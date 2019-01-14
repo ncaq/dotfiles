@@ -1,0 +1,16 @@
+set editing-mode emacs
+
+# control
+
+"\C-b": backward-delete-char
+"\C-h": backward-char
+"\C-n": history-search-forward
+"\C-s": forward-char
+"\C-t": history-search-backward
+
+# alt
+
+"\eb": backward-kill-word
+"\eh": backward-word
+"\es": forward-word
+"\et": history-search-backward

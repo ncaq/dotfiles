@@ -1,0 +1,15 @@
+OPTIONS=!cmdassist
+OPTIONS=checkpoint
+OPTIONS=color
+OPTIONS=disclose: +i +a +v +g +c
+OPTIONS=extmenu
+OPTIONS=hilite_pet
+OPTIONS=lit_corridor
+OPTIONS=menustyle:p
+OPTIONS=msg_window:f
+OPTIONS=msghistory:1000
+OPTIONS=perm_invent
+OPTIONS=pickup_types:$?+!=/
+OPTIONS=showexp
+OPTIONS=showscore
+OPTIONS=time

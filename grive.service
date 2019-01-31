@@ -3,7 +3,7 @@ Description=grive daemon
 After=network.target
 
 [Service]
-ExecStart=/bin/zsh -c 'while true; do grive -p ~/GoogleDrive; inotifywait -r -t 300 -e modify,move,create,delete ~/GoogleDrive; done'
+ExecStart=/bin/zsh -c 'while true; do grive -p ~/GoogleDrive; inotifywait -r -t 100 -e modify,move,create,delete ~/GoogleDrive; done'
 
 [Install]
 WantedBy=default.target

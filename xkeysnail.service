@@ -1,0 +1,9 @@
+[Unit]
+Description=xkeysnail
+
+[Service]
+ExecStart=/usr/bin/sudo xkeysnail --quiet /home/ncaq/.xkeysnail-ncaq/config.py
+Restart=always
+
+[Install]
+WantedBy=default.service

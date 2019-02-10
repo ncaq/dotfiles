@@ -1,6 +1,6 @@
 [Unit]
 Description=grive daemon
-After=network.target
+After=network-online.target
 
 [Service]
 ExecStart=/bin/zsh -c 'while true; do grive -p ~/GoogleDrive; inotifywait -r -t 100 -e modify,move,create,delete ~/GoogleDrive; done'

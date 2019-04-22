@@ -1,0 +1,9 @@
+[Unit]
+Description=xkbset bouncekeys
+
+[Service]
+ExecStart=/home/ncaq/.rc/xkbset-bouncekeys
+Type=oneshot
+
+[Install]
+WantedBy=graphical.target

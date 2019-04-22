@@ -1,0 +1,9 @@
+#!/usr/bin/env zsh
+
+if xkbset q|rg 'Bounce-Keys = Off'; then
+    xkbset bouncekeys 50
+    systemctl --user restart xkeysnail
+else
+    echo "Bounce-Keys On"
+    return
+fi

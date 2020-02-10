@@ -1,0 +1,4 @@
+#!/usr/bin/env zsh
+set -eu
+parallel --no-notice git branch --delete {} ::: $(git branch --merged|rg --invert-match '\*|master')
+git fetch --prune

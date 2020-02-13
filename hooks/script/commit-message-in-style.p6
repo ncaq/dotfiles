@@ -23,4 +23,4 @@ for @prefixs -> $prefix {
   }
 }
 
-die "commit-msg: $commit-msg is invalid.";
+die "commit-msg is invalid. commit-msg: $commit-msg";

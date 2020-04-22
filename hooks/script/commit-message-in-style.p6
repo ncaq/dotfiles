@@ -7,6 +7,7 @@ if !$commit-editmsg-path.is-absolute {
 my Str $commit-msg = slurp($commit-editmsg-path.absolute($project-root-path));
 my Str @prefixs = [
   'Merge ',
+  'Revert ',
   'added: ',
   'changed: ',
   'cleaned: ',

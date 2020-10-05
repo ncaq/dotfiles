@@ -1,4 +1,5 @@
 #!/usr/bin/env zsh
 set -eu
-parallel --no-notice git branch --delete {} ::: $(git branch --merged|rg --invert-match '\*|master')
+default_branch=$(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')
+parallel --no-notice git branch --delete {} ::: $(git branch --merged|rg --invert-match "\\*|${default_branch}")
 git fetch --prune

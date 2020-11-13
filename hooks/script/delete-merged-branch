@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 set -eu
 default_branch=$(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')
-parallel --no-notice git branch --delete {} ::: $(git branch --merged|rg --invert-match "\\*|${default_branch}")
+git branch --merged|grep --invert-match -E "\\*|${default_branch}"|xargs git branch --delete
 git fetch --prune

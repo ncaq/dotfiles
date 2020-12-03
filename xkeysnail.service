@@ -2,10 +2,8 @@
 Description=xkeysnail
 
 [Service]
-ExecStart=/usr/bin/sudo xkeysnail --quiet /home/ncaq/.xkeysnail/config.py
+ExecStart=/usr/bin/sudo xkeysnail --watch --quiet /home/ncaq/.xkeysnail/config.py
 ExecStop=/usr/bin/sudo kill $MAINPID
-Restart=on-failure
-RestartSec=1s
 
 [Install]
 WantedBy=graphical.target

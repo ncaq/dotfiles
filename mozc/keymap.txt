@@ -1,0 +1,100 @@
+status	key	command
+Conversion	Backspace	Cancel
+Composition	Backspace	Backspace
+DirectInput	Ctrl ,	IMEOff
+Precomposition	Ctrl ,	IMEOff
+Composition	Ctrl ,	IMEOff
+Conversion	Ctrl ,	IMEOff
+Suggestion	Ctrl ,	IMEOff
+Prediction	Ctrl ,	IMEOff
+DirectInput	Ctrl .	IMEOn
+Precomposition	Ctrl .	IMEOn
+Prediction	Ctrl .	IMEOn
+Composition	Ctrl .	ConvertToHiragana
+Conversion	Ctrl .	ConvertToHiragana
+Composition	Ctrl '	ConvertToHalfAlphanumeric
+Conversion	Ctrl '	ConvertToHalfAlphanumeric
+Conversion	Ctrl b	Cancel
+Composition	Ctrl b	Backspace
+Conversion	Ctrl c	SegmentWidthShrink
+Composition	Ctrl d	Delete
+Conversion	Ctrl d	Delete
+Composition	Ctrl Enter	Commit
+Composition	Ctrl Enter	Commit
+Conversion	Ctrl Enter	Commit
+Composition	Ctrl g	Cancel
+Conversion	Ctrl g	Cancel
+Composition	Ctrl h	MoveCursorLeft
+Conversion	Ctrl h	SegmentFocusLeft
+Composition	Ctrl m	Commit
+Composition	Ctrl m	Commit
+Conversion	Ctrl m	Commit
+Conversion	Ctrl n	ConvertNext
+Suggestion	Ctrl n	PredictAndConvert
+Composition	Ctrl p	ConvertToFullKatakana
+Conversion	Ctrl p	ConvertToFullKatakana
+Conversion	Ctrl r	SegmentWidthExpand
+Composition	Ctrl s	MoveCursorRight
+Conversion	Ctrl s	SegmentFocusRight
+Conversion	Ctrl t	ConvertPrev
+Prediction	Ctrl v	ConvertNextPage
+Conversion	Ctrl v	ConvertNextPage
+Composition	Ctrl y	ConvertToHalfKatakana
+Conversion	Ctrl y	ConvertToHalfKatakana
+Prediction	Ctrl z	ConvertPrevPage
+Conversion	Ctrl z	ConvertPrevPage
+Composition	Delete	Delete
+Conversion	Down	ConvertNext
+Suggestion	Down	PredictAndConvert
+Composition	Enter	Commit
+Composition	Enter	Commit
+Conversion	Enter	Commit
+Composition	ESC	Cancel
+Conversion	ESC	Cancel
+Precomposition	F10	LaunchDictionaryTool
+Precomposition	F12	LaunchConfigDialog
+DirectInput	Henkan	IMEOn
+Precomposition	Henkan	IMEOn
+Composition	Henkan	ConvertToHiragana
+Conversion	Henkan	ConvertToHiragana
+Suggestion	Henkan	IMEOn
+Prediction	Henkan	IMEOn
+Composition	Left	MoveCursorLeft
+Conversion	Left	SegmentFocusLeft
+DirectInput	Muhenkan	IMEOff
+Precomposition	Muhenkan	IMEOff
+Composition	Muhenkan	IMEOff
+Conversion	Muhenkan	IMEOff
+Suggestion	Muhenkan	IMEOff
+Prediction	Muhenkan	IMEOff
+Conversion	PageDown	ConvertNextPage
+Conversion	PageUp	ConvertPrevPage
+Composition	Right	MoveCursorRight
+Conversion	Right	SegmentFocusRight
+Conversion	Shift Down	ConvertNextPage
+Composition	Shift Enter	Commit
+Composition	Shift Enter	Commit
+Conversion	Shift Enter	Commit
+Conversion	Shift Left	SegmentWidthShrink
+Conversion	Shift Right	SegmentWidthExpand
+Conversion	Shift Space	ConvertPrev
+Precomposition	Shift Space	InsertAlternateSpace
+Conversion	Shift Tab	ConvertPrev
+Conversion	Shift Up	ConvertPrevPage
+Precomposition	Space	InsertSpace
+Conversion	Space	ConvertNext
+Composition	Space	Convert
+Composition	Tab	PredictAndConvert
+Conversion	Tab	PredictAndConvert
+Conversion	Up	ConvertPrev
+Composition	Kanji	IMEOff
+Composition	OFF	IMEOff
+Composition	ON	IMEOn
+Conversion	Kanji	IMEOff
+Conversion	OFF	IMEOff
+Conversion	ON	IMEOn
+DirectInput	Kanji	IMEOn
+DirectInput	ON	IMEOn
+Precomposition	Kanji	IMEOff
+Precomposition	OFF	IMEOff
+Precomposition	ON	IMEOn

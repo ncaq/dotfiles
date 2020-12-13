@@ -55,10 +55,9 @@ Precomposition	F10	LaunchDictionaryTool
 Precomposition	F12	LaunchConfigDialog
 DirectInput	Henkan	IMEOn
 Precomposition	Henkan	IMEOn
+Prediction	Henkan	IMEOn
 Composition	Henkan	ConvertToHiragana
 Conversion	Henkan	ConvertToHiragana
-Suggestion	Henkan	IMEOn
-Prediction	Henkan	IMEOn
 Composition	Left	MoveCursorLeft
 Conversion	Left	SegmentFocusLeft
 DirectInput	Muhenkan	IMEOff

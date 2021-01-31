@@ -50,7 +50,9 @@
 *://*.it-swarm-pt.tech/*
 *://*.it-swarm-ru.tech/*
 *://*.it-swarm.dev/*
+*://*.it-swarm.jp.net/*
 *://*.it-swarm.net/*
+*://*.it-swarm.xyz/*
 *://*.jin115.com/*
 *://*.kotaeta.com/*
 *://*.kyodemo.net/*

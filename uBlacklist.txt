@@ -25,6 +25,8 @@
 *://*.code-examples.net/*
 *://*.code.i-harness.com/*
 *://*.codeday.me/*
+*://*.codefaq.info/*
+*://*.codefaq.ru/*
 *://*.codeflow.site/*
 *://*.coder.work/*
 *://*.coderoad.ru/*
@@ -36,6 +38,7 @@
 *://*.developreference.com/*
 *://*.esuteru.com/*
 *://*.exceptionshub.com/*
+*://*.fixes.pub/*
 *://*.game8.jp/*
 *://*.gamerch.com/*
 *://*.gamewith.jp/*
@@ -69,6 +72,7 @@
 *://*.ojit.com/*
 *://*.programmerz.ru/*
 *://*.programqa.com/*
+*://*.python2.net/*
 *://*.python5.com/*
 *://*.qa-help.ru/*
 *://*.qaru.site/*

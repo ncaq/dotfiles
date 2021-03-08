@@ -1,0 +1,30 @@
+[color]
+	ui = true
+[core]
+	autocrlf = false
+	editor = emacsclient
+	hooksPath = ~/.rc/hooks
+	quotePath = false
+	symlinks = true
+[diff]
+	algorithm = histogram
+[fetch]
+	prune = true
+[log]
+	date = iso
+[pager]
+	diff = diff-highlight | less
+	log = diff-highlight | less
+	show = diff-highlight | less
+[pull]
+	prune = true
+	rebase = false
+[push]
+	default = current
+[user]
+	email = ncaq@ncaq.net
+	name = ncaq
+[github]
+	user = ncaq
+[include]
+	path = ~/.rc/.gitconfig.local

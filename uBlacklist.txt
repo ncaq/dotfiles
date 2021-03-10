@@ -21,6 +21,7 @@
 *://*.calcal.net/*
 *://*.ceron.jp/*
 *://*.ciupacabra.com/*
+*://*.cloud6.net/*
 *://*.code-adviser.com/*
 *://*.code-examples.net/*
 *://*.code.i-harness.com/*

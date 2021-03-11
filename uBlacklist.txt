@@ -357,6 +357,7 @@
 *://*.tutorialmore.com/*
 *://*.tv-japan.net/*
 *://*.ubuntugeeks.com/*
+*://*.uwenku.com/*
 *://*.voidcc.com/*
 *://*.while-do.com/*
 *://*.xbuba.com/*

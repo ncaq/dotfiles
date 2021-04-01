@@ -54,6 +54,7 @@
 *://*.ikioi5ch.net/*
 *://*.intellipaat.com/*
 *://*.issue.life/*
+*://*.it-mure.jp.net/*
 *://*.it-swarm-es.tech/*
 *://*.it-swarm-ja.tech/*
 *://*.it-swarm-pt.tech/*

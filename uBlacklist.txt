@@ -49,6 +49,7 @@
 *://*.gamy.jp/*
 *://*.geeks-world.github.io/*
 *://*.githubja.com/*
+*://*.gitmemory.com/*
 *://*.helpex.vn/*
 *://*.ikioi2ch.net/*
 *://*.ikioi5ch.net/*

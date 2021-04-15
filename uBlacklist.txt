@@ -16,6 +16,7 @@
 *://*.appmedia.jp/*
 *://*.askdev.info/*
 *://*.bestecode.com/*
+*://*.bleepcoder.com/*
 *://*.buginfo.tech/*
 *://*.bugsdb.com/*
 *://*.calcal.net/*

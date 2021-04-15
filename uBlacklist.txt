@@ -68,6 +68,7 @@
 *://*.iteramos.com/*
 *://*.javaer101.com/*
 *://*.jin115.com/*
+*://*.knews.vip/*
 *://*.kotaeta.com/*
 *://*.kyodemo.net/*
 *://*.labo.tv/*

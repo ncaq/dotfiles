@@ -3,7 +3,7 @@
 [core]
 	autocrlf = false
 	editor = emacsclient
-	hooksPath = ~/.rc/hooks
+	hooksPath = ~/dotfiles/git-hooks
 	quotePath = false
 	symlinks = true
 [diff]
@@ -34,4 +34,4 @@
 	clean = git-lfs clean -- %f
 	smudge = git-lfs smudge -- %f
 [include]
-	path = ~/.rc/.gitconfig.local
+	path = ~/.config/git/config.local

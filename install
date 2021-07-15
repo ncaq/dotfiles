@@ -1,0 +1,30 @@
+#!/bin/bash
+set -eux
+
+# ループ終わりにプロジェクトディレクトリに復帰します。
+dotfiles_dir=$(realpath $(dirname "$0"))
+cd $dotfiles_dir
+
+home_dir=~
+
+# etc home-userから設定ファイルを取得します。
+for f in $(find etc home-user -type f); do
+  # 後々正しい相対パスにするために絶対パスを取得しておきます。
+  real=$(realpath $f)
+  # home-userは~/にマッピングします。
+  if [[ $f == home-user* ]]; then
+    conf_dir=$(dirname $(echo $f|sed -e "s#home-user#$home_dir#"))
+    mkdir -p $conf_dir
+    cd $conf_dir
+    ln -sfv $(realpath --relative-to=. $real) .
+  else
+    conf_dir=/$(dirname $f)
+    mkdir -p $conf_dir
+    cd $conf_dir
+    sudo ln -sfv $(realpath --relative-to=. $real) .
+  fi
+  cd $dotfiles_dir
+done
+
+cd ~/.config/git/
+ln -s config.local.linux config.local

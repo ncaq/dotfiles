@@ -27,7 +27,7 @@
   // To learn more about profiles, visit https://aka.ms/terminal-profile-settings
   "profiles": {
     "defaults": {
-      "fontFace": "HackGenNerd",
+      "fontFace": "HackGenNerdConsole",
       "colorScheme": "Solarized Dark"
     },
     "list": [

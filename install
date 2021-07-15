@@ -27,4 +27,4 @@ for f in $(find etc home-user -type f); do
 done
 
 cd ~/.config/git/
-ln -s config.local.linux config.local
+ln -sfv config.local.linux config.local

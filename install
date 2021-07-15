@@ -16,10 +16,12 @@ for f in $(find etc home/user -type f); do
   if [[ $f == home/user* ]]; then
     conf_dir=$(dirname $(echo $f|sed -e "s#home/user#$home_dir#"))
     mkdir -p $conf_dir
+    # マウントしても正常にパスが辿れるようにcdして設置する回りくどい方法を取っています。
     cd $conf_dir
     ln -sfv $(realpath --relative-to=. $real) .
-  else
+  else                          # その他のディレクトリ(今はetcしかないが)はフルパスをマッピングします。
     conf_dir=/$(dirname $f)
+    # etcでの操作にはroot権限が必要になる。
     sudo mkdir -p $conf_dir
     cd $conf_dir
     sudo ln -sfv $(realpath --relative-to=. $real) .
@@ -27,5 +29,14 @@ for f in $(find etc home/user -type f); do
   cd $dotfiles_dir
 done
 
+# gitの認証情報保存設定をソフトウェアのインストール状態によって変更します。
 cd ~/.config/git/
-ln -sfv config.local.linux config.local
+
+if hash git-credential-libsecret 2>/dev/null; then
+  ln -sfv config.local.libsecret config.local
+elif hash git-credential-manager 2>/dev/null; then
+  ln -sfv config.local.manager config.local
+else
+  # 早めにセットアップして入力不要にしましょう。
+  ln -sfv config.local.cache config.local
+fi

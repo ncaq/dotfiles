@@ -19,7 +19,7 @@ for f in $(find etc home-user -type f); do
     ln -sfv $(realpath --relative-to=. $real) .
   else
     conf_dir=/$(dirname $f)
-    mkdir -p $conf_dir
+    sudo mkdir -p $conf_dir
     cd $conf_dir
     sudo ln -sfv $(realpath --relative-to=. $real) .
   fi

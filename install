@@ -5,15 +5,16 @@ set -eux
 dotfiles_dir=$(realpath $(dirname "$0"))
 cd $dotfiles_dir
 
+# 現在のユーザのホームディレクトリに展開します。
 home_dir=~
 
-# etc home-userから設定ファイルを取得します。
-for f in $(find etc home-user -type f); do
+# etc home/userから設定ファイルを取得します。
+for f in $(find etc home/user -type f); do
   # 後々正しい相対パスにするために絶対パスを取得しておきます。
   real=$(realpath $f)
-  # home-userは~/にマッピングします。
-  if [[ $f == home-user* ]]; then
-    conf_dir=$(dirname $(echo $f|sed -e "s#home-user#$home_dir#"))
+  # home/userは~/にマッピングします。
+  if [[ $f == home/user* ]]; then
+    conf_dir=$(dirname $(echo $f|sed -e "s#home/user#$home_dir#"))
     mkdir -p $conf_dir
     cd $conf_dir
     ln -sfv $(realpath --relative-to=. $real) .

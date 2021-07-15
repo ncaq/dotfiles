@@ -1,9 +1,0 @@
-[Unit]
-Description=xkeysnail
-
-[Service]
-ExecStart=/usr/bin/sudo xkeysnail --watch --quiet /home/ncaq/.xkeysnail/config.py
-ExecStop=/usr/bin/sudo kill $MAINPID
-
-[Install]
-WantedBy=graphical.target

@@ -1,7 +1,0 @@
-#!/usr/bin/env zsh
-
-if xkbset q|rg 'Bounce-Keys = Off'; then
-    xkbset bouncekeys 50
-else
-    echo "Bounce-Keys On"
-fi

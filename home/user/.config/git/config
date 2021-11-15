@@ -23,6 +23,8 @@
 	rebase = false
 [push]
 	default = current
+[rerere]
+	enabled = true
 [user]
 	email = ncaq@ncaq.net
 	name = ncaq

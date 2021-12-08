@@ -34,6 +34,8 @@ cd ~/.config/git/
 
 if hash git-credential-libsecret 2>/dev/null; then
   ln -sfv config.local.libsecret config.local
+elif [[ -x /mnt/c/Program\ Files/Git/mingw64/libexec/git-core/git-credential-manager-core.exe ]]; then
+  ln -sfv config.local.manager-windows-core config.local
 elif hash git-credential-manager 2>/dev/null; then
   ln -sfv config.local.manager config.local
 else

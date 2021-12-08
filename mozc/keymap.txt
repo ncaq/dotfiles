@@ -1,21 +1,21 @@
 status	key	command
-Conversion	Backspace	Cancel
 Composition	Backspace	Backspace
+Conversion	Backspace	Cancel
+Composition	Ctrl '	ConvertToHalfAlphanumeric
+Conversion	Ctrl '	ConvertToHalfAlphanumeric
+Prediction	Ctrl ,	IMEOff
+Suggestion	Ctrl ,	IMEOff
 DirectInput	Ctrl ,	IMEOff
 Precomposition	Ctrl ,	IMEOff
 Composition	Ctrl ,	IMEOff
 Conversion	Ctrl ,	IMEOff
-Suggestion	Ctrl ,	IMEOff
-Prediction	Ctrl ,	IMEOff
+Prediction	Ctrl .	IMEOn
 DirectInput	Ctrl .	IMEOn
 Precomposition	Ctrl .	IMEOn
-Prediction	Ctrl .	IMEOn
 Composition	Ctrl .	ConvertToHiragana
 Conversion	Ctrl .	ConvertToHiragana
-Composition	Ctrl '	ConvertToHalfAlphanumeric
-Conversion	Ctrl '	ConvertToHalfAlphanumeric
-Conversion	Ctrl b	Cancel
 Composition	Ctrl b	Backspace
+Conversion	Ctrl b	Cancel
 Conversion	Ctrl c	SegmentWidthShrink
 Composition	Ctrl d	Delete
 Conversion	Ctrl d	Delete
@@ -29,8 +29,8 @@ Conversion	Ctrl h	SegmentFocusLeft
 Composition	Ctrl m	Commit
 Composition	Ctrl m	Commit
 Conversion	Ctrl m	Commit
-Conversion	Ctrl n	ConvertNext
 Suggestion	Ctrl n	PredictAndConvert
+Conversion	Ctrl n	ConvertNext
 Composition	Ctrl p	ConvertToFullKatakana
 Conversion	Ctrl p	ConvertToFullKatakana
 Conversion	Ctrl r	SegmentWidthExpand
@@ -44,8 +44,11 @@ Conversion	Ctrl y	ConvertToHalfKatakana
 Prediction	Ctrl z	ConvertPrevPage
 Conversion	Ctrl z	ConvertPrevPage
 Composition	Delete	Delete
-Conversion	Down	ConvertNext
 Suggestion	Down	PredictAndConvert
+Conversion	Down	ConvertNext
+Precomposition	Eisu	ToggleAlphanumericMode
+Composition	Eisu	ToggleAlphanumericMode
+Conversion	Eisu	ToggleAlphanumericMode
 Composition	Enter	Commit
 Composition	Enter	Commit
 Conversion	Enter	Commit
@@ -53,19 +56,30 @@ Composition	ESC	Cancel
 Conversion	ESC	Cancel
 Precomposition	F10	LaunchDictionaryTool
 Precomposition	F12	LaunchConfigDialog
+DirectInput	Hankaku/Zenkaku	IMEOn
+Precomposition	Hankaku/Zenkaku	IMEOff
+Composition	Hankaku/Zenkaku	IMEOff
+Conversion	Hankaku/Zenkaku	IMEOff
+Prediction	Henkan	IMEOn
 DirectInput	Henkan	IMEOn
 Precomposition	Henkan	IMEOn
-Prediction	Henkan	IMEOn
 Composition	Henkan	ConvertToHiragana
 Conversion	Henkan	ConvertToHiragana
+DirectInput	Hiragana	IMEOn
+Precomposition	Hiragana	InputModeHiragana
+Composition	Hiragana	InputModeHiragana
+Conversion	Hiragana	InputModeHiragana
+DirectInput	Katakana	IMEOn
+Precomposition	Katakana	InputModeFullKatakana
+Composition	Katakana	InputModeFullKatakana
+Conversion	Katakana	InputModeFullKatakana
 Composition	Left	MoveCursorLeft
 Conversion	Left	SegmentFocusLeft
+Prediction	Muhenkan	IMEOff
 DirectInput	Muhenkan	IMEOff
 Precomposition	Muhenkan	IMEOff
 Composition	Muhenkan	IMEOff
 Conversion	Muhenkan	IMEOff
-Suggestion	Muhenkan	IMEOff
-Prediction	Muhenkan	IMEOff
 Conversion	PageDown	ConvertNextPage
 Conversion	PageUp	ConvertPrevPage
 Composition	Right	MoveCursorRight
@@ -76,13 +90,13 @@ Composition	Shift Enter	Commit
 Conversion	Shift Enter	Commit
 Conversion	Shift Left	SegmentWidthShrink
 Conversion	Shift Right	SegmentWidthExpand
-Conversion	Shift Space	ConvertPrev
 Precomposition	Shift Space	InsertAlternateSpace
+Conversion	Shift Space	ConvertPrev
 Conversion	Shift Tab	ConvertPrev
 Conversion	Shift Up	ConvertPrevPage
 Precomposition	Space	InsertSpace
-Conversion	Space	ConvertNext
 Composition	Space	Convert
+Conversion	Space	ConvertNext
 Composition	Tab	PredictAndConvert
 Conversion	Tab	PredictAndConvert
 Conversion	Up	ConvertPrev
@@ -97,3 +111,9 @@ DirectInput	ON	IMEOn
 Precomposition	Kanji	IMEOff
 Precomposition	OFF	IMEOff
 Precomposition	ON	IMEOn
+Composition	ASCII	InsertCharacter
+Composition	Kanji	IMEOff
+Conversion	Kanji	IMEOff
+DirectInput	Kanji	IMEOn
+Precomposition	ASCII	InsertCharacter
+Precomposition	Kanji	IMEOff

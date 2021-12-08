@@ -15,9 +15,9 @@
 [log]
 	date = iso
 [pager]
-	diff = diff-highlight | less
-	log = diff-highlight | less
-	show = diff-highlight | less
+	diff = batcat
+	log = batcat
+	show = batcat
 [pull]
 	prune = true
 	rebase = false

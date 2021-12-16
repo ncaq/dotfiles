@@ -67,6 +67,20 @@
         "action": "scrollUp"
       },
       "keys": "shift+up"
+    },
+    {
+      "command": {
+        "action": "moveTab",
+        "direction": "forward"
+      },
+      "keys": "ctrl+alt+s"
+    },
+    {
+      "command": {
+        "action": "moveTab",
+        "direction": "backward"
+      },
+      "keys": "ctrl+alt+h"
     }
   ],
   "copyFormatting": "all",

@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -eu
+cd ~/Desktop/mikutter/
+exec ./mikutter.rb "$@"

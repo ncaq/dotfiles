@@ -1,4 +1,16 @@
 #!/usr/bin/env bash
 set -eu
+
 cd ~/Desktop/mikutter/
+
+# WSL環境でmikutter専用にfcitxを使います。
+if grep -q "WSL" "/proc/sys/kernel/osrelease"; then
+  export GTK_IM_MODULE=fcitx
+  export QT_IM_MODULE=fcitx
+  export XMODIFIERS=@im=fcitx
+  export DefaultIMModule=fcitx
+
+  fcitx-autostart > /dev/null 2>&1
+fi
+
 exec ./mikutter.rb "$@"

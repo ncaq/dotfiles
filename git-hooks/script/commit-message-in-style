@@ -6,6 +6,11 @@ if $commit-editmsg-path.is-absolute {
 } else {
   $commit-msg = slurp($commit-editmsg-path.absolute(IO::Path.new((run 'git', 'rev-parse', '--show-toplevel', :out).out.slurp(:close).trim).path));
 }
+
+if $commit-msg.trim eq "Initial commit" {
+  exit 0
+}
+
 my Str @prefixs = [
   'Merge ',
   'Revert ',

@@ -2,7 +2,7 @@
 set -eu
 default_branch=$(git symbolic-ref refs/remotes/origin/HEAD|sed 's@^refs/remotes/origin/@@')
 current_branch=$(git rev-parse --abbrev-ref HEAD)
-if [[ $default_branch != $current_branch ]]; then
+if [[ $default_branch != "$current_branch" ]]; then
   exit 0
 fi
 git branch --merged|grep --invert-match -E "\\*|${default_branch}"|xargs --no-run-if-empty git branch --delete

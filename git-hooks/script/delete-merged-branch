@@ -1,9 +1,13 @@
 #!/bin/bash
 set -eu
+# get default branch, e.g. master, main.
 default_branch=$(git symbolic-ref refs/remotes/origin/HEAD|sed 's@^refs/remotes/origin/@@')
 current_branch=$(git rev-parse --abbrev-ref HEAD)
+# when current branch in sot default branch, exit.
 if [[ $default_branch != "$current_branch" ]]; then
   exit 0
 fi
+# remove merged branch, exclude default branch.
 git branch --merged|grep --invert-match -E "\\*|${default_branch}"|xargs --no-run-if-empty git branch --delete
+# cleanup network branch.
 git fetch --prune

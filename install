@@ -8,8 +8,15 @@ cd $dotfiles_dir
 # 現在のユーザのホームディレクトリに展開します。
 home_dir=~
 
-# etc home/userから設定ファイルを取得します。
-for f in $(find etc home/user -type f); do
+# MSYS2環境などでetcなどにマッピングしないように存在するディレクトリだけを使います。
+if [ -d "/etc/" ]; then
+  find_dir=(etc home/user)
+else
+  find_dir=(home/user)
+fi
+
+# 設定ファイルをリンクします。
+for f in $(find "${find_dir[@]}" -type f); do
   # 後々正しい相対パスにするために絶対パスを取得しておきます。
   real=$(realpath $f)
   # home/userは~/にマッピングします。

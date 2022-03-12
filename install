@@ -1,4 +1,5 @@
 #!/bin/bash
+# shellcheck disable=SC2046,SC2086
 set -eux
 
 # ループ終わりにプロジェクトディレクトリに復帰します。
@@ -16,12 +17,13 @@ else
 fi
 
 # 設定ファイルをリンクします。
-for f in $(find "${find_dir[@]}" -type f); do
+while IFS= read -r -d '' f
+do
   # 後々正しい相対パスにするために絶対パスを取得しておきます。
   real=$(realpath $f)
   # home/userは~/にマッピングします。
   if [[ $f == home/user* ]]; then
-    conf_dir=$(dirname $(echo $f|sed -e "s#home/user#$home_dir#"))
+    conf_dir=$(dirname  ${f/home\/user/$home_dir})
     mkdir -p $conf_dir
     # マウントしても正常にパスが辿れるようにcdして設置する回りくどい方法を取っています。
     cd $conf_dir
@@ -34,7 +36,7 @@ for f in $(find "${find_dir[@]}" -type f); do
     sudo ln -sfv $(realpath --relative-to=. $real) .
   fi
   cd $dotfiles_dir
-done
+done < <(find "${find_dir[@]}" -type f -print0)
 
 # gitの認証情報保存設定をソフトウェアのインストール状態によって変更します。
 cd ~/.config/git/

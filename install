@@ -23,7 +23,7 @@ do
   real=$(realpath $f)
   # home/userは~/にマッピングします。
   if [[ $f == home/user* ]]; then
-    conf_dir=$(dirname  ${f/home\/user/$home_dir})
+    conf_dir=$(dirname ${f/home\/user/$home_dir})
     mkdir -p $conf_dir
     # マウントしても正常にパスが辿れるようにcdして設置する回りくどい方法を取っています。
     cd $conf_dir

@@ -9,7 +9,7 @@ cd $dotfiles_dir
 # 現在のユーザのホームディレクトリに展開します。
 home_dir=~
 
-# MSYS2環境などでetcなどにマッピングしないように存在するディレクトリだけを使います。
+# `/etc/`が存在しない環境で`/etc/`にマッピングしないようにする。
 if [ -d "/etc/" ]; then
   find_dir=(etc home/user)
 else

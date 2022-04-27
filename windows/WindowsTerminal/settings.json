@@ -1,16 +1,17 @@
 {
+  "$help": "https://aka.ms/terminal-documentation",
   "$schema": "https://aka.ms/terminal-profiles-schema",
   "actions": [
-    {
-      "command": "unbound",
-      "keys": "ctrl+comma"
-    },
     {
       "command": {
         "action": "copy",
         "singleLine": false
       },
       "keys": "ctrl+shift+c"
+    },
+    {
+      "command": "unbound",
+      "keys": "ctrl+comma"
     },
     {
       "command": "paste",
@@ -25,6 +26,12 @@
     {
       "command": "find",
       "keys": "ctrl+shift+f"
+    },
+    {
+      "command": {
+        "action": "scrollDown"
+      },
+      "keys": "shift+down"
     },
     {
       "command": {
@@ -55,12 +62,6 @@
     {
       "command": "scrollDownPage",
       "keys": "shift+right"
-    },
-    {
-      "command": {
-        "action": "scrollDown"
-      },
-      "keys": "shift+down"
     },
     {
       "command": {
@@ -97,14 +98,12 @@
     },
     "list": [
       {
-        "commandline": "cmd.exe",
         "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
         "hidden": false,
         "name": "\u30b3\u30de\u30f3\u30c9 \u30d7\u30ed\u30f3\u30d7\u30c8"
       },
       {
         "colorScheme": "Campbell",
-        "commandline": "powershell.exe",
         "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
         "hidden": false,
         "name": "Windows PowerShell"

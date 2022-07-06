@@ -19,6 +19,7 @@ Conversion	Ctrl b	Cancel
 Conversion	Ctrl c	SegmentWidthShrink
 Composition	Ctrl d	Delete
 Conversion	Ctrl d	Delete
+Prediction	Ctrl Delete	DeleteSelectedCandidate
 Composition	Ctrl Enter	Commit
 Composition	Ctrl Enter	Commit
 Conversion	Ctrl Enter	Commit

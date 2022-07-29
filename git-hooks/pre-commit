@@ -1,3 +1,0 @@
-#!/bin/bash
-set -eu
-"$(dirname "$0")"/script/git-user-equal-global

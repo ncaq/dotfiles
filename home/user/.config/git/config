@@ -25,15 +25,17 @@
 	default = current
 [rerere]
 	enabled = true
-[user]
-	email = ncaq@ncaq.net
-	name = ncaq
-[github]
-	user = ncaq
 [filter "lfs"]
 	process = git-lfs filter-process
 	required = true
 	clean = git-lfs clean -- %f
 	smudge = git-lfs smudge -- %f
+[github]
+	user = ncaq
+[user]
+	name = ncaq
+	email = ncaq@ncaq.net
+[includeIf "hasconfig:remote.*.url:codecommit://**"]
+	path = ~/.config/git/config.codecommit
 [include]
 	path = ~/.config/git/config.local

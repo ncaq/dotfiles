@@ -30,12 +30,6 @@
       "keys": "shift+right"
     },
     {
-      "command": {
-        "action": "newTab"
-      },
-      "keys": "ctrl+o"
-    },
-    {
       "command": "scrollUpPage",
       "keys": "shift+pgup"
     },
@@ -82,6 +76,10 @@
         "direction": "backward"
       },
       "keys": "ctrl+alt+h"
+    },
+    {
+      "command": "duplicateTab",
+      "keys": "ctrl+o"
     }
   ],
   "copyFormatting": "all",

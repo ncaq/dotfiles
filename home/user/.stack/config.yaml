@@ -3,6 +3,9 @@
 # http://docs.haskellstack.org/en/stable/yaml_configuration/
 
 # for [haskell-language-server](https://github.com/haskell/haskell-language-server)
+# ghcupの提供するGHCを使わないとHLSが正常に動かないことがあるのでシステムのものを使用する。
+system-ghc: true
+# HLSがドキュメント情報を使う。
 ghc-options:
   "$everything": -haddock
 

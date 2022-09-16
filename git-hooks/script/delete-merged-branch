@@ -8,6 +8,6 @@ if [[ $default_branch != "$current_branch" ]]; then
   exit 0
 fi
 # remove merged branch, exclude current and default branch.
-git branch --merged|grep --invert-match -E "\\*|${default_branch}"|xargs --no-run-if-empty git branch --delete
+git branch --merged|grep --invert-match -E "\\*|${default_branch}"|xargs -r git branch --delete
 # cleanup network branch.
 git fetch --prune

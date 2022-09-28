@@ -214,7 +214,26 @@
               "mandatory": ["control"]
             }
           },
-          "to": [{ "key_code": "delete_or_backspace" }]
+          "to": [{ "key_code": "delete_forward" }]
+        },
+        {
+          "conditions": [
+            {
+              "bundle_identifiers": [
+                "org\\.mozilla\\.firefox",
+                "com\\.tinyspeck\\.slackmacgap"
+              ],
+              "type": "frontmost_application_if"
+            }
+          ],
+          "type": "basic",
+          "from": {
+            "key_code": "h",
+            "modifiers": {
+              "mandatory": ["command"]
+            }
+          },
+          "to": [{ "key_code": "delete_forward", "modifiers": ["command"] }]
         },
         {
           "conditions": [
@@ -407,7 +426,7 @@
               "mandatory": ["control"]
             }
           },
-          "to": [{ "key_code": "j", "modifiers": ["control"] }]
+          "to": [{ "key_code": "delete_or_backspace" }]
         },
         {
           "conditions": [
@@ -426,7 +445,9 @@
               "mandatory": ["command"]
             }
           },
-          "to": [{ "key_code": "j", "modifiers": ["command"] }]
+          "to": [
+            { "key_code": "delete_or_backspace", "modifiers": ["command"] }
+          ]
         },
         {
           "conditions": [

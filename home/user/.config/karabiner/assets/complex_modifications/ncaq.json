@@ -545,6 +545,95 @@
           "to": [{ "key_code": "p", "modifiers": ["option"] }]
         }
       ]
+    },
+    {
+      "description": "SlackでEnterで送信する。",
+      "manipulators": [
+        {
+          "conditions": [
+            {
+              "bundle_identifiers": ["com\\.tinyspeck\\.slackmacgap"],
+              "type": "frontmost_application_if"
+            }
+          ],
+          "type": "basic",
+          "from": {
+            "key_code": "return_or_enter"
+          },
+          "to": [{ "key_code": "return_or_enter", "modifiers": ["option"] }]
+        }
+      ]
+    },
+    {
+      "description": "Slackでチャンネルスイッチを手軽にする。",
+      "manipulators": [
+        {
+          "conditions": [
+            {
+              "bundle_identifiers": ["com\\.tinyspeck\\.slackmacgap"],
+              "type": "frontmost_application_if"
+            }
+          ],
+          "type": "basic",
+          "from": {
+            "key_code": "c",
+            "modifiers": {
+              "mandatory": ["command"]
+            }
+          },
+          "to": [
+            { "key_code": "down_arrow", "modifiers": ["command", "shift"] }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "bundle_identifiers": ["com\\.tinyspeck\\.slackmacgap"],
+              "type": "frontmost_application_if"
+            }
+          ],
+          "type": "basic",
+          "from": {
+            "key_code": "v",
+            "modifiers": {
+              "mandatory": ["command"]
+            }
+          },
+          "to": [{ "key_code": "up_arrow", "modifiers": ["command", "shift"] }]
+        },
+        {
+          "conditions": [
+            {
+              "bundle_identifiers": ["com\\.tinyspeck\\.slackmacgap"],
+              "type": "frontmost_application_if"
+            }
+          ],
+          "type": "basic",
+          "from": {
+            "key_code": "k",
+            "modifiers": {
+              "mandatory": ["command"]
+            }
+          },
+          "to": [{ "key_code": "up_arrow", "modifiers": ["command"] }]
+        },
+        {
+          "conditions": [
+            {
+              "bundle_identifiers": ["com\\.tinyspeck\\.slackmacgap"],
+              "type": "frontmost_application_if"
+            }
+          ],
+          "type": "basic",
+          "from": {
+            "key_code": "l",
+            "modifiers": {
+              "mandatory": ["command"]
+            }
+          },
+          "to": [{ "key_code": "down_arrow", "modifiers": ["command"] }]
+        }
+      ]
     }
   ]
 }

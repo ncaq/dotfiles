@@ -3,6 +3,21 @@
   "$schema": "https://aka.ms/terminal-profiles-schema",
   "actions": [
     {
+      "command": "find",
+      "keys": "ctrl+shift+f"
+    },
+    {
+      "command": "duplicateTab",
+      "keys": "ctrl+o"
+    },
+    {
+      "command": {
+        "action": "moveTab",
+        "direction": "backward"
+      },
+      "keys": "ctrl+alt+h"
+    },
+    {
       "command": {
         "action": "copy",
         "singleLine": false
@@ -16,10 +31,6 @@
     {
       "command": "unbound",
       "keys": "ctrl+comma"
-    },
-    {
-      "command": "find",
-      "keys": "ctrl+shift+f"
     },
     {
       "command": "scrollDownPage",
@@ -69,17 +80,6 @@
         "direction": "forward"
       },
       "keys": "ctrl+alt+s"
-    },
-    {
-      "command": {
-        "action": "moveTab",
-        "direction": "backward"
-      },
-      "keys": "ctrl+alt+h"
-    },
-    {
-      "command": "duplicateTab",
-      "keys": "ctrl+o"
     }
   ],
   "copyFormatting": "all",
@@ -91,7 +91,7 @@
       "bellStyle": "none",
       "colorScheme": "Solarized Dark",
       "font": {
-        "face": "HackGenNerd Console"
+        "face": "HackGen Console NFJ"
       }
     },
     "list": [
@@ -325,5 +325,5 @@
       "yellow": "#808000"
     }
   ],
-  "startOnUserLogin": false
+  "startOnUserLogin": true
 }

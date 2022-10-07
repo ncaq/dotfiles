@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 set -eu
 
 cd ~/Desktop/mikutter/
@@ -11,6 +11,13 @@ if grep -q "WSL" "/proc/sys/kernel/osrelease"; then
   export XMODIFIERS=@im=fcitx
   export DefaultIMModule=fcitx
   fcitx-autostart > /dev/null 2>&1
+
+  # Waylandネイティブで起動すると、
+  # ウィンドウ最大化するとまともにUIが動かない。
+  # キーボードをDvorak設定にする方法が分からない。
+  # という問題が発生するため、
+  # XWayland経由で起動する。
+  export GDK_BACKEND=x11
 
   # .Xresourcesを自動的に読み込んでくれないのでここで読み込んでしまいます。
   # mikutterとEmacs以外にGUIアプリを使わず、

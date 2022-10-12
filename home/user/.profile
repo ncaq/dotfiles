@@ -60,7 +60,7 @@ else
   export PATH="$yarn_global_bin:$PATH"
 fi
 
-export PATH="$HOME/.local/bin:$HOME/.zsh.d/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"
 
 # If the execution environment is not WSL, skip subsequent executions.
 if [ ! -e "/proc/sys/kernel/osrelease" ] || ! grep -q "WSL" "/proc/sys/kernel/osrelease"; then

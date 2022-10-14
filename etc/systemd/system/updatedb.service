@@ -1,7 +1,0 @@
-[Service]
-Type=oneshot
-Nice=19
-ExecStart=/usr/bin/updatedb
-
-[Install]
-WantedBy=multi-user.target

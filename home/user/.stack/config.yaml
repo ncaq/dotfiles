@@ -9,9 +9,6 @@ system-ghc: true
 ghc-options:
   "$everything": -haddock
 
-# for `stack install` where global
-allow-newer: true
-
 # The following parameters are used by "stack new" to automatically fill fields
 # in the cabal config. We recommend uncommenting them and filling them out if
 # you intend to use 'stack new'.

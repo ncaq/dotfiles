@@ -73,4 +73,9 @@ fi
 
 if hash setxkbmap 2>/dev/null; then
   setxkbmap us dvorak
+  # In a WSLg environment,
+  # settings may not be accepted immediately after startup,
+  # so it is a dirty hack to try,
+  # but I'll wait and set it up.
+  (sleep 10 & setxkbmap us dvorak)
 fi

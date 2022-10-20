@@ -5,23 +5,16 @@ cd ~/Desktop/mikutter/
 
 # WSL環境でだけ設定する項目。
 if grep -q "WSL" "/proc/sys/kernel/osrelease"; then
-  # mikutter専用にibusを使う。
-  export GTK_IM_MODULE=ibus
-  export QT_IM_MODULE=ibus
-  export XMODIFIERS=@im=ibus
-  export DefaultIMModule=ibus
-  ibus-daemon --daemonize --xim --replace
+  # mikutter専用にfcitxを使う。
+  export GTK_IM_MODULE=fcitx
+  export QT_IM_MODULE=fcitx
+  export XMODIFIERS=@im=fcitx
+  export DefaultIMModule=fcitx
+  # Waylandを無効化しないとディスプレイを検出できない。
+  # Waylandを無効化していてもWaylandアプリで利用できる。
+  fcitx5 --disable=wayland -d --replace
 
-  # Waylandネイティブで起動すると、
-  # ウィンドウ最大化するとまともにUIが動かない。
-  # キーボードをDvorak設定にする方法が分からない。
-  # という問題が発生するため、
-  # XWayland経由で起動する。
-  export GDK_BACKEND=x11
-
-  # ショートカットなどから起動すると`.profile`を読み込まないので`PATH`が通らず、
-  # `setxkbmap`などを設定しているはずなのにも拘わらず読み込まれない時があるため、
-  # 明示的に読み込む。
+  # ショートカットなどから起動すると`.profile`を読み込まないので`PATH`が通らない。
   source ~/.profile
 fi
 

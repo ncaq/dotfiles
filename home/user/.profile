@@ -71,11 +71,5 @@ if hash xrdb 2>/dev/null && [[ -f ~/.Xresources ]]; then
   xrdb -merge ~/.Xresources
 fi
 
-if hash setxkbmap 2>/dev/null; then
-  setxkbmap us dvorak
-  # In a WSLg environment,
-  # settings may not be accepted immediately after startup,
-  # so it is a dirty hack to try,
-  # but I'll wait and set it up.
-  (sleep 10 & setxkbmap us dvorak)
-fi
+export GDK_SCALE=2
+export GDK_DPI_SCALE=2

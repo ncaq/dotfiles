@@ -41,7 +41,7 @@ done < <(find "${find_dir[@]}" -type f -print0)
 # git-hooksを実行可能にする。
 
 cd $dotfiles_dir/git-hooks/
-yarn install --frozen-lockfile
+yarn install --immutable
 
 # gitの認証情報保存設定をソフトウェアのインストール状態によって変更します。
 cd ~/.config/git/

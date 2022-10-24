@@ -70,6 +70,3 @@ fi
 if hash xrdb 2>/dev/null && [[ -f ~/.Xresources ]]; then
   xrdb -merge ~/.Xresources
 fi
-
-export GDK_SCALE=2
-export GDK_DPI_SCALE=2

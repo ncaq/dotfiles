@@ -16,6 +16,11 @@ if grep -q "WSL" "/proc/sys/kernel/osrelease"; then
 
   # ショートカットなどから起動すると`.profile`を読み込まないので`PATH`が通らない。
   source ~/.profile
+
+  # Wayland限定でスケール設定する方法がよくわからないため、
+  # とりあえず使うWaylandアプリであるmikutterだけ有効化する。
+  export GDK_SCALE=2
+  export GDK_DPI_SCALE=2
 fi
 
 exec ./mikutter.rb "$@"

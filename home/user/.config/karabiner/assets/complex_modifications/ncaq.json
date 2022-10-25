@@ -158,12 +158,50 @@
           ],
           "type": "basic",
           "from": {
+            "key_code": "a",
+            "modifiers": {
+              "mandatory": ["control"]
+            }
+          },
+          "to": [{ "key_code": "left_arrow", "modifiers": ["option"] }]
+        },
+        {
+          "conditions": [
+            {
+              "bundle_identifiers": [
+                "org\\.mozilla\\.firefox",
+                "com\\.tinyspeck\\.slackmacgap"
+              ],
+              "type": "frontmost_application_if"
+            }
+          ],
+          "type": "basic",
+          "from": {
             "key_code": "s",
             "modifiers": {
               "mandatory": ["control"]
             }
           },
           "to": [{ "key_code": "k", "modifiers": ["option"] }]
+        },
+        {
+          "conditions": [
+            {
+              "bundle_identifiers": [
+                "org\\.mozilla\\.firefox",
+                "com\\.tinyspeck\\.slackmacgap"
+              ],
+              "type": "frontmost_application_if"
+            }
+          ],
+          "type": "basic",
+          "from": {
+            "key_code": "d",
+            "modifiers": {
+              "mandatory": ["control"]
+            }
+          },
+          "to": [{ "key_code": "right_arrow", "modifiers": ["option"] }]
         },
         {
           "conditions": [
@@ -203,7 +241,7 @@
           },
           "to": [
             { "key_code": "home" },
-            { "key_code": "end", "modifiers": ["shift"] },
+            { "key_code": "right_arrow", "modifiers": ["command", "shift"] },
             { "key_code": "b", "modifiers": ["option"] }
           ]
         },
@@ -415,7 +453,7 @@
             }
           },
           "to": [
-            { "key_code": "end", "modifiers": ["shift"] },
+            { "key_code": "right_arrow", "modifiers": ["command", "shift"] },
             { "key_code": "b", "modifiers": ["option"] }
           ]
         },

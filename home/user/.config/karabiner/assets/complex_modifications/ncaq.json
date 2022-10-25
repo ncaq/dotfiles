@@ -416,7 +416,7 @@
           },
           "to": [
             { "key_code": "end", "modifiers": ["shift"] },
-            { "key_code": "comma", "modifiers": ["option"] }
+            { "key_code": "b", "modifiers": ["option"] }
           ]
         },
         {

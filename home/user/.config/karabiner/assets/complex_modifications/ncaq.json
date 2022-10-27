@@ -94,7 +94,8 @@
             {
               "bundle_identifiers": [
                 "org\\.mozilla\\.firefox",
-                "com\\.tinyspeck\\.slackmacgap"
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
               ],
               "type": "frontmost_application_if"
             }
@@ -113,7 +114,8 @@
             {
               "bundle_identifiers": [
                 "org\\.mozilla\\.firefox",
-                "com\\.tinyspeck\\.slackmacgap"
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
               ],
               "type": "frontmost_application_if"
             }
@@ -132,7 +134,8 @@
             {
               "bundle_identifiers": [
                 "org\\.mozilla\\.firefox",
-                "com\\.tinyspeck\\.slackmacgap"
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
               ],
               "type": "frontmost_application_if"
             }
@@ -151,7 +154,8 @@
             {
               "bundle_identifiers": [
                 "org\\.mozilla\\.firefox",
-                "com\\.tinyspeck\\.slackmacgap"
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
               ],
               "type": "frontmost_application_if"
             }
@@ -170,7 +174,8 @@
             {
               "bundle_identifiers": [
                 "org\\.mozilla\\.firefox",
-                "com\\.tinyspeck\\.slackmacgap"
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
               ],
               "type": "frontmost_application_if"
             }
@@ -189,7 +194,8 @@
             {
               "bundle_identifiers": [
                 "org\\.mozilla\\.firefox",
-                "com\\.tinyspeck\\.slackmacgap"
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
               ],
               "type": "frontmost_application_if"
             }
@@ -208,7 +214,8 @@
             {
               "bundle_identifiers": [
                 "org\\.mozilla\\.firefox",
-                "com\\.tinyspeck\\.slackmacgap"
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
               ],
               "type": "frontmost_application_if"
             }
@@ -227,7 +234,8 @@
             {
               "bundle_identifiers": [
                 "org\\.mozilla\\.firefox",
-                "com\\.tinyspeck\\.slackmacgap"
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
               ],
               "type": "frontmost_application_if"
             }
@@ -250,7 +258,8 @@
             {
               "bundle_identifiers": [
                 "org\\.mozilla\\.firefox",
-                "com\\.tinyspeck\\.slackmacgap"
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
               ],
               "type": "frontmost_application_if"
             }
@@ -269,7 +278,8 @@
             {
               "bundle_identifiers": [
                 "org\\.mozilla\\.firefox",
-                "com\\.tinyspeck\\.slackmacgap"
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
               ],
               "type": "frontmost_application_if"
             }
@@ -288,7 +298,8 @@
             {
               "bundle_identifiers": [
                 "org\\.mozilla\\.firefox",
-                "com\\.tinyspeck\\.slackmacgap"
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
               ],
               "type": "frontmost_application_if"
             }
@@ -307,7 +318,8 @@
             {
               "bundle_identifiers": [
                 "org\\.mozilla\\.firefox",
-                "com\\.tinyspeck\\.slackmacgap"
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
               ],
               "type": "frontmost_application_if"
             }
@@ -326,7 +338,8 @@
             {
               "bundle_identifiers": [
                 "org\\.mozilla\\.firefox",
-                "com\\.tinyspeck\\.slackmacgap"
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
               ],
               "type": "frontmost_application_if"
             }
@@ -345,7 +358,8 @@
             {
               "bundle_identifiers": [
                 "org\\.mozilla\\.firefox",
-                "com\\.tinyspeck\\.slackmacgap"
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
               ],
               "type": "frontmost_application_if"
             }
@@ -364,7 +378,8 @@
             {
               "bundle_identifiers": [
                 "org\\.mozilla\\.firefox",
-                "com\\.tinyspeck\\.slackmacgap"
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
               ],
               "type": "frontmost_application_if"
             }
@@ -383,7 +398,8 @@
             {
               "bundle_identifiers": [
                 "org\\.mozilla\\.firefox",
-                "com\\.tinyspeck\\.slackmacgap"
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
               ],
               "type": "frontmost_application_if"
             }
@@ -402,7 +418,8 @@
             {
               "bundle_identifiers": [
                 "org\\.mozilla\\.firefox",
-                "com\\.tinyspeck\\.slackmacgap"
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
               ],
               "type": "frontmost_application_if"
             }
@@ -421,7 +438,8 @@
             {
               "bundle_identifiers": [
                 "org\\.mozilla\\.firefox",
-                "com\\.tinyspeck\\.slackmacgap"
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
               ],
               "type": "frontmost_application_if"
             }
@@ -440,7 +458,8 @@
             {
               "bundle_identifiers": [
                 "org\\.mozilla\\.firefox",
-                "com\\.tinyspeck\\.slackmacgap"
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
               ],
               "type": "frontmost_application_if"
             }
@@ -462,7 +481,8 @@
             {
               "bundle_identifiers": [
                 "org\\.mozilla\\.firefox",
-                "com\\.tinyspeck\\.slackmacgap"
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
               ],
               "type": "frontmost_application_if"
             }
@@ -481,7 +501,8 @@
             {
               "bundle_identifiers": [
                 "org\\.mozilla\\.firefox",
-                "com\\.tinyspeck\\.slackmacgap"
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
               ],
               "type": "frontmost_application_if"
             }
@@ -502,7 +523,8 @@
             {
               "bundle_identifiers": [
                 "org\\.mozilla\\.firefox",
-                "com\\.tinyspeck\\.slackmacgap"
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
               ],
               "type": "frontmost_application_if"
             }
@@ -521,7 +543,8 @@
             {
               "bundle_identifiers": [
                 "org\\.mozilla\\.firefox",
-                "com\\.tinyspeck\\.slackmacgap"
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
               ],
               "type": "frontmost_application_if"
             }
@@ -540,7 +563,8 @@
             {
               "bundle_identifiers": [
                 "org\\.mozilla\\.firefox",
-                "com\\.tinyspeck\\.slackmacgap"
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
               ],
               "type": "frontmost_application_if"
             }
@@ -559,7 +583,8 @@
             {
               "bundle_identifiers": [
                 "org\\.mozilla\\.firefox",
-                "com\\.tinyspeck\\.slackmacgap"
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
               ],
               "type": "frontmost_application_if"
             }
@@ -578,7 +603,8 @@
             {
               "bundle_identifiers": [
                 "org\\.mozilla\\.firefox",
-                "com\\.tinyspeck\\.slackmacgap"
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
               ],
               "type": "frontmost_application_if"
             }

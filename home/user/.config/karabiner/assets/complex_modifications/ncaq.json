@@ -248,7 +248,7 @@
             }
           },
           "to": [
-            { "key_code": "home" },
+            { "key_code": "left_arrow", "modifiers": ["option"] },
             { "key_code": "right_arrow", "modifiers": ["option", "shift"] },
             { "key_code": "b", "modifiers": ["option"] }
           ]

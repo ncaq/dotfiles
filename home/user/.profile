@@ -25,10 +25,6 @@ if [[ -d ~/.pyenv/ ]]; then
   export PATH="$HOME/.pyenv/shims:$HOME/.pyenv/bin:$PATH"
 fi
 
-if [[ -f ~/.poetry/env ]]; then
-  source ~/.poetry/env
-fi
-
 if [[ -x ~/.rbenv/bin/rbenv ]]; then
   export PATH="$HOME/.rbenv/bin:$PATH"
   eval "$(rbenv init - zsh)"

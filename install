@@ -51,10 +51,10 @@ if hash git-credential-libsecret 2>/dev/null; then
 elif [[ -x /Library/Developer/CommandLineTools/usr/libexec/git-core/git-credential-osxkeychain ]]; then
   ln -sfv config.local.osxkeychain config.local
 elif
-  [[ -x /mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager-core.exe ]]; then
-  ln -sfv config.local.manager-windows-core-wsl config.local
-elif [[ -x "C:\\Program Files\\Git\\mingw64\\bin\\git-credential-manager-core.exe" ]]; then
-  ln -sfv config.local.manager-windows-core-native config.local
+  [[ -x /mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager.exe ]]; then
+  ln -sfv config.local.manager-windows-wsl config.local
+elif [[ -x "C:\\Program Files\\Git\\mingw64\\bin\\git-credential-manager.exe" ]]; then
+  ln -sfv config.local.manager-windows-native config.local
 elif hash git-credential-manager 2>/dev/null; then
   ln -sfv config.local.manager config.local
 else

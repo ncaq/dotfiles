@@ -35,7 +35,5 @@
 [user]
 	name = ncaq
 	email = ncaq@ncaq.net
-[includeIf "hasconfig:remote.*.url:codecommit://**"]
-	path = ~/.config/git/config.codecommit
 [include]
 	path = ~/.config/git/config.local

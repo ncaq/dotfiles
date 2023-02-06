@@ -38,6 +38,11 @@ do
   cd $dotfiles_dir
 done < <(find "${find_dir[@]}" -type f -print0)
 
+# レジストリ的なものの設定。
+if hash gsettings 2>/dev/null; then
+  gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+fi
+
 # git-hooksを実行可能にする。
 
 cd $dotfiles_dir/git-hooks/

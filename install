@@ -2,67 +2,81 @@
 # shellcheck disable=SC2046,SC2086
 set -eux
 
-# ループ終わりにプロジェクトディレクトリに復帰します。
+# このスクリプトのディレクトリ位置を保持する。
+# 戻ったり他のスクリプトの参照に使う。
 dotfiles_dir=$(realpath $(dirname "$0"))
 cd $dotfiles_dir
 
-# 現在のユーザのホームディレクトリに展開します。
-home_dir=~
-
-# `/etc/`が存在しない環境で`/etc/`にマッピングしないようにする。
-if [ -d "/etc/" ]; then
-  find_dir=(etc home/user)
-else
-  find_dir=(home/user)
-fi
-
-# 設定ファイルをリンクします。
-while IFS= read -r -d '' f
-do
-  # 後々正しい相対パスにするために絶対パスを取得しておきます。
-  real=$(realpath $f)
-  # home/userは~/にマッピングします。
-  if [[ $f == home/user* ]]; then
-    conf_dir=$(dirname ${f/home\/user/$home_dir})
-    mkdir -p $conf_dir
-    # マウントしても正常にパスが辿れるようにcdして設置する回りくどい方法を取っています。
-    cd $conf_dir
-    ln -sfv $(realpath --relative-to=. $real) .
-  else                          # その他のディレクトリ(今はetcしかないが)はフルパスをマッピングします。
-    conf_dir=/$(dirname $f)
-    # etcでの操作にはroot権限が必要になる。
-    sudo mkdir -p $conf_dir
-    cd $conf_dir
-    sudo ln -sfv $(realpath --relative-to=. $real) .
-  fi
+# 標準的なUnix環境向けに設定ファイルをコピーする。
+function install-conf-file() {
   cd $dotfiles_dir
-done < <(find "${find_dir[@]}" -type f -print0)
+  # 現在のユーザのホームディレクトリを展開する。
+  home_dir=~
 
-# レジストリ的なものの設定。
-if hash gsettings 2>/dev/null; then
-  gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
-fi
+  # `/etc/`が存在しない環境で`/etc/`にマッピングしないようにする。
+  if [ -d "/etc/" ]; then
+    find_dir=(etc home/user)
+  else
+    find_dir=(home/user)
+  fi
+
+  # 設定ファイルをリンクする。
+  while IFS= read -r -d '' f
+  do
+    # 後々正しい相対パスにするために絶対パスを取得する。
+    real=$(realpath $f)
+    # home/userは~/にマッピングします。
+    if [[ $f == home/user* ]]; then
+      conf_dir=$(dirname ${f/home\/user/$home_dir})
+      mkdir -p $conf_dir
+      # マウントしても正常にパスが辿れるようにcdして設置する回りくどい方法を取っている。
+      cd $conf_dir
+      ln -sfv $(realpath --relative-to=. $real) .
+    else # その他のディレクトリ(今はetcしかないが)はフルパスをマッピングする。
+      conf_dir=/$(dirname $f)
+      # etcでの操作にはroot権限が必要になる。
+      sudo mkdir -p $conf_dir
+      cd $conf_dir
+      sudo ln -sfv $(realpath --relative-to=. $real) .
+    fi
+    cd $dotfiles_dir
+  done < <(find "${find_dir[@]}" -type f -print0)
+}
 
 # git-hooksを実行可能にする。
+function install-git-hooks() {
+  cd $dotfiles_dir/git-hooks/
+  yarn install --immutable
 
-cd $dotfiles_dir/git-hooks/
-yarn install --immutable
+  # gitの認証情報保存設定をソフトウェアのインストール状態によって変更する。
+  cd ~/.config/git/
 
-# gitの認証情報保存設定をソフトウェアのインストール状態によって変更します。
-cd ~/.config/git/
+  if hash git-credential-libsecret 2>/dev/null; then
+    ln -sfv config.local.libsecret config.local
+  elif [[ -x /Library/Developer/CommandLineTools/usr/libexec/git-core/git-credential-osxkeychain ]]; then
+    ln -sfv config.local.osxkeychain config.local
+  elif
+    [[ -x /mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager.exe ]]; then
+    ln -sfv config.local.manager-windows-wsl config.local
+  elif [[ -x "C:\\Program Files\\Git\\mingw64\\bin\\git-credential-manager.exe" ]]; then
+    ln -sfv config.local.manager-windows-native config.local
+  elif hash git-credential-manager 2>/dev/null; then
+    ln -sfv config.local.manager config.local
+  else
+    # フォールバック。
+    # 早めにセットアップして入力不要にするべき。
+    ln -sfv config.local.cache config.local
+  fi
+}
 
-if hash git-credential-libsecret 2>/dev/null; then
-  ln -sfv config.local.libsecret config.local
-elif [[ -x /Library/Developer/CommandLineTools/usr/libexec/git-core/git-credential-osxkeychain ]]; then
-  ln -sfv config.local.osxkeychain config.local
-elif
-  [[ -x /mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager.exe ]]; then
-  ln -sfv config.local.manager-windows-wsl config.local
-elif [[ -x "C:\\Program Files\\Git\\mingw64\\bin\\git-credential-manager.exe" ]]; then
-  ln -sfv config.local.manager-windows-native config.local
-elif hash git-credential-manager 2>/dev/null; then
-  ln -sfv config.local.manager config.local
-else
-  # 早めにセットアップして入力不要にしましょう。
-  ln -sfv config.local.cache config.local
-fi
+# コマンドによりレジストリ的なものの設定を行う。
+function install-by-command() {
+  cd $dotfiles_dir
+  if hash gsettings 2>/dev/null; then
+    gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+  fi
+}
+
+install-conf-file
+install-git-hooks
+install-by-command

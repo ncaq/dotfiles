@@ -52,27 +52,27 @@ function install-git-hooks() {
   cd ~/.config/git/
 
   if hash git-credential-libsecret 2>/dev/null; then
-    # Gentooなど、git-credential-libsecretを素直にパッケージマネージャから入れられる環境。
-    ln -sfv config.local.libsecret config.local
+    # Gentooなど、git-credential-libsecretを素直にパッケージマネージャからPATHに入れられる環境。
+    ln -sfv config.credential.libsecret-path config.credential
   elif [[ -x /usr/share/doc/git/contrib/credential/libsecret/git-credential-libsecret ]]; then
-    # Ubuntuなど、自動でパスが通らない環境。
-    ln -sfv config.local.libsecret-fullpath config.local
+    # Ubuntuなど、自動でPATHが通らない環境。
+    ln -sfv config.credential.libsecret-fullpath config.credential
   elif [[ -x /Library/Developer/CommandLineTools/usr/libexec/git-core/git-credential-osxkeychain ]]; then
     # macOS。
-    ln -sfv config.local.osxkeychain config.local
+    ln -sfv config.credential.osxkeychain config.credential
   elif [[ -x /mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager.exe ]]; then
     # WSL環境など、Windows側に認証情報を任せる場合。Magitから使うとコンソールがポップアップしてくるので使いたくない。
-    ln -sfv config.local.manager-windows-wsl config.local
+    ln -sfv config.credential.manager-windows-wsl config.credential
   elif [[ -x "C:\\Program Files\\Git\\mingw64\\bin\\git-credential-manager.exe" ]]; then
     # MSYS2など、Windowsネイティブで利用する場合。
-    ln -sfv config.local.manager-windows-native config.local
+    ln -sfv config.credential.manager-windows-native config.credential
   elif hash git-credential-manager 2>/dev/null; then
     # マルチプラットフォームでGCMを使う場合。
-    ln -sfv config.local.manager config.local
+    ln -sfv config.credential.manager-path config.credential
   else
     # いずれも使えない場合のフォールバック。
     # 早めにセットアップして入力不要にするべき。
-    ln -sfv config.local.cache config.local
+    ln -sfv config.credential.cache config.credential
   fi
 }
 

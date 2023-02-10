@@ -6,11 +6,11 @@ export VISUAL=$EDITOR
 
 if [[ -x /opt/homebrew/bin/brew ]]; then
   eval $(/opt/homebrew/bin/brew shellenv)
-  export PATH="/opt/homebrew/opt/coreutils/libexec/gnubin/:$PATH"
+  PATH="/opt/homebrew/opt/coreutils/libexec/gnubin/:$PATH"
 fi
 
 if [[ -d $GOPATH ]]; then
-  export PATH="$GOPATH/bin:$PATH"
+  PATH="$GOPATH/bin:$PATH"
 fi
 
 if [[ -f ~/.ghcup/env ]]; then
@@ -22,16 +22,16 @@ if [[ -f ~/.opam/opam-init/init.sh ]]; then
 fi
 
 if [[ -d ~/.pyenv/ ]]; then
-  export PATH="$HOME/.pyenv/shims:$HOME/.pyenv/bin:$PATH"
+  PATH="$HOME/.pyenv/shims:$HOME/.pyenv/bin:$PATH"
 fi
 
 if [[ -x ~/.rbenv/bin/rbenv ]]; then
-  export PATH="$HOME/.rbenv/bin:$PATH"
+  PATH="$HOME/.rbenv/bin:$PATH"
   eval "$(rbenv init - zsh)"
 fi
 
 if hash ruby 2>/dev/null; then
-  export PATH="$(ruby -e 'print Gem.user_dir')/bin:$PATH"
+  PATH="$(ruby -e 'print Gem.user_dir')/bin:$PATH"
 fi
 
 if [[ -f ~/.cargo/env ]]; then
@@ -39,7 +39,7 @@ if [[ -f ~/.cargo/env ]]; then
 fi
 
 if [[ -d ~/.local/share/coursier/bin ]]; then
-  export PATH="$HOME/.local/share/coursier/bin:$PATH"
+  PATH="$HOME/.local/share/coursier/bin:$PATH"
 fi
 
 if hash yarn 2>/dev/null; then
@@ -51,12 +51,13 @@ else
 fi
 
 if hash cygpath 2>/dev/null; then
-  export PATH="$(cygpath $yarn_global_bin):$PATH"
+  PATH="$(cygpath $yarn_global_bin):$PATH"
 else
-  export PATH="$yarn_global_bin:$PATH"
+  PATH="$yarn_global_bin:$PATH"
 fi
 
-export PATH="$HOME/.local/bin:$PATH"
+PATH="$HOME/.local/bin:$PATH"
+export PATH
 
 # If the execution environment is not WSL, skip subsequent executions.
 if [ ! -e "/proc/sys/kernel/osrelease" ] || ! grep -q "WSL" "/proc/sys/kernel/osrelease"; then

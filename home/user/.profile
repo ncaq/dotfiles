@@ -51,7 +51,7 @@ else
 fi
 
 if hash cygpath 2>/dev/null; then
-  PATH="$(cygpath $yarn_global_bin):$PATH"
+  PATH="$(cygpath "$yarn_global_bin"):$PATH"
 else
   PATH="$yarn_global_bin:$PATH"
 fi

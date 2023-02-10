@@ -1,3 +1,4 @@
+# shellcheck disable=SC1090
 export EDITOR='emacsclient -a emacs'
 export GOPATH=~/.go
 export LESS='--ignore-case --long-prompt --RAW-CONTROL-CHARS'

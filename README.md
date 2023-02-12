@@ -17,3 +17,4 @@ I put dotfiles here that I don't need to separate.
 * [ncaq/.xmonad](https://github.com/ncaq/.xmonad)
 * [ncaq/.zsh.d](https://github.com/ncaq/.zsh.d)
 * [ncaq/keyhac-config](https://github.com/ncaq/keyhac-config)
+* [ncaq/surfingkeys-config: My Surfingkeys config](https://github.com/ncaq/surfingkeys-config)

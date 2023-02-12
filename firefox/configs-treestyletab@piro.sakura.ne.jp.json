@@ -1,0 +1,23 @@
+{
+  "autoCollapseExpandSubtreeOnAttach": false,
+  "autoCollapseExpandSubtreeOnSelect": false,
+  "chunkedUserStyleRules0": "LyogU2hvdyB0aXRsZSBvZiB1bnJlYWQgdGFicyB3aXRoIHJlZCBhbmQgaXRhbGljIGZvbnQgKi8KLyoKOnJvb3Quc2lkZWJhciB0YWItaXRlbS51bnJlYWQgLmxhYmVsLWNvbnRlbnQgewogIGNvbG9yOiByZWQgIWltcG9ydGFudDsKICBmb250LXN0eWxlOiBpdGFsaWMgIWltcG9ydGFudDsKfQoqLwoKLyogQWRkIHByaXZhdGUgYnJvd3NpbmcgaW5kaWNhdG9yIHBlciB0YWIgKi8KLyoKOnJvb3Quc2lkZWJhciB0YWItaXRlbS5wcml2YXRlLWJyb3dzaW5nIHRhYi1sYWJlbDpiZWZvcmUgewogIGNvbnRlbnQ6ICLwn5W2IjsKfQoqLwoKOnJvb3QgewogIC0tdGhlbWUtY29sb3JzLXNpZGViYXJfYm9yZGVyOiByZ2JhKDEwLCAxMCwgMTAsIDAuMSnigIs7Cn0KCnRhYi1pdGVtIHRhYi1jbG9zZWJveCB7CiAgZGlzcGxheTogbm9uZSAhaW1wb3J0YW50Owp9",
+  "closeParentBehaviorMode": 1,
+  "configsVersion": 25,
+  "insertNewChildAt": 0,
+  "notifiedFeaturesVersion": 9,
+  "optionsExpandedGroups": ["group-importedConfigsFromLegacy", "group-logFor"],
+  "optionsExpandedSections": [
+    "section-appearance",
+    "section-advanced",
+    "section-addons",
+    "section-debug"
+  ],
+  "parentTabOperationBehaviorMode": 1,
+  "showExpertOptions": true,
+  "style": "photon",
+  "userStyleRules": "",
+  "userStyleRulesFieldHeight": "133.3333282470703px",
+  "warnOnAutoGroupNewTabs": false,
+  "warnOnCloseTabs": false
+}

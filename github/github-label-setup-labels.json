@@ -92,7 +92,7 @@
   },
   {
     "name": "Type: Documentation",
-    "color": "5319e7",
+    "color": "0e8a16",
     "description": "Documentation only changes",
     "aliases": ["documents", "document"]
   },
@@ -131,6 +131,30 @@
     "color": "cc317c",
     "description": "Further information is requested",
     "aliases": ["question"]
+  },
+  {
+    "name": "Type: Security",
+    "color": "ee0701",
+    "description": "Vulnerability disclosure or Fixing security issue",
+    "aliases": ["security"]
+  },
+  {
+    "name": "Type: Dependencies",
+    "color": "0366d6",
+    "description": "Dependency issues or Changes to dependency files",
+    "aliases": ["dependencies"]
+  },
+  {
+    "name": "Type: Meta",
+    "color": "BFD4F2",
+    "description": "Type: Meta - Related to repository itself",
+    "aliases": ["meta"]
+  },
+  {
+    "name": "Type: Release",
+    "color": "5319E7",
+    "description": "Related to release process",
+    "aliases": ["meta"]
   },
   {
     "name": "Estimate: 2",

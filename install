@@ -8,7 +8,7 @@ dotfiles_dir=$(realpath $(dirname "$0"))
 cd $dotfiles_dir
 
 # 標準的なUnix環境向けに設定ファイルをコピーする。
-function install-conf-file() {
+function install-file-conf() {
   cd $dotfiles_dir
   # 現在のユーザのホームディレクトリを展開する。
   home_dir=~
@@ -43,19 +43,20 @@ function install-conf-file() {
   done < <(find "${find_dir[@]}" -type f -print0)
 }
 
-# git-hooksを実行可能にする。
-function install-git-hooks() {
+# Git環境をセットアップする。
+function install-git-conf() {
+  # Git Hooksを利用可能にする。
   cd $dotfiles_dir/git-hooks/
   yarn install --immutable
 
   # gitの認証情報保存設定をソフトウェアのインストール状態によって変更する。
+  # WSL環境でWindowsに投げていないのはプロンプトウィンドウが一瞬表示されてしまう問題があるため。
   cd ~/.config/git/
-
   if hash git-credential-libsecret 2>/dev/null; then
     # Gentooなど、git-credential-libsecretを素直にパッケージマネージャからPATHに入れられる環境。
     ln -sfv config.credential.libsecret.relative config.credential
   elif [[ -x /usr/share/doc/git/contrib/credential/libsecret/git-credential-libsecret ]]; then
-    # Ubuntuなど、自動でPATHが通らない環境。
+    # Ubuntuなど、自動でlibsecretにPATHが通らない環境。
     ln -sfv config.credential.libsecret.absolute config.credential
   elif [[ -x /Library/Developer/CommandLineTools/usr/libexec/git-core/git-credential-osxkeychain ]]; then
     # macOS。
@@ -84,6 +85,6 @@ function install-by-command() {
   fi
 }
 
-install-conf-file
-install-git-hooks
+install-file-conf
+install-git-conf
 install-by-command

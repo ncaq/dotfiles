@@ -43,18 +43,12 @@ if [[ -d ~/.local/share/coursier/bin ]]; then
   PATH=$HOME/.local/share/coursier/bin:$PATH
 fi
 
-if hash yarn 2>/dev/null; then
+if hash yarn 2>/dev/null && hash cygpath 2>/dev/null; then
   # For example, in the case of Windows (like MSYS2), it may be in AppData, so it is necessary to inquire.
-  yarn_global_bin=$(yarn --offline global bin)
+  PATH=$(cygpath "$(yarn --offline global bin)"):$PATH
 else
-  # when yarn is not found, use linux standard yarn path.
-  yarn_global_bin=$HOME/.yarn/bin
-fi
-
-if hash cygpath 2>/dev/null; then
-  PATH=$(cygpath "$yarn_global_bin"):$PATH
-else
-  PATH=$yarn_global_bin:$PATH
+  # use linux standard yarn path.
+  PATH=$HOME/.yarn/bin:$PATH
 fi
 
 PATH=$HOME/.local/bin:$PATH

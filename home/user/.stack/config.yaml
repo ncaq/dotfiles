@@ -16,8 +16,8 @@ ghc-options:
 # See https://docs.haskellstack.org/en/stable/yaml_configuration/#templates
 templates:
   params:
-    author-name: ncaq
     author-email: ncaq@ncaq.net
+    author-name: ncaq
     copyright: © ncaq
     github-username: ncaq
     scm-init: git

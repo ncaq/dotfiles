@@ -146,6 +146,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@commitlint/message@npm:^17.4.2":
+  version: 17.4.2
+  resolution: "@commitlint/message@npm:17.4.2"
+  checksum: 55b6cfeb57f7c9f913e18821aa4d972a6b6faa78c62741390996151f99554396f6df68ccfee86c163d24d8c27a4dbbcb50ef03c2972ab0a7a21d89daa2f9a519
+  languageName: node
+  linkType: hard
+
 "@commitlint/parse@npm:^17.0.0":
   version: 17.0.0
   resolution: "@commitlint/parse@npm:17.0.0"
@@ -2894,6 +2901,7 @@ __metadata:
   dependencies:
     "@commitlint/cli": ^17.0.2
     "@commitlint/config-conventional": ^17.0.2
+    "@commitlint/message": ^17.4.2
     "@commitlint/types": ^17.4.4
     "@types/node": 18.14.2
     "@typescript-eslint/eslint-plugin": ^5.54.1

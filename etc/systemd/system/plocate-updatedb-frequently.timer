@@ -1,0 +1,12 @@
+[Unit]
+Description=Update the plocate database frequently
+
+[Timer]
+OnBootSec=3m
+OnUnitActiveSec=1h
+RandomizedDelaySec=10m
+AccuracySec=10m
+Unit=plocate-updatedb.service
+
+[Install]
+WantedBy=timers.target

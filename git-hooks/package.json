@@ -10,7 +10,7 @@
     "fix:prettier": "yarn lint:prettier --write",
     "lint": "FORCE_COLOR=1 run-p --continue-on-error --print-label 'lint:*'",
     "lint:eslint": "eslint --ignore-path .gitignore --cache --ext .js --ext .ts .",
-    "lint:prettier": "prettier --ignore-path .gitignore --check **/*.{js,ts,json,yml}",
+    "lint:prettier": "prettier --ignore-path .gitignore --ignore-unknown --check '**/*.{js,jsx,ts,tsx,json,html,css,less,sass,scss,yml,yaml}'",
     "lint:tsc": "tsc --noEmit"
   },
   "devDependencies": {

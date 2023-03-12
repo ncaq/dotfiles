@@ -11,7 +11,7 @@ export const subjectAlnumStop: SyncRule<RegExp | undefined> = (
   when = "always",
   value = /[^\p{Letter}\p{Number}]/u
 ) => {
-  let colonIndex = parsed.header.indexOf(":");
+  const colonIndex = parsed.header.indexOf(":");
   if (colonIndex > 0 && colonIndex === parsed.header.length - 1) {
     return [true];
   }

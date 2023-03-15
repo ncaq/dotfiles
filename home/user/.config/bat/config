@@ -1,0 +1,3 @@
+--theme="Solarized (dark)"
+# remove left side aria.
+--style=grid,header,snip

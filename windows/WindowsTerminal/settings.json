@@ -3,8 +3,26 @@
   "$schema": "https://aka.ms/terminal-profiles-schema",
   "actions": [
     {
+      "command": "scrollUpPage",
+      "keys": "shift+pgup"
+    },
+    {
+      "command": "scrollUpPage",
+      "keys": "shift+left"
+    },
+    {
+      "command": {
+        "action": "scrollDown"
+      },
+      "keys": "shift+down"
+    },
+    {
       "command": "find",
       "keys": "ctrl+shift+f"
+    },
+    {
+      "command": "paste",
+      "keys": "ctrl+shift+v"
     },
     {
       "command": "duplicateTab",
@@ -25,40 +43,8 @@
       "keys": "ctrl+shift+c"
     },
     {
-      "command": "paste",
-      "keys": "ctrl+shift+v"
-    },
-    {
       "command": "unbound",
       "keys": "ctrl+comma"
-    },
-    {
-      "command": "scrollDownPage",
-      "keys": "shift+pgdn"
-    },
-    {
-      "command": "scrollDownPage",
-      "keys": "shift+right"
-    },
-    {
-      "command": "scrollUpPage",
-      "keys": "shift+pgup"
-    },
-    {
-      "command": "scrollUpPage",
-      "keys": "shift+left"
-    },
-    {
-      "command": {
-        "action": "scrollDown"
-      },
-      "keys": "shift+down"
-    },
-    {
-      "command": {
-        "action": "closeTab"
-      },
-      "keys": "ctrl+q"
     },
     {
       "command": {
@@ -67,6 +53,20 @@
         "splitMode": "duplicate"
       },
       "keys": "alt+shift+d"
+    },
+    {
+      "command": {
+        "action": "closeTab"
+      },
+      "keys": "ctrl+q"
+    },
+    {
+      "command": "scrollDownPage",
+      "keys": "shift+pgdn"
+    },
+    {
+      "command": "scrollDownPage",
+      "keys": "shift+right"
     },
     {
       "command": {
@@ -82,17 +82,22 @@
       "keys": "ctrl+alt+s"
     }
   ],
+  "confirmCloseAllTabs": true,
   "copyFormatting": "all",
   "copyOnSelect": false,
   "defaultProfile": "{2c4de342-38b7-51cf-b940-2309a097f518}",
+  "experimental.detectURLs": true,
   "launchMode": "maximized",
+  "newTabPosition": "afterCurrentTab",
   "profiles": {
     "defaults": {
+      "adjustIndistinguishableColors": "indexed",
       "bellStyle": "none",
       "colorScheme": "Solarized Dark",
       "font": {
         "face": "HackGen Console NFJ"
-      }
+      },
+      "historySize": 50000
     },
     "list": [
       {
@@ -325,5 +330,8 @@
       "yellow": "#808000"
     }
   ],
-  "startOnUserLogin": true
+  "startOnUserLogin": true,
+  "theme": "system",
+  "themes": [],
+  "windowingBehavior": "useAnyExisting"
 }

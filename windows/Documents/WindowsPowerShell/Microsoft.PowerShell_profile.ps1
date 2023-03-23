@@ -1,3 +1,3 @@
 function wua() {
-    sudo winget upgrade --all
+    sudo winget upgrade --all $Args
 }

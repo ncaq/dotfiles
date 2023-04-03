@@ -5,10 +5,9 @@ I put dotfiles here that I don't need to separate.
 * [./etc](./etc/) -> `/etc/`
 * [./home/user/](./home/user/) -> `$HOME`
 
-* [./git-hooks/](./git-hooks/): My git hooks
+* [./git-hooks/](./git-hooks/): My git global hooks
 
-* [./mozc/](./mozc/): My mozc/Google Japanese Input files
-* [./windows/](./windows/): Windows config files
+It also contains a collection of application-specific configuration files.
 
 # Separated dotfiles
 

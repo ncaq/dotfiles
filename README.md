@@ -2,12 +2,13 @@
 
 I put dotfiles here that I don't need to separate.
 
-* ./etc/ -> /etc/
-* ./home/user/ -> /home/$USERNAME/
+* [./etc](./etc/) -> `/etc/`
+* [./home/user/](./home/user/) -> `$HOME`
 
-* ./git-hooks/: my git hooks
-* ./mozc/: my mozc/Google Japanese Input files
-* ./windows/: windows config files
+* [./git-hooks/](./git-hooks/): My git hooks
+
+* [./mozc/](./mozc/): My mozc/Google Japanese Input files
+* [./windows/](./windows/): Windows config files
 
 # Separated dotfiles
 

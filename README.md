@@ -11,7 +11,7 @@ It also contains a collection of application-specific configuration files.
 
 # Separated dotfiles
 
-* [ncaq/.emacs.d: my Emacs config](https://github.com/ncaq/.emacs.d)
+* [ncaq/.emacs.d: My Emacs config](https://github.com/ncaq/.emacs.d)
 * [ncaq/.percol.d](https://github.com/ncaq/.percol.d)
 * [ncaq/.xkeysnail: My xkeysnail config](https://github.com/ncaq/.xkeysnail)
 * [ncaq/.xmonad](https://github.com/ncaq/.xmonad)

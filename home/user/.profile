@@ -32,7 +32,9 @@ if [[ -x ~/.rbenv/bin/rbenv ]]; then
 fi
 
 if hash ruby 2>/dev/null; then
-  PATH=$(ruby -e 'print Gem.user_dir')/bin:$PATH
+  GEM_HOME="$(ruby -e 'puts Gem.user_dir')"
+  export GEM_HOME
+  PATH=$GEM_HOME/bin:$PATH
 fi
 
 if [[ -f ~/.cargo/env ]]; then

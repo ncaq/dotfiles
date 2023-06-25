@@ -1,7 +1,5 @@
-/* ツリー型タブで十分なため横タブを消去。 */
-#main-window[tabsintitlebar="true"]:not([extradragspace="true"])
-  #TabsToolbar
-  > .toolbar-items {
+/* ツリー型タブで十分なため標準の横タブを消去。 */
+#main-window[tabsintitlebar="true"]:not([extradragspace="true"]) #TabsToolbar > .toolbar-items {
   opacity: 0;
   pointer-events: none;
 }
@@ -14,7 +12,6 @@
   display: none !important;
 }
 /* 利用しているのがツリー型タブの場合サイドバーの切り換えを除去。他のものは間違えた時にツリー型タブに戻したいので残します。 */
-#sidebar-box[sidebarcommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]
-  #sidebar-header {
+#sidebar-box[sidebarcommand="treestyletab_piro_sakura_ne_jp-sidebar-action"] #sidebar-header {
   visibility: collapse;
 }

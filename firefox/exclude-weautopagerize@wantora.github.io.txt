@@ -1,0 +1,12 @@
+*.blogspot.com/*
+*.hateblo.jp/*
+*.hatenablog.com/*
+*.hatenablog.jp/*
+*.hatenadiary.com/*
+*.hatenadiary.jp/*
+https://ga-m.com/*
+https://pk-mn.com/*
+https://togetter.com/*
+https://www.afpbb.com/*
+https://www.amazon.co.jp/*
+https://www.izzetmtgnews.com/*

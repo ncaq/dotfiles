@@ -3,14 +3,6 @@
   "$schema": "https://aka.ms/terminal-profiles-schema",
   "actions": [
     {
-      "command": "scrollUpPage",
-      "keys": "shift+pgup"
-    },
-    {
-      "command": "scrollUpPage",
-      "keys": "shift+left"
-    },
-    {
       "command": {
         "action": "scrollDown"
       },
@@ -21,12 +13,20 @@
       "keys": "ctrl+shift+f"
     },
     {
-      "command": "paste",
-      "keys": "ctrl+shift+v"
+      "command": "scrollUpPage",
+      "keys": "shift+pgup"
+    },
+    {
+      "command": "scrollUpPage",
+      "keys": "shift+left"
     },
     {
       "command": "duplicateTab",
       "keys": "ctrl+o"
+    },
+    {
+      "command": "paste",
+      "keys": "ctrl+shift+v"
     },
     {
       "command": {
@@ -55,18 +55,18 @@
       "keys": "alt+shift+d"
     },
     {
-      "command": {
-        "action": "closeTab"
-      },
-      "keys": "ctrl+q"
-    },
-    {
       "command": "scrollDownPage",
       "keys": "shift+pgdn"
     },
     {
       "command": "scrollDownPage",
       "keys": "shift+right"
+    },
+    {
+      "command": {
+        "action": "closeTab"
+      },
+      "keys": "ctrl+q"
     },
     {
       "command": {
@@ -88,6 +88,11 @@
   "defaultProfile": "{2c4de342-38b7-51cf-b940-2309a097f518}",
   "experimental.detectURLs": true,
   "launchMode": "maximized",
+  "newTabMenu": [
+    {
+      "type": "remainingProfiles"
+    }
+  ],
   "newTabPosition": "afterCurrentTab",
   "profiles": {
     "defaults": {
@@ -351,6 +356,43 @@
   ],
   "startOnUserLogin": true,
   "theme": "system",
-  "themes": [],
+  "themes": [
+    {
+      "name": "legacyDark",
+      "tab": {
+        "background": null,
+        "showCloseButton": "always",
+        "unfocusedBackground": null
+      },
+      "window": {
+        "applicationTheme": "dark",
+        "useMica": false
+      }
+    },
+    {
+      "name": "legacyLight",
+      "tab": {
+        "background": null,
+        "showCloseButton": "always",
+        "unfocusedBackground": null
+      },
+      "window": {
+        "applicationTheme": "light",
+        "useMica": false
+      }
+    },
+    {
+      "name": "legacySystem",
+      "tab": {
+        "background": null,
+        "showCloseButton": "always",
+        "unfocusedBackground": null
+      },
+      "window": {
+        "applicationTheme": "system",
+        "useMica": false
+      }
+    }
+  ],
   "windowingBehavior": "useAnyExisting"
 }

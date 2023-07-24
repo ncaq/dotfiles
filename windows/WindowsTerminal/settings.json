@@ -119,6 +119,24 @@
         "name": "Ubuntu",
         "source": "Windows.Terminal.Wsl",
         "startingDirectory": "/home/ncaq/"
+      },
+      {
+        "guid": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
+        "hidden": false,
+        "name": "PowerShell",
+        "source": "Windows.Terminal.PowershellCore"
+      },
+      {
+        "guid": "{0cd64408-0478-565a-800a-377955db61be}",
+        "hidden": false,
+        "name": "Developer Command Prompt for VS 2022",
+        "source": "Windows.Terminal.VisualStudio"
+      },
+      {
+        "guid": "{9d475eef-c8a8-5459-bed1-ae48b14f475c}",
+        "hidden": false,
+        "name": "Developer PowerShell for VS 2022",
+        "source": "Windows.Terminal.VisualStudio"
       }
     ]
   },

@@ -9,7 +9,8 @@ cd $dotfiles_dir
 
 # 標準的なUnix環境向けに設定ファイルをコピーする。
 function install-file-conf() {
-  cd $dotfiles_dir
+  unix_dir=$dotfiles_dir/unix
+  cd $unix_dir
   # 現在のユーザのホームディレクトリを展開する。
   home_dir=~
 
@@ -39,7 +40,7 @@ function install-file-conf() {
       cd $conf_dir
       sudo ln -sfv $(realpath --relative-to=. $real) .
     fi
-    cd $dotfiles_dir
+    cd $unix_dir
   done < <(find "${find_dir[@]}" -type f -print0)
 }
 

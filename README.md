@@ -2,8 +2,8 @@
 
 I put dotfiles here that I don't need to separate.
 
-* [./etc](./etc/) -> `/etc/`
-* [./home/user/](./home/user/) -> `$HOME`
+* [./unix/etc/](./unix/etc/) -> `/etc/`
+* [./unix/home/user/](./unix/home/user/) -> `$HOME`
 
 * [./git-hooks/](./git-hooks/): My git global hooks
 

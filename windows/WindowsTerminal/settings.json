@@ -97,7 +97,8 @@
       "font": {
         "face": "HackGen Console NF"
       },
-      "historySize": 50000
+      "historySize": 50000,
+      "useAtlasEngine": true
     },
     "list": [
       {

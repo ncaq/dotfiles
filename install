@@ -2,40 +2,41 @@
 # shellcheck disable=SC2046,SC2086
 set -eux
 
-# このスクリプトのディレクトリ位置を保持する。
-# 戻ったり他のスクリプトの参照に使う。
+# このスクリプトのディレクトリ位置を保持します。
+# 戻ったり他のスクリプトの参照に使います。
 dotfiles_dir=$(realpath $(dirname "$0"))
 cd $dotfiles_dir
 
-# 標準的なUnix環境向けに設定ファイルをコピーする。
-function install-file-conf() {
+# 標準的なUnix環境向けに設定ファイルをコピーします。
+function install-unix-conf() {
   unix_dir=$dotfiles_dir/unix
   cd $unix_dir
-  # 現在のユーザのホームディレクトリを展開する。
+  # 現在のユーザのホームディレクトリを展開します。
   home_dir=~
 
-  # `/etc/`が存在しない環境で`/etc/`にマッピングしないようにする。
+  # `/etc/`が存在しない環境で`/etc/`にマッピングしないようにします。
   if [ -d "/etc/" ]; then
     find_dir=(etc home/user)
   else
     find_dir=(home/user)
   fi
 
-  # 設定ファイルをリンクする。
+  # 設定ファイルをリンクします。
   while IFS= read -r -d '' f
   do
-    # 後々正しい相対パスにするために絶対パスを取得する。
+    # 後々正しい相対パスにするために絶対パスを取得します。
     real=$(realpath $f)
-    # home/userは~/にマッピングします。
     if [[ $f == home/user* ]]; then
+      # home/userは~/にマッピングします。
       conf_dir=$(dirname ${f/home\/user/$home_dir})
       mkdir -p $conf_dir
-      # マウントしても正常にパスが辿れるようにcdして設置する回りくどい方法を取っている。
+      # マウントしても正常にパスが辿れるようにcdして設置する回りくどい方法を取っています。
       cd $conf_dir
       ln -sfv $(realpath --relative-to=. $real) .
-    else # その他のディレクトリ(今はetcしかないが)はフルパスをマッピングする。
+    else
+      # その他のディレクトリ(今はetcしかないですが)にはフルパスをマッピングします。
       conf_dir=/$(dirname $f)
-      # etcでの操作にはroot権限が必要になる。
+      # etcでの操作にはroot権限が必要になります。
       sudo mkdir -p $conf_dir
       cd $conf_dir
       sudo ln -sfv $(realpath --relative-to=. $real) .
@@ -44,14 +45,15 @@ function install-file-conf() {
   done < <(find "${find_dir[@]}" -type f -print0)
 }
 
-# Git環境をセットアップする。
+# Git環境をセットアップします。
 function install-git-conf() {
-  # Git Hooksを利用可能にする。
+  # Git Hooksを利用可能にします。
   cd $dotfiles_dir/git-hooks/
   yarn install --immutable
 
-  # gitの認証情報保存設定をソフトウェアのインストール状態によって変更する。
-  # WSL環境でWindowsに投げていないのはプロンプトウィンドウが一瞬表示されてしまう問題があるため。
+  # gitの認証情報保存設定をソフトウェアのインストール状態によって変更します。
+  # WSL環境でGitのバイナリごとWindowsに投げていないのは、
+  # 特定のWSL環境だとプロンプトウィンドウが一瞬表示されてしまう問題があるためです。
   cd ~/.config/git/
   if hash git-credential-libsecret 2>/dev/null; then
     # Gentooなど、git-credential-libsecretを素直にパッケージマネージャからPATHに入れられる環境。
@@ -63,7 +65,9 @@ function install-git-conf() {
     # macOS。
     ln -sfv config.credential.osxkeychain.relative config.credential
   elif [[ -x /mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager.exe ]]; then
-    # WSL環境など、Windows側に認証情報を任せる場合。Magitから使うとコンソールがポップアップしてくるので使いたくない。
+    # WSL環境など、Windows側に認証情報を任せる場合。
+    # Magitから使うとコンソールがポップアップしてくるので使いたくないです。
+    # 出来ればlibsecretを使います。
     ln -sfv config.credential.manager.absolute.windows.wsl config.credential
   elif [[ -x "C:\\Program Files\\Git\\mingw64\\bin\\git-credential-manager.exe" ]]; then
     # MSYS2など、Windowsネイティブで利用する場合。
@@ -73,12 +77,12 @@ function install-git-conf() {
     ln -sfv config.credential.manager.relative config.credential
   else
     # いずれも使えない場合のフォールバック。
-    # 早めにセットアップして入力不要にするべき。
+    # 早めにセットアップして入力不要にするべきです。
     ln -sfv config.credential.cache.relative config.credential
   fi
 }
 
-# コマンドによりレジストリ的なものの設定を行う。
+# コマンドによりレジストリ的なものの設定を行います。
 function install-by-command() {
   cd $dotfiles_dir
   if hash gsettings 2>/dev/null; then
@@ -86,6 +90,6 @@ function install-by-command() {
   fi
 }
 
-install-file-conf
+install-unix-conf
 install-git-conf
 install-by-command

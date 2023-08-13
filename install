@@ -12,50 +12,61 @@ if [ -e "/proc/sys/kernel/osrelease" ] && grep -q "WSL" "/proc/sys/kernel/osrele
   is_wsl=true
 fi
 
+# 指定されたファイルまたはディレクトリに対してシンボリックリンクを作成します。
+# `/mnt/`以下などにマウントしても正常にパスが辿れるように、
+# `cd`して相対パスで設置する回りくどい方法を取っています。
+#
+# 引数:
+#   $1: シンボリックリンクの元となるファイルまたはディレクトリへのパス
+#   $2: シンボリックリンクを作成するディレクトリへのパス
+#   $3: sudoを使うかのフラグ
+function create-link() {
+  local real_path
+  # 後々正しい相対パスにするために絶対パスを取得します。
+  real_path=$(realpath "$1")
+  local target_dir="$2"
+  local is_sudo="$3"
+
+  mkdir -p "$target_dir"
+  cd "$target_dir"
+  if [ "$is_sudo" = true ]; then
+    set -x
+    sudo ln -sfv $(realpath --relative-to=. "$real_path") .
+    set +x
+  else
+    set -x
+    ln -sfv $(realpath --relative-to=. "$real_path") .
+    set +x
+  fi
+}
+
 # 標準的なUnix環境向けに設定ファイルをコピーします。
 function install-unix-conf() {
-  unix_dir=$dotfiles_dir/unix
-  cd $unix_dir
-  # 現在のユーザのホームディレクトリを展開します。
-  home_dir=~
+  local unix_dir="$dotfiles_dir/unix"
+  cd "$unix_dir"
+  local home_dir=~
+  local find_dir=(home/user)
 
-  # `/etc/`が存在しない環境で`/etc/`にマッピングしないようにします。
+  # `/etc/`が存在しない環境で`/etc/`にマッピングしないように、
+  # 存在する環境でだけマッピングします。
   if [ -d "/etc/" ]; then
-    find_dir=(etc home/user)
-  else
-    find_dir=(home/user)
+    find_dir+=(etc)
   fi
 
-  # 設定ファイルをリンクします。
-  while IFS= read -r -d '' f
-  do
-    # 後々正しい相対パスにするために絶対パスを取得します。
-    real=$(realpath $f)
-    if $is_wsl && [[ $f == *ioschedulers.rules ]]; then
+  while IFS= read -r -d '' f; do
+    cd "$unix_dir"
+    if $is_wsl && [[ "$f" == *ioschedulers.rules ]]; then
       # WSL環境ではWindowsにIOスケジューリングを任せた方が良いようなのでスキップします。
       # `/etc/udev/rules.d/60-ioschedulers.rules:7 Failed to write ATTR{...}, ignoring: Invalid argument`
       # のようなエラーログを回避します。
       echo "skip because WSL:" $f
-    elif [[ $f == home/user* ]]; then
-      # home/userは~/にマッピングします。
-      conf_dir=$(dirname ${f/home\/user/$home_dir})
-      mkdir -p $conf_dir
-      # マウントしても正常にパスが辿れるようにcdして設置する回りくどい方法を取っています。
-      cd $conf_dir
-      set -x
-      ln -sfv $(realpath --relative-to=. $real) .
-      set +x
+    elif [[ "$f" == home/user* ]]; then
+      create-link "$f" "$(dirname ${f/home\/user/$home_dir})" false
     else
       # その他のディレクトリ(今はetcしかないですが)にはフルパスをマッピングします。
-      conf_dir=/$(dirname $f)
       # etcでの操作にはroot権限が必要になります。
-      sudo mkdir -p $conf_dir
-      cd $conf_dir
-      set -x
-      sudo ln -sfv $(realpath --relative-to=. $real) .
-      set +x
+      create-link "$f" "/$(dirname $f)" true
     fi
-    cd $unix_dir
   done < <(find "${find_dir[@]}" -type f -print0)
 }
 

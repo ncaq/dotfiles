@@ -7,6 +7,11 @@ set -eux
 dotfiles_dir=$(realpath $(dirname "$0"))
 cd $dotfiles_dir
 
+# 現在のシステムがWSL環境かを判定して後々の条件分岐に使用します。
+if [ -e "/proc/sys/kernel/osrelease" ] && grep -q "WSL" "/proc/sys/kernel/osrelease"; then
+  is_wsl=true
+fi
+
 # 標準的なUnix環境向けに設定ファイルをコピーします。
 function install-unix-conf() {
   unix_dir=$dotfiles_dir/unix
@@ -26,7 +31,12 @@ function install-unix-conf() {
   do
     # 後々正しい相対パスにするために絶対パスを取得します。
     real=$(realpath $f)
-    if [[ $f == home/user* ]]; then
+    if $is_wsl && [[ $f == *ioschedulers.rules ]]; then
+      # WSL環境ではWindowsにIOスケジューリングを任せた方が良いようなのでスキップします。
+      # `/etc/udev/rules.d/60-ioschedulers.rules:7 Failed to write ATTR{...}, ignoring: Invalid argument`
+      # のようなエラーログを回避します。
+      echo "skip because WSL:" $f
+    elif [[ $f == home/user* ]]; then
       # home/userは~/にマッピングします。
       conf_dir=$(dirname ${f/home\/user/$home_dir})
       mkdir -p $conf_dir

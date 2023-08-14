@@ -25,15 +25,15 @@
 	default = current
 [rerere]
 	enabled = true
+[user]
+	name = ncaq
+	email = ncaq@ncaq.net
+[github]
+	user = ncaq
 [filter "lfs"]
 	process = git-lfs filter-process
 	required = true
 	clean = git-lfs clean -- %f
 	smudge = git-lfs smudge -- %f
-[github]
-	user = ncaq
-[user]
-	name = ncaq
-	email = ncaq@ncaq.net
 [include]
 	path = ~/.config/git/config.credential

@@ -8,6 +8,7 @@ dotfiles_dir=$(realpath $(dirname "$0"))
 cd $dotfiles_dir
 
 # 現在のシステムがWSL環境かを判定して後々の条件分岐に使用します。
+is_wsl=false
 if [ -e "/proc/sys/kernel/osrelease" ] && grep -q "WSL" "/proc/sys/kernel/osrelease"; then
   is_wsl=true
 fi

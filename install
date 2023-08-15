@@ -23,20 +23,21 @@ fi
 #   $3: sudoを使うかのフラグ
 function create-link() {
   local real_path
-  # 後々正しい相対パスにするために絶対パスを取得します。
   real_path=$(realpath "$1")
   local target_dir="$2"
   local is_sudo="$3"
 
   mkdir -p "$target_dir"
   cd "$target_dir"
+  local rel_path
+  rel_path=$(realpath --relative-to=. "$real_path")
   if [ "$is_sudo" = true ]; then
     set -x
-    sudo ln -sfv $(realpath --relative-to=. "$real_path") .
+    sudo ln -sfv "$rel_path" .
     set +x
   else
     set -x
-    ln -sfv $(realpath --relative-to=. "$real_path") .
+    ln -sfv "$rel_path" .
     set +x
   fi
 }

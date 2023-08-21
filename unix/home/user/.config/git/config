@@ -6,6 +6,8 @@
 	hooksPath = ~/dotfiles/git-hooks
 	quotePath = false
 	symlinks = true
+[commit]
+	verbose = true
 [diff]
 	algorithm = histogram
 [fetch]

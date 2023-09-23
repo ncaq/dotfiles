@@ -154,7 +154,7 @@ function git-repo-install-unless-exist() {
 
 # 他のリポジトリに置いてある設定をインストールします。
 function install-external-repos() {
-  repos=(
+  local repos=(
     'https://github.com/ncaq/.emacs.d.git'
     'https://github.com/ncaq/.percol.d.git'
     'https://github.com/ncaq/.xkeysnail.git'

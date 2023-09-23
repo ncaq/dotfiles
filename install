@@ -4,8 +4,8 @@ set -eu
 
 # このスクリプトのディレクトリ位置を保持します。
 # 戻ったり他のスクリプトの参照に使います。
-dotfiles_dir=$(realpath $(dirname "$0"))
-cd $dotfiles_dir
+script_dir=$(realpath $(dirname "$0"))
+cd $script_dir
 
 # 現在のシステムがWSL環境かを判定して後々の条件分岐に使用します。
 is_wsl=false
@@ -52,7 +52,7 @@ function create-link() {
 
 # 標準的なUnix環境向けに設定ファイルをコピーします。
 function install-unix-conf() {
-  local unix_dir="$dotfiles_dir/unix"
+  local unix_dir="$script_dir/unix"
   cd "$unix_dir"
   local home_dir=~
   local find_dir=(home/user)
@@ -87,7 +87,7 @@ function install-unix-conf() {
 # Git環境をセットアップします。
 function install-git-conf() {
   # Git Hooksを利用可能にします。
-  cd $dotfiles_dir/git-hooks/
+  cd $script_dir/git-hooks/
   yarn install --immutable
 
   set -x
@@ -125,7 +125,7 @@ function install-git-conf() {
 
 # コマンドによりレジストリ的なものの設定を行います。
 function install-by-command() {
-  cd $dotfiles_dir
+  cd $script_dir
   if hash gsettings 2>/dev/null; then
     set -x
     gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'

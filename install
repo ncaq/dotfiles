@@ -1,11 +1,12 @@
 #!/bin/bash
-# shellcheck disable=SC2046,SC2086
+# shellcheck disable=SC2086
 set -eu
 
 # このスクリプトのディレクトリ位置を保持します。
 # 戻ったり他のスクリプトの参照に使います。
-dotfiles_dir=$(realpath $(dirname "$0"))
-cd $dotfiles_dir
+script_dir_relative=$(dirname "$0")
+script_dir=$(realpath "$script_dir_relative")
+cd $script_dir
 
 # 現在のシステムがWSL環境かを判定して後々の条件分岐に使用します。
 is_wsl=false
@@ -52,7 +53,7 @@ function create-link() {
 
 # 標準的なUnix環境向けに設定ファイルをコピーします。
 function install-unix-conf() {
-  local unix_dir="$dotfiles_dir/unix"
+  local unix_dir="$script_dir/unix"
   cd "$unix_dir"
   local home_dir=~
   local find_dir=(home/user)
@@ -87,7 +88,7 @@ function install-unix-conf() {
 # Git環境をセットアップします。
 function install-git-conf() {
   # Git Hooksを利用可能にします。
-  cd $dotfiles_dir/git-hooks/
+  cd $script_dir/git-hooks/
   yarn install --immutable
 
   set -x
@@ -125,7 +126,7 @@ function install-git-conf() {
 
 # コマンドによりレジストリ的なものの設定を行います。
 function install-by-command() {
-  cd $dotfiles_dir
+  cd $script_dir
   if hash gsettings 2>/dev/null; then
     set -x
     gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
@@ -133,6 +134,44 @@ function install-by-command() {
   fi
 }
 
+# 指定されたGitリポジトリが既にディレクトリに無ければgit cloneします。
+# インストールスクリプトがリポジトリに存在する場合実行します。
+#
+# 引数:
+#   $1: GitリポジトリのURL
+function git-repo-install-unless-exist() {
+  local repo_url="$1"
+  local repo_name
+  repo_name=$(basename "$repo_url" .git)
+  if [ ! -d "$repo_name" ]; then
+    git clone "$repo_url"
+    cd "$repo_name"
+    if [ -x install ]; then
+      ./install
+    fi
+  fi
+}
+
+# 他のリポジトリに置いてある設定をインストールします。
+function install-external-repos() {
+  repos=(
+    'https://github.com/ncaq/.emacs.d.git'
+    'https://github.com/ncaq/.percol.d.git'
+    'https://github.com/ncaq/.zsh.d.git'
+  )
+  for repo_url in "${repos[@]}"
+  do
+    cd ~
+    git-repo-install-unless-exist $repo_url
+  done
+  cd ~
+  # WSL環境ではxmonadはインストールしません。
+  if ! $is_wsl; then
+    git-repo-install-unless-exist 'https://github.com/ncaq/.xmonad.git'
+  fi
+}
+
 install-unix-conf
 install-git-conf
 install-by-command
+install-external-repos

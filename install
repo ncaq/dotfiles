@@ -157,6 +157,7 @@ function install-external-repos() {
   repos=(
     'https://github.com/ncaq/.emacs.d.git'
     'https://github.com/ncaq/.percol.d.git'
+    'https://github.com/ncaq/.xkeysnail.git'
     'https://github.com/ncaq/.zsh.d.git'
   )
   for repo_url in "${repos[@]}"

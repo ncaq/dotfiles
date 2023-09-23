@@ -166,6 +166,7 @@ function install-external-repos() {
     git-repo-install-unless-exist $repo_url
   done
   cd ~
+  # stackとghcupの設定が事前に必要なことに注意。
   # WSL環境ではxmonadはインストールしません。
   if ! $is_wsl; then
     git-repo-install-unless-exist 'https://github.com/ncaq/.xmonad.git'

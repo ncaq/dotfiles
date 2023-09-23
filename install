@@ -134,6 +134,44 @@ function install-by-command() {
   fi
 }
 
+# 指定されたGitリポジトリが既にディレクトリに無ければgit cloneします。
+# インストールスクリプトがリポジトリに存在する場合実行します。
+#
+# 引数:
+#   $1: GitリポジトリのURL
+function git-repo-install-unless-exist() {
+  local repo_url="$1"
+  local repo_name
+  repo_name=$(basename "$repo_url" .git)
+  if [ ! -d "$repo_name" ]; then
+    git clone "$repo_url"
+    cd "$repo_name"
+    if [ -x install ]; then
+      ./install
+    fi
+  fi
+}
+
+# 他のリポジトリに置いてある設定をインストールします。
+function install-external-repos() {
+  repos=(
+    'https://github.com/ncaq/.emacs.d.git'
+    'https://github.com/ncaq/.percol.d.git'
+    'https://github.com/ncaq/.zsh.d.git'
+  )
+  for repo_url in "${repos[@]}"
+  do
+    cd ~
+    git-repo-install-unless-exist $repo_url
+  done
+  cd ~
+  # WSL環境ではxmonadはインストールしません。
+  if ! $is_wsl; then
+    git-repo-install-unless-exist 'https://github.com/ncaq/.xmonad.git'
+  fi
+}
+
 install-unix-conf
 install-git-conf
 install-by-command
+install-external-repos

@@ -142,6 +142,7 @@ function install-by-command() {
 # 引数:
 #   $1: GitリポジトリのURL
 function git-repo-install-unless-exist() {
+  cd ~
   local repo_url="$1"
   local repo_name
   repo_name=$(basename "$repo_url" .git)

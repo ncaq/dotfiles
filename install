@@ -71,7 +71,7 @@ function install-unix-conf() {
       # `/etc/udev/rules.d/60-ioschedulers.rules:7 Failed to write ATTR{...}, ignoring: Invalid argument`
       # のようなエラーログを回避します。
       echo "skip because WSL: " $f
-    elif ! $hi_dpi && [[ "$f" == "*/.Xresources" ]]; then
+    elif ! $hi_dpi && [[ "$f" == */.Xresources ]]; then
       # 現状では`.Xresources`ファイルはDPIの設定にしか使っていないため、
       # HiDPI環境でない場合はスキップします。
       echo "skip because not HiDPI: " $f

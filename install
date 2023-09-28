@@ -41,13 +41,9 @@ function create-link() {
   local rel_path
   rel_path=$(realpath --relative-to=. "$real_path")
   if [ "$is_sudo" = true ]; then
-    set -x
     sudo ln -sfv "$rel_path" .
-    set +x
   else
-    set -x
     ln -sfv "$rel_path" .
-    set +x
   fi
 }
 

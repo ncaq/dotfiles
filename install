@@ -1,12 +1,11 @@
 #!/bin/bash
-# shellcheck disable=SC2086
 set -eu
 
 # このスクリプトのディレクトリ位置を保持します。
 # 戻ったり他のスクリプトの参照に使います。
 script_dir_relative=$(dirname "$0")
 script_dir=$(realpath "$script_dir_relative")
-cd $script_dir
+cd "$script_dir"
 
 # 現在のシステムがWSL環境かを判定して後々の条件分岐に使用します。
 is_wsl=false
@@ -66,17 +65,25 @@ function install-unix-conf() {
       # WSL環境ではWindowsにIOスケジューリングを任せた方が良いようなのでスキップします。
       # `/etc/udev/rules.d/60-ioschedulers.rules:7 Failed to write ATTR{...}, ignoring: Invalid argument`
       # のようなエラーログを回避します。
-      echo "skip because WSL: " $f
+      echo "skip because WSL: " "$f"
     elif ! $hi_dpi && [[ "$f" == */.Xresources ]]; then
       # 現状では`.Xresources`ファイルはDPIの設定にしか使っていないため、
       # HiDPI環境でない場合はスキップします。
-      echo "skip because not HiDPI: " $f
+      echo "skip because not HiDPI: " "$f"
     elif [[ "$f" == home/user* ]]; then
-      create-link "$f" "$(dirname ${f/home\/user/$home_dir})" false
+      local mapped_dir
+      mapped_dir=${f/home\/user/$home_dir}
+      local target_dir
+      target_dir=$(dirname "$mapped_dir")
+      create-link "$f" "$target_dir" false
     else
       # その他のディレクトリ(今はetcしかないですが)にはフルパスをマッピングします。
       # etcでの操作にはroot権限が必要になります。
-      create-link "$f" "/$(dirname $f)" true
+      local mapped_dir
+      mapped_dir=$(dirname "$f")
+      local target_dir
+      target_dir="/$mapped_dir"
+      create-link "$f" "$target_dir" true
     fi
   done < <(find "${find_dir[@]}" -type f -print0)
 }
@@ -84,7 +91,7 @@ function install-unix-conf() {
 # Git環境をセットアップします。
 function install-git-conf() {
   # Git Hooksを利用可能にします。
-  cd $script_dir/git-hooks/
+  cd "$script_dir"/git-hooks/
   yarn install --immutable
 
   set -x
@@ -122,7 +129,7 @@ function install-git-conf() {
 
 # コマンドによりレジストリ的なものの設定を行います。
 function install-by-command() {
-  cd $script_dir
+  cd "$script_dir"
   if hash gsettings 2>/dev/null; then
     set -x
     gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'

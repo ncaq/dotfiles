@@ -155,35 +155,5 @@
     "color": "5319E7",
     "description": "Related to release process",
     "aliases": ["meta"]
-  },
-  {
-    "name": "Estimate: 2",
-    "color": "00B06B",
-    "description": "Seems to end soon"
-  },
-  {
-    "name": "Estimate: 4",
-    "color": "1971ff",
-    "description": "A little trouble"
-  },
-  {
-    "name": "Estimate: 8",
-    "color": "f2e700",
-    "description": "Seriously"
-  },
-  {
-    "name": "Estimate: 16",
-    "color": "f6aa00",
-    "description": "Considerable trouble"
-  },
-  {
-    "name": "Estimate: 32",
-    "color": "ff4b00",
-    "description": "Do not trust the estimates"
-  },
-  {
-    "name": "Estimate: 64",
-    "color": "990099",
-    "description": "Scheduled split"
   }
 ]

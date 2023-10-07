@@ -164,8 +164,8 @@ function install-external-repos() {
   git-repo-install-unless-exist 'https://github.com/ncaq/.emacs.d.git'
   git-repo-install-unless-exist 'https://github.com/ncaq/.percol.d.git'
   git-repo-install-unless-exist 'https://github.com/ncaq/.zsh.d.git'
-  # WSL環境ではX11関係の設定をインストールしません。
-  if ! $is_wsl; then
+  # Xがパスに存在してWSL環境でない場合のみX11関係の設定をインストールします。
+  if hash X 2>/dev/null && ! $is_wsl; then
     git-repo-install-unless-exist 'https://github.com/ncaq/.xkeysnail.git'
     git-repo-install-unless-exist 'https://github.com/ncaq/.xmonad.git' # ghcupの設定が事前に必要なことに注意。
   fi

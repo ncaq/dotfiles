@@ -145,9 +145,9 @@ dist
 # https://yarnpkg.com/getting-started/qa#which-files-should-be-gitignored
 
 .yarn/*
-# !.yarn/releases
+!.yarn/releases
 !.yarn/patches
-# !.yarn/plugins
+!.yarn/plugins
 !.yarn/sdks
 !.yarn/versions
 
@@ -156,6 +156,6 @@ dist
 # !.yarn/cache
 
 # and uncomment the following lines
-# .pnp.*
+.pnp.*
 
 # End of https://www.toptal.com/developers/gitignore/api/node,yarn

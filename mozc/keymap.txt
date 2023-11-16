@@ -11,7 +11,7 @@ Composition	Ctrl ,	IMEOff
 Conversion	Ctrl ,	IMEOff
 Prediction	Ctrl .	IMEOn
 DirectInput	Ctrl .	IMEOn
-Precomposition	Ctrl .	IMEOn
+Precomposition	Ctrl .	InputModeHiragana
 Composition	Ctrl .	ConvertToHiragana
 Conversion	Ctrl .	ConvertToHiragana
 Composition	Ctrl b	Backspace

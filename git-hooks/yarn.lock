@@ -2907,6 +2907,7 @@ __metadata:
     "@typescript-eslint/eslint-plugin": "npm:^5.54.1"
     "@typescript-eslint/parser": "npm:^5.54.1"
     eslint: "npm:^8.36.0"
+    eslint-config-airbnb-base: "npm:^15.0.0"
     eslint-config-airbnb-typescript: "npm:^17.0.0"
     eslint-config-prettier: "npm:^8.7.0"
     eslint-plugin-import: "npm:^2.27.5"

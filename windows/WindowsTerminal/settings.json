@@ -3,16 +3,6 @@
   "$schema": "https://aka.ms/terminal-profiles-schema",
   "actions": [
     {
-      "command": {
-        "action": "scrollDown"
-      },
-      "keys": "shift+down"
-    },
-    {
-      "command": "find",
-      "keys": "ctrl+shift+f"
-    },
-    {
       "command": "scrollUpPage",
       "keys": "shift+pgup"
     },
@@ -21,12 +11,36 @@
       "keys": "shift+left"
     },
     {
-      "command": "duplicateTab",
-      "keys": "ctrl+o"
+      "command": {
+        "action": "scrollDown"
+      },
+      "keys": "shift+down"
+    },
+    {
+      "command": {
+        "action": "splitPane",
+        "split": "auto",
+        "splitMode": "duplicate"
+      },
+      "keys": "alt+shift+d"
+    },
+    {
+      "command": "find",
+      "keys": "ctrl+shift+f"
     },
     {
       "command": "paste",
       "keys": "ctrl+shift+v"
+    },
+    {
+      "command": "duplicateTab",
+      "keys": "ctrl+o"
+    },
+    {
+      "command": {
+        "action": "scrollUp"
+      },
+      "keys": "shift+up"
     },
     {
       "command": {
@@ -48,11 +62,9 @@
     },
     {
       "command": {
-        "action": "splitPane",
-        "split": "auto",
-        "splitMode": "duplicate"
+        "action": "closeTab"
       },
-      "keys": "alt+shift+d"
+      "keys": "ctrl+q"
     },
     {
       "command": "scrollDownPage",
@@ -61,18 +73,6 @@
     {
       "command": "scrollDownPage",
       "keys": "shift+right"
-    },
-    {
-      "command": {
-        "action": "closeTab"
-      },
-      "keys": "ctrl+q"
-    },
-    {
-      "command": {
-        "action": "scrollUp"
-      },
-      "keys": "shift+up"
     },
     {
       "command": {
@@ -130,18 +130,6 @@
         "hidden": false,
         "name": "PowerShell",
         "source": "Windows.Terminal.PowershellCore"
-      },
-      {
-        "guid": "{0cd64408-0478-565a-800a-377955db61be}",
-        "hidden": false,
-        "name": "Developer Command Prompt for VS 2022",
-        "source": "Windows.Terminal.VisualStudio"
-      },
-      {
-        "guid": "{9d475eef-c8a8-5459-bed1-ae48b14f475c}",
-        "hidden": false,
-        "name": "Developer PowerShell for VS 2022",
-        "source": "Windows.Terminal.VisualStudio"
       }
     ]
   },
@@ -354,45 +342,8 @@
       "yellow": "#808000"
     }
   ],
-  "startOnUserLogin": true,
+  "startOnUserLogin": false,
   "theme": "system",
-  "themes": [
-    {
-      "name": "legacyDark",
-      "tab": {
-        "background": null,
-        "showCloseButton": "always",
-        "unfocusedBackground": null
-      },
-      "window": {
-        "applicationTheme": "dark",
-        "useMica": false
-      }
-    },
-    {
-      "name": "legacyLight",
-      "tab": {
-        "background": null,
-        "showCloseButton": "always",
-        "unfocusedBackground": null
-      },
-      "window": {
-        "applicationTheme": "light",
-        "useMica": false
-      }
-    },
-    {
-      "name": "legacySystem",
-      "tab": {
-        "background": null,
-        "showCloseButton": "always",
-        "unfocusedBackground": null
-      },
-      "window": {
-        "applicationTheme": "system",
-        "useMica": false
-      }
-    }
-  ],
+  "themes": [],
   "windowingBehavior": "useAnyExisting"
 }

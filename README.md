@@ -18,3 +18,4 @@ It also contains a collection of application-specific configuration files.
 * [ncaq/.zsh.d](https://github.com/ncaq/.zsh.d)
 * [ncaq/keyhac-config](https://github.com/ncaq/keyhac-config)
 * [ncaq/surfingkeys-config: My Surfingkeys config](https://github.com/ncaq/surfingkeys-config)
+* [ncaq/winconf: My Windows configuration files](https://github.com/ncaq/winconf)

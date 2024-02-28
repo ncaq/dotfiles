@@ -10,6 +10,10 @@ if [[ -x /opt/homebrew/bin/brew ]]; then
   PATH=/opt/homebrew/opt/coreutils/libexec/gnubin/:$PATH
 fi
 
+if [[ -f $HOME/.keychain/$HOST-sh ]]; then
+  source "$HOME/.keychain/$HOST-sh"
+fi
+
 if [[ -d $GOPATH ]]; then
   PATH=$GOPATH/bin:$PATH
 fi

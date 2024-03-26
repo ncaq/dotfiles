@@ -35,7 +35,11 @@ function create-link() {
   local target_dir="$2"
   local is_sudo="$3"
 
-  mkdir -p "$target_dir"
+  if [ "$is_sudo" = true ]; then
+    sudo mkdir -p "$target_dir"
+  else
+    mkdir -p "$target_dir"
+  fi
   cd "$target_dir"
   local rel_path
   rel_path=$(realpath --relative-to=. "$real_path")

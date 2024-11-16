@@ -81,13 +81,15 @@ function install-unix-conf() {
       target_dir=$(dirname "$mapped_dir")
       create-link "$f" "$target_dir" false
     else
-      # その他のディレクトリ(今はetcしかないですが)にはフルパスをマッピングします。
+      # その他のディレクトリ(今はetcしかないですが)にはファイルコピーを行います。
+      # systemdなどがサブボリュームなどファイルシステムが分かれたシンボリックリンクを辿れないことがあるためです。
       # etcでの操作にはroot権限が必要になります。
       local mapped_dir
       mapped_dir=$(dirname "$f")
       local target_dir
       target_dir="/$mapped_dir"
-      create-link "$f" "$target_dir" true
+      echo "$f" "$target_dir"
+      sudo cp -v "$f" "$target_dir"
     fi
   done < <(find "${find_dir[@]}" -type f -print0)
 }

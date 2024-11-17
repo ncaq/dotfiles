@@ -88,7 +88,6 @@ function install-unix-conf() {
       mapped_dir=$(dirname "$f")
       local target_dir
       target_dir="/$mapped_dir"
-      echo "$f" "$target_dir"
       sudo cp -v "$f" "$target_dir"
     fi
   done < <(find "${find_dir[@]}" -type f -print0)

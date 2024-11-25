@@ -18,7 +18,6 @@ templates:
   params:
     author-email: ncaq@ncaq.net
     author-name: ncaq
-    copyright: © ncaq
     github-username: ncaq
     scm-init: git
 

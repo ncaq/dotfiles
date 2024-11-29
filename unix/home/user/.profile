@@ -10,6 +10,10 @@ if [[ -x /opt/homebrew/bin/brew ]]; then
   PATH=/opt/homebrew/opt/coreutils/libexec/gnubin/:$PATH
 fi
 
+if [ -e ~/.nix-profile/etc/profile.d/nix.sh ]; then
+  source ~/.nix-profile/etc/profile.d/nix.sh
+fi
+
 if [[ -d $GOPATH ]]; then
   PATH=$GOPATH/bin:$PATH
 fi

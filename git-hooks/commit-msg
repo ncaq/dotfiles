@@ -1,3 +1,7 @@
 #!/bin/bash
 set -eu
-yarn --cwd "$(dirname "$0")" commitlint --edit "$(realpath "${1}")"
+
+script_dir=$(dirname "$0")
+commit_editmsg_file="$(realpath "${1}")"
+cd "$script_dir"
+yarn commitlint --edit "$commit_editmsg_file"

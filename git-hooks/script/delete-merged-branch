@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eu
 # get default branch, e.g. master, main.
-default_branch=$(git symbolic-ref refs/remotes/origin/HEAD|sed 's@^refs/remotes/origin/@@')
+default_branch=$(git remote show origin|grep 'HEAD branch'|awk '{print $NF}')
 current_branch=$(git rev-parse --abbrev-ref HEAD)
 # when current branch in sot default branch, exit.
 if [[ $default_branch != "$current_branch" ]]; then

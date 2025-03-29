@@ -105,11 +105,14 @@ function install-git-conf() {
   # 特定のWSL環境だとプロンプトウィンドウが一瞬表示されてしまう問題があるためです。
   cd ~/.config/git/
   if hash git-credential-libsecret 2>/dev/null; then
-    # Gentooなど、git-credential-libsecretを素直にパッケージマネージャからPATHに入れられる環境。
+    # git-credential-libsecretがPATHに入っている場合。
     ln -sfv config.credential.libsecret.relative config.credential
+  elif [[ -x /usr/libexec/git-core/git-credential-libsecret ]]; then
+    # Gentooなど。
+    ln -sfv config.credential.libsecret.absolute.portage config.credential
   elif [[ -x /usr/share/doc/git/contrib/credential/libsecret/git-credential-libsecret ]]; then
-    # Ubuntuなど、自動でlibsecretにPATHが通らない環境。
-    ln -sfv config.credential.libsecret.absolute config.credential
+    # Ubuntuなど。
+    ln -sfv config.credential.libsecret.absolute.debian config.credential
   elif [[ -x /Library/Developer/CommandLineTools/usr/libexec/git-core/git-credential-osxkeychain ]]; then
     # macOS。
     ln -sfv config.credential.osxkeychain.relative config.credential

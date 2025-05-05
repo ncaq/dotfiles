@@ -7,4 +7,61 @@
   programs.home-manager.enable = true;
 
   imports = [ ./link.nix ];
+
+  home.packages = with pkgs; [
+    arandr
+    bash
+    bat
+    bat-extras.batdiff
+    bat-extras.batgrep
+    bat-extras.batman
+    bat-extras.batpipe
+    bat-extras.batwatch
+    bat-extras.prettybat
+    chromium
+    copyq
+    direnv
+    docker
+    docker-compose
+    emacs
+    fd
+    file
+    findutils
+    firefox
+    gimp
+    git
+    git-lfs
+    gnugrep
+    go
+    htop
+    inkscape
+    jq
+    kitty
+    less
+    libreoffice
+    lightdm
+    nano
+    nodePackages.prettier
+    nodejs
+    obs-studio
+    pavucontrol
+    plocate
+    python3
+    rhythmbox
+    ripgrep
+    rsync
+    rustup
+    starship
+    thunderbird
+    transmission
+    trayer
+    tree
+    vlc
+    wget
+    xkeysnail
+    xorg.xrandr
+    xorg.xset
+    xsel
+    zsh
+  ];
 }

@@ -41,8 +41,6 @@
     libreoffice
     lightdm
     nano
-    nodePackages.prettier
-    nodejs
     obs-studio
     pavucontrol
     plocate

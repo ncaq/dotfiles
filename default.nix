@@ -52,7 +52,6 @@
     rsync
     starship
     thunderbird
-    transmission
     trayer
     tree
     vlc

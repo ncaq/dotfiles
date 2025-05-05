@@ -6,7 +6,7 @@
 
   programs.home-manager.enable = true;
 
-  imports = [ ./link.nix ];
+  imports = [ ./link.nix ] ++ import ./programs { inherit builtins lib; };
 
   home.packages = with pkgs; [
     arandr
@@ -50,7 +50,6 @@
     rhythmbox
     ripgrep
     rsync
-    rustup
     starship
     thunderbird
     transmission

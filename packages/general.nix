@@ -19,6 +19,5 @@
     rsync
     tree
     wget
-    zsh
   ];
 }

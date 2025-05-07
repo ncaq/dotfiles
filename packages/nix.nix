@@ -1,9 +1,10 @@
 # Nix言語に関係するパッケージ。
 # Nixエコシステムまではあまりカバーしない。
-{ pkgs, ... }: {
+{ pkgs, ... }:
+{
   home.packages = with pkgs; [
-     alejandra
-     nil
-     nixfmt-rfc-style
+    alejandra
+    nil
+    nixfmt-rfc-style
   ];
 }

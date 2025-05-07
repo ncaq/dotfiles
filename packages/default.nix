@@ -2,8 +2,9 @@
 { builtins, lib }:
 let
   nixFiles = builtins.readDir ./.;
-  moduleFiles = lib.filterAttrs (name: type:
-    type == "regular" && lib.hasSuffix ".nix" name && name != "default.nix")
-    nixFiles;
+  moduleFiles = lib.filterAttrs (
+    name: type: type == "regular" && lib.hasSuffix ".nix" name && name != "default.nix"
+  ) nixFiles;
   modules = lib.mapAttrsToList (name: _: ./${name}) moduleFiles;
-in modules
+in
+modules

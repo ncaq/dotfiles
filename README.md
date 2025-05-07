@@ -21,6 +21,14 @@ use [home-manager](https://github.com/nix-community/home-manager).
 
 # Setup
 
+## Initial
+
+``` zsh
+nix run home-manager/master -- init --switch
+```
+
+## Update
+
 ``` zsh
 home-manager switch --flake '.#default'
 ./install

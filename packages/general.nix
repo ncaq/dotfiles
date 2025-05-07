@@ -2,13 +2,6 @@
 {
   home.packages = with pkgs; [
     bash
-    bat
-    bat-extras.batdiff
-    bat-extras.batgrep
-    bat-extras.batman
-    bat-extras.batpipe
-    bat-extras.batwatch
-    bat-extras.prettybat
     cachix
     docker
     docker-compose

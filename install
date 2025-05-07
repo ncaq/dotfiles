@@ -13,14 +13,6 @@ if [ -e "/proc/sys/kernel/osrelease" ] && grep -q "WSL" "/proc/sys/kernel/osrele
   is_wsl=true
 fi
 
-# 現在の環境がHiDPI環境か保存します。
-# 4K解像度のディスプレイの方が多いのでデフォルトではHiDPI環境として扱います。
-hi_dpi=true
-# 特定のホスト名の場合はHiDPI環境ではないと判定します。
-if [ "$(hostname)" == "creep" ]; then
-  hi_dpi=false
-fi
-
 # 指定されたファイルまたはディレクトリに対してシンボリックリンクを作成します。
 # `/mnt/`以下などにマウントしても正常にパスが辿れるように、
 # `cd`して相対パスで設置する回りくどい方法を取っています。
@@ -70,10 +62,6 @@ function install-unix-conf() {
       # `/etc/udev/rules.d/60-ioschedulers.rules:7 Failed to write ATTR{...}, ignoring: Invalid argument`
       # のようなエラーログを回避します。
       echo "skip because WSL: " "$f"
-    elif ! $hi_dpi && [[ "$f" == */.Xresources ]]; then
-      # 現状では`.Xresources`ファイルはDPIの設定にしか使っていないため、
-      # HiDPI環境でない場合はスキップします。
-      echo "skip because not HiDPI: " "$f"
     elif [[ "$f" == home/user* ]]; then
       local mapped_dir
       mapped_dir=${f/home\/user/$home_dir}

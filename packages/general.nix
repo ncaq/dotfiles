@@ -3,8 +3,6 @@
   home.packages = with pkgs; [
     bash
     cachix
-    docker
-    docker-compose
     fd
     file
     findutils

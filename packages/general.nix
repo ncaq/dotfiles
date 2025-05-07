@@ -7,7 +7,6 @@
     file
     findutils
     gnugrep
-    go
     htop
     jq
     less

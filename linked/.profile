@@ -1,6 +1,5 @@
 # shellcheck disable=SC1090
 export EDITOR='emacsclient -a emacs'
-export GOPATH=~/.go
 export LESS='--ignore-case --long-prompt --RAW-CONTROL-CHARS'
 export LESSHISTFILE='-'
 export VISUAL=$EDITOR
@@ -28,7 +27,7 @@ if [[ -f ~/.cargo/env ]]; then
   source ~/.cargo/env
 fi
 
-PATH=~/.local/bin:$GOPATH/bin:~/.pyenv/shims:~/.pyenv/bin:~/.local/share/coursier/bin:~/.yarn/bin:$PATH
+PATH=~/.local/bin:~/.pyenv/shims:~/.pyenv/bin:~/.local/share/coursier/bin:~/.yarn/bin:$PATH
 export PATH
 
 # If the execution environment is not WSL, skip subsequent executions.

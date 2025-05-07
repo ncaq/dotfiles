@@ -93,48 +93,6 @@ function install-unix-conf() {
   done < <(find "${find_dir[@]}" -type f -print0)
 }
 
-# Git環境をセットアップします。
-function install-git-conf() {
-  # Git Hooksを利用可能にします。
-  cd "$script_dir"/git-hooks/
-  yarn install --immutable
-
-  set -x
-  # gitの認証情報保存設定をソフトウェアのインストール状態によって変更します。
-  # WSL環境でGitのバイナリごとWindowsに投げていないのは、
-  # 特定のWSL環境だとプロンプトウィンドウが一瞬表示されてしまう問題があるためです。
-  cd ~/.config/git/
-  if hash git-credential-libsecret 2>/dev/null; then
-    # git-credential-libsecretがPATHに入っている場合。
-    ln -sfv config.credential.libsecret.relative config.credential
-  elif [[ -x /usr/libexec/git-core/git-credential-libsecret ]]; then
-    # Gentooなど。
-    ln -sfv config.credential.libsecret.absolute.portage config.credential
-  elif [[ -x /usr/share/doc/git/contrib/credential/libsecret/git-credential-libsecret ]]; then
-    # Ubuntuなど。
-    ln -sfv config.credential.libsecret.absolute.debian config.credential
-  elif [[ -x /Library/Developer/CommandLineTools/usr/libexec/git-core/git-credential-osxkeychain ]]; then
-    # macOS。
-    ln -sfv config.credential.osxkeychain.relative config.credential
-  elif [[ -x /mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager.exe ]]; then
-    # WSL環境など、Windows側に認証情報を任せる場合。
-    # Magitから使うとコンソールがポップアップしてくるので使いたくないです。
-    # 出来ればlibsecretを使います。
-    ln -sfv config.credential.manager.absolute.windows.wsl config.credential
-  elif [[ -x "C:\\Program Files\\Git\\mingw64\\bin\\git-credential-manager.exe" ]]; then
-    # MSYS2など、Windowsネイティブで利用する場合。
-    ln -sfv config.credential.manager.absolute.windows.native config.credential
-  elif hash git-credential-manager 2>/dev/null; then
-    # マルチプラットフォームでGCMを使う場合。
-    ln -sfv config.credential.manager.relative config.credential
-  else
-    # いずれも使えない場合のフォールバック。
-    # 早めにセットアップして入力不要にするべきです。
-    ln -sfv config.credential.cache.relative config.credential
-  fi
-  set +x
-}
-
 # コマンドによりレジストリ的なものの設定を行います。
 function install-by-command() {
   cd "$script_dir"
@@ -180,6 +138,5 @@ function install-external-repos() {
 }
 
 install-unix-conf
-install-git-conf
 install-by-command
 install-external-repos

@@ -8,8 +8,6 @@
     fd
     file
     findutils
-    git
-    git-lfs
     gnugrep
     go
     htop

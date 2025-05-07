@@ -8,6 +8,7 @@
     bat-extras.batpipe
     bat-extras.batwatch
     bat-extras.prettybat
+    cachix
     direnv
     docker
     docker-compose
@@ -22,6 +23,8 @@
     jq
     less
     nano
+    nix-prefetch
+    plantuml
     plocate
     python3
     ripgrep

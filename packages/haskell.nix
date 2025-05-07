@@ -20,23 +20,26 @@ let
 in {
   home.packages = (with pkgs; [
     cabal-install
+    cabal2nix
     ghc
     haskell-ci
     haskell-language-server
     hlint
+    hpack
     ormolu
     stack
     stylish-haskell
   ]) ++ (with pkgs.haskellPackages; [
     ShellCheck
+    apply-refact
     cabal-fmt
     cabal-gild
+    cabal-plan
     fourmolu
     homura-stopwatch
     implicit-hie
     pandoc-cli
     uniq-deep
-    apply-refact
     weeder
   ]);
 

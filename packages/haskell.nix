@@ -1,4 +1,4 @@
-{ pkgs, config, ... }:
+{ pkgs, ... }:
 let
   yamlFormat = pkgs.formats.yaml { };
   stackConfig = {

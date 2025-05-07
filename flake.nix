@@ -13,6 +13,7 @@
   outputs = { nixpkgs, home-manager, ... }:
     let system = "x86_64-linux";
     in {
+      formatter = nixpkgs.legacyPackages.${system}.nixfmt-rfc-style;
       homeConfigurations.default = home-manager.lib.homeManagerConfiguration {
         pkgs = nixpkgs.legacyPackages.${system};
         modules = [ ./. ];

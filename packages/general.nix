@@ -20,7 +20,6 @@
     python3
     ripgrep
     rsync
-    starship
     tree
     wget
     zsh

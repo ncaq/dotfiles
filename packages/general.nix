@@ -10,7 +10,6 @@
     bat-extras.batwatch
     bat-extras.prettybat
     cachix
-    direnv
     docker
     docker-compose
     fd

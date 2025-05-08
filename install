@@ -81,16 +81,6 @@ function install-unix-conf() {
   done < <(find "${find_dir[@]}" -type f -print0)
 }
 
-# コマンドによりレジストリ的なものの設定を行います。
-function install-by-command() {
-  cd "$script_dir"
-  if hash gsettings 2>/dev/null; then
-    set -x
-    gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
-    set +x
-  fi
-}
-
 # 指定されたGitリポジトリが既にディレクトリに無ければgit cloneします。
 # インストールスクリプトがリポジトリに存在する場合実行します。
 # 実行した後、ホームディレクトリに戻ります。
@@ -124,5 +114,4 @@ function install-external-repos() {
 }
 
 install-unix-conf
-install-by-command
 install-external-repos

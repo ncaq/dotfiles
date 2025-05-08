@@ -9,6 +9,11 @@
     enable = true;
   };
 
+  services.emacs = {
+    client.enable = true;
+    defaultEditor = true;
+  };
+
   # `git clone .emacs.d`
   home.activation.cloneEmacsConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     if [ ! -d "${config.home.homeDirectory}/.emacs.d" ]; then

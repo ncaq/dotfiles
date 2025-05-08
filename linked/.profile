@@ -1,7 +1,4 @@
 # shellcheck disable=SC1090
-export EDITOR='emacsclient -a emacs'
-export VISUAL=$EDITOR
-
 if [ -e ~/.nix-profile/etc/profile.d/nix.sh ]; then
   source ~/.nix-profile/etc/profile.d/nix.sh
 elif [ -e /etc/profile.d/nix.sh ]; then

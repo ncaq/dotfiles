@@ -14,6 +14,15 @@
     defaultEditor = true;
   };
 
+  home.sessionVariables =
+    let
+      editor = "emacsclient -a emacs";
+    in
+    {
+      EDITOR = editor;
+      VISUAL = editor;
+    };
+
   # `git clone .emacs.d`
   home.activation.cloneEmacsConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     if [ ! -d "${config.home.homeDirectory}/.emacs.d" ]; then

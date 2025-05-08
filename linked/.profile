@@ -5,9 +5,6 @@ elif [ -e /etc/profile.d/nix.sh ]; then
   source /etc/profile.d/nix.sh
 fi
 
-PATH=~/.local/bin:$PATH
-export PATH
-
 # If the execution environment is not WSL, skip subsequent executions.
 if [ ! -e "/proc/sys/kernel/osrelease" ] || ! grep -q "WSL" "/proc/sys/kernel/osrelease"; then
   return

@@ -2,11 +2,6 @@
 export EDITOR='emacsclient -a emacs'
 export VISUAL=$EDITOR
 
-if [[ -x /opt/homebrew/bin/brew ]]; then
-  eval "$(/opt/homebrew/bin/brew shellenv)"
-  PATH=/opt/homebrew/opt/coreutils/libexec/gnubin/:$PATH
-fi
-
 if [ -e ~/.nix-profile/etc/profile.d/nix.sh ]; then
   source ~/.nix-profile/etc/profile.d/nix.sh
 elif [ -e /etc/profile.d/nix.sh ]; then

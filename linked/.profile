@@ -1,7 +1,5 @@
 # shellcheck disable=SC1090
 export EDITOR='emacsclient -a emacs'
-export LESS='--ignore-case --long-prompt --RAW-CONTROL-CHARS'
-export LESSHISTFILE='-'
 export VISUAL=$EDITOR
 
 if [[ -x /opt/homebrew/bin/brew ]]; then

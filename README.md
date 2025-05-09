@@ -1,15 +1,6 @@
 # dotfiles
 
-I put dotfiles here that I don't need to separate.
-It also contains a collection of application-specific configuration files.
-
-# To symlinks
-
-## home-manager
-
 use [home-manager](https://github.com/nix-community/home-manager).
-
-* [./linked/](./linked/) -> `$HOME`
 
 ## install script (transitional - will migrate to NixOS)
 

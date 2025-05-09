@@ -4,6 +4,8 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
 
+    flake-parts.url = "github:hercules-ci/flake-parts";
+
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -16,39 +18,55 @@
   };
 
   outputs =
-    {
-      self,
+    inputs@{
       nixpkgs,
-      home-manager,
+      flake-parts,
       treefmt-nix,
+      home-manager,
       ...
     }:
-    let
-      system = "x86_64-linux";
-      pkgs = nixpkgs.legacyPackages.${system};
-      treefmtEval = treefmt-nix.lib.evalModule pkgs ./treefmt.nix;
-
-      mkHomeManagerConfig =
-        { username }:
-        home-manager.lib.homeManagerConfiguration {
-          pkgs = nixpkgs.legacyPackages.${system};
-          extraSpecialArgs = {
-            username = username;
+    flake-parts.lib.mkFlake { inherit inputs; } {
+      imports = [
+        inputs.home-manager.flakeModules.home-manager
+        inputs.treefmt-nix.flakeModule
+      ];
+      flake = {
+        homeConfigurations =
+          let
+            mkLinuxHome =
+              username:
+              home-manager.lib.homeManagerConfiguration ({
+                pkgs = nixpkgs.legacyPackages.x86_64-linux;
+                modules = [ ./home ];
+                extraSpecialArgs = { inherit username; };
+              });
+          in
+          {
+            "GitHub-Actions" = mkLinuxHome "runner";
+            "SSD0086" = mkLinuxHome "ncaq";
           };
-          modules = [ ./home ];
-        };
-    in
-    {
-      formatter.${system} = treefmtEval.config.build.wrapper;
-      checks.${system}.formatting = treefmtEval.config.build.check self;
-
-      homeConfigurations = {
-        default = mkHomeManagerConfig {
-          username = "ncaq";
-        };
-        ci = mkHomeManagerConfig {
-          username = "runner";
-        };
       };
+      systems = [
+        "aarch64-darwin"
+        "aarch64-linux"
+        "x86_64-darwin"
+        "x86_64-linux"
+      ];
+      perSystem =
+        {
+          config,
+          ...
+        }:
+        {
+          treefmt.config = {
+            projectRootFile = "flake.nix";
+            programs = {
+              deadnix.enable = true;
+              nixfmt.enable = true;
+              shellcheck.enable = true;
+              shfmt.enable = true;
+            };
+          };
+        };
     };
 }

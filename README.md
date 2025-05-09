@@ -10,7 +10,7 @@ use [home-manager](https://github.com/nix-community/home-manager).
 
 * [./git-hooks/](./git-hooks/): My git global hooks
 
-# Setup
+# Non NixOS System Setup
 
 ## Initial
 
@@ -21,7 +21,7 @@ nix run home-manager/master -- init --switch
 ## Update
 
 ``` zsh
-home-manager switch --flake '.#default'
+home-manager switch --flake ".#$(hostname)"
 ./install-legacy
 ```
 

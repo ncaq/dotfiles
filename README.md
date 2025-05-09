@@ -31,7 +31,7 @@ nix run home-manager/master -- init --switch
 
 ``` zsh
 home-manager switch --flake '.#default'
-./install
+./install-legacy
 ```
 
 # Separated dotfiles

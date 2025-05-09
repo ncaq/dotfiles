@@ -1,0 +1,894 @@
+{
+  "title": "In Dvorak, ncaq config.",
+  "rules": [
+    {
+      "description": "S-qでウィンドウを閉じる。",
+      "manipulators": [
+        {
+          "type": "basic",
+          "from": {
+            "key_code": "x",
+            "modifiers": {
+              "mandatory": ["option"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "comma",
+              "modifiers": ["option"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "description": "C-,とC-.で日本語入力切替。",
+      "manipulators": [
+        {
+          "type": "basic",
+          "from": {
+            "key_code": "w",
+            "modifiers": {
+              "mandatory": ["control"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "japanese_eisuu"
+            }
+          ]
+        },
+        {
+          "type": "basic",
+          "from": {
+            "key_code": "e",
+            "modifiers": {
+              "mandatory": ["control"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "japanese_kana"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "description": "アプリケーションのスイッチ。",
+      "manipulators": [
+        {
+          "type": "basic",
+          "from": {
+            "key_code": "j",
+            "modifiers": {
+              "mandatory": ["option"]
+            }
+          },
+          "to": [
+            {
+              "shell_command": "open -a Firefox"
+            }
+          ]
+        },
+        {
+          "type": "basic",
+          "from": {
+            "key_code": "k",
+            "modifiers": {
+              "mandatory": ["option"]
+            }
+          },
+          "to": [
+            {
+              "shell_command": "open -a kitty"
+            }
+          ]
+        },
+        {
+          "type": "basic",
+          "from": {
+            "key_code": "l",
+            "modifiers": {
+              "mandatory": ["option"]
+            }
+          },
+          "to": [
+            {
+              "shell_command": "open -a Emacs"
+            }
+          ]
+        },
+        {
+          "type": "basic",
+          "from": {
+            "key_code": "quote",
+            "modifiers": {
+              "mandatory": ["option"]
+            }
+          },
+          "to": [
+            {
+              "shell_command": "open -a Slack"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "description": "webブラウザライクなアプリケーションでText編集などをhtnsbf Emacsに寄せる。",
+      "manipulators": [
+        {
+          "conditions": [
+            {
+              "bundle_identifiers": [
+                "org\\.mozilla\\.firefox",
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
+              ],
+              "type": "frontmost_application_if"
+            }
+          ],
+          "type": "basic",
+          "from": {
+            "key_code": "t",
+            "modifiers": {
+              "mandatory": ["control"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "period",
+              "modifiers": ["option"]
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "bundle_identifiers": [
+                "org\\.mozilla\\.firefox",
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
+              ],
+              "type": "frontmost_application_if"
+            }
+          ],
+          "type": "basic",
+          "from": {
+            "key_code": "u",
+            "modifiers": {
+              "mandatory": ["control"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "escape"
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "bundle_identifiers": [
+                "org\\.mozilla\\.firefox",
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
+              ],
+              "type": "frontmost_application_if"
+            }
+          ],
+          "type": "basic",
+          "from": {
+            "key_code": "open_bracket",
+            "modifiers": {
+              "mandatory": ["control"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "slash",
+              "modifiers": ["option"]
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "bundle_identifiers": [
+                "org\\.mozilla\\.firefox",
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
+              ],
+              "type": "frontmost_application_if"
+            }
+          ],
+          "type": "basic",
+          "from": {
+            "key_code": "a",
+            "modifiers": {
+              "mandatory": ["control"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "left_arrow",
+              "modifiers": ["option"]
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "bundle_identifiers": [
+                "org\\.mozilla\\.firefox",
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
+              ],
+              "type": "frontmost_application_if"
+            }
+          ],
+          "type": "basic",
+          "from": {
+            "key_code": "s",
+            "modifiers": {
+              "mandatory": ["control"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "k",
+              "modifiers": ["option"]
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "bundle_identifiers": [
+                "org\\.mozilla\\.firefox",
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
+              ],
+              "type": "frontmost_application_if"
+            }
+          ],
+          "type": "basic",
+          "from": {
+            "key_code": "d",
+            "modifiers": {
+              "mandatory": ["control"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "right_arrow",
+              "modifiers": ["option"]
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "bundle_identifiers": [
+                "org\\.mozilla\\.firefox",
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
+              ],
+              "type": "frontmost_application_if"
+            }
+          ],
+          "type": "basic",
+          "from": {
+            "key_code": "s",
+            "modifiers": {
+              "mandatory": ["command"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "k",
+              "modifiers": ["option", "shift"]
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "bundle_identifiers": [
+                "org\\.mozilla\\.firefox",
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
+              ],
+              "type": "frontmost_application_if"
+            }
+          ],
+          "type": "basic",
+          "from": {
+            "key_code": "f",
+            "modifiers": {
+              "mandatory": ["control"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "left_arrow",
+              "modifiers": ["option"]
+            },
+            {
+              "key_code": "right_arrow",
+              "modifiers": ["option", "shift"]
+            },
+            {
+              "key_code": "b",
+              "modifiers": ["option"]
+            },
+            {
+              "key_code": "delete_forward"
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "bundle_identifiers": [
+                "org\\.mozilla\\.firefox",
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
+              ],
+              "type": "frontmost_application_if"
+            }
+          ],
+          "type": "basic",
+          "from": {
+            "key_code": "h",
+            "modifiers": {
+              "mandatory": ["control"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "delete_forward"
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "bundle_identifiers": [
+                "org\\.mozilla\\.firefox",
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
+              ],
+              "type": "frontmost_application_if"
+            }
+          ],
+          "type": "basic",
+          "from": {
+            "key_code": "h",
+            "modifiers": {
+              "mandatory": ["command"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "delete_forward",
+              "modifiers": ["command"]
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "bundle_identifiers": [
+                "org\\.mozilla\\.firefox",
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
+              ],
+              "type": "frontmost_application_if"
+            }
+          ],
+          "type": "basic",
+          "from": {
+            "key_code": "j",
+            "modifiers": {
+              "mandatory": ["control"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "left_arrow"
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "bundle_identifiers": [
+                "org\\.mozilla\\.firefox",
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
+              ],
+              "type": "frontmost_application_if"
+            }
+          ],
+          "type": "basic",
+          "from": {
+            "key_code": "j",
+            "modifiers": {
+              "mandatory": ["command"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "left_arrow",
+              "modifiers": ["command"]
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "bundle_identifiers": [
+                "org\\.mozilla\\.firefox",
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
+              ],
+              "type": "frontmost_application_if"
+            }
+          ],
+          "type": "basic",
+          "from": {
+            "key_code": "k",
+            "modifiers": {
+              "mandatory": ["control"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "up_arrow"
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "bundle_identifiers": [
+                "org\\.mozilla\\.firefox",
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
+              ],
+              "type": "frontmost_application_if"
+            }
+          ],
+          "type": "basic",
+          "from": {
+            "key_code": "k",
+            "modifiers": {
+              "mandatory": ["command"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "up_arrow",
+              "modifiers": ["command"]
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "bundle_identifiers": [
+                "org\\.mozilla\\.firefox",
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
+              ],
+              "type": "frontmost_application_if"
+            }
+          ],
+          "type": "basic",
+          "from": {
+            "key_code": "semicolon",
+            "modifiers": {
+              "mandatory": ["control"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "right_arrow"
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "bundle_identifiers": [
+                "org\\.mozilla\\.firefox",
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
+              ],
+              "type": "frontmost_application_if"
+            }
+          ],
+          "type": "basic",
+          "from": {
+            "key_code": "semicolon",
+            "modifiers": {
+              "mandatory": ["command"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "right_arrow",
+              "modifiers": ["command"]
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "bundle_identifiers": [
+                "org\\.mozilla\\.firefox",
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
+              ],
+              "type": "frontmost_application_if"
+            }
+          ],
+          "type": "basic",
+          "from": {
+            "key_code": "quote",
+            "modifiers": {
+              "mandatory": ["command"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "k",
+              "modifiers": ["option", "shift"]
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "bundle_identifiers": [
+                "org\\.mozilla\\.firefox",
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
+              ],
+              "type": "frontmost_application_if"
+            }
+          ],
+          "type": "basic",
+          "from": {
+            "key_code": "x",
+            "modifiers": {
+              "mandatory": ["control"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "comma",
+              "modifiers": ["option"]
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "bundle_identifiers": [
+                "org\\.mozilla\\.firefox",
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
+              ],
+              "type": "frontmost_application_if"
+            }
+          ],
+          "type": "basic",
+          "from": {
+            "key_code": "v",
+            "modifiers": {
+              "mandatory": ["control"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "right_arrow",
+              "modifiers": ["option", "shift"]
+            },
+            {
+              "key_code": "b",
+              "modifiers": ["option"]
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "bundle_identifiers": [
+                "org\\.mozilla\\.firefox",
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
+              ],
+              "type": "frontmost_application_if"
+            }
+          ],
+          "type": "basic",
+          "from": {
+            "key_code": "n",
+            "modifiers": {
+              "mandatory": ["control"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "delete_or_backspace"
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "bundle_identifiers": [
+                "org\\.mozilla\\.firefox",
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
+              ],
+              "type": "frontmost_application_if"
+            }
+          ],
+          "type": "basic",
+          "from": {
+            "key_code": "n",
+            "modifiers": {
+              "mandatory": ["command"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "delete_or_backspace",
+              "modifiers": ["command"]
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "bundle_identifiers": [
+                "org\\.mozilla\\.firefox",
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
+              ],
+              "type": "frontmost_application_if"
+            }
+          ],
+          "type": "basic",
+          "from": {
+            "key_code": "m",
+            "modifiers": {
+              "mandatory": ["control"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "return_or_enter"
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "bundle_identifiers": [
+                "org\\.mozilla\\.firefox",
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
+              ],
+              "type": "frontmost_application_if"
+            }
+          ],
+          "type": "basic",
+          "from": {
+            "key_code": "comma",
+            "modifiers": {
+              "mandatory": ["control"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "b",
+              "modifiers": ["option"]
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "bundle_identifiers": [
+                "org\\.mozilla\\.firefox",
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
+              ],
+              "type": "frontmost_application_if"
+            }
+          ],
+          "type": "basic",
+          "from": {
+            "key_code": "comma",
+            "modifiers": {
+              "mandatory": ["command"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "i",
+              "modifiers": ["option"]
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "bundle_identifiers": [
+                "org\\.mozilla\\.firefox",
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
+              ],
+              "type": "frontmost_application_if"
+            }
+          ],
+          "type": "basic",
+          "from": {
+            "key_code": "y",
+            "modifiers": {
+              "mandatory": ["control"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "y",
+              "modifiers": ["option"]
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "bundle_identifiers": [
+                "org\\.mozilla\\.firefox",
+                "com\\.tinyspeck\\.slackmacgap",
+                "com\\.apple\\.dt\\.Xcode"
+              ],
+              "type": "frontmost_application_if"
+            }
+          ],
+          "type": "basic",
+          "from": {
+            "key_code": "p",
+            "modifiers": {
+              "mandatory": ["control"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "p",
+              "modifiers": ["option"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "description": "SlackでEnterで送信する。",
+      "manipulators": [
+        {
+          "conditions": [
+            {
+              "bundle_identifiers": ["com\\.tinyspeck\\.slackmacgap"],
+              "type": "frontmost_application_if"
+            }
+          ],
+          "type": "basic",
+          "from": {
+            "key_code": "return_or_enter"
+          },
+          "to": [
+            {
+              "key_code": "return_or_enter",
+              "modifiers": ["option"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "description": "Slackでチャンネルスイッチを手軽にする。",
+      "manipulators": [
+        {
+          "conditions": [
+            {
+              "bundle_identifiers": ["com\\.tinyspeck\\.slackmacgap"],
+              "type": "frontmost_application_if"
+            }
+          ],
+          "type": "basic",
+          "from": {
+            "key_code": "c",
+            "modifiers": {
+              "mandatory": ["command"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "down_arrow",
+              "modifiers": ["command", "shift"]
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "bundle_identifiers": ["com\\.tinyspeck\\.slackmacgap"],
+              "type": "frontmost_application_if"
+            }
+          ],
+          "type": "basic",
+          "from": {
+            "key_code": "v",
+            "modifiers": {
+              "mandatory": ["command"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "up_arrow",
+              "modifiers": ["command", "shift"]
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "bundle_identifiers": ["com\\.tinyspeck\\.slackmacgap"],
+              "type": "frontmost_application_if"
+            }
+          ],
+          "type": "basic",
+          "from": {
+            "key_code": "k",
+            "modifiers": {
+              "mandatory": ["command"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "up_arrow",
+              "modifiers": ["command"]
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "bundle_identifiers": ["com\\.tinyspeck\\.slackmacgap"],
+              "type": "frontmost_application_if"
+            }
+          ],
+          "type": "basic",
+          "from": {
+            "key_code": "l",
+            "modifiers": {
+              "mandatory": ["command"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "down_arrow",
+              "modifiers": ["command"]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

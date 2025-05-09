@@ -1,0 +1,21 @@
+# コミットごとにチェックを行う。
+name: check
+
+on:
+  push:
+    branches: master
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read # リポジトリコンテンツの読み取り
+  actions: write # キャッシュアクションに必要
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
+      - run: nix flake check
+      - run: nix run github:nix-community/home-manager -- switch --flake '.#GitHub-Actions' -n -b backup

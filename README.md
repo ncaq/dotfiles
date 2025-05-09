@@ -1,13 +1,29 @@
 # dotfiles
 
-I put dotfiles here that I don't need to separate.
+use [home-manager](https://github.com/nix-community/home-manager).
+
+## install script (transitional - will migrate to NixOS)
 
 * [./unix/etc/](./unix/etc/) -> `/etc/`
-* [./unix/home/user/](./unix/home/user/) -> `$HOME`
+
+# Git Hooks
 
 * [./git-hooks/](./git-hooks/): My git global hooks
 
-It also contains a collection of application-specific configuration files.
+# Non NixOS System Setup
+
+## Initial
+
+``` zsh
+nix run home-manager/master -- init --switch
+```
+
+## Update
+
+``` zsh
+home-manager switch --flake ".#$(hostname)"
+./install-legacy
+```
 
 # Separated dotfiles
 

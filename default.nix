@@ -1,11 +1,11 @@
 {
   config,
   lib,
+  username,
   ...
 }:
 {
-  # If login name is not `ncaq`, change it to your login name.
-  home.username = "ncaq";
+  home.username = username;
   home.homeDirectory = "/home/${config.home.username}";
   home.stateVersion = "24.11";
 

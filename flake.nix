@@ -26,13 +26,20 @@
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
       treefmtEval = treefmt-nix.lib.evalModule pkgs ./treefmt.nix;
+      mkConfig =
+        { username }:
+        home-manager.lib.homeManagerConfiguration {
+          pkgs = nixpkgs.legacyPackages.${system};
+          extraSpecialArgs = {
+            username = username;
+          };
+          modules = [ ./. ];
+        };
     in
     {
       formatter.${system} = treefmtEval.config.build.wrapper;
       checks.${system}.formatting = treefmtEval.config.build.check self;
-      homeConfigurations.default = home-manager.lib.homeManagerConfiguration {
-        pkgs = pkgs;
-        modules = [ ./. ];
-      };
+      homeConfigurations.default = mkConfig { username = "ncaq"; };
+      homeConfigurations.ci = mkConfig { username = "runner"; };
     };
 }

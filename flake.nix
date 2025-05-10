@@ -58,8 +58,8 @@
               });
           in
           {
+            "ncaq" = mkLinuxHome "ncaq";
             "GitHub-Actions" = mkLinuxHome "runner";
-            "SSD0086" = mkLinuxHome "ncaq";
           };
 
         nixosConfigurations = {

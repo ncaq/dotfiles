@@ -2,7 +2,7 @@
 {
   programs.go = {
     enable = true;
-    goPath = "${config.home.homeDirectory}/.go";
+    goPath = ".go";
   };
 
   home.sessionPath = [

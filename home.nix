@@ -11,5 +11,5 @@
 
   programs.home-manager.enable = true;
 
-  imports = [ ./link.nix ] ++ import ./package { inherit builtins lib; };
+  imports = [ ./home/link.nix ] ++ import ./home/package { inherit builtins lib; };
 }

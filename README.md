@@ -15,7 +15,7 @@ use [home-manager](https://github.com/nix-community/home-manager).
 ## Update
 
 ``` zsh
-sudo nixos-rebuild switch --flake .#$(hostname)
+sudo nixos-rebuild switch --flake '.#$(hostname)'
 ```
 
 # Non NixOS System Setup
@@ -23,13 +23,13 @@ sudo nixos-rebuild switch --flake .#$(hostname)
 ## Initial
 
 ``` zsh
-nix run home-manager/master -- init --switch
+nix run home-manager/master -- --flake '.#ncaq' init --switch .
 ```
 
 ## Update
 
 ``` zsh
-home-manager switch --flake '.#ncaq'
+home-manager --flake '.#ncaq' switch
 ./install-legacy
 ```
 

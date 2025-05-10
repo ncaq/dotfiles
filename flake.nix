@@ -53,7 +53,7 @@
               username:
               home-manager.lib.homeManagerConfiguration ({
                 pkgs = nixpkgs.legacyPackages.x86_64-linux;
-                modules = [ ./home ];
+                modules = [ ./home.nix ];
                 extraSpecialArgs = { inherit username; };
               });
           in
@@ -82,7 +82,7 @@
                     inherit inputs;
                     username = "ncaq";
                   };
-                  users.ncaq = import ./home;
+                  users.ncaq = import ./home.nix;
                 };
               }
             ];

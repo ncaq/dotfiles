@@ -7,8 +7,13 @@
       "flakes"
       "nix-command"
     ];
-    max-jobs = "auto";
     cores = 0;
+    max-jobs = "auto";
+    accept-flake-config = true;
+    trusted-users = [
+      "root"
+      "@wheel"
+    ];
   };
 
   i18n.defaultLocale = "ja_JP.UTF-8";

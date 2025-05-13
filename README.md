@@ -15,7 +15,7 @@ use [home-manager](https://github.com/nix-community/home-manager).
 ## Update
 
 ``` zsh
-sudo nixos-rebuild switch --flake '.#$(hostname)'
+sudo nixos-rebuild switch --flake ".#$(hostname)"
 ```
 
 # Non NixOS System Setup

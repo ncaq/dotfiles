@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -eu
 # get default branch, e.g. master, main.
 default_branch=$(git remote show origin|grep 'HEAD branch'|awk '{print $NF}')

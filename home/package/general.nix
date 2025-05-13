@@ -3,20 +3,28 @@
   home.packages = with pkgs; [
     bash
     cachix
+    dmd
     fd
     file
     findutils
     gnugrep
     htop
     jq
-    less
+    libwebp
     nano
     nix-prefetch
+    nkf
+    opusTools
+    oxipng
+    parallel
+    patool
     plantuml
     plocate
     python3
+    rakudo
     ripgrep
     rsync
+    trashy
     tree
     wget
   ];

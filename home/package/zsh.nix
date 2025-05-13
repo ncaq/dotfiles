@@ -8,15 +8,22 @@ let
   zshDotDir = "${config.home.homeDirectory}/.zsh.d";
 in
 {
-  programs.zsh = {
-    enable = true;
+  programs = {
+    zsh = {
+      enable = true;
 
-    # Nixの自動生成するものではないユーザのzshrcを読み込む。
-    initContent = ''
-      if [ -f "${zshDotDir}/.zshrc" ]; then
-        source "${zshDotDir}/.zshrc"
-      fi
-    '';
+      # Nixの自動生成するものではないユーザのzshrcを読み込む。
+      initContent = ''
+        if [ -f "${zshDotDir}/.zshrc" ]; then
+          source "${zshDotDir}/.zshrc"
+        fi
+      '';
+    };
+
+    autojump = {
+      enable = true;
+      enableZshIntegration = true;
+    };
   };
 
   home.activation.cloneZshDotDir = lib.hm.dag.entryAfter [ "writeBoundary" ] ''

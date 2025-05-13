@@ -1,8 +1,12 @@
 { pkgs, ... }:
 {
-  home.packages = with pkgs.xorg; [
-    xrdb
-  ];
+  home.packages =
+    (with pkgs; [
+      xsel
+    ])
+    ++ (with pkgs.xorg; [
+      xrdb
+    ]);
 
   # X リソースファイルを直接定義
   xresources.properties = {

@@ -71,7 +71,7 @@
             };
             modules = [
               ./nixos/configuration.nix
-              ./nixos/host/SSD0086
+              ./nixos/host/SSD0086.nix
               nixos-wsl.nixosModules.default
               home-manager.nixosModules.home-manager
               {

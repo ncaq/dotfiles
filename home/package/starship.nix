@@ -11,7 +11,7 @@
 
       status = {
         disabled = false;
-        format = "[\[$symbol $common_meaning $signal_name $int\]]($style) ";
+        format = "[\\[$symbol $common_meaning $signal_name $int\\]]($style) ";
       };
 
       time = {

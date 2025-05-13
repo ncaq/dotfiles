@@ -2,10 +2,6 @@
 
 use [home-manager](https://github.com/nix-community/home-manager).
 
-## install script (transitional - will migrate to NixOS)
-
-* [./unix/etc/](./unix/etc/) -> `/etc/`
-
 # Git Hooks
 
 * [./git-hooks/](./git-hooks/): My git global hooks
@@ -30,7 +26,6 @@ nix run home-manager/master -- --flake '.#ncaq' init --switch .
 
 ``` zsh
 home-manager --flake '.#ncaq' switch
-./install-legacy
 ```
 
 # Separated dotfiles

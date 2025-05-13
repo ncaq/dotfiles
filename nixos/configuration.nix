@@ -25,7 +25,9 @@
     zsh.enable = true;
   };
 
-  services.dbus.packages = [ pkgs.dconf ];
+  services = {
+    dbus.packages = [ pkgs.dconf ];
+  };
 
   users.users.ncaq = {
     isNormalUser = true;
@@ -34,4 +36,8 @@
     ];
     shell = pkgs.zsh;
   };
+
+  imports = [
+    ./locate.nix
+  ];
 }

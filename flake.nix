@@ -71,7 +71,7 @@
             };
             modules = [
               ./nixos/configuration.nix
-              ./nixos/host/SSD0086
+              ./nixos/host/SSD0086.nix
               nixos-wsl.nixosModules.default
               home-manager.nixosModules.home-manager
               {
@@ -92,8 +92,8 @@
 
       perSystem =
         {
-          config,
           pkgs,
+          config,
           ...
         }:
         {
@@ -107,11 +107,7 @@
             };
           };
 
-          devShells.default = pkgs.mkShell {
-            buildInputs = with pkgs; [
-              nixos-rebuild
-            ];
-          };
+          devShells.default = pkgs.mkShell { };
         };
     };
 }

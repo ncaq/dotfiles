@@ -7,8 +7,8 @@
       "flakes"
       "nix-command"
     ];
-    max-jobs = "auto";
     cores = 0;
+    max-jobs = "auto";
   };
 
   i18n.defaultLocale = "ja_JP.UTF-8";

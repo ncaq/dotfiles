@@ -92,8 +92,8 @@
 
       perSystem =
         {
-          config,
           pkgs,
+          config,
           ...
         }:
         {
@@ -107,11 +107,7 @@
             };
           };
 
-          devShells.default = pkgs.mkShell {
-            buildInputs = with pkgs; [
-              nixos-rebuild
-            ];
-          };
+          devShells.default = pkgs.mkShell { };
         };
     };
 }

@@ -20,9 +20,12 @@
 
   time.timeZone = "Asia/Tokyo";
 
-  programs.zsh.enable = true;
+  programs = {
+    dconf.enable = true;
+    zsh.enable = true;
+  };
+
   services.dbus.packages = [ pkgs.dconf ];
-  programs.dconf.enable = true;
 
   users.users.ncaq = {
     isNormalUser = true;

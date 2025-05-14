@@ -1,10 +1,11 @@
 {
   config,
   isWSL,
+  username,
   ...
 }:
 let
-  windowsUsername = "ncaq";
+  windowsUsername = username;
   WindowsUserHome = "/mnt/c/Users/${windowsUsername}";
 in
 {

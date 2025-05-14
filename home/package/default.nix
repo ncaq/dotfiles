@@ -1,5 +1,5 @@
 # all re-export.
-{ builtins, lib }:
+{ lib, ... }:
 let
   nixFiles = builtins.readDir ./.;
   moduleFiles = lib.filterAttrs (

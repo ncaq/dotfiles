@@ -54,7 +54,10 @@
               home-manager.lib.homeManagerConfiguration ({
                 pkgs = nixpkgs.legacyPackages.x86_64-linux;
                 modules = [ ./home.nix ];
-                extraSpecialArgs = { inherit username; };
+                extraSpecialArgs = {
+                  inherit username;
+                  isWSL = false;
+                };
               });
           in
           {
@@ -63,30 +66,32 @@
           };
 
         nixosConfigurations = {
-          "SSD0086" = nixpkgs.lib.nixosSystem {
-            system = "x86_64-linux";
-            specialArgs = {
-              inherit inputs;
-              username = "ncaq";
-            };
-            modules = [
-              ./nixos/configuration.nix
-              ./nixos/host/SSD0086.nix
-              nixos-wsl.nixosModules.default
-              home-manager.nixosModules.home-manager
-              {
-                home-manager = {
-                  useGlobalPkgs = true;
-                  useUserPackages = true;
-                  extraSpecialArgs = {
-                    inherit inputs;
-                    username = "ncaq";
+          "SSD0086" =
+            let
+              specialArgs = {
+                inherit inputs;
+                username = "ncaq";
+                isWSL = true;
+              };
+            in
+            nixpkgs.lib.nixosSystem {
+              system = "x86_64-linux";
+              specialArgs = specialArgs;
+              modules = [
+                nixos-wsl.nixosModules.default
+                ./nixos/configuration.nix
+                ./nixos/host/SSD0086.nix
+                home-manager.nixosModules.home-manager
+                {
+                  home-manager = {
+                    useGlobalPkgs = true;
+                    useUserPackages = true;
+                    extraSpecialArgs = specialArgs;
+                    users.ncaq = import ./home.nix;
                   };
-                  users.ncaq = import ./home.nix;
-                };
-              }
-            ];
-          };
+                }
+              ];
+            };
         };
       };
 

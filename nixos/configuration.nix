@@ -38,6 +38,7 @@
   };
 
   imports = [
+    ./unfree.nix
     ./locate.nix
   ];
 }

@@ -63,30 +63,31 @@
           };
 
         nixosConfigurations = {
-          "SSD0086" = nixpkgs.lib.nixosSystem {
-            system = "x86_64-linux";
-            specialArgs = {
-              inherit inputs;
-              username = "ncaq";
-            };
-            modules = [
-              ./nixos/configuration.nix
-              ./nixos/host/SSD0086.nix
-              nixos-wsl.nixosModules.default
-              home-manager.nixosModules.home-manager
-              {
-                home-manager = {
-                  useGlobalPkgs = true;
-                  useUserPackages = true;
-                  extraSpecialArgs = {
-                    inherit inputs;
-                    username = "ncaq";
+          "SSD0086" =
+            let
+              specialArgs = {
+                inherit inputs;
+                username = "ncaq";
+              };
+            in
+            nixpkgs.lib.nixosSystem {
+              system = "x86_64-linux";
+              specialArgs = specialArgs;
+              modules = [
+                ./nixos/configuration.nix
+                ./nixos/host/SSD0086.nix
+                nixos-wsl.nixosModules.default
+                home-manager.nixosModules.home-manager
+                {
+                  home-manager = {
+                    useGlobalPkgs = true;
+                    useUserPackages = true;
+                    extraSpecialArgs = specialArgs;
+                    users.ncaq = import ./home.nix;
                   };
-                  users.ncaq = import ./home.nix;
-                };
-              }
-            ];
-          };
+                }
+              ];
+            };
         };
       };
 

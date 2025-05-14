@@ -68,6 +68,7 @@
               specialArgs = {
                 inherit inputs;
                 username = "ncaq";
+                isWSL = true;
               };
             in
             nixpkgs.lib.nixosSystem {

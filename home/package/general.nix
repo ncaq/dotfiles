@@ -5,6 +5,7 @@
     cachix
     dmd
     fd
+    ffmpeg
     file
     findutils
     gnugrep
@@ -20,6 +21,7 @@
     patool
     plantuml
     plocate
+    pstree
     python3
     rakudo
     ripgrep

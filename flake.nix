@@ -74,9 +74,9 @@
               system = "x86_64-linux";
               specialArgs = specialArgs;
               modules = [
+                nixos-wsl.nixosModules.default
                 ./nixos/configuration.nix
                 ./nixos/host/SSD0086.nix
-                nixos-wsl.nixosModules.default
                 home-manager.nixosModules.home-manager
                 {
                   home-manager = {

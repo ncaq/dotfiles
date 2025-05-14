@@ -1,10 +1,10 @@
-{ ... }:
+{ username, ... }:
 {
   wsl = {
     enable = true;
 
-    defaultUser = "ncaq";
-    wslConf.user.default = "ncaq";
+    defaultUser = username;
+    wslConf.user.default = username;
 
     docker-desktop.enable = true;
 

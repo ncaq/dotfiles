@@ -6,6 +6,8 @@
     nil
     nix-diff
     nix-prefetch
+    nix-prefetch-git
+    nix-prefetch-github
     nixfmt-rfc-style
   ];
 }

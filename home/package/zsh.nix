@@ -20,10 +20,7 @@ in
       '';
     };
 
-    autojump = {
-      enable = true;
-      enableZshIntegration = true;
-    };
+    autojump.enable = true;
   };
 
   home.activation.cloneZshDotDir = lib.hm.dag.entryAfter [ "writeBoundary" ] ''

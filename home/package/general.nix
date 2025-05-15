@@ -16,7 +16,6 @@
     plantuml
     pstree
     rakudo
-    ripgrep
     trashy
   ];
 }

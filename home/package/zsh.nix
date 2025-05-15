@@ -23,6 +23,11 @@ in
     autojump.enable = true;
   };
 
+  # nix-shell use zsh.
+  home.sessionVariables = {
+    NIX_BUILD_SHELL = "${pkgs.zsh}/bin/zsh";
+  };
+
   home.activation.cloneZshDotDir = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     if [ ! -d "${zshDotDir}" ]; then
       $DRY_RUN_CMD ${pkgs.git}/bin/git clone https://github.com/ncaq/.zsh.d.git "${zshDotDir}"

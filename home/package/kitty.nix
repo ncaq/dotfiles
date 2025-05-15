@@ -33,10 +33,5 @@
       mouse_map shift+left scroll_page_up
       mouse_map shift+right scroll_page_down
     '';
-
-    shellIntegration = {
-      enableBashIntegration = true;
-      enableZshIntegration = true;
-    };
   };
 }

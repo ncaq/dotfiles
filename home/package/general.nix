@@ -5,6 +5,7 @@
     dmd
     fd
     ffmpeg
+    file
     htop
     jq
     libwebp

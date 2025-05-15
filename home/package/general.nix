@@ -13,7 +13,6 @@
     jq
     libwebp
     nano
-    nix-prefetch
     nkf
     opusTools
     oxipng

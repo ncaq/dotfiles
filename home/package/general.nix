@@ -1,32 +1,22 @@
 { pkgs, ... }:
 {
   home.packages = with pkgs; [
-    bash
     cachix
     dmd
     fd
     ffmpeg
-    file
-    findutils
-    gnugrep
     htop
     jq
     libwebp
-    nano
     nkf
     opusTools
     oxipng
     parallel
     patool
     plantuml
-    plocate
     pstree
-    python3
     rakudo
     ripgrep
-    rsync
     trashy
-    tree
-    wget
   ];
 }

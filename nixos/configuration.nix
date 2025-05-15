@@ -26,7 +26,7 @@
 
   imports = [
     ./nix-settings.nix
-    ./unfree.nix
     ./locate.nix
+    ./unfree.nix
   ];
 }

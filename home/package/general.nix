@@ -17,5 +17,6 @@
     pstree
     rakudo
     trashy
+    tree
   ];
 }

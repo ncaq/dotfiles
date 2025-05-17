@@ -1,7 +1,7 @@
 { ... }:
 {
   programs.kitty = {
-    enable = true;
+    enable = false;
 
     settings = {
       font_size = 12;

@@ -9,7 +9,7 @@ It's managed by
 # Setup
 
 Warning,
-my default `$USERNAME` is `ncaq`.
+my default `${USER}` is `ncaq`.
 I haven't tested with other usernames.
 I write username by hardcode.
 Maybe, if you want to use other username, you need to change code.
@@ -23,7 +23,7 @@ TODO: Add NixOS setup instructions
 ### Non NixOS(home-manager standalone)
 
 ``` zsh
-nix run home-manager/master -- --flake '.#ncaq' init --switch .
+nix run home-manager/master -- --flake ".#${USER}" init --switch .
 ```
 
 ## Rebuild
@@ -37,7 +37,27 @@ sudo nixos-rebuild switch --flake ".#$(hostname)"
 ### Non NixOS(home-manager standalone)
 
 ``` zsh
-home-manager --flake '.#ncaq' switch
+home-manager --flake ".#${USER}" switch
+```
+
+# Format
+
+``` zsh
+nix fmt
+```
+
+# Check
+
+## Static
+
+``` zsh
+nix flake check
+```
+
+## Dynamic
+
+``` zsh
+nix run github:nix-community/home-manager -- switch --flake ".#${USER}" -n -b backup
 ```
 
 # Directory Structure

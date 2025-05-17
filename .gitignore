@@ -1,8 +1,8 @@
 # nix-direnv use cache dir.
-.direnv/
+/.direnv/
 
 # direnv load dotenv if exist.
-.env.local
+.env*local
 
-# nix build
-result
+# nix build result.
+/result/

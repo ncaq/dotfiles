@@ -1,14 +1,26 @@
 # dotfiles
 
-use [home-manager](https://github.com/nix-community/home-manager).
+My main configuration files.
+
+It's managed by
+[NixOS | Declarative builds and deployments](https://nixos.org/) and
+[home-manager](https://github.com/nix-community/home-manager).
 
 # Git Hooks
 
-* [./git-hooks/](./git-hooks/): My git global hooks
+[./git-hooks/](./git-hooks/)
+
+These are my Git global hooks.
 
 # NixOS System Setup
 
-## Update
+Warning,
+my default `$USERNAME` is `ncaq`.
+I haven't tested with other usernames.
+I write username by hardcode.
+Maybe, if you want to use other username, you need to change code.
+
+## Rebuild
 
 ``` zsh
 sudo nixos-rebuild switch --flake ".#$(hostname)"
@@ -22,7 +34,7 @@ sudo nixos-rebuild switch --flake ".#$(hostname)"
 nix run home-manager/master -- --flake '.#ncaq' init --switch .
 ```
 
-## Update
+## Rebuild
 
 ``` zsh
 home-manager --flake '.#ncaq' switch

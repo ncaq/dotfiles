@@ -6,13 +6,7 @@ It's managed by
 [NixOS | Declarative builds and deployments](https://nixos.org/) and
 [home-manager](https://github.com/nix-community/home-manager).
 
-# Git Hooks
-
-[./git-hooks/](./git-hooks/)
-
-These are my Git global hooks.
-
-# NixOS System Setup
+# Setup
 
 Warning,
 my default `$USERNAME` is `ncaq`.
@@ -20,15 +14,13 @@ I haven't tested with other usernames.
 I write username by hardcode.
 Maybe, if you want to use other username, you need to change code.
 
-## Rebuild
-
-``` zsh
-sudo nixos-rebuild switch --flake ".#$(hostname)"
-```
-
-# Non NixOS System Setup
-
 ## Initial
+
+### NixOS
+
+TODO: Add NixOS setup instructions
+
+### Non NixOS(home-manager standalone)
 
 ``` zsh
 nix run home-manager/master -- --flake '.#ncaq' init --switch .
@@ -36,9 +28,51 @@ nix run home-manager/master -- --flake '.#ncaq' init --switch .
 
 ## Rebuild
 
+### NixOS
+
+``` zsh
+sudo nixos-rebuild switch --flake ".#$(hostname)"
+```
+
+### Non NixOS(home-manager standalone)
+
 ``` zsh
 home-manager --flake '.#ncaq' switch
 ```
+
+# Directory Structure
+
+## [flake.nix](./flake.nix)
+
+The entry point of the flake.
+
+## [home.nix](./home.nix), [home/](./home/)
+
+The home-manager configuration files.
+
+`home.nix` is home-manager root file.
+`home/` contains the home-manager configuration files.
+
+### [home/link.nix](./home/link.nix), [home/linked/](./home/linked/)
+
+Create symbolic links from filepath.
+`link.nix` is the program that creates them.
+`linked/` contains the linked files.
+
+### [home/package/](./home/package/)
+
+To install packages.
+
+## [nixos/](./nixos/)
+
+NixOS configuration files.
+
+## [git-hooks/](./git-hooks/)
+
+These are my Git global hooks.
+
+It's semi standalone.
+I might move it to a separate repository because it's unrelated to Nix.
 
 # Separated dotfiles
 

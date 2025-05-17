@@ -60,6 +60,12 @@ nix flake check
 nix run github:nix-community/home-manager -- switch --flake ".#${USER}" -n -b backup
 ```
 
+# Policy
+
+As a general approach,
+I'm managing everything possible with home-manager.
+I only use the NixOS configuration part when absolutely necessary.
+
 # Directory Structure
 
 ## [flake.nix](./flake.nix)

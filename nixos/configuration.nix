@@ -18,6 +18,7 @@
     isNormalUser = true;
     extraGroups = [
       "wheel"
+      "input"
     ];
     shell = pkgs.zsh;
   };
@@ -25,6 +26,7 @@
   imports = [
     ./nix-settings.nix
     ./locate.nix
+    ./uinput.nix
     ./unfree.nix
   ];
 }

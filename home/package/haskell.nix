@@ -25,7 +25,6 @@ in
       cabal-install
       cabal2nix
       haskell-ci
-      haskell-language-server
       hlint
       hpack
       stack

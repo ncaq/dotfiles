@@ -20,9 +20,7 @@
 
     nixos-wsl = {
       url = "github:nix-community/NixOS-WSL/main";
-      inputs = {
-        nixpkgs.follows = "nixpkgs";
-      };
+      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     dot-xmonad.url = "github:ncaq/.xmonad";
@@ -40,8 +38,8 @@
     }:
     flake-parts.lib.mkFlake { inherit inputs; } {
       imports = [
-        inputs.home-manager.flakeModules.home-manager
-        inputs.treefmt-nix.flakeModule
+        home-manager.flakeModules.home-manager
+        treefmt-nix.flakeModule
       ];
 
       systems = [
@@ -60,9 +58,8 @@
                 pkgs = nixpkgs.legacyPackages.x86_64-linux;
                 modules = [ ./home.nix ];
                 extraSpecialArgs = {
-                  inherit username;
+                  inherit username dot-xmonad;
                   isWSL = false;
-                  dot-xmonad = dot-xmonad;
                 };
               });
           in
@@ -75,15 +72,14 @@
           "SSD0086" =
             let
               specialArgs = {
-                inherit inputs;
+                inherit inputs dot-xmonad;
                 username = "ncaq";
                 isWSL = true;
-                dot-xmonad = dot-xmonad;
               };
             in
             nixpkgs.lib.nixosSystem {
+              inherit specialArgs;
               system = "x86_64-linux";
-              specialArgs = specialArgs;
               modules = [
                 nixos-wsl.nixosModules.default
                 ./nixos/configuration.nix

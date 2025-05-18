@@ -5,7 +5,6 @@
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
 
     flake-parts.url = "github:hercules-ci/flake-parts";
-    flake-compat.url = "github:edolstra/flake-compat";
 
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";
@@ -23,22 +22,10 @@
       url = "github:nix-community/NixOS-WSL/main";
       inputs = {
         nixpkgs.follows = "nixpkgs";
-        flake-compat.follows = "flake-compat";
       };
     };
 
-    haskellNix = {
-      url = "github:input-output-hk/haskell.nix";
-      inputs = {
-        nixpkgs.follows = "nixpkgs";
-        flake-compat.follows = "flake-compat";
-      };
-    };
-
-    dot-xmonad = {
-      url = "github:ncaq/.xmonad";
-      inputs.haskellNix.follows = "haskellNix";
-    };
+    dot-xmonad.url = "github:ncaq/.xmonad";
   };
 
   outputs =
@@ -131,7 +118,6 @@
               shfmt.enable = true;
             };
           };
-
           devShells.default = pkgs.mkShell { };
         };
     };

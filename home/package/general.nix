@@ -17,6 +17,7 @@
     plantuml
     pstree
     rakudo
+    shellcheck
     squashfsTools
     trashy
     tree

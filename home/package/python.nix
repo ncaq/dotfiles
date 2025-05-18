@@ -8,7 +8,6 @@
   home.packages = with pkgs; [
     black
     isort
-    jupyter
     pipenv
     pyright
   ];

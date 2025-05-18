@@ -24,12 +24,10 @@ in
     (with pkgs; [
       cabal-install
       cabal2nix
-      ghc
       haskell-ci
       haskell-language-server
       hlint
       hpack
-      ormolu
       stack
       stylish-haskell
     ])

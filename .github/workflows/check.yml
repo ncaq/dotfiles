@@ -25,4 +25,14 @@ jobs:
           name: ncaq-dotfiles
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - run: nix flake check
+      - name: Print system summary
+        run: |
+          echo '==== uname -a ===='
+          uname -a
+          echo '==== CPU info ===='
+          lscpu | grep -E 'Model name|CPU\(s\)|Thread|Core|Socket|MHz'
+          echo '==== Memory ===='
+          free -h
+          echo '==== Disk ===='
+          df -hT
       - run: nix run github:nix-community/home-manager -- switch --flake '.#GitHub-Actions' -n -b backup

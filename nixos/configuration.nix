@@ -1,6 +1,6 @@
 { pkgs, ... }:
 {
-  system.stateVersion = "24.11";
+  system.stateVersion = "25.05";
 
   i18n.defaultLocale = "ja_JP.UTF-8";
 

@@ -5,6 +5,7 @@
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
 
     flake-parts.url = "github:hercules-ci/flake-parts";
+    flake-compat.url = "github:edolstra/flake-compat";
 
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";
@@ -20,7 +21,23 @@
 
     nixos-wsl = {
       url = "github:nix-community/NixOS-WSL/main";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-compat.follows = "flake-compat";
+      };
+    };
+
+    haskellNix = {
+      url = "github:input-output-hk/haskell.nix";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-compat.follows = "flake-compat";
+      };
+    };
+
+    dot-xmonad = {
+      url = "github:ncaq/.xmonad";
+      inputs.haskellNix.follows = "haskellNix";
     };
   };
 
@@ -31,6 +48,7 @@
       treefmt-nix,
       home-manager,
       nixos-wsl,
+      dot-xmonad,
       ...
     }:
     flake-parts.lib.mkFlake { inherit inputs; } {
@@ -57,6 +75,7 @@
                 extraSpecialArgs = {
                   inherit username;
                   isWSL = false;
+                  dot-xmonad = dot-xmonad;
                 };
               });
           in
@@ -72,6 +91,7 @@
                 inherit inputs;
                 username = "ncaq";
                 isWSL = true;
+                dot-xmonad = dot-xmonad;
               };
             in
             nixpkgs.lib.nixosSystem {

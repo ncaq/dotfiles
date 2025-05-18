@@ -20,6 +20,8 @@ jobs:
         with:
           extra_nix_config: |
             accept-flake-config = true
+            min-free = 3000000000  # 3GB必要時に自動的にgarbage collect
+            max-free = 5000000000  # 5GBまで確保
       - uses: cachix/cachix-action@v16
         with:
           name: ncaq-dotfiles
@@ -36,3 +38,8 @@ jobs:
           echo '==== Disk ===='
           df -hT
       - run: nix run github:nix-community/home-manager -- switch --flake '.#GitHub-Actions' -n -b backup
+      - name: Monitor disk usage after nix command
+        run: |
+          echo '==== Disk usage after ===='
+          df -hT /
+        if: always()

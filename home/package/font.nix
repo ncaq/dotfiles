@@ -5,20 +5,9 @@
 
   # 必要なフォントパッケージをインストール
   home.packages = with pkgs; [
-    # 基本フォント
+    hackgen-nf-font
     noto-fonts
-    noto-fonts-cjk-sans
-    noto-fonts-cjk-serif
     noto-fonts-emoji
-
-    # プログラミングフォント
-    hackgen-nf-font # HackGen Console NFをインストール
-    jetbrains-mono
-
-    # その他必要なフォント
-    ubuntu_font_family
-    ipafont
-    ipaexfont
   ];
 
   # fontconfigの設定

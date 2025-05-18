@@ -1,4 +1,4 @@
-{ dot-xmonad, ... }:
+{ pkgs, dot-xmonad, ... }:
 {
   xsession = {
     enable = true;
@@ -6,6 +6,6 @@
   };
 
   home.packages = [
-    dot-xmonad
+    dot-xmonad.packages.${pkgs.system}.default
   ];
 }

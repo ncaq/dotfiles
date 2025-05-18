@@ -24,27 +24,20 @@ in
     (with pkgs; [
       cabal-install
       cabal2nix
-      ghc
       haskell-ci
-      haskell-language-server
       hlint
       hpack
-      ormolu
+      pandoc
       stack
       stylish-haskell
     ])
     ++ (with pkgs.haskellPackages; [
-      ShellCheck
-      apply-refact
       cabal-fmt
       cabal-gild
       cabal-plan
       fourmolu
-      homura-stopwatch
       implicit-hie
-      pandoc-cli
       uniq-deep
-      weeder
     ]);
 
   home.file.".stack/config.yaml".source = yamlFormat.generate "stack-config" stackConfig;

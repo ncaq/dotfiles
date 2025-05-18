@@ -23,7 +23,7 @@ TODO: Add NixOS setup instructions
 ### Non NixOS(home-manager standalone)
 
 ``` zsh
-nix run home-manager/master -- --flake ".#${USER}" init --switch .
+nix run home-manager/release-25.05 -- --flake ".#${USER}" init --switch .
 ```
 
 ## Rebuild

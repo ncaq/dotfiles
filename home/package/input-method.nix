@@ -13,12 +13,4 @@
   home.packages = with pkgs.ibus-engines; [
     mozc-ut
   ];
-
-  home.sessionVariables = {
-    GLFW_IM_MODULE = "ibus";
-    GTK_IM_MODULE = "fcitx";
-    QT_IM_MODULE = "fcitx";
-    SDL_IM_MODULE = "fcitx";
-    XMODIFIERS = "@im=fcitx";
-  };
 }

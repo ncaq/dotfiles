@@ -10,15 +10,31 @@
     ];
   };
 
-  home.packages = with pkgs.ibus-engines; [
-    mozc-ut
-  ];
-
-  home.sessionVariables = {
-    GLFW_IM_MODULE = "ibus";
-    GTK_IM_MODULE = "fcitx";
-    QT_IM_MODULE = "fcitx";
-    SDL_IM_MODULE = "fcitx";
-    XMODIFIERS = "@im=fcitx";
+  xdg.configFile = {
+    # profileは頻繁にfcitxが自動で書き換えるため、強制的に上書きする
+    "fcitx5/profile" = {
+      force = true;
+      text = ''
+        [Groups/0]
+        # Group Name
+        Name=デフォルト
+        # Layout
+        Default Layout=us-dvorak
+        # Default Input Method
+        DefaultIM=keyboard-us-dvorak
+        [Groups/0/Items/0]
+        # Name
+        Name=mozc
+        # Layout
+        Layout=
+        [Groups/0/Items/1]
+        # Name
+        Name=keyboard-us-dvorak
+        # Layout
+        Layout=
+        [GroupOrder]
+        0=デフォルト
+      '';
+    };
   };
 }

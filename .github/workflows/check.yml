@@ -36,3 +36,8 @@ jobs:
           echo '==== Disk ===='
           df -hT
       - run: nix run github:nix-community/home-manager -- switch --flake '.#GitHub-Actions' -n -b backup
+      - name: Monitor disk usage after nix command
+        run: |
+          echo '==== Disk usage after ===='
+          df -hT /
+        if: always()

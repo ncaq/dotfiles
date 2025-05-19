@@ -10,6 +10,10 @@
     ];
   };
 
+  home.packages = with pkgs; [
+    ibus-engines.mozc-ut # install mozc_emacs_helper
+  ];
+
   xdg.configFile = {
     # profileは頻繁にfcitxが自動で書き換えるため、強制的に上書きする
     "fcitx5/profile" = {

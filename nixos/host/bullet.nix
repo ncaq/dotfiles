@@ -1,7 +1,5 @@
 { ... }:
 {
-  networking.hostName = "bullet";
-
   boot = {
     loader = {
       grub = {

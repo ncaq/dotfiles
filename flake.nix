@@ -77,7 +77,12 @@
               { hostName, isWSL }:
               let
                 specialArgs = {
-                  inherit inputs dot-xmonad isWSL;
+                  inherit
+                    inputs
+                    hostName
+                    isWSL
+                    dot-xmonad
+                    ;
                   username = "ncaq";
                 };
               in

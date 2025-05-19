@@ -121,6 +121,9 @@
           apps = {
             cachix-push = {
               type = "app";
+              meta = {
+                description = "Push cache to cachix";
+              };
               program = pkgs.writeShellApplication {
                 name = "cachix-push";
                 runtimeInputs = with pkgs; [

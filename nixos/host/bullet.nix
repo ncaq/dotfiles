@@ -1,19 +1,20 @@
 { ... }:
 {
-  boot = {
-    loader = {
-      grub = {
-        enable = true;
-        device = "/dev/dummy";
-        useOSProber = true;
-      };
-    };
-  };
+  imports = [ ./bullet/disko-config.nix ];
 
-  fileSystems = {
-    "/" = {
-      device = "/dev/dummy";
-      fsType = "btrfs";
+  boot.loader = {
+    efi = {
+      canTouchEfiVariables = true;
+      efiSysMountPoint = "/boot";
+    };
+    grub = {
+      enable = true;
+      useOSProber = true;
+      efiSupport = true;
+      devices = [ "nodev" ];
+      extraConfig = ''
+        GRUB_CMDLINE_LINUX="rootflags=subvol=@"
+      '';
     };
   };
 }

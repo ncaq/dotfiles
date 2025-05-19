@@ -2,7 +2,6 @@
 {
   programs = {
     poetry.enable = true;
-    pyenv.enable = true;
   };
 
   home.packages = with pkgs; [
@@ -10,5 +9,6 @@
     isort
     pipenv
     pyright
+    python3
   ];
 }

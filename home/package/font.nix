@@ -1,80 +1,44 @@
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
+let
+  fontAliases = {
+    "DejaVu Sans" = "sans-serif";
+    "Liberation Mono" = "monospace";
+    "Liberation Sans" = "sans-serif";
+  };
+  generateMatchEntry = originalFamily: targetFamily: ''
+    <match target="pattern">
+      <test name="family"><string>${originalFamily}</string></test>
+      <edit name="family" binding="same" mode="assign"><string>${targetFamily}</string></edit>
+    </match>
+  '';
+  generateOverrideConf =
+    aliases: lib.concatStringsSep "\n" (lib.mapAttrsToList generateMatchEntry aliases);
+in
 {
-  # システムフォントのインストール
-  fonts.fontconfig.enable = true;
+  fonts.fontconfig = {
+    enable = true;
+    defaultFonts = {
+      sansSerif = [ "monospace" ]; # 私は通常の英文でも等幅フォントの方が読みやすいと感じる
+      serif = [
+        "Noto Serif CJK JP"
+        "emoji"
+      ];
+      monospace = [
+        "HackGen Console NF"
+        "emoji"
+      ];
+      emoji = [ "Noto Color Emoji" ];
+    };
+  };
 
-  # 必要なフォントパッケージをインストール
   home.packages = with pkgs; [
     hackgen-nf-font
     noto-fonts
+    noto-fonts-cjk-sans
+    noto-fonts-cjk-serif
     noto-fonts-emoji
   ];
 
-  # fontconfigの設定
-  xdg.configFile."fontconfig/conf.d/99-personal-fonts.conf".text = ''
-    <?xml version="1.0"?>
-    <!DOCTYPE fontconfig SYSTEM "fonts.dtd">
-    <fontconfig>
-      <match target="font">
-        <!-- ヒンティングをフォントの形が崩れても最大限に有効にする。 -->
-        <edit name="hintstyle" mode="assign"><const>hintfull</const></edit>
-        <!-- 殆どのモニターはRGB配列であるだろうと仮定してサブピクセルレンダリングを決め打つ。 -->
-        <edit name="rgba" mode="assign"><const>rgb</const></edit>
-      </match>
-
-      <!--
-          MathJaxが使っている数学フォントをローカルのシステムでも使います。
-      -->
-      <dir>/usr/share/mathjax/fonts/HTML-CSS/TeX/woff/</dir>
-
-      <!--
-          WSL環境でWindowsにインストールされているフォントを利用します。
-      -->
-      <dir>/mnt/c/Patched Fonts/</dir>
-      <dir>/mnt/c/Windows/Fonts/</dir>
-
-      <!--
-          ビットマップを含んだフォントは現代環境だと非常に汚いので除外します。
-          プロパティでの除外はうまく行かなかったものもありました。
-      -->
-      <selectfont>
-        <rejectfont><glob>/usr/share/fonts/100dpi/*</glob></rejectfont>
-        <rejectfont><glob>/usr/share/fonts/kochi-substitute/*</glob></rejectfont>
-        <rejectfont><glob>/usr/share/fonts/sazanami/*</glob></rejectfont>
-        <rejectfont><glob>/usr/share/fonts/urw-fonts/*</glob></rejectfont>
-      </selectfont>
-
-      <!--
-          英文とかも全部等幅フォントの方が読みやすいと思っているのでそちらを優先します。
-      -->
-      <match target="pattern">
-        <test name="family"><string>sans-serif</string></test>
-        <edit name="family" binding="same" mode="prepend"><string>monospace</string></edit>
-      </match>
-
-      <!--
-          HackGenの絵文字含んだ記号が半角のものを使います。
-      -->
-      <match target="pattern">
-        <test name="family"><string>monospace</string></test>
-        <edit name="family" binding="same" mode="prepend"><string>HackGen Console NF</string></edit>
-      </match>
-
-      <!--
-          GNU/Linux環境を意識して標準的なフォントを指定してくるwebサイト向けにこちらの指定するフォントを使わせたいのでマッピングします。
-      -->
-      <match target="pattern">
-        <test name="family"><string>DejaVu Sans</string></test>
-        <edit name="family" binding="same" mode="assign"><string>sans-serif</string></edit>
-      </match>
-      <match target="pattern">
-        <test name="family"><string>Liberation Sans</string></test>
-        <edit name="family" binding="same" mode="assign"><string>sans-serif</string></edit>
-      </match>
-      <match target="pattern">
-        <test name="family"><string>Liberation Mono</string></test>
-        <edit name="family" binding="same" mode="assign"><string>monospace</string></edit>
-      </match>
-    </fontconfig>
-  '';
+  # GNU/Linux環境の標準的なフォントを指定してくるwebサイト向けにこちらの指定するフォントを使わせたい。
+  xdg.configFile."fontconfig/conf.d/90-override.conf".text = generateOverrideConf fontAliases;
 }

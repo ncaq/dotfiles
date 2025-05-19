@@ -72,6 +72,31 @@
           };
 
         nixosConfigurations = {
+          "bullet" =
+            let
+              specialArgs = {
+                inherit inputs dot-xmonad;
+                username = "ncaq";
+                isWSL = false;
+              };
+            in
+            nixpkgs.lib.nixosSystem {
+              system = "x86_64-linux";
+              modules = [
+                ./nixos/configuration.nix
+                ./nixos/host/bullet.nix
+                home-manager.nixosModules.home-manager
+                {
+                  home-manager = {
+                    useGlobalPkgs = true;
+                    useUserPackages = true;
+                    extraSpecialArgs = specialArgs;
+                    users.ncaq = import ./home.nix;
+                  };
+                }
+              ];
+              inherit specialArgs;
+            };
           "SSD0086" =
             let
               specialArgs = {

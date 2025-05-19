@@ -58,7 +58,7 @@
                 pkgs = nixpkgs.legacyPackages.x86_64-linux;
                 modules = [ ./home.nix ];
                 extraSpecialArgs = {
-                  inherit username dot-xmonad;
+                  inherit inputs dot-xmonad username;
                   isWSL = false;
                 };
               });
@@ -78,7 +78,6 @@
               };
             in
             nixpkgs.lib.nixosSystem {
-              inherit specialArgs;
               system = "x86_64-linux";
               modules = [
                 nixos-wsl.nixosModules.default
@@ -94,6 +93,7 @@
                   };
                 }
               ];
+              inherit specialArgs;
             };
         };
       };

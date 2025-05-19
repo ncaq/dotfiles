@@ -138,6 +138,7 @@
               type = "app";
               program = pkgs.writeShellApplication {
                 name = "cachix-push";
+                description = "Push cache to cachix";
                 runtimeInputs = with pkgs; [
                   cachix
                   jq

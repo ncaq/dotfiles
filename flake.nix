@@ -136,9 +136,11 @@
           apps = {
             cachix-push = {
               type = "app";
+              meta = {
+                description = "Push inputs to cachix";
+              };
               program = pkgs.writeShellApplication {
                 name = "cachix-push";
-                description = "Push cache to cachix";
                 runtimeInputs = with pkgs; [
                   cachix
                   jq
@@ -150,6 +152,7 @@
                   nix build --print-out-paths '.#homeConfigurations.ncaq.activationPackage'|cachix push ncaq-dotfiles
                   nix build --print-out-paths '.#homeConfigurations.GitHub-Actions.activationPackage'|cachix push ncaq-dotfiles
                   echo "Push NixOS partical"
+                  nix build --print-out-paths '.#nixosConfigurations.bullet.config.system.build.toplevel'|cachix push ncaq-dotfiles
                   nix build --print-out-paths '.#nixosConfigurations.SSD0086.config.system.build.toplevel'|cachix push ncaq-dotfiles
                 '';
               };

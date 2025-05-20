@@ -27,6 +27,5 @@
     ./nix-settings.nix
     ./locate.nix
     ./uinput.nix
-    ./unfree.nix
   ];
 }

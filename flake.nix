@@ -56,7 +56,10 @@
               username:
               home-manager.lib.homeManagerConfiguration ({
                 pkgs = nixpkgs.legacyPackages.x86_64-linux;
-                modules = [ ./home.nix ];
+                modules = [
+                  ./unfree.nix
+                  ./home.nix
+                ];
                 extraSpecialArgs = {
                   inherit inputs dot-xmonad username;
                   isWSL = false;
@@ -80,6 +83,7 @@
             nixpkgs.lib.nixosSystem {
               system = "x86_64-linux";
               modules = [
+                ./unfree.nix
                 nixos-wsl.nixosModules.default
                 ./nixos/configuration.nix
                 ./nixos/host/SSD0086.nix

@@ -50,6 +50,7 @@
       "node_modules"
       "site-packages"
       "steam-runtime"
+      "store"
       "target"
       "texmf-dist"
       "undo-tree"

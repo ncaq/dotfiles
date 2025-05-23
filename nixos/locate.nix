@@ -31,6 +31,7 @@
       ".stack-work-profile"
       ".stack-work-test"
       ".svn"
+      "Trash"
       "WinSxS"
       "__pycache__"
       "_cache"

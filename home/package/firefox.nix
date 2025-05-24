@@ -3,6 +3,90 @@
   programs.firefox = {
     enable = true;
 
+    policies = {
+      ExtensionSettings = {
+        "uBlock0@raymondhill.net" = {
+          install_url = "https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/latest.xpi";
+          installation_mode = "force_installed";
+        };
+      };
+
+      "3rdparty" = {
+        Extensions = {
+          "uBlock0@raymondhill.net" = {
+            adminSettings = {
+              # 指定された設定値のみを追加
+              userSettings = [
+                [
+                  "cnameUncloakEnabled"
+                  "false"
+                ]
+                [
+                  "hyperlinkAuditingDisabled"
+                  "false"
+                ]
+                [
+                  "popupPanelSections"
+                  "31"
+                ]
+                [
+                  "prefetchingDisabled"
+                  "false"
+                ]
+                [
+                  "suspendUntilListsAreLoaded"
+                  "false"
+                ]
+              ];
+              selectedFilterLists = [
+                "user-filters"
+                "ublock-filters"
+                "ublock-badware"
+                "ublock-quick-fixes"
+                "ublock-unbreak"
+                "easylist"
+                "adguard-generic"
+                "urlhaus-1"
+                "curben-phishing"
+                "fanboy-cookiemonster"
+                "ublock-cookies-easylist"
+                "adguard-cookies"
+                "ublock-cookies-adguard"
+                "easylist-chat"
+                "easylist-newsletters"
+                "easylist-notifications"
+                "easylist-annoyances"
+                "adguard-mobile-app-banners"
+                "adguard-other-annoyances"
+                "adguard-popup-overlays"
+                "adguard-widgets"
+                "ublock-annoyances"
+                "JPN-1"
+              ];
+              toAdd = {
+                trustedSiteDirectives = [
+                  "127.0.0.1"
+                  "chrome-extension-scheme"
+                  "hapitas.jp"
+                  "localhost"
+                  "moppy.jp"
+                  "moz-extension-scheme"
+                  "ncaq.net"
+                  "nicoad.nicovideo.jp"
+                  "rebates.jp"
+                  "youtube.com"
+                ];
+                filters = [
+                  "@@||analytics.google.com"
+                  "@@||googletagmanager.com"
+                  "@@||mozilla.org"
+                ];
+              };
+            };
+          };
+        };
+      };
+    };
     profiles = {
       default = {
         id = 0;

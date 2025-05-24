@@ -1,12 +1,11 @@
-{ username, ... }:
+# 基本的にビルドした自分のxmonad-launchを使うが、トラブル時の復旧セッションも用意する。
+{ pkgs, username, ... }:
 {
   services = {
     xserver = {
       enable = true;
       displayManager = {
-        lightdm = {
-          enable = true;
-        };
+        lightdm.enable = true;
         session = [
           {
             manage = "desktop";
@@ -18,6 +17,7 @@
           }
         ];
       };
+      windowManager.icewm.enable = true;
       xkb = {
         layout = "us";
         model = "pc104";
@@ -34,4 +34,8 @@
     };
     libinput.enable = true;
   };
+  environment.systemPackages = with pkgs; [
+    rxvt-unicode
+    xterm
+  ];
 }

@@ -1,7 +1,7 @@
 { ... }:
 {
   programs.kitty = {
-    enable = false; # avoid OpenGL issues.
+    enable = true;
 
     settings = {
       font_size = 12;

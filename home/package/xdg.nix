@@ -1,5 +1,6 @@
 {
   config,
+  lib,
   isWSL,
   username,
   ...
@@ -50,4 +51,15 @@ in
       else
         { }
     );
+
+  home.activation.createGoogleDrive = lib.hm.dag.entryAfter [ "writeBoundary" ] (
+    if isWSL then
+      ""
+    else
+      ''
+        if [ ! -d "${config.home.homeDirectory}/GoogleDrive" ]; then
+          $DRY_RUN_CMD mkdir -p "${config.home.homeDirectory}/GoogleDrive"
+        fi
+      ''
+  );
 }

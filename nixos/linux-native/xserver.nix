@@ -1,4 +1,4 @@
-{ pkgs, username, ... }:
+{ username, ... }:
 {
   services = {
     xserver = {
@@ -11,14 +11,9 @@
           {
             manage = "desktop";
             name = "hm-xsession";
+            description = "home-manager側で設定した `.xsession` を起動する。";
             start = ''
-              # home-managerの`.xsession`が存在しない場合のfallback
-              if [ -f "$HOME/.xsession" ]; then
-                exec $HOME/.xsession
-              else
-                # 基本的なXのsessionを開始
-                exec ${pkgs.xterm}/bin/xterm
-              fi
+              exec $HOME/.xsession
             '';
           }
         ];

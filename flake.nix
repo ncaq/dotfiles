@@ -121,6 +121,10 @@
               };
           in
           {
+            "vanitas" = mkNixosSystem {
+              hostName = "vanitas";
+              isWSL = false;
+            };
             "bullet" = mkNixosSystem {
               hostName = "bullet";
               isWSL = false;

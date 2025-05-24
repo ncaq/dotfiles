@@ -24,4 +24,5 @@
       fsType = "ext4";
     };
   };
+  virtualisation.virtualbox.guest.enable = true;
 }

@@ -12,7 +12,17 @@ let
     </match>
   '';
   generateOverrideConf =
-    aliases: lib.concatStringsSep "\n" (lib.mapAttrsToList generateMatchEntry aliases);
+    aliases:
+    let
+      header = ''
+        <?xml version="1.0"?>
+        <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
+        <fontconfig>
+      '';
+      body = lib.concatStringsSep "\n" (lib.mapAttrsToList generateMatchEntry aliases);
+      footer = '''</fontconfig>'';
+    in
+    header + "\n" + body + "\n" + footer;
 in
 {
   fonts.fontconfig = {

@@ -11,6 +11,15 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    nur = {
+      url = "github:nix-community/NUR";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-parts.follows = "flake-parts";
+        treefmt-nix.follows = "treefmt-nix";
+      };
+    };
+
     home-manager = {
       url = "github:nix-community/home-manager/release-25.05";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -36,6 +45,7 @@
       nixpkgs,
       flake-parts,
       treefmt-nix,
+      nur,
       home-manager,
       disko,
       nixos-wsl,
@@ -60,7 +70,9 @@
             mkLinuxHome =
               username:
               home-manager.lib.homeManagerConfiguration ({
-                pkgs = nixpkgs.legacyPackages.x86_64-linux;
+                pkgs = import nixpkgs.legacyPackages.x86_64-linux {
+                  overlays = [ nur.overlays ];
+                };
                 modules = [
                   ./unfree.nix
                   ./home.nix
@@ -104,6 +116,7 @@
                       [ disko.nixosModules.default ]
                   )
                   ++ [
+                    nur.modules.nixos.default
                     ./unfree.nix
                     ./nixos/configuration.nix
                     ./nixos/host/${hostName}.nix

@@ -3,10 +3,11 @@
   users.users.${username} = {
     isNormalUser = true;
     extraGroups = [
-      "wheel"
-      "networkmanager"
       "input"
+      "networkmanager"
       "pipewire"
+      "uinput"
+      "wheel"
     ];
     shell = pkgs.zsh;
   };

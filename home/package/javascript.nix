@@ -1,6 +1,7 @@
 { pkgs, ... }:
 {
   home.packages = with pkgs; [
+    corepack
     nodePackages.prettier
     nodejs
     typescript

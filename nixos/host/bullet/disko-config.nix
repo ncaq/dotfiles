@@ -8,7 +8,7 @@
           type = "gpt";
           partitions = {
             ESP = {
-              name = "ESP";
+              name = "EFI";
               size = "4G";
               type = "EF00";
               content = {
@@ -18,7 +18,7 @@
               };
             };
             root = {
-              name = "nixos";
+              name = "NixOS Root";
               size = "100%";
               type = "8300";
               content = {

@@ -8,17 +8,27 @@ It's managed by
 
 # Setup
 
-Warning,
-my default `${USER}` is `ncaq`.
-I haven't tested with other usernames.
-I write username by hardcode.
-Maybe, if you want to use other username, you need to change code.
+> [!NOTE]
+> My default `${USER}` is `ncaq`.
+> I haven't tested with other usernames.
+> I write username by hardcode.
+> Maybe, if you want to use other username, you need to change code.
 
 ## Initial
 
 ### NixOS
 
-TODO: Add NixOS setup instructions
+> [!NOTE]
+> Please input `please-input-new-hostname`.
+
+``` zsh
+new_hostname=please-input-new-hostname
+nix --extra-experimental-features 'flakes nix-command' run 'nixpkgs#git' -- clone https://github.com/ncaq/dotfiles.git
+cd dotfiles
+sudo nix --experimental-features 'flakes nix-command' run github:nix-community/disko/latest -- --flake ".#${new_hostname}"
+```
+
+Please reboot.
 
 ### Non NixOS(home-manager standalone)
 

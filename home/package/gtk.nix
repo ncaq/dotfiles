@@ -28,4 +28,10 @@
       color-scheme = "prefer-dark";
     };
   };
+
+  # To avoid below warning.
+  # Gtk-Message: 13:28:28.579: Failed to load module "canberra-gtk-module"
+  home.packages = with pkgs; [
+    libcanberra
+  ];
 }

@@ -68,35 +68,41 @@
             "GitHub-Actions" = mkLinuxHome "runner";
           };
 
-        nixosConfigurations = {
-          "SSD0086" =
-            let
-              specialArgs = {
-                inherit inputs dot-xmonad;
-                username = "ncaq";
-                isWSL = true;
+        nixosConfigurations =
+          let
+            mkNixosSystem =
+              { hostName, isWSL }:
+              let
+                specialArgs = {
+                  inherit inputs dot-xmonad isWSL;
+                  username = "ncaq";
+                };
+              in
+              nixpkgs.lib.nixosSystem {
+                system = "x86_64-linux";
+                modules = (if isWSL then [ nixos-wsl.nixosModules.default ] else [ ]) ++ [
+                  ./unfree.nix
+                  ./nixos/configuration.nix
+                  ./nixos/host/${hostName}.nix
+                  home-manager.nixosModules.home-manager
+                  {
+                    home-manager = {
+                      useGlobalPkgs = true;
+                      useUserPackages = true;
+                      extraSpecialArgs = specialArgs;
+                      users.ncaq = import ./home.nix;
+                    };
+                  }
+                ];
+                inherit specialArgs;
               };
-            in
-            nixpkgs.lib.nixosSystem {
-              system = "x86_64-linux";
-              modules = [
-                ./unfree.nix
-                nixos-wsl.nixosModules.default
-                ./nixos/configuration.nix
-                ./nixos/host/SSD0086.nix
-                home-manager.nixosModules.home-manager
-                {
-                  home-manager = {
-                    useGlobalPkgs = true;
-                    useUserPackages = true;
-                    extraSpecialArgs = specialArgs;
-                    users.ncaq = import ./home.nix;
-                  };
-                }
-              ];
-              inherit specialArgs;
+          in
+          {
+            "SSD0086" = mkNixosSystem {
+              hostName = "SSD0086";
+              isWSL = true;
             };
-        };
+          };
       };
 
       perSystem =

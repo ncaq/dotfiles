@@ -165,6 +165,9 @@
             "vanitas" = mkNixosSystem {
               hostName = "vanitas";
             };
+            "bullet" = mkNixosSystem {
+              hostName = "bullet";
+            };
             "creep" = mkNixosSystem {
               hostName = "creep";
             };
@@ -208,6 +211,8 @@
                   echo "Push home-manager"
                   nix build --print-out-paths '.#homeConfigurations.ncaq.activationPackage'|cachix push ncaq-dotfiles
                   echo "Push NixOS partical"
+                  nix build --print-out-paths '.#nixosConfigurations.vanitas.config.system.build.toplevel'|cachix push ncaq-dotfiles
+                  nix build --print-out-paths '.#nixosConfigurations.bullet.config.system.build.toplevel'|cachix push ncaq-dotfiles
                   nix build --print-out-paths '.#nixosConfigurations.SSD0086.config.system.build.toplevel'|cachix push ncaq-dotfiles
                 '';
               };

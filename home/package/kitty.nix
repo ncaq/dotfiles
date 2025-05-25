@@ -1,8 +1,20 @@
-{ osConfig, ... }:
+{ pkgs, osConfig, ... }:
+let
+  kitty-wrapper = pkgs.writeShellScriptBin "kitty-wrapper" ''
+    if command -v kitty >/dev/null 2>&1; then
+      exec kitty "$@"
+    else
+      echo "kitty not found in system PATH. Please install kitty via your system package manager." >&2
+      exit 1
+    fi
+  '';
+in
 {
   programs.kitty = {
-    # 非NixOS環境だとOpenGLの問題があるため、NixOS環境でのみ有効化する。
-    enable = osConfig != null;
+    enable = true;
+
+    # 非NixOS環境だとOpenGLの問題があるため、システムのパッケージを使う。
+    package = if osConfig == null then kitty-wrapper else pkgs.kitty;
 
     settings = {
       font_size = 12;

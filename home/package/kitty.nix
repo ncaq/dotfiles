@@ -1,7 +1,8 @@
-{ ... }:
+{ osConfig, ... }:
 {
   programs.kitty = {
-    enable = false; # avoid OpenGL issues.
+    # 非NixOS環境だとOpenGLの問題があるため、NixOS環境でのみ有効化する。
+    enable = osConfig != null;
 
     settings = {
       font_size = 12;

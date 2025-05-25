@@ -1,5 +1,11 @@
-{ pkgs, dot-xmonad, ... }:
 {
+  pkgs,
+  lib,
+  isWSL,
+  dot-xmonad,
+  ...
+}:
+lib.mkIf (!isWSL) {
   xsession = {
     enable = true;
     windowManager.command = "xmonad-launch";

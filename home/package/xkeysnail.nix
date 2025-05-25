@@ -2,9 +2,10 @@
   config,
   pkgs,
   lib,
+  isWSL,
   ...
 }:
-{
+lib.mkIf (!isWSL) {
   home.packages = with pkgs; [
     xkeysnail
   ];

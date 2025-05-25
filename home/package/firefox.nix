@@ -324,6 +324,54 @@
             visibility: collapse;
           }
         '';
+        settings = {
+          "accessibility.typeaheadfind.manual" = false; # 手動の先行入力検索無効
+          "browser.aboutConfig.showWarning" = false; # about:config警告を表示しない
+          "browser.bookmarks.showMobileBookmarks" = false; # モバイルブックマーク非表示
+          "browser.newtabpage.activity-stream.section.highlights.rows" = 4; # ハイライト表示行数
+          "browser.newtabpage.activity-stream.showSearch" = false; # 検索ボックス非表示
+          "browser.newtabpage.activity-stream.showSponsoredTopSites" = false; # スポンサー付きサイト非表示
+          "browser.newtabpage.activity-stream.topSitesRows" = 4; # トップサイト表示行数
+          "browser.newtabpage.enabled" = false; # 新規タブページを無効
+          "browser.search.separatePrivateDefault.urlbarResult.enabled" = false; # プライベート用検索エンジン分離無効
+          "browser.search.suggest.enabled.private" = true; # プライベートブラウジングで検索候補有効
+          "browser.shell.didSkipDefaultBrowserCheckOnFirstRun" = true; # デフォルトブラウザチェックをスキップ
+          "browser.startup.homepage" = "chrome://browser/content/blanktab.html"; # ホームページをブランクタブに
+          "browser.startup.page" = 3; # 起動時に前回のセッションを復元
+          "browser.tabs.closeWindowWithLastTab" = false; # 最後のタブを閉じてもウィンドウを閉じない
+          "browser.toolbars.bookmarks.visibility" = "never"; # ブックマークツールバーを非表示
+          "browser.translations.automaticallyPopup" = false; # 翻訳機能の自動ポップアップ無効
+          "browser.uidensity" = 1; # UIをコンパクトモードに設定
+          "browser.urlbar.keepPanelOpenDuringImeComposition" = true; # IME入力中にパネルを開いたまま
+          "browser.urlbar.maxRichResults" = 16; # URLバーの候補表示数
+          "browser.urlbar.showSearchSuggestionsFirst" = false; # 検索候補を最初に表示しない
+          "browser.urlbar.suggest.openpage" = false; # 開いているページを候補に表示しない
+          "browser.urlbar.tabToSearch.onboard.interactionsLeft" = 0; # Tab-to-Searchオンボード無効
+          "browser.urlbar.tabToSearch.onboard.maxShown" = 0; # Tab-to-Searchオンボード表示回数上限
+          "browser.urlbar.timesBeforeHidingSuggestionsHint" = 0; # 候補ヒント非表示までの回数
+          "devtools.browsertoolbox.scope" = "everything"; # ブラウザツールボックスのスコープ
+          "devtools.command-button-measure.enabled" = true; # 測定ツールボタン有効
+          "devtools.command-button-rulers.enabled" = true; # ルーラーボタン有効
+          "devtools.command-button-screenshot.enabled" = true; # スクリーンショットボタン有効
+          "devtools.debugger.map-scopes-enabled" = true; # デバッガーのスコープマッピング有効
+          "devtools.debugger.pause-on-caught-exceptions" = false; # キャッチされた例外で一時停止しない
+          "devtools.dom.enabled" = true; # DOMインスペクター有効
+          "devtools.everOpened" = true; # 開発者ツール使用済みフラグ
+          "devtools.inspector.show_pseudo_elements" = true; # 疑似要素表示
+          "devtools.responsive.touchSimulation.enabled" = true; # タッチシミュレーション有効
+          "devtools.selfxss.count" = 5; # セルフXSSの警告カウンター
+          "devtools.theme" = "dark"; # 開発者ツールのテーマをダークに
+          "devtools.toolbox.splitconsole.open" = true; # スプリットコンソールを開く
+          "extensions.webextensions.restrictedDomains" = ""; # 拡張機能の制限ドメインを空に
+          "general.smoothScroll.mouseWheel.migrationPercent" = 0; # スムーススクロールのマウスホイール移行率
+          "intl.accept_languages" = "ja"; # 受け入れ言語を日本語に
+          "layout.spellcheckDefault" = 0; # スペルチェック無効
+          "pdfjs.defaultZoomValue" = "page-height"; # PDFのデフォルトズームを「ページの高さに合わせる」
+          "permissions.default.desktop-notification" = 2; # デスクトップ通知をデフォルトで拒否
+          "signon.generation.enabled" = false; # パスワード生成機能無効
+          "toolkit.legacyUserProfileCustomizations.stylesheets" = true; # userChrome.css使用を有効
+          "ui.key.menuAccessKeyFocuses" = false; # メニューアクセスキーでのフォーカス移動無効
+        };
       };
     };
   };

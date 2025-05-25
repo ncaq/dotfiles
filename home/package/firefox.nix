@@ -1,4 +1,4 @@
-{ lib, ... }:
+{ pkgs, lib, ... }:
 {
   programs.firefox = {
     enable = true;
@@ -37,7 +37,6 @@
             "{a8332c60-5b6d-41ee-bfc8-e9bb331d34ad}" # Surfingkeys
             "{bd97f89b-17ba-4539-9fec-06852d07f917}" # Checkmarks
             "{d07ccf11-c0cd-4938-a265-2a4d6ad01189}" # Web Archives
-            "{eceab40b-230a-4560-98ed-185ad010633f}" # NixOS Packages Search Engine
           ]
         );
       "3rdparty" = {
@@ -131,6 +130,200 @@
             visibility: collapse;
           }
         '';
+        search = {
+          force = true;
+          engines = {
+            google.metadata.alias = "g";
+            wikipedia-ja.metadata.alias = "w";
+            amazon-jp.metadata.alias = "a";
+            twitter = {
+              name = "Twitter";
+              urls = [
+                {
+                  template = "https://twitter.com/search";
+                  params = [
+                    {
+                      name = "q";
+                      value = "{searchTerms}";
+                    }
+                  ];
+                }
+              ];
+              icon = "${pkgs.kdePackages.breeze-icons}/share/icons/breeze-dark/actions/22/im-twitter.svg";
+              definedAliases = [
+                "t"
+                "@twitter"
+              ];
+            };
+            eowf = {
+              name = "英辞郎 on the WEB Pro お試し版";
+              urls = [
+                {
+                  template = "https://eowf.alc.co.jp/search";
+                  params = [
+                    {
+                      name = "q";
+                      value = "{searchTerms}";
+                    }
+                  ];
+                }
+              ];
+              # TODO
+              # icon =
+              definedAliases = [
+                "e"
+                "@eof"
+              ];
+            };
+            stackexchange = {
+              name = "Stack Exchange";
+              urls = [
+                {
+                  template = "https://stackexchange.com/search";
+                  params = [
+                    {
+                      name = "q";
+                      value = "{searchTerms}";
+                    }
+                  ];
+                }
+              ];
+              # TODO
+              # icon =
+              definedAliases = [
+                "s"
+                "@stackexchange"
+              ];
+            };
+            niconico-dic = {
+              name = "ニコニコ大百科";
+              urls = [
+                {
+                  template = "https://dic.nicovideo.jp/s/a/t/{searchTerms}/rev_created/desc/1-";
+                }
+              ];
+              # TODO
+              # icon =
+              definedAliases = [ "@nicovideo-dic" ];
+            };
+            mdn = {
+              name = "MDN Web Docs";
+              urls = [
+                {
+                  template = "https://developer.mozilla.org/ja/search";
+                  params = [
+                    {
+                      name = "q";
+                      value = "{searchTerms}";
+                    }
+                  ];
+                }
+              ];
+              # TODO
+              # icon
+              definedAliases = [
+                "m"
+                "@mdn"
+              ];
+            };
+            nixos-packages = {
+              name = "NixOS Search - Packages";
+              urls = [
+                {
+                  template = "https://search.nixos.org/packages";
+                  params = [
+                    {
+                      name = "query";
+                      value = "{searchTerms}";
+                    }
+                  ];
+                }
+              ];
+              icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
+              definedAliases = [
+                "n"
+                "@nixpkgs"
+              ];
+            };
+            hackage = {
+              name = "Hackage";
+              urls = [
+                {
+                  template = "https://hackage.haskell.org/packages/search";
+                  params = [
+                    {
+                      name = "terms";
+                      value = "{searchTerms}";
+                    }
+                  ];
+                }
+              ];
+              icon = "${pkgs.kdePackages.breeze-icons}/share/icons/breeze-dark/mimetypes/64/text-x-haskell.svg";
+              definedAliases = [
+                "h"
+                "@hackage"
+              ];
+            };
+            stackage = {
+              name = "Stackage";
+              urls = [
+                {
+                  template = "https://www.stackage.org/lts/hoogle";
+                  params = [
+                    {
+                      name = "q";
+                      value = "{searchTerms}";
+                    }
+                  ];
+                }
+              ];
+              # TODO
+              # icon =
+              definedAliases = [
+                "l"
+                "@stackage"
+              ];
+            };
+            crate = {
+              name = "crates.io: Rust Package Registry";
+              urls = [
+                {
+                  template = "https://crates.io/search";
+                  params = [
+                    {
+                      name = "q";
+                      value = "{searchTerms}";
+                    }
+                  ];
+                }
+              ];
+              icon = "${pkgs.kdePackages.breeze-icons}/share/icons/breeze-dark/mimetypes/64/text-rust.svg";
+              definedAliases = [
+                "r"
+                "@crate"
+              ];
+            };
+            npm = {
+              name = "npm";
+              urls = [
+                {
+                  template = "https://www.npmjs.com/search";
+                  params = [
+                    {
+                      name = "q";
+                      value = "{searchTerms}";
+                    }
+                  ];
+                }
+              ];
+              icon = "${pkgs.kdePackages.breeze-icons}/share/icons/breeze-dark/mimetypes/64/text-javascript.svg";
+              definedAliases = [
+                "j"
+                "@npm"
+              ];
+            };
+          };
+        };
       };
     };
   };

@@ -36,6 +36,75 @@
             "{eceab40b-230a-4560-98ed-185ad010633f}" # NixOS Packages Search Engine
           ]
         );
+      "3rdparty" = {
+        Extensions = {
+          "uBlock0@raymondhill.net" = {
+            # https://github.com/gorhill/uBlock/blob/93d8e639ce91b633cd585b0e031ec52cd77413bc/platform/common/managed_storage.json
+            userSettings = [
+              [
+                "cnameUncloakEnabled"
+                "false"
+              ]
+              [
+                "hyperlinkAuditingDisabled"
+                "false"
+              ]
+              [
+                "popupPanelSections"
+                "31"
+              ]
+              [
+                "prefetchingDisabled"
+                "false"
+              ]
+            ];
+            toOverwrite = {
+              filters = [
+                "@@||analytics.google.com"
+                "@@||googletagmanager.com"
+                "@@||mozilla.org"
+              ];
+              filterLists = [
+                "user-filters"
+                "ublock-filters"
+                "ublock-badware"
+                "ublock-quick-fixes"
+                "ublock-unbreak"
+                "easylist"
+                "adguard-generic"
+                "urlhaus-1"
+                "curben-phishing"
+                "fanboy-cookiemonster"
+                "ublock-cookies-easylist"
+                "adguard-cookies"
+                "ublock-cookies-adguard"
+                "easylist-chat"
+                "easylist-newsletters"
+                "easylist-notifications"
+                "easylist-annoyances"
+                "adguard-mobile-app-banners"
+                "adguard-other-annoyances"
+                "adguard-popup-overlays"
+                "adguard-widgets"
+                "ublock-annoyances"
+                "JPN-1"
+              ];
+              trustedSiteDirectives = [
+                "127.0.0.1"
+                "chrome-extension-scheme"
+                "hapitas.jp"
+                "localhost"
+                "moppy.jp"
+                "moz-extension-scheme"
+                "ncaq.net"
+                "nicoad.nicovideo.jp"
+                "rebates.jp"
+                "youtube.com"
+              ];
+            };
+          };
+        };
+      };
     };
     profiles = {
       default = {

@@ -1,33 +1,32 @@
-{ pkgs, hostName, ... }:
+{ isWSL, ... }:
 {
   system.stateVersion = "25.05";
 
-  networking.hostName = hostName;
-
   i18n.defaultLocale = "ja_JP.UTF-8";
-
   time.timeZone = "Asia/Tokyo";
 
+  console.keyMap = "dvorak";
+
   programs = {
-    dconf.enable = true;
     nix-ld.enable = true;
     zsh.enable = true;
   };
 
-  services.dbus.packages = [ pkgs.dconf ];
-
-  users.users.ncaq = {
-    isNormalUser = true;
-    extraGroups = [
-      "wheel"
-      "input"
-    ];
-    shell = pkgs.zsh;
-  };
-
-  imports = [
-    ./nix-settings.nix
-    ./locate.nix
-    ./uinput.nix
-  ];
+  # Linuxネイティブに必要だがWSLなどとは干渉するモジュールを分離する。
+  imports =
+    let
+      coreImports = [
+        ./core/dconf.nix
+        ./core/locate.nix
+        ./core/nix-settings.nix
+        ./core/uinput.nix
+        ./core/user.nix
+      ];
+      linuxNativeImports = [
+        ./linux-native/audio.nix
+        ./linux-native/network.nix
+        ./linux-native/xserver.nix
+      ];
+    in
+    coreImports ++ (if isWSL then [ ] else linuxNativeImports);
 }

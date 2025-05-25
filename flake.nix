@@ -80,20 +80,30 @@
               in
               nixpkgs.lib.nixosSystem {
                 system = "x86_64-linux";
-                modules = (if isWSL then [ nixos-wsl.nixosModules.default ] else [ ]) ++ [
-                  ./unfree.nix
-                  ./nixos/configuration.nix
-                  ./nixos/host/${hostName}.nix
-                  home-manager.nixosModules.home-manager
-                  {
-                    home-manager = {
-                      useGlobalPkgs = true;
-                      useUserPackages = true;
-                      extraSpecialArgs = specialArgs;
-                      users.ncaq = import ./home.nix;
-                    };
-                  }
-                ];
+                modules =
+                  (
+                    if isWSL then
+                      [
+                        nixos-wsl.nixosModules.default
+                        ./nixos/wsl.nix
+                      ]
+                    else
+                      [ ]
+                  )
+                  ++ [
+                    ./unfree.nix
+                    ./nixos/configuration.nix
+                    ./nixos/host/${hostName}.nix
+                    home-manager.nixosModules.home-manager
+                    {
+                      home-manager = {
+                        useGlobalPkgs = true;
+                        useUserPackages = true;
+                        extraSpecialArgs = specialArgs;
+                        users.ncaq = import ./home.nix;
+                      };
+                    }
+                  ];
                 inherit specialArgs;
               };
           in

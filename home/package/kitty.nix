@@ -41,10 +41,10 @@ in
       mouse_map left click ungrabbed no-op
       mouse_map ctrl+left click ungrabbed mouse_handle_click selection link prompt
       mouse_map ctrl+left press ungrabbed mouse_selection normal
-      mouse_map shift+up scroll_line_up
-      mouse_map shift+down scroll_line_down
-      mouse_map shift+left scroll_page_up
-      mouse_map shift+right scroll_page_down
+      map shift+up scroll_line_up
+      map shift+down scroll_line_down
+      map shift+left scroll_page_up
+      map shift+right scroll_page_down
     '';
   };
 }

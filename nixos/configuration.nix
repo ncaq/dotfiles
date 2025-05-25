@@ -20,6 +20,7 @@
         ./core/font.nix
         ./core/locate.nix
         ./core/nix-settings.nix
+        ./core/sudo.nix
         ./core/uinput.nix
         ./core/user.nix
       ];

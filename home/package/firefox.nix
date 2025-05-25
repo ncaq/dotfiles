@@ -112,24 +112,6 @@
     profiles = {
       default = {
         id = 0;
-        userChrome = ''
-          /* ツリー型タブで十分なため標準の横タブを消去。 */
-          #main-window[tabsintitlebar="true"]:not([extradragspace="true"]) #TabsToolbar > .toolbar-items {
-            opacity: 0;
-            pointer-events: none;
-          }
-          #main-window:not([tabsintitlebar="true"]) #TabsToolbar {
-            visibility: collapse !important;
-          }
-          /* サイドバーのボーダーは領域を無駄に食うので消去。どのコンテンツでも幅を弄ったりはしない。 */
-          #sidebar-splitter {
-            display: none !important;
-          }
-          /* 利用しているのがツリー型タブの場合サイドバーの切り換えを除去。他の場合は残す。 */
-          #sidebar-box[sidebarcommand="treestyletab_piro_sakura_ne_jp-sidebar-action"] #sidebar-header {
-            visibility: collapse;
-          }
-        '';
         search = {
           force = true;
           engines = {
@@ -324,6 +306,24 @@
             };
           };
         };
+        userChrome = ''
+          /* ツリー型タブで十分なため標準の横タブを消去。 */
+          #main-window[tabsintitlebar="true"]:not([extradragspace="true"]) #TabsToolbar > .toolbar-items {
+            opacity: 0;
+            pointer-events: none;
+          }
+          #main-window:not([tabsintitlebar="true"]) #TabsToolbar {
+            visibility: collapse !important;
+          }
+          /* サイドバーのボーダーは領域を無駄に食うので消去。どのコンテンツでも幅を弄ったりはしない。 */
+          #sidebar-splitter {
+            display: none !important;
+          }
+          /* 利用しているのがツリー型タブの場合サイドバーの切り換えを除去。他の場合は残す。 */
+          #sidebar-box[sidebarcommand="treestyletab_piro_sakura_ne_jp-sidebar-action"] #sidebar-header {
+            visibility: collapse;
+          }
+        '';
       };
     };
   };

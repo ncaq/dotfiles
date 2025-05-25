@@ -17,6 +17,7 @@
     let
       coreImports = [
         ./core/dconf.nix
+        ./core/font.nix
         ./core/locate.nix
         ./core/nix-settings.nix
         ./core/uinput.nix

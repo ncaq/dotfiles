@@ -18,6 +18,11 @@
 
     nixos-hardware.url = "github:NixOS/nixos-hardware";
 
+    disko = {
+      url = "github:nix-community/disko";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     nixos-wsl = {
       url = "github:nix-community/NixOS-WSL/main";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -32,6 +37,7 @@
       flake-parts,
       treefmt-nix,
       home-manager,
+      disko,
       nixos-wsl,
       dot-xmonad,
       ...
@@ -93,7 +99,7 @@
                         ./nixos/wsl.nix
                       ]
                     else
-                      [ ]
+                      [ disko.nixosModules.default ]
                   )
                   ++ [
                     ./unfree.nix

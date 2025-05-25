@@ -1,6 +1,8 @@
-{ pkgs, ... }:
+{ pkgs, hostName, ... }:
 {
   system.stateVersion = "25.05";
+
+  networking.hostName = hostName;
 
   i18n.defaultLocale = "ja_JP.UTF-8";
 

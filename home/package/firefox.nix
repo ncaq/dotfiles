@@ -113,7 +113,6 @@
     profiles = {
       default = {
         id = 0;
-        isDefault = true;
         userChrome = ''
           /* ツリー型タブで十分なため標準の横タブを消去。 */
           #main-window[tabsintitlebar="true"]:not([extradragspace="true"]) #TabsToolbar > .toolbar-items {

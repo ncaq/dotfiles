@@ -19,6 +19,7 @@
         ./core/dconf.nix
         ./core/font.nix
         ./core/locate.nix
+        ./core/networking.nix
         ./core/nix-settings.nix
         ./core/sudo.nix
         ./core/uinput.nix
@@ -26,7 +27,7 @@
       ];
       linuxNativeImports = [
         ./linux-native/audio.nix
-        ./linux-native/network.nix
+        ./linux-native/networkmanager.nix
         ./linux-native/xserver.nix
       ];
     in

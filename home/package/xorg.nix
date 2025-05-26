@@ -14,5 +14,6 @@
       xkbcomp
       xmodmap
       xprop
+      xrdb
     ]);
 }

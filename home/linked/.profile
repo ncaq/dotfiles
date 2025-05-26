@@ -10,6 +10,4 @@ case "$(</proc/sys/kernel/osrelease 2>/dev/null)" in
   *) return ;;             # それ以外は .profile を抜ける
 esac
 
-if command -v xrdb >/dev/null 2>&1 && [ -f "$HOME/.Xresources" ]; then
-  xrdb -merge "$HOME/.Xresources"
-fi
+xrdb -merge "$HOME/.Xresources"

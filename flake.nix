@@ -28,6 +28,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    rust-overlay = {
+      url = "github:oxalica/rust-overlay";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     dot-xmonad.url = "github:ncaq/.xmonad";
   };
 
@@ -39,6 +44,7 @@
       home-manager,
       disko,
       nixos-wsl,
+      rust-overlay,
       dot-xmonad,
       ...
     }:
@@ -61,6 +67,12 @@
                 pkgs = nixpkgs.legacyPackages.x86_64-linux;
                 modules = [
                   ./unfree.nix
+                  (
+                    { ... }:
+                    {
+                      nixpkgs.overlays = [ rust-overlay.overlays.default ];
+                    }
+                  )
                   ./home.nix
                 ];
                 extraSpecialArgs = {
@@ -103,6 +115,12 @@
                   )
                   ++ [
                     ./unfree.nix
+                    (
+                      { ... }:
+                      {
+                        nixpkgs.overlays = [ rust-overlay.overlays.default ];
+                      }
+                    )
                     ./nixos/configuration.nix
                     ./nixos/host/${hostName}.nix
                     home-manager.nixosModules.home-manager

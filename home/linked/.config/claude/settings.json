@@ -13,6 +13,7 @@
       "Bash(cabal user-config:*)",
       "Bash(cabal-fmt:*)",
       "Bash(cabal-gild:*)",
+      "Bash(fd:*)",
       "Bash(find:*)",
       "Bash(gh config get:*)",
       "Bash(gh config list:*)",

@@ -65,9 +65,8 @@
       "Bash(ls:*)",
       "Bash(mkdir:*)",
       "Bash(rg:*)",
-      "WebFetch(domain:github.com)",
-      "WebFetch(domain:haskell.org)",
-      "WebFetch(domain:stackage.org)"
-    ]
+      "WebFetch"
+    ],
+    "deny": []
   }
 }

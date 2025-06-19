@@ -9,6 +9,7 @@
     htop
     jq
     libwebp
+    lsof
     nkf
     opusTools
     oxipng

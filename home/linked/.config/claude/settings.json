@@ -68,7 +68,7 @@
       "Bash(rg:*)",
       "WebFetch"
     ],
-    "deny": []
+    "deny": ["Bash(rm:*)"]
   },
   "model": "opus"
 }

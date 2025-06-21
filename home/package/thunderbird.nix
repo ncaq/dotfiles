@@ -3,7 +3,7 @@
   programs.thunderbird = {
     enable = true;
     profiles.default = {
-      id = 0;
+      isDefault = true;
       settings = {
         "accessibility.typeaheadfind.manual" = false;
         "browser.aboutConfig.showWarning" = false;

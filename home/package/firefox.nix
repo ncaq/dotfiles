@@ -7,6 +7,7 @@
       "en-US"
     ];
     policies = {
+      # [policy-templates | Policy Templates for Firefox](https://mozilla.github.io/policy-templates/)
       ExtensionSettings =
         let
           normalInstall =
@@ -113,6 +114,7 @@
       default = {
         id = 0;
         search = {
+          # https://github.com/mozilla-firefox/firefox/blob/09ba48590299a48636b0b4692f43f8fd5c59972b/toolkit/components/search/SearchEngine.sys.mjs#L934
           force = true;
           engines = {
             google.metadata.alias = "g";

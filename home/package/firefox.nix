@@ -8,6 +8,26 @@
     ];
     policies = {
       # [policy-templates | Policy Templates for Firefox](https://mozilla.github.io/policy-templates/)
+      DisplayBookmarksToolbar = "never";
+      FirefoxHome = {
+        Search = false; # 検索ボックス非表示
+        SponsoredTopSites = false; # スポンサー付きサイト非表示
+      };
+      Homepage = {
+        URL = "chrome://browser/content/blanktab.html";
+        Locked = false;
+        StartPage = "previous-session";
+      };
+      NewTabPage = {
+        Enabled = false;
+        Locked = false;
+      };
+      PDFjs = {
+        Enabled = true;
+        DefaultZoomValue = "page-fit";
+      };
+      RequestedLocales = [ "ja" ]; # 言語設定を日本語に
+      TranslateEnabled = false; # 翻訳機能を無効化
       ExtensionSettings =
         let
           normalInstall =
@@ -334,14 +354,9 @@
           "browser.newtabpage.activity-stream.showSearch" = false; # 検索ボックス非表示
           "browser.newtabpage.activity-stream.showSponsoredTopSites" = false; # スポンサー付きサイト非表示
           "browser.newtabpage.activity-stream.topSitesRows" = 4; # トップサイト表示行数
-          "browser.newtabpage.enabled" = false; # 新規タブページを無効
           "browser.search.separatePrivateDefault.urlbarResult.enabled" = false; # プライベート用検索エンジン分離無効
           "browser.search.suggest.enabled.private" = true; # プライベートブラウジングで検索候補有効
-          "browser.shell.didSkipDefaultBrowserCheckOnFirstRun" = true; # デフォルトブラウザチェックをスキップ
-          "browser.startup.homepage" = "chrome://browser/content/blanktab.html"; # ホームページをブランクタブに
-          "browser.startup.page" = 3; # 起動時に前回のセッションを復元
           "browser.tabs.closeWindowWithLastTab" = false; # 最後のタブを閉じてもウィンドウを閉じない
-          "browser.toolbars.bookmarks.visibility" = "never"; # ブックマークツールバーを非表示
           "browser.translations.automaticallyPopup" = false; # 翻訳機能の自動ポップアップ無効
           "browser.uidensity" = 1; # UIをコンパクトモードに設定
           "browser.urlbar.keepPanelOpenDuringImeComposition" = true; # IME入力中にパネルを開いたまま

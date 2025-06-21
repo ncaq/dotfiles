@@ -7,9 +7,7 @@
       settings = {
         "accessibility.typeaheadfind.manual" = false;
         "browser.aboutConfig.showWarning" = false;
-        "browser.policies.applied" = true;
         "browser.search.region" = "JP";
-        "browser.shell.didSkipDefaultBrowserCheckOnFirstRun" = true;
         "calendar.timezone.local" = "Asia/Tokyo";
         "calendar.ui.version" = 3;
         "calendar.week.start" = 1; # 月曜始まり

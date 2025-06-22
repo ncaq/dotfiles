@@ -24,6 +24,7 @@ in
     (with pkgs; [
       cabal-install
       cabal2nix
+      fourmolu
       ghc
       haskell-ci
       haskell-language-server
@@ -37,7 +38,6 @@ in
       cabal-fmt
       cabal-gild
       cabal-plan
-      fourmolu
       implicit-hie
       uniq-deep
     ]);

@@ -2,14 +2,21 @@
 {
   home.packages = with pkgs; [
     cachix
+    discord
     dmd
+    eog
+    evince
     fd
     ffmpeg
     file
+    gimp3
     htop
+    inkscape
     jq
+    libreoffice
     libwebp
     lsof
+    nautilus
     nkf
     opusTools
     oxipng
@@ -18,9 +25,14 @@
     plantuml
     pstree
     rakudo
+    rhythmbox
     shellcheck
+    slack
     squashfsTools
     trashy
     tree
+    virtualbox
+    vlc
+    zoom-us
   ];
 }

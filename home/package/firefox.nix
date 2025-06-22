@@ -62,6 +62,16 @@
         );
       "3rdparty" = {
         Extensions = {
+          "@ublacklist" = {
+            hideBlockLinks = true;
+            subscriptions = [
+              {
+                name = "ncaq";
+                url = "https://raw.githubusercontent.com/ncaq/uBlacklistRule/master/uBlacklist.txt";
+                enabled = true;
+              }
+            ];
+          };
           "uBlock0@raymondhill.net" = {
             # https://github.com/gorhill/uBlock/blob/93d8e639ce91b633cd585b0e031ec52cd77413bc/platform/common/managed_storage.json
             userSettings = [

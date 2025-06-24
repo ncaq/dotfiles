@@ -14,6 +14,7 @@
       useOSProber = true;
     };
   };
+  # プリインストールされているWindowsのパーティションを残す必要があるためdiskoは使えない。
   fileSystems = {
     "/boot/efi" = {
       device = "/dev/disk/by-label/EFI";

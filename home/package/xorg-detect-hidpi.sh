@@ -1,11 +1,7 @@
-#!/usr/bin/env bash
+#!/usr/bin/env nix-shell
+#!nix-shell -i bash -p gawk xorg.xrandr
+# shellcheck shell=bash
 set -euo pipefail
-
-# Check if xrandr is available
-if ! command -v xrandr &>/dev/null; then
-  echo "xrandr not found. Using standard DPI." >&2
-  exit 1
-fi
 
 # Get count of all active monitors
 total_monitors=$(xrandr --listactivemonitors | head -n1 | awk '{print $2}')

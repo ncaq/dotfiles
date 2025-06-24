@@ -18,6 +18,14 @@ It's managed by
 
 ## NixOS
 
+#### Manual
+
+Use install media.
+Install NixOS.
+Run dotfiles.
+
+#### Automatic
+
 > [!NOTE]
 > Please input `please-input-new-hostname`.
 

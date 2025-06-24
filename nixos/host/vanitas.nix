@@ -9,8 +9,8 @@
     };
     grub = {
       enable = true;
-      efiSupport = true;
       devices = [ "nodev" ];
+      efiSupport = true;
     };
   };
   # VirtualBoxの標準的なデバイス名に合わせている。

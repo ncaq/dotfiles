@@ -13,6 +13,14 @@
       efiSupport = true;
       useOSProber = true;
     };
+    initrd = {
+      luks.devices = {
+        nixos-root-crypt = {
+          device = "/dev/disk/by-label/nixos-root";
+          allowDiscards = true;
+        };
+      };
+    };
   };
   # プリインストールされているWindowsのパーティションを残す必要があるためdiskoは使えない。
   fileSystems = {

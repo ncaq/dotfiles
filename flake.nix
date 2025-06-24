@@ -140,6 +140,10 @@
               hostName = "vanitas";
               isWSL = false;
             };
+            "creep" = mkNixosSystem {
+              hostName = "creep";
+              isWSL = false;
+            };
             "SSD0086" = mkNixosSystem {
               hostName = "SSD0086";
               isWSL = true;

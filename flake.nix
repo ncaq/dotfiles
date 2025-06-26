@@ -42,6 +42,7 @@
       flake-parts,
       treefmt-nix,
       home-manager,
+      nixos-hardware,
       disko,
       nixos-wsl,
       rust-overlay,
@@ -95,6 +96,7 @@
                     inputs
                     hostName
                     isWSL
+                    nixos-hardware
                     dot-xmonad
                     ;
                   username = "ncaq";

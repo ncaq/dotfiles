@@ -17,8 +17,8 @@
     };
     initrd = {
       luks.devices = {
-        nixos-root-crypt = {
-          device = "/dev/disk/by-label/nixos-root";
+        nixos-root = {
+          device = "/dev/disk/by-label/nixos-root-crypt";
           allowDiscards = true;
         };
       };
@@ -37,7 +37,7 @@
       options = [ "noatime" ];
     };
     "/" = {
-      device = "/dev/disk/by-label/nixos-root";
+      device = "/dev/mapper/nixos-root";
       fsType = "btrfs";
       options = [
         "noatime"
@@ -46,7 +46,7 @@
       ];
     };
     "/var/log" = {
-      device = "/dev/disk/by-label/nixos-root";
+      device = "/dev/mapper/nixos-root";
       fsType = "btrfs";
       options = [
         "noatime"
@@ -55,7 +55,7 @@
       ];
     };
     "/.snapshots" = {
-      device = "/dev/disk/by-label/nixos-root";
+      device = "/dev/mapper/nixos-root";
       fsType = "btrfs";
       options = [
         "noatime"

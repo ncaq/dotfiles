@@ -2,6 +2,7 @@
 {
   imports = [
     nixos-hardware.nixosModules.lenovo-thinkpad-p16s-amd-gen2
+    ./creep/hardware-configuration.nix
   ];
   boot = {
     loader = {

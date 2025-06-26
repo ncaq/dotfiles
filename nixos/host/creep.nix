@@ -28,7 +28,7 @@
   # プリインストールされているWindowsのパーティションを残す必要があるためdiskoは使えない。
   fileSystems = {
     "/boot/efi" = {
-      device = "/dev/disk/by-label/EFI";
+      device = "/dev/disk/by-label/SYSTEM";
       fsType = "vfat";
       options = [ "noatime" ];
     };

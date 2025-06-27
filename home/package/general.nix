@@ -18,6 +18,7 @@
     lsof
     nautilus
     nkf
+    openssl
     opusTools
     oxipng
     parallel

@@ -143,13 +143,13 @@
           {
             "vanitas" = mkNixosSystem {
               hostName = "vanitas";
-              dpi = 144;
               isWSL = false;
+              dpi = 144;
             };
             "SSD0086" = mkNixosSystem {
               hostName = "SSD0086";
-              dpi = 144;
               isWSL = true;
+              dpi = 144;
             };
           };
       };

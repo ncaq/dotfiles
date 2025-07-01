@@ -88,13 +88,18 @@
         nixosConfigurations =
           let
             mkNixosSystem =
-              { hostName, isWSL }:
+              {
+                hostName,
+                isWSL,
+                dpi ? null,
+              }:
               let
                 specialArgs = {
                   inherit
                     inputs
                     hostName
                     isWSL
+                    dpi
                     dot-xmonad
                     ;
                   username = "ncaq";
@@ -138,10 +143,12 @@
           {
             "vanitas" = mkNixosSystem {
               hostName = "vanitas";
+              dpi = 144;
               isWSL = false;
             };
             "SSD0086" = mkNixosSystem {
               hostName = "SSD0086";
+              dpi = 144;
               isWSL = true;
             };
           };

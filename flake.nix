@@ -78,6 +78,7 @@
                 extraSpecialArgs = {
                   inherit inputs dot-xmonad username;
                   isWSL = false;
+                  dpi = 144;
                 };
               });
           in

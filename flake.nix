@@ -150,6 +150,7 @@
             "bullet" = mkNixosSystem {
               hostName = "bullet";
               isWSL = false;
+              dpi = 144;
             };
             "SSD0086" = mkNixosSystem {
               hostName = "SSD0086";

@@ -10,7 +10,7 @@
     nixos-hardware.nixosModules.common-pc-ssd
 
     ./bullet/hardware-configuration.nix
-    ./bullet/disko-config.nix
+    ./bullet/disk.nix
   ];
   boot = {
     loader = {

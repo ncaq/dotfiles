@@ -73,7 +73,7 @@
                       nixpkgs.overlays = [ rust-overlay.overlays.default ];
                     }
                   )
-                  ./home.nix
+                  ./home
                 ];
                 extraSpecialArgs = {
                   inherit inputs dot-xmonad username;
@@ -134,7 +134,7 @@
                         useGlobalPkgs = true;
                         useUserPackages = true;
                         extraSpecialArgs = specialArgs;
-                        users.ncaq = import ./home.nix;
+                        users.ncaq = import ./home;
                       };
                     }
                   ];

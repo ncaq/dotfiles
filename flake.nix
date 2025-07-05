@@ -33,7 +33,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    dot-xmonad.url = "github:ncaq/.xmonad";
+    dot-xmonad.url = "github:ncaq/.xmonad/delegate-to-autorandr";
   };
 
   outputs =
@@ -91,7 +91,6 @@
               {
                 hostName,
                 isWSL,
-                dpi ? null,
               }:
               let
                 specialArgs = {
@@ -99,7 +98,6 @@
                     inputs
                     hostName
                     isWSL
-                    dpi
                     dot-xmonad
                     ;
                   username = "ncaq";
@@ -144,12 +142,10 @@
             "vanitas" = mkNixosSystem {
               hostName = "vanitas";
               isWSL = false;
-              dpi = 144;
             };
             "SSD0086" = mkNixosSystem {
               hostName = "SSD0086";
               isWSL = true;
-              dpi = 144;
             };
           };
       };

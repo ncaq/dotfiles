@@ -8,17 +8,30 @@
           type = "gpt";
           partitions = {
             ESP = {
-              name = "EFI";
-              size = "4G";
+              size = "1G";
               type = "EF00";
               content = {
                 type = "filesystem";
                 format = "vfat";
-                mountpoint = "/boot";
+                mountpoint = "/boot/efi";
+                mountOptions = [
+                  "noatime"
+                ];
               };
             };
-            root = {
-              name = "NixOS Root";
+            nixos-boot = {
+              size = "4G";
+              type = "8300";
+              content = {
+                type = "filesystem";
+                format = "ext4";
+                mountpoint = "/boot";
+                mountOptions = [
+                  "noatime"
+                ];
+              };
+            };
+            nixos-root = {
               size = "100%";
               type = "8300";
               content = {

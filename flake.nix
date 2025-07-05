@@ -42,6 +42,7 @@
       flake-parts,
       treefmt-nix,
       home-manager,
+      nixos-hardware,
       disko,
       nixos-wsl,
       rust-overlay,
@@ -98,6 +99,7 @@
                 specialArgs = {
                   inherit
                     inputs
+                    nixos-hardware
                     hostName
                     isWSL
                     dpi

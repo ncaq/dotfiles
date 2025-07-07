@@ -26,6 +26,14 @@
         "subvol=@"
       ];
     };
+    "/swap" = {
+      device = "/dev/mapper/nixos-root";
+      fsType = "btrfs";
+      options = [
+        "noatime"
+        "subvol=@swap"
+      ];
+    };
     "/var/log" = {
       device = "/dev/mapper/nixos-root";
       fsType = "btrfs";
@@ -45,4 +53,5 @@
       ];
     };
   };
+  swapDevices = [ { device = "/swap/swapfile"; } ];
 }

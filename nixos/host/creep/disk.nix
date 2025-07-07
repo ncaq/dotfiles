@@ -1,6 +1,7 @@
 { ... }:
 {
-  # プリインストールされているWindowsのパーティションを残す必要があるためdiskoは使えない。
+  # diskoは一つのディスクでのデュアルブートには対応していない。
+  # よってプリインストールされているWindowsのパーティションを残す必要があるためdiskoは使えない。
   fileSystems = {
     "/boot/efi" = {
       device = "/dev/disk/by-label/SYSTEM";

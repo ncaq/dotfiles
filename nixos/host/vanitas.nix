@@ -3,14 +3,13 @@
   # VirtualBoxのゲストOSを想定したNixOSのホスト定義。
 
   # 普通の環境はEFIが有効だと思うので予行演習としてVirtualBoxのEFIサポートを有効にしている。
-  boot.loader = {
-    efi = {
-      efiSysMountPoint = "/boot";
-    };
-    grub = {
-      enable = true;
-      efiSupport = true;
-      devices = [ "nodev" ];
+  boot = {
+    loader = {
+      efi = {
+        canTouchEfiVariables = true;
+        efiSysMountPoint = "/boot/efi";
+      };
+      systemd-boot.enable = true; # NixOSのマジョリティに近いと思うから寄せているだけでこだわりはない。
     };
   };
   # VirtualBoxの標準的なデバイス名に合わせている。

@@ -3,6 +3,7 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
     flake-parts.url = "github:hercules-ci/flake-parts";
 
@@ -39,6 +40,7 @@
   outputs =
     inputs@{
       nixpkgs,
+      nixpkgs-unstable,
       flake-parts,
       treefmt-nix,
       home-manager,
@@ -65,22 +67,28 @@
             mkLinuxHome =
               username:
               home-manager.lib.homeManagerConfiguration ({
-                pkgs = nixpkgs.legacyPackages.x86_64-linux;
+                pkgs = import nixpkgs {
+                  system = "x86_64-linux";
+                };
+                extraSpecialArgs = {
+                  inherit inputs dot-xmonad username;
+                  pkgs-unstable = import nixpkgs-unstable {
+                    system = "x86_64-linux";
+                    config.allowUnfree = true;
+                  };
+                  isWSL = false;
+                  dpi = 144;
+                };
                 modules = [
-                  ./unfree.nix
                   (
                     { ... }:
                     {
+                      nixpkgs.config.allowUnfree = true;
                       nixpkgs.overlays = [ rust-overlay.overlays.default ];
                     }
                   )
                   ./home
                 ];
-                extraSpecialArgs = {
-                  inherit inputs dot-xmonad username;
-                  isWSL = false;
-                  dpi = 144;
-                };
               });
           in
           {
@@ -105,11 +113,16 @@
                     nixos-hardware
                     dot-xmonad
                     ;
+                  pkgs-unstable = import nixpkgs-unstable {
+                    system = "x86_64-linux";
+                    config.allowUnfree = true;
+                  };
                   username = "ncaq";
                 };
               in
               nixpkgs.lib.nixosSystem {
                 system = "x86_64-linux";
+                inherit specialArgs;
                 modules =
                   (
                     if isWSL then
@@ -121,10 +134,10 @@
                       [ disko.nixosModules.default ]
                   )
                   ++ [
-                    ./unfree.nix
                     (
                       { ... }:
                       {
+                        nixpkgs.config.allowUnfree = true;
                         nixpkgs.overlays = [ rust-overlay.overlays.default ];
                       }
                     )
@@ -140,7 +153,6 @@
                       };
                     }
                   ];
-                inherit specialArgs;
               };
           in
           {

@@ -82,11 +82,10 @@ I only use the NixOS configuration part when absolutely necessary.
 
 The entry point of the flake.
 
-## [home.nix](./home.nix), [home/](./home/)
+## [home/](./home/)
 
 The home-manager configuration files.
 
-`home.nix` is home-manager root file.
 `home/` contains the home-manager configuration files.
 
 ### [home/link.nix](./home/link.nix), [home/linked/](./home/linked/)

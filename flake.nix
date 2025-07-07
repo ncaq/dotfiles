@@ -66,6 +66,11 @@
               username:
               home-manager.lib.homeManagerConfiguration ({
                 pkgs = nixpkgs.legacyPackages.x86_64-linux;
+                extraSpecialArgs = {
+                  inherit inputs dot-xmonad username;
+                  isWSL = false;
+                  dpi = 144;
+                };
                 modules = [
                   ./unfree.nix
                   (
@@ -76,11 +81,6 @@
                   )
                   ./home
                 ];
-                extraSpecialArgs = {
-                  inherit inputs dot-xmonad username;
-                  isWSL = false;
-                  dpi = 144;
-                };
               });
           in
           {
@@ -110,6 +110,7 @@
               in
               nixpkgs.lib.nixosSystem {
                 system = "x86_64-linux";
+                inherit specialArgs;
                 modules =
                   (
                     if isWSL then
@@ -140,7 +141,6 @@
                       };
                     }
                   ];
-                inherit specialArgs;
               };
           in
           {

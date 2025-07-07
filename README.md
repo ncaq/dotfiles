@@ -20,9 +20,75 @@ It's managed by
 
 ### Manual
 
-Use install media.
-Install NixOS.
-Run dotfiles.
+Before shrink disk partition.
+
+Create install media from [Nix & NixOS | Declarative builds and deployments](https://nixos.org/).
+
+Boot install media.
+
+Setting network and keyboard layout.
+
+Open terminal.
+
+#### Disk Partitioning
+
+```console
+sudo fdisk /dev/disk/by-id/your-disk-id
+```
+
+```
+n
++4G
+```
+
+```
+n
+```
+
+```
+w
+```
+
+```console
+sudo mkfs.ext4 -L nixos-boot /dev/disk/by-id/your-disk-id-of-boot
+sudo e2label /dev/disk/by-id/your-disk-id-of-root-for-crypt nixos-root-crypt
+sudo cryptsetup luksFormat /dev/disk/by-id/nixos-root-crypt
+sudo cryptsetup open /dev/disk/by-id/nixos-root-crypt nixos-root
+sudo mkfs.btrfs /dev/mapper/nixos-root
+sudo mount /dev/mapper/nixos-root /mnt
+sudo btrfs subvolume create /mnt/@
+sudo btrfs subvolume create /mnt/@var-log
+sudo btrfs subvolume create /mnt/@snapshots
+sudo umount /mnt
+```
+
+#### Mount
+
+```console
+sudo mount -o noatime,compress=zstd,subvol=@ /dev/mapper/nixos-root /mnt
+
+sudo mkdir -p /mnt/boot
+sudo mkdir -p /mnt/boot/efi
+sudo mkdir -p /mnt/var/log
+sudo mkdir -p /mnt/.snapshots
+
+sudo mount -o noatime /dev/by-id/nixos-boot /mnt/boot
+sudo mount -o noatime /dev/by-id/your-disk-id-of-efi-system /mnt/boot/efi
+sudo mount -o noatime,compress=zstd,subvol=@var-log /dev/mapper/nixos-root /mnt/var/log
+sudo mount -o noatime,compress=zstd,subvol=@snapshots /dev/mapper/nixos-root /mnt/.snapshots
+```
+
+#### Install NixOS
+
+``` console
+nix-shell -p git
+
+cd ~
+git clone 'https://github.com/ncaq/dotfiles.git'
+cd dotfiles
+
+sudo nixos-install --flake '.#your-machine-hostname' --root /mnt
+```
 
 ### Automatic
 

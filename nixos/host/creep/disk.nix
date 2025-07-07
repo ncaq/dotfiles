@@ -6,7 +6,11 @@
     "/boot/efi" = {
       device = "/dev/disk/by-label/SYSTEM";
       fsType = "vfat";
-      options = [ "noatime" ];
+      options = [
+        "noatime"
+        "fmask=0077"
+        "dmask=0077"
+      ];
     };
     "/boot" = {
       device = "/dev/disk/by-label/nixos-boot";

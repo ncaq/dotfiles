@@ -42,6 +42,7 @@
       flake-parts,
       treefmt-nix,
       home-manager,
+      nixos-hardware,
       disko,
       nixos-wsl,
       rust-overlay,
@@ -101,6 +102,7 @@
                     hostName
                     isWSL
                     dpi
+                    nixos-hardware
                     dot-xmonad
                     ;
                   username = "ncaq";
@@ -146,6 +148,10 @@
               hostName = "vanitas";
               isWSL = false;
               dpi = 144;
+            };
+            "creep" = mkNixosSystem {
+              hostName = "creep";
+              isWSL = false;
             };
             "SSD0086" = mkNixosSystem {
               hostName = "SSD0086";

@@ -11,7 +11,7 @@ It's managed by
 > [!NOTE]
 > My default `${USER}` is `ncaq`.
 > I haven't tested with other usernames.
-> I write username by hardcode.
+> I have hard-coded the username.
 > Maybe, if you want to use other username, you need to change code.
 
 # Initial

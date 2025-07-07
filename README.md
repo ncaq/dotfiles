@@ -6,17 +6,17 @@ It's managed by
 [NixOS | Declarative builds and deployments](https://nixos.org/) and
 [home-manager](https://github.com/nix-community/home-manager).
 
-# Setup
+# Note
 
 > [!NOTE]
 > My default `${USER}` is `ncaq`.
 > I haven't tested with other usernames.
-> I write username by hardcode.
+> I have hard-coded the username.
 > Maybe, if you want to use other username, you need to change code.
 
-## Initial
+# Initial
 
-### NixOS
+## NixOS
 
 > [!NOTE]
 > Please input `please-input-new-hostname`.
@@ -30,21 +30,21 @@ sudo nix --experimental-features 'flakes nix-command' run github:nix-community/d
 
 Please reboot.
 
-### Non NixOS(home-manager standalone)
+## Non NixOS(home-manager standalone)
 
 ``` zsh
 nix run home-manager/release-25.05 -- --flake ".#${USER}" init --switch .
 ```
 
-## Rebuild
+# Rebuild
 
-### NixOS
+## NixOS
 
 ``` zsh
 sudo nixos-rebuild switch --flake ".#$(hostname)"
 ```
 
-### Non NixOS(home-manager standalone)
+## Non NixOS(home-manager standalone)
 
 ``` zsh
 home-manager --flake ".#${USER}" switch
@@ -82,11 +82,10 @@ I only use the NixOS configuration part when absolutely necessary.
 
 The entry point of the flake.
 
-## [home.nix](./home.nix), [home/](./home/)
+## [home/](./home/)
 
 The home-manager configuration files.
 
-`home.nix` is home-manager root file.
 `home/` contains the home-manager configuration files.
 
 ### [home/link.nix](./home/link.nix), [home/linked/](./home/linked/)

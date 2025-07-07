@@ -9,7 +9,11 @@
         canTouchEfiVariables = true;
         efiSysMountPoint = "/boot/efi";
       };
-      systemd-boot.enable = true; # NixOSのマジョリティに近いと思うから寄せているだけでこだわりはない。
+      timeout = 1;
+      systemd-boot = {
+        enable = true;
+        consoleMode = "max";
+      };
     };
   };
   virtualisation.virtualbox.guest.enable = true;

@@ -11,7 +11,11 @@
         canTouchEfiVariables = true;
         efiSysMountPoint = "/boot/efi";
       };
-      systemd-boot.enable = true;
+      timeout = 1;
+      systemd-boot = {
+        enable = true;
+        consoleMode = "max";
+      };
     };
     initrd = {
       luks.devices = {

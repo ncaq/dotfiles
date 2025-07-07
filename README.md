@@ -18,13 +18,13 @@ It's managed by
 
 ## NixOS
 
-#### Manual
+### Manual
 
 Use install media.
 Install NixOS.
 Run dotfiles.
 
-#### Automatic
+### Automatic
 
 > [!NOTE]
 > Please input `please-input-new-hostname`.

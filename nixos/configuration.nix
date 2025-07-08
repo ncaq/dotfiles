@@ -1,4 +1,9 @@
-{ isWSL, ... }:
+{
+  lib,
+  inputs,
+  isWSL,
+  ...
+}:
 {
   system.stateVersion = "25.05";
 
@@ -14,22 +19,6 @@
 
   # ネイティブLinuxに必要だがWSLなどとは干渉するモジュールを分離する。
   imports =
-    let
-      coreImports = [
-        ./core/dconf.nix
-        ./core/font.nix
-        ./core/locate.nix
-        ./core/networking.nix
-        ./core/nix-settings.nix
-        ./core/sudo.nix
-        ./core/uinput.nix
-        ./core/user.nix
-      ];
-      nativeLinuxImports = [
-        ./native-linux/audio.nix
-        ./native-linux/networkmanager.nix
-        ./native-linux/xserver.nix
-      ];
-    in
-    coreImports ++ (if isWSL then [ ] else nativeLinuxImports);
+    (import ./core { inherit builtins lib inputs; })
+    ++ (if isWSL then [ ] else (import ./native-linux { inherit builtins lib inputs; }));
 }

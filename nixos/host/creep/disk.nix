@@ -26,6 +26,15 @@
         "subvol=@"
       ];
     };
+    "/nix" = {
+      device = "/dev/mapper/nixos-root";
+      fsType = "btrfs";
+      options = [
+        "noatime"
+        "compress=zstd"
+        "subvol=@nix"
+      ];
+    };
     "/swap" = {
       device = "/dev/mapper/nixos-root";
       fsType = "btrfs";

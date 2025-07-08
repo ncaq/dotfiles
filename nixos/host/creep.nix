@@ -2,8 +2,11 @@
 {
   imports = [
     nixos-hardware.nixosModules.lenovo-thinkpad-p16s-amd-gen2
+
     ./creep/disk.nix
     ./creep/hardware-configuration.nix
+
+    ../laptop/backlight.nix
   ];
   boot = {
     loader = {

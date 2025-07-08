@@ -12,7 +12,7 @@
     zsh.enable = true;
   };
 
-  # Linuxネイティブに必要だがWSLなどとは干渉するモジュールを分離する。
+  # ネイティブLinuxに必要だがWSLなどとは干渉するモジュールを分離する。
   imports =
     let
       coreImports = [
@@ -25,11 +25,11 @@
         ./core/uinput.nix
         ./core/user.nix
       ];
-      linuxNativeImports = [
-        ./linux-native/audio.nix
-        ./linux-native/networkmanager.nix
-        ./linux-native/xserver.nix
+      nativeLinuxImports = [
+        ./native-linux/audio.nix
+        ./native-linux/networkmanager.nix
+        ./native-linux/xserver.nix
       ];
     in
-    coreImports ++ (if isWSL then [ ] else linuxNativeImports);
+    coreImports ++ (if isWSL then [ ] else nativeLinuxImports);
 }

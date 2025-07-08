@@ -34,7 +34,10 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    dot-xmonad.url = "github:ncaq/.xmonad";
+    dot-xmonad = {
+      url = "github:ncaq/.xmonad";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =

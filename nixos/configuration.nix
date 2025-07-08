@@ -1,4 +1,9 @@
-{ isWSL, ... }:
+{
+  lib,
+  inputs,
+  isWSL,
+  ...
+}:
 {
   system.stateVersion = "25.05";
 
@@ -12,24 +17,8 @@
     zsh.enable = true;
   };
 
-  # Linuxネイティブに必要だがWSLなどとは干渉するモジュールを分離する。
+  # ネイティブLinuxに必要だがWSLなどとは干渉するモジュールを分離する。
   imports =
-    let
-      coreImports = [
-        ./core/dconf.nix
-        ./core/font.nix
-        ./core/locate.nix
-        ./core/networking.nix
-        ./core/nix-settings.nix
-        ./core/sudo.nix
-        ./core/uinput.nix
-        ./core/user.nix
-      ];
-      linuxNativeImports = [
-        ./linux-native/audio.nix
-        ./linux-native/networkmanager.nix
-        ./linux-native/xserver.nix
-      ];
-    in
-    coreImports ++ (if isWSL then [ ] else linuxNativeImports);
+    (import ./core { inherit builtins lib inputs; })
+    ++ (if isWSL then [ ] else (import ./native-linux { inherit builtins lib inputs; }));
 }

@@ -1,7 +1,6 @@
 {
   lib,
   inputs,
-  isWSL,
   ...
 }:
 {
@@ -17,8 +16,5 @@
     zsh.enable = true;
   };
 
-  # ネイティブLinuxに必要だがWSLなどとは干渉するモジュールを分離する。
-  imports =
-    (import ./core { inherit builtins lib inputs; })
-    ++ (if isWSL then [ ] else (import ./native-linux { inherit builtins lib inputs; }));
+  imports = import ./core { inherit builtins lib inputs; };
 }

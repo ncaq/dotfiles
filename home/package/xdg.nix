@@ -1,6 +1,6 @@
 {
-  config,
   lib,
+  config,
   isWSL,
   username,
   ...
@@ -13,6 +13,7 @@ in
   xdg = {
     enable = true;
     userDirs = {
+      # xdgディレクトリを日本語名称にせずにマジョリティな名称にするように明示的に設定。
       enable = true;
       createDirectories = true;
 
@@ -21,6 +22,7 @@ in
       pictures = "${config.home.homeDirectory}/Pictures";
       videos = "${config.home.homeDirectory}/Videos";
 
+      # publicShareとtemplatesは何に使うべきなのか未だによくわからないので作らない。
       publicShare = null;
       templates = null;
     };
@@ -28,38 +30,27 @@ in
 
   home.file =
     {
+      # 共通で`Pictures`はGoogle Driveの`Pictures`フォルダを参照する。
       "Pictures" = {
         source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/GoogleDrive/Pictures";
       };
     }
-    // (
-      if isWSL then
-        {
-          "Videos" = {
-            source = config.lib.file.mkOutOfStoreSymlink "/mnt/d/Videos/";
-          };
-          "GoogleDrive" = {
-            source = config.lib.file.mkOutOfStoreSymlink (WindowsUserHome + "/マイドライブ");
-          };
-          "WinHome" = {
-            source = config.lib.file.mkOutOfStoreSymlink WindowsUserHome;
-          };
-          "WinDownloads" = {
-            source = config.lib.file.mkOutOfStoreSymlink (WindowsUserHome + "/Downloads");
-          };
-        }
-      else
-        { }
-    );
-
-  home.activation.createGoogleDrive = lib.hm.dag.entryAfter [ "writeBoundary" ] (
-    if isWSL then
-      ""
-    else
-      ''
-        if [ ! -d "${config.home.homeDirectory}/GoogleDrive" ]; then
-          $DRY_RUN_CMD mkdir -p "${config.home.homeDirectory}/GoogleDrive"
-        fi
-      ''
-  );
+    // lib.mkIf isWSL {
+      # WindowsのHDD側を参照。
+      "Videos" = {
+        source = config.lib.file.mkOutOfStoreSymlink "/mnt/d/Videos/";
+      };
+      # Windowsホストの管理するGoogle Driveディレクトリを参照。
+      "GoogleDrive" = {
+        source = config.lib.file.mkOutOfStoreSymlink (WindowsUserHome + "/マイドライブ");
+      };
+      # WSLで便利なリンク。
+      "WinHome" = {
+        source = config.lib.file.mkOutOfStoreSymlink WindowsUserHome;
+      };
+      # WSLで便利なリンク。
+      "WinDownloads" = {
+        source = config.lib.file.mkOutOfStoreSymlink (WindowsUserHome + "/Downloads");
+      };
+    };
 }

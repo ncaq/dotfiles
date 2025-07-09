@@ -16,5 +16,5 @@
     zsh.enable = true;
   };
 
-  imports = [ ./module/is-wsl.nix ] ++ import ./core { inherit builtins lib inputs; };
+  imports = import ./core { inherit builtins lib inputs; };
 }

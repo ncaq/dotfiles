@@ -11,5 +11,4 @@
 
     useWindowsDriver = true;
   };
-  isWSL = true;
 }

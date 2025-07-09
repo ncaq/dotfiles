@@ -143,7 +143,7 @@
                         useGlobalPkgs = true;
                         useUserPackages = true;
                         extraSpecialArgs = specialArgs // {
-                          isWSL = config.isWSL;
+                          isWSL = config.wsl.enable or false;
                         };
                         users.ncaq = import ./home;
                       };

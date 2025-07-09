@@ -1,6 +1,8 @@
 {
   pkgs,
   lib,
+  config,
+  isWSL,
   ...
 }:
 let
@@ -14,13 +16,14 @@ let
     util-linux
   ];
 
+  # デフォルトではscriptをインストールしないのでoverrideAttrsで追加する。
   grive2WithScript = pkgs.grive2.overrideAttrs (oldAttrs: {
     postInstall =
       (oldAttrs.postInstall or "")
       + "install -Dm755 $src/systemd/grive-sync.sh $out/lib/grive/grive-sync.sh";
   });
 in
-{
+lib.mkIf (!isWSL) {
   home.packages = [
     grive2WithScript
   ];
@@ -70,4 +73,10 @@ in
       };
     };
   };
+
+  home.activation.createGoogleDriveDir = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    if [ ! -d "${config.home.homeDirectory}/GoogleDrive" ]; then
+      $DRY_RUN_CMD mkdir "${config.home.homeDirectory}/GoogleDrive"
+    fi
+  '';
 }

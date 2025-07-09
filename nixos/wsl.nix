@@ -1,5 +1,6 @@
-{ username, ... }:
+{ nixos-wsl, username, ... }:
 {
+  imports = [ nixos-wsl.nixosModules.default ];
   wsl = {
     enable = true;
 
@@ -10,4 +11,5 @@
 
     useWindowsDriver = true;
   };
+  isWSL = true;
 }

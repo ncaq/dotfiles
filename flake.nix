@@ -79,7 +79,6 @@
                     system = "x86_64-linux";
                     config.allowUnfree = true;
                   };
-                  isWSL = false;
                   dpi = 144;
                 };
                 modules = [
@@ -103,7 +102,6 @@
             mkNixosSystem =
               {
                 hostName,
-                isWSL,
                 dpi ? null,
               }:
               let
@@ -111,9 +109,9 @@
                   inherit
                     inputs
                     hostName
-                    isWSL
                     dpi
                     nixos-hardware
+                    nixos-wsl
                     dot-xmonad
                     ;
                   pkgs-unstable = import nixpkgs-unstable {
@@ -126,51 +124,44 @@
               nixpkgs.lib.nixosSystem {
                 system = "x86_64-linux";
                 inherit specialArgs;
-                modules =
+                modules = [
                   (
-                    if isWSL then
-                      [
-                        nixos-wsl.nixosModules.default
-                        ./nixos/wsl.nix
-                      ]
-                    else
-                      [ disko.nixosModules.default ]
+                    { ... }:
+                    {
+                      nixpkgs.config.allowUnfree = true;
+                      nixpkgs.overlays = [ rust-overlay.overlays.default ];
+                    }
                   )
-                  ++ [
-                    (
-                      { ... }:
-                      {
-                        nixpkgs.config.allowUnfree = true;
-                        nixpkgs.overlays = [ rust-overlay.overlays.default ];
-                      }
-                    )
-                    ./nixos/configuration.nix
-                    ./nixos/host/${hostName}.nix
-                    home-manager.nixosModules.home-manager
+                  disko.nixosModules.default
+                  ./nixos/configuration.nix
+                  ./nixos/host/${hostName}.nix
+                  home-manager.nixosModules.home-manager
+                  (
+                    { config, ... }:
                     {
                       home-manager = {
                         useGlobalPkgs = true;
                         useUserPackages = true;
-                        extraSpecialArgs = specialArgs;
+                        extraSpecialArgs = specialArgs // {
+                          isWSL = config.isWSL;
+                        };
                         users.ncaq = import ./home;
                       };
                     }
-                  ];
+                  )
+                ];
               };
           in
           {
             "vanitas" = mkNixosSystem {
               hostName = "vanitas";
-              isWSL = false;
               dpi = 144;
             };
             "creep" = mkNixosSystem {
               hostName = "creep";
-              isWSL = false;
             };
             "SSD0086" = mkNixosSystem {
               hostName = "SSD0086";
-              isWSL = true;
               dpi = 144;
             };
           };

@@ -211,7 +211,10 @@
       "Bash(yarn lint:eslint)",
       "Bash(yarn lint:tsc)",
       "Bash(yarn prettier:*)",
-      "WebFetch"
+      "WebFetch",
+      "mcp__deepwiki__ask_question",
+      "mcp__deepwiki__read_wiki_contents",
+      "mcp__deepwiki__read_wiki_structure"
     ],
     "deny": ["Bash(git commit:*)", "Bash(rm:*)"]
   },

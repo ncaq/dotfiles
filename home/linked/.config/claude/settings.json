@@ -213,7 +213,7 @@
       "Bash(yarn prettier:*)",
       "WebFetch"
     ],
-    "deny": ["Bash(rm:*)"]
+    "deny": ["Bash(git commit:*)", "Bash(rm:*)"]
   },
   "model": "opus"
 }

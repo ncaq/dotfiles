@@ -148,7 +148,6 @@
       "Bash(ghc-pkg field:*)",
       "Bash(ghci:*)",
       "Bash(git add:*)",
-      "Bash(git branch:*)",
       "Bash(git clone:*)",
       "Bash(git diff:*)",
       "Bash(git log:*)",

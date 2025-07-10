@@ -153,6 +153,7 @@
       "Bash(git log:*)",
       "Bash(git show:*)",
       "Bash(git status:*)",
+      "Bash(git switch:*)",
       "Bash(grep:*)",
       "Bash(hadolint:*)",
       "Bash(hlint:*)",

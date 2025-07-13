@@ -82,9 +82,6 @@ sudo mount -o noatime,compress=zstd,subvol=@nix-store /dev/mapper/nixos-root /mn
 sudo mount -o noatime,subvol=@swap /dev/mapper/nixos-root /mnt/swap
 sudo mount -o noatime,compress=zstd,subvol=@var-log /dev/mapper/nixos-root /mnt/var/log
 sudo mount -o noatime,compress=zstd,subvol=@snapshots /dev/mapper/nixos-root /mnt/.snapshots
-
-cd /mnt/swap
-sudo btrfs filesystem mkswapfile swapfile --size 32g
 ```
 
 #### Install NixOS

@@ -34,9 +34,20 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    haskellNix = {
+      url = "github:input-output-hk/haskell.nix";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        nixpkgs-unstable.follows = "nixpkgs-unstable";
+      };
+    };
+
     dot-xmonad = {
       url = "github:ncaq/.xmonad";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        haskellNix.follows = "haskellNix";
+      };
     };
   };
 

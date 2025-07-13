@@ -1,8 +1,4 @@
-{
-  lib,
-  inputs,
-  ...
-}:
+{ ... }:
 {
   system.stateVersion = "25.05";
 
@@ -16,5 +12,5 @@
     zsh.enable = true;
   };
 
-  imports = import ./core { inherit builtins lib inputs; };
+  imports = [ ./core ];
 }

@@ -33,7 +33,7 @@ lib.mkIf (!isWSL) {
       ];
     };
     Install = {
-      WantedBy = [ "graphical.target" ];
+      WantedBy = [ "graphical-session.target" ];
     };
   };
 }

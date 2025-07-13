@@ -16,6 +16,8 @@
                 mountpoint = "/boot/efi";
                 mountOptions = [
                   "noatime"
+                  "fmask=0077"
+                  "dmask=0077"
                 ];
               };
             };
@@ -44,6 +46,19 @@
                       "compress=zstd"
                     ];
                   };
+                  "@nix-store" = {
+                    mountpoint = "/nix/store";
+                    mountOptions = [
+                      "noatime"
+                      "compress=zstd"
+                    ];
+                  };
+                  "@swap" = {
+                    mountpoint = "/swap";
+                    mountOptions = [
+                      "noatime"
+                    ];
+                  };
                   "@var-log" = {
                     mountpoint = "/var/log";
                     mountOptions = [
@@ -66,4 +81,10 @@
       };
     };
   };
+  swapDevices = [
+    {
+      device = "/swap/swapfile";
+      size = 4 * 1024;
+    }
+  ];
 }

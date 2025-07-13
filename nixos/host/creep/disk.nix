@@ -26,13 +26,13 @@
         "subvol=@"
       ];
     };
-    "/nix" = {
+    "/nix/store" = {
       device = "/dev/mapper/nixos-root";
       fsType = "btrfs";
       options = [
         "noatime"
         "compress=zstd"
-        "subvol=@nix"
+        "subvol=@nix-store"
       ];
     };
     "/swap" = {

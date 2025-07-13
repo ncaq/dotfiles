@@ -57,6 +57,7 @@ sudo cryptsetup open /dev/disk/by-id/nixos-root-crypt nixos-root
 sudo mkfs.btrfs /dev/mapper/nixos-root
 sudo mount /dev/mapper/nixos-root /mnt
 sudo btrfs subvolume create /mnt/@
+sudo btrfs subvolume create /mnt/@nix-store
 sudo btrfs subvolume create /mnt/@swap
 sudo btrfs subvolume create /mnt/@var-log
 sudo btrfs subvolume create /mnt/@snapshots
@@ -70,12 +71,14 @@ sudo mount -o noatime,compress=zstd,subvol=@ /dev/mapper/nixos-root /mnt
 
 sudo mkdir -p /mnt/boot
 sudo mkdir -p /mnt/boot/efi
+sudo mkdir -p /mnt/nix/store
 sudo mkdir -p /mnt/swap
 sudo mkdir -p /mnt/var/log
 sudo mkdir -p /mnt/.snapshots
 
 sudo mount -o noatime /dev/by-id/nixos-boot /mnt/boot
 sudo mount -o noatime /dev/by-id/your-disk-id-of-efi-system /mnt/boot/efi
+sudo mount -o noatime,compress=zstd,subvol=@nix-store /dev/mapper/nixos-root /mnt/nix/store
 sudo mount -o noatime,subvol=@swap /dev/mapper/nixos-root /mnt/swap
 sudo mount -o noatime,compress=zstd,subvol=@var-log /dev/mapper/nixos-root /mnt/var/log
 sudo mount -o noatime,compress=zstd,subvol=@snapshots /dev/mapper/nixos-root /mnt/.snapshots

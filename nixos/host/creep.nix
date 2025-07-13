@@ -1,6 +1,8 @@
 { nixos-hardware, ... }:
 {
   imports = [
+    ../native-linux
+
     nixos-hardware.nixosModules.lenovo-thinkpad-p16s-amd-gen2
 
     ./creep/disk.nix

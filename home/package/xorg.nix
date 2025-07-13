@@ -1,9 +1,4 @@
-{
-  pkgs,
-  lib,
-  dpi,
-  ...
-}:
+{ pkgs, ... }:
 {
   home.packages =
     (with pkgs; [
@@ -15,10 +10,10 @@
       xkbcomp
       xmodmap
       xprop
+      xrandr
       xrdb
     ]);
 
-  xresources.properties = lib.mkIf (dpi != null) {
-    "Xft.dpi" = dpi;
-  };
+  services.autorandr.enable = true;
+  programs.autorandr.enable = true;
 }

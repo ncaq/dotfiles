@@ -34,9 +34,20 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    haskellNix = {
+      url = "github:input-output-hk/haskell.nix";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        nixpkgs-unstable.follows = "nixpkgs-unstable";
+      };
+    };
+
     dot-xmonad = {
       url = "github:ncaq/.xmonad";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        haskellNix.follows = "haskellNix";
+      };
     };
   };
 
@@ -74,7 +85,7 @@
                   system = "x86_64-linux";
                 };
                 extraSpecialArgs = {
-                  inherit inputs dot-xmonad username;
+                  inherit inputs username dot-xmonad;
                   pkgs-unstable = import nixpkgs-unstable {
                     system = "x86_64-linux";
                     config.allowUnfree = true;
@@ -102,14 +113,12 @@
             mkNixosSystem =
               {
                 hostName,
-                dpi ? null,
               }:
               let
                 specialArgs = {
                   inherit
                     inputs
                     hostName
-                    dpi
                     nixos-hardware
                     nixos-wsl
                     dot-xmonad
@@ -155,14 +164,12 @@
           {
             "vanitas" = mkNixosSystem {
               hostName = "vanitas";
-              dpi = 144;
             };
             "creep" = mkNixosSystem {
               hostName = "creep";
             };
             "SSD0086" = mkNixosSystem {
               hostName = "SSD0086";
-              dpi = 144;
             };
           };
       };

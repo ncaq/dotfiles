@@ -99,6 +99,12 @@ cd dotfiles
 sudo nixos-install --flake '.#your-machine-hostname' --root /mnt
 ```
 
+#### `nixos-generate-config`
+
+```console
+sudo nixos-generate-config --show-hardware-config --no-filesystems > ~/dotfiles/nixos/host/your-machine-hostname/hardware-configuration.nix
+```
+
 ### Automatic
 
 > [!NOTE]

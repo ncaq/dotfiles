@@ -18,9 +18,11 @@ It's managed by
 
 ## NixOS
 
-### Manual
+### Manual for with Windows dual boot
 
-Before shrink disk partition.
+#### Preparation
+
+Shrink the disk partition.
 
 Create install media from [Nix & NixOS | Declarative builds and deployments](https://nixos.org/).
 
@@ -49,6 +51,8 @@ n
 w
 ```
 
+#### File System Creation
+
 ```console
 sudo mkfs.ext4 -L nixos-boot /dev/disk/by-id/your-disk-id-of-boot
 sudo e2label /dev/disk/by-id/your-disk-id-of-root-for-crypt nixos-root-crypt
@@ -69,7 +73,6 @@ sudo umount /mnt
 ```console
 sudo mount -o noatime,compress=zstd,subvol=@ /dev/mapper/nixos-root /mnt
 
-sudo mkdir -p /mnt/boot
 sudo mkdir -p /mnt/boot/efi
 sudo mkdir -p /mnt/nix/store
 sudo mkdir -p /mnt/swap
@@ -84,7 +87,7 @@ sudo mount -o noatime,compress=zstd,subvol=@var-log /dev/mapper/nixos-root /mnt/
 sudo mount -o noatime,compress=zstd,subvol=@snapshots /dev/mapper/nixos-root /mnt/.snapshots
 ```
 
-#### Install NixOS
+#### `nixos-install`
 
 ``` console
 nix-shell -p git

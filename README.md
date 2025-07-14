@@ -105,13 +105,13 @@ cd ~
 git clone 'https://github.com/ncaq/dotfiles.git'
 cd dotfiles
 
-sudo nixos-install --flake '.#your-machine-hostname' --root /mnt
+sudo nixos-install --flake '.#new-hostname' --root /mnt
 ```
 
 #### `nixos-generate-config`
 
 ```console
-sudo nixos-generate-config --show-hardware-config --no-filesystems > ~/dotfiles/nixos/host/your-machine-hostname/hardware-configuration.nix
+sudo nixos-generate-config --show-hardware-config --no-filesystems > ~/dotfiles/nixos/host/new-hostname/hardware-configuration.nix
 ```
 
 ### Automatic
@@ -120,10 +120,10 @@ sudo nixos-generate-config --show-hardware-config --no-filesystems > ~/dotfiles/
 > Please input `please-input-new-hostname`.
 
 ``` zsh
-new_hostname=please-input-new-hostname
+new-hostname=please-input-new-hostname
 nix --extra-experimental-features 'flakes nix-command' run 'nixpkgs#git' -- clone https://github.com/ncaq/dotfiles.git
 cd dotfiles
-sudo nix --experimental-features 'flakes nix-command' run github:nix-community/disko/latest -- --flake ".#${new_hostname}"
+sudo nix --experimental-features 'flakes nix-command' run github:nix-community/disko/latest -- --flake ".#${new-hostname}"
 ```
 
 Please reboot.

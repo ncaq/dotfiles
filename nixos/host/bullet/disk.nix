@@ -13,7 +13,7 @@
               content = {
                 type = "filesystem";
                 format = "vfat";
-                mountpoint = "/boot/efi";
+                mountpoint = "/efi";
                 mountOptions = [
                   "noatime"
                   "fmask=0077"
@@ -22,14 +22,16 @@
               };
             };
             nixos-boot = {
-              size = "4G";
-              type = "8300";
+              size = "1G";
+              type = "EA00";
               content = {
                 type = "filesystem";
-                format = "ext4";
+                format = "vfat";
                 mountpoint = "/boot";
                 mountOptions = [
                   "noatime"
+                  "fmask=0077"
+                  "dmask=0077"
                 ];
               };
             };

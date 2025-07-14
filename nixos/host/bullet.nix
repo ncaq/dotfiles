@@ -1,7 +1,8 @@
 { nixos-hardware, ... }:
 {
-  hardware.nvidia.open = true;
   imports = [
+    ../native-linux
+
     nixos-hardware.nixosModules.common-cpu-amd
     nixos-hardware.nixosModules.common-cpu-amd-pstate
     nixos-hardware.nixosModules.common-gpu-nvidia-nonprime
@@ -9,16 +10,22 @@
     nixos-hardware.nixosModules.common-pc
     nixos-hardware.nixosModules.common-pc-ssd
 
-    ./bullet/hardware-configuration.nix
     ./bullet/disk.nix
+    ./bullet/hardware-configuration.nix
   ];
   boot = {
     loader = {
       efi = {
         canTouchEfiVariables = true;
-        efiSysMountPoint = "/boot/efi";
+        efiSysMountPoint = "/efi";
       };
-      systemd-boot.enable = true;
+      timeout = 1;
+      systemd-boot = {
+        enable = true;
+        consoleMode = "max";
+        xbootldrMountPoint = "/boot";
+      };
     };
   };
+  hardware.nvidia.open = true;
 }

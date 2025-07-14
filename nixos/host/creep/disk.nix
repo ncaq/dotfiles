@@ -65,7 +65,7 @@
   swapDevices = [
     {
       device = "/swap/swapfile";
-      size = 32 * 1024;
+      size = 4 * 1024;
     }
   ];
 }

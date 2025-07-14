@@ -210,7 +210,7 @@
                   nix flake archive --json|jq -r '.path,(.inputs|to_entries[].value.path)'|cachix push ncaq-dotfiles
                   echo "Push home-manager"
                   nix build --print-out-paths '.#homeConfigurations.ncaq.activationPackage'|cachix push ncaq-dotfiles
-                  echo "Push NixOS partical"
+                  echo "Push NixOS partial"
                   nix build --print-out-paths '.#nixosConfigurations.vanitas.config.system.build.toplevel'|cachix push ncaq-dotfiles
                   nix build --print-out-paths '.#nixosConfigurations.bullet.config.system.build.toplevel'|cachix push ncaq-dotfiles
                   nix build --print-out-paths '.#nixosConfigurations.SSD0086.config.system.build.toplevel'|cachix push ncaq-dotfiles

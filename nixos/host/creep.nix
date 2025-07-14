@@ -14,12 +14,13 @@
     loader = {
       efi = {
         canTouchEfiVariables = true;
-        efiSysMountPoint = "/boot/efi";
+        efiSysMountPoint = "/efi";
       };
       timeout = 1;
       systemd-boot = {
         enable = true;
         consoleMode = "max";
+        xbootldrMountPoint = "/boot";
       };
     };
     initrd = {

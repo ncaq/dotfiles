@@ -3,7 +3,7 @@
   # diskoは一つのディスクでのデュアルブートには対応していない。
   # よってプリインストールされているWindowsのパーティションを残す必要があるためdiskoは使えない。
   fileSystems = {
-    "/boot/efi" = {
+    "/efi" = {
       device = "/dev/disk/by-label/SYSTEM";
       fsType = "vfat";
       options = [
@@ -14,8 +14,12 @@
     };
     "/boot" = {
       device = "/dev/disk/by-label/nixos-boot";
-      fsType = "ext4";
-      options = [ "noatime" ];
+      fsType = "vfat";
+      options = [
+        "noatime"
+        "fmask=0077"
+        "dmask=0077"
+      ];
     };
     "/" = {
       device = "/dev/mapper/nixos-root";

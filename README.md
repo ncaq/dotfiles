@@ -51,6 +51,8 @@ n
 w
 ```
 
+#### File System Creation
+
 ```console
 sudo mkfs.ext4 -L nixos-boot /dev/disk/by-id/your-disk-id-of-boot
 sudo e2label /dev/disk/by-id/your-disk-id-of-root-for-crypt nixos-root-crypt

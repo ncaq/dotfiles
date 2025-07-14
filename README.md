@@ -20,6 +20,8 @@ It's managed by
 
 ### Manual
 
+#### Preparation
+
 Before shrink disk partition.
 
 Create install media from [Nix & NixOS | Declarative builds and deployments](https://nixos.org/).

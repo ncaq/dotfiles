@@ -22,7 +22,7 @@
       timeout = 1;
       systemd-boot = {
         enable = true;
-        consoleMode = "max";
+        consoleMode = "auto";
         xbootldrMountPoint = "/boot";
       };
     };

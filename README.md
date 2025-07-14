@@ -73,7 +73,6 @@ sudo umount /mnt
 ```console
 sudo mount -o noatime,compress=zstd,subvol=@ /dev/mapper/nixos-root /mnt
 
-sudo mkdir -p /mnt/boot
 sudo mkdir -p /mnt/boot/efi
 sudo mkdir -p /mnt/nix/store
 sudo mkdir -p /mnt/swap

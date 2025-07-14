@@ -5,10 +5,10 @@
 
     nixos-hardware.nixosModules.lenovo-thinkpad-p16s-amd-gen2
 
+    ../laptop/backlight.nix
+
     ./creep/disk.nix
     ./creep/hardware-configuration.nix
-
-    ../laptop/backlight.nix
   ];
   boot = {
     loader = {

@@ -22,7 +22,7 @@ It's managed by
 
 #### Preparation
 
-Before shrink disk partition.
+Shrink the disk partition.
 
 Create install media from [Nix & NixOS | Declarative builds and deployments](https://nixos.org/).
 

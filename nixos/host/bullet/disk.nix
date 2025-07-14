@@ -3,7 +3,7 @@
     disk = {
       main = {
         type = "disk";
-        device = "/dev/disk/by-id/nvme-Samsung_SSD_970_EVO_Plus_1TB_S4EWNF0M300603J";
+        device = "/dev/disk/by-id/nvme-WD_BLACK_SN8100_2000GB_25221P800034";
         content = {
           type = "gpt";
           partitions = {

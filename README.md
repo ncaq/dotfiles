@@ -18,7 +18,7 @@ It's managed by
 
 ## NixOS
 
-### Manual
+### Manual for with Windows dual boot
 
 #### Preparation
 

@@ -87,7 +87,7 @@ sudo mount -o noatime,compress=zstd,subvol=@var-log /dev/mapper/nixos-root /mnt/
 sudo mount -o noatime,compress=zstd,subvol=@snapshots /dev/mapper/nixos-root /mnt/.snapshots
 ```
 
-#### Install NixOS
+#### `nixos-install`
 
 ``` console
 nix-shell -p git

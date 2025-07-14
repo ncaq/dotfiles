@@ -3,9 +3,9 @@
   imports = [
     ../native-linux
 
-    nixos-hardware.nixosModules.lenovo-thinkpad-p16s-amd-gen2
-
     ../laptop/backlight.nix
+
+    nixos-hardware.nixosModules.lenovo-thinkpad-p16s-amd-gen2
 
     ./creep/disk.nix
     ./creep/hardware-configuration.nix

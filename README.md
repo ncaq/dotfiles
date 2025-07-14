@@ -34,13 +34,21 @@ Open terminal.
 
 #### Disk Partitioning
 
+Create XBOOTLDR partition for `/boot` (1GB) and root partition.
+Following Boot Loader Specification, ESP will be mounted at `/efi` and XBOOTLDR at `/boot`.
+
 ```console
 sudo fdisk /dev/disk/by-id/your-disk-id
 ```
 
+create a new partition for the boot loader(XBOOTLDR).
+XBOOTLDR type is `Linux extended boot`(`BC13C2FF-59E6-4262-A352-B275FD6F7172`).
+
 ```
 n
-+4G
++1G
+t
+142
 ```
 
 ```
@@ -54,7 +62,7 @@ w
 #### File System Creation
 
 ```console
-sudo mkfs.ext4 -L nixos-boot /dev/disk/by-id/your-disk-id-of-boot
+sudo mkfs.vfat -F32 -n nixos-boot /dev/disk/by-id/your-disk-id-of-boot
 sudo e2label /dev/disk/by-id/your-disk-id-of-root-for-crypt nixos-root-crypt
 sudo cryptsetup luksFormat /dev/disk/by-id/nixos-root-crypt
 sudo cryptsetup open /dev/disk/by-id/nixos-root-crypt nixos-root
@@ -73,14 +81,15 @@ sudo umount /mnt
 ```console
 sudo mount -o noatime,compress=zstd,subvol=@ /dev/mapper/nixos-root /mnt
 
-sudo mkdir -p /mnt/boot/efi
+sudo mkdir -p /mnt/efi
+sudo mkdir -p /mnt/boot
 sudo mkdir -p /mnt/nix/store
 sudo mkdir -p /mnt/swap
 sudo mkdir -p /mnt/var/log
 sudo mkdir -p /mnt/.snapshots
 
-sudo mount -o noatime /dev/by-id/nixos-boot /mnt/boot
-sudo mount -o noatime /dev/by-id/your-disk-id-of-efi-system /mnt/boot/efi
+sudo mount -o noatime,fmask=0077,dmask=0077 /dev/disk/by-label/nixos-boot /mnt/boot
+sudo mount -o noatime,fmask=0077,dmask=0077 /dev/disk/by-label/your-disk-label-of-efi-system /mnt/efi
 sudo mount -o noatime,compress=zstd,subvol=@nix-store /dev/mapper/nixos-root /mnt/nix/store
 sudo mount -o noatime,subvol=@swap /dev/mapper/nixos-root /mnt/swap
 sudo mount -o noatime,compress=zstd,subvol=@var-log /dev/mapper/nixos-root /mnt/var/log

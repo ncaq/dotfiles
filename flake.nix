@@ -6,6 +6,11 @@
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
     flake-parts.url = "github:hercules-ci/flake-parts";
+    flake-utils.url = "github:numtide/flake-utils";
+    devshell = {
+      url = "github:numtide/devshell";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";
@@ -16,14 +21,11 @@
       url = "github:nix-community/home-manager/release-25.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
     nixos-hardware.url = "github:NixOS/nixos-hardware";
-
     disko = {
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
     nixos-wsl = {
       url = "github:nix-community/NixOS-WSL/main";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -46,7 +48,21 @@
       url = "github:ncaq/.xmonad";
       inputs = {
         nixpkgs.follows = "nixpkgs";
+        flake-utils.follows = "flake-utils";
         haskellNix.follows = "haskellNix";
+      };
+    };
+
+    mcp-servers-nix = {
+      url = "github:natsukium/mcp-servers-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    mcp-nixos = {
+      url = "github:utensils/mcp-nixos";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-utils.follows = "flake-utils";
+        devshell.follows = "devshell";
       };
     };
   };
@@ -63,6 +79,8 @@
       nixos-wsl,
       rust-overlay,
       dot-xmonad,
+      mcp-servers-nix,
+      mcp-nixos,
       ...
     }:
     flake-parts.lib.mkFlake { inherit inputs; } {
@@ -85,7 +103,13 @@
                   system = "x86_64-linux";
                 };
                 extraSpecialArgs = {
-                  inherit inputs username dot-xmonad;
+                  inherit
+                    inputs
+                    username
+                    dot-xmonad
+                    mcp-servers-nix
+                    mcp-nixos
+                    ;
                   pkgs-unstable = import nixpkgs-unstable {
                     system = "x86_64-linux";
                     config.allowUnfree = true;
@@ -122,6 +146,8 @@
                     nixos-hardware
                     nixos-wsl
                     dot-xmonad
+                    mcp-servers-nix
+                    mcp-nixos
                     ;
                   pkgs-unstable = import nixpkgs-unstable {
                     system = "x86_64-linux";

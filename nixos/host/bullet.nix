@@ -20,24 +20,26 @@
         efiSysMountPoint = "/efi";
       };
       timeout = 1;
-      systemd-boot = {
+      grub = {
         enable = true;
-        consoleMode = "auto";
-        xbootldrMountPoint = "/boot";
-        edk2-uefi-shell.enable = true;
-        # 仕事用Windowsを最上位に表示し、上キーで移動できるようにする。
-        windows = {
-          "work" = {
-            title = "Windows 11 Work";
-            efiDeviceHandle = "HD0b";
-            sortKey = "a_windows_work";
-          };
-          "game" = {
-            title = "Windows 11 Game";
-            efiDeviceHandle = "HD1b";
-            sortKey = "b_windows_game";
-          };
-        };
+        device = "nodev";
+        efiSupport = true;
+        extraEntries = ''
+          menuentry "Windows Game" {
+            insmod part_gpt
+            insmod fat
+            insmod chain
+            set root='hd0,gpt1'
+            chainloader /efi/Microsoft/Boot/bootmgfw.efi
+          }
+          menuentry "Windows Work" {
+            insmod part_gpt
+            insmod fat
+            insmod chain
+            set root='hd1,gpt1'
+            chainloader /efi/Microsoft/Boot/bootmgfw.efi
+          }
+        '';
       };
     };
   };

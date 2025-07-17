@@ -15,6 +15,7 @@
     jq
     libreoffice
     libwebp
+    lshw
     lsof
     nautilus
     nkf
@@ -23,6 +24,7 @@
     oxipng
     parallel
     patool
+    pciutils
     plantuml
     pstree
     rakudo
@@ -32,6 +34,7 @@
     squashfsTools
     trashy
     tree
+    usbutils
     virtualbox
     vlc
     zoom-us

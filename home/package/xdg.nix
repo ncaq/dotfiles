@@ -35,7 +35,7 @@ in
         source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/GoogleDrive/Pictures";
       };
     }
-    // lib.mkIf isWSL {
+    // lib.optionalAttrs isWSL {
       # WindowsのHDD側を参照。
       "Videos" = {
         source = config.lib.file.mkOutOfStoreSymlink "/mnt/d/Videos/";

@@ -24,6 +24,7 @@
         enable = true;
         device = "nodev";
         efiSupport = true;
+        default = "saved";
         extraEntries = ''
           menuentry "Windows Game" {
             insmod part_gpt

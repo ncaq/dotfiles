@@ -25,6 +25,7 @@
         device = "nodev";
         efiSupport = true;
         gfxmodeEfi = "1024x768";
+        default = "saved";
         extraEntries = ''
           menuentry "Windows Game" {
             insmod part_gpt

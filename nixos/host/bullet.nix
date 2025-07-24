@@ -28,18 +28,22 @@
         default = "saved";
         extraEntries = ''
           menuentry "Windows Game" {
+            savedefault
             insmod part_gpt
             insmod fat
+            insmod search_fs_uuid
             insmod chain
-            set root='hd0,gpt1'
-            chainloader /efi/Microsoft/Boot/bootmgfw.efi
+            search --fs-uuid --set=root 8E7A-6494
+            chainloader /EFI/Microsoft/Boot/bootmgfw.efi
           }
           menuentry "Windows Work" {
+            savedefault
             insmod part_gpt
             insmod fat
+            insmod search_fs_uuid
             insmod chain
-            set root='hd1,gpt1'
-            chainloader /efi/Microsoft/Boot/bootmgfw.efi
+            search --fs-uuid --set=root CE5B-C127
+            chainloader /EFI/Microsoft/Boot/bootmgfw.efi
           }
         '';
       };

@@ -5,6 +5,7 @@
     cachix
     discord
     dmd
+    efibootmgr
     eog
     evince
     fd

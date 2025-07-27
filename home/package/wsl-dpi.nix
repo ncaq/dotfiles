@@ -19,7 +19,7 @@ lib.mkIf isWSL {
           if [ -S /tmp/.X11-unix/X0 ] && ${pkgs.xorg.xset}/bin/xset q &>/dev/null; then
             break
           fi
-          ${pkgs.coreutils}/bin/sleep 0.1
+          ${pkgs.coreutils}/bin/sleep 1
           timeout=$((timeout - 1))
         done
       ''}'";
@@ -27,7 +27,7 @@ lib.mkIf isWSL {
         #!${pkgs.bash}/bin/bash
         set -euo pipefail
         DPI=''${WSL_DPI:-144}
-        ${pkgs.xorg.xrandr}/bin/xrandr --dpi "$DPI" 2>/dev/null
+        ${pkgs.xorg.xrandr}/bin/xrandr --dpi "$DPI"
         echo "Xft.dpi: $DPI"|${pkgs.xorg.xrdb}/bin/xrdb -merge
       ''}'";
       Environment = [

@@ -216,7 +216,7 @@
       "mcp__deepwiki__read_wiki_contents",
       "mcp__deepwiki__read_wiki_structure"
     ],
-    "deny": ["Bash(git commit:*)", "Bash(rm:*)"]
+    "deny": ["Bash(git commit:*)", "Bash(rm:*)", "Bash(head:*)", "Bash(tail:*)"]
   },
   "model": "opus"
 }

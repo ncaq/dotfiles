@@ -3,6 +3,8 @@
   imports = [
     ../native-linux
 
+    ../desktop/dpms.nix
+
     nixos-hardware.nixosModules.common-cpu-amd
     nixos-hardware.nixosModules.common-cpu-amd-pstate
     nixos-hardware.nixosModules.common-gpu-nvidia-nonprime

@@ -99,30 +99,30 @@ sudo mount -o noatime,compress=zstd,subvol=@snapshots /dev/mapper/nixos-root /mn
 #### `nixos-install`
 
 ``` console
-new-hostname=please-input-new-hostname
+NEW_HOST=please-input-new-hostname
 nix-shell -p git
 
 cd ~
 git clone 'https://github.com/ncaq/dotfiles.git'
 cd dotfiles
 
-sudo nixos-install --flake ".#${new-hostname}" --root /mnt
+sudo nixos-install --flake ".#${NEW_HOST}" --root /mnt
 ```
 
 #### `nixos-generate-config`
 
 ```console
-sudo nixos-generate-config --show-hardware-config --no-filesystems > ~/dotfiles/nixos/host/${new-hostname}/hardware-configuration.nix
+sudo nixos-generate-config --show-hardware-config --no-filesystems > ~/dotfiles/nixos/host/${NEW_HOST}/hardware-configuration.nix
 ```
 
 ### Automatic
 
 ``` zsh
-new-hostname=please-input-new-hostname
+NEW_HOST=please-input-new-hostname
 nix --extra-experimental-features 'flakes nix-command' run 'nixpkgs#git' -- clone https://github.com/ncaq/dotfiles.git
 cd dotfiles
-sudo nix --experimental-features 'flakes nix-command' run github:nix-community/disko/latest -- --mode format,mount --flake ".#${new-hostname}"
-sudo nixos-install --flake ".#${new-hostname}" --root /mnt
+sudo nix --experimental-features 'flakes nix-command' run github:nix-community/disko/latest -- --mode format,mount --flake ".#${NEW_HOST}"
+sudo nixos-install --flake ".#${NEW_HOST}" --root /mnt
 ```
 
 Please reboot.

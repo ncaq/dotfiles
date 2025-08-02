@@ -39,6 +39,7 @@
     usbutils
     virtualbox
     vlc
+    youtube-music
     zoom-us
   ];
 }

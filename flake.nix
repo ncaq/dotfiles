@@ -91,6 +91,7 @@
                     config.allowUnfree = true;
                   };
                   dpi = 144;
+                  isWSL = false;
                 };
                 modules = [
                   (

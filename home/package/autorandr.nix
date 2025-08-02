@@ -80,7 +80,7 @@ in
           };
           # right
           DP-2 = acerRt280kConfig // {
-            position = "11520x2160";
+            position = "7680x2160";
           };
           # bottom
           DP-4 = lgUltragearConfig // {

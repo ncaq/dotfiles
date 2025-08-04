@@ -22,6 +22,6 @@ in
   # https://github.com/anthropics/claude-code/issues/3575
   home.activation.claudeSettings = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     $DRY_RUN_CMD mkdir -p $HOME/.config/claude
-    $DRY_RUN_CMD cp "${claudeSettingsSource}" "${config.xdg.configHome}/claude/settings.json"
+    $DRY_RUN_CMD install -m 644 "${claudeSettingsSource}" "${config.xdg.configHome}/claude/settings.json"
   '';
 }

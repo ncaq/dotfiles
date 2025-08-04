@@ -62,7 +62,29 @@ in
       '';
     };
     profiles = {
-      dominaria-4 = {
+      dominaria-TLB = {
+        fingerprint = {
+          HDMI-0 = lgHdr4kFingerprint;
+          DP-0 = acerVg270kFingerprint;
+          DP-4 = lgUltragearFingerprint;
+        };
+        config = {
+          # top
+          HDMI-0 = lgHdr4kConfig // {
+            position = "3840x0";
+          };
+          # left
+          DP-0 = acerVg270kConfig // {
+            position = "0x2160";
+          };
+          # bottom
+          DP-4 = lgUltragearConfig // {
+            primary = true;
+            position = "3840x2160";
+          };
+        };
+      };
+      dominaria-full = {
         fingerprint = {
           HDMI-0 = lgHdr4kFingerprint;
           DP-0 = acerVg270kFingerprint;

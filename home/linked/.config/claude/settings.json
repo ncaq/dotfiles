@@ -186,6 +186,8 @@
       "Bash(nix-diff:*)",
       "Bash(nix-prefetch-git:*)",
       "Bash(nix-prefetch-url:*)",
+      "Bash(nixos-option:*)",
+      "Bash(readlink:*)",
       "Bash(rg:*)",
       "Bash(stack bench:*)",
       "Bash(stack build:*)",
@@ -214,7 +216,12 @@
       "WebFetch",
       "mcp__deepwiki__ask_question",
       "mcp__deepwiki__read_wiki_contents",
-      "mcp__deepwiki__read_wiki_structure"
+      "mcp__deepwiki__read_wiki_structure",
+      "mcp__nixos__home_manager_info",
+      "mcp__nixos__home_manager_options_by_prefix",
+      "mcp__nixos__home_manager_search",
+      "mcp__nixos__nixos_info",
+      "mcp__nixos__nixos_search"
     ],
     "deny": ["Bash(git commit:*)", "Bash(rm:*)", "Bash(head:*)", "Bash(tail:*)"]
   },

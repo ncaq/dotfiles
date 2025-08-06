@@ -7,10 +7,7 @@
 
   console.keyMap = "dvorak";
 
-  programs = {
-    nix-ld.enable = true;
-    zsh.enable = true;
-  };
+  programs.zsh.enable = true;
 
   imports = [ ./core ];
 }

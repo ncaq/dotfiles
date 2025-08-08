@@ -23,7 +23,7 @@
           + " --output DP-4 --mode 3840x2160 --pos 3840x2160 --rate 144 --primary";
         execute_after = [
           "${pkgs.xorg.xrandr}/bin/xrandr --dpi 144"
-          "echo 'Xft.dpi: 144}'|${pkgs.xorg.xrdb}/bin/xrdb -merge"
+          "echo 'Xft.dpi: 144'|${pkgs.xorg.xrdb}/bin/xrdb -merge"
         ];
       }
     ];

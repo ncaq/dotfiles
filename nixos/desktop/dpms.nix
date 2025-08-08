@@ -1,15 +1,18 @@
 { pkgs, ... }:
 {
-  # デスクトップマシンでは画面の自動オフを無効にする。
-  systemd.user.services.dpms-disable = {
-    description = "Disable DPMS (Display Power Management Signaling)";
+  # OLEDモニターにも対応したDPMS設定。
+  # 作業の邪魔にならない程度に管理。
+  systemd.user.services.dpms-oled = {
+    description = "Configure DPMS for OLED monitors";
     serviceConfig = {
       Type = "oneshot";
-      ExecStart = pkgs.writeShellScript "dpms-disable" ''
+      ExecStart = pkgs.writeShellScript "dpms-oled" ''
         set -euo pipefail
-        # DPMSを無効化
-        ${pkgs.xorg.xset}/bin/xset -dpms
-        # スクリーンセーバーも無効化
+        # DPMSを有効化
+        ${pkgs.xorg.xset}/bin/xset +dpms
+        # DPMS設定 (スタンバイ:30分, サスペンド:45分, オフ:60分)
+        ${pkgs.xorg.xset}/bin/xset dpms 1800 2700 3600
+        # スクリーンセーバーは使わずDPMSに任せます
         ${pkgs.xorg.xset}/bin/xset s off
       '';
       Environment = [

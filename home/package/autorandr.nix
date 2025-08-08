@@ -35,8 +35,11 @@ in
   # 起動時に正しくprimaryが設定されるようにXサーバの起動を待つようにカスタマイズする。
   systemd.user.services.autorandr = {
     Service = {
-      # X11ソケットが作成され、実際に接続可能になるまで待つ
-      ExecStartPre = "${pkgs.coreutils}/bin/timeout 10 ${pkgs.bash}/bin/bash -c 'while ! [ -S /tmp/.X11-unix/X0 ] || ! ${pkgs.xorg.xset}/bin/xset q &>/dev/null; do ${pkgs.coreutils}/bin/sleep 0.1; done; ${pkgs.coreutils}/bin/sleep 1'";
+      ExecStartPre = [
+        # X11ソケットが作成され、実際に接続可能になるまで待つ。
+        # autorandrには複数のモニターのフレームバッファサイズを適切に検出できないバグがあるので事前割当で回避。
+        "${pkgs.coreutils}/bin/timeout 10 ${pkgs.bash}/bin/bash -c 'while ! [ -S /tmp/.X11-unix/X0 ] || ! ${pkgs.xorg.xset}/bin/xset q &>/dev/null; do ${pkgs.coreutils}/bin/sleep 0.1; done; ${pkgs.coreutils}/bin/sleep 1'; ${pkgs.xorg.xrandr}/bin/xrandr --fb 15360x4320"
+      ];
     };
   };
 

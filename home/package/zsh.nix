@@ -23,11 +23,9 @@ in
     autojump.enable = true;
   };
 
-  home.activation.cloneZshDotDir = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+  home.activation.cloneZshConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     if [ ! -d "${zshDotDir}" ]; then
       $DRY_RUN_CMD ${pkgs.git}/bin/git clone https://github.com/ncaq/.zsh.d.git "${zshDotDir}"
-    else
-      echo "Info: ${zshDotDir} already exists, skipping clone"
     fi
   '';
 }

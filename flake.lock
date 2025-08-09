@@ -83,6 +83,29 @@
         "type": "github"
       }
     },
+    "claude-desktop": {
+      "inputs": {
+        "flake-utils": [
+          "flake-utils"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1753539450,
+        "narHash": "sha256-JtFQDEnieVtxzfcCo7/TjseMdmhokKkwNKPm525RHBA=",
+        "owner": "k3d3",
+        "repo": "claude-desktop-linux-flake",
+        "rev": "276188d7200d2840d75729524b4950eadcfcdd7d",
+        "type": "github"
+      },
+      "original": {
+        "owner": "k3d3",
+        "repo": "claude-desktop-linux-flake",
+        "type": "github"
+      }
+    },
     "disko": {
       "inputs": {
         "nixpkgs": [
@@ -105,7 +128,9 @@
     },
     "dot-xmonad": {
       "inputs": {
-        "flake-utils": "flake-utils",
+        "flake-utils": [
+          "flake-utils"
+        ],
         "haskellNix": [
           "haskellNix"
         ],
@@ -774,9 +799,11 @@
     },
     "root": {
       "inputs": {
+        "claude-desktop": "claude-desktop",
         "disko": "disko",
         "dot-xmonad": "dot-xmonad",
         "flake-parts": "flake-parts",
+        "flake-utils": "flake-utils",
         "haskellNix": "haskellNix",
         "home-manager": "home-manager",
         "nixos-hardware": "nixos-hardware",

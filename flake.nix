@@ -6,6 +6,7 @@
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
     flake-parts.url = "github:hercules-ci/flake-parts";
+    flake-utils.url = "github:numtide/flake-utils";
 
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";
@@ -47,6 +48,15 @@
       inputs = {
         nixpkgs.follows = "nixpkgs";
         haskellNix.follows = "haskellNix";
+        flake-utils.follows = "flake-utils";
+      };
+    };
+
+    claude-desktop = {
+      url = "github:k3d3/claude-desktop-linux-flake";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-utils.follows = "flake-utils";
       };
     };
   };
@@ -63,6 +73,7 @@
       nixos-wsl,
       rust-overlay,
       dot-xmonad,
+      claude-desktop,
       ...
     }:
     flake-parts.lib.mkFlake { inherit inputs; } {
@@ -85,7 +96,12 @@
                   system = "x86_64-linux";
                 };
                 extraSpecialArgs = {
-                  inherit inputs username dot-xmonad;
+                  inherit
+                    inputs
+                    username
+                    dot-xmonad
+                    claude-desktop
+                    ;
                   pkgs-unstable = import nixpkgs-unstable {
                     system = "x86_64-linux";
                     config.allowUnfree = true;
@@ -123,6 +139,7 @@
                     nixos-hardware
                     nixos-wsl
                     dot-xmonad
+                    claude-desktop
                     ;
                   pkgs-unstable = import nixpkgs-unstable {
                     system = "x86_64-linux";

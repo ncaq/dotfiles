@@ -12,5 +12,6 @@
     ./seminar/boot.nix
     ./seminar/disk.nix
     ./seminar/hardware-configuration.nix
+    ./seminar/ssh.nix
   ];
 }

@@ -1,13 +1,13 @@
 { lib, nixos-hardware, ... }:
 {
   imports = [
-    ../native-linux
-
     nixos-hardware.nixosModules.common-cpu-amd
     nixos-hardware.nixosModules.common-cpu-amd-pstate
     nixos-hardware.nixosModules.common-gpu-amd
     nixos-hardware.nixosModules.common-pc
     nixos-hardware.nixosModules.common-pc-ssd
+
+    ../native-linux
 
     ./seminar/boot.nix
     ./seminar/disk.nix

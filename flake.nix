@@ -183,6 +183,7 @@
             "SSD0086" = mkNixosSystem { hostName = "SSD0086"; };
             "bullet" = mkNixosSystem { hostName = "bullet"; };
             "creep" = mkNixosSystem { hostName = "creep"; };
+            "seminar" = mkNixosSystem { hostName = "seminar"; };
             "vanitas" = mkNixosSystem { hostName = "vanitas"; };
           };
       };

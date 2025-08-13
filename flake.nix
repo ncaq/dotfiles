@@ -180,18 +180,10 @@
               };
           in
           {
-            "vanitas" = mkNixosSystem {
-              hostName = "vanitas";
-            };
-            "bullet" = mkNixosSystem {
-              hostName = "bullet";
-            };
-            "creep" = mkNixosSystem {
-              hostName = "creep";
-            };
-            "SSD0086" = mkNixosSystem {
-              hostName = "SSD0086";
-            };
+            "SSD0086" = mkNixosSystem { hostName = "SSD0086"; };
+            "bullet" = mkNixosSystem { hostName = "bullet"; };
+            "creep" = mkNixosSystem { hostName = "creep"; };
+            "vanitas" = mkNixosSystem { hostName = "vanitas"; };
           };
       };
 

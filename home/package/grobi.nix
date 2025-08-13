@@ -26,6 +26,24 @@
           "echo 'Xft.dpi: 144'|${pkgs.xorg.xrdb}/bin/xrdb -merge"
         ];
       }
+      {
+        name = "dominaria-tlb"; # Top Left Bottom
+        atomic = true;
+        outputs_connected = [
+          "HDMI-0-GSM-30470-699895-LG HDR 4K-"
+          "DP-0-ACR-1680-2450570038-Acer VG270K-"
+          "DP-4-DEL-41599-810963027-AW2725Q-1JYC174"
+        ];
+        configure_command =
+          "${pkgs.xorg.xrandr}/bin/xrandr"
+          + " --output HDMI-0 --mode 3840x2160 --pos 3840x0"
+          + " --output DP-0 --mode 3840x2160 --pos 0x2160"
+          + " --output DP-4 --mode 3840x2160 --pos 3840x2160 --rate 144 --primary";
+        execute_after = [
+          "${pkgs.xorg.xrandr}/bin/xrandr --dpi 144"
+          "echo 'Xft.dpi: 144'|${pkgs.xorg.xrdb}/bin/xrdb -merge"
+        ];
+      }
     ];
   };
 }

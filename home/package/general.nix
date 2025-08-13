@@ -3,6 +3,7 @@
   home.packages = with pkgs; [
     android-tools
     cachix
+    cryptsetup
     discord
     dmd
     efibootmgr

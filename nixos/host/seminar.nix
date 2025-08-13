@@ -1,4 +1,4 @@
-{ nixos-hardware, ... }:
+{ lib, nixos-hardware, ... }:
 {
   imports = [
     ../native-linux
@@ -15,4 +15,6 @@
     ./seminar/machine-info.nix
     ./seminar/ssh.nix
   ];
+  # GUIをデフォルトでは起動しない。
+  systemd.defaultUnit = lib.mkForce "multi-user.target";
 }

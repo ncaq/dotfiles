@@ -14,6 +14,7 @@
     ./seminar/hardware-configuration.nix
     ./seminar/machine-info.nix
     ./seminar/ssh.nix
+    ./seminar/vpn.nix
   ];
   # GUIをデフォルトでは起動しない。
   systemd.defaultUnit = lib.mkForce "multi-user.target";

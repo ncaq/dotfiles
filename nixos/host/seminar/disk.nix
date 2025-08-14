@@ -81,6 +81,69 @@
           };
         };
       };
+      # # diskoはbcacheを直接サポートしていないため、一部は以下のように手動で設定する必要があります。
+      # # bcacheデバイスの作成
+      # # キャッシュデバイス（SSD）
+      # sudo make-bcache --cache /dev/disk/by-id/nvme-WD_PC_SN740_SDDQNQD-256G-1201_23252F808935
+      # # バッキングデバイス（HDD）
+      # sudo make-bcache --bdev /dev/disk/by-id/ata-WDC_WD80EAAZ-00BXBB0_WD-RD2PKLEH
+      # sudo make-bcache --bdev /dev/disk/by-id/ata-WDC_WD80EAZZ-00BKLB0_WD-CA2HPAUK
+      # # キャッシュセットに接続
+      # CACHE_SET_UUID=$(sudo bcache-super-show /dev/disk/by-id/nvme-WD_PC_SN740_SDDQNQD-256G-1201_23252F808935|grep 'cset.uuid'|awk '{print $2}')
+      # sudo zsh -c "echo $CACHE_SET_UUID > /sys/block/bcache0/bcache/attach"
+      # sudo zsh -c "echo $CACHE_SET_UUID > /sys/block/bcache1/bcache/attach"
+      # # パスワードファイル作成
+      # echo "your-secure-password" > /tmp/secret.password
+      # # diskoでLUKS + btrfs設定
+      # sudo nix --experimental-features 'flakes nix-command' run github:nix-community/disko/latest -- --mode format,mount --flake ".#${HOST}"
+      # # and
+      # install.sh
+      # # TPM2登録
+      # sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/disk/by-partlabel/disk-noa0-luks
+      # sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/disk/by-partlabel/disk-noa1-luks
+      noa0 = {
+        type = "disk";
+        device = "/dev/bcache0";
+        content = {
+          type = "gpt";
+          partitions = {
+            luks = {
+              size = "100%";
+              content = {
+                type = "luks";
+                name = "noa0";
+                settings.allowDiscards = true;
+                passwordFile = "/tmp/secret.password";
+              };
+            };
+          };
+        };
+      };
+      noa1 = {
+        type = "disk";
+        device = "/dev/bcache1";
+        content = {
+          type = "gpt";
+          partitions = {
+            luks = {
+              size = "100%";
+              content = {
+                type = "luks";
+                name = "noa1";
+                settings.allowDiscards = true;
+                passwordFile = "/tmp/secret.password";
+                content = {
+                  type = "btrfs";
+                  extraArgs = [
+                    "-d raid1"
+                    "/dev/mapper/noa0"
+                  ];
+                };
+              };
+            };
+          };
+        };
+      };
     };
   };
   swapDevices = [
@@ -88,5 +151,32 @@
       device = "/swap/swapfile";
       size = 4 * 1024;
     }
+  ];
+  boot.kernelModules = [ "bcache" ];
+  boot.initrd.systemd.enable = true;
+  boot.initrd.availableKernelModules = [ "bcache" ];
+  boot.initrd.luks.devices = {
+    "noa0" = {
+      device = "/dev/disk/by-partlabel/disk-noa0-luks";
+      crypttabExtraOpts = [
+        "tpm2-device=auto"
+      ];
+    };
+    "noa1" = {
+      device = "/dev/disk/by-partlabel/disk-noa1-luks";
+      crypttabExtraOpts = [
+        "tpm2-device=auto"
+      ];
+    };
+  };
+  security.tpm2 = {
+    enable = true;
+    pkcs11.enable = true;
+    tctiEnvironment.enable = true;
+  };
+  systemd.tmpfiles.rules = [
+    # writebackモードを有効化
+    "w /sys/block/bcache0/bcache/cache_mode - - - - writeback"
+    "w /sys/block/bcache1/bcache/cache_mode - - - - writeback"
   ];
 }

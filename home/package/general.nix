@@ -4,8 +4,10 @@
     android-tools
     cachix
     cryptsetup
+    ddcutil
     discord
     dmd
+    edid-decode
     efibootmgr
     eog
     evince
@@ -14,6 +16,7 @@
     file
     gimp3
     htop
+    i2c-tools
     inkscape
     jq
     libreoffice
@@ -22,6 +25,7 @@
     lsof
     nautilus
     nkf
+    ntfs3g
     openssl
     opusTools
     oxipng
@@ -32,6 +36,7 @@
     pstree
     rakudo
     rhythmbox
+    rwedid
     shellcheck
     slack
     squashfsTools
@@ -40,6 +45,7 @@
     usbutils
     virtualbox
     vlc
+    xxd
     youtube-music
     zoom-us
   ];

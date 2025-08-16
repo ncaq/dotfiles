@@ -44,6 +44,10 @@
           "echo 'Xft.dpi: 144'|${pkgs.xorg.xrdb}/bin/xrdb -merge"
         ];
       }
+      {
+        name = "eDP-1";
+        configure_single = "eDP-1";
+      }
     ];
   };
 }

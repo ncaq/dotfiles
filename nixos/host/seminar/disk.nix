@@ -134,6 +134,7 @@
                 passwordFile = "/tmp/secret.password";
                 content = {
                   type = "btrfs";
+                  mountpoint = "/mnt/noa";
                   extraArgs = [
                     "-d raid1"
                     "/dev/mapper/noa0"

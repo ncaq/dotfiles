@@ -25,6 +25,7 @@
     lsof
     nautilus
     nkf
+    nmap
     ntfs3g
     openssl
     opusTools

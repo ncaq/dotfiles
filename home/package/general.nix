@@ -40,6 +40,7 @@
     rwedid
     shellcheck
     slack
+    sqlite
     squashfsTools
     trashy
     tree

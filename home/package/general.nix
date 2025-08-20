@@ -15,6 +15,7 @@
     ffmpeg
     file
     gimp3
+    gnome.gvfs
     htop
     i2c-tools
     inkscape
@@ -38,6 +39,7 @@
     rakudo
     rhythmbox
     rwedid
+    samba
     shellcheck
     slack
     sqlite

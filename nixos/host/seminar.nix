@@ -13,6 +13,7 @@
     ./seminar/disk.nix
     ./seminar/hardware-configuration.nix
     ./seminar/machine-info.nix
+    ./seminar/samba.nix
     ./seminar/ssh.nix
     ./seminar/vpn.nix
   ];

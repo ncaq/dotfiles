@@ -1,4 +1,10 @@
 { pkgs, ... }:
+let
+  dpiIs144 = [
+    "${pkgs.xorg.xrandr}/bin/xrandr --dpi 144"
+    "echo 'Xft.dpi: 144'|${pkgs.xorg.xrdb}/bin/xrdb -merge"
+  ];
+in
 {
   services.grobi = {
     enable = true;
@@ -21,10 +27,7 @@
           + " --output DP-0 --mode 3840x2160 --pos 0x2160"
           + " --output DP-2 --mode 3840x2160 --pos 7680x2160"
           + " --output DP-4 --mode 3840x2160 --pos 3840x2160 --rate 144 --primary";
-        execute_after = [
-          "${pkgs.xorg.xrandr}/bin/xrandr --dpi 144"
-          "echo 'Xft.dpi: 144'|${pkgs.xorg.xrdb}/bin/xrdb -merge"
-        ];
+        execute_after = dpiIs144;
       }
       {
         name = "dominaria-tbr"; # Top Bottom Right
@@ -40,10 +43,7 @@
           + " --output HDMI-0 --mode 3840x2160 --pos 3840x0"
           + " --output DP-2 --mode 3840x2160 --pos 7680x2160"
           + " --output DP-4 --mode 3840x2160 --pos 3840x2160 --rate 144 --primary";
-        execute_after = [
-          "${pkgs.xorg.xrandr}/bin/xrandr --dpi 144"
-          "echo 'Xft.dpi: 144'|${pkgs.xorg.xrdb}/bin/xrdb -merge"
-        ];
+        execute_after = dpiIs144;
       }
       {
         name = "dominaria-lbr"; # Left Bottom Right
@@ -58,10 +58,7 @@
           "DP-2-GSM-23487-16843009-LG ULTRAGEAR+-"
           "DP-4-DEL-41599-810963027-AW2725Q-1JYC174"
         ];
-        execute_after = [
-          "${pkgs.xorg.xrandr}/bin/xrandr --dpi 144"
-          "echo 'Xft.dpi: 144'|${pkgs.xorg.xrdb}/bin/xrdb -merge"
-        ];
+        execute_after = dpiIs144;
       }
       {
         name = "dominaria-tlr"; # Top Left Right
@@ -76,10 +73,7 @@
           + " --output HDMI-0 --mode 3840x2160 --pos 1920x0"
           + " --output DP-0 --mode 3840x2160 --pos 0x2160"
           + " --output DP-2 --mode 3840x2160 --pos 3840x2160 --primary";
-        execute_after = [
-          "${pkgs.xorg.xrandr}/bin/xrandr --dpi 144"
-          "echo 'Xft.dpi: 144'|${pkgs.xorg.xrdb}/bin/xrdb -merge"
-        ];
+        execute_after = dpiIs144;
       }
       {
         name = "dominaria-tlb"; # Top Left Bottom
@@ -94,42 +88,27 @@
           + " --output HDMI-0 --mode 3840x2160 --pos 3840x0"
           + " --output DP-0 --mode 3840x2160 --pos 0x2160"
           + " --output DP-4 --mode 3840x2160 --pos 3840x2160 --rate 144 --primary";
-        execute_after = [
-          "${pkgs.xorg.xrandr}/bin/xrandr --dpi 144"
-          "echo 'Xft.dpi: 144'|${pkgs.xorg.xrdb}/bin/xrdb -merge"
-        ];
+        execute_after = dpiIs144;
       }
       {
         name = "dominaria-t"; # Top
         configure_single = "HDMI-0-GSM-30470-699895-LG HDR 4K-";
-        execute_after = [
-          "${pkgs.xorg.xrandr}/bin/xrandr --dpi 144"
-          "echo 'Xft.dpi: 144'|${pkgs.xorg.xrdb}/bin/xrdb -merge"
-        ];
+        execute_after = dpiIs144;
       }
       {
         name = "dominaria-l"; # Left
         configure_single = "DP-0-ACR-1680-2450570038-Acer VG270K-";
-        execute_after = [
-          "${pkgs.xorg.xrandr}/bin/xrandr --dpi 144"
-          "echo 'Xft.dpi: 144'|${pkgs.xorg.xrdb}/bin/xrdb -merge"
-        ];
+        execute_after = dpiIs144;
       }
       {
         name = "dominaria-r"; # Right
         configure_single = "DP-2-GSM-23487-16843009-LG ULTRAGEAR+-";
-        execute_after = [
-          "${pkgs.xorg.xrandr}/bin/xrandr --dpi 144"
-          "echo 'Xft.dpi: 144'|${pkgs.xorg.xrdb}/bin/xrdb -merge"
-        ];
+        execute_after = dpiIs144;
       }
       {
         name = "dominaria-b"; # Bottom
         configure_single = "DP-4-DEL-41599-810963027-AW2725Q-1JYC174";
-        execute_after = [
-          "${pkgs.xorg.xrandr}/bin/xrandr --dpi 144"
-          "echo 'Xft.dpi: 144'|${pkgs.xorg.xrdb}/bin/xrdb -merge"
-        ];
+        execute_after = dpiIs144;
       }
       {
         name = "eDP-1";

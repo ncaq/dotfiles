@@ -7,6 +7,7 @@
     ddcutil
     discord
     dmd
+    duperemove
     edid-decode
     efibootmgr
     eog

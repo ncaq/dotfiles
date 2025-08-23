@@ -63,6 +63,38 @@
         ];
       }
       {
+        name = "dominaria-t"; # Top
+        configure_single = "HDMI-0-GSM-30470-699895-LG HDR 4K-";
+        execute_after = [
+          "${pkgs.xorg.xrandr}/bin/xrandr --dpi 144"
+          "echo 'Xft.dpi: 144'|${pkgs.xorg.xrdb}/bin/xrdb -merge"
+        ];
+      }
+      {
+        name = "dominaria-l"; # Left
+        configure_single = "DP-0-ACR-1680-2450570038-Acer VG270K-";
+        execute_after = [
+          "${pkgs.xorg.xrandr}/bin/xrandr --dpi 144"
+          "echo 'Xft.dpi: 144'|${pkgs.xorg.xrdb}/bin/xrdb -merge"
+        ];
+      }
+      {
+        name = "dominaria-r"; # Right
+        configure_single = "DP-2-GSM-23487-16843009-LG ULTRAGEAR+-";
+        execute_after = [
+          "${pkgs.xorg.xrandr}/bin/xrandr --dpi 144"
+          "echo 'Xft.dpi: 144'|${pkgs.xorg.xrdb}/bin/xrdb -merge"
+        ];
+      }
+      {
+        name = "dominaria-b"; # Bottom
+        configure_single = "DP-4-DEL-41599-810963027-AW2725Q-1JYC174";
+        execute_after = [
+          "${pkgs.xorg.xrandr}/bin/xrandr --dpi 144"
+          "echo 'Xft.dpi: 144'|${pkgs.xorg.xrdb}/bin/xrdb -merge"
+        ];
+      }
+      {
         name = "eDP-1";
         configure_single = "eDP-1";
       }

@@ -227,6 +227,7 @@
       "mcp__nixos__nixos_search"
     ],
     "deny": ["Bash(git commit:*)", "Bash(rm:*)", "Bash(head:*)", "Bash(tail:*)"],
+    "additionalDirectories": ["~/dotfiles/"],
     "defaultMode": "acceptEdits"
   },
   "statusLine": {

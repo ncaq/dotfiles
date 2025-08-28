@@ -226,7 +226,8 @@
       "mcp__nixos__nixos_info",
       "mcp__nixos__nixos_search"
     ],
-    "deny": ["Bash(git commit:*)", "Bash(rm:*)", "Bash(head:*)", "Bash(tail:*)"]
+    "deny": ["Bash(git commit:*)", "Bash(rm:*)", "Bash(head:*)", "Bash(tail:*)"],
+    "defaultMode": "acceptEdits"
   },
   "statusLine": {
     "type": "command",

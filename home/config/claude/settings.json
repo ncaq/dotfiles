@@ -228,5 +228,9 @@
     ],
     "deny": ["Bash(git commit:*)", "Bash(rm:*)", "Bash(head:*)", "Bash(tail:*)"]
   },
+  "statusLine": {
+    "type": "command",
+    "command": "bash /home/ncaq/.claude/statusline-command.sh"
+  },
   "model": "opus"
 }

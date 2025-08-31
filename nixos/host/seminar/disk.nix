@@ -120,6 +120,10 @@
                 content = {
                   type = "btrfs";
                   mountpoint = "/mnt/noa";
+                  mountOptions = [
+                    "noatime"
+                    "compress=zstd"
+                  ];
                   extraArgs = [
                     "-d raid1"
                     "/dev/mapper/noa0"

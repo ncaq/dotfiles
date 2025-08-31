@@ -128,6 +128,14 @@
                     "/dev/mapper/noa0"
                     "/dev/mapper/noa1"
                     "/dev/mapper/noa2"
+                    "-m raid1c3"
+                    "/dev/mapper/noa0"
+                    "/dev/mapper/noa1"
+                    "/dev/mapper/noa2"
+                    "-s raid1c3"
+                    "/dev/mapper/noa0"
+                    "/dev/mapper/noa1"
+                    "/dev/mapper/noa2"
                   ];
                 };
               };

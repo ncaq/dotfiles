@@ -96,9 +96,8 @@
       # sudo zsh -c "echo $CACHE_SET_UUID > /sys/block/bcache2/bcache/attach"
       # # パスワードファイル作成
       # sudo nano /tmp/secret.password
-      # # diskoでLUKS + btrfs設定
-      # sudo nix --experimental-features 'flakes nix-command' run github:nix-community/disko/latest -- --mode format,mount --flake ".#${HOST}"
-      # # and
+      # # 初期インストール時以外はフォーマットを手動で済ませる。diskoのformatを使うとUUIDが変わってUEFIのブートエントリが壊れる。
+      # # 初期インストール時は以下のdiskoのformatとmountを使っても良い。
       # install.sh
       # # TPM2登録
       # sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/disk/by-partlabel/disk-noa0-luks

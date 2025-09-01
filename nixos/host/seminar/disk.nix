@@ -86,21 +86,23 @@
       # # キャッシュデバイス（SSD）
       # sudo make-bcache --cache /dev/disk/by-id/nvme-WD_PC_SN740_SDDQNQD-256G-1201_23252F808935
       # # バッキングデバイス（HDD）
+      # sudo make-bcache --bdev /dev/disk/by-id/ata-WDC_WD121PURZ-85GUCY0_2AGN938Y
       # sudo make-bcache --bdev /dev/disk/by-id/ata-WDC_WD80EAAZ-00BXBB0_WD-RD2PKLEH
       # sudo make-bcache --bdev /dev/disk/by-id/ata-WDC_WD80EAZZ-00BKLB0_WD-CA2HPAUK
       # # キャッシュセットに接続
       # CACHE_SET_UUID=$(sudo bcache-super-show /dev/disk/by-id/nvme-WD_PC_SN740_SDDQNQD-256G-1201_23252F808935|grep 'cset.uuid'|awk '{print $2}')
       # sudo zsh -c "echo $CACHE_SET_UUID > /sys/block/bcache0/bcache/attach"
       # sudo zsh -c "echo $CACHE_SET_UUID > /sys/block/bcache1/bcache/attach"
+      # sudo zsh -c "echo $CACHE_SET_UUID > /sys/block/bcache2/bcache/attach"
       # # パスワードファイル作成
-      # echo "your-secure-password" > /tmp/secret.password
-      # # diskoでLUKS + btrfs設定
-      # sudo nix --experimental-features 'flakes nix-command' run github:nix-community/disko/latest -- --mode format,mount --flake ".#${HOST}"
-      # # and
+      # sudo nano /tmp/secret.password
+      # # 初期インストール時以外はフォーマットを手動で済ませる。diskoのformatを使うとUUIDが変わってUEFIのブートエントリが壊れる。
+      # # 初期インストール時は以下のdiskoのformatとmountを使っても良い。
       # install.sh
       # # TPM2登録
       # sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/disk/by-partlabel/disk-noa0-luks
       # sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/disk/by-partlabel/disk-noa1-luks
+      # sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/disk/by-partlabel/disk-noa2-luks
       noa0 = {
         type = "disk";
         device = "/dev/bcache0";
@@ -114,6 +116,28 @@
                 name = "noa0";
                 settings.allowDiscards = true;
                 passwordFile = "/tmp/secret.password";
+                content = {
+                  type = "btrfs";
+                  mountpoint = "/mnt/noa";
+                  mountOptions = [
+                    "noatime"
+                    "compress=zstd"
+                  ];
+                  extraArgs = [
+                    "-d raid1"
+                    "/dev/mapper/noa0"
+                    "/dev/mapper/noa1"
+                    "/dev/mapper/noa2"
+                    "-m raid1c3"
+                    "/dev/mapper/noa0"
+                    "/dev/mapper/noa1"
+                    "/dev/mapper/noa2"
+                    "-s raid1c3"
+                    "/dev/mapper/noa0"
+                    "/dev/mapper/noa1"
+                    "/dev/mapper/noa2"
+                  ];
+                };
               };
             };
           };
@@ -132,14 +156,24 @@
                 name = "noa1";
                 settings.allowDiscards = true;
                 passwordFile = "/tmp/secret.password";
-                content = {
-                  type = "btrfs";
-                  mountpoint = "/mnt/noa";
-                  extraArgs = [
-                    "-d raid1"
-                    "/dev/mapper/noa0"
-                  ];
-                };
+              };
+            };
+          };
+        };
+      };
+      noa2 = {
+        type = "disk";
+        device = "/dev/bcache2";
+        content = {
+          type = "gpt";
+          partitions = {
+            luks = {
+              size = "100%";
+              content = {
+                type = "luks";
+                name = "noa2";
+                settings.allowDiscards = true;
+                passwordFile = "/tmp/secret.password";
               };
             };
           };
@@ -169,6 +203,12 @@
         "tpm2-device=auto"
       ];
     };
+    "noa2" = {
+      device = "/dev/disk/by-partlabel/disk-noa2-luks";
+      crypttabExtraOpts = [
+        "tpm2-device=auto"
+      ];
+    };
   };
   security.tpm2 = {
     enable = true;
@@ -179,5 +219,6 @@
     # writebackモードを有効化
     "w /sys/block/bcache0/bcache/cache_mode - - - - writeback"
     "w /sys/block/bcache1/bcache/cache_mode - - - - writeback"
+    "w /sys/block/bcache2/bcache/cache_mode - - - - writeback"
   ];
 }

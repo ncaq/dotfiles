@@ -8,6 +8,13 @@ insert_final_newline = true
 # 主にprettierが過剰に改行することへの対策。
 max_line_length = 120
 
+[*.md]
+# Markdownには最後にスペース2つ入れて強制改行するシンタックスがあるので末尾のスペースを許可。
+# 注意: なるべく強制改行は使わず、意味で段落して、改行位置はクライアントのデバイスに任せるべき。
+trim_trailing_whitespace = false
+# 順序付きリストをネストする時に、インデント幅を2にすると適切にパース出来ない事が多い(GitHubも)ので4にする。
+indent_size = 4
+
 [*.bat]
 charset = latin1
 end_of_line = crlf

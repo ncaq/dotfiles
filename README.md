@@ -98,7 +98,7 @@ sudo mount -o noatime,compress=zstd,subvol=@snapshots /dev/mapper/nixos-root /mn
 
 #### `nixos-install`
 
-``` console
+```console
 NEW_HOST=please-input-new-hostname
 nix-shell -p git
 
@@ -117,7 +117,7 @@ sudo nixos-generate-config --show-hardware-config --no-filesystems > ~/dotfiles/
 
 ### Automatic
 
-``` zsh
+```zsh
 NEW_HOST=please-input-new-hostname
 nix --extra-experimental-features 'flakes nix-command' run 'nixpkgs#git' -- clone https://github.com/ncaq/dotfiles.git
 cd dotfiles
@@ -129,7 +129,7 @@ Please reboot.
 
 ## Non NixOS(home-manager standalone)
 
-``` zsh
+```zsh
 nix run home-manager/release-25.05 -- --flake ".#${USER}" init --switch .
 ```
 
@@ -137,19 +137,19 @@ nix run home-manager/release-25.05 -- --flake ".#${USER}" init --switch .
 
 ## NixOS
 
-``` zsh
+```zsh
 sudo nixos-rebuild switch --flake ".#$(hostname)"
 ```
 
 ## Non NixOS(home-manager standalone)
 
-``` zsh
+```zsh
 home-manager --flake ".#${USER}" switch
 ```
 
 # Format
 
-``` zsh
+```zsh
 nix fmt
 ```
 
@@ -157,13 +157,13 @@ nix fmt
 
 ## Static
 
-``` zsh
+```zsh
 nix flake check
 ```
 
 ## Dynamic
 
-``` zsh
+```zsh
 nix run github:nix-community/home-manager -- switch --flake ".#${USER}" -n -b backup
 ```
 
@@ -208,11 +208,11 @@ I might move it to a separate repository because it's unrelated to Nix.
 
 # Separated dotfiles
 
-* [ncaq/.emacs.d: My Emacs config](https://github.com/ncaq/.emacs.d)
-* [ncaq/.percol.d](https://github.com/ncaq/.percol.d)
-* [ncaq/.xkeysnail: My xkeysnail config](https://github.com/ncaq/.xkeysnail)
-* [ncaq/.xmonad](https://github.com/ncaq/.xmonad)
-* [ncaq/.zsh.d](https://github.com/ncaq/.zsh.d)
-* [ncaq/keyhac-config](https://github.com/ncaq/keyhac-config)
-* [ncaq/surfingkeys-config: My Surfingkeys config](https://github.com/ncaq/surfingkeys-config)
-* [ncaq/winconf: My Windows configuration files](https://github.com/ncaq/winconf)
+- [ncaq/.emacs.d: My Emacs config](https://github.com/ncaq/.emacs.d)
+- [ncaq/.percol.d](https://github.com/ncaq/.percol.d)
+- [ncaq/.xkeysnail: My xkeysnail config](https://github.com/ncaq/.xkeysnail)
+- [ncaq/.xmonad](https://github.com/ncaq/.xmonad)
+- [ncaq/.zsh.d](https://github.com/ncaq/.zsh.d)
+- [ncaq/keyhac-config](https://github.com/ncaq/keyhac-config)
+- [ncaq/surfingkeys-config: My Surfingkeys config](https://github.com/ncaq/surfingkeys-config)
+- [ncaq/winconf: My Windows configuration files](https://github.com/ncaq/winconf)

@@ -9,13 +9,7 @@
 
     ../native-linux
 
-    ./seminar/boot.nix
-    ./seminar/disk.nix
-    ./seminar/hardware-configuration.nix
-    ./seminar/machine-info.nix
-    ./seminar/samba.nix
-    ./seminar/ssh.nix
-    ./seminar/vpn.nix
+    ./seminar
   ];
   # GUIをデフォルトでは起動しない。
   systemd.defaultUnit = lib.mkForce "multi-user.target";

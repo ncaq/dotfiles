@@ -5,6 +5,7 @@
     cachix
     cryptsetup
     ddcutil
+    dig
     discord
     dmd
     duperemove

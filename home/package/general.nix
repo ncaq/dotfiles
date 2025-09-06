@@ -2,6 +2,7 @@
 {
   home.packages = with pkgs; [
     android-tools
+    attic-client
     cachix
     cryptsetup
     ddcutil

@@ -12,7 +12,7 @@
       default = "http_status:404";
       credentialsFile = "/home/${username}/.cloudflared/tunnel-seminar.json";
       ingress = {
-        "seminar.ncaq.net" = "http://localhost:80";
+        "nix-cache.ncaq.net" = "http://localhost:10000";
       };
     };
   };

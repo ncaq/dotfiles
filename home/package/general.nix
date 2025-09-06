@@ -3,6 +3,7 @@
   home.packages = with pkgs; [
     android-tools
     atop
+    attic-client
     bcache-tools
     cachix
     cryptsetup

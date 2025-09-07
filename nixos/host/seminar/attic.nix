@@ -11,7 +11,7 @@
     environmentFile = "/etc/atticd.env";
     settings = {
       listen = "[::]:10000"; # ポート番号は雑に定めました。深く考えていません。
-      allowed-hosts = [ "nix-cache.ncaq.net" ];
+      # allowed-hosts = [ "nix-cache.ncaq.net" ];
       api-endpoint = "https://nix-cache.ncaq.net/";
       database.url = "postgresql:///atticd?host=/run/postgresql";
       storage = {

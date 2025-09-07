@@ -52,6 +52,6 @@
   # ```
   # トークンを利用してログインする。
   # ```
-  # attic login ncaq https://nix-cache.ncaq.net "$TOKEN"
+  # attic login ncaq https://nix-cache.ncaq.net/ "$TOKEN"
   # ```
 }

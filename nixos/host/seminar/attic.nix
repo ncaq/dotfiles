@@ -44,15 +44,14 @@
   ];
   # 管理トークン発行例。
   # ```
-  # sudo atticd-atticadm make-token --sub 'seminar' --validity '4y' --pull 'private' --push 'private' --create-cache 'private'
+  # TOKEN="$(sudo atticd-atticadm make-token --sub 'seminar' --validity '4y' --pull 'private' --push 'private' --create-cache 'private')"
   # ```
   # 読み書きトークン発行例。
   # ```
-  # sudo atticd-atticadm make-token --sub 'bullet' --validity '4y' --pull 'private' --push 'private'
+  # TOKEN=$(sudo atticd-atticadm make-token --sub 'bullet' --validity '4y' --pull 'private' --push 'private')
   # ```
   # トークンを利用してログインする。
-  # 最初にスペースを入れてシェルの履歴に残らないようにすること。
   # ```
-  # attic login ncaq https://nix-cache.ncaq.net <token>
+  # attic login ncaq https://nix-cache.ncaq.net "$TOKEN"
   # ```
 }

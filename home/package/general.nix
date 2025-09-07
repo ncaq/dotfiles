@@ -2,6 +2,7 @@
 {
   home.packages = with pkgs; [
     android-tools
+    atop
     cachix
     cryptsetup
     ddcutil
@@ -21,6 +22,7 @@
     htop
     i2c-tools
     inkscape
+    iotop
     jq
     libreoffice
     libwebp
@@ -46,6 +48,7 @@
     slack
     sqlite
     squashfsTools
+    sysstat
     trashy
     tree
     usbutils

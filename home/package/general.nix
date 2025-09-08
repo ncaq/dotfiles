@@ -3,6 +3,7 @@
   home.packages = with pkgs; [
     android-tools
     atop
+    bcache-tools
     cachix
     cryptsetup
     ddcutil
@@ -32,6 +33,7 @@
     nkf
     nmap
     ntfs3g
+    ntfs3g
     openssl
     opusTools
     oxipng
@@ -49,6 +51,7 @@
     sqlite
     squashfsTools
     sysstat
+    tinyxxd
     trashy
     tree
     usbutils

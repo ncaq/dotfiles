@@ -33,7 +33,6 @@
     nkf
     nmap
     ntfs3g
-    ntfs3g
     openssl
     opusTools
     oxipng

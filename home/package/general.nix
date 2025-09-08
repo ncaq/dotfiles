@@ -3,6 +3,7 @@
   home.packages = with pkgs; [
     android-tools
     atop
+    bcache-tools
     cachix
     cryptsetup
     ddcutil

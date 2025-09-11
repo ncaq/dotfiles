@@ -1,4 +1,9 @@
-{ pkgs, lib, ... }:
+{
+  pkgs,
+  lib,
+  config,
+  ...
+}:
 {
   programs.firefox = {
     enable = true;
@@ -384,4 +389,11 @@
         };
       };
   };
+  # 各種プロファイルの`users.js`はNix管理の読み取り専用ファイルになりますが、
+  # アドオン開発のためと考えるとweb-extがエラーを出すので読み取り専用は望ましくありません。
+  # 開発のためのほぼ使い捨てのプロファイルであることを考えると`users.js`はそんなに真面目に管理する必要がないので、
+  # 雑に読み取り専用になっているのを解除します。
+  home.activation.firefoxUserJsWritable = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    $DRY_RUN_CMD unlink ${config.home.homeDirectory}/.mozilla/firefox/google-search-title-qualified/user.js
+  '';
 }

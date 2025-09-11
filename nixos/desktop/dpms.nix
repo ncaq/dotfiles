@@ -8,6 +8,8 @@
       Type = "oneshot";
       ExecStart = pkgs.writeShellScript "dpms-oled" ''
         set -euo pipefail
+        # スクリーンセーバーの方は無効化
+        ${pkgs.xorg.xset}/bin/xset s off
         # DPMSを有効化
         ${pkgs.xorg.xset}/bin/xset +dpms
         # DPMS設定 (スタンバイ:60分, サスペンド:100分, オフ:120分)

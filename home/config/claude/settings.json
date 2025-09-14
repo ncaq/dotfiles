@@ -1,6 +1,7 @@
 {
   "permissions": {
     "allow": [
+      "Bash(atop:*)",
       "Bash(cabal build:*)",
       "Bash(cabal clean:*)",
       "Bash(cabal haddock:*)",
@@ -17,6 +18,7 @@
       "Bash(cat:*)",
       "Bash(chmod:*)",
       "Bash(coredumpctl:*)",
+      "Bash(diff:*)",
       "Bash(direnv:*)",
       "Bash(docker --help:*)",
       "Bash(docker --version:*)",
@@ -165,6 +167,8 @@
       "Bash(hlint:*)",
       "Bash(hostname)",
       "Bash(hostnamectl status:*)",
+      "Bash(iostat:*)",
+      "Bash(iotop:*)",
       "Bash(journalctl:*)",
       "Bash(jq:*)",
       "Bash(localectl status:*)",
@@ -207,6 +211,7 @@
       "Bash(stack test:*)",
       "Bash(systemctl status:*)",
       "Bash(timedatectl status:*)",
+      "Bash(top:*)",
       "Bash(touch:*)",
       "Bash(trash:*)",
       "Bash(true)",

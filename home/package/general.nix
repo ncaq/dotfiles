@@ -36,6 +36,7 @@
     openssl
     opusTools
     oxipng
+    p7zip
     parallel
     patool
     pciutils

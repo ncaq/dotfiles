@@ -158,6 +158,7 @@
       "Bash(git add:*)",
       "Bash(git clone:*)",
       "Bash(git diff:*)",
+      "Bash(git fetch:*)",
       "Bash(git log:*)",
       "Bash(git show:*)",
       "Bash(git status:*)",

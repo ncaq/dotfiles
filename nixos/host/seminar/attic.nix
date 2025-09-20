@@ -7,6 +7,7 @@
     # openssl genrsa -traditional 4096|base64 -w0|sudo tee -a /etc/atticd.env
     # echo '"'|sudo tee -a /etc/atticd.env
     # sudo chown atticd: /etc/atticd.env && sudo chmod 640 /etc/atticd.env
+    # sudo systemctl restart atticd
     # ```
     environmentFile = "/etc/atticd.env";
     settings = {

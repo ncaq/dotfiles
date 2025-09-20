@@ -51,7 +51,7 @@
   # ```
   # TOKEN=$(sudo atticd-atticadm make-token --sub 'bullet' --validity '4y' --pull 'private' --push 'private')
   # ```
-  # トークンを利用してログインする。
+  # トークンを利用してログインします。
   # ```
   # attic login ncaq https://nix-cache.ncaq.net/ "$TOKEN"
   # ```

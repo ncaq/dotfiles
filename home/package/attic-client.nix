@@ -33,4 +33,22 @@
       WantedBy = [ "default.target" ];
     };
   };
+
+  # 起動時にキャッシュ設定を初期化します。
+  systemd.user.services.attic-use-ncaq-private = {
+    Unit = {
+      Description = "Initialize Attic Cache Configuration";
+      After = [ "network-online.target" ];
+      Wants = [ "network-online.target" ];
+    };
+
+    Service = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.attic-client}/bin/attic use ncaq:private";
+    };
+
+    Install = {
+      WantedBy = [ "default.target" ];
+    };
+  };
 }

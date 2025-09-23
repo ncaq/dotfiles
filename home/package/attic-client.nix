@@ -38,12 +38,19 @@
   systemd.user.services.attic-use-ncaq-private = {
     Unit = {
       Description = "Initialize Attic Cache Configuration";
-      After = [ "network-online.target" ];
-      Wants = [ "network-online.target" ];
+      After = [
+        "network-online.target"
+        "nss-lookup.target"
+      ];
+      Wants = [
+        "network-online.target"
+        "nss-lookup.target"
+      ];
     };
 
     Service = {
       Type = "oneshot";
+      ExecStartPre = "${pkgs.curl}/bin/curl --head --silent --fail --connect-timeout 5 --max-time 15 --retry 3 --retry-delay 5 --retry-all-errors https://nix-cache.ncaq.net/";
       ExecStart = "${pkgs.attic-client}/bin/attic use ncaq:private";
     };
 

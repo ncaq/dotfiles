@@ -57,6 +57,7 @@
     usbutils
     virtualbox
     vlc
+    wget
     xxd
     youtube-music
     zoom-us

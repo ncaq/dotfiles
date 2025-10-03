@@ -34,6 +34,7 @@
     nkf
     nmap
     ntfs3g
+    nvtopPackages.full
     openssl
     opusTools
     oxipng

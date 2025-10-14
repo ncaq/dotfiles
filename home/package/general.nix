@@ -4,6 +4,7 @@
     android-tools
     atop
     attic-client
+    autoconf
     bcache-tools
     cachix
     cryptsetup

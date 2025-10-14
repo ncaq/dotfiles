@@ -7,6 +7,7 @@
     (lib.lowPrio clang)
 
     autoconf
+    automake
     ccls
     cmake
     gdb

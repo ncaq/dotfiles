@@ -6,6 +6,7 @@
     (lib.hiPrio gcc)
     (lib.lowPrio clang)
 
+    autoconf
     ccls
     cmake
     gdb

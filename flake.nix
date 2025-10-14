@@ -49,6 +49,7 @@
         nixpkgs.follows = "nixpkgs";
         haskellNix.follows = "haskellNix";
         flake-utils.follows = "flake-utils";
+        treefmt-nix.follows = "treefmt-nix";
       };
     };
 

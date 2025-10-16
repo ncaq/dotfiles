@@ -164,7 +164,6 @@
       "Bash(git show:*)",
       "Bash(git status:*)",
       "Bash(git switch:*)",
-      "Bash(grep:*)",
       "Bash(hadolint:*)",
       "Bash(hlint:*)",
       "Bash(hostname)",
@@ -234,7 +233,7 @@
       "mcp__nixos__nixos_info",
       "mcp__nixos__nixos_search"
     ],
-    "deny": ["Bash(git commit:*)", "Bash(rm:*)", "Bash(head:*)", "Bash(tail:*)"],
+    "deny": ["Bash(git commit:*)", "Bash(grep:*)", "Bash(head:*)", "Bash(rm:*)", "Bash(tail:*)"],
     "additionalDirectories": ["~/dotfiles/"],
     "defaultMode": "acceptEdits"
   },

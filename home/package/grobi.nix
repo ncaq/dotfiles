@@ -91,7 +91,6 @@ in
       }
       {
         name = "dominaria-t"; # Top
-        atomic = true;
         outputs_connected = [
           "HDMI-0-GSM-30470-699895-LG HDR 4K-"
         ];

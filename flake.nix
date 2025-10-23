@@ -54,7 +54,7 @@
     };
 
     claude-desktop = {
-      url = "github:ncaq/claude-desktop-linux-flake/bump-version";
+      url = "github:k3d3/claude-desktop-linux-flake";
       inputs = {
         nixpkgs.follows = "nixpkgs";
         flake-utils.follows = "flake-utils";

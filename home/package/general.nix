@@ -6,6 +6,7 @@
     attic-client
     bcache-tools
     cachix
+    cloudflared
     cryptsetup
     ddcutil
     dig

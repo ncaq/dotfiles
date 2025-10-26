@@ -1,5 +1,6 @@
 {
   pkgs,
+  config,
   username,
   ...
 }:
@@ -30,6 +31,10 @@ in
       default = "http_status:404";
       credentialsFile = "/home/${username}/.cloudflared/tunnel-seminar.json";
       ingress = {
+        "forgejo.ncaq.net" =
+          "http://${toString config.services.forgejo.settings.server.HTTP_ADDR}:${toString config.services.forgejo.settings.server.HTTP_PORT}";
+        "forgejo-ssh.ncaq.net" =
+          "ssh://localhost:${toString config.services.forgejo.settings.server.SSH_PORT}";
         "nix-cache.ncaq.net" = "http://localhost:10000";
       };
     };

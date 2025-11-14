@@ -13,9 +13,22 @@ in
   ];
 
   home.file = {
+    # Claude Codeがxdgに従ったり従わなかったり不安定なためシンボリックリンクを配置します。
     ".claude" = {
       source = config.lib.file.mkOutOfStoreSymlink "${config.xdg.configHome}/claude";
     };
+    # Claude Codeに必要なユーザプロンプト全体を連結して配置します。
+    "${config.xdg.configHome}/claude/CLAUDE.md".text = lib.concatStringsSep "\n" [
+      (builtins.readFile ../../prompt/for-llm.md)
+      (builtins.readFile ../../prompt/environment.md)
+      (builtins.readFile ../../prompt/profile.md)
+      (builtins.readFile ../../prompt/personal.md)
+      (builtins.readFile ../../prompt/command.md)
+      (builtins.readFile ../../prompt/naming-rule.md)
+      (builtins.readFile ../../prompt/use-error-info.md)
+      (builtins.readFile ../../prompt/check-work.md)
+      (builtins.readFile ../../prompt/test.md)
+    ];
   };
 
   # Claude Codeがシンボリックリンクされたsettings.jsonに書き込めない問題を回避

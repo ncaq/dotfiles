@@ -12,8 +12,8 @@
         ${pkgs.xorg.xset}/bin/xset s off
         # DPMSを有効化
         ${pkgs.xorg.xset}/bin/xset +dpms
-        # DPMS設定 (スタンバイ:60分, サスペンド:100分, オフ:120分)
-        ${pkgs.xorg.xset}/bin/xset dpms 3600 6000 7200
+        # DPMS設定 (スタンバイ:120分, サスペンド:240分, オフ:240分)
+        ${pkgs.xorg.xset}/bin/xset dpms 7200 14400 14400
       '';
       Environment = [
         "DISPLAY=:0"

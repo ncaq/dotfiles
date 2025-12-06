@@ -12,6 +12,6 @@ lib.mkIf (!isWSL) {
   };
 
   home.packages = [
-    dot-xmonad.packages.${pkgs.system}.default
+    dot-xmonad.packages.${pkgs.stdenv.hostPlatform.system}.default
   ];
 }

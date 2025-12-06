@@ -7,6 +7,6 @@
 }:
 lib.mkIf (!isWSL) {
   home.packages = [
-    claude-desktop.packages.${pkgs.system}.claude-desktop-with-fhs
+    claude-desktop.packages.${pkgs.stdenv.hostPlatform.system}.claude-desktop-with-fhs
   ];
 }

@@ -4,9 +4,11 @@
     git = {
       enable = true;
       lfs.enable = true;
-      userName = "ncaq";
-      userEmail = "ncaq@ncaq.net";
-      extraConfig = {
+      settings = {
+        user = {
+          name = "ncaq";
+          email = "ncaq@ncaq.net";
+        };
         color.ui = true;
         core = {
           autocrlf = false;

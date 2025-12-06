@@ -130,7 +130,7 @@ Please reboot.
 ## Non NixOS(home-manager standalone)
 
 ```zsh
-nix run home-manager/release-25.05 -- --flake ".#${USER}" init --switch .
+nix run home-manager/release-25.11 -- --flake ".#${USER}" init --switch .
 ```
 
 # Rebuild

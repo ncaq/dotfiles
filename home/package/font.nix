@@ -46,7 +46,7 @@ in
     noto-fonts
     noto-fonts-cjk-sans
     noto-fonts-cjk-serif
-    noto-fonts-emoji
+    noto-fonts-color-emoji
   ];
 
   # GNU/Linux環境の標準的なフォントを指定してくるwebサイト向けにこちらの指定するフォントを使わせたい。

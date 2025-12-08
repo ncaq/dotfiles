@@ -1,4 +1,5 @@
 {
+  pkgs,
   pkgs-unstable,
   config,
   lib,
@@ -10,6 +11,9 @@ in
 {
   home.packages = [
     pkgs-unstable.claude-code
+    # Claude Codeのsandbox機能を利用するために必要。
+    pkgs.bubblewrap
+    pkgs.socat
   ];
 
   home.file = {

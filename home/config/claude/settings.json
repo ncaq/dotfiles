@@ -234,11 +234,12 @@
       "mcp__nixos__nixos_search"
     ],
     "deny": ["Bash(git commit:*)", "Bash(grep:*)", "Bash(head:*)", "Bash(rm:*)", "Bash(tail:*)"],
-    "additionalDirectories": ["~/dotfiles/"],
-    "defaultMode": "acceptEdits"
+    "defaultMode": "acceptEdits",
+    "additionalDirectories": ["~/dotfiles/"]
   },
   "statusLine": {
     "type": "command",
     "command": "bash ~/.claude/statusline-command.sh"
-  }
+  },
+  "model": "opus"
 }

@@ -237,6 +237,10 @@
     "defaultMode": "acceptEdits",
     "additionalDirectories": ["~/dotfiles/"]
   },
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true
+  },
   "statusLine": {
     "type": "command",
     "command": "bash ~/.claude/statusline-command.sh"

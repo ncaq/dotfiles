@@ -19,6 +19,7 @@
       "Bash(chmod:*)",
       "Bash(coredumpctl:*)",
       "Bash(diff:*)",
+      "Bash(dig:*)",
       "Bash(direnv:*)",
       "Bash(docker --help:*)",
       "Bash(docker --version:*)",
@@ -194,6 +195,7 @@
       "Bash(nix-prefetch-git:*)",
       "Bash(nix-prefetch-url:*)",
       "Bash(nixos-option:*)",
+      "Bash(nslookup:*)",
       "Bash(readlink:*)",
       "Bash(rg:*)",
       "Bash(stack bench:*)",
@@ -234,11 +236,16 @@
       "mcp__nixos__nixos_search"
     ],
     "deny": ["Bash(git commit:*)", "Bash(grep:*)", "Bash(head:*)", "Bash(rm:*)", "Bash(tail:*)"],
-    "additionalDirectories": ["~/dotfiles/"],
-    "defaultMode": "acceptEdits"
+    "defaultMode": "acceptEdits",
+    "additionalDirectories": ["~/dotfiles/"]
+  },
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true
   },
   "statusLine": {
     "type": "command",
     "command": "bash ~/.claude/statusline-command.sh"
-  }
+  },
+  "model": "opus"
 }

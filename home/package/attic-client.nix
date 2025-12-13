@@ -50,8 +50,15 @@
 
     Service = {
       Type = "oneshot";
-      ExecStartPre = "${pkgs.curl}/bin/curl --head --silent --fail --connect-timeout 5 --max-time 15 --retry 3 --retry-delay 5 --retry-all-errors https://nix-cache.ncaq.net/";
+      ExecStartPre = [
+        "${pkgs.curl}/bin/curl --head --silent --fail --connect-timeout 10 --max-time 30 --retry 10 --retry-delay 10 --retry-all-errors https://nix-cache.ncaq.net/"
+      ];
       ExecStart = "${pkgs.attic-client}/bin/attic use ncaq:private";
+      # 失敗時に自動リトライします。
+      Restart = "on-failure";
+      RestartSec = "30s";
+      # 必須でないサービスなのでタイムアウトを長めに設定します。
+      TimeoutStartSec = "5min";
     };
 
     Install = {

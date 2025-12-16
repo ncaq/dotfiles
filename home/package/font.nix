@@ -28,13 +28,13 @@ in
   fonts.fontconfig = {
     enable = true;
     defaultFonts = {
-      sansSerif = [ "Fira Sans" ];
+      sansSerif = [ "monospace" ]; # 日本語フォントをしっかり合成しているフォントをプログラミングフォントしか知らないため。
       serif = [
         "Noto Serif CJK JP"
         "emoji"
       ];
       monospace = [
-        "Fira Mono"
+        "FirgeNerd Console"
         "emoji"
       ];
       emoji = [ "Noto Color Emoji" ];
@@ -43,6 +43,8 @@ in
 
   home.packages = with pkgs; [
     fira
+    firge-font
+    firge-nerd-font
     hackgen-nf-font
     noto-fonts
     noto-fonts-cjk-sans

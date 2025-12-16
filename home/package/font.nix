@@ -30,6 +30,7 @@ in
     defaultFonts = {
       sansSerif = [ "monospace" ]; # 日本語フォントをしっかり合成しているフォントをプログラミングフォントしか知らないため。
       serif = [
+        "Zilla Slab"
         "Noto Serif CJK JP"
         "emoji"
       ];
@@ -50,6 +51,7 @@ in
     noto-fonts-cjk-sans
     noto-fonts-cjk-serif
     noto-fonts-color-emoji
+    zilla-slab
   ];
 
   # GNU/Linux環境の標準的なフォントを指定してくるwebサイト向けにこちらの指定するフォントを使わせたい。

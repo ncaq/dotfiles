@@ -28,7 +28,11 @@ in
   fonts.fontconfig = {
     enable = true;
     defaultFonts = {
-      sansSerif = [ "monospace" ]; # 日本語フォントをしっかり合成しているフォントをプログラミングフォントしか知らないため。
+      sansSerif = [
+        "Fira Sans"
+        "BIZ UDGothic"
+        "emoji"
+      ];
       serif = [
         "Zilla Slab"
         "Noto Serif CJK JP"
@@ -43,6 +47,7 @@ in
   };
 
   home.packages = with pkgs; [
+    biz-ud-gothic
     fira
     firge-font
     firge-nerd-font

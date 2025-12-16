@@ -28,13 +28,13 @@ in
   fonts.fontconfig = {
     enable = true;
     defaultFonts = {
-      sansSerif = [ "monospace" ]; # 私は通常の英文でも等幅フォントの方が読みやすいと感じる
+      sansSerif = [ "Fira Sans" ];
       serif = [
         "Noto Serif CJK JP"
         "emoji"
       ];
       monospace = [
-        "HackGen Console NF"
+        "Fira Mono"
         "emoji"
       ];
       emoji = [ "Noto Color Emoji" ];
@@ -42,6 +42,7 @@ in
   };
 
   home.packages = with pkgs; [
+    fira
     hackgen-nf-font
     noto-fonts
     noto-fonts-cjk-sans

@@ -61,6 +61,11 @@
         flake-utils.follows = "flake-utils";
       };
     };
+
+    firge-nix = {
+      url = "github:ncaq/firge-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -77,6 +82,7 @@
       rust-overlay,
       dot-xmonad,
       claude-desktop,
+      firge-nix,
       ...
     }:
     flake-parts.lib.mkFlake { inherit inputs; } {
@@ -120,7 +126,10 @@
                     { ... }:
                     {
                       nixpkgs.config.allowUnfree = true;
-                      nixpkgs.overlays = [ rust-overlay.overlays.default ];
+                      nixpkgs.overlays = [
+                        rust-overlay.overlays.default
+                        firge-nix.overlays.default
+                      ];
                     }
                   )
                   ./home
@@ -165,7 +174,10 @@
                     { ... }:
                     {
                       nixpkgs.config.allowUnfree = true;
-                      nixpkgs.overlays = [ rust-overlay.overlays.default ];
+                      nixpkgs.overlays = [
+                        rust-overlay.overlays.default
+                        firge-nix.overlays.default
+                      ];
                     }
                   )
                   disko.nixosModules.default

@@ -155,6 +155,26 @@
         "type": "github"
       }
     },
+    "firge-nix": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1765876310,
+        "narHash": "sha256-1ID2zFp0LnP4T2RFZ1dB2fYYOzIH1keVet5jP/aUmNc=",
+        "owner": "ncaq",
+        "repo": "firge-nix",
+        "rev": "f9294236ec07c68192bac1b893c5e9f82d77a14a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ncaq",
+        "repo": "firge-nix",
+        "type": "github"
+      }
+    },
     "flake-compat": {
       "flake": false,
       "locked": {
@@ -820,6 +840,7 @@
         "claude-desktop": "claude-desktop",
         "disko": "disko",
         "dot-xmonad": "dot-xmonad",
+        "firge-nix": "firge-nix",
         "flake-parts": "flake-parts",
         "flake-utils": "flake-utils",
         "haskellNix": "haskellNix",

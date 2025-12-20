@@ -29,11 +29,11 @@ in
       (builtins.readFile ../../prompt/environment/hardware.md)
       (builtins.readFile ../../prompt/profile.md)
       (builtins.readFile "${www-ncaq-net}/site/about.md")
-      (builtins.readFile ../../prompt/command.md)
-      (builtins.readFile ../../prompt/naming-rule.md)
-      (builtins.readFile ../../prompt/use-error-info.md)
-      (builtins.readFile ../../prompt/check-work.md)
-      (builtins.readFile ../../prompt/test.md)
+      (builtins.readFile ../../prompt/programming/command.md)
+      (builtins.readFile ../../prompt/programming/naming-rule.md)
+      (builtins.readFile ../../prompt/programming/use-error-info.md)
+      (builtins.readFile ../../prompt/programming/check-job.md)
+      (builtins.readFile ../../prompt/programming/test.md)
     ];
   };
 

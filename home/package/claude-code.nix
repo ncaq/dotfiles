@@ -24,10 +24,11 @@ in
     };
     # Claude Codeに必要なユーザプロンプト全体を連結して配置します。
     "${config.xdg.configHome}/claude/CLAUDE.md".text = lib.concatStringsSep "\n" [
-      (builtins.readFile ../../prompt/for-llm.md)
+      (builtins.readFile ../../prompt/assistant/output.md)
       (builtins.readFile ../../prompt/environment/os.md)
       (builtins.readFile ../../prompt/environment/hardware.md)
-      (builtins.readFile ../../prompt/profile.md)
+      (builtins.readFile ../../prompt/user/policy.md)
+      (builtins.readFile ../../prompt/user/region.md)
       (builtins.readFile "${www-ncaq-net}/site/about.md")
       (builtins.readFile ../../prompt/programming/command.md)
       (builtins.readFile ../../prompt/programming/naming-rule.md)

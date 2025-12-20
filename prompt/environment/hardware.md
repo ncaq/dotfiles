@@ -65,7 +65,7 @@ nix run --file '<nixpkgs>' fastfetch -- --logo none
 メインのスマートフォンの簡単なハードウェアの情報は以下の通りです。
 
 - Host: samsung SM-F966Q
-- CPU: Qualcomm Snapdragon 8 Elite [SM8750] (8)
+- CPU: Qualcomm Snapdragon 8 Elite for Galaxy [SM8750] (8)
 - GPU: Qualcomm Adreno (TM) 830 [Integrated]
 - Memory: 14.75 GiB
 - Swap: 20.00 GiB
@@ -79,7 +79,7 @@ nix run --file '<nixpkgs>' fastfetch -- --logo none
 メインのタブレットの簡単なハードウェアの情報は以下の通りです。
 
 - Host: samsung SM-X910
-- CPU: 3 x Qualcomm Snapdragon 8 Gen 2 [SM8550] (8)
+- CPU: Qualcomm Snapdragon 8 Gen 2 for Galaxy [SM8550] (8)
 - GPU: Qualcomm Adreno (TM) 740 [Integrated]
 - Memory: 10.92 GiB
 - Swap: 12.00 GiB

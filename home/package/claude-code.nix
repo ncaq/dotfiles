@@ -25,6 +25,7 @@ in
     # Claude Codeに必要なユーザプロンプト全体を連結して配置します。
     "${config.xdg.configHome}/claude/CLAUDE.md".text = lib.concatStringsSep "\n" [
       (builtins.readFile ../../prompt/assistant/output.md)
+      (builtins.readFile ../../prompt/assistant/persona.md)
       (builtins.readFile ../../prompt/environment/os.md)
       (builtins.readFile ../../prompt/environment/hardware.md)
       (builtins.readFile ../../prompt/user/policy.md)

@@ -46,7 +46,11 @@
 
     git-hooks = {
       url = "github:ncaq/git-hooks";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-parts.follows = "flake-parts";
+        treefmt-nix.follows = "treefmt-nix";
+      };
     };
 
     dot-xmonad = {

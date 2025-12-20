@@ -246,16 +246,22 @@
     },
     "git-hooks": {
       "inputs": {
+        "flake-parts": [
+          "flake-parts"
+        ],
         "nixpkgs": [
           "nixpkgs"
+        ],
+        "treefmt-nix": [
+          "treefmt-nix"
         ]
       },
       "locked": {
-        "lastModified": 1766199708,
-        "narHash": "sha256-O9CGLAqI2cVF4EySLtiQwruy0QaeqqlozERY81B3ywU=",
+        "lastModified": 1766203355,
+        "narHash": "sha256-m04Rp1njgodx1RzrPtL0oPGA3q7ddLvLemXHvPBLDYA=",
         "owner": "ncaq",
         "repo": "git-hooks",
-        "rev": "1c01dd901390b5f9e725a53450347a3fdfc1ac06",
+        "rev": "53f86e828254925eac7995ac0e613af9027b2bad",
         "type": "github"
       },
       "original": {

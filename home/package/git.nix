@@ -1,6 +1,6 @@
 { pkgs, inputs, ... }:
 {
-  imports = [ inputs.git-hooks.homeManagerModules.default ];
+  imports = [ inputs.git-hooks.modules.homeManager.default ];
   programs = {
     git = {
       enable = true;

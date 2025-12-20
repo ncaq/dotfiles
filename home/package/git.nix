@@ -1,5 +1,6 @@
-{ pkgs, ... }:
+{ pkgs, inputs, ... }:
 {
+  imports = [ inputs.git-hooks.homeManagerModules.default ];
   programs = {
     git = {
       enable = true;
@@ -13,7 +14,6 @@
         core = {
           autocrlf = false;
           editor = "emacsclient";
-          hooksPath = "~/dotfiles/git-hooks"; # TODO: Nix的に管理。
           quotePath = false;
           symlinks = true;
         };
@@ -47,5 +47,6 @@
         github-copilot-cli
       ];
     };
+    git-hooks.enable = true;
   };
 }

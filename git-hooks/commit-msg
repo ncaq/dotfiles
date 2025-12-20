@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-set -eu
-
-script_dir=$(dirname "$0")
-commit_editmsg_file="$(realpath "${1}")"
-yarn --cwd "$script_dir" commitlint --edit "$commit_editmsg_file"

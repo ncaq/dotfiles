@@ -53,6 +53,16 @@
       };
     };
 
+    www-ncaq-net = {
+      url = "github:ncaq/www.ncaq.net";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-utils.follows = "flake-utils";
+        treefmt-nix.follows = "treefmt-nix";
+        haskellNix.follows = "haskellNix";
+      };
+    };
+
     dot-xmonad = {
       url = "github:ncaq/.xmonad";
       inputs = {
@@ -89,6 +99,7 @@
       disko,
       nixos-wsl,
       rust-overlay,
+      www-ncaq-net,
       dot-xmonad,
       claude-desktop,
       firge-nix,
@@ -117,6 +128,7 @@
                   inherit
                     inputs
                     username
+                    www-ncaq-net
                     dot-xmonad
                     claude-desktop
                     ;
@@ -162,6 +174,7 @@
                     hostName
                     nixos-hardware
                     nixos-wsl
+                    www-ncaq-net
                     dot-xmonad
                     claude-desktop
                     ;

@@ -3,6 +3,7 @@
   pkgs-unstable,
   config,
   lib,
+  www-ncaq-net,
   ...
 }:
 let
@@ -26,7 +27,7 @@ in
       (builtins.readFile ../../prompt/for-llm.md)
       (builtins.readFile ../../prompt/environment.md)
       (builtins.readFile ../../prompt/profile.md)
-      (builtins.readFile ../../prompt/personal.md)
+      (builtins.readFile "${www-ncaq-net}/site/about.md")
       (builtins.readFile ../../prompt/command.md)
       (builtins.readFile ../../prompt/naming-rule.md)
       (builtins.readFile ../../prompt/use-error-info.md)

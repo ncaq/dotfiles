@@ -24,8 +24,8 @@ nix run --file '<nixpkgs>' fastfetch -- --logo none
 - Display (GSM5BBF): 3840x2160 @ 1.5x in 27", 144 Hz [External]
 - CPU: AMD Ryzen 9 9950X3D (32) @ 5.75 GHz
 - GPU: NVIDIA GeForce RTX 5090 [Discrete]
-- Memory: 93.85 GiB
-- Swap: 50.92 GiB
+- Memory: 96 GB
+- Swap: 50 GiB
 - Disk (/): 474.76 GiB / 1.82 TiB (26%)
 
 同じマザーボードにSSDを分けて3つ入っているいずれのOSも、
@@ -39,7 +39,7 @@ nix run --file '<nixpkgs>' fastfetch -- --logo none
 
 - CPU: AMD Ryzen 5 7540U
 - GPU: 内蔵
-- Memory: 32GB
+- Memory: 32 GB
 - Disk (/): SN770 1TB NVMe SSD
 
 ### サーバ
@@ -51,8 +51,8 @@ nix run --file '<nixpkgs>' fastfetch -- --logo none
 - Host: A620M-HDV/M.2+
 - CPU: AMD Ryzen 5 7600 (12) @ 5.17 GHz
 - GPU: AMD Raphael [Integrated]
-- Memory: 61.89 GiB
-- Swap: 34.95 GiB
+- Memory: 64 GB
+- Swap: 34 GiB
 - Disk (/): 144.04 GiB / 929.51 GiB (15%) - btrfs
 - Disk (/mnt/noa): 608.59 GiB / 12.73 TiB (5%) - btrfs
 
@@ -67,7 +67,7 @@ nix run --file '<nixpkgs>' fastfetch -- --logo none
 - Host: samsung SM-F966Q
 - CPU: Qualcomm Snapdragon 8 Elite for Galaxy [SM8750] (8)
 - GPU: Qualcomm Adreno (TM) 830 [Integrated]
-- Memory: 14.75 GiB
+- Memory: 16 GB
 - Swap: 20.00 GiB
 - Disk (/): 7.06 GiB / 7.06 GiB (100%) - erofs [Read-only]
 - Disk (/storage/emulated): 114.81 GiB / 936.83 GiB (12%) - fuse
@@ -81,7 +81,7 @@ nix run --file '<nixpkgs>' fastfetch -- --logo none
 - Host: samsung SM-X910
 - CPU: Qualcomm Snapdragon 8 Gen 2 for Galaxy [SM8550] (8)
 - GPU: Qualcomm Adreno (TM) 740 [Integrated]
-- Memory: 10.92 GiB
+- Memory: 12 GB
 - Swap: 12.00 GiB
 - Disk (/): 6.50 GiB / 6.50 GiB (100%) - erofs [Read-only]
 - Disk (/storage/emulated): 71.38 GiB / 462.07 GiB (15%) - fuse

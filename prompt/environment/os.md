@@ -1,4 +1,4 @@
-# 利用環境
+# よく使うソフトウェア
 
 ## オペレーティングシステム
 
@@ -15,7 +15,7 @@ WSL2の上でNixOSを使っています。
 
 ### Windows
 
-ゲームをする時はWindows 11を使うことがあります。
+ゲームをする時などはWindows 11をネイティブで使うことがあります。
 
 ## webブラウザ
 
@@ -36,28 +36,3 @@ webブラウザにはFirefoxを使っています。
 [ncaq/.zsh.d](https://github.com/ncaq/.zsh.d)
 で管理されています。
 `~/.zsh.d`に`git clone`されています。
-
-## スマートデバイス
-
-スマートデバイスにはAndroid端末を使っています。
-現在の使用端末はGalaxy Z Fold7とGalaxy Tab S9 Ultraです。
-
-## PCのハードウェア情報
-
-### bullet, pristine, SSD0086
-
-メインのデスクトップPCの簡単なハードウェアの情報は以下の通りです。
-
-- CPU: AMD Ryzen 9 9950X3D
-- GPU: NVIDIA GeForce RTX 5090
-- Memory: 96GB
-- Disk (/): 2TBのNVMe SSD(SN8100, SN850X, SN850)のうち一つ
-
-### creep
-
-メインのラップトップPCであるThinkPad P16s Gen 2の簡単なハードウェアの情報は以下の通りです。
-
-- CPU: AMD Ryzen 5 7540U
-- GPU: 内蔵
-- Memory: 32GB
-- Disk (/): SN770 1TB NVMe SSD

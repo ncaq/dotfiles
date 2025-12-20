@@ -244,6 +244,26 @@
         "type": "github"
       }
     },
+    "git-hooks": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1766199708,
+        "narHash": "sha256-O9CGLAqI2cVF4EySLtiQwruy0QaeqqlozERY81B3ywU=",
+        "owner": "ncaq",
+        "repo": "git-hooks",
+        "rev": "1c01dd901390b5f9e725a53450347a3fdfc1ac06",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ncaq",
+        "repo": "git-hooks",
+        "type": "github"
+      }
+    },
     "hackage": {
       "flake": false,
       "locked": {
@@ -843,6 +863,7 @@
         "firge-nix": "firge-nix",
         "flake-parts": "flake-parts",
         "flake-utils": "flake-utils",
+        "git-hooks": "git-hooks",
         "haskellNix": "haskellNix",
         "home-manager": "home-manager",
         "nixos-hardware": "nixos-hardware",

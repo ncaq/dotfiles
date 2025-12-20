@@ -44,6 +44,11 @@
       };
     };
 
+    git-hooks = {
+      url = "github:ncaq/git-hooks";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     dot-xmonad = {
       url = "github:ncaq/.xmonad";
       inputs = {

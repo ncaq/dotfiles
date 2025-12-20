@@ -199,13 +199,6 @@ To install packages.
 
 NixOS configuration files.
 
-## [git-hooks/](./git-hooks/)
-
-These are my Git global hooks.
-
-It's semi standalone.
-I might move it to a separate repository because it's unrelated to Nix.
-
 # Separated dotfiles
 
 - [ncaq/.emacs.d: My Emacs config](https://github.com/ncaq/.emacs.d)
@@ -213,6 +206,7 @@ I might move it to a separate repository because it's unrelated to Nix.
 - [ncaq/.xkeysnail: My xkeysnail config](https://github.com/ncaq/.xkeysnail)
 - [ncaq/.xmonad](https://github.com/ncaq/.xmonad)
 - [ncaq/.zsh.d](https://github.com/ncaq/.zsh.d)
+- [ncaq/git-hooks: My Git global hooks](https://github.com/ncaq/git-hooks)
 - [ncaq/keyhac-config](https://github.com/ncaq/keyhac-config)
 - [ncaq/surfingkeys-config: My Surfingkeys config](https://github.com/ncaq/surfingkeys-config)
 - [ncaq/winconf: My Windows configuration files](https://github.com/ncaq/winconf)

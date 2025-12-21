@@ -37,10 +37,13 @@ nix run --file '<nixpkgs>' fastfetch -- --logo none
 
 メインのラップトップPCであるThinkPad P16s Gen 2の簡単なハードウェアの情報は以下の通りです。
 
-- CPU: AMD Ryzen 5 7540U
-- GPU: 内蔵
+- Host: 21K9CTO1WW (ThinkPad P16s Gen 2)
+- Display (AUOD49C): 1920x1200 in 16", 60 Hz [Built-in]
+- CPU: AMD Ryzen 5 PRO 7540U (12) @ 4.98 GHz
+- GPU: AMD Radeon 740M Graphics [Integrated]
 - Memory: 32 GB
-- Disk (/): SN770 1TB NVMe SSD
+- Swap: 17.55 GiB
+- Disk (/): 145.07 GiB / 691.91 GiB (21%) - btrfs
 
 ### サーバ
 

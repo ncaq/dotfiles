@@ -35,6 +35,7 @@
     ];
     coding-agent = lib.concatStringsSep "\n" [
       (builtins.readFile ./assistant/output.md)
+      (builtins.readFile ./environment/software.md)
       (builtins.readFile ./programming/command.md)
       (builtins.readFile ./programming/naming-rule.md)
       (builtins.readFile ./programming/use-error-info.md)

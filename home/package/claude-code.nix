@@ -3,7 +3,6 @@
   pkgs-unstable,
   config,
   lib,
-  www-ncaq-net,
   ...
 }:
 let
@@ -12,7 +11,7 @@ in
 {
   home.packages = [
     pkgs-unstable.claude-code
-    # Claude Codeのsandbox機能を利用するために必要。
+    # Claude Codeのsandbox機能を利用する時に必要。
     pkgs.bubblewrap
     pkgs.socat
   ];
@@ -22,24 +21,12 @@ in
     ".claude" = {
       source = config.lib.file.mkOutOfStoreSymlink "${config.xdg.configHome}/claude";
     };
-    # Claude Codeに必要なユーザプロンプト全体を連結して配置します。
-    "${config.xdg.configHome}/claude/CLAUDE.md".text = lib.concatStringsSep "\n" [
-      (builtins.readFile ../../prompt/assistant/output.md)
-      (builtins.readFile ../../prompt/assistant/persona.md)
-      (builtins.readFile ../../prompt/environment/os.md)
-      (builtins.readFile ../../prompt/environment/hardware.md)
-      (builtins.readFile ../../prompt/user/policy.md)
-      (builtins.readFile ../../prompt/user/region.md)
-      (builtins.readFile "${www-ncaq-net}/site/about.md")
-      (builtins.readFile ../../prompt/programming/command.md)
-      (builtins.readFile ../../prompt/programming/naming-rule.md)
-      (builtins.readFile ../../prompt/programming/use-error-info.md)
-      (builtins.readFile ../../prompt/programming/check-job.md)
-      (builtins.readFile ../../prompt/programming/test.md)
-    ];
+    # Claude Codeに必要なカスタムプロンプトを配置します。
+    "${config.xdg.configHome}/claude/CLAUDE.md".text = config.prompt.coding-agent;
   };
 
-  # Claude Codeがシンボリックリンクされたsettings.jsonに書き込めない問題を回避
+  # Claude Codeがシンボリックリンクされたsettings.jsonに書き込めない問題を回避するために、
+  # シンボリックリンクを配置するのではなくインストール時に毎回コピーします。
   # https://github.com/anthropics/claude-code/issues/3575
   home.activation.claudeSettings = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     $DRY_RUN_CMD mkdir -p $HOME/.config/claude

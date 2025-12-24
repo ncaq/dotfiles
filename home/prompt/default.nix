@@ -1,4 +1,4 @@
-# Claude Code等で使用するプロンプトを連結して提供するモジュール。
+# LLMで利用するプロンプトを連結して提供するモジュール。
 {
   lib,
   www-ncaq-net,
@@ -9,7 +9,7 @@
     coding-agent = lib.mkOption {
       type = lib.types.str;
       readOnly = true;
-      description = "コーディングエージェント向けのユーザプロンプトを連結したテキスト";
+      description = "コーディングエージェント向けのカスタムプロンプトを連結したテキスト";
     };
   };
 

@@ -21,7 +21,7 @@ in
     ".claude" = {
       source = config.lib.file.mkOutOfStoreSymlink "${config.xdg.configHome}/claude";
     };
-    # Claude Codeに必要なユーザプロンプトを配置します。
+    # Claude Codeに必要なカスタムプロンプトを配置します。
     "${config.xdg.configHome}/claude/CLAUDE.md".text = config.prompt.coding-agent;
   };
 

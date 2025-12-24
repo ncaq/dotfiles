@@ -33,6 +33,9 @@
       (builtins.readFile ./programming/check-job.md)
       (builtins.readFile ./programming/test.md)
     ];
+    # coding-agentのcontextは貴重なので、
+    # chat-assistantより厳選して少なめにします。
+    # プログラミングに直接関係ない情報は省きます。
     coding-agent = lib.concatStringsSep "\n" [
       (builtins.readFile ./assistant/output.md)
       (builtins.readFile ./environment/software.md)

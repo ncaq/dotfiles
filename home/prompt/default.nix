@@ -22,7 +22,7 @@
     chat-assistant = lib.concatStringsSep "\n" [
       (builtins.readFile ./assistant/output.md)
       (builtins.readFile ./assistant/persona.md)
-      (builtins.readFile ./environment/os.md)
+      (builtins.readFile ./environment/software.md)
       (builtins.readFile ./environment/hardware.md)
       (builtins.readFile ./user/policy.md)
       (builtins.readFile ./user/region.md)

@@ -12,6 +12,7 @@
 
   imports = [
     ./link.nix
+    ./prompt
     ./package
   ];
 }

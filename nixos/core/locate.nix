@@ -49,6 +49,7 @@
       "file-backup"
       "htmlcache"
       "node_modules"
+      "projects" # claude code
       "site-packages"
       "steam-runtime"
       "store"

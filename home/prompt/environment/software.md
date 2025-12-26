@@ -36,3 +36,10 @@ webブラウザにはFirefoxを使っています。
 [ncaq/.zsh.d](https://github.com/ncaq/.zsh.d)
 で管理されています。
 `~/.zsh.d`に`git clone`されています。
+
+## コマンドラインファイルアーカイバ
+
+[patool - Wikipedia](https://ja.wikipedia.org/wiki/Patool)を使っています。
+`patool extract`で大抵の圧縮ファイルを解凍できます。
+
+`unzip`コマンドが見つからなくても諦めずに`patool`を試してみてください。

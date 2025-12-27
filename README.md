@@ -121,7 +121,7 @@ sudo nixos-generate-config --show-hardware-config --no-filesystems > ~/dotfiles/
 NEW_HOST=please-input-new-hostname
 nix --extra-experimental-features 'flakes nix-command' run 'nixpkgs#git' -- clone https://github.com/ncaq/dotfiles.git
 cd dotfiles
-sudo nix --experimental-features 'flakes nix-command' run github:nix-community/disko/latest -- --mode format,mount --flake ".#${NEW_HOST}"
+sudo nix --experimental-features 'flakes nix-command' run '.#disko' -- --mode format,mount --flake ".#${NEW_HOST}"
 sudo nixos-install --flake ".#${NEW_HOST}" --root /mnt
 ```
 
@@ -130,7 +130,7 @@ Please reboot.
 ## Non NixOS(home-manager standalone)
 
 ```zsh
-nix run home-manager/release-25.11 -- --flake ".#${USER}" init --switch .
+nix run '.#home-manager' -- --flake ".#${USER}" init --switch .
 ```
 
 # Rebuild
@@ -164,7 +164,7 @@ nix flake check
 ## Dynamic
 
 ```zsh
-nix run github:nix-community/home-manager -- switch --flake ".#${USER}" -n -b backup
+nix run '.#home-manager' -- switch --flake ".#${USER}" -n -b backup
 ```
 
 # Policy

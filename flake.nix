@@ -115,121 +115,142 @@
         "x86_64-linux"
       ];
 
-      flake = {
-        homeConfigurations =
-          let
-            mkLinuxHome =
-              username:
-              home-manager.lib.homeManagerConfiguration ({
-                pkgs = import nixpkgs {
-                  system = "x86_64-linux";
-                };
-                extraSpecialArgs = {
-                  inherit
-                    inputs
-                    username
-                    www-ncaq-net
-                    dot-xmonad
-                    claude-desktop
-                    ;
-                  pkgs-unstable = import nixpkgs-unstable {
-                    system = "x86_64-linux";
-                    config.allowUnfree = true;
-                  };
-                  pkgs-2505 = import nixpkgs-2505 {
-                    system = "x86_64-linux";
-                  };
-                  dpi = 144;
-                  isWSL = false;
-                };
-                modules = [
-                  (
-                    { ... }:
-                    {
-                      nixpkgs.config.allowUnfree = true;
-                      nixpkgs.overlays = [
-                        rust-overlay.overlays.default
-                        firge-nix.overlays.default
-                      ];
-                    }
-                  )
-                  ./home
-                ];
-              });
-          in
-          {
-            "ncaq" = mkLinuxHome "ncaq";
+      flake =
+        let
+          # 許可するライセンス。
+          allowlistedLicenses = with nixpkgs.lib.licenses; [
+            nvidiaCuda # 現実的な代替手段がないため。
+            nvidiaCudaRedist # 再配布可能ならまだマシ。
+            unfreeRedistributable # 再配布可能ならまだマシ。
+          ];
+          # 明示的に許可するunfreeパッケージのリスト
+          allowedUnfreePackages = [
+            "claude-code"
+            "discord"
+            "github-copilot-cli"
+            "slack"
+            "zoom"
+          ];
+          nixpkgsConfig = {
+            inherit allowlistedLicenses;
+            allowUnfreePredicate = pkg: builtins.elem (nixpkgs.lib.getName pkg) allowedUnfreePackages;
           };
+        in
+        {
+          homeConfigurations =
+            let
+              mkLinuxHome =
+                username:
+                home-manager.lib.homeManagerConfiguration ({
+                  pkgs = import nixpkgs {
+                    system = "x86_64-linux";
+                  };
+                  extraSpecialArgs = {
+                    inherit
+                      inputs
+                      username
+                      www-ncaq-net
+                      dot-xmonad
+                      claude-desktop
+                      ;
+                    pkgs-unstable = import nixpkgs-unstable {
+                      system = "x86_64-linux";
+                      config = nixpkgsConfig;
+                    };
+                    pkgs-2505 = import nixpkgs-2505 {
+                      system = "x86_64-linux";
+                    };
+                    dpi = 144;
+                    isWSL = false;
+                  };
+                  modules = [
+                    (
+                      { ... }:
+                      {
+                        nixpkgs.config = nixpkgsConfig;
+                        nixpkgs.overlays = [
+                          rust-overlay.overlays.default
+                          firge-nix.overlays.default
+                        ];
+                      }
+                    )
+                    ./home
+                  ];
+                });
+            in
+            {
+              "ncaq" = mkLinuxHome "ncaq";
+            };
 
-        nixosConfigurations =
-          let
-            mkNixosSystem =
-              {
-                hostName,
-              }:
-              let
-                specialArgs = {
-                  inherit
-                    inputs
-                    hostName
-                    nixos-hardware
-                    nixos-wsl
-                    www-ncaq-net
-                    dot-xmonad
-                    claude-desktop
-                    ;
-                  pkgs-unstable = import nixpkgs-unstable {
-                    system = "x86_64-linux";
-                    config.allowUnfree = true;
+          nixosConfigurations =
+            let
+              mkNixosSystem =
+                {
+                  hostName,
+                }:
+                let
+                  specialArgs = {
+                    inherit
+                      inputs
+                      hostName
+                      nixos-hardware
+                      nixos-wsl
+                      www-ncaq-net
+                      dot-xmonad
+                      claude-desktop
+                      ;
+                    pkgs-unstable = import nixpkgs-unstable {
+                      system = "x86_64-linux";
+                      config = nixpkgsConfig;
+                    };
+                    pkgs-2505 = import nixpkgs-2505 {
+                      system = "x86_64-linux";
+                    };
+                    username = "ncaq";
                   };
-                  pkgs-2505 = import nixpkgs-2505 {
-                    system = "x86_64-linux";
-                  };
-                  username = "ncaq";
-                };
-              in
-              nixpkgs.lib.nixosSystem {
-                system = "x86_64-linux";
-                inherit specialArgs;
-                modules = [
-                  (
-                    { ... }:
-                    {
-                      nixpkgs.config.allowUnfree = true;
-                      nixpkgs.overlays = [
-                        rust-overlay.overlays.default
-                        firge-nix.overlays.default
-                      ];
-                    }
-                  )
-                  disko.nixosModules.default
-                  ./nixos/configuration.nix
-                  ./nixos/host/${hostName}.nix
-                  home-manager.nixosModules.home-manager
-                  (
-                    { config, ... }:
-                    {
-                      home-manager = {
-                        useGlobalPkgs = true;
-                        useUserPackages = true;
-                        extraSpecialArgs = specialArgs // {
-                          isWSL = config.wsl.enable or false;
+                in
+                nixpkgs.lib.nixosSystem {
+                  system = "x86_64-linux";
+                  inherit specialArgs;
+                  modules = [
+                    (
+                      { ... }:
+                      {
+                        nixpkgs.config = nixpkgsConfig;
+                        nixpkgs.overlays = [
+                          rust-overlay.overlays.default
+                          firge-nix.overlays.default
+                        ];
+                      }
+                    )
+                    disko.nixosModules.default
+                    ./nixos/configuration.nix
+                    ./nixos/host/${hostName}.nix
+                    home-manager.nixosModules.home-manager
+                    (
+                      { config, ... }:
+                      {
+                        home-manager = {
+                          useGlobalPkgs = true;
+                          useUserPackages = true;
+                          extraSpecialArgs = specialArgs // {
+                            isWSL = config.wsl.enable or false;
+                          };
+                          users.ncaq = import ./home;
                         };
-                        users.ncaq = import ./home;
-                      };
-                    }
-                  )
-                ];
-              };
-          in
-          {
-            "SSD0086" = mkNixosSystem { hostName = "SSD0086"; };
-            "bullet" = mkNixosSystem { hostName = "bullet"; };
-            "creep" = mkNixosSystem { hostName = "creep"; };
-            "seminar" = mkNixosSystem { hostName = "seminar"; };
-            "vanitas" = mkNixosSystem { hostName = "vanitas"; };
-          };
-      };
+                      }
+                    )
+                  ];
+                };
+            in
+            {
+              "SSD0086" = mkNixosSystem { hostName = "SSD0086"; };
+              "bullet" = mkNixosSystem { hostName = "bullet"; };
+              "creep" = mkNixosSystem { hostName = "creep"; };
+              "seminar" = mkNixosSystem { hostName = "seminar"; };
+              "vanitas" = mkNixosSystem { hostName = "vanitas"; };
+            };
+        };
 
       perSystem =
         {

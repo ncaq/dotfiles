@@ -6,7 +6,7 @@
 特にディスクの利用サイズなどは日々変動します。
 
 ```console
-nix run --file '<nixpkgs>' fastfetch -- --logo none
+nix run "$HOME/dotfiles#fastfetch" -- --logo none
 ```
 
 コマンドを動いているマシンで実行することでほぼ同じ最新の情報を取得できます。

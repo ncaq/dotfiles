@@ -159,6 +159,7 @@
                     };
                     pkgs-2505 = import nixpkgs-2505 {
                       system = "x86_64-linux";
+                      config = nixpkgsConfig;
                     };
                     dpi = 144;
                     isWSL = false;

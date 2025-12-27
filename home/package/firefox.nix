@@ -234,6 +234,25 @@
                   "@mdn"
                 ];
               };
+              nixos-options = {
+                name = "NixOS Search - Options";
+                urls = [
+                  {
+                    template = "https://search.nixos.org/options";
+                    params = [
+                      {
+                        name = "query";
+                        value = "{searchTerms}";
+                      }
+                    ];
+                  }
+                ];
+                icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
+                definedAliases = [
+                  "nn"
+                  "@nixos-options"
+                ];
+              };
               nixos-packages = {
                 name = "NixOS Search - Packages";
                 urls = [

@@ -123,7 +123,7 @@
             nvidiaCudaRedist # 再配布可能ならまだマシ。
             unfreeRedistributable # 再配布可能ならまだマシ。
           ];
-          # 明示的に許可するunfreeパッケージのリスト
+          # 明示的に許可するunfreeパッケージのリスト。
           allowedUnfreePackages = [
             "claude-code"
             "discord"

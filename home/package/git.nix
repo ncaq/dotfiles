@@ -1,4 +1,4 @@
-{ pkgs, inputs, ... }:
+{ inputs, ... }:
 {
   imports = [ inputs.git-hooks.modules.homeManager.default ];
   programs = {
@@ -41,12 +41,7 @@
         "Thumbs.db"
       ];
     };
-    gh = {
-      enable = true;
-      extensions = with pkgs; [
-        github-copilot-cli
-      ];
-    };
+    gh.enable = true;
     git-hooks.enable = true;
   };
 }

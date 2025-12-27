@@ -158,7 +158,7 @@
                     ];
                   }
                 ];
-                icon = "${pkgs.kdePackages.breeze-icons}/share/icons/breeze-dark/actions/22/im-twitter.svg";
+                icon = "${pkgs.super-tiny-icons}/share/icons/SuperTinyIcons/svg/twitter.svg";
                 definedAliases = [
                   "t"
                   "@twitter"
@@ -197,8 +197,7 @@
                     ];
                   }
                 ];
-                # TODO
-                # icon =
+                icon = "${pkgs.super-tiny-icons}/share/icons/SuperTinyIcons/svg/stackexchange.svg";
                 definedAliases = [
                   "s"
                   "@stackexchange"
@@ -306,7 +305,7 @@
                     ];
                   }
                 ];
-                icon = "${pkgs.kdePackages.breeze-icons}/share/icons/breeze-dark/mimetypes/64/text-rust.svg";
+                icon = "${pkgs.super-tiny-icons}/share/icons/SuperTinyIcons/svg/rust.svg";
                 definedAliases = [
                   "r"
                   "@crate"
@@ -325,7 +324,7 @@
                     ];
                   }
                 ];
-                icon = "${pkgs.kdePackages.breeze-icons}/share/icons/breeze-dark/mimetypes/64/text-javascript.svg";
+                icon = "${pkgs.super-tiny-icons}/share/icons/SuperTinyIcons/svg/npm.svg";
                 definedAliases = [
                   "j"
                   "@npm"

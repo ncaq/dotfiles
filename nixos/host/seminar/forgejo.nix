@@ -44,6 +44,7 @@ in
             type = "postgres";
             # PostgreSQL runs on host, accessed via bindMounted socket.
             createDatabase = false;
+            socket = "/run/postgresql";
           };
           settings = {
             server = {

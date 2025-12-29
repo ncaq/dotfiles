@@ -39,7 +39,7 @@ in
           # ```
           environmentFile = "/etc/atticd.env";
           settings = {
-            listen = "[::]:10000";
+            listen = "[::]:80";
             allowed-hosts = [ "nix-cache.ncaq.net" ];
             api-endpoint = "https://nix-cache.ncaq.net/";
             database.url = "postgresql:///atticd?host=/run/postgresql";

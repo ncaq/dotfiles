@@ -11,7 +11,7 @@ in
     bindMounts = {
       "/run/postgresql" = {
         hostPath = "/run/postgresql";
-        isReadOnly = false;
+        isReadOnly = true;
       };
       "/mnt/noa/atticd" = {
         hostPath = "/mnt/noa/atticd";

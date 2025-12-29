@@ -6,6 +6,7 @@
 }:
 let
   addr = config.containerAddresses.atticd;
+  user = config.containerUsers.atticd;
   # ホストからコンテナ内のatticd-atticadmコマンドを実行するラッパースクリプト
   atticadmWrapper = pkgs.writeShellScriptBin "atticd-atticadm" ''
     exec nixos-container run atticd -- atticd-atticadm "$@"
@@ -40,10 +41,10 @@ in
         services.resolved.enable = true;
         # UID/GID must match host for PostgreSQL peer authentication via bindMounted socket.
         users.users.atticd = {
-          uid = 993;
+          uid = user.uid;
           group = "atticd";
         };
-        users.groups.atticd.gid = 988;
+        users.groups.atticd.gid = user.gid;
         services.atticd = {
           enable = true;
           # ```
@@ -77,10 +78,10 @@ in
   users.users.atticd = {
     isSystemUser = true;
     group = "atticd";
-    uid = 993;
+    uid = user.uid;
   };
   users.groups.atticd = {
-    gid = 988;
+    gid = user.gid;
     members = [ username ];
   };
   systemd.tmpfiles.rules = [

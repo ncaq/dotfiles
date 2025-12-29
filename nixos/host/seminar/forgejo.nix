@@ -1,6 +1,7 @@
 { config, pkgs, ... }:
 let
   addr = config.containerAddresses.forgejo;
+  user = config.containerUsers.forgejo;
   # ホストからコンテナ内のforgejoコマンドを実行するラッパースクリプト
   forgejoWrapper = pkgs.writeShellScriptBin "forgejo" ''
     exec nixos-container run forgejo -- forgejo "$@"
@@ -31,10 +32,10 @@ in
         services.resolved.enable = true;
         # UID/GID must match host for PostgreSQL peer authentication via bindMounted socket.
         users.users.forgejo = {
-          uid = 991;
+          uid = user.uid;
           group = "forgejo";
         };
-        users.groups.forgejo.gid = 986;
+        users.groups.forgejo.gid = user.gid;
         services.forgejo = {
           enable = true;
           database = {
@@ -71,9 +72,9 @@ in
   users.users.forgejo = {
     isSystemUser = true;
     group = "forgejo";
-    uid = 991;
+    uid = user.uid;
   };
-  users.groups.forgejo.gid = 986;
+  users.groups.forgejo.gid = user.gid;
   systemd.tmpfiles.rules = [
     "d /var/lib/forgejo 0750 forgejo forgejo -"
   ];

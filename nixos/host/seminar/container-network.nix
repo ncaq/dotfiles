@@ -12,6 +12,18 @@ let
       };
     };
   };
+  userType = lib.types.submodule {
+    options = {
+      uid = lib.mkOption {
+        type = lib.types.int;
+        description = "User ID (must match between host and container for PostgreSQL peer auth)";
+      };
+      gid = lib.mkOption {
+        type = lib.types.int;
+        description = "Group ID (must match between host and container for PostgreSQL peer auth)";
+      };
+    };
+  };
 in
 {
   options.containerAddresses = lib.mkOption {
@@ -27,6 +39,21 @@ in
       };
     };
     description = "Container network addresses";
+  };
+
+  options.containerUsers = lib.mkOption {
+    type = lib.types.attrsOf userType;
+    default = {
+      forgejo = {
+        uid = 991;
+        gid = 986;
+      };
+      atticd = {
+        uid = 993;
+        gid = 988;
+      };
+    };
+    description = "Container user/group IDs for PostgreSQL peer authentication";
   };
 
   config = {

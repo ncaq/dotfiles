@@ -40,6 +40,7 @@ in
               DOMAIN = "forgejo.ncaq.net";
               ROOT_URL = "https://forgejo.ncaq.net/";
               SSH_DOMAIN = "forgejo-ssh.ncaq.net";
+              START_SSH_SERVER = true;
             };
             session = {
               COOKIE_SECURE = true;

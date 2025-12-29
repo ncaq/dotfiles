@@ -1,8 +1,18 @@
-{ config, username, ... }:
+{
+  config,
+  username,
+  pkgs,
+  ...
+}:
 let
   addr = config.containerAddresses.atticd;
+  # ホストからコンテナ内のatticd-atticadmコマンドを実行するラッパースクリプト
+  atticadmWrapper = pkgs.writeShellScriptBin "atticd-atticadm" ''
+    exec nixos-container run atticd -- atticd-atticadm "$@"
+  '';
 in
 {
+  environment.systemPackages = [ atticadmWrapper ];
   containers.atticd = {
     autoStart = true;
     privateNetwork = true;

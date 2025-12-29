@@ -16,7 +16,7 @@ in
     bindMounts = {
       "/run/postgresql" = {
         hostPath = "/run/postgresql";
-        isReadOnly = false;
+        isReadOnly = true;
       };
       "/var/lib/forgejo" = {
         hostPath = "/var/lib/forgejo";

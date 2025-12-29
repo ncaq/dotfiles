@@ -57,4 +57,14 @@ in
         environment.systemPackages = [ config.services.forgejo.package ];
       };
   };
+
+  # Host-side user/group configuration for bindMount permissions.
+  users.users.forgejo = {
+    isSystemUser = true;
+    group = "forgejo";
+  };
+  users.groups.forgejo = { };
+  systemd.tmpfiles.rules = [
+    "d /var/lib/forgejo 0750 forgejo forgejo -"
+  ];
 }

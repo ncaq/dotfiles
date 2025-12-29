@@ -1,8 +1,13 @@
-{ config, ... }:
+{ config, pkgs, ... }:
 let
   addr = config.containerAddresses.forgejo;
+  # ホストからコンテナ内のforgejoコマンドを実行するラッパースクリプト
+  forgejoWrapper = pkgs.writeShellScriptBin "forgejo" ''
+    exec nixos-container run forgejo -- forgejo "$@"
+  '';
 in
 {
+  environment.systemPackages = [ forgejoWrapper ];
   containers.forgejo = {
     autoStart = true;
     privateNetwork = true;
@@ -48,8 +53,8 @@ in
             };
           };
         };
+        # コンテナ内で管理CLIコマンドを使えるようにします。
+        environment.systemPackages = [ config.services.forgejo.package ];
       };
   };
-  # サーバで管理コマンドを実行できるようにします。
-  environment.systemPackages = [ config.services.forgejo.package ];
 }

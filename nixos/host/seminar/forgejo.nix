@@ -42,7 +42,7 @@ in
           };
           settings = {
             server = {
-              HTTP_PORT = 80;
+              HTTP_PORT = 8080;
               DOMAIN = "forgejo.ncaq.net";
               ROOT_URL = "https://forgejo.ncaq.net/";
               SSH_DOMAIN = "forgejo-ssh.ncaq.net";

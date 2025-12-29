@@ -39,6 +39,8 @@ in
         system.stateVersion = "25.05";
         networking.useHostResolvConf = lib.mkForce false;
         services.resolved.enable = true;
+        # Allow incoming connections from host via private network.
+        networking.firewall.trustedInterfaces = [ "eth0" ];
         # UID/GID must match host for PostgreSQL peer authentication via bindMounted socket.
         users.users.atticd = {
           uid = user.uid;

@@ -61,5 +61,7 @@ in
       enable = true;
       internalInterfaces = [ "ve-+" ];
     };
+    # Trust container veth interfaces for local host-to-container communication.
+    networking.firewall.trustedInterfaces = [ "ve-+" ];
   };
 }

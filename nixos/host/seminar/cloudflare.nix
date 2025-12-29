@@ -34,7 +34,7 @@ in
       credentialsFile = "/home/${username}/.cloudflared/tunnel-seminar.json";
       ingress = {
         "forgejo.ncaq.net" = "http://${forgejoAddr}:8080";
-        "forgejo-ssh.ncaq.net" = "ssh://${forgejoAddr}:22";
+        "forgejo-ssh.ncaq.net" = "ssh://${forgejoAddr}:2222";
         "nix-cache.ncaq.net" = "http://${atticdAddr}:8080";
       };
     };

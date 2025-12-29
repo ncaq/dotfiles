@@ -42,6 +42,8 @@ in
           enable = true;
           database = {
             type = "postgres";
+            # PostgreSQL runs on host, accessed via bindMounted socket.
+            createDatabase = false;
           };
           settings = {
             server = {

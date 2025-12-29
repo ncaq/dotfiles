@@ -16,6 +16,8 @@ let
       exec ${pkgs.cloudflared}/bin/cloudflared "$@"
     fi
   '';
+  forgejoAddr = config.containerAddresses.forgejo.container;
+  atticdAddr = config.containerAddresses.atticd.container;
 in
 {
   # To initialize, run in server:
@@ -31,11 +33,9 @@ in
       default = "http_status:404";
       credentialsFile = "/home/${username}/.cloudflared/tunnel-seminar.json";
       ingress = {
-        "forgejo.ncaq.net" =
-          "http://${toString config.services.forgejo.settings.server.HTTP_ADDR}:${toString config.services.forgejo.settings.server.HTTP_PORT}";
-        "forgejo-ssh.ncaq.net" =
-          "ssh://localhost:${toString config.services.forgejo.settings.server.SSH_PORT}";
-        "nix-cache.ncaq.net" = "http://localhost:10000";
+        "forgejo.ncaq.net" = "http://${forgejoAddr}:10001";
+        "forgejo-ssh.ncaq.net" = "ssh://${forgejoAddr}:22";
+        "nix-cache.ncaq.net" = "http://${atticdAddr}:10000";
       };
     };
   };

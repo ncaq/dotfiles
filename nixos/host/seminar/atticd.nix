@@ -1,57 +1,110 @@
-{ username, ... }:
 {
-  services.atticd = {
-    enable = true;
-    # ```
-    # echo -n 'ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64="'|sudo tee /etc/atticd.env
-    # openssl genrsa -traditional 4096|base64 -w0|sudo tee -a /etc/atticd.env
-    # echo '"'|sudo tee -a /etc/atticd.env
-    # sudo chown atticd: /etc/atticd.env && sudo chmod 640 /etc/atticd.env
-    # sudo systemctl restart atticd
-    # ```
-    environmentFile = "/etc/atticd.env";
-    settings = {
-      listen = "[::]:10000"; # ポート番号は雑に定めました。深く考えていません。
-      allowed-hosts = [ "nix-cache.ncaq.net" ];
-      api-endpoint = "https://nix-cache.ncaq.net/";
-      database.url = "postgresql:///atticd?host=/run/postgresql";
-      storage = {
-        type = "local";
-        path = "/mnt/noa/atticd";
+  config,
+  username,
+  pkgs,
+  ...
+}:
+let
+  addr = config.containerAddresses.atticd;
+  user = config.containerUsers.atticd;
+  # ホストからコンテナ内のatticd-atticadmコマンドを実行するラッパースクリプト
+  atticadmWrapper = pkgs.writeShellScriptBin "atticd-atticadm" ''
+    exec nixos-container run atticd -- atticd-atticadm "$@"
+  '';
+in
+{
+  environment.systemPackages = [ atticadmWrapper ];
+  containers.atticd = {
+    autoStart = true;
+    privateNetwork = true;
+    hostAddress = addr.host;
+    localAddress = addr.container;
+    bindMounts = {
+      "/run/postgresql" = {
+        hostPath = "/run/postgresql";
+        isReadOnly = true;
       };
-      # chunkingはNixの設定でデフォルトが定まっているので任せます。
-
-      # compressionはbtrfsがバックエンドであることを考えると、
-      # むしろ明示的に無効にしておいたほうがストレージ効率は良いですが、
-      # ネットワーク通信のことを考えると有効にしておいたほうが良いかもしれません。
-      # デフォルト値に任せます。
-
-      # ガベージコレクションはデフォルトに近い緩めの値を設定しておきます。
-      garbage-collection = {
-        interval = "1 day";
-        default-retention-period = "6 months";
+      "/mnt/noa/atticd" = {
+        hostPath = "/mnt/noa/atticd";
+        isReadOnly = false;
+      };
+      "/etc/atticd.env" = {
+        hostPath = "/etc/atticd.env";
+        isReadOnly = true;
       };
     };
+    config =
+      { lib, ... }:
+      {
+        system.stateVersion = "25.05";
+        networking.useHostResolvConf = lib.mkForce false;
+        services.resolved.enable = true;
+        # Allow incoming connections from host via private network.
+        networking.firewall.trustedInterfaces = [ "eth0" ];
+        # UID/GID must match host for PostgreSQL peer authentication via bindMounted socket.
+        users.users.atticd = {
+          uid = user.uid;
+          group = "atticd";
+        };
+        users.groups.atticd.gid = user.gid;
+        services.atticd = {
+          enable = true;
+          # ```
+          # echo -n 'ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64="'|sudo tee /etc/atticd.env
+          # openssl genrsa -traditional 4096|base64 -w0|sudo tee -a /etc/atticd.env
+          # echo '"'|sudo tee -a /etc/atticd.env
+          # sudo chown atticd: /etc/atticd.env && sudo chmod 640 /etc/atticd.env
+          # sudo systemctl restart atticd
+          # ```
+          environmentFile = "/etc/atticd.env";
+          settings = {
+            listen = "[::]:8080";
+            allowed-hosts = [ "nix-cache.ncaq.net" ];
+            api-endpoint = "https://nix-cache.ncaq.net/";
+            database.url = "postgresql:///atticd?host=/run/postgresql";
+            storage = {
+              type = "local";
+              path = "/mnt/noa/atticd";
+            };
+            garbage-collection = {
+              interval = "1 day";
+              default-retention-period = "6 months";
+            };
+          };
+        };
+      };
   };
+
+  # Host-side user/group configuration for bindMount permissions.
+  # UID/GID must match between host and container for PostgreSQL peer authentication.
   users.users.atticd = {
     isSystemUser = true;
     group = "atticd";
+    uid = user.uid;
   };
   users.groups.atticd = {
+    gid = user.gid;
     members = [ username ];
   };
   systemd.tmpfiles.rules = [
     "d /mnt/noa/atticd 0755 atticd atticd -"
   ];
-  # 管理トークン発行例。
+
+  # Wait for PostgreSQL to be ready before starting container.
+  systemd.services."container@atticd" = {
+    after = [ "postgresql.service" ];
+    requires = [ "postgresql.service" ];
+  };
+
+  # Token generation examples:
   # ```
   # TOKEN="$(sudo atticd-atticadm make-token --sub 'seminar' --validity '4y' --pull 'private' --push 'private' --create-cache 'private')"
   # ```
-  # 読み書きトークン発行例。
+  # Read/write token example:
   # ```
   # TOKEN=$(sudo atticd-atticadm make-token --sub 'bullet' --validity '4y' --pull 'private' --push 'private')
   # ```
-  # トークンを利用してログインします。
+  # Login with token:
   # ```
   # attic login ncaq https://nix-cache.ncaq.net/ "$TOKEN"
   # ```

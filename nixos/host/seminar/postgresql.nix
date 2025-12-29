@@ -10,10 +10,17 @@
     package = pkgs.postgresql_17_jit;
     # サービス側で追加する方が良いかもしれませんが、
     # ここでデータベース一覧をまとめるメリットもあるのでこちらでの定義を選択します。
-    ensureDatabases = [ "atticd" ];
+    ensureDatabases = [
+      "atticd"
+      "forgejo"
+    ];
     ensureUsers = [
       {
         name = "atticd";
+        ensureDBOwnership = true;
+      }
+      {
+        name = "forgejo";
         ensureDBOwnership = true;
       }
     ];

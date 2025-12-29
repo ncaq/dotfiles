@@ -38,6 +38,12 @@ in
         system.stateVersion = "25.05";
         networking.useHostResolvConf = lib.mkForce false;
         services.resolved.enable = true;
+        # UID/GID must match host for PostgreSQL peer authentication via bindMounted socket.
+        users.users.atticd = {
+          uid = 993;
+          group = "atticd";
+        };
+        users.groups.atticd.gid = 988;
         services.atticd = {
           enable = true;
           # ```
@@ -67,11 +73,14 @@ in
   };
 
   # Host-side user/group configuration for bindMount permissions.
+  # UID/GID must match between host and container for PostgreSQL peer authentication.
   users.users.atticd = {
     isSystemUser = true;
     group = "atticd";
+    uid = 993;
   };
   users.groups.atticd = {
+    gid = 988;
     members = [ username ];
   };
   systemd.tmpfiles.rules = [

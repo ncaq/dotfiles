@@ -77,4 +77,10 @@ in
   systemd.tmpfiles.rules = [
     "d /var/lib/forgejo 0750 forgejo forgejo -"
   ];
+
+  # Wait for PostgreSQL to be ready before starting container.
+  systemd.services."container@forgejo" = {
+    after = [ "postgresql.service" ];
+    requires = [ "postgresql.service" ];
+  };
 }

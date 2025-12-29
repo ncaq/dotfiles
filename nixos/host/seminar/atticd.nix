@@ -87,6 +87,12 @@ in
     "d /mnt/noa/atticd 0755 atticd atticd -"
   ];
 
+  # Wait for PostgreSQL to be ready before starting container.
+  systemd.services."container@atticd" = {
+    after = [ "postgresql.service" ];
+    requires = [ "postgresql.service" ];
+  };
+
   # Token generation examples:
   # ```
   # TOKEN="$(sudo atticd-atticadm make-token --sub 'seminar' --validity '4y' --pull 'private' --push 'private' --create-cache 'private')"

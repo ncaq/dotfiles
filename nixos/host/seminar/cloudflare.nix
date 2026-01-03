@@ -33,9 +33,10 @@ in
       default = "http_status:404";
       credentialsFile = "/home/${username}/.cloudflared/tunnel-seminar.json";
       ingress = {
-        "forgejo.ncaq.net" = "http://${forgejoAddr}:8080";
         "forgejo-ssh.ncaq.net" = "ssh://${forgejoAddr}:2222";
+        "forgejo.ncaq.net" = "http://${forgejoAddr}:8080";
         "nix-cache.ncaq.net" = "http://${atticdAddr}:8080";
+        "seminar-ssh.ncaq.net" = "ssh://localhost:22";
       };
     };
   };

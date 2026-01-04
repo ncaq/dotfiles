@@ -7,4 +7,4 @@ let
     name: type: type == "regular" && lib.hasSuffix ".nix" name && name != "default.nix"
   ) nixFiles;
 in
-lib.mapAttrsToList (name: _: dir + "/${name}") moduleFiles
+lib.mapAttrsToList (name: _: lib.path.append dir name) moduleFiles

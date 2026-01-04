@@ -2,8 +2,9 @@
 # ただし、seminarと同じローカルネットワークにいる場合は通常の通信を行う。
 { pkgs, ... }:
 let
-  # seminarがローカルネットワークにいるかをavahi(mDNS)で確認し、
-  # exit nodeの設定を切り替えるスクリプト。
+  # seminarへの接続がダイレクトかDERP経由かで、
+  # ローカルネットワークにいるかを判定し、exit nodeの設定を切り替えるスクリプト。
+  # tailscale pingを使うことでmDNS偽装攻撃を防ぐ。
   tailscaleExitNodeScript = pkgs.writeShellScript "tailscale-exit-node" ''
     set -euo pipefail
 
@@ -20,13 +21,14 @@ let
       sleep 1
     done
 
-    # seminar.localにpingできるかでローカルネットワーク判定
-    if ${pkgs.iputils}/bin/ping -c 1 -W 2 seminar.local > /dev/null 2>&1; then
-      echo "seminar.local is reachable, disabling exit node"
-      ${pkgs.tailscale}/bin/tailscale set --exit-node=
-    else
-      echo "seminar.local is not reachable, enabling exit node via seminar"
+    # tailscale pingでダイレクト接続かDERP経由かを判定
+    # DERP経由ならローカルネットワーク外なのでexit nodeを有効化
+    if ${pkgs.tailscale}/bin/tailscale ping -c 1 seminar 2>&1 | ${pkgs.gnugrep}/bin/grep -q "via DERP"; then
+      echo "seminar is reachable via DERP, enabling exit node"
       ${pkgs.tailscale}/bin/tailscale set --exit-node=seminar
+    else
+      echo "seminar is reachable directly, disabling exit node"
+      ${pkgs.tailscale}/bin/tailscale set --exit-node=
     fi
   '';
 in

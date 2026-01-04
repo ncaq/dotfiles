@@ -1,10 +1,10 @@
-# ラップトップでは外出時のセキュリティのため、seminarをexit nodeとして使用する。
-# ただし、seminarと同じローカルネットワークにいる場合は通常の通信を行う。
+# ラップトップでは外出時の一応のセキュリティのためseminarをexit nodeとして使用します。
+# ただしseminarと同じローカルネットワークにいる場合は無駄なので通常の通信を行います。
 { pkgs, ... }:
 let
   # seminarへの接続がダイレクトかDERP経由かで、
-  # ローカルネットワークにいるかを判定し、exit nodeの設定を切り替えるスクリプト。
-  # tailscale pingを使うことでmDNS偽装攻撃を防ぐ。
+  # ローカルネットワークにいるかを判定し、
+  # exit nodeの設定を切り替えるスクリプト。
   tailscaleExitNodeScript = pkgs.writeShellScript "tailscale-exit-node" ''
     set -euo pipefail
 

@@ -5,10 +5,8 @@
 
     ../native-linux
 
-    ../laptop/backlight.nix
+    ../laptop
 
-    ./creep/boot.nix
-    ./creep/disk.nix
-    ./creep/hardware-configuration.nix
+    ./creep
   ];
 }

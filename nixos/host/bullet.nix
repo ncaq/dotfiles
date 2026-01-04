@@ -10,11 +10,9 @@
 
     ../native-linux
 
-    ../desktop/dpms.nix
+    ../desktop
 
-    ./bullet/boot.nix
-    ./bullet/disk.nix
-    ./bullet/hardware-configuration.nix
+    ./bullet
   ];
   hardware.nvidia.open = true;
 }

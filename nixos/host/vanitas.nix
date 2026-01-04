@@ -4,8 +4,7 @@
   imports = [
     ../native-linux
 
-    ./vanitas/boot.nix
-    ./vanitas/disk.nix
+    ./vanitas
   ];
   virtualisation.virtualbox.guest.enable = true;
 }

@@ -117,6 +117,8 @@
 
       flake =
         let
+          # ディレクトリ内の全.nixファイルをimportするヘルパー関数。
+          importDirModules = import ./lib/import-dir-modules.nix { inherit (nixpkgs) lib; };
           # 許可するライセンス。
           allowlistedLicenses = with nixpkgs.lib.licenses; [
             nvidiaCuda # 現実的な代替手段がないため。
@@ -148,6 +150,7 @@
                   extraSpecialArgs = {
                     inherit
                       inputs
+                      importDirModules
                       username
                       www-ncaq-net
                       dot-xmonad
@@ -193,6 +196,7 @@
                   specialArgs = {
                     inherit
                       inputs
+                      importDirModules
                       hostName
                       nixos-hardware
                       nixos-wsl

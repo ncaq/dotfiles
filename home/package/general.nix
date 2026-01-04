@@ -4,6 +4,7 @@
     android-tools
     atop
     attic-client
+    bc # dcも含まれます。
     bcache-tools
     cachix
     cloudflared

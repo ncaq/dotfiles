@@ -1,10 +1,28 @@
-{ inputs, ... }:
+{
+  inputs,
+  hostName ? null,
+  ...
+}:
+let
+  # 各端末ごとの署名鍵マッピング
+  signingKeys = {
+    bullet = "33F5EB0E553A2EFB";
+    creep = "60635905E8D66388";
+    seminar = "562EE3E571A37489";
+    SSD0086 = "B3630E320567F75A";
+  };
+  signingKey = signingKeys.${hostName} or null;
+in
 {
   imports = [ inputs.git-hooks.modules.homeManager.default ];
   programs = {
     git = {
       enable = true;
       lfs.enable = true;
+      signing = {
+        key = signingKey;
+        signByDefault = signingKey != null;
+      };
       settings = {
         user = {
           name = "ncaq";

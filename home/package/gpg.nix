@@ -9,5 +9,6 @@
   home.packages = with pkgs; [
     gcr # pinentry-gnome3の動作に必要。
     paperkey
+    pinentry-gnome3
   ];
 }

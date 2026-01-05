@@ -1,6 +1,13 @@
 { pkgs, ... }:
 {
-  programs.gpg.enable = true;
+  programs.gpg = {
+    enable = true;
+    scdaemonSettings = {
+      # `gpg --card-status`などがドライバの不一致で失敗する問題の対策。
+      disable-ccid = true;
+      reader-port = "Yubico YubiKey";
+    };
+  };
   services.gpg-agent = with pkgs; {
     enable = true;
     enableSshSupport = true;

@@ -1,9 +1,9 @@
 { pkgs, ... }:
 {
   programs.gpg.enable = true;
-  services.gpg-agent = {
+  services.gpg-agent = with pkgs; {
     enable = true;
     enableSshSupport = true;
-    pinentry.package = pkgs.pinentry-gnome3;
+    pinentry.package = pinentry-gnome3;
   };
 }

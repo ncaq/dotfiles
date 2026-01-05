@@ -2,6 +2,12 @@
 {
   programs.gpg = {
     enable = true;
+    publicKeys = [
+      {
+        trust = "ultimate";
+        source = ../ncaq-public-key.asc;
+      }
+    ];
     scdaemonSettings = {
       # `gpg --card-status`などがドライバの不一致で失敗する問題の対策。
       disable-ccid = true;

@@ -23,6 +23,8 @@ in
     autojump.enable = true;
   };
 
+  home.shell.enableZshIntegration = true;
+
   home.activation.cloneZshConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     if [ ! -d "${zshDotDir}" ]; then
       $DRY_RUN_CMD ${pkgs.git}/bin/git clone https://github.com/ncaq/.zsh.d.git "${zshDotDir}"

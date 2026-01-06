@@ -1,0 +1,13 @@
+# sops設定ファイル
+# このファイルはsopsがどの鍵で暗号化/復号化するかを定義します。
+
+keys:
+  # ncaqのGPG鍵
+  - &ncaq_gpg 7DDE3BC405DC58D94BF661D342248C7D0FB73D57
+
+creation_rules:
+  # デフォルトルール: 全てのシークレットファイルをncaqのGPG鍵で暗号化
+  - path_regex: secrets/.*\.yaml$
+    key_groups:
+      - pgp:
+          - *ncaq_gpg

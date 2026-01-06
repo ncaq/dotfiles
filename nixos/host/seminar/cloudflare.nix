@@ -1,7 +1,6 @@
 {
   pkgs,
   config,
-  username,
   ...
 }:
 let
@@ -20,18 +19,35 @@ let
   atticdAddr = config.containerAddresses.atticd.container;
 in
 {
-  # To initialize, run in server:
+  # Cloudflare認証情報を管理。
+  sops.secrets."cloudflare-cert" = {
+    sopsFile = ../../../secrets/seminar/cloudflare.yaml;
+    key = "cert_pem";
+    mode = "0444";
+  };
+  sops.secrets."cloudflare-tunnel-credentials" = {
+    sopsFile = ../../../secrets/seminar/cloudflare.yaml;
+    key = "tunnel_credentials";
+    mode = "0444";
+  };
+
+  # Managed by sops-nix. To update the secrets:
+  # ```
+  # sops secrets/seminar/cloudflare.yaml
+  # ```
+  # To initialize (first time only):
   # ```
   # nix run 'nixpkgs#cloudflared' -- tunnel login
   # ```
-  # copy credentialsFile from terraform client to server.
+  # Then copy cert.pem content to cert_pem key and
+  # tunnel credentials JSON to tunnel_credentials key in the sops file.
   services.cloudflared = {
     enable = true;
     package = cloudflaredWrapper;
-    certificateFile = "/home/${username}/.cloudflared/cert.pem";
+    certificateFile = "/run/secrets/cloudflare-cert";
     tunnels.seminar = {
       default = "http_status:404";
-      credentialsFile = "/home/${username}/.cloudflared/tunnel-seminar.json";
+      credentialsFile = "/run/secrets/cloudflare-tunnel-credentials";
       ingress = {
         "forgejo-ssh.ncaq.net" = "ssh://${forgejoAddr}:2222";
         "forgejo.ncaq.net" = "http://${forgejoAddr}:8080";

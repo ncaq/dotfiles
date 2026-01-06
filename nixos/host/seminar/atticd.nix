@@ -13,6 +13,14 @@ let
   '';
 in
 {
+  # atticdのJWT署名鍵を管理。
+  sops.secrets."atticd-env" = {
+    sopsFile = ../../../secrets/seminar/atticd.yaml;
+    key = "attic_env";
+    owner = "atticd";
+    group = "atticd";
+    mode = "0640";
+  };
   environment.systemPackages = [ atticadmWrapper ];
   containers.atticd = {
     autoStart = true;
@@ -29,7 +37,7 @@ in
         isReadOnly = false;
       };
       "/etc/atticd.env" = {
-        hostPath = "/etc/atticd.env";
+        hostPath = "/run/secrets/atticd-env";
         isReadOnly = true;
       };
     };
@@ -49,13 +57,15 @@ in
         users.groups.atticd.gid = user.gid;
         services.atticd = {
           enable = true;
+          # Managed by sops-nix. To update the secret:
           # ```
-          # echo -n 'ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64="'|sudo tee /etc/atticd.env
-          # openssl genrsa -traditional 4096|base64 -w0|sudo tee -a /etc/atticd.env
-          # echo '"'|sudo tee -a /etc/atticd.env
-          # sudo chown atticd: /etc/atticd.env && sudo chmod 640 /etc/atticd.env
-          # sudo systemctl restart atticd
+          # sops secrets/seminar/atticd.yaml
           # ```
+          # To generate a new key:
+          # ```
+          # openssl genrsa -traditional 4096 | base64 -w0
+          # ```
+          # Then set attic_env to: ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64="<generated_key>"
           environmentFile = "/etc/atticd.env";
           settings = {
             listen = "[::]:8080";

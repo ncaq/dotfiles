@@ -951,6 +951,7 @@
         "nixpkgs-2505": "nixpkgs-2505_2",
         "nixpkgs-unstable": "nixpkgs-unstable",
         "rust-overlay": "rust-overlay",
+        "sops-nix": "sops-nix",
         "treefmt-nix": "treefmt-nix",
         "www-ncaq-net": "www-ncaq-net"
       }
@@ -972,6 +973,26 @@
       "original": {
         "owner": "oxalica",
         "repo": "rust-overlay",
+        "type": "github"
+      }
+    },
+    "sops-nix": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1767499857,
+        "narHash": "sha256-0zUU/PW09d6oBaR8x8vMHcAhg1MOvo3CwoXgHijzzNE=",
+        "owner": "Mic92",
+        "repo": "sops-nix",
+        "rev": "ecc41505948ec2ab0325f14c9862a4329c2b4190",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Mic92",
+        "repo": "sops-nix",
         "type": "github"
       }
     },

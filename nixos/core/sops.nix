@@ -1,12 +1,13 @@
 {
   pkgs,
+  username,
   ...
 }:
 {
   # sops-nix: NixOS用のシークレット管理。
 
   sops.gnupg = {
-    home = "/home/ncaq/.gnupg";
+    home = /home/${username}/.gnupg;
     sshKeyPaths = [ ];
   };
 

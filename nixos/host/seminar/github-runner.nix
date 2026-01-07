@@ -14,16 +14,31 @@
   #      - For organization-wide runners: "admin:org" scope (組織全体の管理権限)
   #      - For repository-specific runners: "repo" scope
   #
-  # 2. Create the token file:
-  #    sudo mkdir -p /var/lib/secrets
-  #    echo -n "YOUR_TOKEN_HERE" | sudo tee /var/lib/secrets/github-runner-token
-  #    sudo chmod 600 /var/lib/secrets/github-runner-token
+  # 2. Create and encrypt the token file with sops:
+  #    # First, create the file if it doesn't exist:
+  #    cat > secrets/seminar/github-runner.yaml <<EOF
+  #    runner_token: YOUR_TOKEN_HERE
+  #    EOF
   #
-  #    Note: このリポジトリではsops-nixなどの暗号化ツールは使っていないため、
-  #    手動でのトークンファイル作成が標準的な方法です(atticd.envやcloudflared certと同様)
+  #    # Then encrypt it with sops (will use GPG key from .sops.yaml):
+  #    sops -e -i secrets/seminar/github-runner.yaml
+  #
+  #    # Or edit directly with sops (creates encrypted file if it doesn't exist):
+  #    sops secrets/seminar/github-runner.yaml
   #
   # 3. Set the repository or organization URL below
   # 4. Rebuild the system configuration
+  #
+  # Note: The secrets file is NOT included in this commit for security.
+  # You must create it manually following the steps above.
+
+  # GitHub runner token managed by sops-nix
+  sops.secrets."github-runner-token" = {
+    sopsFile = ../../../secrets/seminar/github-runner.yaml;
+    key = "runner_token";
+    owner = "github-runner-seminar";
+    mode = "0400";
+  };
 
   services.github-runners = {
     # Runner name - can be customized
@@ -41,8 +56,8 @@
       url = builtins.throw "Please set the GitHub repository or organization URL in github-runner.nix";
 
       # Path to the file containing the GitHub token
-      # The file should contain only the token with no trailing newline
-      tokenFile = "/var/lib/secrets/github-runner-token";
+      # Managed by sops-nix
+      tokenFile = config.sops.secrets."github-runner-token".path;
 
       # Runner name (defaults to hostname if not specified)
       name = "seminar";

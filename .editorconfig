@@ -17,11 +17,11 @@ indent_style = space
 indent_size = 2
 
 # 標準インデントが4の言語とGitHubがMarkdownの順序付きリストのインデントを2だと適切にパースできないことに対応。
-[*.{cs,csx,java,md,php,py,pyi,rs}]
+[*.{cs,csx,java,kt,kts,md,php,py,pyi,rs}]
 indent_size = 4
 
 # 標準インデントがタブの言語。
-[{*.go,*.make,*.mk,Makefile}]
+[*.{go,make,mk},Makefile]
 indent_style = tab
 
 [*.md]

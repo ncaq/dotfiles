@@ -21,7 +21,7 @@ indent_size = 2
 indent_size = 4
 
 # 標準インデントがタブの言語。
-[*.{go,make,mk},Makefile]
+[{*.go,*.make,*.mk,Makefile}]
 indent_style = tab
 
 [*.md]

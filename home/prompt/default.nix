@@ -65,7 +65,7 @@ in
     # 大きすぎるファイルや今のプロジェクトに関係のないファイルが大量に入ってノイズになりそうなので、
     # `D`の方を使って短めに2日間のクリーンアップを設定します。
     systemd.user.tmpfiles.rules = [
-      "D /tmp/coding-agent-work 0755 - - 2d"
+      "D /tmp/coding-agent-work 0700 - - 2d"
     ];
   };
 }

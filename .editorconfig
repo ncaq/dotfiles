@@ -3,17 +3,31 @@ root = true
 [*]
 charset = utf-8
 end_of_line = lf
-trim_trailing_whitespace = true
 insert_final_newline = true
-# 主にprettierが過剰に改行することへの対策。
+trim_trailing_whitespace = true
+
+# URLなどは分割困難で長過ぎることがあるためしばしば例外が許可されます。
+# あくまで指針と各種フォーマッターへの指示です。
 max_line_length = 120
+
+# デフォルトのインデントをスペースで2幅にして例外の方を設定することにします。
+# これもcheckerがインデントではないものを誤認することがあるので、
+# あくまで指針と各種フォーマッターへの指示です。
+indent_style = space
+indent_size = 2
+
+# 標準インデントが4の言語とGitHubがMarkdownの順序付きリストのインデントを2だと適切にパースできないことに対応。
+[*.{cs,csx,java,kt,kts,md,php,py,pyi,rs}]
+indent_size = 4
+
+# 標準インデントがタブの言語。
+[{*.go,*.make,*.mk,Makefile}]
+indent_style = tab
 
 [*.md]
 # Markdownには最後にスペース2つ入れて強制改行するシンタックスがあるので末尾のスペースを許可。
-# 注意: なるべく強制改行は使わず、意味で段落して、改行位置はクライアントのデバイスに任せるべき。
+# 注意: なるべく強制改行は使わず、意味で段落して、改行位置はクライアントのデバイスに任せるべきです。
 trim_trailing_whitespace = false
-# 順序付きリストをネストする時に、インデント幅を2にすると適切にパース出来ない事が多い(GitHubも)ので4にする。
-indent_size = 4
 
 [*.bat]
 charset = latin1

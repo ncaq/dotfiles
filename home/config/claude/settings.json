@@ -280,7 +280,7 @@
     ],
     "deny": ["Bash(git commit:*)", "Bash(head:*)", "Bash(rm:*)", "Bash(tail:*)"],
     "defaultMode": "acceptEdits",
-    "additionalDirectories": ["/nix/store/", "~/dotfiles/"]
+    "additionalDirectories": ["/tmp/coding-agent-work/", "/nix/store/", "~/dotfiles/"]
   },
   "statusLine": {
     "type": "command",

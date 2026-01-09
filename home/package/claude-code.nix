@@ -394,6 +394,15 @@ in
           "mcp__playwright__browser_network_requests"
           "mcp__playwright__browser_snapshot"
           "mcp__playwright__browser_take_screenshot"
+          "mcp__terraform__get_latest_module_version"
+          "mcp__terraform__get_latest_provider_version"
+          "mcp__terraform__get_module_details"
+          "mcp__terraform__get_policy_details"
+          "mcp__terraform__get_provider_capabilities"
+          "mcp__terraform__get_provider_details"
+          "mcp__terraform__search_modules"
+          "mcp__terraform__search_policies"
+          "mcp__terraform__search_providers"
         ];
         deny = [
           "Bash(git commit:*)"

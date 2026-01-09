@@ -26,7 +26,7 @@ buildDotnetModule rec {
   projectFile = [ "core/src/AzureMcp.Cli/AzureMcp.Cli.csproj" ];
 
   postFixup = ''
-    mv $out/bin/azmcp $out/bin/azure-mcp || true
+    mv $out/bin/azmcp $out/bin/azure-mcp
   '';
 
   meta = {

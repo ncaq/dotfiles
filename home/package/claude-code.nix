@@ -7,8 +7,30 @@
 }:
 let
   ccstatusline = pkgs.callPackage ../../pkg/ccstatusline.nix { };
+
+  # GitHub MCP ServerのPATをsops-nixで管理されたシークレットから読み込むラッパー
+  github-mcp-server-wrapper = pkgs.writeShellApplication {
+    name = "github-mcp-server-wrapper";
+    runtimeInputs = [ pkgs.github-mcp-server ];
+    text = ''
+      if [[ -r ${config.sops.secrets."github-mcp-server/pat".path} ]]; then
+        GITHUB_PERSONAL_ACCESS_TOKEN="$(< ${config.sops.secrets."github-mcp-server/pat".path})"
+        export GITHUB_PERSONAL_ACCESS_TOKEN
+      fi
+      exec github-mcp-server "$@"
+    '';
+  };
 in
 {
+  # GitHub MCP Server用のPersonal Access Tokenをsops-nixで管理します。
+  # シークレットファイルは `sops secrets/github-mcp-server.yaml` で編集してください。
+  # 形式:
+  # pat: ghp_xxxxxxxxxxxxxxxxxxxxx
+  sops.secrets."github-mcp-server/pat" = {
+    sopsFile = ../../secrets/github-mcp-server.yaml;
+    key = "pat";
+  };
+
   home.packages = [
     # Claude Codeのsandbox機能を利用する時は必要。
     pkgs.bubblewrap
@@ -21,6 +43,14 @@ in
 
     # `CLAUDE.md`と同等です。
     memory.text = config.prompt.coding-agent;
+
+    mcpServers = {
+      github = {
+        type = "stdio";
+        command = lib.getExe github-mcp-server-wrapper;
+        args = [ "stdio" ];
+      };
+    };
 
     settings = {
       # その時最適なモデルをデフォルトにします。

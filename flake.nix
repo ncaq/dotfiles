@@ -184,6 +184,7 @@
                         ];
                       }
                     )
+                    sops-nix.homeManagerModules.sops
                     ./home
                   ];
                 });
@@ -249,6 +250,9 @@
                           extraSpecialArgs = specialArgs // {
                             isWSL = config.wsl.enable or false;
                           };
+                          sharedModules = [
+                            sops-nix.homeManagerModules.sops
+                          ];
                           users.ncaq = import ./home;
                         };
                       }

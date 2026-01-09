@@ -2,9 +2,35 @@
   pkgs,
   pkgs-unstable,
   config,
+  lib,
   ...
 }:
+let
+  ccstatusline = pkgs.callPackage ../../pkg/ccstatusline.nix { };
+
+  # GitHub MCP ServerのPATをsops-nixで管理されたシークレットから読み込むラッパー
+  github-mcp-server-wrapper = pkgs.writeShellApplication {
+    name = "github-mcp-server-wrapper";
+    runtimeInputs = [ pkgs.github-mcp-server ];
+    text = ''
+      if [[ -r ${config.sops.secrets."github-mcp-server/pat".path} ]]; then
+        GITHUB_PERSONAL_ACCESS_TOKEN="$(< ${config.sops.secrets."github-mcp-server/pat".path})"
+        export GITHUB_PERSONAL_ACCESS_TOKEN
+      fi
+      exec github-mcp-server "$@"
+    '';
+  };
+in
 {
+  # GitHub MCP Server用のPersonal Access Tokenをsops-nixで管理します。
+  # シークレットファイルは `sops secrets/github-mcp-server.yaml` で編集してください。
+  # 形式:
+  # pat: ghp_xxxxxxxxxxxxxxxxxxxxx
+  sops.secrets."github-mcp-server/pat" = {
+    sopsFile = ../../secrets/github-mcp-server.yaml;
+    key = "pat";
+  };
+
   home.packages = [
     # Claude Codeのsandbox機能を利用する時は必要。
     pkgs.bubblewrap
@@ -18,23 +44,38 @@
     # `CLAUDE.md`と同等です。
     memory.text = config.prompt.coding-agent;
 
+    mcpServers = {
+      playwright = {
+        type = "stdio";
+        command = lib.getExe pkgs.playwright-mcp;
+      };
+      github = {
+        type = "stdio";
+        command = lib.getExe github-mcp-server-wrapper;
+        args = [ "stdio" ];
+      };
+      deepwiki = {
+        type = "http";
+        url = "https://mcp.deepwiki.com/mcp";
+      };
+      nix = {
+        type = "stdio";
+        command = lib.getExe pkgs.mcp-nixos;
+      };
+      terraform = {
+        type = "stdio";
+        command = lib.getExe pkgs.terraform-mcp-server;
+      };
+    };
+
     settings = {
       # その時最適なモデルをデフォルトにします。
       model = "opus";
       # statuslineを設定します。
+      # ccstatuslineを使用して豪華な表示にします。
       statusLine = {
         type = "command";
-        command = ''
-          input=$(cat)
-          current_dir=$(echo "$input" | jq -r '.workspace.current_dir')
-          model_name=$(echo "$input" | jq -r '.model.display_name')
-          output_style=$(echo "$input" | jq -r '.output_style.name')
-          time_str=$(date "+%Y-%m-%dT%H:%M:%S")
-          user=$(whoami)
-          hostname=$(hostname -s)
-          printf '[%s] %s@%s:%s | %s (%s)\n' "$time_str" "$user" "$hostname" "$current_dir" "$model_name" "$output_style"
-        '';
-        padding = 0;
+        command = lib.getExe ccstatusline;
       };
       permissions = {
         defaultMode = "acceptEdits";
@@ -315,12 +356,60 @@
           "mcp__deepwiki__ask_question"
           "mcp__deepwiki__read_wiki_contents"
           "mcp__deepwiki__read_wiki_structure"
+          "mcp__github__get_commit"
+          "mcp__github__get_file_contents"
+          "mcp__github__get_label"
+          "mcp__github__get_latest_release"
+          "mcp__github__get_me"
+          "mcp__github__get_release_by_tag"
+          "mcp__github__get_tag"
+          "mcp__github__get_team_members"
+          "mcp__github__get_teams"
+          "mcp__github__issue_read"
+          "mcp__github__list_branches"
+          "mcp__github__list_commits"
+          "mcp__github__list_issue_types"
+          "mcp__github__list_issues"
+          "mcp__github__list_pull_requests"
+          "mcp__github__list_releases"
+          "mcp__github__list_tags"
+          "mcp__github__pull_request_read"
+          "mcp__github__search_code"
+          "mcp__github__search_issues"
+          "mcp__github__search_pull_requests"
+          "mcp__github__search_repositories"
+          "mcp__github__search_users"
+          "mcp__nix__darwin_info"
+          "mcp__nix__darwin_list_options"
+          "mcp__nix__darwin_options_by_prefix"
+          "mcp__nix__darwin_search"
+          "mcp__nix__darwin_stats"
+          "mcp__nix__home_manager_info"
+          "mcp__nix__home_manager_list_options"
+          "mcp__nix__home_manager_options_by_prefix"
           "mcp__nix__home_manager_search"
-          "mcp__nixos__home_manager_info"
-          "mcp__nixos__home_manager_options_by_prefix"
-          "mcp__nixos__home_manager_search"
-          "mcp__nixos__nixos_info"
-          "mcp__nixos__nixos_search"
+          "mcp__nix__home_manager_stats"
+          "mcp__nix__nixhub_find_version"
+          "mcp__nix__nixhub_package_versions"
+          "mcp__nix__nixos_channels"
+          "mcp__nix__nixos_flakes_search"
+          "mcp__nix__nixos_flakes_stats"
+          "mcp__nix__nixos_info"
+          "mcp__nix__nixos_search"
+          "mcp__nix__nixos_stats"
+          "mcp__playwright__browser_console_messages"
+          "mcp__playwright__browser_network_requests"
+          "mcp__playwright__browser_snapshot"
+          "mcp__playwright__browser_take_screenshot"
+          "mcp__terraform__get_latest_module_version"
+          "mcp__terraform__get_latest_provider_version"
+          "mcp__terraform__get_module_details"
+          "mcp__terraform__get_policy_details"
+          "mcp__terraform__get_provider_capabilities"
+          "mcp__terraform__get_provider_details"
+          "mcp__terraform__search_modules"
+          "mcp__terraform__search_policies"
+          "mcp__terraform__search_providers"
         ];
         deny = [
           "Bash(git commit:*)"

@@ -32,7 +32,7 @@ trim_trailing_whitespace = false
 max_line_length = 200
 
 [*.nix]
-# Nix言語はURLやコード例が長くなることが多いため行幅制限を緩めます。
+# Nix言語を使った設定はコメントなどでURLやコード例が長くなることが多いため行幅制限を緩めます。
 max_line_length = 200
 
 [*.bat]

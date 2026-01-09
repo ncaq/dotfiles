@@ -356,6 +356,7 @@ in
           "Bash(pnpm preview:*)"
           "Bash(readlink:*)"
           "Bash(rg:*)"
+          "Bash(sops --encrypt:*)"
           "Bash(ss:*)"
           "Bash(stack bench:*)"
           "Bash(stack build:*)"

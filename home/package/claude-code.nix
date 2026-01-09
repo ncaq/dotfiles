@@ -337,9 +337,6 @@ in
           "Bash(yarn preview:*)"
           "WebFetch"
           "WebSearch"
-          "mcp__deepwiki__ask_question"
-          "mcp__deepwiki__read_wiki_contents"
-          "mcp__deepwiki__read_wiki_structure"
           "mcp__github__get_commit"
           "mcp__github__get_file_contents"
           "mcp__github__get_label"
@@ -363,12 +360,6 @@ in
           "mcp__github__search_pull_requests"
           "mcp__github__search_repositories"
           "mcp__github__search_users"
-          "mcp__nix__home_manager_search"
-          "mcp__nixos__home_manager_info"
-          "mcp__nixos__home_manager_options_by_prefix"
-          "mcp__nixos__home_manager_search"
-          "mcp__nixos__nixos_info"
-          "mcp__nixos__nixos_search"
         ];
         deny = [
           "Bash(git commit:*)"

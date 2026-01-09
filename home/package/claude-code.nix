@@ -45,10 +45,22 @@ in
     memory.text = config.prompt.coding-agent;
 
     mcpServers = {
+      playwright = {
+        type = "stdio";
+        command = lib.getExe pkgs.playwright-mcp;
+      };
       github = {
         type = "stdio";
         command = lib.getExe github-mcp-server-wrapper;
         args = [ "stdio" ];
+      };
+      nix = {
+        type = "stdio";
+        command = lib.getExe pkgs.mcp-nixos;
+      };
+      terraform = {
+        type = "stdio";
+        command = lib.getExe pkgs.terraform-mcp-server;
       };
     };
 

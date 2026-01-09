@@ -283,7 +283,15 @@
             };
             settings.formatter = {
               editorconfig-checker = {
-                command = pkgs.lib.getExe pkgs.editorconfig-checker;
+                command = pkgs.lib.getExe (
+                  pkgs.writeShellApplication {
+                    name = "editorconfig-checker-wrapper";
+                    runtimeInputs = [ pkgs.editorconfig-checker ];
+                    text = ''
+                      editorconfig-checker -config .editorconfig-checker.json "$@"
+                    '';
+                  }
+                );
                 includes = [ "*" ];
                 excludes = [
                   ".git/*"

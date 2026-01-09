@@ -54,6 +54,10 @@ in
         command = lib.getExe github-mcp-server-wrapper;
         args = [ "stdio" ];
       };
+      deepwiki = {
+        type = "http";
+        url = "https://mcp.deepwiki.com/mcp";
+      };
       nix = {
         type = "stdio";
         command = lib.getExe pkgs.mcp-nixos;

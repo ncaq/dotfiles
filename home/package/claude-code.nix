@@ -103,6 +103,10 @@ in
         type = "http";
         url = "https://docs.mcp.cloudflare.com/mcp";
       };
+      microsoft-learn = {
+        type = "http";
+        url = "https://learn.microsoft.com/api/mcp";
+      };
       terraform = {
         type = "stdio";
         command = lib.getExe pkgs.terraform-mcp-server;

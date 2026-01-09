@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
 let
   yamlFormat = pkgs.formats.yaml { };
   stackConfig = {
@@ -16,7 +16,18 @@ let
       };
     };
     color = "auto";
-    stack-colors = "error=31:good=32:shell=35:dir=34:recommendation=32:target=95:module=35:package-component=95:secondary=92:highlight=32";
+    stack-colors = lib.concatStringsSep ":" [
+      "error=31"
+      "good=32"
+      "shell=35"
+      "dir=34"
+      "recommendation=32"
+      "target=95"
+      "module=35"
+      "package-component=95"
+      "secondary=92"
+      "highlight=32"
+    ];
   };
 in
 {

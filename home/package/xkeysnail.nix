@@ -12,7 +12,9 @@ lib.mkIf (!isWSL) {
 
   home.activation.cloneXkeysnailConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     if [ ! -d "${config.home.homeDirectory}/.xkeysnail" ]; then
-      $DRY_RUN_CMD ${pkgs.git}/bin/git clone https://github.com/ncaq/.xkeysnail.git "${config.home.homeDirectory}/.xkeysnail"
+      $DRY_RUN_CMD ${pkgs.git}/bin/git clone \
+        https://github.com/ncaq/.xkeysnail.git \
+        "${config.home.homeDirectory}/.xkeysnail"
     fi
   '';
 

@@ -18,6 +18,11 @@
         "color": "brightBlack"
       },
       {
+        "id": "3a",
+        "type": "separator",
+        "character": " "
+      },
+      {
         "id": "4",
         "type": "context-percentage",
         "color": "brightBlack"
@@ -33,14 +38,29 @@
         "color": "green"
       },
       {
+        "id": "6a",
+        "type": "separator",
+        "character": " "
+      },
+      {
         "id": "7",
         "type": "tokens-output",
         "color": "yellow"
       },
       {
+        "id": "7a",
+        "type": "separator",
+        "character": " "
+      },
+      {
         "id": "8",
         "type": "tokens-cached",
         "color": "blue"
+      },
+      {
+        "id": "8a",
+        "type": "separator",
+        "character": " "
       },
       {
         "id": "9",
@@ -58,6 +78,11 @@
         "color": "magenta"
       },
       {
+        "id": "11a",
+        "type": "separator",
+        "character": " "
+      },
+      {
         "id": "12",
         "type": "git-changes",
         "color": "yellow"
@@ -71,6 +96,11 @@
         "id": "14",
         "type": "session-clock",
         "color": "green"
+      },
+      {
+        "id": "14a",
+        "type": "separator",
+        "character": " "
       },
       {
         "id": "15",

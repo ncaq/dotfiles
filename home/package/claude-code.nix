@@ -99,6 +99,10 @@ in
         type = "stdio";
         command = lib.getExe pkgs.mcp-nixos;
       };
+      cloudflare-docs = {
+        type = "http";
+        url = "https://docs.mcp.cloudflare.com/mcp";
+      };
       terraform = {
         type = "stdio";
         command = lib.getExe pkgs.terraform-mcp-server;

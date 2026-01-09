@@ -28,6 +28,8 @@ indent_style = tab
 # Markdownには最後にスペース2つ入れて強制改行するシンタックスがあるので末尾のスペースを許可。
 # 注意: なるべく強制改行は使わず、意味で段落して、改行位置はクライアントのデバイスに任せるべきです。
 trim_trailing_whitespace = false
+# MarkdownはURLやコード例が長くなることが多いため行幅制限を緩めます。
+max_line_length = 200
 
 [*.bat]
 charset = latin1

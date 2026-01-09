@@ -22,7 +22,6 @@ let
   };
 
   backlog-mcp-server = pkgs.callPackage ../../pkg/backlog-mcp-server.nix { };
-
   # Backlog MCP Serverの認証情報をsops-nixで管理されたシークレットから読み込むラッパー
   backlog-mcp-server-wrapper = pkgs.writeShellApplication {
     name = "backlog-mcp-server-wrapper";
@@ -39,6 +38,10 @@ let
       exec backlog-mcp-server "$@"
     '';
   };
+
+  mcp-proxy-for-aws = pkgs.callPackage ../../pkg/mcp-proxy-for-aws.nix { };
+  gcloud-mcp = pkgs.callPackage ../../pkg/gcloud-mcp.nix { };
+  azure-mcp = pkgs.callPackage ../../pkg/azure-mcp.nix { };
 in
 {
   # GitHub MCP Server用のPersonal Access Tokenをsops-nixで管理します。
@@ -98,6 +101,35 @@ in
       nix = {
         type = "stdio";
         command = lib.getExe pkgs.mcp-nixos;
+      };
+      mdn = {
+        type = "http";
+        url = "https://mdn-mcp-0445ad8e765a.herokuapp.com/mcp";
+      };
+      cloudflare-docs = {
+        type = "http";
+        url = "https://docs.mcp.cloudflare.com/mcp";
+      };
+      aws = {
+        type = "stdio";
+        command = lib.getExe mcp-proxy-for-aws;
+        args = [ "https://aws-mcp.us-east-1.api.aws/mcp" ];
+      };
+      gcloud = {
+        type = "stdio";
+        command = lib.getExe gcloud-mcp;
+      };
+      azure = {
+        type = "stdio";
+        command = lib.getExe azure-mcp;
+        args = [
+          "server"
+          "start"
+        ];
+      };
+      microsoft-learn = {
+        type = "http";
+        url = "https://learn.microsoft.com/api/mcp";
       };
       terraform = {
         type = "stdio";
@@ -356,6 +388,7 @@ in
           "Bash(pnpm preview:*)"
           "Bash(readlink:*)"
           "Bash(rg:*)"
+          "Bash(sops --encrypt:*)"
           "Bash(ss:*)"
           "Bash(stack bench:*)"
           "Bash(stack build:*)"
@@ -390,6 +423,13 @@ in
           "Bash(yarn preview:*)"
           "WebFetch"
           "WebSearch"
+          "mcp__azure__azureterraformbestpractices"
+          "mcp__azure__bestpractices"
+          "mcp__azure__bicepschema"
+          "mcp__azure__cloudarchitect"
+          "mcp__azure__documentation"
+          "mcp__azure__quota"
+          "mcp__azure__resourcehealth"
           "mcp__backlog__count_issues"
           "mcp__backlog__count_notifications"
           "mcp__backlog__get_categories"
@@ -421,6 +461,8 @@ in
           "mcp__backlog__get_wiki"
           "mcp__backlog__get_wiki_pages"
           "mcp__backlog__get_wikis_count"
+          "mcp__cloudflare-docs__migrate_pages_to_workers_guide"
+          "mcp__cloudflare-docs__search_cloudflare_documentation"
           "mcp__deepwiki__ask_question"
           "mcp__deepwiki__read_wiki_contents"
           "mcp__deepwiki__read_wiki_structure"
@@ -447,6 +489,12 @@ in
           "mcp__github__search_pull_requests"
           "mcp__github__search_repositories"
           "mcp__github__search_users"
+          "mcp__mdn__get-compat"
+          "mcp__mdn__get-doc"
+          "mcp__mdn__search"
+          "mcp__microsoft-learn__microsoft_code_sample_search"
+          "mcp__microsoft-learn__microsoft_docs_fetch"
+          "mcp__microsoft-learn__microsoft_docs_search"
           "mcp__nix__darwin_info"
           "mcp__nix__darwin_list_options"
           "mcp__nix__darwin_options_by_prefix"

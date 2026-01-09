@@ -102,6 +102,10 @@ in
         type = "stdio";
         command = lib.getExe pkgs.mcp-nixos;
       };
+      mdn = {
+        type = "http";
+        url = "https://mdn-mcp-0445ad8e765a.herokuapp.com/mcp";
+      };
       cloudflare-docs = {
         type = "http";
         url = "https://docs.mcp.cloudflare.com/mcp";

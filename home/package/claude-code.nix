@@ -39,7 +39,7 @@ let
     '';
   };
 
-  powertools-mcp = pkgs.callPackage ../../pkg/powertools-mcp.nix { };
+  mcp-proxy-for-aws = pkgs.callPackage ../../pkg/mcp-proxy-for-aws.nix { };
   gcloud-mcp = pkgs.callPackage ../../pkg/gcloud-mcp.nix { };
   azure-mcp = pkgs.callPackage ../../pkg/azure-mcp.nix { };
 in
@@ -106,9 +106,10 @@ in
         type = "http";
         url = "https://docs.mcp.cloudflare.com/mcp";
       };
-      aws-powertools = {
+      aws = {
         type = "stdio";
-        command = lib.getExe powertools-mcp;
+        command = lib.getExe mcp-proxy-for-aws;
+        args = [ "https://aws-mcp.us-east-1.api.aws/mcp" ];
       };
       gcloud = {
         type = "stdio";

@@ -20,6 +20,25 @@ let
       exec github-mcp-server "$@"
     '';
   };
+
+  backlog-mcp-server = pkgs.callPackage ../../pkg/backlog-mcp-server.nix { };
+
+  # Backlog MCP Serverの認証情報をsops-nixで管理されたシークレットから読み込むラッパー
+  backlog-mcp-server-wrapper = pkgs.writeShellApplication {
+    name = "backlog-mcp-server-wrapper";
+    runtimeInputs = [ backlog-mcp-server ];
+    text = ''
+      if [[ -r ${config.sops.secrets."backlog-mcp-server/domain".path} ]]; then
+        BACKLOG_DOMAIN="$(< ${config.sops.secrets."backlog-mcp-server/domain".path})"
+        export BACKLOG_DOMAIN
+      fi
+      if [[ -r ${config.sops.secrets."backlog-mcp-server/api-key".path} ]]; then
+        BACKLOG_API_KEY="$(< ${config.sops.secrets."backlog-mcp-server/api-key".path})"
+        export BACKLOG_API_KEY
+      fi
+      exec backlog-mcp-server "$@"
+    '';
+  };
 in
 {
   # GitHub MCP Server用のPersonal Access Tokenをsops-nixで管理します。
@@ -29,6 +48,20 @@ in
   sops.secrets."github-mcp-server/pat" = {
     sopsFile = ../../secrets/github-mcp-server.yaml;
     key = "pat";
+  };
+
+  # Backlog MCP Server用の認証情報をsops-nixで管理します。
+  # シークレットファイルは `sops secrets/backlog-mcp-server.yaml` で編集してください。
+  # 形式:
+  # domain: your-space.backlog.com
+  # api-key: your-api-key
+  sops.secrets."backlog-mcp-server/domain" = {
+    sopsFile = ../../secrets/backlog-mcp-server.yaml;
+    key = "domain";
+  };
+  sops.secrets."backlog-mcp-server/api-key" = {
+    sopsFile = ../../secrets/backlog-mcp-server.yaml;
+    key = "api-key";
   };
 
   home.packages = [
@@ -57,6 +90,10 @@ in
       deepwiki = {
         type = "http";
         url = "https://mcp.deepwiki.com/mcp";
+      };
+      backlog = {
+        type = "stdio";
+        command = lib.getExe backlog-mcp-server-wrapper;
       };
       nix = {
         type = "stdio";

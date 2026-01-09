@@ -2,12 +2,14 @@
 # https://github.com/googleapis/gcloud-mcp
 # Google公式のgcloud CLI用MCPサーバーです。
 # npmパッケージはビルド済みバンドルを含むため、直接インストールします。
+# gcloud CLIが必要なため、google-cloud-sdkをPATHに追加します。
 {
   lib,
   stdenvNoCC,
   fetchurl,
   nodejs,
   makeWrapper,
+  google-cloud-sdk,
 }:
 stdenvNoCC.mkDerivation rec {
   pname = "gcloud-mcp";
@@ -27,7 +29,8 @@ stdenvNoCC.mkDerivation rec {
     mkdir -p $out/lib/gcloud-mcp $out/bin
     cp -r dist package.json $out/lib/gcloud-mcp/
     makeWrapper ${nodejs}/bin/node $out/bin/gcloud-mcp \
-      --add-flags "$out/lib/gcloud-mcp/dist/bundle.js"
+      --add-flags "$out/lib/gcloud-mcp/dist/bundle.js" \
+      --prefix PATH : ${lib.makeBinPath [ google-cloud-sdk ]}
     runHook postInstall
   '';
 

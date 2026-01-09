@@ -372,6 +372,10 @@ in
           "mcp__github__search_pull_requests"
           "mcp__github__search_repositories"
           "mcp__github__search_users"
+          "mcp__playwright__browser_console_messages"
+          "mcp__playwright__browser_network_requests"
+          "mcp__playwright__browser_snapshot"
+          "mcp__playwright__browser_take_screenshot"
         ];
         deny = [
           "Bash(git commit:*)"

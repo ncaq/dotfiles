@@ -46,3 +46,7 @@ end_of_line = crlf
 [*.reg]
 charset = utf-8-bom
 end_of_line = crlf
+
+[secrets/**/*]
+# 暗号化されたデータが長く1行で書かれているので行幅制限を行いません。
+max_line_length = off

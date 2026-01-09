@@ -22,7 +22,6 @@ let
   };
 
   backlog-mcp-server = pkgs.callPackage ../../pkg/backlog-mcp-server.nix { };
-
   # Backlog MCP Serverの認証情報をsops-nixで管理されたシークレットから読み込むラッパー
   backlog-mcp-server-wrapper = pkgs.writeShellApplication {
     name = "backlog-mcp-server-wrapper";
@@ -39,6 +38,10 @@ let
       exec backlog-mcp-server "$@"
     '';
   };
+
+  powertools-mcp = pkgs.callPackage ../../pkg/powertools-mcp.nix { };
+  gcloud-mcp = pkgs.callPackage ../../pkg/gcloud-mcp.nix { };
+  azure-mcp = pkgs.callPackage ../../pkg/azure-mcp.nix { };
 in
 {
   # GitHub MCP Server用のPersonal Access Tokenをsops-nixで管理します。
@@ -102,6 +105,22 @@ in
       cloudflare-docs = {
         type = "http";
         url = "https://docs.mcp.cloudflare.com/mcp";
+      };
+      aws-powertools = {
+        type = "stdio";
+        command = lib.getExe powertools-mcp;
+      };
+      gcloud = {
+        type = "stdio";
+        command = lib.getExe gcloud-mcp;
+      };
+      azure = {
+        type = "stdio";
+        command = lib.getExe azure-mcp;
+        args = [
+          "server"
+          "start"
+        ];
       };
       microsoft-learn = {
         type = "http";

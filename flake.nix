@@ -281,6 +281,17 @@
               shellcheck.enable = true;
               shfmt.enable = true;
             };
+            settings.formatter = {
+              editorconfig-checker = {
+                command = pkgs.lib.getExe pkgs.editorconfig-checker;
+                includes = [ "*" ];
+                excludes = [
+                  ".git/*"
+                  ".direnv/*"
+                  "result*"
+                ];
+              };
+            };
           };
           apps = {
             home-manager = {

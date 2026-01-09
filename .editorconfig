@@ -31,6 +31,10 @@ trim_trailing_whitespace = false
 # MarkdownはURLやコード例が長くなることが多いため行幅制限を緩めます。
 max_line_length = 200
 
+[*.nix]
+# Nix言語はURLやコード例が長くなることが多いため行幅制限を緩めます。
+max_line_length = 200
+
 [*.bat]
 charset = latin1
 end_of_line = crlf

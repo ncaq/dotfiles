@@ -2,8 +2,12 @@
   pkgs,
   pkgs-unstable,
   config,
+  lib,
   ...
 }:
+let
+  ccstatusline = pkgs.callPackage ../../pkg/ccstatusline.nix { };
+in
 {
   home.packages = [
     # Claude Codeのsandbox機能を利用する時は必要。
@@ -22,19 +26,10 @@
       # その時最適なモデルをデフォルトにします。
       model = "opus";
       # statuslineを設定します。
+      # ccstatuslineを使用して豪華な表示にします。
       statusLine = {
         type = "command";
-        command = ''
-          input=$(cat)
-          current_dir=$(echo "$input" | jq -r '.workspace.current_dir')
-          model_name=$(echo "$input" | jq -r '.model.display_name')
-          output_style=$(echo "$input" | jq -r '.output_style.name')
-          time_str=$(date "+%Y-%m-%dT%H:%M:%S")
-          user=$(whoami)
-          hostname=$(hostname -s)
-          printf '[%s] %s@%s:%s | %s (%s)\n' "$time_str" "$user" "$hostname" "$current_dir" "$model_name" "$output_style"
-        '';
-        padding = 0;
+        command = lib.getExe ccstatusline;
       };
       permissions = {
         defaultMode = "acceptEdits";

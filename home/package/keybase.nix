@@ -1,8 +1,10 @@
 { pkgs, ... }:
 {
-  services.keybase.enable = true;
+  services = {
+    keybase.enable = true;
+    kbfs.enable = true;
+  };
   home.packages = with pkgs; [
-    kbfs
     keybase-gui
   ];
 }

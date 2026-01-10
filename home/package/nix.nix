@@ -4,9 +4,6 @@
   home.packages = with pkgs; [
     nil
     nix-diff
-    nix-prefetch
-    nix-prefetch-git
-    nix-prefetch-github
     nixfmt-rfc-style
   ];
 }

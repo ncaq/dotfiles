@@ -191,7 +191,6 @@ in
           "~/dotfiles/"
         ];
         allow = jsRunnerPermissions ++ [
-          "Bash(atop:*)"
           "Bash(cabal build:*)"
           "Bash(cabal clean:*)"
           "Bash(cabal haddock:*)"
@@ -239,8 +238,6 @@ in
           "Bash(hlint:*)"
           "Bash(hostname)"
           "Bash(hostnamectl status:*)"
-          "Bash(iostat:*)"
-          "Bash(iotop:*)"
           "Bash(journalctl:*)"
           "Bash(jq:*)"
           "Bash(localectl status:*)"
@@ -299,7 +296,6 @@ in
           "Bash(stack test:*)"
           "Bash(systemctl status:*)"
           "Bash(timedatectl status:*)"
-          "Bash(top:*)"
           "Bash(touch:*)"
           "Bash(trash:*)"
           "Bash(tree:*)"

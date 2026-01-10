@@ -436,19 +436,19 @@ in
           "Bash(gh auth:*)"
           "Bash(gh config set:*)"
           "Bash(gh extension remove:*)"
-          "Bash(gh gist delete:*)"
           "Bash(gh issue create:*)"
-          "Bash(gh issue delete:*)"
           "Bash(gh label delete:*)"
           "Bash(gh pr merge:*)"
+          "Bash(gh run delete:*)"
+        ];
+        deny = [
+          "Bash(gh gist delete:*)"
+          "Bash(gh issue delete:*)"
           "Bash(gh project delete:*)"
           "Bash(gh release delete:*)"
           "Bash(gh repo archive:*)"
           "Bash(gh repo delete:*)"
           "Bash(gh repo rename:*)"
-          "Bash(gh run delete:*)"
-        ];
-        deny = [
           "Bash(git commit:*)"
           "Bash(head:*)"
           "Bash(rm:*)"

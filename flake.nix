@@ -60,12 +60,7 @@
 
     www-ncaq-net = {
       url = "github:ncaq/www.ncaq.net";
-      inputs = {
-        nixpkgs.follows = "nixpkgs";
-        flake-utils.follows = "flake-utils";
-        treefmt-nix.follows = "treefmt-nix";
-        haskellNix.follows = "haskellNix";
-      };
+      flake = false;
     };
 
     dot-xmonad = {

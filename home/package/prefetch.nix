@@ -9,6 +9,7 @@
     nix-prefetch-github
     nix-prefetch-hg
     nix-prefetch-svn
+    nurl
     prefetch-npm-deps
     prefetch-yarn-deps
   ];

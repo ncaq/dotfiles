@@ -42,6 +42,43 @@ let
   mcp-proxy-for-aws = pkgs.callPackage ../../pkg/mcp-proxy-for-aws.nix { };
   gcloud-mcp = pkgs.callPackage ../../pkg/gcloud-mcp.nix { };
   azure-mcp = pkgs.callPackage ../../pkg/azure-mcp.nix { };
+
+  # npm, yarn, pnpm, bunで共通のサブコマンドを許可するためのヘルパー
+  jsPackageManagers = [
+    "npm"
+    "yarn"
+    "pnpm"
+    "bun"
+  ];
+
+  # 直接実行するサブコマンド (install等)
+  jsDirectSubcommands = [
+    "install"
+  ];
+
+  # npm run経由で実行するサブコマンド (npmは `npm run <cmd>` 形式、他は `<pkg> <cmd>` 形式)
+  jsRunSubcommands = [
+    "build:*"
+    "dev:*"
+    "fix:*"
+    "lint:*"
+    "lint:eslint"
+    "lint:prettier"
+    "lint:tsc"
+    "prettier:*"
+    "preview:*"
+    "test:*"
+  ];
+
+  mkJsDirectPermissions = pkg: map (sub: "Bash(${pkg} ${sub})") jsDirectSubcommands;
+
+  mkJsRunPermissions =
+    pkg:
+    map (sub: if pkg == "npm" then "Bash(npm run ${sub})" else "Bash(${pkg} ${sub})") jsRunSubcommands;
+
+  jsRunnerPermissions = lib.concatMap (
+    pkg: mkJsDirectPermissions pkg ++ mkJsRunPermissions pkg
+  ) jsPackageManagers;
 in
 {
   # GitHub MCP Server用のPersonal Access Tokenをsops-nixで管理します。
@@ -153,17 +190,8 @@ in
           "/tmp/coding-agent-work/"
           "~/dotfiles/"
         ];
-        allow = [
+        allow = jsRunnerPermissions ++ [
           "Bash(atop:*)"
-          "Bash(bun build:*)"
-          "Bash(bun dev:*)"
-          "Bash(bun fix:*)"
-          "Bash(bun lint:*)"
-          "Bash(bun lint:eslint)"
-          "Bash(bun lint:prettier)"
-          "Bash(bun lint:tsc)"
-          "Bash(bun prettier:*)"
-          "Bash(bun preview:*)"
           "Bash(cabal build:*)"
           "Bash(cabal clean:*)"
           "Bash(cabal haddock:*)"
@@ -372,30 +400,9 @@ in
           "Bash(nix-prefetch:*)"
           "Bash(nix-update:*)"
           "Bash(nixos-option:*)"
-          "Bash(npm install)"
-          "Bash(npm ls:*)"
-          "Bash(npm run build:*)"
-          "Bash(npm run dev:*)"
-          "Bash(npm run fix:*)"
-          "Bash(npm run lint:*)"
-          "Bash(npm run lint:eslint)"
-          "Bash(npm run lint:prettier)"
-          "Bash(npm run lint:tsc)"
-          "Bash(npm run prettier:*)"
-          "Bash(npm run preview:*)"
-          "Bash(npm run test:*)"
           "Bash(nslookup:*)"
           "Bash(nurl:*)"
           "Bash(parallel:*)"
-          "Bash(pnpm build:*)"
-          "Bash(pnpm dev:*)"
-          "Bash(pnpm fix:*)"
-          "Bash(pnpm lint:*)"
-          "Bash(pnpm lint:eslint)"
-          "Bash(pnpm lint:prettier)"
-          "Bash(pnpm lint:tsc)"
-          "Bash(pnpm prettier:*)"
-          "Bash(pnpm preview:*)"
           "Bash(prefetch-npm-deps:*)"
           "Bash(prefetch-yarn-deps:*)"
           "Bash(readlink:*)"
@@ -425,15 +432,6 @@ in
           "Bash(true)"
           "Bash(update-nix-fetchgit:*)"
           "Bash(xargs:*)"
-          "Bash(yarn build:*)"
-          "Bash(yarn dev:*)"
-          "Bash(yarn fix:*)"
-          "Bash(yarn lint:*)"
-          "Bash(yarn lint:eslint)"
-          "Bash(yarn lint:prettier)"
-          "Bash(yarn lint:tsc)"
-          "Bash(yarn prettier:*)"
-          "Bash(yarn preview:*)"
           "WebFetch"
           "WebSearch"
           "mcp__azure__azureterraformbestpractices"

@@ -62,7 +62,7 @@ The index-state is set to 2026-01-11T09:48:01Z.
 nix flake check
 ```
 
-haskell.nixは追随に遅れがあるため、最新の`index-state`を使用するとエラーになる場合があります。
+haskell.nixは最新の`index-state`への対応に遅れがある場合があるため、最新の`index-state`を使用するとエラーになる場合があります。
 エラーメッセージに現在認識している最新の`index-state`が表示されます。
 
 例:

@@ -37,7 +37,13 @@ cabal update
 ```
 
 cabal updateの出力から最新の`index-state`タイムスタンプを取得します。
-出力例: `Downloaded package list from haskell.org (timestamp: 2026-01-11T12:34:56Z)`
+出力例:
+
+```console
+Downloading the latest package list from hackage.haskell.org
+Package list of hackage.haskell.org is up to date.
+The index-state is set to 2026-01-11T09:48:01Z.
+```
 
 ### index-stateの更新
 

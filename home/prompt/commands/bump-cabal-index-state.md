@@ -41,8 +41,11 @@ cabal updateの出力から最新の`index-state`タイムスタンプを取得�
 
 ### index-stateの更新
 
-`cabal.project`ファイルの`index-state`を更新します。
+通常は`cabal.project`ファイルに書かれている`index-state`を更新します。
 フォーマット: `index-state: YYYY-MM-DDTHH:MM:SSZ`
+
+もしここに書いていない場合`flake.nix`などに書かれている場合もあります。
+探して更新してください。
 
 ### 動作確認
 
@@ -74,7 +77,8 @@ cabal update
 
 ### index-stateの更新
 
-cabal updateの出力から最新のタイムスタンプを取得し、`cabal.project`の`index-state`を更新します。
+cabal updateの出力から最新のタイムスタンプを取得し、
+通常は`cabal.project`に書かれている`index-state`を更新します。
 
 ### 動作確認
 

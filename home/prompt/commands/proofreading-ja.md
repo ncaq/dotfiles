@@ -1,5 +1,10 @@
 ---
-allowed-tools: Bash(git log:*), Bash(nix fmt:*)
+allowed-tools:
+  - Bash(git log:*)
+  - Bash(nix fmt:*)
+  - Edit
+  - Read
+  - Write
 description: 誤字脱字や分かりにくい表現を修正する
 ---
 

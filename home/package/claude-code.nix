@@ -81,6 +81,12 @@ let
   ) jsPackageManagers;
 in
 {
+  home.packages = [
+    # Claude Codeのsandbox機能を利用する時は必要。
+    pkgs.bubblewrap
+    pkgs.socat
+  ];
+
   # GitHub MCP Server用のPersonal Access Tokenをsops-nixで管理します。
   # シークレットファイルは `sops secrets/github-mcp-server.yaml` で編集してください。
   # 形式:
@@ -103,12 +109,6 @@ in
     sopsFile = ../../secrets/backlog-mcp-server.yaml;
     key = "api-key";
   };
-
-  home.packages = [
-    # Claude Codeのsandbox機能を利用する時は必要。
-    pkgs.bubblewrap
-    pkgs.socat
-  ];
 
   # Clone repositories for additionalDirectories if they don't exist
   home.activation.cloneNixpkgs = lib.hm.dag.entryAfter [ "writeBoundary" ] ''

@@ -1,6 +1,8 @@
 ---
 description: cabalのindex-stateを最新に更新
 allowed-tools:
+  - Bash(cabal build:*)
+  - Bash(cabal test:*)
   - Bash(cabal update:*)
   - Bash(nix flake check:*)
   - Bash(nix flake update:*)
@@ -90,7 +92,11 @@ cabal updateの出力から最新のタイムスタンプを取得し、
 ### 動作確認
 
 プロジェクトのビルドシステムに応じて動作確認を行います。
+
 Nixを使用している場合は`nix flake check`を実行してください。
+
+Nixを使用していない場合は`cabal build`や`cabal test`などでビルド確認を行うか、
+ユーザに動作確認が出来なかったことを報告してください。
 
 # 完了報告
 

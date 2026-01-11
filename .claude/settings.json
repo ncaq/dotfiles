@@ -1,6 +1,6 @@
 {
   "permissions": {
-    "additionalDirectories": ["../Desktop/nixpkgs", "../Desktop/home-manager/"]
+    "additionalDirectories": ["~/Desktop/nixpkgs", "~/Desktop/home-manager/"]
   },
   "hooks": {
     "PostToolUse": [

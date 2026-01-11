@@ -102,6 +102,7 @@ Nixを使用していない場合は`cabal build`や`cabal test`などでビル�
 
 更新が完了したら以下を報告してください:
 
+- 動作確認が成功したか
 - 更新前の`index-state`
 - 更新後の`index-state`
 - haskell.nixの使用有無

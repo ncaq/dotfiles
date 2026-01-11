@@ -455,6 +455,7 @@ in
           "Bash(gh label delete:*)"
           "Bash(gh pr merge:*)"
           "Bash(gh run delete:*)"
+          "Bash(git commit:*)"
         ];
         deny = [
           "Bash(gh gist delete:*)"
@@ -464,7 +465,6 @@ in
           "Bash(gh repo archive:*)"
           "Bash(gh repo delete:*)"
           "Bash(gh repo rename:*)"
-          "Bash(git commit:*)"
           "Bash(head:*)"
           "Bash(rm:*)"
           "Bash(tail:*)"

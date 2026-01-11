@@ -1,6 +1,5 @@
 ---
-name: proofreader-ja
-model: inherit
+allowed-tools: Bash(git log:*), (nix fmt:*)
 description: 誤字脱字や分かりにくい表現を修正する
 ---
 

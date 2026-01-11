@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "additionalDirectories": ["~/Desktop/nixpkgs", "~/Desktop/home-manager"]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Stop",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd $CLAUDE_PROJECT_DIR && nix fmt"
+          }
+        ]
+      }
+    ]
+  }
+}

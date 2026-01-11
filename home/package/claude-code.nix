@@ -81,6 +81,12 @@ let
   ) jsPackageManagers;
 in
 {
+  home.packages = [
+    # Claude Codeのsandbox機能を利用する時は必要。
+    pkgs.bubblewrap
+    pkgs.socat
+  ];
+
   # GitHub MCP Server用のPersonal Access Tokenをsops-nixで管理します。
   # シークレットファイルは `sops secrets/github-mcp-server.yaml` で編集してください。
   # 形式:
@@ -104,11 +110,21 @@ in
     key = "api-key";
   };
 
-  home.packages = [
-    # Claude Codeのsandbox機能を利用する時は必要。
-    pkgs.bubblewrap
-    pkgs.socat
-  ];
+  # Clone repositories for additionalDirectories if they don't exist
+  home.activation.cloneNixpkgs = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    if [ ! -d "${config.home.homeDirectory}/Desktop/nixpkgs" ]; then
+      $DRY_RUN_CMD ${pkgs.git}/bin/git clone --depth=50 \
+        https://github.com/NixOS/nixpkgs.git \
+        "${config.home.homeDirectory}/Desktop/nixpkgs"
+    fi
+  '';
+  home.activation.cloneHomeManager = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    if [ ! -d "${config.home.homeDirectory}/Desktop/home-manager" ]; then
+      $DRY_RUN_CMD ${pkgs.git}/bin/git clone --depth=50 \
+        https://github.com/nix-community/home-manager.git \
+        "${config.home.homeDirectory}/Desktop/home-manager"
+    fi
+  '';
 
   programs.claude-code = {
     enable = true;
@@ -116,6 +132,8 @@ in
 
     # `CLAUDE.md`と同等です。
     memory.text = config.prompt.coding-agent;
+
+    commandsDir = ./claude/commands;
 
     mcpServers = {
       playwright = {

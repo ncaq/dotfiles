@@ -1,5 +1,8 @@
 ---
-allowed-tools: Bash(git add:*), Bash(nix fmt:*), Bash(nix flake check:*)
+allowed-tools:
+  - Bash(git add:*)
+  - Bash(nix flake check:*)
+  - Bash(nix fmt:*)
 description: Nixプロジェクトのフォーマットとチェックを実行
 ---
 

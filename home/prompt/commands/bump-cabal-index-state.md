@@ -4,6 +4,7 @@ allowed-tools:
   - Bash(cabal build:*)
   - Bash(cabal test:*)
   - Bash(cabal update:*)
+  - Bash(git commit:*)
   - Bash(nix flake check:*)
   - Bash(nix flake update:*)
   - Edit
@@ -101,6 +102,27 @@ Nixを使用している場合は`nix flake check`を実行してください。
 
 Nixを使用していない場合は`cabal build`や`cabal test`などでビルド確認を行うか、
 ユーザに動作確認が出来なかったことを報告してください。
+
+## Gitにコミット
+
+動作確認が成功したらGitにコミットしてください。
+動作確認が成功しなければコミットは行わないで完了報告に進んでください。
+
+コミットメッセージのタイトルは、
+`build(deps): cabalのindex-stateを更新`
+です。
+
+本文は以下のテンプレートに従ってください。
+
+```md
+`cabal.project` の `index-state` を `YYYY-MM-DDTHH:mm:ssZ` に更新しました。
+```
+
+このテンプレートに従って置き換えて本文を作成してください。
+
+- `cabal.project`は実際に更新したファイル名に置き換えてください。大抵は`cabal.project`そのままです
+- `YYYY-MM-DDTHH:mm:ssZ`は実際の新しい`index-state`に置き換えてください
+- ドメイン指定がある場合は`index-state`の前にスペースで囲んで`hackage.haskell.org`のように更新したドメインを追加してください
 
 # 完了報告
 

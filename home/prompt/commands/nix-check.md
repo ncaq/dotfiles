@@ -1,9 +1,9 @@
 ---
+description: Nixプロジェクトのフォーマットとチェックを実行
 allowed-tools:
   - Bash(git add:*)
   - Bash(nix flake check:*)
   - Bash(nix fmt:*)
-description: Nixプロジェクトのフォーマットとチェックを実行
 ---
 
 Nixで管理しているプロジェクトが正常かチェックします。

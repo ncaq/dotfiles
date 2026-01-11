@@ -4,7 +4,6 @@ allowed-tools:
   - Bash(cabal update:*)
   - Bash(nix flake check:*)
   - Bash(nix flake update:*)
-  - Bash(nix fmt:*)
   - Edit
   - Glob
   - Grep

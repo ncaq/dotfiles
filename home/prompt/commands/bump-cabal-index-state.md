@@ -52,8 +52,8 @@ The index-state is set to 2026-01-11T09:48:01Z.
 通常は`cabal.project`ファイルに書かれている`index-state`を更新します。
 フォーマット: `index-state: YYYY-MM-DDTHH:MM:SSZ`
 
-もしここに書いていない場合、
-`flake.nix`などに書かれている場合もあります。
+もし`cabal.project`に書いていないなら、
+`flake.nix`などに書かれている場合があります。
 探して更新してください。
 
 ### 動作確認

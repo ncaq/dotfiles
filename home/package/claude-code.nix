@@ -133,6 +133,7 @@ in
     # `CLAUDE.md`と同等です。
     memory.text = config.prompt.coding-agent;
 
+    agentsDir = ./claude/agents;
     commandsDir = ./claude/commands;
 
     mcpServers = {

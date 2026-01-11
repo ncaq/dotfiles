@@ -71,7 +71,7 @@ haskell.nixは最新の`index-state`への対応に遅れがあります。
 
 例:
 
-```
+```console
 > Error: [Cabal-7159]
 > Latest known index-state for 'hackage.haskell.org' (2026-01-05T23:03:18Z) is older than the requested index-state (2026-01-11T18:45:48Z).
 > Run 'cabal update' or set the index-state to a value at or before 2026-01-05T23:03:18Z.

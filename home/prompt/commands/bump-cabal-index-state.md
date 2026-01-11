@@ -56,7 +56,7 @@ The index-state is set to 2026-01-11T09:48:01Z.
 `index-state`と日時の間にURLが入っていることも稀にあります。
 
 もし`cabal.project`に書いていないなら、
-`flake.nix`などに書かれている場合があります。
+`cabal.project.local`や`flake.nix`などに書かれている場合があります。
 探して更新してください。
 
 ### 動作確認

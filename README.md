@@ -195,9 +195,21 @@ Create symbolic links from filepath.
 
 To install packages.
 
+### [home/prompt/](./home/prompt/)
+
+The prompt for Chat LLM and Coding Agent.
+
+## [lib/](./lib/)
+
+The library files for Nix expressions.
+
 ## [nixos/](./nixos/)
 
 NixOS configuration files.
+
+## [pkg/](./pkg/)
+
+Custom Nix packages.
 
 # Separated dotfiles
 

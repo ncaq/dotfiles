@@ -117,6 +117,8 @@ in
     # `CLAUDE.md`と同等です。
     memory.text = config.prompt.coding-agent;
 
+    commandsDir = ./claude/commands;
+
     mcpServers = {
       playwright = {
         type = "stdio";

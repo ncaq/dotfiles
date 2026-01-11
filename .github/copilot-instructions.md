@@ -25,6 +25,14 @@ ASCIIに対応する全角形(Fullwidth Forms)は使用禁止。
 
 `$HOST`変数を見れば`flake.nix`で作っているどの環境でインストールされているか分かります。
 
+## リポジトリ構成
+
+`CLAUDE.md`は以下のように`.github/copilot-instructions.md`のシンボリックリンクになっています。
+
+```console
+CLAUDE.md -> .github/copilot-instructions.md
+```
+
 ## 重要コマンド
 
 ### フォーマット

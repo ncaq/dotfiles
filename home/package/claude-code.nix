@@ -263,6 +263,7 @@ in
           "Bash(ls:*)"
           "Bash(mkdir:*)"
           "Bash(nix build:*)"
+          "Bash(nix derivation show:*)"
           "Bash(nix develop:*)"
           "Bash(nix eval:*)"
           "Bash(nix flake check:*)"

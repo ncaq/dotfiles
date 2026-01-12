@@ -131,4 +131,4 @@ Nixを使用していない場合は`cabal build`や`cabal test`などでビル�
 - 動作確認が成功したか
 - 更新前の`index-state`
 - 更新後の`index-state`
-- haskell.nixを使用している場合、cabalの最新`index-state`とhaskell.nixが認識している最新`index-state`の差異
+- haskell.nixを使用している場合、haskell.nixが認識している最新`index-state`がcabalの最新`index-state`に比べてどれぐらい遅れているか

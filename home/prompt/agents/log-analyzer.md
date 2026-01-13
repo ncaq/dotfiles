@@ -36,7 +36,7 @@ and return a concise summary of the important information.
 ## Prepare the command
 
 - Determine an appropriate filename based on the command and timestamp
-  (e.g., `build-log-2024-01-15-143022.txt`, `test-output-myproject.txt`)
+  (e.g., `build-log-%Y-%m-%dT%H:%M:%S%z.txt`, `test-output-myproject.txt`)
 - Construct the command with `tee` to capture output:
   `foo 2>&1 | tee /tmp/coding-agent-work/[filename]`
 
@@ -86,13 +86,13 @@ Provide a structured report in Japanese containing:
 
 ```bash
 # Build command
-nix build 2>&1 | tee /tmp/coding-agent-work/nix-build-$(date +%Y%m%d-%H%M%S).txt
+nix build 2>&1 | tee /tmp/coding-agent-work/nix-build-$(date '+%Y-%m-%dT%H:%M:%S%z').txt
 
 # Test command
-npm test 2>&1 | tee /tmp/coding-agent-work/npm-test-$(date +%Y%m%d-%H%M%S).txt
+npm test 2>&1 | tee /tmp/coding-agent-work/npm-test-$(date '+%Y-%m-%dT%H:%M:%S%z').txt
 
 # System logs
-journalctl -b 2>&1 | tee /tmp/coding-agent-work/journalctl-boot-$(date +%Y%m%d-%H%M%S).txt
+journalctl -b 2>&1 | tee /tmp/coding-agent-work/journalctl-boot-$(date '+%Y-%m-%dT%H:%M:%S%z').txt
 ```
 
 Your goal is to be the thorough reader that ensures no important information is lost,

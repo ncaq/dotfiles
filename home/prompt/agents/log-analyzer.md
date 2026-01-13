@@ -1,7 +1,7 @@
 ---
 name: log-analyzer
 model: sonnet
-description: Use this agent when you need to execute commands that produce long output and extract the important information without consuming excessive context in the main conversation.
+description: 長大なコマンド出力から重要情報を抽出。メイン会話のコンテキスト消費を抑えたい場合に使用。
 tools:
   - Bash
   - Glob

@@ -19,10 +19,8 @@ tools:
   - mcp__backlog__get_pull_requests
   - mcp__backlog__get_wiki
   - mcp__backlog__get_wiki_pages
-  - mcp__cloudflare-docs__search_cloudflare_documentation
-  - mcp__deepwiki__ask_question
-  - mcp__deepwiki__read_wiki_contents
-  - mcp__deepwiki__read_wiki_structure
+  - mcp__cloudflare-docs
+  - mcp__deepwiki
   - mcp__github__get_file_contents
   - mcp__github__issue_read
   - mcp__github__list_issues
@@ -32,18 +30,9 @@ tools:
   - mcp__github__search_issues
   - mcp__github__search_pull_requests
   - mcp__github__search_repositories
-  - mcp__mdn__get-compat
-  - mcp__mdn__get-doc
-  - mcp__mdn__search
-  - mcp__microsoft-learn__microsoft_code_sample_search
-  - mcp__microsoft-learn__microsoft_docs_fetch
-  - mcp__microsoft-learn__microsoft_docs_search
-  - mcp__nix__home_manager_info
-  - mcp__nix__home_manager_search
-  - mcp__nix__nixhub_package_versions
-  - mcp__nix__nixos_flakes_search
-  - mcp__nix__nixos_info
-  - mcp__nix__nixos_search
+  - mcp__mdn
+  - mcp__microsoft-learn
+  - mcp__nix
   - mcp__playwright__browser_click
   - mcp__playwright__browser_console_messages
   - mcp__playwright__browser_navigate
@@ -51,10 +40,7 @@ tools:
   - mcp__playwright__browser_snapshot
   - mcp__playwright__browser_take_screenshot
   - mcp__playwright__browser_type
-  - mcp__terraform__get_module_details
-  - mcp__terraform__get_provider_details
-  - mcp__terraform__search_modules
-  - mcp__terraform__search_providers
+  - mcp__terraform
 ---
 
 あらゆる情報ソースを横断検索して回答します。

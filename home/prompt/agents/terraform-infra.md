@@ -8,10 +8,7 @@ tools:
   - Glob
   - Grep
   - Read
-  - mcp__terraform__get_module_details
-  - mcp__terraform__get_provider_details
-  - mcp__terraform__search_modules
-  - mcp__terraform__search_providers
+  - mcp__terraform
 ---
 
 あなたはTerraformの専門家です。

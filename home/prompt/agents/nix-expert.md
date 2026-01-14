@@ -7,11 +7,7 @@ tools:
   - Glob
   - Grep
   - Read
-  - mcp__nix__home_manager_info
-  - mcp__nix__home_manager_search
-  - mcp__nix__nixhub_package_versions
-  - mcp__nix__nixos_info
-  - mcp__nix__nixos_search
+  - mcp__nix
 ---
 
 あなたはNixの専門家です。

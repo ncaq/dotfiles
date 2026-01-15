@@ -40,6 +40,7 @@ in
           (builtins.readFile ./assistant/persona.md)
           (builtins.readFile ./environment/software.md)
           (builtins.readFile ./environment/hardware.md)
+          (builtins.readFile ./user/job.md)
           (builtins.readFile ./user/policy.md)
           (builtins.readFile ./user/region.md)
           (builtins.readFile "${www-ncaq-net}/site/about.md")

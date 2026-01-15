@@ -202,6 +202,7 @@ in
         type = "command";
         command = lib.getExe ccstatusline;
       };
+      language = "japanese";
       permissions = {
         defaultMode = "acceptEdits";
         additionalDirectories = [

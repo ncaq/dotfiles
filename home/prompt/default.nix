@@ -40,6 +40,7 @@ in
           (builtins.readFile ./assistant/persona.md)
           (builtins.readFile ./environment/software.md)
           (builtins.readFile ./environment/hardware.md)
+          (builtins.readFile ./user/decision-style.md)
           (builtins.readFile ./user/house.md)
           (builtins.readFile ./user/job.md)
           (builtins.readFile ./user/policy.md)

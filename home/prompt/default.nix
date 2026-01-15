@@ -37,6 +37,7 @@ in
         [
           (builtins.readFile ./assistant/language.md)
           (builtins.readFile ./assistant/form.md)
+          (builtins.readFile ./assistant/communication-guideline.md)
           (builtins.readFile ./assistant/persona.md)
           (builtins.readFile ./environment/software.md)
           (builtins.readFile ./environment/hardware.md)

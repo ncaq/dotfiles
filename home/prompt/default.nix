@@ -40,9 +40,9 @@ in
           (builtins.readFile ./assistant/persona.md)
           (builtins.readFile ./environment/software.md)
           (builtins.readFile ./environment/hardware.md)
+          (builtins.readFile ./user/house.md)
           (builtins.readFile ./user/job.md)
           (builtins.readFile ./user/policy.md)
-          (builtins.readFile ./user/region.md)
           (builtins.readFile "${www-ncaq-net}/site/about.md")
           (builtins.readFile "${www-ncaq-net}/site/entry/2025-12-28-14-43-14.md") # 現在の自分の決済方法
         ]

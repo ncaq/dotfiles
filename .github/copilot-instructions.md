@@ -74,10 +74,10 @@ kebab-caseを使用します。
 
 ### 変数名・属性名
 
-| 種類 | スタイル | 例 |
-|------|---------|-----|
-| 純粋な変数・設定値 | lowerCamelCase | `keyConfig`, `identityKey`, `baseProfile` |
-| パッケージ・derivation | kebab-case | `github-mcp-server-wrapper`, `trayscale-autostart-desktop` |
+| 種類                   | スタイル       | 例                                                         |
+| ---------------------- | -------------- | ---------------------------------------------------------- |
+| 純粋な変数・設定値     | lowerCamelCase | `keyConfig`, `identityKey`, `baseProfile`                  |
+| パッケージ・derivation | kebab-case     | `github-mcp-server-wrapper`, `trayscale-autostart-desktop` |
 
 単純な変数はlowerCamelCaseを使用します。
 

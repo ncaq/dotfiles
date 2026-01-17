@@ -111,14 +111,14 @@ gpg --import /path/to/subkeys-<副鍵の名前>.asc
 gpg --edit-key ncaq@ncaq.net
 ```
 
-```
+```console
 gpg> passwd
 ```
 
 1. 現在のパスフレーズを入力
 2. 新しいパスフレーズは空にして決定
 
-```
+```console
 gpg> save
 ```
 

@@ -1,5 +1,9 @@
 # GPG鍵の運用方法
 
+## 前提知識
+
+公開鍵のフィンガープリント: `7DDE3BC405DC58D94BF661D342248C7D0FB73D57`
+
 ## 鍵の構成
 
 - 暗号鍵: 全端末で共通の副鍵を使用
@@ -12,16 +16,6 @@
 暗号鍵を共通にしている理由は、
 データを送る側からすると暗号鍵が異なると、
 どの暗号鍵に向けて暗号化すれば良いか分からなくなるため。
-
-## 公開鍵の更新先
-
-[ncaq-public-key.asc](./ncaq-public-key.asc) を更新した場合、
-以下の場所にも反映が必要:
-
-- [GitHub](https://github.com/settings/keys)
-- [Keybase](https://keybase.io/): `keybase pgp update`
-- [keys.openpgp.org](https://keys.openpgp.org/upload)
-- [ncaq/ncaq.net: https://ncaq.net/](https://github.com/ncaq/ncaq.net)
 
 ## 副鍵はパスフレーズなし
 
@@ -135,9 +129,53 @@ echo "test" | gpg --sign --armor
 
 ### dotfiles更新
 
-[ncaq-public-key.asc](./ncaq-public-key.asc)の内容と、
-[default.nix](./default.nix)の`identity-keys`を更新してコミットして、
-PRを作ってマージしてください。
+[ncaq-public-key.asc](./ncaq-public-key.asc)の新しい内容と、
+[default.nix](./default.nix)の`identity-keys`を更新して、
+それをコミットしてPRを作ってマージしてください。
 
 その後`./install.sh`を実行して、
-ネットワーク上の公開鍵を更新してください。
+その設定の鍵を更新してください。
+
+## 公開鍵の更新先
+
+[ncaq-public-key.asc](./ncaq-public-key.asc)
+を更新した場合、
+公開鍵の更新が必要です。
+
+dotfilesが展開されている端末では公開鍵は自動で更新されるので更新不要です。
+
+以下のネットワークサービスには手動反映が必要です。
+
+### [GitHub](https://github.com/settings/keys)
+
+十分な権限をGitHub CLIに与えてください。
+できない場合はWeb UIで手動更新してください。
+
+```zsh
+gh gpg-key list
+gh gpg-key delete 42248C7D0FB73D57 --yes
+gh gpg-key add ~/dotfiles/key/ncaq-public-key.asc ---title ncaq-public-key
+```
+
+### [Keybase](https://keybase.io/)
+
+```zsh
+keybase pgp update
+```
+
+### [keys.openpgp.org](https://keys.openpgp.org/upload)
+
+```zsh
+gpg --keyserver keys.openpgp.org --send-keys 7DDE3BC405DC58D94BF661D342248C7D0FB73D57
+```
+
+### [ncaq/ncaq.net: https://ncaq.net/](https://github.com/ncaq/ncaq.net)
+
+dotfilesがマージされたあと、
+
+```zsh
+nix flake update --commit-lock-file --option commit-lockfile-summary "build(deps): bump \`flake.lock\`"
+```
+
+を実行してPRを作って、
+マージしてGitHub Actionsによるデプロイをトリガーしてください。

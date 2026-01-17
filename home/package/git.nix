@@ -4,8 +4,8 @@
   ...
 }:
 let
-  key-config = import ../../key;
-  identity-key = key-config.identity-keys.${hostName} or null;
+  keyConfig = import ../../key;
+  identityKey = keyConfig.identityKeys.${hostName} or null;
 in
 {
   imports = [ inputs.git-hooks.modules.homeManager.default ];
@@ -14,8 +14,8 @@ in
       enable = true;
       lfs.enable = true;
       signing = {
-        key = identity-key;
-        signByDefault = identity-key != null;
+        key = identityKey;
+        signByDefault = identityKey != null;
       };
       settings = {
         user = {

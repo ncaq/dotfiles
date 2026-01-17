@@ -137,7 +137,7 @@
     };
     profiles =
       let
-        base-profile = {
+        baseProfile = {
           search = {
             # https://github.com/mozilla-firefox/firefox/blob/09ba48590299a48636b0b4692f43f8fd5c59972b/toolkit/components/search/SearchEngine.sys.mjs#L934
             force = true;
@@ -398,10 +398,10 @@
         };
       in
       {
-        default = base-profile // {
+        default = baseProfile // {
           id = 0;
         };
-        google-search-title-qualified = base-profile // {
+        google-search-title-qualified = baseProfile // {
           id = 1;
           name = "google-search-title-qualified";
         };

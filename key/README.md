@@ -130,7 +130,7 @@ echo "test" | gpg --sign --armor
 ### dotfiles更新
 
 [ncaq-public-key.asc](./ncaq-public-key.asc)の新しい内容と、
-[default.nix](./default.nix)の`identity-keys`を更新して、
+[default.nix](./default.nix)の`identityKeys`を更新して、
 それをコミットしてPRを作ってマージしてください。
 
 その後`./install.sh`を実行して、

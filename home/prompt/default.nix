@@ -5,7 +5,7 @@
   ...
 }:
 let
-  programming-prompts = [
+  programmingPrompts = [
     (builtins.readFile ./programming/command.md)
     (builtins.readFile ./programming/github.md)
     (builtins.readFile ./programming/naming-rule.md)
@@ -13,18 +13,18 @@ let
     (builtins.readFile ./programming/check-job.md)
     (builtins.readFile ./programming/test.md)
   ];
-  coding-agent-prompts = [
+  codingAgentPrompts = [
     (builtins.readFile ./coding-agent/workspace.md)
   ];
 in
 {
   options.prompt = {
-    chat-assistant = lib.mkOption {
+    chatAssistant = lib.mkOption {
       type = lib.types.str;
       readOnly = true;
       description = "通常のチャット向けのカスタムプロンプトを連結したテキスト";
     };
-    coding-agent = lib.mkOption {
+    codingAgent = lib.mkOption {
       type = lib.types.str;
       readOnly = true;
       description = "コーディングエージェント向けのカスタムプロンプトを連結したテキスト";
@@ -33,7 +33,7 @@ in
 
   config = {
     prompt = {
-      chat-assistant = lib.concatStringsSep "\n" (
+      chatAssistant = lib.concatStringsSep "\n" (
         [
           (builtins.readFile ./assistant/language.md)
           (builtins.readFile ./assistant/form.md)
@@ -49,18 +49,18 @@ in
           (builtins.readFile "${www-ncaq-net}/site/about.md")
           (builtins.readFile "${www-ncaq-net}/site/entry/2025-12-28-14-43-14.md") # 現在の自分の決済方法
         ]
-        ++ programming-prompts
+        ++ programmingPrompts
       );
-      # coding-agentのcontextは貴重なので、
-      # chat-assistantより厳選して少なめにします。
+      # codingAgentのcontextは貴重なので、
+      # chatAssistantより厳選して少なめにします。
       # プログラミングに直接関係ない情報は省きます。
-      coding-agent = lib.concatStringsSep "\n" (
+      codingAgent = lib.concatStringsSep "\n" (
         [
           (builtins.readFile ./assistant/form.md)
           (builtins.readFile ./environment/software.md)
         ]
-        ++ programming-prompts
-        ++ coding-agent-prompts
+        ++ programmingPrompts
+        ++ codingAgentPrompts
       );
     };
 

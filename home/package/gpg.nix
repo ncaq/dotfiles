@@ -1,6 +1,6 @@
 { pkgs, ... }:
 let
-  key-config = import ../../key;
+  keyConfig = import ../../key;
 in
 {
   programs.gpg = {
@@ -8,7 +8,7 @@ in
     publicKeys = [
       {
         trust = "ultimate";
-        source = key-config.public-key-file;
+        source = keyConfig.publicKeyFile;
       }
     ];
     scdaemonSettings = {

@@ -131,7 +131,7 @@ in
     package = pkgs-unstable.claude-code;
 
     # `CLAUDE.md`と同等です。
-    memory.text = config.prompt.coding-agent;
+    memory.text = config.prompt.codingAgent;
 
     agentsDir = ../prompt/agents;
     commandsDir = ../prompt/commands;

@@ -154,7 +154,7 @@ dotfilesが展開されている端末では公開鍵は自動で更新される
 ```zsh
 gh gpg-key list
 gh gpg-key delete 42248C7D0FB73D57 --yes
-gh gpg-key add ~/dotfiles/key/ncaq-public-key.asc --title ncaq-public-key
+gh gpg-key add ~/dotfiles/key/ncaq-public-key.asc --title ncaq-public-key.asc
 ```
 
 ### [Keybase](https://keybase.io/)

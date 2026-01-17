@@ -1,7 +1,7 @@
 {
   # 各端末ごとの署名と認証機能のある鍵のフィンガープリントのマッピング。
   # vanitasは仮想環境で検証をするためのもので署名鍵は不要。
-  identity-keys = {
+  identityKeys = {
     bullet = "33F5EB0E553A2EFB";
     creep = "60635905E8D66388";
     seminar = "562EE3E571A37489";
@@ -9,5 +9,5 @@
   };
 
   # 公開鍵ファイルのパス。
-  public-key-file = ./ncaq-public-key.asc;
+  publicKeyFile = ./ncaq-public-key.asc;
 }

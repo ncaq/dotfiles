@@ -9,6 +9,6 @@
     # 公式に配置する場所がないので関連する場所ということで間借りさせてもらいます。
     # 更新されたら配置したあと手動で設定画面にコピペします。
     # Claude Codeと同じ`.claude`ディレクトリに配置します。
-    ".claude/CLAUDE_WEB.md".text = config.prompt.chat-assistant;
+    ".claude/CLAUDE_WEB.md".text = config.prompt.chatAssistant;
   };
 }

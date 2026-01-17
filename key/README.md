@@ -69,7 +69,7 @@ gpg --import master-secret-key.asc
 副鍵を追加。
 
 ```zsh
-gpg --batch --passphrase '' --quick-add-key 7DDE3BC405DC58D94BF661D342248C7D0FB73D57 ed25519 sign,auth 5y
+gpg --quick-add-key 7DDE3BC405DC58D94BF661D342248C7D0FB73D57 ed25519 sign,auth 5y
 ```
 
 鍵一覧を見て発行された副鍵を確認。

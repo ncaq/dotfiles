@@ -59,3 +59,40 @@ nix flake check
 # 使用する技術スタックやライブラリ
 
 環境構築には[Nix Flakes](https://wiki.nixos.org/wiki/Flakes/ja)を利用しています。
+
+# Nix言語
+
+## 命名規則
+
+[nixpkgsの公式コーディング規約](https://github.com/NixOS/nixpkgs/blob/master/pkgs/README.md)
+
+### ファイル名・ディレクトリ名
+
+kebab-caseを使用します。
+
+例: `all-packages.nix`, `claude-code.nix`
+
+### 変数名・属性名
+
+| 種類 | スタイル | 例 |
+|------|---------|-----|
+| 純粋な変数・設定値 | lowerCamelCase | `keyConfig`, `identityKey`, `baseProfile` |
+| パッケージ・derivation | kebab-case | `github-mcp-server-wrapper`, `trayscale-autostart-desktop` |
+
+単純な変数はlowerCamelCaseを使用します。
+
+パッケージやプログラムを示す変数は、
+pnameと同様にkebab-caseを使用します。
+2012年以降、
+Nix言語では識別子にハイフンを使用できます。
+
+### NixOSオプション
+
+原則camelCaseを使用します。
+
+例: `services.nginx.enableReload`, `prompt.chatAssistant`
+
+例外:
+
+- パッケージ名を参照する場合はkebab-case: `services.nix-serve`
+- `nix.settings`など外部設定ファイルをマッピングするオプションは、その設定ファイルの命名規則に従う(nix.confはkebab-case)

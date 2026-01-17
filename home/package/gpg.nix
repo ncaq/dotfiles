@@ -1,11 +1,14 @@
 { pkgs, ... }:
+let
+  key-config = import ../../key;
+in
 {
   programs.gpg = {
     enable = true;
     publicKeys = [
       {
         trust = "ultimate";
-        source = ../ncaq-public-key.asc;
+        source = key-config.public-key-file;
       }
     ];
     scdaemonSettings = {

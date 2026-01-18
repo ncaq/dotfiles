@@ -51,7 +51,7 @@ in
         networking.firewall.trustedInterfaces = [ "eth0" ];
         # UID/GID must match host for PostgreSQL peer authentication via bindMounted socket.
         users.users.atticd = {
-          uid = user.uid;
+          inherit (user) uid;
           group = "atticd";
         };
         users.groups.atticd.gid = user.gid;
@@ -90,10 +90,10 @@ in
   users.users.atticd = {
     isSystemUser = true;
     group = "atticd";
-    uid = user.uid;
+    inherit (user) uid;
   };
   users.groups.atticd = {
-    gid = user.gid;
+    inherit (user) gid;
     members = [ username ];
   };
   systemd.tmpfiles.rules = [

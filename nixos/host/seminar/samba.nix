@@ -1,7 +1,6 @@
 # 初回設定時に手動で実行
 # sudo smbpasswd -a ncaq
-{ ... }:
-{
+_: {
   services.samba = {
     enable = true;
     openFirewall = true;

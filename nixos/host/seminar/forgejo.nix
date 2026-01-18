@@ -34,7 +34,7 @@ in
         networking.firewall.trustedInterfaces = [ "eth0" ];
         # UID/GID must match host for PostgreSQL peer authentication via bindMounted socket.
         users.users.forgejo = {
-          uid = user.uid;
+          inherit (user) uid;
           group = "forgejo";
         };
         users.groups.forgejo.gid = user.gid;
@@ -77,7 +77,7 @@ in
   users.users.forgejo = {
     isSystemUser = true;
     group = "forgejo";
-    uid = user.uid;
+    inherit (user) uid;
   };
   users.groups.forgejo.gid = user.gid;
   systemd.tmpfiles.rules = [

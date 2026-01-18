@@ -1,5 +1,4 @@
-{ ... }:
-{
+_: {
   # Exit Nodeとして動作するための追加設定。
   # 基本的なTailscale有効化は nixos/core/tailscale.nix で行っている。
   services.tailscale.useRoutingFeatures = "both";

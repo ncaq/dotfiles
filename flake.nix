@@ -143,7 +143,7 @@
             let
               mkLinuxHome =
                 username:
-                home-manager.lib.homeManagerConfiguration ({
+                home-manager.lib.homeManagerConfiguration {
                   pkgs = import nixpkgs {
                     system = "x86_64-linux";
                     config = nixpkgsConfig;
@@ -169,20 +169,17 @@
                     isWSL = false;
                   };
                   modules = [
-                    (
-                      { ... }:
-                      {
-                        nixpkgs.config = nixpkgsConfig;
-                        nixpkgs.overlays = [
-                          rust-overlay.overlays.default
-                          firge-nix.overlays.default
-                        ];
-                      }
-                    )
+                    (_: {
+                      nixpkgs.config = nixpkgsConfig;
+                      nixpkgs.overlays = [
+                        rust-overlay.overlays.default
+                        firge-nix.overlays.default
+                      ];
+                    })
                     sops-nix.homeManagerModules.sops
                     ./home
                   ];
-                });
+                };
             in
             {
               "ncaq" = mkLinuxHome "ncaq";
@@ -221,16 +218,13 @@
                   system = "x86_64-linux";
                   inherit specialArgs;
                   modules = [
-                    (
-                      { ... }:
-                      {
-                        nixpkgs.config = nixpkgsConfig;
-                        nixpkgs.overlays = [
-                          rust-overlay.overlays.default
-                          firge-nix.overlays.default
-                        ];
-                      }
-                    )
+                    (_: {
+                      nixpkgs.config = nixpkgsConfig;
+                      nixpkgs.overlays = [
+                        rust-overlay.overlays.default
+                        firge-nix.overlays.default
+                      ];
+                    })
                     sops-nix.nixosModules.sops
                     disko.nixosModules.default
                     ./nixos/configuration.nix
@@ -274,11 +268,26 @@
           treefmt.config = {
             projectRootFile = "flake.nix";
             programs = {
+              actionlint.enable = true;
               deadnix.enable = true;
               nixfmt.enable = true;
               prettier.enable = true;
               shellcheck.enable = true;
               shfmt.enable = true;
+              zizmor.enable = true;
+
+              statix = {
+                enable = true;
+                disabled-lints = [ "eta_reduction" ];
+              };
+              typos = {
+                enable = true;
+                excludes = [
+                  "key/*"
+                  "mozc/*"
+                  "secrets/*"
+                ];
+              };
             };
             settings.formatter = {
               editorconfig-checker = {

@@ -1,7 +1,6 @@
 # 初回設定時に手動で実行
 # sudo smbpasswd -a ncaq
-{ ... }:
-{
+_: {
   services.samba = {
     enable = true;
     openFirewall = true;
@@ -24,7 +23,7 @@
 
       "chihiro" = {
         "path" = "/mnt/noa/chihiro";
-        "browseable" = "yes";
+        "browsable" = "yes";
         "read only" = "no"; # 書き込み可能に設定
         "guest ok" = "no";
         "valid users" = "ncaq";

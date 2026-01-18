@@ -1,7 +1,6 @@
 # GNU Readline の設定。
 # `.inputrc`の設定でもある。
-{ ... }:
-{
+_: {
   programs.readline = {
     enable = true;
 

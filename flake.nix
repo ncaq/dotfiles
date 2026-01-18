@@ -150,12 +150,13 @@
                   };
                   extraSpecialArgs = {
                     inherit
-                      inputs
-                      importDirModules
-                      username
-                      www-ncaq-net
-                      dot-xmonad
                       claude-desktop
+                      dot-xmonad
+                      importDirModules
+                      inputs
+                      www-ncaq-net
+
+                      username
                       ;
                     pkgs-unstable = import nixpkgs-unstable {
                       system = "x86_64-linux";
@@ -194,14 +195,15 @@
                 let
                   specialArgs = {
                     inherit
-                      inputs
+                      claude-desktop
+                      dot-xmonad
                       importDirModules
+                      inputs
+                      www-ncaq-net
+
                       hostName
                       nixos-hardware
                       nixos-wsl
-                      www-ncaq-net
-                      dot-xmonad
-                      claude-desktop
                       ;
                     pkgs-unstable = import nixpkgs-unstable {
                       system = "x86_64-linux";

@@ -23,7 +23,7 @@ _: {
 
       "chihiro" = {
         "path" = "/mnt/noa/chihiro";
-        "browseable" = "yes";
+        "browsable" = "yes";
         "read only" = "no"; # 書き込み可能に設定
         "guest ok" = "no";
         "valid users" = "ncaq";

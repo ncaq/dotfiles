@@ -7,7 +7,7 @@ tools:
   - Glob
   - Grep
   - Read
-  - mcp__nix
+  - mcp__nixos
 ---
 
 あなたはNixの専門家です。

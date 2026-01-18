@@ -32,7 +32,7 @@ tools:
   - mcp__github__search_repositories
   - mcp__mdn
   - mcp__microsoft-learn
-  - mcp__nix
+  - mcp__nixos
   - mcp__playwright__browser_click
   - mcp__playwright__browser_console_messages
   - mcp__playwright__browser_navigate

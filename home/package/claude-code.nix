@@ -154,7 +154,7 @@ in
         type = "stdio";
         command = lib.getExe backlog-mcp-server-wrapper;
       };
-      nix = {
+      nixos = {
         type = "stdio";
         command = lib.getExe pkgs.mcp-nixos;
       };
@@ -390,7 +390,7 @@ in
           "mcp__github__search_users"
           "mcp__mdn"
           "mcp__microsoft-learn"
-          "mcp__nix"
+          "mcp__nixos"
           "mcp__playwright__browser_console_messages"
           "mcp__playwright__browser_network_requests"
           "mcp__playwright__browser_snapshot"

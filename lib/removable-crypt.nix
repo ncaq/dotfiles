@@ -23,13 +23,13 @@ let
       name = "mnt-${name}";
       runtimeInputs = [ pkgs.udisks ];
       text = ''
-        device-path="/dev/disk/by-id/${device.deviceId}"
-        if [[ ! -e "$device" ]]; then
-          echo "error: device not found: $device-path" >&2
+        device_path="/dev/disk/by-id/${device.deviceId}"
+        if [[ ! -e "$device_path" ]]; then
+          echo "error: device not found: $device_path" >&2
           exit 1
         fi
-        udisksctl unlock -b "$device-path"
-        udisksctl mount -b "$device-path"
+        udisksctl unlock -b "$device_path"
+        udisksctl mount -b "$device_path"
       '';
     };
 
@@ -39,13 +39,13 @@ let
       name = "umnt-${name}";
       runtimeInputs = [ pkgs.udisks ];
       text = ''
-        device-path="/dev/disk/by-id/${device.deviceId}"
-        if [[ ! -e "$device" ]]; then
-          echo "error: device not found: $device-path" >&2
+        device_path="/dev/disk/by-id/${device.deviceId}"
+        if [[ ! -e "$device_path" ]]; then
+          echo "error: device not found: $device_path" >&2
           exit 1
         fi
-        udisksctl unmount -b "$device-path"
-        udisksctl lock -b "$device-path"
+        udisksctl unmount -b "$device_path"
+        udisksctl lock -b "$device_path"
       '';
     };
 

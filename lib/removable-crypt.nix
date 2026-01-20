@@ -11,7 +11,7 @@ let
     options = {
       deviceId = lib.mkOption {
         type = lib.types.str;
-        description = "id of under `/dev/disk/by-id/`";
+        description = "ID of the device under `/dev/disk/by-id/`";
         example = "usb-JetFlash_Transcend_32GB_25XSK57XTBIHQODC-0:0-part1";
       };
     };

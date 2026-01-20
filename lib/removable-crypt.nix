@@ -71,6 +71,6 @@ in
   };
 
   config = lib.mkIf (cfg.enable && cfg.devices != { }) {
-    home.packages = allCommands;
+    environment.systemPackages = allCommands;
   };
 }

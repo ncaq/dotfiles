@@ -49,7 +49,7 @@ let
         device_path="/dev/disk/by-id/${device.deviceId}"
         mapper_name="${name}"
         target_user="''${SUDO_USER:-$USER}"
-        mount_point="/run/media/$target_user/${name}"
+        mount_point="/mnt/${name}"
 
         if [[ ! -e "$device_path" ]]; then
           echo "error: device not found: $device_path" >&2
@@ -89,7 +89,7 @@ let
 
         mapper_name="${name}"
         target_user="''${SUDO_USER:-$USER}"
-        mount_point="/run/media/$target_user/${name}"
+        mount_point="/mnt/${name}"
 
         umount "$mount_point"
         rmdir "$mount_point"

@@ -26,18 +26,24 @@ let
         pkgs.util-linux
       ];
       text = ''
+        if [[ $EUID -ne 0 ]]; then
+          echo "error: must be run as root (use sudo)" >&2
+          exit 1
+        fi
+
         device_path="/dev/disk/by-id/${device.deviceId}"
         mapper_name="${name}"
-        mount_point="/run/media/$USER/${name}"
+        target_user="''${SUDO_USER:-$USER}"
+        mount_point="/run/media/$target_user/${name}"
 
         if [[ ! -e "$device_path" ]]; then
           echo "error: device not found: $device_path" >&2
           exit 1
         fi
 
-        sudo cryptsetup open "$device_path" "$mapper_name"
+        cryptsetup open "$device_path" "$mapper_name"
         mkdir -p "$mount_point"
-        sudo mount "/dev/mapper/$mapper_name" "$mount_point"
+        mount "/dev/mapper/$mapper_name" "$mount_point"
       '';
     };
 
@@ -50,12 +56,18 @@ let
         pkgs.util-linux
       ];
       text = ''
-        mapper_name="${name}"
-        mount_point="/run/media/$USER/${name}"
+        if [[ $EUID -ne 0 ]]; then
+          echo "error: must be run as root (use sudo)" >&2
+          exit 1
+        fi
 
-        sudo umount "$mount_point"
+        mapper_name="${name}"
+        target_user="''${SUDO_USER:-$USER}"
+        mount_point="/run/media/$target_user/${name}"
+
+        umount "$mount_point"
         rmdir "$mount_point"
-        sudo cryptsetup close "$mapper_name"
+        cryptsetup close "$mapper_name"
       '';
     };
 

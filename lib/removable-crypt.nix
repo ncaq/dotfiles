@@ -12,7 +12,7 @@ let
       deviceId = lib.mkOption {
         type = lib.types.str;
         description = "id of under `/dev/disk/by-id/`";
-        example = "usb-SanDisk_Extreme_Pro_4C530001234567891234-0:0-part1";
+        example = "usb-JetFlash_Transcend_32GB_25XSK57XTBIHQODC-0:0-part1";
       };
     };
   };

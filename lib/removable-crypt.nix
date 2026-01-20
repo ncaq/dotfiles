@@ -60,10 +60,12 @@ in
 
     devices = lib.mkOption {
       type = lib.types.attrsOf deviceType;
-      default = [ ];
+      default = { };
       description = "manage these removable encrypted devices";
       example = lib.literalExpression ''
-        [ game = { deviceId = "usb-SanDisk_Extreme_Pro_XXXX-0:0-part1"; }; ]
+        {
+          two-thousand.deviceId = "usb-JetFlash_Transcend_32GB_25XSK57XTBIHQODC-0:0-part1";
+        };
       '';
     };
   };

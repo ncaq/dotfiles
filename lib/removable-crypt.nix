@@ -26,8 +26,8 @@ let
         pkgs.util-linux
       ];
       text = ''
-        if [[ $EUID -ne 0 ]]; then
-          echo "error: must be run as root (use sudo)" >&2
+        if [[ ! -w /dev/mapper/control ]]; then
+          echo "error: no permission to access /dev/mapper/control (use sudo)" >&2
           exit 1
         fi
 
@@ -56,8 +56,8 @@ let
         pkgs.util-linux
       ];
       text = ''
-        if [[ $EUID -ne 0 ]]; then
-          echo "error: must be run as root (use sudo)" >&2
+        if [[ ! -w /dev/mapper/control ]]; then
+          echo "error: no permission to access /dev/mapper/control (use sudo)" >&2
           exit 1
         fi
 

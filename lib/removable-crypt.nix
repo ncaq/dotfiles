@@ -21,31 +21,41 @@ let
     name: device:
     pkgs.writeShellApplication {
       name = "mnt-${name}";
-      runtimeInputs = [ pkgs.udisks ];
+      runtimeInputs = [
+        pkgs.cryptsetup
+        pkgs.util-linux
+      ];
       text = ''
         device_path="/dev/disk/by-id/${device.deviceId}"
+        mapper_name="${name}"
+        mount_point="/run/media/$USER/${name}"
+
         if [[ ! -e "$device_path" ]]; then
           echo "error: device not found: $device_path" >&2
           exit 1
         fi
-        udisksctl unlock -b "$device_path"
-        udisksctl mount -b "$device_path"
+
+        sudo cryptsetup open "$device_path" "$mapper_name"
+        mkdir -p "$mount_point"
+        sudo mount "/dev/mapper/$mapper_name" "$mount_point"
       '';
     };
 
   mkUnmountCommand =
-    name: device:
+    name: _device:
     pkgs.writeShellApplication {
       name = "umnt-${name}";
-      runtimeInputs = [ pkgs.udisks ];
+      runtimeInputs = [
+        pkgs.cryptsetup
+        pkgs.util-linux
+      ];
       text = ''
-        device_path="/dev/disk/by-id/${device.deviceId}"
-        if [[ ! -e "$device_path" ]]; then
-          echo "error: device not found: $device_path" >&2
-          exit 1
-        fi
-        udisksctl unmount -b "$device_path"
-        udisksctl lock -b "$device_path"
+        mapper_name="${name}"
+        mount_point="/run/media/$USER/${name}"
+
+        sudo umount "$mount_point"
+        rmdir "$mount_point"
+        sudo cryptsetup close "$mapper_name"
       '';
     };
 

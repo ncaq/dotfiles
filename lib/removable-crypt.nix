@@ -43,7 +43,9 @@ let
 
         cryptsetup open "$device_path" "$mapper_name"
         mkdir -p "$mount_point"
+        chown "$target_user:$target_user" "$mount_point"
         mount "/dev/mapper/$mapper_name" "$mount_point"
+        chown "$target_user:$target_user" "$mount_point"
       '';
     };
 

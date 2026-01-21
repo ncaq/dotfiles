@@ -88,7 +88,6 @@ let
         fi
 
         mapper_name="${name}"
-        target_user="''${SUDO_USER:-$USER}"
         mount_point="/mnt/${name}"
 
         umount "$mount_point"

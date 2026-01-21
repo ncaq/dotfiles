@@ -58,7 +58,7 @@ let
 
         cryptsetup open "$device_path" "$mapper_name"
         mkdir -p "$mount_point"
-        chown "$target_user:$target_user" "$mount_point"
+        chown "$target_user:" "$mount_point"
 
         fs_type=$(blkid -s TYPE -o value "/dev/mapper/$mapper_name")
         if [[ "$fs_type" == "btrfs" ]]; then
@@ -69,7 +69,7 @@ let
           mount -o "${lib.concatStringsSep "," device.mountOptions}" "/dev/mapper/$mapper_name" "$mount_point"
         fi
 
-        chown "$target_user:$target_user" "$mount_point"
+        chown "$target_user:" "$mount_point"
       '';
     };
 

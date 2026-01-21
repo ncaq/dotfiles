@@ -89,10 +89,28 @@ let
 
         mapper_name="${name}"
         mount_point="/mnt/${name}"
+        has_error=0
 
-        umount "$mount_point"
-        rmdir "$mount_point"
-        cryptsetup close "$mapper_name"
+        if ! umount "$mount_point" 2>&1; then
+          echo "warning: failed to unmount $mount_point" >&2
+          has_error=1
+        fi
+
+        if [[ -d "$mount_point" ]]; then
+          if ! rmdir "$mount_point" 2>&1; then
+            echo "warning: failed to remove $mount_point" >&2
+            has_error=1
+          fi
+        fi
+
+        if [[ -e "/dev/mapper/$mapper_name" ]]; then
+          if ! cryptsetup close "$mapper_name" 2>&1; then
+            echo "warning: failed to close $mapper_name" >&2
+            has_error=1
+          fi
+        fi
+
+        exit "$has_error"
       '';
     };
 

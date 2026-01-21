@@ -7,10 +7,16 @@
 let
   cfg = config.programs.removable-crypt;
 
+  dmNamePattern = "[a-zA-Z0-9][a-zA-Z0-9#+=@_.:-]*";
+
+  deviceIdType = lib.types.strMatching dmNamePattern // {
+    description = "device ID under /dev/disk/by-id/ (alphanumeric, #+-.:=@_)";
+  };
+
   deviceType = lib.types.submodule {
     options = {
       deviceId = lib.mkOption {
-        type = lib.types.str;
+        type = deviceIdType;
         description = "ID of the device under `/dev/disk/by-id/`";
         example = "usb-JetFlash_Transcend_32GB_25XSK57XTBIHQODC-0:0-part1";
       };
@@ -136,6 +142,22 @@ in
   };
 
   config = lib.mkIf (cfg.enable && cfg.devices != { }) {
+    assertions =
+      let
+        invalidNames = lib.filter (name: builtins.match dmNamePattern name == null) (
+          lib.attrNames cfg.devices
+        );
+      in
+      [
+        {
+          assertion = invalidNames == [ ];
+          message = ''
+            programs.removable-crypt.devices:
+            invalid device name(s): ${lib.concatStringsSep ", " invalidNames}.
+            Names must match ${dmNamePattern}.
+          '';
+        }
+      ];
     environment.systemPackages = allCommands;
   };
 }

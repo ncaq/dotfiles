@@ -45,7 +45,7 @@ jobs:
         uses: anthropics/claude-code-action@a017b830c03e23789b11fb69ed571ea61c12e45c # v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          plugin_marketplaces: "https://github.com/ncaq/claude-code.git"
+          plugin_marketplaces: "https://github.com/ncaq/claude-code.git#code-review-when-new-commit"
           plugins: "code-review@claude-code-plugins"
           prompt: "/code-review:code-review --comment ${{ github.repository }}/pull/${{ github.event.pull_request.number }}"
           claude_args: --model opus

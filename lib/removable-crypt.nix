@@ -57,12 +57,30 @@ let
         target_user="''${SUDO_USER:-$USER}"
         mount_point="/mnt/${name}"
 
+        mapper_opened=0
+        mounted=0
+
+        cleanup() {
+          if [[ "$mounted" -eq 1 ]]; then
+            umount "$mount_point" 2>/dev/null || true
+          fi
+          if [[ -d "$mount_point" ]]; then
+            rmdir "$mount_point" 2>/dev/null || true
+          fi
+          if [[ "$mapper_opened" -eq 1 ]]; then
+            cryptsetup close "$mapper_name" 2>/dev/null || true
+          fi
+        }
+        trap cleanup EXIT
+
         if [[ ! -e "$device_path" ]]; then
           echo "error: device not found: $device_path" >&2
           exit 1
         fi
 
         cryptsetup open "$device_path" "$mapper_name"
+        mapper_opened=1
+
         mkdir -p "$mount_point"
         chown "$target_user:" "$mount_point"
 
@@ -74,8 +92,12 @@ let
         else
           mount -o "${lib.concatStringsSep "," device.mountOptions}" "/dev/mapper/$mapper_name" "$mount_point"
         fi
+        mounted=1
 
         chown "$target_user:" "$mount_point"
+
+        # Success - disable cleanup
+        trap - EXIT
       '';
     };
 

@@ -1,11 +1,10 @@
 {
   inputs,
-  hostName ? null,
   ...
 }:
 let
   keyConfig = import ../../key;
-  identityKey = keyConfig.identityKeys.${hostName} or null;
+  inherit (keyConfig) identityKey;
 in
 {
   imports = [ inputs.git-hooks.modules.homeManager.default ];

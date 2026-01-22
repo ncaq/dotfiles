@@ -8,12 +8,10 @@
     bcache-tools
     cachix
     cloudflared
-    cryptsetup
     ddcutil
     dig
     discord
     dmd
-    duperemove
     edid-decode
     efibootmgr
     eog
@@ -22,7 +20,6 @@
     ffmpeg
     file
     gimp3
-    gnome.gvfs
     htop
     i2c-tools
     inkscape
@@ -35,7 +32,6 @@
     nautilus
     nkf
     nmap
-    ntfs3g
     nvtopPackages.full
     openssl
     opusTools
@@ -53,7 +49,6 @@
     shellcheck
     slack
     sqlite
-    squashfsTools
     sysstat
     trashy
     tree

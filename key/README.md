@@ -6,16 +6,13 @@
 
 ## 鍵の構成
 
-- 暗号鍵: 全端末で共通の副鍵を使用
-- 署名鍵: 各端末ごとに個別の副鍵を使用
-  - ついでに認証鍵も署名鍵に紐付けています
+- 暗号副鍵: 全端末で共通
+- 署名副鍵: 全端末で共通(認証機能も付与)
 
-署名鍵を端末ごとに分けている理由は、
-漏洩時にどの端末から流出したか特定しやすいため。
+全副鍵を共通にしている理由:
 
-暗号鍵を共通にしている理由は、
-データを送る側からすると暗号鍵が異なると、
-どの暗号鍵に向けて暗号化すれば良いか分からなくなるため。
+- 暗号鍵: データを送る側からするとどの暗号鍵に向けて暗号化すれば良いか分からなくなるため
+- 署名鍵: 端末ごとに分けると管理が煩雑になり、実用上のメリットより運用コストが上回るため
 
 ## 副鍵はパスフレーズなし
 
@@ -33,9 +30,12 @@
 そして私が脳内に記憶できる程度のパスフレーズは脆弱です。
 結果としてセキュリティ上の意味はほぼないのに手間だけ増える状態になってしまいます。
 
-## 新しい副鍵の追加手順
+## 副鍵の更新手順
 
-### 副鍵生成手順
+副鍵の有効期限が近づいた場合や、
+新しい副鍵に更新する場合の手順です。
+
+### 副鍵生成
 
 主鍵のデータを隔離ストレージからマウント。
 
@@ -60,7 +60,7 @@ gpgconf --kill gpg-agent
 gpg --import master-secret-key.asc
 ```
 
-副鍵を追加。
+署名・認証副鍵を追加。
 
 ```zsh
 gpg --quick-add-key 7DDE3BC405DC58D94BF661D342248C7D0FB73D57 ed25519 sign,auth 5y
@@ -75,9 +75,10 @@ gpg --list-keys --with-subkey-fingerprint --full-timestrings 7DDE3BC405DC58D94BF
 ```
 
 副鍵をエクスポート。
+暗号副鍵と署名認証副鍵の両方を含めます。
 
 ```zsh
-gpg --export-secret-subkeys --armor <暗号副鍵のフィンガープリント>! <署名認証副鍵のフィンガープリント>! > subkeys-<副鍵の名前>.asc
+gpg --export-secret-subkeys --armor <暗号副鍵のフィンガープリント>! <署名認証副鍵のフィンガープリント>! > subkeys.asc
 ```
 
 公開鍵をエクスポート。
@@ -97,12 +98,12 @@ unset GNUPGHOME
 
 隔離ストレージをアンマウントして保存場所に戻します。
 
-### 端末にコピー
+### 端末にimport
 
-新しい副鍵を使う端末にコピーしてimportします。
+副鍵ファイルを端末にコピーしてimportします。
 
 ```zsh
-gpg --import /path/to/subkeys-<副鍵の名前>.asc
+gpg --import /path/to/subkeys.asc
 ```
 
 パスフレーズを削除します。
@@ -122,6 +123,8 @@ gpg> passwd
 gpg> save
 ```
 
+動作確認。
+
 ```zsh
 gpgconf --kill gpg-agent
 echo "test" | gpg --sign --armor
@@ -129,12 +132,12 @@ echo "test" | gpg --sign --armor
 
 ### dotfiles更新
 
-[ncaq-public-key.asc](./ncaq-public-key.asc)の新しい内容と、
-[default.nix](./default.nix)の`identityKeys`を更新して、
-それをコミットしてPRを作ってマージしてください。
+[ncaq-public-key.asc](./ncaq-public-key.asc)と、
+[default.nix](./default.nix)の`identityKey`を更新して、
+コミットしてPRを作ってマージしてください。
 
 その後`./install.sh`を実行して、
-その設定の鍵を更新してください。
+端末の鍵を更新してください。
 
 ## 公開鍵の更新先
 

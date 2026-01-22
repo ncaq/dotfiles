@@ -1,11 +1,10 @@
 {
   inputs,
-  hostName ? null,
   ...
 }:
 let
   keyConfig = import ../../key;
-  identityKey = keyConfig.identityKeys.${hostName} or null;
+  inherit (keyConfig) identityKey;
 in
 {
   imports = [ inputs.git-hooks.modules.homeManager.default ];
@@ -15,7 +14,7 @@ in
       lfs.enable = true;
       signing = {
         key = identityKey;
-        signByDefault = identityKey != null;
+        signByDefault = true;
       };
       settings = {
         user = {

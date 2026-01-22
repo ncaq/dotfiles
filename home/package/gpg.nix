@@ -25,6 +25,11 @@ in
     # 証明書を持っていることが重要なのであって、パスフレーズを入力させることにあまり意味は無いと考えています。
     defaultCacheTtl = 157680000; # 5年(60 * 60 * 24 * 365 * 5)
     maxCacheTtl = 157680000;
+    # SSH認証に使用するGPGサブキーのkeygrip。
+    # `gpg --list-keys --with-keygrip`で[A]能力を持つサブキーのkeygripを確認できる。
+    sshKeys = [
+      "29C212A380A9E2977752FA41C35A2F9BF6CA24E2" # 認証サブキー 0xACA66AB679E75544
+    ];
   };
   home.packages = with pkgs; [
     paperkey

@@ -37,27 +37,12 @@
 
 ### 副鍵生成
 
-主鍵のデータを隔離ストレージからマウント。
-
-クリーンな`GNUPGHOME`を設定。
-
-```zsh
-export GNUPGHOME=$(mktemp -d)
-```
-
-gpg-agentを再起動。
+主鍵が保存されているUSBメモリをマウントし、
+`GNUPGHOME`を設定。
 
 ```zsh
-cat > "$GNUPGHOME/gpg-agent.conf" << EOF
-pinentry-program $(which pinentry-qt)
-EOF
+export GNUPGHOME=/mnt/<USBメモリ>/.gnupg
 gpgconf --kill gpg-agent
-```
-
-主鍵をimport。
-
-```zsh
-gpg --import master-secret-key.asc
 ```
 
 署名・認証副鍵を追加。
@@ -78,7 +63,7 @@ gpg --list-keys --with-subkey-fingerprint --full-timestrings 7DDE3BC405DC58D94BF
 暗号副鍵と署名認証副鍵の両方を含めます。
 
 ```zsh
-gpg --export-secret-subkeys --armor <暗号副鍵のフィンガープリント>! <署名認証副鍵のフィンガープリント>! > subkeys.asc
+gpg --export-secret-subkeys --armor <暗号副鍵のフィンガープリント>! <署名認証副鍵のフィンガープリント>! > subkeys-secret.asc
 ```
 
 公開鍵をエクスポート。
@@ -87,23 +72,19 @@ gpg --export-secret-subkeys --armor <暗号副鍵のフィンガープリント>
 gpg --export --armor 7DDE3BC405DC58D94BF661D342248C7D0FB73D57 > ~/dotfiles/key/ncaq-public-key.asc
 ```
 
-更新した鍵データを全て隔離ストレージにコピーしてアップデート。
-具体的な手順は隔離ストレージの運用方法に従ってください。
-
-`GNUPGHOME`を元に戻します。
+`GNUPGHOME`を元に戻してUSBメモリをアンマウント。
 
 ```zsh
 unset GNUPGHOME
+gpgconf --kill gpg-agent
 ```
-
-隔離ストレージをアンマウントして保存場所に戻します。
 
 ### 端末にimport
 
-副鍵ファイルを端末にコピーしてimportします。
+副鍵をimportします。
 
 ```zsh
-gpg --import /path/to/subkeys.asc
+gpg --import subkeys-secret.asc
 ```
 
 パスフレーズを削除します。

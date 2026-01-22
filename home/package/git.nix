@@ -14,7 +14,7 @@ in
       lfs.enable = true;
       signing = {
         key = identityKey;
-        signByDefault = identityKey != null;
+        signByDefault = true;
       };
       settings = {
         user = {

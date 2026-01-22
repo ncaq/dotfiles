@@ -42,9 +42,9 @@ let
     name: device:
     pkgs.writeShellApplication {
       name = "mnt-${name}";
-      runtimeInputs = [
-        pkgs.cryptsetup
-        pkgs.util-linux
+      runtimeInputs = with pkgs; [
+        systemd
+        util-linux
       ];
       text = ''
         if [[ ! -w /dev/mapper/control ]]; then
@@ -57,7 +57,7 @@ let
         target_user="''${SUDO_USER:-$USER}"
         mount_point="/mnt/${name}"
 
-        mapper_opened=0
+        mapper_attached=0
         mounted=0
 
         cleanup() {
@@ -67,8 +67,8 @@ let
           if [[ -d "$mount_point" ]]; then
             rmdir "$mount_point" 2>/dev/null || true
           fi
-          if [[ "$mapper_opened" -eq 1 ]]; then
-            cryptsetup close "$mapper_name" 2>/dev/null || true
+          if [[ "$mapper_attached" -eq 1 ]]; then
+            systemd-cryptsetup detach "$mapper_name" 2>/dev/null || true
           fi
         }
         trap cleanup EXIT
@@ -78,8 +78,8 @@ let
           exit 1
         fi
 
-        cryptsetup open "$device_path" "$mapper_name"
-        mapper_opened=1
+        systemd-cryptsetup attach "$mapper_name" "$device_path"
+        mapper_attached=1
 
         mkdir -p "$mount_point"
         chown "$target_user:" "$mount_point"
@@ -105,9 +105,9 @@ let
     name: _device:
     pkgs.writeShellApplication {
       name = "umnt-${name}";
-      runtimeInputs = [
-        pkgs.cryptsetup
-        pkgs.util-linux
+      runtimeInputs = with pkgs; [
+        systemd
+        util-linux
       ];
       text = ''
         if [[ ! -w /dev/mapper/control ]]; then
@@ -132,8 +132,8 @@ let
         fi
 
         if [[ -e "/dev/mapper/$mapper_name" ]]; then
-          if ! cryptsetup close "$mapper_name"; then
-            echo "warning: failed to close $mapper_name" >&2
+          if ! systemd-cryptsetup detach "$mapper_name"; then
+            echo "warning: failed to detach $mapper_name" >&2
             has_error=1
           fi
         fi

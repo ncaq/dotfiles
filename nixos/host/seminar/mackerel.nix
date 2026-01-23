@@ -39,6 +39,8 @@ in
     settings = {
       # エージェント自身のメモリ使用量も収集
       diagnostic = true;
+      # ファイルシステムをデバイス名(dm-1等)ではなくマウントポイント名で表示
+      filesystems.use_mountpoint = true;
     };
   };
 }

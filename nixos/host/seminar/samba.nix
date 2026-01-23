@@ -1,6 +1,36 @@
-# 初回設定時に手動で実行
-# sudo smbpasswd -a ncaq
-_: {
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+{
+  # Sambaパスワードをsopsで管理
+  sops.secrets."samba-password" = {
+    sopsFile = ../../../secrets/seminar/samba.yaml;
+    key = "password";
+    mode = "0400";
+  };
+
+  # Sambaパスワードを自動設定するサービス
+  systemd.services.samba-password-setup = {
+    description = "Setup Samba password for ncaq user";
+    requires = [ "samba-smbd.service" ];
+    bindsTo = [ "samba-smbd.service" ];
+    after = [ "samba-smbd.service" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      set -euo pipefail
+      PASSWORD=$(cat ${config.sops.secrets."samba-password".path})
+      # smbpasswdはパスワードを2回(確認用)読み取る
+      (echo "$PASSWORD"; echo "$PASSWORD") | ${lib.getExe' pkgs.samba "smbpasswd"} -a -s ncaq
+    '';
+  };
+
   services.samba = {
     enable = true;
     openFirewall = true;

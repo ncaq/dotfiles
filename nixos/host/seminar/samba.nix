@@ -24,6 +24,7 @@
       RemainAfterExit = true;
     };
     script = ''
+      set -euo pipefail
       PASSWORD=$(cat ${config.sops.secrets."samba-password".path})
       # smbpasswdはパスワードを2回(確認用)読み取る
       (echo "$PASSWORD"; echo "$PASSWORD") | ${lib.getExe' pkgs.samba "smbpasswd"} -a -s ncaq

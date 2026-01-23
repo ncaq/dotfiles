@@ -16,6 +16,7 @@
   systemd.services.samba-password-setup = {
     description = "Setup Samba password for ncaq user";
     requires = [ "samba-smbd.service" ];
+    bindsTo = [ "samba-smbd.service" ];
     after = [ "samba-smbd.service" ];
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {

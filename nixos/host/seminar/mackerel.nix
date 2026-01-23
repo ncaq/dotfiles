@@ -2,40 +2,24 @@
   config,
   ...
 }:
-let
-  apiKeyConfigPath = "/run/mackerel-agent/apikey.conf";
-in
 {
   # Mackerel APIキー(純粋なキー文字列)をsopsで管理
   sops.secrets."mackerel-api-key" = {
     sopsFile = ../../../secrets/seminar/mackerel.yaml;
     key = "api_key";
-    mode = "0400";
   };
 
-  # sopsシークレットからTOML形式の設定ファイルを生成
-  systemd.services.mackerel-agent-apikey-setup = {
-    description = "Generate Mackerel API key config file";
-    before = [ "mackerel-agent.service" ];
-    requiredBy = [ "mackerel-agent.service" ];
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-      RuntimeDirectory = "mackerel-agent";
-      RuntimeDirectoryMode = "0700";
-    };
-    script = ''
-      set -euo pipefail
-      API_KEY=$(cat ${config.sops.secrets."mackerel-api-key".path})
-      printf 'apikey = "%s"\n' "$API_KEY" > ${apiKeyConfigPath}
-      chmod 0400 ${apiKeyConfigPath}
+  # sops.templatesでTOML形式の設定ファイルを生成
+  sops.templates."mackerel-api-key.conf" = {
+    content = ''
+      apikey = "${config.sops.placeholder."mackerel-api-key"}"
     '';
+    mode = "0400";
   };
 
   services.mackerel-agent = {
     enable = true;
-    # 生成されたTOML形式の設定ファイルを使用
-    apiKeyFile = apiKeyConfigPath;
+    apiKeyFile = config.sops.templates."mackerel-api-key.conf".path;
     settings = {
       # エージェント自身のメモリ使用量も収集
       diagnostic = true;

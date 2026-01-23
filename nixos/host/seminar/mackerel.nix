@@ -19,6 +19,7 @@
 
   services.mackerel-agent = {
     enable = true;
+    runAsRoot = true;
     apiKeyFile = config.sops.templates."mackerel-api-key.conf".path;
     settings = {
       # エージェント自身のメモリ使用量も収集

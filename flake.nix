@@ -41,14 +41,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    haskellNix = {
-      url = "github:input-output-hk/haskell.nix";
-      inputs = {
-        nixpkgs.follows = "nixpkgs";
-        nixpkgs-unstable.follows = "nixpkgs-unstable";
-      };
-    };
-
     git-hooks = {
       url = "github:ncaq/git-hooks";
       inputs = {
@@ -67,7 +59,10 @@
       url = "github:ncaq/.xmonad";
       inputs = {
         nixpkgs.follows = "nixpkgs";
-        haskellNix.follows = "haskellNix";
+        haskellNix.inputs = {
+          nixpkgs-2505.follows = "nixpkgs-2505";
+          nixpkgs-unstable.follows = "nixpkgs-unstable";
+        };
         flake-utils.follows = "flake-utils";
         treefmt-nix.follows = "treefmt-nix";
       };

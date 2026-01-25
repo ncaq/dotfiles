@@ -20,7 +20,7 @@ let
         <fontconfig>
       '';
       body = lib.concatStringsSep "\n" (lib.mapAttrsToList generateMatchEntry aliases);
-      footer = "'</fontconfig>";
+      footer = "</fontconfig>";
     in
     header + "\n" + body + "\n" + footer;
 in

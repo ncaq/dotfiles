@@ -18,6 +18,7 @@ buildDotnetModule rec {
     hash = "sha256-dFy7qW8utF2ZV/XSHnm0matYk3NctgcqroahYHA1vOE=";
   };
 
+  # ビルドには.NET 10 SDKを使用しますが、ランタイムは.NET 9が想定されています。
   dotnet-sdk = dotnetCorePackages.sdk_10_0;
   dotnet-runtime = dotnetCorePackages.aspnetcore_9_0;
 

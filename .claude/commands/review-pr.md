@@ -1,8 +1,7 @@
 ---
 allowed-tools:
-  - Bash(gh pr comment:*)
-  - Bash(gh pr diff:*)
-  - Bash(gh pr view:*)
+  - Bash(gh issue:*)
+  - Bash(gh pr:*)
   - mcp__github
 description: Review a pull request
 ---

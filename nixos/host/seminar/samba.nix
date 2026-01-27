@@ -45,10 +45,6 @@
         # セキュリティ設定
         "security" = "user"; # ユーザー認証必須
         "map to guest" = "never"; # ゲストアクセス禁止
-        # SMB3以降のみ許可
-        "client min protocol" = "SMB3";
-        "server max protocol" = "SMB3_11";
-        "server min protocol" = "SMB3";
       };
 
       "chihiro" = {

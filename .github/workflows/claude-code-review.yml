@@ -2,7 +2,7 @@ name: Claude Code Review
 
 on:
   pull_request:
-    types: [opened, synchronize]
+    types: [opened, synchronize, ready_for_review, reopened]
     # Optional: Only run on specific file changes
     # paths:
     #   - "src/**/*.ts"
@@ -20,11 +20,24 @@ jobs:
     #   github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR'
 
     runs-on: ubuntu-24.04
+
+    timeout-minutes: 10
+
     permissions:
+      actions: read
+      attestations: read
+      checks: read
       contents: read
-      pull-requests: write
-      issues: read
+      deployments: read
+      discussions: read
       id-token: write
+      issues: read
+      packages: read
+      pages: read
+      pull-requests: write
+      repository-projects: read
+      security-events: read
+      statuses: read
 
     steps:
       - name: Checkout repository
@@ -45,24 +58,7 @@ jobs:
         uses: anthropics/claude-code-action@f64219702d7454cf29fe32a74104be6ed43dc637 # v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          prompt: |
-            REPO: ${{ github.repository }}
-            PR NUMBER: ${{ github.event.pull_request.number }}
-
-            Please review this pull request and provide feedback on:
-            - Code quality and best practices
-            - Potential bugs or issues
-            - Performance considerations
-            - Security concerns
-            - Test coverage
-
-            Use the repository's CLAUDE.md for guidance on style and conventions.
-            Be constructive and helpful in your feedback.
-
-            Use `gh pr comment` with your Bash tool to leave your review as a comment on the PR.
-
-          # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
-          # or https://code.claude.com/docs/en/cli-reference for available options
+          prompt: "/review-pr REPO: ${{ github.repository }} PR_NUMBER: ${{ github.event.pull_request.number }}"
           claude_args: >-
             --model opus --allowed-tools "
             Bash(gh issue list:*),
@@ -71,5 +67,14 @@ jobs:
             Bash(gh pr diff:*),
             Bash(gh pr list:*),
             Bash(gh pr view:*),
-            Bash(gh search:*)
+            Bash(gh search:*),
+            Glob,
+            Grep,
+            Read,
+            TodoWrite,
+            WebFetch,
+            WebSearch,
+            mcp__github
             "
+          # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
+          # or https://code.claude.com/docs/en/cli-reference for available options

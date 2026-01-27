@@ -21,7 +21,7 @@ jobs:
 
     runs-on: ubuntu-24.04
 
-    timeout-minutes: 10
+    timeout-minutes: 30
 
     permissions:
       actions: read
@@ -61,12 +61,8 @@ jobs:
           prompt: "/review-pr REPO: ${{ github.repository }} PR_NUMBER: ${{ github.event.pull_request.number }}"
           claude_args: >-
             --model opus --allowed-tools "
-            Bash(gh issue list:*),
-            Bash(gh issue view:*),
-            Bash(gh pr comment:*),
-            Bash(gh pr diff:*),
-            Bash(gh pr list:*),
-            Bash(gh pr view:*),
+            Bash(gh issue:*),
+            Bash(gh pr:*),
             Bash(gh search:*),
             Glob,
             Grep,
@@ -74,7 +70,8 @@ jobs:
             TodoWrite,
             WebFetch,
             WebSearch,
-            mcp__github
+            mcp__github,
+            mcp__github_inline_comment__create_inline_comment
             "
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://code.claude.com/docs/en/cli-reference for available options

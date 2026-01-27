@@ -3,6 +3,7 @@ allowed-tools:
   - Bash(gh issue:*)
   - Bash(gh pr:*)
   - mcp__github
+  - mcp__github_inline_comment__create_inline_comment
 description: Review a pull request
 ---
 

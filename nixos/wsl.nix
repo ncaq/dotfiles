@@ -1,4 +1,9 @@
-{ nixos-wsl, username, ... }:
+{
+  pkgs,
+  nixos-wsl,
+  username,
+  ...
+}:
 {
   imports = [ nixos-wsl.nixosModules.default ];
   wsl = {
@@ -11,4 +16,8 @@
 
     useWindowsDriver = true;
   };
+  environment.systemPackages = with pkgs; [
+    wsl-open
+    wslu
+  ];
 }

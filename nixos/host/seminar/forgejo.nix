@@ -14,6 +14,13 @@ in
     privateNetwork = true;
     hostAddress = addr.host;
     localAddress = addr.container;
+    forwardPorts = [
+      {
+        containerPort = 2222;
+        hostPort = 2222;
+        protocol = "tcp";
+      }
+    ];
     bindMounts = {
       "/run/postgresql" = {
         hostPath = "/run/postgresql";
@@ -52,7 +59,7 @@ in
               SSH_PORT = 2222;
               DOMAIN = "forgejo.ncaq.net";
               ROOT_URL = "https://forgejo.ncaq.net/";
-              SSH_DOMAIN = "forgejo-ssh.ncaq.net";
+              SSH_DOMAIN = "ssh.forgejo.ncaq.net";
               START_SSH_SERVER = true;
             };
             session = {

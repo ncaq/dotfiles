@@ -1,13 +1,10 @@
-{ pkgs, ... }:
-{
+_: {
   programs.ssh = {
     enable = true;
     enableDefaultConfig = false;
     matchBlocks = {
-      "forgejo-ssh.ncaq.net" = {
-        proxyCommand = ''
-          ${pkgs.cloudflared}/bin/cloudflared access ssh --hostname %h
-        '';
+      "ssh.forgejo.ncaq.net" = {
+        port = 2222;
         extraOptions = {
           # Forgejo's built-in SSH server doesn't support post-quantum key exchange.
           WarnWeakCrypto = "no-pq-kex";

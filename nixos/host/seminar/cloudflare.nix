@@ -49,7 +49,6 @@ in
       default = "http_status:404";
       credentialsFile = "/run/secrets/cloudflare-tunnel-credentials";
       ingress = {
-        "forgejo-ssh.ncaq.net" = "ssh://${forgejoAddr}:2222";
         "forgejo.ncaq.net" = "http://${forgejoAddr}:8080";
         "nix-cache.ncaq.net" = "http://${atticdAddr}:8080";
       };

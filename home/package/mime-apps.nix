@@ -1,4 +1,9 @@
 {
+  lib,
+  isWSL,
+  ...
+}:
+lib.mkIf (!isWSL) {
   xdg.mimeApps = {
     enable = true;
 

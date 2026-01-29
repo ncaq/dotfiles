@@ -4,11 +4,6 @@
     enable = true;
     enableDefaultConfig = false;
     matchBlocks = {
-      "seminar-ssh.ncaq.net" = {
-        proxyCommand = ''
-          ${pkgs.cloudflared}/bin/cloudflared access ssh --hostname %h
-        '';
-      };
       "forgejo-ssh.ncaq.net" = {
         proxyCommand = ''
           ${pkgs.cloudflared}/bin/cloudflared access ssh --hostname %h

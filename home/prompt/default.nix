@@ -7,6 +7,7 @@
 let
   programmingPrompts = [
     (builtins.readFile ./programming/command.md)
+    (builtins.readFile ./programming/nix-command.md)
     (builtins.readFile ./programming/github.md)
     (builtins.readFile ./programming/naming-rule.md)
     (builtins.readFile ./programming/use-error-info.md)

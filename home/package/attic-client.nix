@@ -43,7 +43,7 @@
       '';
       ExecStart = pkgs.writeShellScript "attic-init" ''
         TOKEN=$(${pkgs.coreutils}/bin/cat ${config.sops.secrets."attic-token".path})
-        ${pkgs.attic-client}/bin/attic login ncaq https://cache.nix.ncaq.net/ "$TOKEN"
+        echo "$TOKEN"|${pkgs.attic-client}/bin/attic login ncaq https://cache.nix.ncaq.net/
         ${pkgs.attic-client}/bin/attic use ncaq:private;
       '';
       # 失敗時に自動リトライします。

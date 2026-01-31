@@ -6,7 +6,6 @@ _: {
     defaultOptions = [
       "--bind=ctrl-g:abort,ctrl-j:accept"
       "--bind=ctrl-v:page-down,alt-v:page-up"
-      "--bind=alt-<:first,alt->:last"
       "--bind=ctrl-t:up,ctrl-n:down"
       "--bind=ctrl-h:backward-char,ctrl-s:forward-char"
       "--bind=ctrl-b:backward-delete-char"

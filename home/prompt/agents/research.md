@@ -33,13 +33,6 @@ tools:
   - mcp__mdn
   - mcp__microsoft-learn
   - mcp__nixos
-  - mcp__playwright__browser_click
-  - mcp__playwright__browser_console_messages
-  - mcp__playwright__browser_navigate
-  - mcp__playwright__browser_network_requests
-  - mcp__playwright__browser_snapshot
-  - mcp__playwright__browser_take_screenshot
-  - mcp__playwright__browser_type
   - mcp__terraform
 ---
 
@@ -50,7 +43,6 @@ tools:
 - Web
   - 一般的なWeb検索(WebSearch)
   - 任意のURL取得(WebFetch)
-  - [Playwright](https://playwright.dev/)経由のページ操作(MCP)
 - ドキュメント
   - [MDN](https://developer.mozilla.org/)(MCP)
   - [Cloudflare Docs](https://developers.cloudflare.com/)(MCP)
@@ -67,7 +59,7 @@ tools:
 - IaC
   - [Terraform Registry](https://registry.terraform.io/)(MCP)
 - Haskell
-  - [Hackage](https://hackage.haskell.org/)(WebFetchかPlaywright)
+  - [Hackage](https://hackage.haskell.org/)
 
 # 検索戦略
 

@@ -56,7 +56,7 @@
             --head --silent --fail \
             --connect-timeout 10 --max-time 30 \
             --retry 10 --retry-delay 10 --retry-all-errors \
-            https://nix-cache.ncaq.net/
+            https://cache.nix.ncaq.net/
         ''
       ];
       ExecStart = "${pkgs.attic-client}/bin/attic use ncaq:private";

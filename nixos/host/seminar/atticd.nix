@@ -69,8 +69,8 @@ in
           environmentFile = "/etc/atticd.env";
           settings = {
             listen = "[::]:8080";
-            allowed-hosts = [ "nix-cache.ncaq.net" ];
-            api-endpoint = "https://nix-cache.ncaq.net/";
+            allowed-hosts = [ "cache.nix.ncaq.net" ];
+            api-endpoint = "https://cache.nix.ncaq.net/";
             database.url = "postgresql:///atticd?host=/run/postgresql";
             storage = {
               type = "local";
@@ -116,6 +116,6 @@ in
   # ```
   # Login with token:
   # ```
-  # attic login ncaq https://nix-cache.ncaq.net/ "$TOKEN"
+  # attic login ncaq https://cache.nix.ncaq.net/ "$TOKEN"
   # ```
 }

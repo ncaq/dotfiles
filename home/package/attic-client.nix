@@ -41,12 +41,16 @@
           --retry 3 --retry-delay 10 --retry-all-errors \
           https://cache.nix.ncaq.net/
       '';
-      ExecStart = pkgs.writeShellScript "attic-init" ''
-        ${pkgs.attic-client}/bin/attic login ncaq https://cache.nix.ncaq.net/ < ${
-          config.sops.secrets."attic-token".path
-        }
-        ${pkgs.attic-client}/bin/attic use ncaq:private
-      '';
+      ExecStart = pkgs.writeShellApplication {
+        name = "attic-init";
+        runtimeInputs = with pkgs; [
+          attic-client
+        ];
+        text = ''
+          attic login ncaq https://cache.nix.ncaq.net/ < ${config.sops.secrets."attic-token".path}
+          attic use ncaq:private
+        '';
+      };
       # 失敗時に自動リトライします。
       Restart = "on-failure";
       RestartSec = "30s";

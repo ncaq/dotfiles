@@ -18,11 +18,6 @@ cabalプロジェクトの`index-state`を最新に更新します。
 
 # 手順
 
-## haskell.nixの使用確認
-
-まずプロジェクトがhaskell.nixを使用しているか確認してください。
-`flake.nix`または`flake.lock`に`haskell.nix`への参照があるか確認します。
-
 ## cabal updateの実行
 
 ```bash

@@ -16,7 +16,6 @@ let
     fi
   '';
   forgejoAddr = config.containerAddresses.forgejo.container;
-  atticdAddr = config.containerAddresses.atticd.container;
 in
 {
   # Cloudflare認証情報を管理。
@@ -50,7 +49,6 @@ in
       credentialsFile = "/run/secrets/cloudflare-tunnel-credentials";
       ingress = {
         "forgejo.ncaq.net" = "http://${forgejoAddr}:8080";
-        "nix-cache.ncaq.net" = "http://${atticdAddr}:8080";
       };
     };
   };

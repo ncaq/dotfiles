@@ -106,13 +106,15 @@ in
     requires = [ "postgresql.service" ];
   };
 
+  # 基本的には自動化されているので手動でトークンを発行する必要はないですが、
+  # 一応参考までに手順を記載しておきます。
   # Token generation examples:
   # ```
-  # TOKEN="$(sudo atticd-atticadm make-token --sub 'seminar' --validity '4y' --pull 'private' --push 'private' --create-cache 'private')"
+  # sudo atticd-atticadm make-token --sub 'seminar' --validity '4y' --pull 'private' --push 'private' --create-cache 'private'"
   # ```
   # Read/write token example:
   # ```
-  # TOKEN=$(sudo atticd-atticadm make-token --sub 'bullet' --validity '4y' --pull 'private' --push 'private')
+  # sudo atticd-atticadm make-token --sub 'client' --validity '4y' --pull 'private' --push 'private'
   # ```
   # Login with token:
   # ```

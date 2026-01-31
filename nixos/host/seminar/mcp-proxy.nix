@@ -19,11 +19,6 @@ in
         networking.useHostResolvConf = lib.mkForce false;
         services.resolved.enable = true;
         networking.firewall.trustedInterfaces = [ "eth0" ];
-        environment.systemPackages = [
-          pkgs.mcp-proxy
-
-          pkgs.mcp-nixos
-        ];
         systemd.services.mcp-proxy = {
           description = "MCP Proxy for mcp-nixos";
           wantedBy = [ "multi-user.target" ];

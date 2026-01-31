@@ -214,7 +214,6 @@ Custom Nix packages.
 # Separated dotfiles
 
 - [ncaq/.emacs.d: My Emacs config](https://github.com/ncaq/.emacs.d)
-- [ncaq/.percol.d](https://github.com/ncaq/.percol.d)
 - [ncaq/.xkeysnail: My xkeysnail config](https://github.com/ncaq/.xkeysnail)
 - [ncaq/.xmonad](https://github.com/ncaq/.xmonad)
 - [ncaq/.zsh.d](https://github.com/ncaq/.zsh.d)

@@ -2,13 +2,11 @@
 description: cabalのindex-stateを最新に更新
 allowed-tools:
   - Bash(cabal build:*)
-  - Bash(cabal test:*)
   - Bash(cabal update:*)
   - Bash(gh pr create --assignee @me --fill --web --label "dependencies" --title "build(deps): cabalのindex-stateを更新")
   - Bash(git commit:*)
   - Bash(git push --verbose --set-upstream origin)
   - Bash(nix flake check:*)
-  - Bash(nix flake update:*)
   - Edit
   - Glob
   - Grep
@@ -20,22 +18,7 @@ cabalプロジェクトの`index-state`を最新に更新します。
 
 # 手順
 
-## haskell.nixの使用確認
-
-まずプロジェクトがhaskell.nixを使用しているか確認してください。
-`flake.nix`または`flake.lock`に`haskell.nix`への参照があるか確認します。
-
-## haskell.nixを使用している場合
-
-### flake.lockの更新
-
-先にflake.lockを最新に更新してコミットするコマンドを実行します。
-
-```bash
-nix flake update --commit-lock-file --option commit-lockfile-summary "build(deps): bump \`flake.lock\`"
-```
-
-### cabal updateの実行
+## cabal updateの実行
 
 ```bash
 cabal update
@@ -50,7 +33,7 @@ Package list of hackage.haskell.org is up to date.
 The index-state is set to 2026-01-11T09:48:01Z.
 ```
 
-### index-stateの更新
+## index-stateの更新
 
 通常は`cabal.project`ファイルに書かれている`index-state`を更新します。
 
@@ -62,11 +45,23 @@ The index-state is set to 2026-01-11T09:48:01Z.
 `cabal.project.local`や`flake.nix`などに書かれている場合があります。
 探して更新してください。
 
-### 動作確認
+## 動作確認
+
+プロジェクトのビルドシステムに応じて動作確認を行います。
+
+Nixを使用している場合は以下のコマンドを実行してください。
 
 ```bash
 nix flake check
 ```
+
+Nixを使用していない場合は以下のコマンドを実行してください。
+
+```bash
+cabal build --disable-optimization --enable-tests all
+```
+
+### haskell.nixを使用している場合の遅れへの対応
 
 haskell.nixは最新の`index-state`への対応に遅れがあります。
 そのため最新の`index-state`を使用するとエラーになることがあります。
@@ -83,27 +78,7 @@ haskell.nixは最新の`index-state`への対応に遅れがあります。
 このエラーが出た場合は、
 エラーメッセージに記載されている最新の値を使用してください。
 
-## haskell.nixを使用していない場合
-
-### cabal updateの実行
-
-```bash
-cabal update
-```
-
-### index-stateの更新
-
-cabal updateの出力から最新のタイムスタンプを取得し、
-通常は`cabal.project`に書かれている`index-state`を更新します。
-
-### 動作確認
-
-プロジェクトのビルドシステムに応じて動作確認を行います。
-
-Nixを使用している場合は`nix flake check`を実行してください。
-
-Nixを使用していない場合は`cabal build`や`cabal test`などでビルド確認を行うか、
-ユーザに動作確認が出来なかったことを報告してください。
+変更した後に再度動作確認を行ってください。
 
 ## Gitにコミット
 

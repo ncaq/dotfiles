@@ -2,8 +2,8 @@
 {
   home.packages = with pkgs; [
     corepack
-    nodePackages.prettier
     nodejs
+    prettier
     typescript
     typescript-language-server
     vscode-langservers-extracted

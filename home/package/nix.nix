@@ -6,7 +6,7 @@
     nix-diff
     nix-init
     nix-update
-    nixfmt-rfc-style
+    nixfmt
     update-nix-fetchgit
   ];
 }

@@ -5,7 +5,6 @@
 }:
 let
   atticdAddr = config.containerAddresses.atticd.container;
-  mcpProxyAddr = config.containerAddresses.mcp-proxy.container;
 in
 {
   sops.secrets."cloudflare-dns-api-token" = {
@@ -31,12 +30,6 @@ in
         dns cloudflare {file.${config.sops.secrets."cloudflare-dns-api-token".path}}
       }
       reverse_proxy http://${atticdAddr}:8080
-    '';
-    virtualHosts."mcp-proxy.ncaq.net".extraConfig = ''
-      tls {
-        dns cloudflare {file.${config.sops.secrets."cloudflare-dns-api-token".path}}
-      }
-      reverse_proxy http://${mcpProxyAddr}:8080
     '';
   };
 }

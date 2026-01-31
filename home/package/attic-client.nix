@@ -38,7 +38,7 @@
         ${pkgs.curl}/bin/curl \
           --head --silent --fail \
           --connect-timeout 10 --max-time 30 \
-          --retry 10 --retry-delay 10 --retry-all-errors \
+          --retry 3 --retry-delay 10 --retry-all-errors \
           https://cache.nix.ncaq.net/
       '';
       ExecStart = pkgs.writeShellScript "attic-init" ''

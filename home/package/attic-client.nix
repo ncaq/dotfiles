@@ -34,6 +34,7 @@
 
     Service = {
       Type = "oneshot";
+      RemainAfterExit = true;
       ExecStartPre = ''
         ${pkgs.curl}/bin/curl \
           --head --silent --fail \

@@ -4,7 +4,6 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    nixpkgs-2505.url = "github:NixOS/nixpkgs/nixos-25.05";
 
     flake-parts.url = "github:hercules-ci/flake-parts";
     flake-utils.url = "github:numtide/flake-utils";
@@ -60,7 +59,6 @@
       inputs = {
         nixpkgs.follows = "nixpkgs";
         haskellNix.inputs = {
-          nixpkgs-2505.follows = "nixpkgs-2505";
           nixpkgs-unstable.follows = "nixpkgs-unstable";
         };
         flake-utils.follows = "flake-utils";
@@ -86,7 +84,6 @@
     inputs@{
       nixpkgs,
       nixpkgs-unstable,
-      nixpkgs-2505,
       flake-parts,
       treefmt-nix,
       home-manager,
@@ -157,10 +154,6 @@
                       system = "x86_64-linux";
                       config = nixpkgsConfig;
                     };
-                    pkgs-2505 = import nixpkgs-2505 {
-                      system = "x86_64-linux";
-                      config = nixpkgsConfig;
-                    };
                     dpi = 144;
                     isWSL = false;
                   };
@@ -201,10 +194,6 @@
                       nixos-wsl
                       ;
                     pkgs-unstable = import nixpkgs-unstable {
-                      system = "x86_64-linux";
-                      config = nixpkgsConfig;
-                    };
-                    pkgs-2505 = import nixpkgs-2505 {
                       system = "x86_64-linux";
                       config = nixpkgsConfig;
                     };

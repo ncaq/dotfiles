@@ -1,19 +1,23 @@
-_: {
+{ pkgs, ... }:
+let
+  # Emacs htnsbf風キーバインドを再現
+  # `FZF_DEFAULT_OPTS`に`<`や`>`を含むバインドを入れるとシェルのリダイレクト記号として解釈されます
+  # `FZF_DEFAULT_OPTS_FILE`は`cat`で直接読まれるためシェルの解釈を受けません
+  fzfDefaultOptsFile = pkgs.writeText "fzf-default-opts" ''
+    --bind=ctrl-g:abort,ctrl-j:accept
+    --bind=ctrl-v:page-down,alt-v:page-up
+    --bind=ctrl-t:up,ctrl-n:down
+    --bind=ctrl-h:backward-char,ctrl-s:forward-char
+    --bind=ctrl-b:backward-delete-char
+    --bind=alt-h:backward-word,alt-s:forward-word
+    --bind=alt-b:backward-kill-word
+    --reverse
+    --border
+  '';
+in
+{
   programs.fzf = {
     enable = true;
-
-    # Emacs htnsbf風キーバインドを再現
-    defaultOptions = [
-      "--bind=ctrl-g:abort,ctrl-j:accept"
-      "--bind=ctrl-v:page-down,alt-v:page-up"
-      "--bind=ctrl-t:up,ctrl-n:down"
-      "--bind=ctrl-h:backward-char,ctrl-s:forward-char"
-      "--bind=ctrl-b:backward-delete-char"
-      "--bind=alt-h:backward-word,alt-s:forward-word"
-      "--bind=alt-b:backward-kill-word"
-      "--reverse"
-      "--border"
-    ];
 
     # findの代わりにfdを使う
     defaultCommand = "fd --type f --hidden --exclude .git";
@@ -35,4 +39,6 @@ _: {
       "--exact"
     ];
   };
+
+  home.sessionVariables.FZF_DEFAULT_OPTS_FILE = "${fzfDefaultOptsFile}";
 }

@@ -110,7 +110,7 @@ in
   # 一応参考までに手順を記載しておきます。
   # Token generation examples:
   # ```
-  # sudo atticd-atticadm make-token --sub 'seminar' --validity '4y' --pull 'private' --push 'private' --create-cache 'private'"
+  # sudo atticd-atticadm make-token --sub 'seminar' --validity '4y' --pull 'private' --push 'private' --create-cache 'private'
   # ```
   # Read/write token example:
   # ```

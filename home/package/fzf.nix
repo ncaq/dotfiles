@@ -2,7 +2,7 @@
 let
   # Emacs htnsbf風キーバインドを再現
   # `FZF_DEFAULT_OPTS`に`<`や`>`を含むバインドを入れるとシェルのリダイレクト記号として解釈されます
-  # `FZF_DEFAULT_OPTS_FILE`は`cat`で直接読まれるためシェルの解釈を受けません
+  # `FZF_DEFAULT_OPTS_FILE`はシェルの解釈を受けませんが、fzf自体が`<`と`>`を特殊文字として扱うためバックスラッシュエスケープが必要です
   fzfDefaultOptsFile = pkgs.writeText "fzf-default-opts" ''
     --bind=ctrl-g:abort,ctrl-j:accept
     --bind=ctrl-v:page-down,alt-v:page-up
@@ -11,7 +11,7 @@ let
     --bind=ctrl-b:backward-delete-char
     --bind=alt-h:backward-word,alt-s:forward-word
     --bind=alt-b:backward-kill-word
-    --bind=alt-<:first,alt->:last
+    --bind=alt-\<:first,alt-\>:last
     --reverse
     --border
   '';

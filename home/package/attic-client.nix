@@ -11,6 +11,7 @@
   sops.secrets."attic-token" = {
     sopsFile = ../../secrets/attic-client.yaml;
     key = "token";
+    mode = "0400";
   };
 
   # 起動時にキャッシュ設定を初期化します。

@@ -37,6 +37,10 @@ in
         host = "192.168.100.20";
         container = "192.168.100.21";
       };
+      mcp-proxy = {
+        host = "192.168.100.30";
+        container = "192.168.100.31";
+      };
     };
     description = "Container network addresses";
   };

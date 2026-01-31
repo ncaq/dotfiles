@@ -50,6 +50,7 @@
       # 失敗時に自動リトライします。
       Restart = "on-failure";
       RestartSec = "30s";
+      TimeoutStartSec = "5min";
     };
 
     Install = {

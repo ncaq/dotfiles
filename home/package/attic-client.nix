@@ -20,12 +20,10 @@
       Wants = [
         "network-online.target"
         "nss-lookup.target"
-        "sops-nix.service"
       ];
       After = [
         "network-online.target"
         "nss-lookup.target"
-        "sops-nix.service"
       ];
       Before = [
         "attic-watch-store-ncaq-private.service"
@@ -35,6 +33,7 @@
     Service = {
       Type = "oneshot";
       RemainAfterExit = true;
+      ConditionPathExists = [ config.sops.secrets."attic-token".path ];
       ExecStartPre = ''
         ${pkgs.curl}/bin/curl \
           --head --silent --fail \

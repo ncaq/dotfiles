@@ -12,14 +12,13 @@
     dig
     discord
     dmd
-    edid-decode
     efibootmgr
     eog
     evince
     fd
     ffmpeg
     file
-    gimp3
+    gimp
     htop
     i2c-tools
     inkscape
@@ -53,6 +52,7 @@
     trashy
     tree
     usbutils
+    v4l-utils
     virtualbox
     vlc
     wget

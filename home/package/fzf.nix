@@ -11,6 +11,7 @@ let
     --bind=ctrl-b:backward-delete-char
     --bind=alt-h:backward-word,alt-s:forward-word
     --bind=alt-b:backward-kill-word
+    --bind=alt-<:first,alt->:last
     --reverse
     --border
   '';

@@ -46,7 +46,7 @@
         bind -n C-o new-window -c "#{pane_current_path}"
 
         # ctrl+q = ウィンドウを閉じる
-        bind -n C-q kill-window
+        bind -n C-q confirm-before -p "kill window? (y/n)" kill-window
 
         # ウインドウ移動
         bind -n C-M-n next-window

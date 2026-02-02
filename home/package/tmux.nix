@@ -91,9 +91,7 @@
 
         # tmux-resurrect/continuum
         set -g @continuum-restore 'on'
-        set -g @continuum-save-interval '5'
         set -g @resurrect-capture-pane-contents 'on'
-        set -g @resurrect-dir '~/.local/share/tmux/resurrect'
       '';
     };
   };

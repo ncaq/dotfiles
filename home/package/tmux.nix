@@ -12,7 +12,7 @@
       clock24 = true;
       escapeTime = 0;
       focusEvents = true;
-      historyLimit = 500000; # 50万行
+      historyLimit = 100000; # 10万行
       keyMode = "emacs";
       mouse = true;
       newSession = true;

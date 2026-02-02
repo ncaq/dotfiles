@@ -39,6 +39,8 @@ in
     historyWidgetOptions = [
       "--exact"
     ];
+
+    tmux.enableShellIntegration = true;
   };
 
   home.sessionVariables.FZF_DEFAULT_OPTS_FILE = "${fzfDefaultOptsFile}";

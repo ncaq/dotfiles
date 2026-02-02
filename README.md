@@ -117,7 +117,7 @@ sudo nixos-generate-config --show-hardware-config --no-filesystems > ~/dotfiles/
 
 ### Automatic
 
-```zsh
+```bash
 NEW_HOST=please-input-new-hostname
 nix --extra-experimental-features 'flakes nix-command' run 'nixpkgs#git' -- clone https://github.com/ncaq/dotfiles.git
 cd dotfiles
@@ -129,7 +129,7 @@ Please reboot.
 
 ## Non NixOS(home-manager standalone)
 
-```zsh
+```bash
 nix run '.#home-manager' -- --flake ".#${USER}" init --switch .
 ```
 
@@ -137,19 +137,19 @@ nix run '.#home-manager' -- --flake ".#${USER}" init --switch .
 
 ## NixOS
 
-```zsh
+```bash
 sudo nixos-rebuild switch --flake ".#$(hostname)"
 ```
 
 ## Non NixOS(home-manager standalone)
 
-```zsh
+```bash
 home-manager --flake ".#${USER}" switch
 ```
 
 # Format
 
-```zsh
+```bash
 nix fmt
 ```
 
@@ -157,13 +157,13 @@ nix fmt
 
 ## Static
 
-```zsh
+```bash
 nix flake check
 ```
 
 ## Dynamic
 
-```zsh
+```bash
 nix run '.#home-manager' -- switch --flake ".#${USER}" -n -b backup
 ```
 

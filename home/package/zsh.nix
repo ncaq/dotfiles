@@ -14,8 +14,8 @@ in
 
       # Nixの自動生成するものではないユーザのzshrcを読み込む。
       initContent = ''
-        if [[ -z "$TMUX" ]] && [[ $- == *i* ]]; then
-          exec tmux new -A -s master
+        if [ -x "$(command -v ${lib.getExe pkgs.tmux})" ] && [[ -z "$TMUX" ]] && [[ $- == *i* ]]; then
+          exec ${lib.getExe pkgs.tmux} new -A -s master
         fi
         if [ -f "${zshDotDir}/.zshrc" ]; then
           source "${zshDotDir}/.zshrc"

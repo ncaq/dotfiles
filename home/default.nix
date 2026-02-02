@@ -1,4 +1,5 @@
 {
+  pkgs,
   config,
   username,
   ...
@@ -9,11 +10,14 @@
 
   home.stateVersion = "25.05";
 
-  i18n.glibcLocales = [
-    "ja_JP.UTF-8"
-    "en_US.UTF-8"
-    "C.UTF-8"
-  ];
+  i18n.glibcLocales = pkgs.glibcLocales.override {
+    allLocales = false;
+    locales = [
+      "ja_JP.UTF-8/UTF-8"
+      "en_US.UTF-8/UTF-8"
+      "C.UTF-8/UTF-8"
+    ];
+  };
 
   programs.home-manager.enable = true;
 

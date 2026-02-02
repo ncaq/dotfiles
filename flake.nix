@@ -23,6 +23,14 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    nix-on-droid = {
+      url = "github:nix-community/nix-on-droid/prerelease-25.11";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        home-manager.follows = "home-manager";
+      };
+    };
+
     nixos-hardware.url = "github:NixOS/nixos-hardware";
 
     sops-nix = {
@@ -88,6 +96,7 @@
       treefmt-nix,
       home-manager,
       nixos-wsl,
+      nix-on-droid,
       nixos-hardware,
       sops-nix,
       disko,
@@ -242,6 +251,51 @@
             in
             {
               "ncaq" = mkLinuxHome "ncaq";
+            };
+
+          nixOnDroidConfigurations =
+            let
+              mkNixOnDroid =
+                username:
+                nix-on-droid.lib.nixOnDroidConfiguration {
+                  pkgs = import nixpkgs {
+                    system = "aarch64-linux";
+                    config = nixpkgsConfig;
+                    overlays = [ nix-on-droid.overlays.default ];
+                  };
+                  extraSpecialArgs = {
+                    inherit
+                      importDirModules
+                      inputs
+                      www-ncaq-net
+
+                      username
+                      ;
+                    pkgs-unstable = import nixpkgs-unstable {
+                      system = "aarch64-linux";
+                      config = nixpkgsConfig;
+                      overlays = [ nix-on-droid.overlays.default ];
+                    };
+                    dpi = 144; # 今現在持っているAndroidデバイスだと96よりは144の方が一応妥当。
+                    isWSL = false;
+                  };
+                  modules = [
+                    (_: {
+                      nixpkgs.config = nixpkgsConfig;
+                      nixpkgs.overlays = [
+                        rust-overlay.overlays.default
+                        firge-nix.overlays.default
+                      ];
+                    })
+                    sops-nix.homeManagerModules.sops
+                    ./nix-on-droid.nix
+                  ];
+                  # set path to home-manager flake
+                  home-manager-path = home-manager.outPath;
+                };
+            in
+            {
+              default = mkNixOnDroid "ncaq";
             };
         };
 

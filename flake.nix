@@ -18,6 +18,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    nixos-wsl = {
+      url = "github:nix-community/NixOS-WSL/main";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     nixos-hardware.url = "github:NixOS/nixos-hardware";
 
     sops-nix = {
@@ -27,11 +32,6 @@
 
     disko = {
       url = "github:nix-community/disko";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    nixos-wsl = {
-      url = "github:nix-community/NixOS-WSL/main";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -87,10 +87,10 @@
       flake-parts,
       treefmt-nix,
       home-manager,
+      nixos-wsl,
       nixos-hardware,
       sops-nix,
       disko,
-      nixos-wsl,
       rust-overlay,
       www-ncaq-net,
       dot-xmonad,

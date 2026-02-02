@@ -15,7 +15,6 @@
       historyLimit = 100000; # 10万行
       keyMode = "emacs";
       mouse = true;
-      newSession = true;
       prefix = "C-M-z";
       terminal = "tmux-256color";
       shell = "${pkgs.zsh}/bin/zsh";

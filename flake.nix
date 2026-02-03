@@ -124,7 +124,6 @@
           importDirModules = import ./lib/import-dir-modules.nix { inherit (nixpkgs) lib; };
           # 許可するライセンス。
           allowlistedLicenses = with nixpkgs.lib.licenses; [
-            nvidiaCuda # 現実的な代替手段がないため。
             nvidiaCudaRedist # 再配布可能ならまだマシ。
             unfreeRedistributable # 再配布可能ならまだマシ。
           ];
@@ -139,6 +138,12 @@
             inherit allowlistedLicenses;
             allowUnfreePredicate = pkg: builtins.elem (nixpkgs.lib.getName pkg) allowedUnfreePackages;
           };
+          mkPkgsUnstable =
+            system:
+            import nixpkgs-unstable {
+              inherit system;
+              config = nixpkgsConfig;
+            };
         in
         {
           nixosConfigurations =
@@ -146,6 +151,7 @@
               mkNixosSystem =
                 {
                   hostName,
+                  system,
                 }:
                 let
                   specialArgs = {
@@ -160,16 +166,14 @@
                       nixos-hardware
                       nixos-wsl
                       ;
-                    pkgs-unstable = import nixpkgs-unstable {
-                      system = "x86_64-linux";
-                      config = nixpkgsConfig;
-                    };
                     username = "ncaq";
                   };
                 in
                 nixpkgs.lib.nixosSystem {
-                  system = "x86_64-linux";
-                  inherit specialArgs;
+                  inherit
+                    specialArgs
+                    system
+                    ;
                   modules = [
                     (_: {
                       nixpkgs.config = nixpkgsConfig;
@@ -196,8 +200,9 @@
                             in
                             specialArgs
                             // {
-                              inherit isWSL isTermux;
-                              isNativeLinux = !(isWSL || isTermux);
+                              inherit isTermux isWSL;
+                              isNativeLinux = !(isTermux || isWSL);
+                              pkgs-unstable = mkPkgsUnstable system;
                             };
                           sharedModules = [
                             sops-nix.homeManagerModules.sops
@@ -210,20 +215,38 @@
                 };
             in
             {
-              "SSD0086" = mkNixosSystem { hostName = "SSD0086"; };
-              "bullet" = mkNixosSystem { hostName = "bullet"; };
-              "creep" = mkNixosSystem { hostName = "creep"; };
-              "seminar" = mkNixosSystem { hostName = "seminar"; };
-              "vanitas" = mkNixosSystem { hostName = "vanitas"; };
+              "SSD0086" = mkNixosSystem {
+                system = "x86_64-linux";
+                hostName = "SSD0086";
+              };
+              "bullet" = mkNixosSystem {
+                system = "x86_64-linux";
+                hostName = "bullet";
+              };
+              "creep" = mkNixosSystem {
+                system = "x86_64-linux";
+                hostName = "creep";
+              };
+              "seminar" = mkNixosSystem {
+                system = "x86_64-linux";
+                hostName = "seminar";
+              };
+              "vanitas" = mkNixosSystem {
+                system = "x86_64-linux";
+                hostName = "vanitas";
+              };
             };
 
           homeConfigurations =
             let
               mkLinuxHome =
-                username:
+                {
+                  system,
+                  username,
+                }:
                 home-manager.lib.homeManagerConfiguration {
                   pkgs = import nixpkgs {
-                    system = "x86_64-linux";
+                    inherit system;
                     config = nixpkgsConfig;
                   };
                   extraSpecialArgs =
@@ -239,16 +262,13 @@
                         inputs
                         www-ncaq-net
 
-                        username
-                        isWSL
                         isTermux
+                        isWSL
+                        username
                         ;
-                      pkgs-unstable = import nixpkgs-unstable {
-                        system = "x86_64-linux";
-                        config = nixpkgsConfig;
-                      };
-                      dpi = 144;
                       isNativeLinux = !(isWSL || isTermux);
+                      pkgs-unstable = mkPkgsUnstable system;
+                      dpi = 144;
                     };
                   modules = [
                     (_: {
@@ -264,23 +284,29 @@
                 };
             in
             {
-              "ncaq" = mkLinuxHome "ncaq";
+              "ncaq" = mkLinuxHome {
+                system = "x86_64-linux";
+                username = "ncaq";
+              };
             };
 
           nixOnDroidConfigurations =
             let
               mkNixOnDroid =
-                username:
+                {
+                  system,
+                  username,
+                }:
                 nix-on-droid.lib.nixOnDroidConfiguration {
                   pkgs = import nixpkgs {
-                    system = "aarch64-linux";
+                    inherit system;
                     config = nixpkgsConfig;
                     overlays = [ nix-on-droid.overlays.default ];
                   };
                   extraSpecialArgs =
                     let
-                      isWSL = false;
                       isTermux = true; # アプリとしてはnix-on-droidですがランタイム的にはTermuxの方が妥当な名前。
+                      isWSL = false;
                     in
                     {
                       inherit
@@ -288,17 +314,15 @@
                         inputs
                         www-ncaq-net
 
-                        username
-                        isWSL
                         isTermux
+                        isWSL
+                        username
                         ;
-                      pkgs-unstable = import nixpkgs-unstable {
-                        system = "aarch64-linux";
-                        config = nixpkgsConfig;
+                      isNativeLinux = !(isTermux || isWSL);
+                      pkgs-unstable = mkPkgsUnstable system {
                         overlays = [ nix-on-droid.overlays.default ];
                       };
                       dpi = 144; # 今現在持っているAndroidデバイスだと96よりは144の方が一応妥当。
-                      isNativeLinux = !(isWSL || isTermux);
                     };
                   modules = [
                     (_: {
@@ -316,7 +340,10 @@
                 };
             in
             {
-              default = mkNixOnDroid "ncaq";
+              default = mkNixOnDroid {
+                system = "aarch64-linux";
+                username = "ncaq";
+              };
             };
         };
 

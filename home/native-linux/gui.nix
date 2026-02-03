@@ -3,6 +3,7 @@
 {
   home.packages = with pkgs; [
     discord
+    eog
     evince
     gimp
     inkscape

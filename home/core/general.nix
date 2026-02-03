@@ -11,7 +11,6 @@
     ddcutil
     dig
     efibootmgr
-    eog
     fd
     ffmpeg
     file

@@ -114,7 +114,6 @@
           importDirModules = import ./lib/import-dir-modules.nix { inherit (nixpkgs) lib; };
           # 許可するライセンス。
           allowlistedLicenses = with nixpkgs.lib.licenses; [
-            nvidiaCuda # 現実的な代替手段がないため。
             nvidiaCudaRedist # 再配布可能ならまだマシ。
             unfreeRedistributable # 再配布可能ならまだマシ。
           ];

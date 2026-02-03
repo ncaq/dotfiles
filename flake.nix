@@ -189,10 +189,16 @@
                         home-manager = {
                           useGlobalPkgs = true;
                           useUserPackages = true;
-                          extraSpecialArgs = specialArgs // {
-                            isWSL = config.wsl.enable or false;
-                            isTermux = false;
-                          };
+                          extraSpecialArgs =
+                            let
+                              isWSL = config.wsl.enable or false;
+                              isTermux = false;
+                            in
+                            specialArgs
+                            // {
+                              inherit isWSL isTermux;
+                              isNativeLinux = !(isWSL || isTermux);
+                            };
                           sharedModules = [
                             sops-nix.homeManagerModules.sops
                           ];
@@ -220,24 +226,30 @@
                     system = "x86_64-linux";
                     config = nixpkgsConfig;
                   };
-                  extraSpecialArgs = {
-                    inherit
-                      claude-desktop
-                      dot-xmonad
-                      importDirModules
-                      inputs
-                      www-ncaq-net
+                  extraSpecialArgs =
+                    let
+                      isWSL = false;
+                      isTermux = false;
+                    in
+                    {
+                      inherit
+                        claude-desktop
+                        dot-xmonad
+                        importDirModules
+                        inputs
+                        www-ncaq-net
 
-                      username
-                      ;
-                    pkgs-unstable = import nixpkgs-unstable {
-                      system = "x86_64-linux";
-                      config = nixpkgsConfig;
+                        username
+                        isWSL
+                        isTermux
+                        ;
+                      pkgs-unstable = import nixpkgs-unstable {
+                        system = "x86_64-linux";
+                        config = nixpkgsConfig;
+                      };
+                      dpi = 144;
+                      isNativeLinux = !(isWSL || isTermux);
                     };
-                    dpi = 144;
-                    isWSL = false;
-                    isTermux = false;
-                  };
                   modules = [
                     (_: {
                       nixpkgs.config = nixpkgsConfig;
@@ -265,23 +277,29 @@
                     config = nixpkgsConfig;
                     overlays = [ nix-on-droid.overlays.default ];
                   };
-                  extraSpecialArgs = {
-                    inherit
-                      importDirModules
-                      inputs
-                      www-ncaq-net
+                  extraSpecialArgs =
+                    let
+                      isWSL = false;
+                      isTermux = true; # アプリとしてはnix-on-droidですがランタイム的にはTermuxの方が妥当な名前。
+                    in
+                    {
+                      inherit
+                        importDirModules
+                        inputs
+                        www-ncaq-net
 
-                      username
-                      ;
-                    pkgs-unstable = import nixpkgs-unstable {
-                      system = "aarch64-linux";
-                      config = nixpkgsConfig;
-                      overlays = [ nix-on-droid.overlays.default ];
+                        username
+                        isWSL
+                        isTermux
+                        ;
+                      pkgs-unstable = import nixpkgs-unstable {
+                        system = "aarch64-linux";
+                        config = nixpkgsConfig;
+                        overlays = [ nix-on-droid.overlays.default ];
+                      };
+                      dpi = 144; # 今現在持っているAndroidデバイスだと96よりは144の方が一応妥当。
+                      isNativeLinux = !(isWSL || isTermux);
                     };
-                    dpi = 144; # 今現在持っているAndroidデバイスだと96よりは144の方が一応妥当。
-                    isWSL = false;
-                    isTermux = true; # アプリとしてはnix-on-droidですがランタイム的にはTermuxの方が妥当な名前。
-                  };
                   modules = [
                     (_: {
                       nixpkgs.config = nixpkgsConfig;

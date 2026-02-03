@@ -19,6 +19,7 @@ in
             # tmuxセッションが正常終了した場合、zshシェルも終了します。
             exit $?
           else
+            # tmuxが異常終了した場合、通常のシェルにフォールバックします。
             echo "Warning: tmux failed to start. Falling back to normal shell." >&2
           fi
         fi

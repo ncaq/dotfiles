@@ -310,7 +310,17 @@
                     ];
                   };
                   modules = [
-                    (_: {
+                    {
+                      system.stateVersion = "25.05";
+
+                      # nix-on-droidのデフォルト設定。
+                      # Android端末でコンフリクトしたファイルを処理するのには手間がかかるので合理的。
+                      environment.etcBackupExtension = ".bak";
+
+                      # Androidホストのタイムゾーンは自動的に引き継がれないようなので、
+                      # 明示的に設定。
+                      time.timeZone = "Asia/Tokyo";
+
                       home-manager = {
                         extraSpecialArgs =
                           let
@@ -336,9 +346,11 @@
                         sharedModules = [
                           sops-nix.homeManagerModules.sops
                         ];
+                        config = ./home;
+                        backupFileExtension = "hm-bak";
+                        useGlobalPkgs = true;
                       };
-                    })
-                    ./home/nix-on-droid.nix
+                    }
                   ];
                   # set path to home-manager flake
                   home-manager-path = home-manager.outPath;

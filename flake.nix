@@ -191,6 +191,7 @@
                           useUserPackages = true;
                           extraSpecialArgs = specialArgs // {
                             isWSL = config.wsl.enable or false;
+                            isTermux = false;
                           };
                           sharedModules = [
                             sops-nix.homeManagerModules.sops
@@ -235,6 +236,7 @@
                     };
                     dpi = 144;
                     isWSL = false;
+                    isTermux = false;
                   };
                   modules = [
                     (_: {
@@ -278,6 +280,7 @@
                     };
                     dpi = 144; # 今現在持っているAndroidデバイスだと96よりは144の方が一応妥当。
                     isWSL = false;
+                    isTermux = true; # アプリとしてはnix-on-droidですがランタイム的にはTermuxの方が妥当な名前。
                   };
                   modules = [
                     (_: {

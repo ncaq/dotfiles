@@ -2,7 +2,7 @@
   pkgs,
   lib,
   config,
-  isWSL,
+  isNativeLinux,
   ...
 }:
 let
@@ -23,7 +23,7 @@ let
       + "install -Dm755 $src/systemd/grive-sync.sh $out/lib/grive/grive-sync.sh";
   });
 in
-lib.mkIf (!isWSL) {
+lib.mkIf isNativeLinux {
   home.packages = [
     grive2WithScript
   ];

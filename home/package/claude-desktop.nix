@@ -1,11 +1,11 @@
 {
   pkgs,
   lib,
-  isWSL,
+  isNativeLinux,
   claude-desktop,
   ...
 }:
-lib.mkIf (!isWSL) {
+lib.mkIf isNativeLinux {
   home.packages = [
     claude-desktop.packages.${pkgs.stdenv.hostPlatform.system}.claude-desktop-with-fhs
   ];

@@ -2,10 +2,10 @@
   config,
   pkgs,
   lib,
-  isWSL,
+  isNativeLinux,
   ...
 }:
-lib.mkIf (!isWSL) {
+lib.mkIf isNativeLinux {
   home.packages = with pkgs; [
     xkeysnail
   ];

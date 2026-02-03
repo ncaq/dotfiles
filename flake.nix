@@ -114,7 +114,6 @@
           importDirModules = import ./lib/import-dir-modules.nix { inherit (nixpkgs) lib; };
           # 許可するライセンス。
           allowlistedLicenses = with nixpkgs.lib.licenses; [
-            nvidiaCuda # 現実的な代替手段がないため。
             nvidiaCudaRedist # 再配布可能ならまだマシ。
             unfreeRedistributable # 再配布可能ならまだマシ。
           ];
@@ -129,15 +128,24 @@
             inherit allowlistedLicenses;
             allowUnfreePredicate = pkg: builtins.elem (nixpkgs.lib.getName pkg) allowedUnfreePackages;
           };
+          pkgs-unstable =
+            system:
+            import nixpkgs-unstable {
+              inherit system;
+              config = nixpkgsConfig;
+            };
         in
         {
           homeConfigurations =
             let
               mkLinuxHome =
-                username:
+                {
+                  system,
+                  username,
+                }:
                 home-manager.lib.homeManagerConfiguration {
                   pkgs = import nixpkgs {
-                    system = "x86_64-linux";
+                    inherit system;
                     config = nixpkgsConfig;
                   };
                   extraSpecialArgs = {
@@ -150,10 +158,7 @@
 
                       username
                       ;
-                    pkgs-unstable = import nixpkgs-unstable {
-                      system = "x86_64-linux";
-                      config = nixpkgsConfig;
-                    };
+                    pkgs-unstable = pkgs-unstable system;
                     dpi = 144;
                     isWSL = false;
                   };
@@ -171,7 +176,10 @@
                 };
             in
             {
-              "ncaq" = mkLinuxHome "ncaq";
+              "ncaq" = mkLinuxHome {
+                system = "x86_64-linux";
+                username = "ncaq";
+              };
             };
 
           nixosConfigurations =
@@ -179,6 +187,7 @@
               mkNixosSystem =
                 {
                   hostName,
+                  system,
                 }:
                 let
                   specialArgs = {
@@ -193,16 +202,14 @@
                       nixos-hardware
                       nixos-wsl
                       ;
-                    pkgs-unstable = import nixpkgs-unstable {
-                      system = "x86_64-linux";
-                      config = nixpkgsConfig;
-                    };
                     username = "ncaq";
                   };
                 in
                 nixpkgs.lib.nixosSystem {
-                  system = "x86_64-linux";
-                  inherit specialArgs;
+                  inherit
+                    specialArgs
+                    system
+                    ;
                   modules = [
                     (_: {
                       nixpkgs.config = nixpkgsConfig;
@@ -223,6 +230,7 @@
                           useGlobalPkgs = true;
                           useUserPackages = true;
                           extraSpecialArgs = specialArgs // {
+                            pkgs-unstable = pkgs-unstable system;
                             isWSL = config.wsl.enable or false;
                           };
                           sharedModules = [
@@ -236,11 +244,26 @@
                 };
             in
             {
-              "SSD0086" = mkNixosSystem { hostName = "SSD0086"; };
-              "bullet" = mkNixosSystem { hostName = "bullet"; };
-              "creep" = mkNixosSystem { hostName = "creep"; };
-              "seminar" = mkNixosSystem { hostName = "seminar"; };
-              "vanitas" = mkNixosSystem { hostName = "vanitas"; };
+              "SSD0086" = mkNixosSystem {
+                system = "x86_64-linux";
+                hostName = "SSD0086";
+              };
+              "bullet" = mkNixosSystem {
+                system = "x86_64-linux";
+                hostName = "bullet";
+              };
+              "creep" = mkNixosSystem {
+                system = "x86_64-linux";
+                hostName = "creep";
+              };
+              "seminar" = mkNixosSystem {
+                system = "x86_64-linux";
+                hostName = "seminar";
+              };
+              "vanitas" = mkNixosSystem {
+                system = "x86_64-linux";
+                hostName = "vanitas";
+              };
             };
         };
 

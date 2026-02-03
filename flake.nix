@@ -24,7 +24,7 @@
     };
 
     nix-on-droid = {
-      url = "github:nix-community/nix-on-droid/prerelease-25.11";
+      url = "github:nix-community/nix-on-droid/release-24.05";
       inputs = {
         nixpkgs.follows = "nixpkgs";
         home-manager.follows = "home-manager";
@@ -311,7 +311,7 @@
                   };
                   modules = [
                     {
-                      system.stateVersion = "25.05";
+                      system.stateVersion = "24.05";
 
                       # nix-on-droidのデフォルト設定。
                       # Android端末でコンフリクトしたファイルを処理するのには手間がかかるので合理的。

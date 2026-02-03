@@ -139,9 +139,12 @@
             allowUnfreePredicate = pkg: builtins.elem (nixpkgs.lib.getName pkg) allowedUnfreePackages;
           };
           mkPkgsUnstable =
-            system:
+            {
+              system,
+              overlays ? [ ],
+            }:
             import nixpkgs-unstable {
-              inherit system;
+              inherit system overlays;
               config = nixpkgsConfig;
             };
         in
@@ -202,7 +205,7 @@
                             // {
                               inherit isTermux isWSL;
                               isNativeLinux = !(isTermux || isWSL);
-                              pkgs-unstable = mkPkgsUnstable system;
+                              pkgs-unstable = mkPkgsUnstable { inherit system; };
                             };
                           sharedModules = [
                             sops-nix.homeManagerModules.sops
@@ -267,7 +270,7 @@
                         username
                         ;
                       isNativeLinux = !(isWSL || isTermux);
-                      pkgs-unstable = mkPkgsUnstable system;
+                      pkgs-unstable = mkPkgsUnstable { inherit system; };
                       dpi = 144;
                     };
                   modules = [
@@ -319,7 +322,8 @@
                         username
                         ;
                       isNativeLinux = !(isTermux || isWSL);
-                      pkgs-unstable = mkPkgsUnstable system {
+                      pkgs-unstable = mkPkgsUnstable {
+                        inherit system;
                         overlays = [ nix-on-droid.overlays.default ];
                       };
                       dpi = 144; # 今現在持っているAndroidデバイスだと96よりは144の方が一応妥当。

@@ -19,7 +19,7 @@ in
             echo "Warning: tmux failed to start. Falling back to normal shell." >&2
           else
             # tmuxセッションが正常終了した場合、zshシェルも終了します。
-            exit
+            exit $?
           fi
         fi
         if [ -f "${zshDotDir}/.zshrc" ]; then

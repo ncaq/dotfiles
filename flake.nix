@@ -128,7 +128,7 @@
             inherit allowlistedLicenses;
             allowUnfreePredicate = pkg: builtins.elem (nixpkgs.lib.getName pkg) allowedUnfreePackages;
           };
-          pkgs-unstable =
+          mkPkgsUnstable =
             system:
             import nixpkgs-unstable {
               inherit system;
@@ -158,7 +158,7 @@
 
                       username
                       ;
-                    pkgs-unstable = pkgs-unstable system;
+                    pkgs-unstable = mkPkgsUnstable system;
                     dpi = 144;
                     isWSL = false;
                   };
@@ -230,7 +230,7 @@
                           useGlobalPkgs = true;
                           useUserPackages = true;
                           extraSpecialArgs = specialArgs // {
-                            pkgs-unstable = pkgs-unstable system;
+                            pkgs-unstable = mkPkgsUnstable system;
                             isWSL = config.wsl.enable or false;
                           };
                           sharedModules = [

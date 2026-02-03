@@ -17,7 +17,7 @@ in
         if [[ -x "$(command -v ${lib.getExe pkgs.tmux})" ]] && [[ -z "$TMUX" ]] && [[ $- == *i* ]]; then
           if ${lib.getExe pkgs.tmux} new -A -s master; then
             # tmuxセッションが正常終了した場合、zshシェルも終了します。
-            exit $?
+            exit
           else
             # tmuxが異常終了した場合、通常のシェルにフォールバックします。
             echo "Warning: tmux failed to start. Falling back to normal shell." >&2

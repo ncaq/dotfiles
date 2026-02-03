@@ -193,10 +193,6 @@
                       nixos-hardware
                       nixos-wsl
                       ;
-                    pkgs-unstable = import nixpkgs-unstable {
-                      system = "x86_64-linux";
-                      config = nixpkgsConfig;
-                    };
                     username = "ncaq";
                   };
                 in
@@ -223,6 +219,10 @@
                           useGlobalPkgs = true;
                           useUserPackages = true;
                           extraSpecialArgs = specialArgs // {
+                            pkgs-unstable = import nixpkgs-unstable {
+                              system = "x86_64-linux";
+                              config = nixpkgsConfig;
+                            };
                             isWSL = config.wsl.enable or false;
                           };
                           sharedModules = [

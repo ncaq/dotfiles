@@ -18,6 +18,7 @@ in
           if ! ${lib.getExe pkgs.tmux} new -A -s master; then
             echo "Warning: tmux failed to start. Falling back to normal shell." >&2
           else
+            # tmuxセッションが正常終了した場合、zshシェルも終了します。
             exit
           fi
         fi

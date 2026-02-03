@@ -2,10 +2,9 @@
   config,
   pkgs,
   lib,
-  isNativeLinux,
   ...
 }:
-lib.mkIf isNativeLinux {
+{
   home.packages = with pkgs; [
     xkeysnail
   ];

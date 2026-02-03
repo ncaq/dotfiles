@@ -2,6 +2,8 @@
   pkgs,
   lib,
   config,
+  isNativeLinux,
+  isWSL,
   username,
   ...
 }:
@@ -28,6 +30,8 @@
   imports = [
     ./link.nix
     ./prompt
-    ./package
-  ];
+    ./core
+  ]
+  ++ lib.optional isNativeLinux ./native-linux
+  ++ lib.optional isWSL ./wsl;
 }

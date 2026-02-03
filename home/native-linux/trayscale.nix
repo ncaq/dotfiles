@@ -1,7 +1,5 @@
 {
   pkgs,
-  lib,
-  isNativeLinux,
   ...
 }:
 let
@@ -11,7 +9,7 @@ let
       --replace-fail "Exec=trayscale" "Exec=trayscale --hide-window"
   '';
 in
-lib.mkIf isNativeLinux {
+{
   home.packages = [ pkgs.trayscale ];
 
   xdg.autostart = {

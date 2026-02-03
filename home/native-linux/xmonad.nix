@@ -1,11 +1,9 @@
 {
   pkgs,
-  lib,
-  isNativeLinux,
   dot-xmonad,
   ...
 }:
-lib.mkIf isNativeLinux {
+{
   xsession = {
     enable = true;
     windowManager.command = "xmonad-launch";

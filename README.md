@@ -191,9 +191,17 @@ Create symbolic links from filepath.
 `link.nix` is the program that creates them.
 `linked/` contains the linked files.
 
-### [home/package/](./home/package/)
+### [home/core/](./home/core/)
 
-To install packages.
+Core packages and configurations shared across all environments.
+
+### [home/native-linux/](./home/native-linux/)
+
+Packages and configurations specific to native Linux desktop environments.
+
+### [home/wsl/](./home/wsl/)
+
+Packages and configurations specific to WSL environments.
 
 ### [home/prompt/](./home/prompt/)
 

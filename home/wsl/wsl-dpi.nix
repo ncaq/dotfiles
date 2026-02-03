@@ -1,10 +1,8 @@
 {
   pkgs,
-  lib,
-  isWSL,
   ...
 }:
-lib.mkIf isWSL {
+{
   systemd.user.services.wsl-dpi = {
     Unit = {
       Description = "Set DPI for WSLg environment";

@@ -271,7 +271,6 @@
                         ;
                       isNativeLinux = !(isWSL || isTermux);
                       pkgs-unstable = mkPkgsUnstable { inherit system; };
-                      dpi = 144;
                     };
                   modules = [
                     (_: {
@@ -326,7 +325,6 @@
                         inherit system;
                         overlays = [ nix-on-droid.overlays.default ];
                       };
-                      dpi = 144; # 今現在持っているAndroidデバイスだと96よりは144の方が一応妥当。
                     };
                   modules = [
                     (_: {

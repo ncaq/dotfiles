@@ -37,7 +37,7 @@
         set -g set-titles on
         set -g set-titles-string "#{pane_title}"
         set -g window-status-format "#I:#{b:pane_current_path}/#{pane_current_command}"
-        set -g window-status-current-format "#I:#{b:pane_current_path}/#{pane_current_command}"
+        set -g window-status-current-format "#[fg=colour255,bg=colour24,bold] #I:#{b:pane_current_path}/#{pane_current_command} #[default]"
 
         # プレフィックスなしで直接使えるキーバインド
 

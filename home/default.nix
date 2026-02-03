@@ -6,7 +6,7 @@
   ...
 }:
 {
-  home.username = username;
+  home.username = lib.mkForce username;
 
   # Nix-on-Droidなど特殊なユーザディレクトリを使う場合はそちらを優先するために、
   # デフォルト値として優先度を低めて設定します。

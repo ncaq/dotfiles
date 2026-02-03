@@ -337,7 +337,7 @@
                       ];
                     })
                     sops-nix.homeManagerModules.sops
-                    ./nix-on-droid.nix
+                    ./home/nix-on-droid.nix
                   ];
                   # set path to home-manager flake
                   home-manager-path = home-manager.outPath;

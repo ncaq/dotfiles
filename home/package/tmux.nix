@@ -42,7 +42,7 @@
         # プレフィックスなしで直接使えるキーバインド
 
         # ctrl+o = 新規ウィンドウ(タブ)、同じディレクトリで開始
-        bind -n C-o new-window -c "#{pane_current_path}"
+        bind -n C-o new-window -a -c "#{pane_current_path}"
 
         # ctrl+q = ウィンドウを閉じる
         bind -n C-q confirm-before -p "kill window? (y/n)" kill-window

@@ -1,12 +1,16 @@
 {
   pkgs,
+  lib,
   config,
   username,
   ...
 }:
 {
   home.username = username;
-  home.homeDirectory = "/home/${config.home.username}";
+
+  # Nix-on-Droidなど特殊なユーザディレクトリを使う場合はそちらを優先するために、
+  # デフォルト値として優先度を低めて設定します。
+  home.homeDirectory = lib.mkDefault "/home/${config.home.username}";
 
   home.stateVersion = "25.05";
 

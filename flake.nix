@@ -303,38 +303,41 @@
                   pkgs = import nixpkgs {
                     inherit system;
                     config = nixpkgsConfig;
-                    overlays = [ nix-on-droid.overlays.default ];
+                    overlays = [
+                      nix-on-droid.overlays.default
+                      rust-overlay.overlays.default
+                      firge-nix.overlays.default
+                    ];
                   };
-                  extraSpecialArgs =
-                    let
-                      isTermux = true; # アプリとしてはnix-on-droidですがランタイム的にはTermuxの方が妥当な名前。
-                      isWSL = false;
-                    in
-                    {
-                      inherit
-                        importDirModules
-                        inputs
-                        www-ncaq-net
-
-                        isTermux
-                        isWSL
-                        username
-                        ;
-                      isNativeLinux = !(isTermux || isWSL);
-                      pkgs-unstable = mkPkgsUnstable {
-                        inherit system;
-                        overlays = [ nix-on-droid.overlays.default ];
-                      };
-                    };
                   modules = [
                     (_: {
-                      nixpkgs.config = nixpkgsConfig;
-                      nixpkgs.overlays = [
-                        rust-overlay.overlays.default
-                        firge-nix.overlays.default
-                      ];
+                      home-manager = {
+                        extraSpecialArgs =
+                          let
+                            isTermux = true; # アプリとしてはnix-on-droidですがランタイム的にはTermuxの方が妥当な名前。
+                            isWSL = false;
+                          in
+                          {
+                            inherit
+                              importDirModules
+                              inputs
+                              www-ncaq-net
+
+                              isTermux
+                              isWSL
+                              username
+                              ;
+                            isNativeLinux = !(isTermux || isWSL);
+                            pkgs-unstable = mkPkgsUnstable {
+                              inherit system;
+                              overlays = [ nix-on-droid.overlays.default ];
+                            };
+                          };
+                        sharedModules = [
+                          sops-nix.homeManagerModules.sops
+                        ];
+                      };
                     })
-                    sops-nix.homeManagerModules.sops
                     ./home/nix-on-droid.nix
                   ];
                   # set path to home-manager flake

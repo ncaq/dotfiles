@@ -15,11 +15,11 @@ in
       # Nixの自動生成するものではないユーザのzshrcを読み込む。
       initContent = ''
         if [[ -x "$(command -v ${lib.getExe pkgs.tmux})" ]] && [[ -z "$TMUX" ]] && [[ $- == *i* ]]; then
-          if ! ${lib.getExe pkgs.tmux} new -A -s master; then
-            echo "Warning: tmux failed to start. Falling back to normal shell." >&2
-          else
+          if ${lib.getExe pkgs.tmux} new -A -s master; then
             # tmuxセッションが正常終了した場合、zshシェルも終了します。
             exit $?
+          else
+            echo "Warning: tmux failed to start. Falling back to normal shell." >&2
           fi
         fi
         if [ -f "${zshDotDir}/.zshrc" ]; then

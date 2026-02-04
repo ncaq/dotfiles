@@ -30,7 +30,7 @@ in
     '';
     # tailscale serveはlocalhost宛のプロキシのみサポートするため、
     # caddyで中継します。
-    virtualHosts."http://localhost:8081".extraConfig = ''
+    virtualHosts."localhost:8081".extraConfig = ''
       reverse_proxy http://${atticdAddr}:8080
     '';
   };

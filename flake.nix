@@ -159,7 +159,6 @@
                       username
                       ;
                     pkgs-unstable = mkPkgsUnstable system;
-                    dpi = 144;
                     isWSL = false;
                   };
                   modules = [

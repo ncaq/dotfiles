@@ -71,7 +71,6 @@ in
             listen = "[::]:8080";
             allowed-hosts = [
               "cache.nix.ncaq.net"
-              "seminar.border-saurolophus.ts.net"
             ];
             api-endpoint = "https://cache.nix.ncaq.net/";
             database.url = "postgresql:///atticd?host=/run/postgresql";

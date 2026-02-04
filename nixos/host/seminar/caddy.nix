@@ -28,12 +28,5 @@ in
       }
       reverse_proxy http://${atticdAddr}:8080
     '';
-    # tailscale serveはlocalhost宛のプロキシのみサポートするため、
-    # caddyで中継します。
-    # httpsが解決されたものをhttp同士で中継する必要があるため、
-    # わかりやすさも考えてプロトコルを明示的に指定しています。
-    virtualHosts."http://localhost:8081".extraConfig = ''
-      reverse_proxy http://${atticdAddr}:8080
-    '';
   };
 }

@@ -32,8 +32,13 @@ in
     # caddyで中継します。
     # httpsが解決されたものをhttp同士で中継する必要があるため、
     # わかりやすさも考えてプロトコルを明示的に指定しています。
+    # Tailscale Funnelは /nix/cache/ パスで公開するため、
+    # そのパスを処理してatticに転送します。
     virtualHosts."http://localhost:8081".extraConfig = ''
-      reverse_proxy http://${atticdAddr}:8080
+      handle /nix/cache/* {
+        uri strip_prefix /nix/cache
+        reverse_proxy http://${atticdAddr}:8080
+      }
     '';
   };
 }

@@ -1,8 +1,8 @@
 {
-  username,
+  config,
   ...
 }:
 {
   # home-manager用sops-nixの設定
-  sops.gnupg.home = "/home/${username}/.gnupg";
+  sops.gnupg.home = "${config.home.homeDirectory}/.gnupg";
 }

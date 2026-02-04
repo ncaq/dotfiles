@@ -22,12 +22,16 @@ in
   sops.secrets."cloudflare-cert" = {
     sopsFile = ../../../secrets/seminar/cloudflare.yaml;
     key = "cert_pem";
-    mode = "0444";
+    owner = "cloudflared";
+    group = "cloudflared";
+    mode = "0400";
   };
   sops.secrets."cloudflare-tunnel-credentials" = {
     sopsFile = ../../../secrets/seminar/cloudflare.yaml;
     key = "tunnel_credentials";
-    mode = "0444";
+    owner = "cloudflared";
+    group = "cloudflared";
+    mode = "0400";
   };
 
   # Managed by sops-nix. To update the secrets:

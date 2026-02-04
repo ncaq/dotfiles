@@ -19,7 +19,7 @@ in
     key = "attic_env";
     owner = "atticd";
     group = "atticd";
-    mode = "0640";
+    mode = "0400";
   };
   environment.systemPackages = [ atticadmWrapper ];
   containers.atticd = {

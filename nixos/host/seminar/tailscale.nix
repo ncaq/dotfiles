@@ -41,7 +41,7 @@
             tailscale
           ];
           text = ''
-            tailscale serve --bg --set-path /nix/cache/ http://localhost:8081
+            tailscale serve --bg https:443 /nix/cache/ http://localhost:8081
             tailscale funnel --bg 443
           '';
         }

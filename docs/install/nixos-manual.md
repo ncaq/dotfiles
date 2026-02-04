@@ -57,8 +57,8 @@ w
 ```console
 sudo mkfs.vfat -F32 -n nixos-boot /dev/disk/by-id/your-disk-id-of-boot
 sudo e2label /dev/disk/by-id/your-disk-id-of-root-for-crypt nixos-root-crypt
-sudo cryptsetup luksFormat /dev/disk/by-label/nixos-root-crypt
-sudo cryptsetup open /dev/disk/by-label/nixos-root-crypt nixos-root
+sudo cryptsetup luksFormat /dev/disk/by-id/nixos-root-crypt
+sudo cryptsetup open /dev/disk/by-id/nixos-root-crypt nixos-root
 sudo mkfs.btrfs /dev/mapper/nixos-root
 sudo mount /dev/mapper/nixos-root /mnt
 sudo btrfs subvolume create /mnt/@

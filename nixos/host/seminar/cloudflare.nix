@@ -22,15 +22,15 @@ in
   sops.secrets."cloudflare-cert" = {
     sopsFile = ../../../secrets/seminar/cloudflare.yaml;
     key = "cert_pem";
-    owner = "cloudflared";
-    group = "cloudflared";
+    owner = "root";
+    group = "root";
     mode = "0400";
   };
   sops.secrets."cloudflare-tunnel-credentials" = {
     sopsFile = ../../../secrets/seminar/cloudflare.yaml;
     key = "tunnel_credentials";
-    owner = "cloudflared";
-    group = "cloudflared";
+    owner = "root";
+    group = "root";
     mode = "0400";
   };
 

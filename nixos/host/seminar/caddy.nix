@@ -35,7 +35,7 @@ in
     # Tailscale Funnelは /nix/cache/ パスで公開するため、
     # そのパスを処理してatticに転送します。
     virtualHosts."http://localhost:8081".extraConfig = ''
-      handle /nix/cache/* {
+      handle /nix/cache* {
         uri strip_prefix /nix/cache
         reverse_proxy http://${atticdAddr}:8080
       }

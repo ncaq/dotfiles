@@ -5,30 +5,21 @@
     atop
     attic-client
     bc # dcも含まれます。
-    bcache-tools
     cachix
     cloudflared
     ddcutil
     dig
-    discord
-    dmd
     efibootmgr
-    eog
-    evince
     fd
     ffmpeg
     file
-    gimp
     htop
     i2c-tools
-    inkscape
     iotop
     jq
-    libreoffice
     libwebp
     lshw
     lsof
-    nautilus
     nkf
     nmap
     nvtopPackages.full
@@ -42,22 +33,15 @@
     plantuml
     pstree
     rakudo
-    rhythmbox
     rwedid
-    samba
     shellcheck
-    slack
     sqlite
     sysstat
     trashy
     tree
     usbutils
     v4l-utils
-    virtualbox
-    vlc
     wget
     xxd
-    youtube-music
-    zoom-us
   ];
 }

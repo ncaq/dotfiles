@@ -2,7 +2,6 @@
   pkgs,
   lib,
   config,
-  isWSL,
   ...
 }:
 let
@@ -23,7 +22,7 @@ let
       + "install -Dm755 $src/systemd/grive-sync.sh $out/lib/grive/grive-sync.sh";
   });
 in
-lib.mkIf (!isWSL) {
+{
   home.packages = [
     grive2WithScript
   ];

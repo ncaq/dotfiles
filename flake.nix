@@ -159,7 +159,6 @@
                       username
                       ;
                     pkgs-unstable = mkPkgsUnstable system;
-                    dpi = 144;
                     isWSL = false;
                   };
                   modules = [
@@ -365,9 +364,9 @@
   nixConfig = {
     extra-substituters = [
       "https://cache.nixos.org/"
-      "https://nix-community.cachix.org"
-      "https://cache.iog.io"
-      "https://ncaq-dotfiles.cachix.org"
+      "https://nix-community.cachix.org/"
+      "https://cache.iog.io/"
+      "https://ncaq-dotfiles.cachix.org/"
     ];
     extra-trusted-public-keys = [
       "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="

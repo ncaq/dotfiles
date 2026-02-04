@@ -27,7 +27,7 @@ runs:
       env:
         ATTIC_TOKEN: "${{ inputs.attic-token }}"
       run: |
-        NETRC_FILE=$(nix show-config --json | jq -r '.["netrc-file"].value')
+        NETRC_FILE=$(nix config show --json | jq -r '.["netrc-file"].value')
         printf 'machine seminar.border-saurolophus.ts.net password %s\n' "$ATTIC_TOKEN" | sudo tee -a "$NETRC_FILE" > /dev/null
         sudo tee -a /etc/nix/nix.conf > /dev/null <<'EOF'
         extra-substituters = https://seminar.border-saurolophus.ts.net/nix/cache/private/

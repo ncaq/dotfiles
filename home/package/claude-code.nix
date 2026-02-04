@@ -94,6 +94,7 @@ in
   sops.secrets."github-mcp-server/pat" = {
     sopsFile = ../../secrets/github-mcp-server.yaml;
     key = "pat";
+    mode = "0400";
   };
 
   # Backlog MCP Server用の認証情報をsops-nixで管理します。
@@ -104,10 +105,12 @@ in
   sops.secrets."backlog-mcp-server/domain" = {
     sopsFile = ../../secrets/backlog-mcp-server.yaml;
     key = "domain";
+    mode = "0400";
   };
   sops.secrets."backlog-mcp-server/api-key" = {
     sopsFile = ../../secrets/backlog-mcp-server.yaml;
     key = "api-key";
+    mode = "0400";
   };
 
   # Clone repositories for additionalDirectories if they don't exist

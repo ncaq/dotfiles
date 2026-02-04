@@ -7,6 +7,9 @@
   sops.secrets."mackerel-api-key" = {
     sopsFile = ../../../secrets/seminar/mackerel.yaml;
     key = "api_key";
+    owner = "root";
+    group = "root";
+    mode = "0400";
   };
 
   # sops.templatesでTOML形式の設定ファイルを生成

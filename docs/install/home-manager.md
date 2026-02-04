@@ -10,6 +10,8 @@ This guide describes how to install home-manager standalone on non-NixOS systems
 ## Installation Steps
 
 ```zsh
+git clone https://github.com/ncaq/dotfiles.git
+cd dotfiles
 nix run '.#home-manager' -- --flake ".#${USER}" init --switch .
 ```
 

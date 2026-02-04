@@ -1,7 +1,4 @@
 { config, pkgs, ... }:
-let
-  atticdAddr = config.containerAddresses.atticd.container;
-in
 {
   # Exit Nodeとして動作するための追加設定。
   # 基本的なTailscale有効化は nixos/core/tailscale.nix で行っています。
@@ -23,7 +20,7 @@ in
     description = "Tailscale Serve for attic cache";
     after = [
       "tailscaled.service"
-      "container@atticd.service"
+      "caddy.service"
     ];
     wants = [ "tailscaled.service" ];
     wantedBy = [ "multi-user.target" ];
@@ -32,12 +29,12 @@ in
       Type = "oneshot";
       RemainAfterExit = true;
       ExecStart = "${pkgs.writeShellScript "tailscale-serve-attic-start" ''
-        tailscale serve --bg /nix/cache/ http://${atticdAddr}:8080
+        tailscale serve --bg --set-path /nix/cache/ http://localhost:8081
         tailscale funnel --bg 443
       ''}";
       ExecStop = "${pkgs.writeShellScript "tailscale-serve-attic-stop" ''
         tailscale funnel off 443
-        tailscale serve off /nix/cache/
+        tailscale serve reset
       ''}";
     };
   };

@@ -32,14 +32,26 @@
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
-      ExecStart = "${pkgs.writeShellScript "tailscale-serve-attic-start" ''
-        tailscale serve --bg --set-path /nix/cache/ http://localhost:8081
-        tailscale funnel --bg 443
-      ''}";
-      ExecStop = "${pkgs.writeShellScript "tailscale-serve-attic-stop" ''
-        tailscale funnel off 443
-        tailscale serve reset
-      ''}";
+      ExecStart = pkgs.writeShellApplication {
+        name = "tailscale-serve-attic-start";
+        runtimeInputs = with pkgs; [
+          tailscale
+        ];
+        text = ''
+          tailscale serve --bg --set-path /nix/cache/ http://localhost:8081
+          tailscale funnel --bg 443
+        '';
+      };
+      ExecStop = pkgs.writeShellApplication {
+        name = "tailscale-serve-attic-stop";
+        runtimeInputs = with pkgs; [
+          tailscale
+        ];
+        text = ''
+          tailscale funnel off 443
+          tailscale serve reset
+        '';
+      };
     };
   };
 }

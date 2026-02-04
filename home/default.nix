@@ -1,6 +1,8 @@
 {
+  lib,
   config,
   username,
+  isWSL,
   ...
 }:
 {
@@ -13,6 +15,8 @@
   imports = [
     ./link.nix
     ./prompt
-    ./package
-  ];
+    ./core
+  ]
+  ++ lib.optional (!isWSL) ./native-linux
+  ++ lib.optional isWSL ./wsl;
 }

@@ -1,9 +1,4 @@
-{
-  pkgs,
-  lib,
-  isWSL,
-  ...
-}:
+{ pkgs, ... }:
 let
   # デフォルトだとウインドウが起動時に表示されてしまうためトレイにのみ表示するように引数を追加したdesktopファイルを作成。
   trayscale-autostart-desktop = pkgs.runCommand "trayscale-autostart.desktop" { } ''
@@ -11,7 +6,7 @@ let
       --replace-fail "Exec=trayscale" "Exec=trayscale --hide-window"
   '';
 in
-lib.mkIf (!isWSL) {
+{
   home.packages = [ pkgs.trayscale ];
 
   xdg.autostart = {

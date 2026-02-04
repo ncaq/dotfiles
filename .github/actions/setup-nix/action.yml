@@ -29,6 +29,8 @@ runs:
         extra_nix_config: |
           accept-flake-config = true
           netrc-file = /tmp/netrc-nix
+          substituters = https://seminar.border-saurolophus.ts.net/nix/cache/private/
+          trusted-public-keys = private:7SHPFhFIAzd4F78w1+EXgwP0HKApgLBbu9IJG8GE2I4=
     - uses: cachix/cachix-action@3ba601ff5bbb07c7220846facfa2cd81eeee15a1 # v16
       with:
         name: ncaq-dotfiles

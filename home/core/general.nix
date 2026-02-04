@@ -5,7 +5,6 @@
     atop
     attic-client
     bc # dcも含まれます。
-    bcache-tools
     cachix
     cloudflared
     ddcutil
@@ -36,7 +35,6 @@
     pstree
     rakudo
     rwedid
-    samba
     shellcheck
     sqlite
     sysstat

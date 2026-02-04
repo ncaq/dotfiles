@@ -30,7 +30,6 @@
       "tailscaled.service"
       "caddy.service"
     ];
-    wants = [ "tailscaled.service" ];
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
       Type = "oneshot";

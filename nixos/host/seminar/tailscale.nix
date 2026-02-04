@@ -54,8 +54,8 @@
             tailscale
           ];
           text = ''
-            tailscale funnel off 443
-            tailscale serve reset
+            tailscale funnel off 443 || echo "tailscale funnel off 443 failed" >&2
+            tailscale serve reset || echo "tailscale serve reset failed" >&2
           '';
         }
       );

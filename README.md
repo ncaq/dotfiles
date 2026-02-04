@@ -218,6 +218,7 @@ Custom Nix packages.
 - [ncaq/.xmonad](https://github.com/ncaq/.xmonad)
 - [ncaq/.zsh.d](https://github.com/ncaq/.zsh.d)
 - [ncaq/git-hooks: My Git global hooks](https://github.com/ncaq/git-hooks)
+- [ncaq/infra.ncaq.net: Infrastructure as Code for ncaq.net](https://github.com/ncaq/infra.ncaq.net)
 - [ncaq/keyhac-config](https://github.com/ncaq/keyhac-config)
 - [ncaq/surfingkeys-config: My Surfingkeys config](https://github.com/ncaq/surfingkeys-config)
 - [ncaq/winconf: My Windows configuration files](https://github.com/ncaq/winconf)

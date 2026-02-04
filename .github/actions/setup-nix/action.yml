@@ -13,25 +13,24 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Configure attic cache authentication
-      shell: bash
-      env:
-        ATTIC_TOKEN: "${{ inputs.attic-token }}"
-      run: |
-        NETRC_PATH="/tmp/netrc-nix"
-        touch "$NETRC_PATH"
-        chmod 600 "$NETRC_PATH"
-        if [ -n "$ATTIC_TOKEN" ]; then
-          printf 'machine seminar.border-saurolophus.ts.net password %s\n' "$ATTIC_TOKEN" > "$NETRC_PATH"
-        fi
     - uses: cachix/install-nix-action@4e002c8ec80594ecd40e759629461e26c8abed15 # v31
       with:
         extra_nix_config: |
           accept-flake-config = true
-          netrc-file = /tmp/netrc-nix
-          substituters = https://seminar.border-saurolophus.ts.net/nix/cache/private/
-          trusted-public-keys = private:7SHPFhFIAzd4F78w1+EXgwP0HKApgLBbu9IJG8GE2I4=
     - uses: cachix/cachix-action@3ba601ff5bbb07c7220846facfa2cd81eeee15a1 # v16
       with:
         name: ncaq-dotfiles
         authToken: "${{ inputs.cachix-auth-token }}"
+    - name: Configure attic cache
+      if: inputs.attic-token != ''
+      shell: bash
+      env:
+        ATTIC_TOKEN: "${{ inputs.attic-token }}"
+      run: |
+        NETRC_FILE=$(nix show-config --json | jq -r '.["netrc-file"].value')
+        printf 'machine seminar.border-saurolophus.ts.net password %s\n' "$ATTIC_TOKEN" | sudo tee -a "$NETRC_FILE" > /dev/null
+        sudo tee -a /etc/nix/nix.conf > /dev/null <<'EOF'
+        extra-substituters = https://seminar.border-saurolophus.ts.net/nix/cache/private/
+        extra-trusted-public-keys = private:7SHPFhFIAzd4F78w1+EXgwP0HKApgLBbu9IJG8GE2I4=
+        EOF
+        sudo systemctl restart nix-daemon

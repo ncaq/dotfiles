@@ -1,4 +1,9 @@
-{ config, pkgs, ... }:
+{
+  pkgs,
+  lib,
+  config,
+  ...
+}:
 {
   # Exit Nodeとして動作するための追加設定。
   # 基本的なTailscale有効化は nixos/core/tailscale.nix で行っています。
@@ -32,26 +37,30 @@
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
-      ExecStart = pkgs.writeShellApplication {
-        name = "tailscale-serve-attic-start";
-        runtimeInputs = with pkgs; [
-          tailscale
-        ];
-        text = ''
-          tailscale serve --bg --set-path /nix/cache/ http://localhost:8081
-          tailscale funnel --bg 443
-        '';
-      };
-      ExecStop = pkgs.writeShellApplication {
-        name = "tailscale-serve-attic-stop";
-        runtimeInputs = with pkgs; [
-          tailscale
-        ];
-        text = ''
-          tailscale funnel off 443
-          tailscale serve reset
-        '';
-      };
+      ExecStart = lib.getExe (
+        pkgs.writeShellApplication {
+          name = "tailscale-serve-attic-start";
+          runtimeInputs = with pkgs; [
+            tailscale
+          ];
+          text = ''
+            tailscale serve --bg --set-path /nix/cache/ http://localhost:8081
+            tailscale funnel --bg 443
+          '';
+        }
+      );
+      ExecStop = lib.getExe (
+        pkgs.writeShellApplication {
+          name = "tailscale-serve-attic-stop";
+          runtimeInputs = with pkgs; [
+            tailscale
+          ];
+          text = ''
+            tailscale funnel off 443
+            tailscale serve reset
+          '';
+        }
+      );
     };
   };
 }

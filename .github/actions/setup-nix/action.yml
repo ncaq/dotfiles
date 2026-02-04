@@ -1,0 +1,19 @@
+name: Setup Nix
+description: Install Nix and configure caches
+
+inputs:
+  cachix-auth-token:
+    description: Cachix authentication token
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - uses: cachix/install-nix-action@4e002c8ec80594ecd40e759629461e26c8abed15 # v31
+      with:
+        extra_nix_config: |
+          accept-flake-config = true
+    - uses: cachix/cachix-action@3ba601ff5bbb07c7220846facfa2cd81eeee15a1 # v16
+      with:
+        name: ncaq-dotfiles
+        authToken: "${{ inputs.cachix-auth-token }}"

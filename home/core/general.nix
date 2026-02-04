@@ -9,7 +9,6 @@
     cloudflared
     ddcutil
     dig
-    dmd
     efibootmgr
     fd
     ffmpeg

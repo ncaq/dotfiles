@@ -1,7 +1,6 @@
 {
   pkgs,
   lib,
-  config,
   ...
 }:
 {
@@ -33,7 +32,6 @@
     ];
     wants = [ "tailscaled.service" ];
     wantedBy = [ "multi-user.target" ];
-    path = [ config.services.tailscale.package ];
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;

@@ -18,6 +18,10 @@
   # GitHub Actionsなど外部CIからNixキャッシュとしてアクセス可能にするため。
   systemd.services.tailscale-serve-attic = {
     description = "Tailscale Serve for attic cache";
+    requires = [
+      "tailscaled.service"
+      "caddy.service"
+    ];
     after = [
       "tailscaled.service"
       "caddy.service"

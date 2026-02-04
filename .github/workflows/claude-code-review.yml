@@ -48,6 +48,7 @@ jobs:
       - uses: ./.github/actions/setup-nix
         with:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+          attic-token: "${{ secrets.ATTIC_TOKEN }}"
       - name: Run Claude Code Review
         id: claude-review
         uses: anthropics/claude-code-action@70e16deb18402428bd09e08d1ec3662a872e3c72 # v1

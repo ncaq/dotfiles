@@ -69,10 +69,7 @@ in
           environmentFile = "/etc/atticd.env";
           settings = {
             listen = "[::]:8080";
-            allowed-hosts = [
-              "cache.nix.ncaq.net"
-              "seminar.border-saurolophus.ts.net"
-            ];
+            allowed-hosts = [ "seminar.border-saurolophus.ts.net" ];
             # 他のホストを指定してもプログラムが自動で設定し直してしまうことがあるため、
             # tailnet内部からでも外部からでもアクセス可能なエンドポイントを指定。
             api-endpoint = "https://seminar.border-saurolophus.ts.net/nix/cache/";
@@ -123,6 +120,6 @@ in
   # ```
   # Login with token:
   # ```
-  # attic login ncaq https://cache.nix.ncaq.net/ "$TOKEN"
+  # attic login ncaq https://seminar.border-saurolophus.ts.net/nix/cache/ "$TOKEN"
   # ```
 }

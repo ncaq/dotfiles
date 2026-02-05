@@ -1,5 +1,4 @@
 {
-  pkgs,
   config,
   ...
 }:
@@ -12,32 +11,11 @@ let
   keyFile = "${certDir}/${tailscaleDomain}.key";
 in
 {
-  sops.secrets."cloudflare-dns-api-token" = {
-    sopsFile = ../../../secrets/seminar/caddy.yaml;
-    key = "cloudflare_dns_api_token";
-    owner = "caddy";
-    group = "caddy";
-    mode = "0400";
-  };
-
   services.caddy = {
     enable = true;
     email = "ncaq@ncaq.net";
-    package = pkgs.caddy.withPlugins {
-      plugins = [ "github.com/caddy-dns/cloudflare@v0.2.2" ];
-      hash = "sha256-dnhEjopeA0UiI+XVYHYpsjcEI6Y1Hacbi28hVKYQURg=";
-    };
-    # tailnetからしかアクセスできないキャッシュサーバのドメイン。
-    virtualHosts."cache.nix.ncaq.net".extraConfig = ''
-      tls {
-        dns cloudflare {file.${config.sops.secrets."cloudflare-dns-api-token".path}}
-      }
-      reverse_proxy http://${atticdAddr}:8080
-    '';
     # tailnet内からのアクセス用。
-    # Caddyが`*:443`を占有しているため、
-    # tailscaledではなくCaddyが、
-    # Tailscaleドメインへのリクエストをバーチャルホストとして処理します。
+    # 分かり易さのためCaddyがまとめてリクエストを管理します。
     virtualHosts."${tailscaleDomain}".extraConfig = ''
       tls ${certFile} ${keyFile}
       handle_path /nix/cache/* {
@@ -48,7 +26,6 @@ in
     # Tailscale Funnelからのリクエストを受けるリバースプロキシ。
     # Tailscale Funnelはlocalhostへの転送しかサポートしていないため、
     # コンテナへの転送をするためにCaddyでプロキシします。
-    # パス処理はtailnet用virtual hostと同じロジックです。
     virtualHosts.":8080".extraConfig = ''
       bind 127.0.0.1
       handle_path /nix/cache/* {

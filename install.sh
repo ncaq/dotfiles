@@ -13,6 +13,7 @@ else
     ;;
   *)
     echo "その他のアーキテクチャ: $(uname -m)"
+    exit 1
     ;;
   esac
 fi

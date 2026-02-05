@@ -11,14 +11,6 @@ let
   keyFile = "${certDir}/${tailscaleDomain}.key";
 in
 {
-  sops.secrets."cloudflare-dns-api-token" = {
-    sopsFile = ../../../secrets/seminar/caddy.yaml;
-    key = "cloudflare_dns_api_token";
-    owner = "caddy";
-    group = "caddy";
-    mode = "0400";
-  };
-
   services.caddy = {
     enable = true;
     email = "ncaq@ncaq.net";

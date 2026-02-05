@@ -73,7 +73,9 @@ in
               "cache.nix.ncaq.net"
               "seminar.border-saurolophus.ts.net"
             ];
-            api-endpoint = "https://cache.nix.ncaq.net/";
+            # 他のホストを指定してもプログラムが自動で設定し直してしまうことがあるため、
+            # tailnet内部からでも外部からでもアクセス可能なエンドポイントを指定。
+            api-endpoint = "https://seminar.border-saurolophus.ts.net/nix/cache/";
             database.url = "postgresql:///atticd?host=/run/postgresql";
             storage = {
               type = "local";

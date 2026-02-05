@@ -33,11 +33,13 @@ in
     # Tailscale Funnelからのリクエストを受けるリバースプロキシ。
     # Tailscale Funnelはlocalhostへの転送しかサポートしていないため、
     # コンテナへの転送をするためにCaddyでプロキシします。
-    # tailscaledが`/nix/cache/`プレフィックスを除去済みで転送するため、
-    # そのままatticdにプロキシします。
+    # パス処理はtailnet用virtual hostと同じロジックです。
     virtualHosts.":8081".extraConfig = ''
       bind 127.0.0.1
-      reverse_proxy http://${atticdAddr}:8080
+      handle_path /nix/cache/* {
+        reverse_proxy http://${atticdAddr}:8080
+      }
+      redir /nix/cache /nix/cache/
     '';
     # tailnet内からのアクセス用。
     # Caddyが`*:443`を占有しているため、tailscaledではなくCaddyが、

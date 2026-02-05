@@ -11,7 +11,7 @@ let
 in
 {
   # Funnel設定(パブリックインターネットからのアクセス用)。
-  systemd.services.tailscale-funnel-attic = {
+  systemd.services.tailscale-funnel = {
     description = "Configure Tailscale Funnel for attic cache";
     after = [
       "tailscaled.service"
@@ -27,8 +27,8 @@ in
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
-      ExecStart = "${tailscale}/bin/tailscale funnel --bg --set-path=/nix/cache/ http://127.0.0.1:8081";
-      ExecStop = "${tailscale}/bin/tailscale funnel --bg --set-path=/nix/cache/ off";
+      ExecStart = "${tailscale}/bin/tailscale funnel --bg http://127.0.0.1:8081";
+      ExecStop = "${tailscale}/bin/tailscale funnel --bg off";
     };
   };
 

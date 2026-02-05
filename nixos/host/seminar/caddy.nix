@@ -38,7 +38,7 @@ in
     # Caddyが`*:443`を占有しているため、tailscaledではなくCaddyが、
     # Tailscaleドメインの`/nix/cache/`をSNIベースで処理します。
     virtualHosts."${tailscaleDomain}".extraConfig = ''
-      tls ${certDir}/${tailscaleDomain}.crt ${certDir}/${tailscaleDomain}.key
+      tls ${certFile} ${keyFile}
       handle_path /nix/cache/* {
         reverse_proxy http://${atticdAddr}:8080
       }

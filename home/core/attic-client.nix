@@ -45,7 +45,7 @@
           --head --silent --fail \
           --connect-timeout 10 --max-time 30 \
           --retry 3 --retry-delay 10 --retry-all-errors \
-          https://cache.nix.ncaq.net/
+          https://seminar.border-saurolophus.ts.net/nix/cache/
       '';
       ExecStart = lib.getExe (
         pkgs.writeShellApplication {
@@ -54,7 +54,8 @@
             attic-client
           ];
           text = ''
-            attic login ncaq https://cache.nix.ncaq.net/ < ${config.sops.secrets."attic-token".path}
+            attic login ncaq https://seminar.border-saurolophus.ts.net/nix/cache/ < \
+              ${config.sops.secrets."attic-token".path}
             attic use ncaq:private
           '';
         }

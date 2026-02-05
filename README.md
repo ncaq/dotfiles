@@ -35,9 +35,6 @@ Choose the installation method that fits your environment:
 
 This script automatically detects your environment and runs the appropriate command:
 
-- NixOS: `sudo nixos-rebuild switch --flake ".#$(hostname)"`
-- Non NixOS: `home-manager --flake ".#${USER}" switch`
-
 # Format
 
 ```zsh
@@ -50,12 +47,6 @@ nix fmt
 
 ```zsh
 nix flake check
-```
-
-## Dynamic
-
-```zsh
-nix run '.#home-manager' -- switch --flake ".#${USER}" -n -b backup
 ```
 
 # Policy

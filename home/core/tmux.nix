@@ -27,6 +27,9 @@
       ];
 
       extraConfig = ''
+        # クリップボードを連携
+        set -g set-clipboard on
+
         # セッションをなるべく維持する
         set -g detach-on-destroy off
         set -g remain-on-exit on

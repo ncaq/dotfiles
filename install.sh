@@ -12,7 +12,7 @@ else
     home-manager --flake ".#aarch64-linux" switch
     ;;
   *)
-    echo "その他のアーキテクチャ: $(uname -m)"
+    echo "未対応のプラットフォーム: $(uname -s)-$(uname -m)"
     exit 1
     ;;
   esac

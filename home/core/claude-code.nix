@@ -439,9 +439,7 @@ in
           "Bash(gh repo archive:*)"
           "Bash(gh repo delete:*)"
           "Bash(gh repo rename:*)"
-          "Bash(head:*)"
           "Bash(rm:*)"
-          "Bash(tail:*)"
         ];
       };
     };

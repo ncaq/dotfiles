@@ -15,12 +15,10 @@ in
     description = "Configure Tailscale Funnel for attic cache";
     wants = [
       "tailscaled.service"
-      "container@atticd.service"
       "caddy.service"
     ];
     after = [
       "tailscaled.service"
-      "container@atticd.service"
       "caddy.service"
     ];
     wantedBy = [ "multi-user.target" ];

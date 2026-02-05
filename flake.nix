@@ -18,6 +18,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    nixos-wsl = {
+      url = "github:nix-community/NixOS-WSL/main";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     nixos-hardware.url = "github:NixOS/nixos-hardware";
 
     sops-nix = {
@@ -27,11 +32,6 @@
 
     disko = {
       url = "github:nix-community/disko";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    nixos-wsl = {
-      url = "github:nix-community/NixOS-WSL/main";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -87,10 +87,10 @@
       flake-parts,
       treefmt-nix,
       home-manager,
+      nixos-wsl,
       nixos-hardware,
       sops-nix,
       disko,
-      nixos-wsl,
       rust-overlay,
       www-ncaq-net,
       dot-xmonad,
@@ -137,55 +137,6 @@
             };
         in
         {
-          homeConfigurations =
-            let
-              mkLinuxHome =
-                {
-                  system,
-                  username,
-                }:
-                home-manager.lib.homeManagerConfiguration {
-                  pkgs = import nixpkgs {
-                    inherit system;
-                    config = nixpkgsConfig;
-                  };
-                  extraSpecialArgs = {
-                    inherit
-                      claude-desktop
-                      dot-xmonad
-                      importDirModules
-                      inputs
-                      www-ncaq-net
-
-                      username
-                      ;
-                    pkgs-unstable = mkPkgsUnstable system;
-                    isWSL = false;
-                  };
-                  modules = [
-                    (_: {
-                      nixpkgs.config = nixpkgsConfig;
-                      nixpkgs.overlays = [
-                        rust-overlay.overlays.default
-                        firge-nix.overlays.default
-                      ];
-                    })
-                    sops-nix.homeManagerModules.sops
-                    ./home
-                  ];
-                };
-            in
-            {
-              "x86_64-linux" = mkLinuxHome {
-                system = "x86_64-linux";
-                username = "ncaq";
-              };
-              "aarch64-linux" = mkLinuxHome {
-                system = "aarch64-linux";
-                username = "ncaq";
-              };
-            };
-
           nixosConfigurations =
             let
               mkNixosSystem =
@@ -267,6 +218,55 @@
               "vanitas" = mkNixosSystem {
                 system = "x86_64-linux";
                 hostName = "vanitas";
+              };
+            };
+
+          homeConfigurations =
+            let
+              mkLinuxHome =
+                {
+                  system,
+                  username,
+                }:
+                home-manager.lib.homeManagerConfiguration {
+                  pkgs = import nixpkgs {
+                    inherit system;
+                    config = nixpkgsConfig;
+                  };
+                  extraSpecialArgs = {
+                    inherit
+                      claude-desktop
+                      dot-xmonad
+                      importDirModules
+                      inputs
+                      www-ncaq-net
+
+                      username
+                      ;
+                    pkgs-unstable = mkPkgsUnstable system;
+                    isWSL = false;
+                  };
+                  modules = [
+                    (_: {
+                      nixpkgs.config = nixpkgsConfig;
+                      nixpkgs.overlays = [
+                        rust-overlay.overlays.default
+                        firge-nix.overlays.default
+                      ];
+                    })
+                    sops-nix.homeManagerModules.sops
+                    ./home
+                  ];
+                };
+            in
+            {
+              "x86_64-linux" = mkLinuxHome {
+                system = "x86_64-linux";
+                username = "ncaq";
+              };
+              "aarch64-linux" = mkLinuxHome {
+                system = "aarch64-linux";
+                username = "ncaq";
               };
             };
         };

@@ -35,8 +35,9 @@ in
       reverse_proxy http://${atticdAddr}:8080
     '';
     # tailnet内からのアクセス用。
-    # Caddyが`*:443`を占有しているため、tailscaledではなくCaddyが、
-    # Tailscaleドメインの`/nix/cache/`をSNIベースで処理します。
+    # Caddyが`*:443`を占有しているため、
+    # tailscaledではなくCaddyが、
+    # Tailscaleドメインへのリクエストをバーチャルホストとして処理します。
     virtualHosts."${tailscaleDomain}".extraConfig = ''
       tls ${certFile} ${keyFile}
       handle_path /nix/cache/* {

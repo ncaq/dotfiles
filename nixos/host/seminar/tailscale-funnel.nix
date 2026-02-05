@@ -13,12 +13,12 @@ in
   # Funnel設定(パブリックインターネットからのアクセス用)。
   systemd.services.tailscale-funnel = {
     description = "Configure Tailscale Funnel for attic cache";
-    after = [
+    wants = [
       "tailscaled.service"
       "container@atticd.service"
       "caddy.service"
     ];
-    wants = [
+    after = [
       "tailscaled.service"
       "container@atticd.service"
       "caddy.service"
@@ -39,8 +39,8 @@ in
   ];
   systemd.services.tailscale-cert = {
     description = "Generate Tailscale TLS certificates for Caddy";
-    after = [ "tailscaled.service" ];
     wants = [ "tailscaled.service" ];
+    after = [ "tailscaled.service" ];
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
       Type = "oneshot";

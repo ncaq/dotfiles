@@ -82,4 +82,9 @@ in
       Persistent = true;
     };
   };
+
+  systemd.services.caddy = {
+    wants = [ "tailscale-cert-for-caddy.service" ];
+    after = [ "tailscale-cert-for-caddy.service" ];
+  };
 }

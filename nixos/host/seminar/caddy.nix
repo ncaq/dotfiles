@@ -31,22 +31,22 @@ in
       }
       reverse_proxy http://${atticdAddr}:8080
     '';
+    # tailnet内からのアクセス用。
+    # Caddyが`*:443`を占有しているため、tailscaledではなくCaddyが、
+    # Tailscaleドメインの`/nix/cache/`をSNIベースで処理します。
+    virtualHosts."${tailscaleDomain}".extraConfig = ''
+      tls ${certDir}/${tailscaleDomain}.crt ${certDir}/${tailscaleDomain}.key
+      handle_path /nix/cache/* {
+        reverse_proxy http://${atticdAddr}:8080
+      }
+      redir /nix/cache /nix/cache/
+    '';
     # Tailscale Funnelからのリクエストを受けるリバースプロキシ。
     # Tailscale Funnelはlocalhostへの転送しかサポートしていないため、
     # コンテナへの転送をするためにCaddyでプロキシします。
     # パス処理はtailnet用virtual hostと同じロジックです。
     virtualHosts.":8080".extraConfig = ''
       bind 127.0.0.1
-      handle_path /nix/cache/* {
-        reverse_proxy http://${atticdAddr}:8080
-      }
-      redir /nix/cache /nix/cache/
-    '';
-    # tailnet内からのアクセス用。
-    # Caddyが`*:443`を占有しているため、tailscaledではなくCaddyが、
-    # Tailscaleドメインの`/nix/cache/`をSNIベースで処理します。
-    virtualHosts."${tailscaleDomain}".extraConfig = ''
-      tls ${certDir}/${tailscaleDomain}.crt ${certDir}/${tailscaleDomain}.key
       handle_path /nix/cache/* {
         reverse_proxy http://${atticdAddr}:8080
       }

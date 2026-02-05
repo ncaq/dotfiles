@@ -27,6 +27,7 @@
       ];
 
       extraConfig = ''
+        # セッションをなるべく維持する
         set -g detach-on-destroy off
         set -g remain-on-exit on
         set-hook -g pane-died 'if -F "#{&&:#{==:#{session_windows},1},#{==:#{window_panes},1}}" "respawn-pane" ""'

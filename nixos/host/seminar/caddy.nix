@@ -70,6 +70,7 @@ in
     serviceConfig = {
       Type = "oneshot";
       ExecStart = "${tailscale}/bin/tailscale cert --cert-file ${certFile} --key-file ${keyFile} ${tailscaleDomain}";
+      RemainAfterExit = true;
       User = "caddy";
       Group = "caddy";
     };

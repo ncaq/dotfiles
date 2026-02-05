@@ -33,7 +33,7 @@ Choose the installation method that fits your environment:
 ./install.sh
 ```
 
-This script automatically detects your environment and runs the appropriate command:
+This script automatically detects your environment and runs the appropriate command.
 
 # Format
 

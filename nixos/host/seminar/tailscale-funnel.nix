@@ -20,9 +20,11 @@ in
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
       Type = "oneshot";
-      RemainAfterExit = true;
       ExecStart = "${tailscale}/bin/tailscale funnel --bg http://127.0.0.1:8080";
       ExecStop = "${tailscale}/bin/tailscale funnel --bg off";
+      RemainAfterExit = true;
+      Restart = "on-failure";
+      RestartSec = "10s";
     };
   };
 }

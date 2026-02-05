@@ -137,55 +137,6 @@
             };
         in
         {
-          homeConfigurations =
-            let
-              mkLinuxHome =
-                {
-                  system,
-                  username,
-                }:
-                home-manager.lib.homeManagerConfiguration {
-                  pkgs = import nixpkgs {
-                    inherit system;
-                    config = nixpkgsConfig;
-                  };
-                  extraSpecialArgs = {
-                    inherit
-                      claude-desktop
-                      dot-xmonad
-                      importDirModules
-                      inputs
-                      www-ncaq-net
-
-                      username
-                      ;
-                    pkgs-unstable = mkPkgsUnstable system;
-                    isWSL = false;
-                  };
-                  modules = [
-                    (_: {
-                      nixpkgs.config = nixpkgsConfig;
-                      nixpkgs.overlays = [
-                        rust-overlay.overlays.default
-                        firge-nix.overlays.default
-                      ];
-                    })
-                    sops-nix.homeManagerModules.sops
-                    ./home
-                  ];
-                };
-            in
-            {
-              "x86_64-linux" = mkLinuxHome {
-                system = "x86_64-linux";
-                username = "ncaq";
-              };
-              "aarch64-linux" = mkLinuxHome {
-                system = "aarch64-linux";
-                username = "ncaq";
-              };
-            };
-
           nixosConfigurations =
             let
               mkNixosSystem =
@@ -267,6 +218,55 @@
               "vanitas" = mkNixosSystem {
                 system = "x86_64-linux";
                 hostName = "vanitas";
+              };
+            };
+
+          homeConfigurations =
+            let
+              mkLinuxHome =
+                {
+                  system,
+                  username,
+                }:
+                home-manager.lib.homeManagerConfiguration {
+                  pkgs = import nixpkgs {
+                    inherit system;
+                    config = nixpkgsConfig;
+                  };
+                  extraSpecialArgs = {
+                    inherit
+                      claude-desktop
+                      dot-xmonad
+                      importDirModules
+                      inputs
+                      www-ncaq-net
+
+                      username
+                      ;
+                    pkgs-unstable = mkPkgsUnstable system;
+                    isWSL = false;
+                  };
+                  modules = [
+                    (_: {
+                      nixpkgs.config = nixpkgsConfig;
+                      nixpkgs.overlays = [
+                        rust-overlay.overlays.default
+                        firge-nix.overlays.default
+                      ];
+                    })
+                    sops-nix.homeManagerModules.sops
+                    ./home
+                  ];
+                };
+            in
+            {
+              "x86_64-linux" = mkLinuxHome {
+                system = "x86_64-linux";
+                username = "ncaq";
+              };
+              "aarch64-linux" = mkLinuxHome {
+                system = "aarch64-linux";
+                username = "ncaq";
               };
             };
         };

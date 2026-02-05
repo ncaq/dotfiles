@@ -70,7 +70,6 @@ in
     serviceConfig = {
       Type = "oneshot";
       ExecStart = "${tailscale}/bin/tailscale cert --cert-file ${certFile} --key-file ${keyFile} ${tailscaleDomain}";
-      ExecStartPost = "+/run/current-system/systemd/bin/systemctl reload caddy";
       User = "caddy";
       Group = "caddy";
     };

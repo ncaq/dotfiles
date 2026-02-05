@@ -21,3 +21,10 @@ runs:
       with:
         name: ncaq-dotfiles
         authToken: "${{ inputs.cachix-auth-token }}"
+    - name: Setup Attic cache
+      if: inputs.attic-token != ''
+      uses: ryanccn/attic-action@1887fd507f03327c96c64cca30118c96eb17fdad # v0.4.1
+      with:
+        endpoint: https://seminar.border-saurolophus.ts.net/nix/cache/
+        cache: private
+        token: "${{ inputs.attic-token }}"

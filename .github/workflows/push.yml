@@ -25,8 +25,15 @@ jobs:
       - run: nix flake check
 
   build-home-manager:
-    runs-on: ubuntu-24.04
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
+    strategy:
+      matrix:
+        include:
+          - system: x86_64-linux
+            runner: ubuntu-24.04
+          - system: aarch64-linux
+            runner: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
@@ -35,7 +42,7 @@ jobs:
         with:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
           attic-token: "${{ secrets.ATTIC_TOKEN }}"
-      - run: nix build .#homeConfigurations.ncaq.activationPackage
+      - run: nix build .#homeConfigurations.${{ matrix.system }}.activationPackage
 
   build-nixos:
     runs-on: ubuntu-24.04

@@ -105,6 +105,7 @@
       ];
 
       systems = [
+        "aarch64-linux"
         "x86_64-linux"
       ];
 
@@ -175,8 +176,12 @@
                 };
             in
             {
-              "ncaq" = mkLinuxHome {
+              "x86_64-linux" = mkLinuxHome {
                 system = "x86_64-linux";
+                username = "ncaq";
+              };
+              "aarch64-linux" = mkLinuxHome {
+                system = "aarch64-linux";
                 username = "ncaq";
               };
             };

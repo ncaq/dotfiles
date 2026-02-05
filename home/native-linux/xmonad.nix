@@ -1,9 +1,10 @@
 {
   pkgs,
+  lib,
   dot-xmonad,
   ...
 }:
-{
+lib.mkIf pkgs.stdenv.hostPlatform.isx86_64 {
   xsession = {
     enable = true;
     windowManager.command = "xmonad-launch";

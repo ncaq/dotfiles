@@ -5,8 +5,11 @@
 }:
 let
   atticdAddr = config.containerAddresses.atticd.container;
+  tailscale = config.services.tailscale.package;
   tailscaleDomain = "seminar.border-saurolophus.ts.net";
   certDir = "/var/lib/tailscale-cert";
+  certFile = "${certDir}/${tailscaleDomain}.crt";
+  keyFile = "${certDir}/${tailscaleDomain}.key";
 in
 {
   sops.secrets."cloudflare-dns-api-token" = {
@@ -52,5 +55,32 @@ in
       }
       redir /nix/cache /nix/cache/
     '';
+  };
+
+  # Tailscaleドメイン用のTLS証明書を取得・更新するサービス。
+  # Caddyがtailnet内からのアクセスでもTLSを提供できるようにします。
+  systemd.tmpfiles.rules = [
+    "d ${certDir} 0750 caddy caddy -"
+  ];
+  systemd.services.tailscale-cert-for-caddy = {
+    description = "Generate Tailscale TLS certificates for Caddy";
+    requires = [ "tailscaled.service" ];
+    after = [ "tailscaled.service" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${tailscale}/bin/tailscale cert --cert-file ${certFile} --key-file ${keyFile} ${tailscaleDomain}";
+      ExecStartPost = "+/run/current-system/systemd/bin/systemctl reload caddy";
+      User = "caddy";
+      Group = "caddy";
+    };
+  };
+  systemd.timers.tailscale-cert-for-caddy = {
+    description = "Weekly renewal of Tailscale TLS certificates";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnCalendar = "weekly";
+      Persistent = true;
+    };
   };
 }

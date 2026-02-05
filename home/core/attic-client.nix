@@ -19,6 +19,9 @@
   systemd.user.services.attic-init = {
     Unit = {
       Description = "Initialize Attic Cache Configuration";
+      Requires = [
+        "sops-nix.service"
+      ];
       Wants = [
         "network-online.target"
         "nss-lookup.target"
@@ -26,6 +29,7 @@
       After = [
         "network-online.target"
         "nss-lookup.target"
+        "sops-nix.service"
       ];
       Before = [
         "attic-watch-store-ncaq-private.service"

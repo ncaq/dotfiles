@@ -12,7 +12,7 @@ in
 {
   # Funnel設定(パブリックインターネットからのアクセス用)。
   systemd.services.tailscale-funnel = {
-    description = "Configure Tailscale Funnel for attic cache";
+    description = "Configure Tailscale Funnel";
     requires = [
       "tailscaled.service"
       "caddy.service"

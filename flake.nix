@@ -333,29 +333,6 @@
               meta.description = "Fast system information tool";
               program = "${pkgs.fastfetch}/bin/fastfetch";
             };
-            cachix-push = {
-              type = "app";
-              meta = {
-                description = "Push cache to cachix";
-              };
-              program = pkgs.writeShellApplication {
-                name = "cachix-push";
-                runtimeInputs = with pkgs; [
-                  cachix
-                  jq
-                ];
-                text = ''
-                  echo "Push inputs"
-                  nix flake archive --json|jq -r '.path,(.inputs|to_entries[].value.path)'|cachix push ncaq-dotfiles
-                  echo "Push home-manager"
-                  nix build --print-out-paths '.#homeConfigurations.ncaq.activationPackage'|cachix push ncaq-dotfiles
-                  echo "Push NixOS partial"
-                  nix build --print-out-paths '.#nixosConfigurations.vanitas.config.system.build.toplevel'|cachix push ncaq-dotfiles
-                  nix build --print-out-paths '.#nixosConfigurations.bullet.config.system.build.toplevel'|cachix push ncaq-dotfiles
-                  nix build --print-out-paths '.#nixosConfigurations.SSD0086.config.system.build.toplevel'|cachix push ncaq-dotfiles
-                '';
-              };
-            };
           };
           devShells.default = pkgs.mkShell { };
         };

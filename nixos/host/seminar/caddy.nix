@@ -34,7 +34,7 @@ in
     # Tailscale Funnelはlocalhostへの転送しかサポートしていないため、
     # コンテナへの転送をするためにCaddyでプロキシします。
     # パス処理はtailnet用virtual hostと同じロジックです。
-    virtualHosts.":8081".extraConfig = ''
+    virtualHosts.":8080".extraConfig = ''
       bind 127.0.0.1
       handle_path /nix/cache/* {
         reverse_proxy http://${atticdAddr}:8080

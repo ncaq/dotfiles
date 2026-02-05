@@ -25,7 +25,7 @@ in
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
-      ExecStart = "${tailscale}/bin/tailscale funnel --bg http://127.0.0.1:8081";
+      ExecStart = "${tailscale}/bin/tailscale funnel --bg http://127.0.0.1:8080";
       ExecStop = "${tailscale}/bin/tailscale funnel --bg off";
     };
   };

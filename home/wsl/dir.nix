@@ -15,10 +15,6 @@ in
     };
     # Windows側のSMBで解決。
     "Videos" = {
-      # 以下のようにWindows側でコマンドを使って共有ディレクトリをマウントしてください。
-      # ```
-      # net use S: \\SEMINAR\chihiro /persistent:yes
-      # ```
       source = config.lib.file.mkOutOfStoreSymlink "/mnt/s/Videos";
     };
     # WSLで便利なリンク。

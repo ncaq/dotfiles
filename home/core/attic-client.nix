@@ -19,8 +19,8 @@
   home.activation.attic-init = lib.hm.dag.entryAfter [ "sopsNix" ] ''
     if [[ -f "${config.sops.secrets."attic-token".path}" ]]; then
       # サーバーへの接続確認
-      if $DRY_RUN_CMD ${pkgs.curl}/bin/curl --head --silent --fail --connect-timeout 10 --max-time 30 \
-          https://seminar.border-saurolophus.ts.net/nix/cache/; then
+      if $DRY_RUN_CMD ${pkgs.curl}/bin/curl \
+         --head --silent --fail https://seminar.border-saurolophus.ts.net/nix/cache/; then
         $DRY_RUN_CMD ${pkgs.attic-client}/bin/attic login ncaq \
           https://seminar.border-saurolophus.ts.net/nix/cache/ < \
           ${config.sops.secrets."attic-token".path}

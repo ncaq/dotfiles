@@ -19,7 +19,7 @@ in
 
   fileSystems."/mnt/chihiro" = {
     fsType = "cifs";
-    device = "//seminar";
+    device = "//seminar/chihiro";
     options = [
       "noatime"
       "uid=${uid}"

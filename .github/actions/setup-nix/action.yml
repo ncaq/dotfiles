@@ -13,6 +13,16 @@ inputs:
 runs:
   using: composite
   steps:
+    - uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be # v1.3.1
+      if: runner.os == 'Linux'
+      with:
+        android: true # Nixで管理するので不要
+        docker-images: true # Dockerイメージは使わない
+        dotnet: true # Nixで管理するので不要
+        haskell: true # Nixで管理するので不要
+        large-packages: false # ARMランナーに存在しないパッケージ削除で警告が出るため触らない
+        swap-storage: false # swap設定は初期値のまま
+        tool-cache: false # GitHub Actionsのツールは残します
     - uses: cachix/install-nix-action@4e002c8ec80594ecd40e759629461e26c8abed15 # v31
       with:
         extra_nix_config: |

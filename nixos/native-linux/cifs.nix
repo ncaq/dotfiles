@@ -1,10 +1,11 @@
 {
   pkgs,
   config,
+  username,
   ...
 }:
 let
-  userConfig = config.users.users.ncaq; # サーバ側がユーザ名`ncaq`を求めるため固定します
+  userConfig = config.users.users.${username};
   uid = toString userConfig.uid;
   gid = toString config.users.groups.${userConfig.group}.gid;
 in

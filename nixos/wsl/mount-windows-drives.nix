@@ -8,7 +8,10 @@ in
   # WindowsでマウントされたネットワークドライブをWSL側で自動マウントする
   systemd.services.mount-windows-network-drives = {
     description = "Mount Windows network drives in WSL";
-    after = [ "local-fs.target" ];
+    after = [
+      "local-fs.target"
+      "network.target"
+    ];
     wantedBy = [ "multi-user.target" ];
 
     serviceConfig = {

@@ -43,16 +43,3 @@ jobs:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
           attic-token: "${{ secrets.ATTIC_TOKEN }}"
       - run: nix build .#homeConfigurations.${{ matrix.system }}.activationPackage
-
-  build-nixos:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/setup-nix
-        with:
-          cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
-          attic-token: "${{ secrets.ATTIC_TOKEN }}"
-      - run: nix build .#nixosConfigurations.bullet.config.system.build.toplevel # bulletが退役したらメインマシンに変更すること

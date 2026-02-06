@@ -9,10 +9,6 @@ let
 in
 {
   home.file = {
-    # WindowsのHDD側を参照。
-    "Videos" = {
-      source = config.lib.file.mkOutOfStoreSymlink "/mnt/d/Videos/";
-    };
     # Windowsホストの管理するGoogle Driveディレクトリを参照。
     "GoogleDrive" = {
       source = config.lib.file.mkOutOfStoreSymlink (WindowsUserHome + "/マイドライブ");

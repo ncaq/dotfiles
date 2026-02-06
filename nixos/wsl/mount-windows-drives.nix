@@ -22,7 +22,7 @@ in
       # ```
       # net use S: \\SEMINAR\chihiro /persistent:yes
       # ```
-      ExecStart = "${pkgs.util-linux}/bin/mount -t drvfs 'S:' /mnt/s -o metadata,uid=${uid},gid=${gid}";
+      ExecStart = "${pkgs.util-linux}/bin/mount -t drvfs 'S:' /mnt/s -o metadata,uid=${uid},gid=${gid},noexec,nosuid";
       ExecStop = "${pkgs.util-linux}/bin/umount /mnt/s";
     };
   };

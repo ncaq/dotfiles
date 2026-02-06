@@ -33,6 +33,9 @@ in
       "uid=${uid}"
       "gid=${gid}"
       "_netdev"
+      "nofail"
+      "noexec"
+      "nosuid"
       "credentials=${config.sops.templates."cifs-credentials".path}"
     ];
   };

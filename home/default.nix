@@ -2,6 +2,7 @@
   lib,
   config,
   username,
+  isTermux,
   isWSL,
   ...
 }:
@@ -21,6 +22,6 @@
     ./prompt
     ./core
   ]
-  ++ lib.optional (!isWSL) ./native-linux
+  ++ lib.optional (!(isTermux || isWSL)) ./native-linux
   ++ lib.optional isWSL ./wsl;
 }

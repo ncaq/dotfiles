@@ -24,6 +24,7 @@ in
       "noatime"
       "uid=${uid}"
       "gid=${gid}"
+      "_netdev"
       "credentials=${config.sops.secrets."cifs-password".path}"
     ];
   };

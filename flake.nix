@@ -96,6 +96,7 @@
       treefmt-nix,
       home-manager,
       nixos-wsl,
+      nix-on-droid,
       nixos-hardware,
       sops-nix,
       disko,
@@ -279,6 +280,66 @@
                 username = "ncaq";
               };
               "aarch64-linux" = mkLinuxHome {
+                system = "aarch64-linux";
+                username = "ncaq";
+              };
+            };
+
+          nixOnDroidConfigurations =
+            let
+              mkNixOnDroid =
+                {
+                  system,
+                  username,
+                }:
+                nix-on-droid.lib.nixOnDroidConfiguration {
+                  pkgs = import nixpkgs {
+                    inherit system;
+                    config = nixpkgsConfig;
+                    overlays = [
+                      rust-overlay.overlays.default
+                      firge-nix.overlays.default
+                      nix-on-droid.overlays.default
+                    ];
+                  };
+                  modules = [
+                    {
+                      # nix-on-droidのセットアップ時の最新バージョン。
+                      system.stateVersion = "24.05";
+                      # Android端末はほぼ携帯端末なのでコンフリクトしたファイルを処理するのには手間がかかるので合理的。
+                      environment.etcBackupExtension = ".bak";
+                      # Androidホストのタイムゾーンは自動的に引き継がれないようなので、
+                      # 明示的に設定。
+                      time.timeZone = "Asia/Tokyo";
+                      home-manager = {
+                        backupFileExtension = "hm-bak";
+                        useGlobalPkgs = true;
+                        useUserPackages = true;
+                        extraSpecialArgs = {
+                          inherit
+                            importDirModules
+                            inputs
+                            www-ncaq-net
+
+                            username
+                            ;
+                          pkgs-unstable = mkPkgsUnstable { inherit system; };
+                          isTermux = true; # アプリとしてはnix-on-droidですがランタイム的にはTermuxの方が妥当な名前。
+                          isWSL = false;
+                        };
+                        sharedModules = [
+                          sops-nix.homeManagerModules.sops
+                        ];
+                        config = ./home;
+                      };
+                    }
+                  ];
+                  # set path to home-manager flake
+                  home-manager-path = home-manager.outPath;
+                };
+            in
+            {
+              default = mkNixOnDroid {
                 system = "aarch64-linux";
                 username = "ncaq";
               };

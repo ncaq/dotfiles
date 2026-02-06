@@ -138,9 +138,12 @@
             allowUnfreePredicate = pkg: builtins.elem (nixpkgs.lib.getName pkg) allowedUnfreePackages;
           };
           mkPkgsUnstable =
-            system:
+            {
+              system,
+              overlays ? [ ],
+            }:
             import nixpkgs-unstable {
-              inherit system;
+              inherit system overlays;
               config = nixpkgsConfig;
             };
         in
@@ -194,7 +197,7 @@
                           useGlobalPkgs = true;
                           useUserPackages = true;
                           extraSpecialArgs = specialArgs // {
-                            pkgs-unstable = mkPkgsUnstable system;
+                            pkgs-unstable = mkPkgsUnstable { inherit system; };
                             isWSL = config.wsl.enable or false;
                           };
                           sharedModules = [
@@ -252,7 +255,7 @@
 
                       username
                       ;
-                    pkgs-unstable = mkPkgsUnstable system;
+                    pkgs-unstable = mkPkgsUnstable { inherit system; };
                     isWSL = false;
                   };
                   modules = [

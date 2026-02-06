@@ -198,6 +198,7 @@
                           useUserPackages = true;
                           extraSpecialArgs = specialArgs // {
                             pkgs-unstable = mkPkgsUnstable { inherit system; };
+                            isTermux = false;
                             isWSL = config.wsl.enable or false;
                           };
                           sharedModules = [
@@ -256,6 +257,7 @@
                       username
                       ;
                     pkgs-unstable = mkPkgsUnstable { inherit system; };
+                    isTermux = false;
                     isWSL = false;
                   };
                   modules = [

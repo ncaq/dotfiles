@@ -20,7 +20,7 @@ in
   sops.templates."cifs-credentials" = {
     content = ''
       username=ncaq
-      password="${config.sops.placeholder."cifs-password"}"
+      password=${config.sops.placeholder."cifs-password"}
     '';
     mode = "0400";
   };

@@ -15,73 +15,37 @@
     mode = "0400";
   };
 
-  # 起動時にキャッシュ設定を初期化します。
-  systemd.user.services.attic-init = {
-    Unit = {
-      Description = "Initialize Attic Cache Configuration";
-      Requires = [
-        "sops-nix.service"
-      ];
-      Wants = [
-        "network-online.target"
-        "nss-lookup.target"
-      ];
-      After = [
-        "network-online.target"
-        "nss-lookup.target"
-        "sops-nix.service"
-      ];
-      Before = [
-        "attic-watch-store-ncaq-private.service"
-      ];
-    };
-
-    Service = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-      ConditionPathExists = [ config.sops.secrets."attic-token".path ];
-      ExecStartPre = ''
-        ${pkgs.curl}/bin/curl \
-          --head --silent --fail \
-          --connect-timeout 10 --max-time 30 \
-          --retry 3 --retry-delay 10 --retry-all-errors \
-          https://seminar.border-saurolophus.ts.net/nix/cache/
-      '';
-      ExecStart = lib.getExe (
-        pkgs.writeShellApplication {
-          name = "attic-init";
-          runtimeInputs = with pkgs; [
-            attic-client
-          ];
-          text = ''
-            attic login ncaq https://seminar.border-saurolophus.ts.net/nix/cache/ < \
-              ${config.sops.secrets."attic-token".path}
-            attic use ncaq:private
-          '';
-        }
-      );
-      # 失敗時に自動リトライします。
-      Restart = "on-failure";
-      RestartSec = "30s";
-      TimeoutStartSec = "5min";
-    };
-
-    Install = {
-      WantedBy = [ "default.target" ];
-    };
-  };
+  # インストール時にキャッシュ設定を初期化します。
+  home.activation.attic-init = lib.hm.dag.entryAfter [ "sopsNix" ] ''
+    if [[ -f "${config.sops.secrets."attic-token".path}" ]]; then
+      # サーバーへの接続確認
+      if $DRY_RUN_CMD ${pkgs.curl}/bin/curl \
+         --head --silent --fail \
+         --connect-timeout 5 --max-time 10 \
+         https://seminar.border-saurolophus.ts.net/nix/cache/; then
+        $DRY_RUN_CMD ${pkgs.attic-client}/bin/attic login ncaq \
+          https://seminar.border-saurolophus.ts.net/nix/cache/ < \
+          ${config.sops.secrets."attic-token".path}
+        $DRY_RUN_CMD ${pkgs.attic-client}/bin/attic use ncaq:private
+      else
+        echo "attic-init: サーバーに接続できないためスキップします"
+      fi
+    else
+      echo "attic-init: トークンファイルが存在しないためスキップします"
+    fi
+  '';
 
   # 全てのビルド結果を非同期にプライベートキャッシュにpushします。
   systemd.user.services.attic-watch-store-ncaq-private = {
     Unit = {
       Description = "Attic Binary Cache Auto-Push Service for ncaq:private";
       # ネットワークなどの準備が整ってから起動します。
-      Requires = [ "attic-init.service" ];
       After = [
         "network-online.target"
         "nix-daemon.service"
-        "attic-init.service"
       ];
+      # 設定ファイルが存在しない場合は起動しません。
+      ConditionPathExists = [ "%h/.config/attic/config.toml" ];
     };
 
     Service = {

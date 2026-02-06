@@ -22,7 +22,8 @@
   };
 
   home.file = {
-    # 共通で`Pictures`はGoogle Driveの`Pictures`フォルダを参照する。
+    # 共通で`Pictures`はGoogle Driveの`Pictures`フォルダを参照します。
+    # Google Driveをどちらで解決するかは別のモジュールに任せます。
     "Pictures" = {
       source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/GoogleDrive/Pictures";
     };

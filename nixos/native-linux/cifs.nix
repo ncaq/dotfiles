@@ -12,7 +12,7 @@ in
   environment.systemPackages = with pkgs; [ cifs-utils ];
 
   sops.secrets."cifs-password" = {
-    sopsFile = ../../../secrets/samba.yaml;
+    sopsFile = ../../secrets/samba.yaml;
     key = "password";
     mode = "0400";
   };

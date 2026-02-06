@@ -17,6 +17,14 @@ in
     mode = "0400";
   };
 
+  sops.templates."cifs-credentials" = {
+    content = ''
+      username=ncaq
+      password="${config.sops.placeholder."cifs-password"}"
+    '';
+    mode = "0400";
+  };
+
   fileSystems."/mnt/chihiro" = {
     fsType = "cifs";
     device = "//seminar/chihiro";
@@ -25,7 +33,7 @@ in
       "uid=${uid}"
       "gid=${gid}"
       "_netdev"
-      "credentials=${config.sops.secrets."cifs-password".path}"
+      "credentials=${config.sops.templates."cifs-credentials".path}"
     ];
   };
 }

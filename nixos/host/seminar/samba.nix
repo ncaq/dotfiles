@@ -7,7 +7,7 @@
 {
   # Sambaパスワードをsopsで管理
   sops.secrets."samba-password" = {
-    sopsFile = ../../../secrets/seminar/samba.yaml;
+    sopsFile = ../../../secrets/samba.yaml;
     key = "password";
     mode = "0400";
   };

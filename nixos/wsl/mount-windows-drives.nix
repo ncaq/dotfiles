@@ -1,4 +1,9 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
+let
+  userConfig = config.users.users.ncaq; # サーバ側がユーザ名`ncaq`を求めるため固定します
+  uid = toString userConfig.uid;
+  gid = toString config.users.groups.${userConfig.group}.gid;
+in
 {
   # WindowsでマウントされたネットワークドライブをWSL側で自動マウントする
   systemd.services.mount-windows-network-drives = {
@@ -14,7 +19,7 @@
       # ```
       # net use S: \\SEMINAR\chihiro /persistent:yes
       # ```
-      ExecStart = "${pkgs.util-linux}/bin/mount -t drvfs 'S:' /mnt/s -o metadata,uid=1000,gid=100";
+      ExecStart = "${pkgs.util-linux}/bin/mount -t drvfs 'S:' /mnt/s -o metadata,uid=${uid},gid=${gid}";
       ExecStop = "${pkgs.util-linux}/bin/umount /mnt/s";
     };
   };

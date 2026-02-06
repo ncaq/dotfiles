@@ -20,7 +20,9 @@
     if [[ -f "${config.sops.secrets."attic-token".path}" ]]; then
       # サーバーへの接続確認
       if $DRY_RUN_CMD ${pkgs.curl}/bin/curl \
-         --head --silent --fail https://seminar.border-saurolophus.ts.net/nix/cache/; then
+         --head --silent --fail \
+         --connect-timeout 5 --max-time 10 \
+         https://seminar.border-saurolophus.ts.net/nix/cache/; then
         $DRY_RUN_CMD ${pkgs.attic-client}/bin/attic login ncaq \
           https://seminar.border-saurolophus.ts.net/nix/cache/ < \
           ${config.sops.secrets."attic-token".path}

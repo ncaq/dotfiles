@@ -13,6 +13,10 @@ in
     "GoogleDrive" = {
       source = config.lib.file.mkOutOfStoreSymlink (windowsUserHome + "/マイドライブ");
     };
+    # Windows側のSMBで解決。
+    "Videos" = {
+      source = config.lib.file.mkOutOfStoreSymlink "/mnt/s/Videos";
+    };
     # WSLで便利なリンク。
     "WinHome" = {
       source = config.lib.file.mkOutOfStoreSymlink windowsUserHome;

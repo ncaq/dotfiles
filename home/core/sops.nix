@@ -42,6 +42,10 @@ let
     pkgs.writeShellApplication {
       name = "sops-nix-user-termux";
       text = ''
+        # Termux環境では$XDG_RUNTIME_DIRが設定されていないが、
+        # sops-install-secretsはUserModeで$XDG_RUNTIME_DIRを参照するため、
+        # ダミー値を設定する（実際のパスはmanifestで明示的に指定済み）
+        export XDG_RUNTIME_DIR="${cfg.defaultSecretsMountPoint}"
         export SOPS_GPG_EXEC="${cfg.gnupg.package}/bin/gpg"
         ${sops-install-secrets}/bin/sops-install-secrets -ignore-passwd ${manifest}
       '';

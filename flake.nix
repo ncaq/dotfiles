@@ -338,8 +338,9 @@
                       terminal.font = "${pkgs.firge-nerd-font}/share/fonts/firge-nerd/FirgeNerdConsole-Regular.ttf";
                       # Androidホストのタイムゾーンは自動的に引き継がれないようなので明示的に設定。
                       time.timeZone = "Asia/Tokyo";
-                      # ユーザ情報をnix-on-droidレベルでも指定
                       user = {
+                        # `userName`はnix-on-droidでread-onlyで`"nix-on-droid"`固定のため設定不可。
+                        # 以下のコミットで変更可能なようになるようですがまだリリースされていません。
                         shell = "${pkgs.zsh}/bin/zsh";
                       };
                       # 今後home-managerに設定を委任。

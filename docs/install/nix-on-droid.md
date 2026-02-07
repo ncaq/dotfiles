@@ -23,7 +23,7 @@ run the following commands in the Nix-on-Droid terminal.
 ```bash
 nix shell 'nixpkgs#git' --command git clone https://github.com/ncaq/dotfiles.git
 cd dotfiles
-nix-on-droid switch --flake '.#default'
+nix-on-droid switch --flake '.'
 ```
 
 ### 3. Restart the App

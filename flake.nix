@@ -425,6 +425,7 @@
             inherit (pkgs)
               disko
               fastfetch
+              git
               home-manager
               ;
           };

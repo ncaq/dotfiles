@@ -3,7 +3,7 @@ set -euo pipefail
 
 # gitがPATHにない場合gitをPATHに追加して再実行。
 # Nix-on-Droidの初期環境などではgitがインストールされていないため必要。
-if ! command -v git &> /dev/null; then
+if ! command -v git &>/dev/null; then
   # gitがないとflakeの読み込みも出来ないのでnixpkgsの生の使用はやむを得ない。
   exec nix shell 'nixpkgs#git' --command "$0" "$@"
 fi

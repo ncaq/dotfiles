@@ -146,15 +146,6 @@
             inherit allowlistedLicenses;
             allowUnfreePredicate = pkg: builtins.elem (nixpkgs.lib.getName pkg) allowedUnfreePackages;
           };
-          mkPkgsUnstable =
-            {
-              system,
-              overlays ? [ ],
-            }:
-            import nixpkgs-unstable {
-              inherit system overlays;
-              config = nixpkgsConfig;
-            };
         in
         {
           nixosConfigurations =
@@ -208,7 +199,14 @@
                           useGlobalPkgs = true;
                           useUserPackages = true;
                           extraSpecialArgs = specialArgs // {
-                            pkgs-unstable = mkPkgsUnstable { inherit system; };
+                            pkgs-unstable = import nixpkgs-unstable {
+                              inherit system;
+                              config = nixpkgsConfig;
+                              overlays = [
+                                rust-overlay.overlays.default
+                                firge-nix.overlays.default
+                              ];
+                            };
                             isTermux = false;
                             isWSL = config.wsl.enable or false;
                           };
@@ -256,7 +254,13 @@
                   pkgs = import nixpkgs {
                     inherit system;
                     config = nixpkgsConfig;
+                    overlays = [
+                      rust-overlay.overlays.default
+                      firge-nix.overlays.default
+                    ];
                   };
+                  useGlobalPkgs = true;
+                  useUserPackages = true;
                   extraSpecialArgs = {
                     inherit
                       claude-desktop
@@ -267,20 +271,18 @@
 
                       username
                       ;
-                    pkgs-unstable = mkPkgsUnstable { inherit system; };
+                    pkgs-unstable = import nixpkgs-unstable {
+                      inherit system;
+                      config = nixpkgsConfig;
+                      overlay = [
+                        rust-overlay.overlays.default
+                        firge-nix.overlays.default
+                      ];
+                    };
                     isTermux = false;
                     isWSL = false;
                   };
                   modules = [
-                    (_: {
-                      nixpkgs = {
-                        config = nixpkgsConfig;
-                        overlays = [
-                          rust-overlay.overlays.default
-                          firge-nix.overlays.default
-                        ];
-                      };
-                    })
                     sops-nix.homeManagerModules.sops
                     ./home
                   ];
@@ -356,7 +358,15 @@
 
                             username
                             ;
-                          pkgs-unstable = mkPkgsUnstable { inherit system; };
+                          pkgs-unstable = import nixpkgs-unstable {
+                            inherit system;
+                            config = nixpkgsConfig;
+                            overlays = [
+                              rust-overlay.overlays.default
+                              firge-nix.overlays.default
+                              nix-on-droid.overlays.default
+                            ];
+                          };
                           isTermux = true; # アプリとしてはnix-on-droidですがランタイム的にはTermuxの方が妥当な名前。
                           isWSL = false;
                         };

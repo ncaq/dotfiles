@@ -259,8 +259,6 @@
                       firge-nix.overlays.default
                     ];
                   };
-                  useGlobalPkgs = true;
-                  useUserPackages = true;
                   extraSpecialArgs = {
                     inherit
                       claude-desktop

@@ -21,7 +21,7 @@
   # 引数を利用することで一瞬`ps`でトークンが見れる問題は、
   # セキュリティ上無視できる問題だと判断します。
   # そもそも`ps`を実行される権限があるのが問題外と考えます。
-  home.activation.attic-init = lib.hm.dag.entryAfter [ "sops-nix" ] ''
+  home.activation.attic-init = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     if [[ -f "${config.sops.secrets."attic-token".path}" ]]; then
       # サーバーへの接続確認
       if $DRY_RUN_CMD ${pkgs.curl}/bin/curl \

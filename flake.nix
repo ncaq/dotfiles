@@ -274,7 +274,7 @@
                     pkgs-unstable = import nixpkgs-unstable {
                       inherit system;
                       config = nixpkgsConfig;
-                      overlay = [
+                      overlays = [
                         rust-overlay.overlays.default
                         firge-nix.overlays.default
                       ];

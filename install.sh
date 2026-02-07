@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# gitがPATHにない場合、flakeのgitをPATHに追加して再実行。
+# Nix-on-Droidの初期環境ではgitがインストールされていないため必要。
+if ! command -v git &> /dev/null; then
+  exec nix shell '.#git' --command "$0" "$@"
+fi
+
 if [ -f /etc/NIXOS ]; then
   sudo nixos-rebuild switch --flake ".#$(hostname)"
 elif [ -n "${TERMUX_VERSION:-}" ]; then

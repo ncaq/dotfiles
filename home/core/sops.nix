@@ -69,7 +69,7 @@ lib.mkMerge [
     # lib.mkForceで元のactivation hookを上書きする
     home.activation.sops-nix = lib.mkForce (
       lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-        run ${script}
+        $DRY_RUN_CMD run ${script}
       ''
     );
   })

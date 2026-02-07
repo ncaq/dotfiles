@@ -321,6 +321,10 @@
                     {
                       # nix-on-droidのセットアップ時の最新バージョン。
                       system.stateVersion = "24.05";
+                      # 常に有効にしておく機能をランタイムでも有効化。
+                      nix.extraOptions = ''
+                        experimental-features = flakes nix-command
+                      '';
                       # Android端末はほぼ携帯端末なのでコンフリクトしたファイルを処理するのには手間がかかるので合理的。
                       environment.etcBackupExtension = ".bak";
                       # Nix-on-Droid特有のAndroid連携設定。

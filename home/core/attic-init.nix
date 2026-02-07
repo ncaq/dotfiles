@@ -29,8 +29,8 @@
         echo "attic-init: token head = $(${pkgs.coreutils}/bin/head -c 20 ${
           config.sops.secrets."attic-token".path
         })"
-        ${pkgs.coreutils}/bin/cat ${config.sops.secrets."attic-token".path} | \
-          ${pkgs.attic-client}/bin/attic login ncaq https://seminar.border-saurolophus.ts.net/nix/cache/
+        token=$(${pkgs.coreutils}/bin/cat ${config.sops.secrets."attic-token".path})
+        echo "$token" | ${pkgs.attic-client}/bin/attic login ncaq https://seminar.border-saurolophus.ts.net/nix/cache/
         ${pkgs.attic-client}/bin/attic use ncaq:private
       else
         echo "attic-init: サーバーに接続できないためスキップします"

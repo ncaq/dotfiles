@@ -341,6 +341,7 @@
                       user = {
                         # `userName`はnix-on-droidでread-onlyで`"nix-on-droid"`固定のため設定不可。
                         # 以下のコミットで変更可能なようになるようですがまだリリースされていません。
+                        # [allow both group and username to be changed](https://github.com/nix-community/nix-on-droid/commit/010aa48cf613ce3b4a0ed57457920f66ff3239f8)
                         shell = "${pkgs.zsh}/bin/zsh";
                       };
                       # 今後home-managerに設定を委任。

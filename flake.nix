@@ -326,6 +326,7 @@
                         termux-wake-unlock.enable = true;
                         xdg-open.enable = true;
                       };
+                      terminal.font = "${firge-nix.firge-nerd-font}/share/fonts/firge-nerd/FirgeNerdConsole-Regular.ttf";
                       home-manager = {
                         backupFileExtension = "hm-bak";
                         useGlobalPkgs = true;

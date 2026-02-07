@@ -296,7 +296,7 @@
                   system,
                   username,
                 }:
-                nix-on-droid.lib.nixOnDroidConfiguration {
+                let
                   pkgs = import nixpkgs {
                     inherit system;
                     config = nixpkgsConfig;
@@ -306,6 +306,9 @@
                       nix-on-droid.overlays.default
                     ];
                   };
+                in
+                nix-on-droid.lib.nixOnDroidConfiguration {
+                  inherit pkgs;
                   modules = [
                     {
                       # nix-on-droidのセットアップ時の最新バージョン。
@@ -324,12 +327,12 @@
                         xdg-open.enable = true;
                       };
                       # Termuxのターミナルのフォント設定は一つのファイルしか指定できない。
-                      terminal.font = "${firge-nix.firge-nerd-font}/share/fonts/firge-nerd/FirgeNerdConsole-Regular.ttf";
+                      terminal.font = "${pkgs.firge-nerd-font}/share/fonts/firge-nerd/FirgeNerdConsole-Regular.ttf";
                       # Androidホストのタイムゾーンは自動的に引き継がれないようなので明示的に設定。
                       time.timeZone = "Asia/Tokyo";
                       # ユーザ情報をnix-on-droidレベルでも指定
                       user = {
-                        shell = "${nixpkgs.legacyPackages.${system}.zsh}/bin/zsh";
+                        shell = "${pkgs.zsh}/bin/zsh";
                       };
                       # 今後home-managerに設定を委任。
                       home-manager = {

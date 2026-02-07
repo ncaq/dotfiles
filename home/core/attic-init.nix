@@ -16,7 +16,7 @@
   };
 
   # インストール時にキャッシュ設定を初期化します。
-  home.activation.attic-init = lib.hm.dag.entryAfter [ "sopsNix" ] ''
+  home.activation.attic-init = lib.hm.dag.entryAfter [ "sops-nix" ] ''
     if [[ -f "${config.sops.secrets."attic-token".path}" ]]; then
       # サーバーへの接続確認
       if $DRY_RUN_CMD ${pkgs.curl}/bin/curl \

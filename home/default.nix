@@ -2,14 +2,15 @@
   lib,
   config,
   username,
+  isTermux,
   isWSL,
   ...
 }:
 {
   home.stateVersion = "25.05";
 
-  # ユーザ名は様々な場所に影響するのでプラットフォームが名前を用意しても強制します。
-  home.username = lib.mkForce username;
+  # ユーザ名の制約が強い環境で譲ります。
+  home.username = lib.mkDefault username;
 
   # ホームディレクトリはプラットフォームの制約が強いのでプラットフォームの設定を尊重します。
   home.homeDirectory = lib.mkDefault "/home/${config.home.username}";
@@ -21,6 +22,6 @@
     ./prompt
     ./core
   ]
-  ++ lib.optional (!isWSL) ./native-linux
+  ++ lib.optional (!(isTermux || isWSL)) ./native-linux
   ++ lib.optional isWSL ./wsl;
 }

@@ -1,4 +1,10 @@
-_: {
+{
+  lib,
+  isTermux,
+  ...
+}:
+lib.mkIf (!isTermux) {
+  # Termux環境ではdconfにアクセス出来ないので無効にします。
   gtk = {
     enable = true;
 
@@ -9,7 +15,6 @@ _: {
       gtk-application-prefer-dark-theme = true;
     };
   };
-
   dconf.settings = {
     "org/gnome/desktop/interface" = {
       color-scheme = "prefer-dark";

@@ -27,6 +27,10 @@ Choose the installation method that fits your environment:
 
 - [home-manager Standalone](./docs/install/home-manager.md) - Install home-manager only on non-NixOS systems
 
+## Nix-on-Droid
+
+- [Nix-on-Droid](./docs/install/nix-on-droid.md) - Install on Android using Nix-on-Droid
+
 # Rebuild
 
 ```zsh

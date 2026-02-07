@@ -2,7 +2,8 @@
   description = "dotfiles, NixOS and home-manager.";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
+    nixpkgs.follows = "nixpkgs-2511";
+    nixpkgs-2511.url = "github:NixOS/nixpkgs/nixos-25.11";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
     flake-parts.url = "github:hercules-ci/flake-parts";
@@ -23,6 +24,14 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    nix-on-droid = {
+      url = "github:nix-community/nix-on-droid/release-24.05";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        home-manager.follows = "home-manager";
+      };
+    };
+
     nixos-hardware.url = "github:NixOS/nixos-hardware";
 
     sops-nix = {
@@ -33,6 +42,15 @@
     disko = {
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    haskellNix = {
+      url = "github:input-output-hk/haskell.nix";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        nixpkgs-2511.follows = "nixpkgs-2511";
+        nixpkgs-unstable.follows = "nixpkgs-unstable";
+      };
     };
 
     rust-overlay = {
@@ -58,9 +76,7 @@
       url = "github:ncaq/.xmonad";
       inputs = {
         nixpkgs.follows = "nixpkgs";
-        haskellNix.inputs = {
-          nixpkgs-unstable.follows = "nixpkgs-unstable";
-        };
+        haskellNix.follows = "haskellNix";
         flake-utils.follows = "flake-utils";
         treefmt-nix.follows = "treefmt-nix";
       };
@@ -88,6 +104,7 @@
       treefmt-nix,
       home-manager,
       nixos-wsl,
+      nix-on-droid,
       nixos-hardware,
       sops-nix,
       disko,
@@ -129,12 +146,6 @@
             inherit allowlistedLicenses;
             allowUnfreePredicate = pkg: builtins.elem (nixpkgs.lib.getName pkg) allowedUnfreePackages;
           };
-          mkPkgsUnstable =
-            system:
-            import nixpkgs-unstable {
-              inherit system;
-              config = nixpkgsConfig;
-            };
         in
         {
           nixosConfigurations =
@@ -167,11 +178,13 @@
                     ;
                   modules = [
                     (_: {
-                      nixpkgs.config = nixpkgsConfig;
-                      nixpkgs.overlays = [
-                        rust-overlay.overlays.default
-                        firge-nix.overlays.default
-                      ];
+                      nixpkgs = {
+                        config = nixpkgsConfig;
+                        overlays = [
+                          rust-overlay.overlays.default
+                          firge-nix.overlays.default
+                        ];
+                      };
                     })
                     sops-nix.nixosModules.sops
                     disko.nixosModules.default
@@ -186,7 +199,15 @@
                           useGlobalPkgs = true;
                           useUserPackages = true;
                           extraSpecialArgs = specialArgs // {
-                            pkgs-unstable = mkPkgsUnstable system;
+                            pkgs-unstable = import nixpkgs-unstable {
+                              inherit system;
+                              config = nixpkgsConfig;
+                              overlays = [
+                                rust-overlay.overlays.default
+                                firge-nix.overlays.default
+                              ];
+                            };
+                            isTermux = false;
                             isWSL = config.wsl.enable or false;
                           };
                           sharedModules = [
@@ -233,6 +254,10 @@
                   pkgs = import nixpkgs {
                     inherit system;
                     config = nixpkgsConfig;
+                    overlays = [
+                      rust-overlay.overlays.default
+                      firge-nix.overlays.default
+                    ];
                   };
                   extraSpecialArgs = {
                     inherit
@@ -244,17 +269,18 @@
 
                       username
                       ;
-                    pkgs-unstable = mkPkgsUnstable system;
-                    isWSL = false;
-                  };
-                  modules = [
-                    (_: {
-                      nixpkgs.config = nixpkgsConfig;
-                      nixpkgs.overlays = [
+                    pkgs-unstable = import nixpkgs-unstable {
+                      inherit system;
+                      config = nixpkgsConfig;
+                      overlays = [
                         rust-overlay.overlays.default
                         firge-nix.overlays.default
                       ];
-                    })
+                    };
+                    isTermux = false;
+                    isWSL = false;
+                  };
+                  modules = [
                     sops-nix.homeManagerModules.sops
                     ./home
                   ];
@@ -270,12 +296,31 @@
                 username = "ncaq";
               };
             };
+
+          nixOnDroidConfigurations = {
+            default = import ./nix-on-droid {
+              inherit
+                firge-nix
+                home-manager
+                importDirModules
+                inputs
+                nix-on-droid
+                nixpkgs
+                nixpkgs-unstable
+                nixpkgsConfig
+                rust-overlay
+                sops-nix
+                www-ncaq-net
+                ;
+              system = "aarch64-linux";
+              username = "ncaq";
+            };
+          };
         };
 
       perSystem =
         {
           pkgs,
-          inputs',
           ...
         }:
         {
@@ -323,22 +368,14 @@
               };
             };
           };
-          apps = {
-            home-manager = {
-              type = "app";
-              meta.description = "Manage user configuration with Nix";
-              program = "${inputs'.home-manager.packages.home-manager}/bin/home-manager";
-            };
-            disko = {
-              type = "app";
-              meta.description = "Declarative disk partitioning";
-              program = "${inputs'.disko.packages.disko}/bin/disko";
-            };
-            fastfetch = {
-              type = "app";
-              meta.description = "Fast system information tool";
-              program = "${pkgs.fastfetch}/bin/fastfetch";
-            };
+          packages = {
+            # flake.lockの管理バージョンをre-exportすることで安定した利用を促進。
+            inherit (pkgs)
+              disko
+              fastfetch
+              git
+              home-manager
+              ;
           };
           devShells.default = pkgs.mkShell { };
         };
@@ -348,12 +385,14 @@
     extra-substituters = [
       "https://cache.nixos.org/"
       "https://nix-community.cachix.org/"
+      "https://nix-on-droid.cachix.org/"
       "https://cache.iog.io/"
       "https://ncaq-dotfiles.cachix.org/"
     ];
     extra-trusted-public-keys = [
       "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+      "nix-on-droid.cachix.org-1:56snoMJTXmDRC1Ei24CmKoUqvHJ9XCp+nidK7qkMQrU="
       "hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ="
       "ncaq-dotfiles.cachix.org-1:oEM1SL5sNteDM16I23/rFZwKl+Anca/PnEWp6LWUrws="
     ];

@@ -14,15 +14,6 @@
     defaultEditor = true;
   };
 
-  home.sessionVariables =
-    let
-      editor = "emacsclient -a emacs";
-    in
-    {
-      EDITOR = editor;
-      VISUAL = editor;
-    };
-
   home.activation.cloneEmacsConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     if [ ! -d "${config.home.homeDirectory}/.emacs.d" ]; then
       $DRY_RUN_CMD ${pkgs.git}/bin/git clone \

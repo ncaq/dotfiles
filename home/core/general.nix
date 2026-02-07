@@ -13,6 +13,7 @@
     fd
     ffmpeg
     file
+    findutils
     htop
     i2c-tools
     iotop
@@ -31,6 +32,7 @@
     patool
     pciutils
     plantuml
+    plocate
     pstree
     rakudo
     rwedid

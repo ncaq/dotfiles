@@ -327,6 +327,10 @@
                       terminal.font = "${firge-nix.firge-nerd-font}/share/fonts/firge-nerd/FirgeNerdConsole-Regular.ttf";
                       # Androidホストのタイムゾーンは自動的に引き継がれないようなので明示的に設定。
                       time.timeZone = "Asia/Tokyo";
+                      # ユーザ情報をnix-on-droidレベルでも指定
+                      user = {
+                        shell = "${nixpkgs.legacyPackages.${system}.zsh}/bin/zsh";
+                      };
                       # 今後home-managerに設定を委任。
                       home-manager = {
                         backupFileExtension = "hm-bak";

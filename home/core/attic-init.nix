@@ -23,9 +23,8 @@
          --head --silent --fail \
          --connect-timeout 5 --max-time 10 \
          https://seminar.border-saurolophus.ts.net/nix/cache/; then
-        $DRY_RUN_CMD ${pkgs.attic-client}/bin/attic login ncaq \
-          https://seminar.border-saurolophus.ts.net/nix/cache/ < \
-          ${config.sops.secrets."attic-token".path}
+        $DRY_RUN_CMD ${pkgs.coreutils}/bin/cat ${config.sops.secrets."attic-token".path} | \
+          ${pkgs.attic-client}/bin/attic login ncaq https://seminar.border-saurolophus.ts.net/nix/cache/
         $DRY_RUN_CMD ${pkgs.attic-client}/bin/attic use ncaq:private
       else
         echo "attic-init: サーバーに接続できないためスキップします"

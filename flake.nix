@@ -315,6 +315,17 @@
                       # Androidホストのタイムゾーンは自動的に引き継がれないようなので、
                       # 明示的に設定。
                       time.timeZone = "Asia/Tokyo";
+                      # Android特有の設定。
+                      android-integration = {
+                        am.enable = true;
+                        termux-open.enable = true;
+                        termux-open-url.enable = true;
+                        termux-reload-settings.enable = true;
+                        termux-setup-storage.enable = true;
+                        termux-wake-lock.enable = true;
+                        termux-wake-unlock.enable = true;
+                        xdg-open.enable = true;
+                      };
                       home-manager = {
                         backupFileExtension = "hm-bak";
                         useGlobalPkgs = true;

@@ -19,13 +19,18 @@
   home.activation.attic-init = lib.hm.dag.entryAfter [ "sops-nix" ] ''
     if [[ -f "${config.sops.secrets."attic-token".path}" ]]; then
       # サーバーへの接続確認
-      if $DRY_RUN_CMD ${pkgs.curl}/bin/curl \
+      if ${pkgs.curl}/bin/curl \
          --head --silent --fail \
          --connect-timeout 5 --max-time 10 \
          https://seminar.border-saurolophus.ts.net/nix/cache/; then
-        $DRY_RUN_CMD ${pkgs.coreutils}/bin/cat ${config.sops.secrets."attic-token".path} | \
+        # デバッグ: トークンの先頭を表示
+        echo "attic-init: token path = ${config.sops.secrets."attic-token".path}"
+        echo "attic-init: token head = $(${pkgs.coreutils}/bin/head -c 20 ${
+          config.sops.secrets."attic-token".path
+        })"
+        ${pkgs.coreutils}/bin/cat ${config.sops.secrets."attic-token".path} | \
           ${pkgs.attic-client}/bin/attic login ncaq https://seminar.border-saurolophus.ts.net/nix/cache/
-        $DRY_RUN_CMD ${pkgs.attic-client}/bin/attic use ncaq:private
+        ${pkgs.attic-client}/bin/attic use ncaq:private
       else
         echo "attic-init: サーバーに接続できないためスキップします"
       fi

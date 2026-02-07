@@ -35,8 +35,12 @@ nix-on-droid.lib.nixOnDroidConfiguration {
       nix.extraOptions = ''
         experimental-features = flakes nix-command
       '';
-      # Android端末はほぼ携帯端末なのでコンフリクトしたファイルを処理するのには手間がかかるので合理的。
-      environment.etcBackupExtension = ".bak";
+      environment = {
+        # Android端末はほぼ携帯端末なのでコンフリクトしたファイルを処理するのには手間がかかるので合理的。
+        etcBackupExtension = ".bak";
+        # Tailscale前提のDNS設定。
+        etc."resolv.conf".source = ./resolv.conf;
+      };
       # Nix-on-Droid特有のAndroid連携設定。
       android-integration = {
         am.enable = true;

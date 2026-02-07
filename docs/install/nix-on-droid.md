@@ -24,7 +24,7 @@ run the following commands in the Nix-on-Droid terminal.
 cd ~
 nix run 'nixpkgs#git' -- clone https://github.com/ncaq/dotfiles.git
 cd dotfiles
-nix-on-droid switch --flake '.'
+./install.sh
 ```
 
 ### 3. Restart the App

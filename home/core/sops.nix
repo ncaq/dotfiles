@@ -37,20 +37,6 @@ let
     };
 
   manifest = manifestFor "" cfg.secrets cfg.templates;
-
-  script = lib.getExe (
-    pkgs.writeShellApplication {
-      name = "sops-nix-user-termux";
-      text = ''
-        # Termux環境では$XDG_RUNTIME_DIRが設定されていないが、
-        # sops-install-secretsはUserModeで$XDG_RUNTIME_DIRを参照するため、
-        # ダミー値を設定する（実際のパスはmanifestで明示的に指定済み）
-        export XDG_RUNTIME_DIR="${cfg.defaultSecretsMountPoint}"
-        export SOPS_GPG_EXEC="${cfg.gnupg.package}/bin/gpg"
-        ${sops-install-secrets}/bin/sops-install-secrets -ignore-passwd ${manifest}
-      '';
-    }
-  );
 in
 lib.mkMerge [
   {
@@ -58,18 +44,25 @@ lib.mkMerge [
     sops.gnupg.home = "${config.home.homeDirectory}/.gnupg";
   }
   (lib.mkIf isTermux {
-    # Termux環境では$XDG_RUNTIME_DIRが設定されていないため、
-    # シークレットの配置場所を明示的に指定する
+    # Termux環境では`$XDG_RUNTIME_DIR`が設定されていないため、
+    # シークレットの配置場所を明示的に指定します
     sops.defaultSecretsMountPoint = "${config.xdg.stateHome}/sops-nix/secrets.d";
   })
   (lib.mkIf (isTermux && cfg.secrets != { }) {
-    # Termux環境では、systemdサービスの代わりにactivation hookで直接復号化
-    # sops-nixモジュールのhome.activation.sops-nixはsystemctlを呼び出すが、
-    # Termux環境ではsystemdが動作しないため、直接sops-install-secretsを実行する
-    # lib.mkForceで元のactivation hookを上書きする
+    # Termux環境ではsystemdサービスの代わりにactivation hookで直接復号化します
+    # sops-nixモジュールの`home.activation.sops-nix`は`systemctl`を呼び出しますが、
+    # Termux環境ではsystemdが動作しないため、
+    # 直接`sops-install-secrets`を実行します
+    # `lib.mkForce`で元のactivation hookを上書きします
+    # Termux環境では`$XDG_RUNTIME_DIR`が設定されていませんが、
+    # `sops-install-secrets`は`UserMode`で`$XDG_RUNTIME_DIR`を参照するため、
+    # ダミー値を設定します
+    # 実際のパスはmanifestで明示的に指定済み
     home.activation.sops-nix = lib.mkForce (
       lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-        $DRY_RUN_CMD run ${script}
+        export XDG_RUNTIME_DIR="${cfg.defaultSecretsMountPoint}"
+        export SOPS_GPG_EXEC="${cfg.gnupg.package}/bin/gpg"
+        $DRY_RUN_CMD ${sops-install-secrets}/bin/sops-install-secrets -ignore-passwd ${manifest}
       ''
     );
   })

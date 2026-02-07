@@ -2,7 +2,8 @@
   description = "dotfiles, NixOS and home-manager.";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
+    nixpkgs.follows = "nixpkgs-2511";
+    nixpkgs-2511.url = "github:NixOS/nixpkgs/nixos-25.11";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
     flake-parts.url = "github:hercules-ci/flake-parts";
@@ -43,6 +44,15 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    haskellNix = {
+      url = "github:input-output-hk/haskell.nix";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        nixpkgs-2511.follows = "nixpkgs-2511";
+        nixpkgs-unstable.follows = "nixpkgs-unstable";
+      };
+    };
+
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -66,9 +76,7 @@
       url = "github:ncaq/.xmonad";
       inputs = {
         nixpkgs.follows = "nixpkgs";
-        haskellNix.inputs = {
-          nixpkgs-unstable.follows = "nixpkgs-unstable";
-        };
+        haskellNix.follows = "haskellNix";
         flake-utils.follows = "flake-utils";
         treefmt-nix.follows = "treefmt-nix";
       };

@@ -312,10 +312,7 @@
                       system.stateVersion = "24.05";
                       # Android端末はほぼ携帯端末なのでコンフリクトしたファイルを処理するのには手間がかかるので合理的。
                       environment.etcBackupExtension = ".bak";
-                      # Androidホストのタイムゾーンは自動的に引き継がれないようなので、
-                      # 明示的に設定。
-                      time.timeZone = "Asia/Tokyo";
-                      # Android特有の設定。
+                      # Nix-on-Droid特有のAndroid連携設定。
                       android-integration = {
                         am.enable = true;
                         termux-open.enable = true;
@@ -326,7 +323,11 @@
                         termux-wake-unlock.enable = true;
                         xdg-open.enable = true;
                       };
+                      # Termuxのターミナルのフォント設定は一つのファイルしか指定できない。
                       terminal.font = "${firge-nix.firge-nerd-font}/share/fonts/firge-nerd/FirgeNerdConsole-Regular.ttf";
+                      # Androidホストのタイムゾーンは自動的に引き継がれないようなので明示的に設定。
+                      time.timeZone = "Asia/Tokyo";
+                      # 今後home-managerに設定を委任。
                       home-manager = {
                         backupFileExtension = "hm-bak";
                         useGlobalPkgs = true;

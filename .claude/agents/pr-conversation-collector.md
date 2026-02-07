@@ -24,6 +24,8 @@ model: sonnet
 1. `gh pr view PR_NUMBER --repo REPO --json reviews,comments,latestReviews,body`でコメントと返信を取得
 2. `mcp__github__pull_request_read`でPR情報とインラインコメントを取得
 
+`gh api`コマンドは使用しないでください。
+
 複数の方法で取得し、漏れがないようにしてください。
 
 # 出力形式

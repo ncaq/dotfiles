@@ -373,7 +373,6 @@
       perSystem =
         {
           pkgs,
-          inputs',
           ...
         }:
         {
@@ -421,22 +420,13 @@
               };
             };
           };
-          apps = {
-            home-manager = {
-              type = "app";
-              meta.description = "Manage user configuration with Nix";
-              program = "${inputs'.home-manager.packages.home-manager}/bin/home-manager";
-            };
-            disko = {
-              type = "app";
-              meta.description = "Declarative disk partitioning";
-              program = "${inputs'.disko.packages.disko}/bin/disko";
-            };
-            fastfetch = {
-              type = "app";
-              meta.description = "Fast system information tool";
-              program = "${pkgs.fastfetch}/bin/fastfetch";
-            };
+          packages = {
+            # flake.lockの管理バージョンをre-exportすることで安定した利用を促進。
+            inherit (pkgs)
+              disko
+              fastfetch
+              home-manager
+              ;
           };
           devShells.default = pkgs.mkShell { };
         };

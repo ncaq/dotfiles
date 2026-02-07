@@ -179,11 +179,13 @@
                     ;
                   modules = [
                     (_: {
-                      nixpkgs.config = nixpkgsConfig;
-                      nixpkgs.overlays = [
-                        rust-overlay.overlays.default
-                        firge-nix.overlays.default
-                      ];
+                      nixpkgs = {
+                        config = nixpkgsConfig;
+                        overlays = [
+                          rust-overlay.overlays.default
+                          firge-nix.overlays.default
+                        ];
+                      };
                     })
                     sops-nix.nixosModules.sops
                     disko.nixosModules.default
@@ -263,11 +265,13 @@
                   };
                   modules = [
                     (_: {
-                      nixpkgs.config = nixpkgsConfig;
-                      nixpkgs.overlays = [
-                        rust-overlay.overlays.default
-                        firge-nix.overlays.default
-                      ];
+                      nixpkgs = {
+                        config = nixpkgsConfig;
+                        overlays = [
+                          rust-overlay.overlays.default
+                          firge-nix.overlays.default
+                        ];
+                      };
                     })
                     sops-nix.homeManagerModules.sops
                     ./home

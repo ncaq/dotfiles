@@ -23,7 +23,8 @@
          --head --silent --fail \
          --connect-timeout 5 --max-time 10 \
          https://seminar.border-saurolophus.ts.net/nix/cache/; then
-        # デバッグ: トークンの先頭を表示
+        # デバッグ
+        echo "attic-init: HOME = $HOME"
         echo "attic-init: token path = ${config.sops.secrets."attic-token".path}"
         echo "attic-init: token head = $(${pkgs.coreutils}/bin/head -c 20 ${
           config.sops.secrets."attic-token".path

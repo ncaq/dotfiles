@@ -40,7 +40,6 @@ lib.mkMerge [
           sshKeys = [ sshKeygrip ];
         };
         home.packages = with pkgs; [
-          paperkey
           pinentry-qt
         ];
       }
@@ -62,7 +61,6 @@ lib.mkMerge [
           ${sshKeygrip}
         '';
         home.packages = with pkgs; [
-          paperkey
           pinentry-curses
         ];
       }

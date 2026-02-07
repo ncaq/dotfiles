@@ -13,7 +13,7 @@ This guide describes how to install this dotfiles configuration on Android using
 
 Install Nix-on-Droid from the F-Droid repository.
 
-[Nix-on-Droid | F-Droid](https://f-droid.org/ja/packages/com.termux.nix/)
+[Nix-on-Droid | F-Droid](https://f-droid.org/packages/com.termux.nix/)
 
 ### 2. Clone and Apply Configuration
 

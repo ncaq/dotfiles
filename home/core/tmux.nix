@@ -80,13 +80,13 @@
 
         # 互いにtmuxを使っているマシンでssh接続などをした時に、
         # F12でネストされた内側のtmuxを優先操作するトグル
-        bind -T root F12 \
+        bind -T root C-S-z \
           set prefix None \;\
           set key-table off \;\
           set status-style "bg=colour238" \;\
           if -F '#{pane_in_mode}' 'send-keys -X cancel' \;\
           refresh-client -S
-        bind -T off F12 \
+        bind -T off C-S-z \
           set -u prefix \;\
           set -u key-table \;\
           set -u status-style \;\

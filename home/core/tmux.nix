@@ -79,14 +79,14 @@
         bind -n M-9 select-window -t 9
 
         # 互いにtmuxを使っているマシンでssh接続などをした時に、
-        # C-S-zでネストされた内側のtmuxを優先操作するトグル
-        bind -T root C-S-z \
+        # C-M-jでネストされた内側のtmuxを優先操作するトグル
+        bind -T root C-M-j \
           set prefix None \;\
           set key-table off \;\
           set status-style "bg=colour238" \;\
           if -F '#{pane_in_mode}' 'send-keys -X cancel' \;\
           refresh-client -S
-        bind -T off C-S-z \
+        bind -T off C-M-j \
           set -u prefix \;\
           set -u key-table \;\
           set -u status-style \;\

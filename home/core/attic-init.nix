@@ -32,12 +32,12 @@ lib.mkMerge [
           "nss-lookup.target"
           "sops-nix.service"
         ];
+        ConditionPathExists = [ config.sops.secrets."attic-token".path ];
       };
       Service = {
         Type = "oneshot";
         RemainAfterExit = true;
         Restart = "on-failure";
-        ConditionPathExists = [ config.sops.secrets."attic-token".path ];
         ExecStartPre = ''
           ${pkgs.curl}/bin/curl --head --silent --fail https://seminar.border-saurolophus.ts.net/nix/cache/
         '';

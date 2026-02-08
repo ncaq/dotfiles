@@ -79,7 +79,7 @@
         bind -n M-9 select-window -t 9
 
         # 互いにtmuxを使っているマシンでssh接続などをした時に、
-        # F12でネストされた内側のtmuxを優先操作するトグル
+        # C-S-zでネストされた内側のtmuxを優先操作するトグル
         bind -T root C-S-z \
           set prefix None \;\
           set key-table off \;\

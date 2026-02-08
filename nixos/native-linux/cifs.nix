@@ -11,10 +11,7 @@ let
   cifsServer = "//seminar/chihiro";
 in
 {
-  # mountユニットの依存関係を設定
-  # fileSystems.${mountPoint}ではなくsystemd.mountsを使う理由:
-  # - automountと組み合わせるとビルドが壊れることがある
-  # - 依存関係をより細かく制御可能
+  # より細かく制御したいのでfileSystemsではなくsystemdのmount単位で制御。
   systemd.mounts = [
     {
       where = mountPoint;
@@ -27,27 +24,24 @@ in
       after = [
         "network-online.target"
         "tailscaled.service"
+        # tailscale0デバイスが存在するのでtailnetに接続しているはず。
+        "sys-devices-virtual-net-tailscale0.device"
       ];
+      # sopsの認証情報ファイルが存在する場合のみマウントを試行
+      unitConfig.ConditionPathExists = config.sops.templates."cifs-credentials".path;
       options = builtins.concatStringsSep "," [
+        # 認証
         "credentials=${config.sops.templates."cifs-credentials".path}"
         "uid=${toString userConfig.uid}"
         "gid=${toString config.users.groups.${userConfig.group}.gid}"
+        # ネットワークドライブ向けオプション
         "_netdev"
-        "nofail"
         "noexec"
+        "nofail"
         "nosuid"
-        "noauto" # ユーザレベルのsopsを待つ必要があるため自動マウントはしません。
+        # 定番オプション
         "noatime"
       ];
-    }
-  ];
-
-  # x-systemd.automountの代わりにsystemd.automountsを使用
-  # fstabのx-systemd.automountはsystemd-fstab-generatorで生成されるため、
-  # NixOSのswitch-to-configurationが正しく処理できない問題がある
-  systemd.automounts = [
-    {
-      where = mountPoint;
       wantedBy = [ "multi-user.target" ];
     }
   ];

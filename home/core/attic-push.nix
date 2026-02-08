@@ -10,14 +10,8 @@ lib.mkIf (!isTermux) {
     Unit = {
       Description = "Attic Binary Cache Auto-Push Service for ncaq:private";
       # ネットワークなどの準備が整ってから起動します。
-      Wants = [
-        "network-online.target"
-        "nss-lookup.target"
-      ];
       After = [
-        "attic-init.service" # initがなくても起動を試みるのでRequiresには書きません。
-        "network-online.target"
-        "nss-lookup.target"
+        "attic-init.service" # initがなくても起動を試みるのでWantsなどには書きません。
       ];
       # 設定ファイルが存在しない場合は起動しません。
       ConditionPathExists = [ "%h/.config/attic/config.toml" ];

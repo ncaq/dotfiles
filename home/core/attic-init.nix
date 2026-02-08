@@ -23,13 +23,9 @@ lib.mkMerge [
       Unit = {
         Description = "Initialize Attic Cache Configuration";
         Requires = [
-          "network-online.target"
-          "nss-lookup.target"
           "sops-nix.service"
         ];
         After = [
-          "network-online.target"
-          "nss-lookup.target"
           "sops-nix.service"
         ];
         ConditionPathExists = [ config.sops.secrets."attic-token".path ];

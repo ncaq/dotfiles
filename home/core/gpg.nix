@@ -21,11 +21,6 @@ lib.mkMerge [
           source = keyConfig.publicKeyFile;
         }
       ];
-      scdaemonSettings = {
-        # `gpg --card-status`などがドライバの不一致で失敗する問題の対策。
-        disable-ccid = true;
-        reader-port = "Yubico YubiKey";
-      };
     };
     home.packages = with pkgs; [ paperkey ];
   }

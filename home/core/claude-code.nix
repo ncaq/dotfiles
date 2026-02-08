@@ -125,7 +125,7 @@ in
 
   programs.claude-code = {
     enable = true;
-    package = pkgs-unstable.claude-code;
+    package = pkgs-unstable.claude-code-bin;
 
     # `CLAUDE.md`と同等です。
     memory.text = config.prompt.codingAgent;

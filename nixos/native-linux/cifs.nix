@@ -31,6 +31,8 @@ in
       ];
       # sopsの認証情報ファイルが存在する場合のみマウントを試行
       unitConfig.ConditionPathExists = config.sops.templates."cifs-credentials".path;
+      # マウント/アンマウントのタイムアウトを短く設定(デフォルトは90秒)
+      mountConfig.TimeoutSec = 10;
       options = builtins.concatStringsSep "," [
         # 認証
         "credentials=${config.sops.templates."cifs-credentials".path}"

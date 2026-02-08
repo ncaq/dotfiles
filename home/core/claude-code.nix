@@ -81,12 +81,6 @@ let
   ) jsPackageManagers;
 in
 {
-  home.packages = [
-    # Claude Codeのsandbox機能を利用する時は必要。
-    pkgs.bubblewrap
-    pkgs.socat
-  ];
-
   # GitHub MCP Server用のPersonal Access Tokenをsops-nixで管理します。
   # シークレットファイルは `sops secrets/github-mcp-server.yaml` で編集してください。
   # 形式:

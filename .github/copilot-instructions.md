@@ -96,3 +96,9 @@ Nix言語では識別子にハイフンを使用できます。
 
 - パッケージ名を参照する場合はkebab-case: `services.nix-serve`
 - `nix.settings`など外部設定ファイルをマッピングするオプションは、その設定ファイルの命名規則に従う(nix.confはkebab-case)
+
+## `writeShellApplication`
+
+デフォルトの安全性と分かりやすさの点で、
+基本的に`writeShellScript`などよりも、
+`writeShellApplication`を優先的に使用します。

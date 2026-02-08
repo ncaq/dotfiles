@@ -11,35 +11,46 @@ let
   cifsServer = "//seminar/chihiro";
 in
 {
-  fileSystems.${mountPoint} = {
-    device = cifsServer;
-    fsType = "cifs";
-    options = [
-      # 認証
-      "credentials=${config.sops.templates."cifs-credentials".path}"
-      # 所有者
-      "uid=${toString userConfig.uid}"
-      "gid=${toString config.users.groups.${userConfig.group}.gid}"
-      # パフォーマンス
-      "noatime"
-      # 起動時自動ではマウントしません
-      "noauto"
-      # セキュリティ
-      "noexec"
-      "nosuid"
-      # マウント失敗でもブート継続
-      "nofail"
-      # ネットワークファイルシステム(network-online.target後にマウント)
-      "_netdev"
-      # 依存関係
-      "x-systemd.requires=sops-nix.service"
-      "x-systemd.requires=tailscaled.service"
-      "x-systemd.after=sops-nix.service"
-      "x-systemd.after=tailscaled.service"
-      # アクセス時にマウント
-      "x-systemd.automount"
-    ];
-  };
+  # mountユニットの依存関係を設定
+  # fileSystems.${mountPoint}ではなくsystemd.mountsを使う理由:
+  # - automountと組み合わせるとビルドが壊れることがある
+  # - 依存関係をより細かく制御可能
+  systemd.mounts = [
+    {
+      where = mountPoint;
+      what = cifsServer;
+      type = "cifs";
+      requires = [
+        "network-online.target"
+        "tailscaled.service"
+      ];
+      after = [
+        "network-online.target"
+        "tailscaled.service"
+      ];
+      options = builtins.concatStringsSep "," [
+        "credentials=${config.sops.templates."cifs-credentials".path}"
+        "uid=${toString userConfig.uid}"
+        "gid=${toString config.users.groups.${userConfig.group}.gid}"
+        "_netdev"
+        "nofail"
+        "noexec"
+        "nosuid"
+        "noauto" # ユーザレベルのsopsを待つ必要があるため自動マウントはしません。
+        "noatime"
+      ];
+    }
+  ];
+
+  # x-systemd.automountの代わりにsystemd.automountsを使用
+  # fstabのx-systemd.automountはsystemd-fstab-generatorで生成されるため、
+  # NixOSのswitch-to-configurationが正しく処理できない問題がある
+  systemd.automounts = [
+    {
+      where = mountPoint;
+      wantedBy = [ "multi-user.target" ];
+    }
+  ];
 
   sops.templates."cifs-credentials" = {
     content = ''

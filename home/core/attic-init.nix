@@ -22,12 +22,8 @@ lib.mkMerge [
     systemd.user.services.attic-init = {
       Unit = {
         Description = "Initialize Attic Cache Configuration";
-        Requires = [
-          "sops-nix.service"
-        ];
-        After = [
-          "sops-nix.service"
-        ];
+        Requires = [ "sops-nix.service" ];
+        After = [ "sops-nix.service" ];
       };
       Service = {
         Type = "oneshot";

@@ -20,7 +20,7 @@ in
     settings = {
       font_size = 12;
 
-      tab_bar_min_tabs = 0;
+      tab_bar_min_tabs = 2; # タブが1つだけのときはタブを表示しない
       tab_title_template = "[{index}]{fmt.fg.red}{bell_symbol}{activity_symbol}{fmt.fg.tab}{title}";
 
       confirm_os_window_close = 0;

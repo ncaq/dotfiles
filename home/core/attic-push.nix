@@ -14,7 +14,7 @@ lib.mkIf (!isTermux) {
     Service = {
       # クラッシュしてもしばらく後に再起動します。
       Restart = "on-failure";
-      RestartSec = "15s";
+      RestartSec = "15s"; # ネットワークの問題なので少し待ってから再試行します。
       # 必要なパスのみアクセス許可します。
       ReadOnlyPaths = [
         "/nix/store"

@@ -9,7 +9,6 @@ lib.mkIf (!isTermux) {
   systemd.user.services.attic-watch-store-ncaq-private = {
     Unit = {
       Description = "Attic Binary Cache Auto-Push Service for ncaq:private";
-      # ネットワークなどの準備が整ってから起動します。
       After = [
         "attic-init.service" # initがなくても起動を試みるのでWantsなどには書きません。
       ];

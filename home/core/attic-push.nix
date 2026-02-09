@@ -20,7 +20,6 @@ lib.mkIf (!isTermux) {
         "/nix/store"
         "%h/.config/attic"
       ];
-      # 直接コマンド実行
       ExecStart = "${pkgs.attic-client}/bin/attic watch-store ncaq:private";
     };
     Install = {

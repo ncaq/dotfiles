@@ -9,7 +9,6 @@ lib.mkIf (!isTermux) {
   systemd.user.services.attic-watch-store-ncaq-private = {
     Unit = {
       Description = "Attic Binary Cache Auto-Push Service for ncaq:private";
-      # `attic watch-store`はpushする時に設定をその場で読み込むため事前条件は必須ではありません。
     };
     Service = {
       Restart = "on-failure";

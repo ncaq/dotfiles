@@ -29,9 +29,6 @@ lib.mkMerge [
         Type = "oneshot";
         RemainAfterExit = true;
         Restart = "on-failure";
-        ExecStartPre = ''
-          ${pkgs.curl}/bin/curl --head --silent --fail https://seminar.border-saurolophus.ts.net/nix/cache/
-        '';
         ExecStart = lib.getExe (
           pkgs.writeShellApplication {
             name = "attic-init";

@@ -12,7 +12,6 @@ lib.mkIf (!isTermux) {
       # `attic watch-store`はpushする時に設定をその場で読み込むため事前条件は必須ではありません。
     };
     Service = {
-      # クラッシュしてもしばらく後に再起動します。
       Restart = "on-failure";
       RestartSec = "15s"; # ネットワークの問題なので少し待ってから再試行します。
       # 必要なパスのみアクセス許可します。

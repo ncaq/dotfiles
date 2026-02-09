@@ -9,23 +9,15 @@ lib.mkIf (!isTermux) {
   systemd.user.services.attic-watch-store-ncaq-private = {
     Unit = {
       Description = "Attic Binary Cache Auto-Push Service for ncaq:private";
-      # ネットワークなどの準備が整ってから起動します。
-      After = [
-        "attic-init.service" # initがなくても起動を試みるのでWantsなどには書きません。
-      ];
-      # 設定ファイルが存在しない場合は起動しません。
-      ConditionPathExists = [ "%h/.config/attic/config.toml" ];
     };
     Service = {
-      # クラッシュしてもしばらく後に再起動します。
       Restart = "on-failure";
-      RestartSec = "15s";
+      RestartSec = "15s"; # ネットワークの問題なので少し待ってから再試行します。
       # 必要なパスのみアクセス許可します。
       ReadOnlyPaths = [
         "/nix/store"
         "%h/.config/attic"
       ];
-      # 直接コマンド実行
       ExecStart = "${pkgs.attic-client}/bin/attic watch-store ncaq:private";
     };
     Install = {

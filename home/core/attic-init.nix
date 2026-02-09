@@ -22,21 +22,14 @@ lib.mkMerge [
     systemd.user.services.attic-init = {
       Unit = {
         Description = "Initialize Attic Cache Configuration";
-        Requires = [
-          "sops-nix.service"
-        ];
-        After = [
-          "sops-nix.service"
-        ];
-        ConditionPathExists = [ config.sops.secrets."attic-token".path ];
+        Requires = [ "sops-nix.service" ];
+        After = [ "sops-nix.service" ];
       };
       Service = {
         Type = "oneshot";
         RemainAfterExit = true;
         Restart = "on-failure";
-        ExecStartPre = ''
-          ${pkgs.curl}/bin/curl --head --silent --fail https://seminar.border-saurolophus.ts.net/nix/cache/
-        '';
+        RestartSec = "15s"; # ネットワークの問題なので少し待ってから再試行します。
         ExecStart = lib.getExe (
           pkgs.writeShellApplication {
             name = "attic-init";

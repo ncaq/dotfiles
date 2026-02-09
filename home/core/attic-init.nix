@@ -28,7 +28,6 @@ lib.mkMerge [
         After = [
           "sops-nix.service"
         ];
-        ConditionPathExists = [ config.sops.secrets."attic-token".path ];
       };
       Service = {
         Type = "oneshot";

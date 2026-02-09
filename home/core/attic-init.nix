@@ -29,6 +29,7 @@ lib.mkMerge [
         Type = "oneshot";
         RemainAfterExit = true;
         Restart = "on-failure";
+        RestartSec = "15s"; # ネットワークの問題なので少し待ってから再試行します。
         ExecStart = lib.getExe (
           pkgs.writeShellApplication {
             name = "attic-init";

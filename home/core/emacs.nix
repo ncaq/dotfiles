@@ -15,7 +15,13 @@
 
   services.emacs = {
     enable = true;
-    client.enable = true;
+    client = {
+      enable = true;
+      arguments = [
+        "--reuse-frame"
+        "--alternate-editor=emacs"
+      ];
+    };
     defaultEditor = true;
   };
 

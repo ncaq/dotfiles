@@ -58,11 +58,6 @@
       };
     };
 
-    rust-overlay = {
-      url = "github:oxalica/rust-overlay";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     git-hooks = {
       url = "github:ncaq/git-hooks";
       inputs = {
@@ -119,7 +114,6 @@
       sops-nix,
       disko,
       emacs-overlay,
-      rust-overlay,
       www-ncaq-net,
       dot-emacs,
       dot-xmonad,
@@ -198,7 +192,6 @@
                         overlays = [
                           emacs-overlay.overlays.default
                           firge-nix.overlays.default
-                          rust-overlay.overlays.default
                         ];
                       };
                     })
@@ -221,7 +214,6 @@
                               overlays = [
                                 emacs-overlay.overlays.default
                                 firge-nix.overlays.default
-                                rust-overlay.overlays.default
                               ];
                             };
                             isTermux = false;
@@ -274,7 +266,6 @@
                     overlays = [
                       emacs-overlay.overlays.default
                       firge-nix.overlays.default
-                      rust-overlay.overlays.default
                     ];
                   };
                   extraSpecialArgs = {
@@ -294,7 +285,6 @@
                       overlays = [
                         emacs-overlay.overlays.default
                         firge-nix.overlays.default
-                        rust-overlay.overlays.default
                       ];
                     };
                     isTermux = false;
@@ -330,7 +320,6 @@
                 nixpkgs
                 nixpkgs-unstable
                 nixpkgsConfig
-                rust-overlay
                 sops-nix
                 www-ncaq-net
                 ;

@@ -83,9 +83,10 @@ nix-on-droid.lib.nixOnDroidConfiguration {
             inherit system;
             config = nixpkgsConfig;
             overlays = [
-              rust-overlay.overlays.default
+              emacs-overlay.overlays.default
               firge-nix.overlays.default
               nix-on-droid.overlays.default
+              rust-overlay.overlays.default
             ];
           };
           isTermux = true; # アプリとしてはnix-on-droidですがランタイム的にはTermuxの方が妥当な名前。

@@ -9,7 +9,6 @@
   nixpkgs,
   nixpkgs-unstable,
   nixpkgsConfig,
-  rust-overlay,
   sops-nix,
   system,
   username,
@@ -24,7 +23,6 @@ let
       emacs-overlay.overlays.default
       firge-nix.overlays.default
       nix-on-droid.overlays.default
-      rust-overlay.overlays.default
     ];
   };
 in
@@ -86,7 +84,6 @@ nix-on-droid.lib.nixOnDroidConfiguration {
               emacs-overlay.overlays.default
               firge-nix.overlays.default
               nix-on-droid.overlays.default
-              rust-overlay.overlays.default
             ];
           };
           isTermux = true; # アプリとしてはnix-on-droidですがランタイム的にはTermuxの方が妥当な名前。

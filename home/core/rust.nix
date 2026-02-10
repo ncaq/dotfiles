@@ -5,7 +5,6 @@
     cargo-outdated
     cargo-watch
     clippy
-    license-generator
     rust-analyzer
     rustc
     rustfmt

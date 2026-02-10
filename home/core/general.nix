@@ -19,6 +19,7 @@
     iotop
     jq
     libwebp
+    license-generator
     lshw
     lsof
     nkf

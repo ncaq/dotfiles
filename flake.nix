@@ -320,6 +320,7 @@
           nixOnDroidConfigurations = {
             default = import ./nix-on-droid {
               inherit
+                dot-emacs
                 emacs-overlay
                 firge-nix
                 home-manager

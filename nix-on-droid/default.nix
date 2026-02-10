@@ -1,4 +1,6 @@
 {
+  dot-emacs,
+  emacs-overlay,
   firge-nix,
   home-manager,
   importDirModules,
@@ -19,9 +21,10 @@ let
     inherit system;
     config = nixpkgsConfig;
     overlays = [
-      rust-overlay.overlays.default
+      emacs-overlay.overlays.default
       firge-nix.overlays.default
       nix-on-droid.overlays.default
+      rust-overlay.overlays.default
     ];
   };
 in
@@ -69,6 +72,7 @@ nix-on-droid.lib.nixOnDroidConfiguration {
         useUserPackages = true;
         extraSpecialArgs = {
           inherit
+            dot-emacs
             importDirModules
             inputs
             www-ncaq-net

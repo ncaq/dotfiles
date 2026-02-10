@@ -46,11 +46,11 @@
     "dot-emacs": {
       "flake": false,
       "locked": {
-        "lastModified": 1770711639,
-        "narHash": "sha256-ViJWr4pFq/nle04xu4Li7/8JV3WR3Asr41uHnAUPWf8=",
+        "lastModified": 1770725904,
+        "narHash": "sha256-Zmbg6xeIertluJe8ofC7DdDGfN+aMB13lUu2kTtN0vc=",
         "owner": "ncaq",
         "repo": ".emacs.d",
-        "rev": "6319cdd72a8d5662fbbf45ff3b5cba885a4ccaf1",
+        "rev": "f9e8542c548da52a14e5cba78482748da342deb7",
         "type": "github"
       },
       "original": {

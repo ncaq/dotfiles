@@ -44,6 +44,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    emacs-overlay = {
+      url = "github:nix-community/emacs-overlay";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     haskellNix = {
       url = "github:input-output-hk/haskell.nix";
       inputs = {
@@ -69,6 +74,11 @@
 
     www-ncaq-net = {
       url = "github:ncaq/www.ncaq.net";
+      flake = false;
+    };
+
+    dot-emacs = {
+      url = "github:ncaq/.emacs.d";
       flake = false;
     };
 
@@ -108,8 +118,10 @@
       nixos-hardware,
       sops-nix,
       disko,
+      emacs-overlay,
       rust-overlay,
       www-ncaq-net,
+      dot-emacs,
       dot-xmonad,
       claude-desktop,
       firge-nix,
@@ -139,6 +151,7 @@
           allowedUnfreePackages = [
             "claude-code" # 一番使いやすいLLMエージェントのため仕方がない。
             "claude-code-bin" # Node版とBun版両方受け入れると指定する必要があります。
+            "copilot-language-server" # 一番いい補完のため仕方がない。
             "discord" # ネイティブ版の方が音声などが安定しているため仕方がない。
             "slack" # ネイティブ版の方が通知などが安定しているため仕方がない。
             "zoom" # ネイティブ版の方が動画などが安定しているため仕方がない。
@@ -160,6 +173,7 @@
                   specialArgs = {
                     inherit
                       claude-desktop
+                      dot-emacs
                       dot-xmonad
                       importDirModules
                       inputs
@@ -182,8 +196,9 @@
                       nixpkgs = {
                         config = nixpkgsConfig;
                         overlays = [
-                          rust-overlay.overlays.default
+                          emacs-overlay.overlays.default
                           firge-nix.overlays.default
+                          rust-overlay.overlays.default
                         ];
                       };
                     })
@@ -204,8 +219,9 @@
                               inherit system;
                               config = nixpkgsConfig;
                               overlays = [
-                                rust-overlay.overlays.default
+                                emacs-overlay.overlays.default
                                 firge-nix.overlays.default
+                                rust-overlay.overlays.default
                               ];
                             };
                             isTermux = false;
@@ -256,13 +272,15 @@
                     inherit system;
                     config = nixpkgsConfig;
                     overlays = [
-                      rust-overlay.overlays.default
+                      emacs-overlay.overlays.default
                       firge-nix.overlays.default
+                      rust-overlay.overlays.default
                     ];
                   };
                   extraSpecialArgs = {
                     inherit
                       claude-desktop
+                      dot-emacs
                       dot-xmonad
                       importDirModules
                       inputs
@@ -274,8 +292,9 @@
                       inherit system;
                       config = nixpkgsConfig;
                       overlays = [
-                        rust-overlay.overlays.default
+                        emacs-overlay.overlays.default
                         firge-nix.overlays.default
+                        rust-overlay.overlays.default
                       ];
                     };
                     isTermux = false;
@@ -301,6 +320,8 @@
           nixOnDroidConfigurations = {
             default = import ./nix-on-droid {
               inherit
+                dot-emacs
+                emacs-overlay
                 firge-nix
                 home-manager
                 importDirModules

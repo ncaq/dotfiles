@@ -34,13 +34,13 @@
 
     nixos-hardware.url = "github:NixOS/nixos-hardware";
 
-    sops-nix = {
-      url = "github:Mic92/sops-nix";
+    disko = {
+      url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    disko = {
-      url = "github:nix-community/disko";
+    sops-nix = {
+      url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -101,8 +101,8 @@
       nixos-wsl,
       nix-on-droid,
       nixos-hardware,
-      sops-nix,
       disko,
+      sops-nix,
       emacs-overlay,
       www-ncaq-net,
       dot-emacs,
@@ -185,8 +185,8 @@
                         ];
                       };
                     })
-                    sops-nix.nixosModules.sops
                     disko.nixosModules.default
+                    sops-nix.nixosModules.sops
                     ./nixos/configuration.nix
                     ./nixos/host/${hostName}.nix
                     home-manager.nixosModules.home-manager

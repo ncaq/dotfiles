@@ -25,6 +25,11 @@
     defaultEditor = true;
   };
 
+  # Emacsが必要とするネイティブパッケージ。
+  home.packages = with pkgs; [
+    copilot-language-server
+  ];
+
   # Emacsの設定はEmacs Lispで行うのがDSLとして最適化されていて楽なので、
   # Nix言語ではなく`.emacs.d`で基本的に管理します。
   # またEmacsの設定は即座に反映したいため、

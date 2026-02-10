@@ -151,6 +151,7 @@
           allowedUnfreePackages = [
             "claude-code" # 一番使いやすいLLMエージェントのため仕方がない。
             "claude-code-bin" # Node版とBun版両方受け入れると指定する必要があります。
+            "copilot-language-server" # 一番いい補完のため仕方がない。
             "discord" # ネイティブ版の方が音声などが安定しているため仕方がない。
             "slack" # ネイティブ版の方が通知などが安定しているため仕方がない。
             "zoom" # ネイティブ版の方が動画などが安定しているため仕方がない。

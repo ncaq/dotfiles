@@ -49,15 +49,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    haskellNix = {
-      url = "github:input-output-hk/haskell.nix";
-      inputs = {
-        nixpkgs.follows = "nixpkgs";
-        nixpkgs-2511.follows = "nixpkgs-2511";
-        nixpkgs-unstable.follows = "nixpkgs-unstable";
-      };
-    };
-
     git-hooks = {
       url = "github:ncaq/git-hooks";
       inputs = {
@@ -81,8 +72,7 @@
       url = "github:ncaq/.xmonad";
       inputs = {
         nixpkgs.follows = "nixpkgs";
-        haskellNix.follows = "haskellNix";
-        flake-utils.follows = "flake-utils";
+        flake-parts.follows = "flake-parts";
         treefmt-nix.follows = "treefmt-nix";
       };
     };
@@ -397,14 +387,12 @@
       "https://cache.nixos.org/"
       "https://nix-community.cachix.org/"
       "https://nix-on-droid.cachix.org/"
-      "https://cache.iog.io/"
       "https://ncaq-dotfiles.cachix.org/"
     ];
     extra-trusted-public-keys = [
       "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
       "nix-on-droid.cachix.org-1:56snoMJTXmDRC1Ei24CmKoUqvHJ9XCp+nidK7qkMQrU="
-      "hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ="
       "ncaq-dotfiles.cachix.org-1:oEM1SL5sNteDM16I23/rFZwKl+Anca/PnEWp6LWUrws="
     ];
   };

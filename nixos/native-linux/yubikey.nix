@@ -1,11 +1,12 @@
 { pkgs, ... }:
 {
-  # YubiKeyは一応持ってるので使えるように設定していますが、
-  # ファームウェアのバージョンが5.1.2で古くて楕円曲線暗号に対応していないため、
-  # 現状GPGには使えていません。
+  # YubiKeyは、
+  # GPG対応版はファームウェアのバージョンが5.1.2で古くて楕円曲線暗号に対応しておらず、
+  # BioはそもそもGPG機能がないため、
+  # GPGには使えていません。
+  # FIDO2のために使っています。
 
   services = {
-    pcscd.enable = true; # GPGなどと通信が出来るように。
     udev.packages = [ pkgs.yubikey-personalization ];
   };
 

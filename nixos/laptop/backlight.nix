@@ -15,4 +15,10 @@ _: {
       };
     };
   };
+  # デフォルトだとclightパッケージが同梱するXDG autostartのdesktopファイルから、
+  # systemd-xdg-autostart-generatorがサービスを生成します。
+  # そうなるとservices.clightが作成するsystemdユーザーサービスと二重起動して競合するため、
+  # autostart側を無効化します。
+  # See: https://github.com/NixOS/nixpkgs/pull/262624
+  systemd.user.services."app-clight@autostart".enable = false;
 }

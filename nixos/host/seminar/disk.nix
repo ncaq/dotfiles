@@ -210,11 +210,6 @@
       ];
     };
   };
-  security.tpm2 = {
-    enable = true;
-    pkcs11.enable = true;
-    tctiEnvironment.enable = true;
-  };
   systemd.tmpfiles.rules = [
     # writebackモードを有効化
     "w /sys/block/bcache0/bcache/cache_mode - - - - writeback"

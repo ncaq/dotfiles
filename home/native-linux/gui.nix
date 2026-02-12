@@ -21,6 +21,7 @@
     ]
     ++ lib.optionals stdenv.hostPlatform.isx86_64 [
       discord
+      proton-authenticator
       slack
       virtualbox
       zoom-us

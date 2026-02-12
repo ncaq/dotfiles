@@ -54,6 +54,7 @@ let
   # 直接実行するサブコマンド (install等)
   jsDirectSubcommands = [
     "install"
+    "view *"
   ];
 
   # npm run経由で実行するサブコマンド (npmは `npm run <cmd>` 形式、他は `<pkg> <cmd>` 形式)
@@ -68,7 +69,6 @@ let
     "prettier *"
     "preview *"
     "test *"
-    "view *"
   ];
 
   mkJsDirectPermissions = pkg: map (sub: "Bash(${pkg} ${sub})") jsDirectSubcommands;

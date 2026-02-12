@@ -1,10 +1,10 @@
 ---
 allowed-tools:
-  - Bash(gh pr checks:*)
-  - Bash(gh pr diff:*)
-  - Bash(gh pr list:*)
-  - Bash(gh pr status:*)
-  - Bash(gh pr view:*)
+  - Bash(gh pr checks *)
+  - Bash(gh pr diff *)
+  - Bash(gh pr list *)
+  - Bash(gh pr status *)
+  - Bash(gh pr view *)
   - Task
   - mcp__github
   - mcp__github_inline_comment__create_inline_comment

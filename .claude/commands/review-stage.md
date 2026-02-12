@@ -1,8 +1,8 @@
 ---
 allowed-tools:
-  - Bash(gh pr view:*)
-  - Bash(gh repo view:*)
-  - Bash(git diff:*)
+  - Bash(gh pr view *)
+  - Bash(gh repo view *)
+  - Bash(git diff *)
   - Glob
   - Grep
   - Read

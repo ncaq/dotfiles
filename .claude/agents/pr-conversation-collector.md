@@ -5,7 +5,7 @@ description: |
   レビュー時の重複コメント回避に使える要約を生成するエージェント。
   レビューコマンドの前段として使用する。
 tools:
-  - Bash(gh pr view:*)
+  - Bash(gh pr view *)
   - mcp__github
 model: sonnet
 ---

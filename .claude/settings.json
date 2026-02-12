@@ -1,6 +1,6 @@
 {
   "permissions": {
-    "allow": ["Bash(./install.sh:*)"],
+    "allow": ["Bash(./install.sh *)"],
     "additionalDirectories": ["~/.claude", "~/Desktop/nixpkgs", "~/Desktop/home-manager"]
   },
   "hooks": {

@@ -111,7 +111,7 @@
       firge-nix,
       ...
     }:
-    flake-parts.lib.mkFlake { inherit inputs; } {
+    flake-parts.lib.mkFlake { inherit inputs; } (top: {
       imports = [
         home-manager.flakeModules.home-manager
         treefmt-nix.flakeModule
@@ -322,9 +322,37 @@
       perSystem =
         {
           pkgs,
+          system,
           ...
         }:
         {
+          checks =
+            let
+              # NixOS構成の評価チェック(評価のみ、ビルドしない)
+              nixosEvalChecks =
+                nixpkgs.lib.mapAttrs'
+                  (
+                    name: nixosConfig:
+                    nixpkgs.lib.nameValuePair "nixos-eval-${name}" (
+                      builtins.seq nixosConfig.config.system.build.toplevel.drvPath (
+                        pkgs.writeText "nixos-eval-${name}" name
+                      )
+                    )
+                  )
+                  (
+                    nixpkgs.lib.filterAttrs (
+                      _: nixosConfig: nixosConfig.pkgs.system == system
+                    ) top.config.flake.nixosConfigurations
+                  );
+              # home-manager構成の評価チェック
+              hmEvalChecks = nixpkgs.lib.optionalAttrs (top.config.flake.homeConfigurations ? ${system}) {
+                "hm-eval" = builtins.seq top.config.flake.homeConfigurations.${system}.activationPackage.drvPath (
+                  pkgs.writeText "hm-eval-${system}" system
+                );
+              };
+            in
+            nixosEvalChecks // hmEvalChecks;
+
           treefmt.config = {
             projectRootFile = "flake.nix";
             programs = {
@@ -380,7 +408,7 @@
           };
           devShells.default = pkgs.mkShell { };
         };
-    };
+    });
 
   nixConfig = {
     extra-substituters = [

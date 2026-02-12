@@ -4,6 +4,7 @@
   home.packages = with pkgs; [
     nil
     nix-diff
+    nix-fast-build
     nix-init
     nix-update
     nixfmt

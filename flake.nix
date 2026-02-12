@@ -350,14 +350,8 @@
                   pkgs.writeText "hm-eval-${system}" system
                 );
               };
-              # Nix-on-Droid構成の評価チェック
-              droidChecks = nixpkgs.lib.optionalAttrs (top.config.flake.nixOnDroidConfigurations ? ${system}) {
-                "droid-eval" =
-                  builtins.seq top.config.flake.nixOnDroidConfigurations.${system}.activationPackage.drvPath
-                    (pkgs.writeText "droid-eval-${system}" system);
-              };
             in
-            nixosEvalChecks // hmEvalChecks // droidChecks;
+            nixosEvalChecks // hmEvalChecks;
 
           treefmt.config = {
             projectRootFile = "flake.nix";

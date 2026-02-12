@@ -208,6 +208,8 @@ in
           "~/dotfiles/"
         ];
         allow = jsRunnerPermissions ++ [
+          "Bash(* --help *)"
+          "Bash(* --version)"
           "Bash(cabal build *)"
           "Bash(cabal clean *)"
           "Bash(cabal haddock *)"

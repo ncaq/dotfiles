@@ -68,6 +68,7 @@ let
     "prettier *"
     "preview *"
     "test *"
+    "view *"
   ];
 
   mkJsDirectPermissions = pkg: map (sub: "Bash(${pkg} ${sub})") jsDirectSubcommands;

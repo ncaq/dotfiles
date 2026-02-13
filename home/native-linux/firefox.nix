@@ -52,7 +52,7 @@
             "extension@redux.devtools" # 設定不要
             "goodbye-rfc-2822-date-time@ncaq.net" # 設定不要
             "google-search-title-qualified@ncaq.net" # 設定不要
-            "keepassxc-browser@keepassxc.org"
+            "keepassxc-browser@keepassxc.org" # ポリシー対応
             "treestyletab@piro.sakura.ne.jp" # ポリシー非対応
             "uBlock0@raymondhill.net" # ポリシー対応
             "weautopagerize@wantora.github.io" # ポリシー非対応

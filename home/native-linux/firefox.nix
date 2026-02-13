@@ -68,6 +68,18 @@
         );
       "3rdparty" = {
         Extensions = {
+          "keepassxc-browser@keepassxc.org" = {
+            # https://github.com/keepassxreboot/keepassxc-browser/blob/master/keepassxc-browser/managed_storage.json
+            settings = {
+              autoFillSingleEntry = true; # 単一の資格情報を自動入力
+              autoFillRelevantCredential = true; # 関連する資格情報を自動入力
+              autoFillAndSend = true; # HTTP Basic Authを自動入力して送信
+              autoSubmit = true; # 資格情報を自動送信
+              passkeysFallback = false; # Passkeysフォールバック無効
+              defaultGroupAlwaysAsk = true; # 保存時に常にグループを確認
+              downloadFaviconAfterSave = true; # 保存後にfaviconをダウンロード
+            };
+          };
           "uBlock0@raymondhill.net" = {
             # https://github.com/gorhill/uBlock/blob/93d8e639ce91b633cd585b0e031ec52cd77413bc/platform/common/managed_storage.json
             userSettings = [

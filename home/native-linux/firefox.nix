@@ -56,10 +56,10 @@
             "uBlock0@raymondhill.net" # ポリシー対応
             "weautopagerize@wantora.github.io" # ポリシー非対応
             "{1be309c5-3e4f-4b99-927d-bb500eb4fa88}" # Augmented Steam - ポリシー非対応
-            "{a4c4eda4-fb84-4a84-b4a1-f7c1cbf2a1ad}" # Refined GitHub - ポリシー非対応
             "{2e5ff8c8-32fe-46d0-9fc8-6b8986621f3c}" # Search by Image - 設定不要
             "{37aa84f3-dfba-43ee-8da6-875ec5af3072}" # AWS Favicon - 設定不要
             "{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}" # Stylus - ポリシー非対応
+            "{a4c4eda4-fb84-4a84-b4a1-f7c1cbf2a1ad}" # Refined GitHub - ポリシー非対応
             "{a8332c60-5b6d-41ee-bfc8-e9bb331d34ad}" # Surfingkeys - ポリシー非対応
             "{bd97f89b-17ba-4539-9fec-06852d07f917}" # Checkmarks - 設定不要
             "{d07ccf11-c0cd-4938-a265-2a4d6ad01189}" # Web Archives - 設定不要

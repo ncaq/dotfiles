@@ -52,14 +52,15 @@
             "extension@redux.devtools" # 設定不要
             "goodbye-rfc-2822-date-time@ncaq.net" # 設定不要
             "google-search-title-qualified@ncaq.net" # 設定不要
+            "keepassxc-browser@keepassxc.org" # ポリシー対応
             "treestyletab@piro.sakura.ne.jp" # ポリシー非対応
             "uBlock0@raymondhill.net" # ポリシー対応
             "weautopagerize@wantora.github.io" # ポリシー非対応
             "{1be309c5-3e4f-4b99-927d-bb500eb4fa88}" # Augmented Steam - ポリシー非対応
-            "{a4c4eda4-fb84-4a84-b4a1-f7c1cbf2a1ad}" # Refined GitHub - ポリシー非対応
             "{2e5ff8c8-32fe-46d0-9fc8-6b8986621f3c}" # Search by Image - 設定不要
             "{37aa84f3-dfba-43ee-8da6-875ec5af3072}" # AWS Favicon - 設定不要
             "{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}" # Stylus - ポリシー非対応
+            "{a4c4eda4-fb84-4a84-b4a1-f7c1cbf2a1ad}" # Refined GitHub - ポリシー非対応
             "{a8332c60-5b6d-41ee-bfc8-e9bb331d34ad}" # Surfingkeys - ポリシー非対応
             "{bd97f89b-17ba-4539-9fec-06852d07f917}" # Checkmarks - 設定不要
             "{d07ccf11-c0cd-4938-a265-2a4d6ad01189}" # Web Archives - 設定不要
@@ -67,6 +68,18 @@
         );
       "3rdparty" = {
         Extensions = {
+          "keepassxc-browser@keepassxc.org" = {
+            # https://github.com/keepassxreboot/keepassxc-browser/blob/master/keepassxc-browser/managed_storage.json
+            settings = {
+              autoFillSingleEntry = true; # 単一の資格情報を自動入力
+              autoFillRelevantCredential = true; # 関連する資格情報を自動入力
+              autoFillAndSend = true; # HTTP Basic Authを自動入力して送信
+              autoSubmit = true; # 資格情報を自動送信
+              passkeysFallback = false; # Passkeysフォールバック無効
+              defaultGroupAlwaysAsk = true; # 保存時に常にグループを確認
+              downloadFaviconAfterSave = true; # 保存後にfaviconをダウンロード
+            };
+          };
           "uBlock0@raymondhill.net" = {
             # https://github.com/gorhill/uBlock/blob/93d8e639ce91b633cd585b0e031ec52cd77413bc/platform/common/managed_storage.json
             userSettings = [

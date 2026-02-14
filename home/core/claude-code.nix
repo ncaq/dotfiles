@@ -82,48 +82,6 @@ let
   ) jsPackageManagers;
 in
 {
-  # GitHub MCP Server用のPersonal Access Tokenをsops-nixで管理します。
-  # シークレットファイルは `sops secrets/github-mcp-server.yaml` で編集してください。
-  # 形式:
-  # pat: ghp_xxxxxxxxxxxxxxxxxxxxx
-  sops.secrets."github-mcp-server/pat" = {
-    sopsFile = ../../secrets/github-mcp-server.yaml;
-    key = "pat";
-    mode = "0400";
-  };
-
-  # Backlog MCP Server用の認証情報をsops-nixで管理します。
-  # シークレットファイルは `sops secrets/backlog-mcp-server.yaml` で編集してください。
-  # 形式:
-  # domain: your-space.backlog.com
-  # api-key: your-api-key
-  sops.secrets."backlog-mcp-server/domain" = {
-    sopsFile = ../../secrets/backlog-mcp-server.yaml;
-    key = "domain";
-    mode = "0400";
-  };
-  sops.secrets."backlog-mcp-server/api-key" = {
-    sopsFile = ../../secrets/backlog-mcp-server.yaml;
-    key = "api-key";
-    mode = "0400";
-  };
-
-  # Clone repositories for additionalDirectories if they don't exist
-  home.activation.cloneNixpkgs = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    if [ ! -d "${config.home.homeDirectory}/Desktop/nixpkgs" ]; then
-      $DRY_RUN_CMD ${pkgs.git}/bin/git clone --depth=50 \
-        https://github.com/NixOS/nixpkgs.git \
-        "${config.home.homeDirectory}/Desktop/nixpkgs"
-    fi
-  '';
-  home.activation.cloneHomeManager = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    if [ ! -d "${config.home.homeDirectory}/Desktop/home-manager" ]; then
-      $DRY_RUN_CMD ${pkgs.git}/bin/git clone --depth=50 \
-        https://github.com/nix-community/home-manager.git \
-        "${config.home.homeDirectory}/Desktop/home-manager"
-    fi
-  '';
-
   programs.claude-code = {
     enable = true;
     package = pkgs-unstable.claude-code-bin;
@@ -192,6 +150,8 @@ in
     };
 
     settings = {
+      # 応答に使う自然言語です。
+      language = "japanese";
       # その時最適なモデルをデフォルトにします。
       model = "opus";
       # コミットメッセージにCo-Authored-Byフッターを付与しません。
@@ -203,7 +163,6 @@ in
         type = "command";
         command = lib.getExe ccstatusline;
       };
-      language = "japanese";
       permissions = {
         defaultMode = "acceptEdits";
         additionalDirectories = [
@@ -454,4 +413,46 @@ in
       };
     };
   };
+
+  # GitHub MCP Server用のPersonal Access Tokenをsops-nixで管理します。
+  # シークレットファイルは `sops secrets/github-mcp-server.yaml` で編集してください。
+  # 形式:
+  # pat: ghp_xxxxxxxxxxxxxxxxxxxxx
+  sops.secrets."github-mcp-server/pat" = {
+    sopsFile = ../../secrets/github-mcp-server.yaml;
+    key = "pat";
+    mode = "0400";
+  };
+
+  # Backlog MCP Server用の認証情報をsops-nixで管理します。
+  # シークレットファイルは `sops secrets/backlog-mcp-server.yaml` で編集してください。
+  # 形式:
+  # domain: your-space.backlog.com
+  # api-key: your-api-key
+  sops.secrets."backlog-mcp-server/domain" = {
+    sopsFile = ../../secrets/backlog-mcp-server.yaml;
+    key = "domain";
+    mode = "0400";
+  };
+  sops.secrets."backlog-mcp-server/api-key" = {
+    sopsFile = ../../secrets/backlog-mcp-server.yaml;
+    key = "api-key";
+    mode = "0400";
+  };
+
+  # Clone repositories for additionalDirectories if they don't exist
+  home.activation.cloneNixpkgs = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    if [ ! -d "${config.home.homeDirectory}/Desktop/nixpkgs" ]; then
+      $DRY_RUN_CMD ${pkgs.git}/bin/git clone --depth=50 \
+        https://github.com/NixOS/nixpkgs.git \
+        "${config.home.homeDirectory}/Desktop/nixpkgs"
+    fi
+  '';
+  home.activation.cloneHomeManager = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    if [ ! -d "${config.home.homeDirectory}/Desktop/home-manager" ]; then
+      $DRY_RUN_CMD ${pkgs.git}/bin/git clone --depth=50 \
+        https://github.com/nix-community/home-manager.git \
+        "${config.home.homeDirectory}/Desktop/home-manager"
+    fi
+  '';
 }

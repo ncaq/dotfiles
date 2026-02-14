@@ -71,7 +71,6 @@
           "keepassxc-browser@keepassxc.org" = {
             # https://github.com/keepassxreboot/keepassxc-browser/blob/master/keepassxc-browser/managed_storage.json
             settings = {
-              autoFillSingleEntry = true; # 単一の資格情報を自動入力
               autoFillRelevantCredential = true; # 関連する資格情報を自動入力
               autoFillAndSend = true; # HTTP Basic Authを自動入力して送信
               autoSubmit = true; # 資格情報を自動送信

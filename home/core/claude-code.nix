@@ -6,7 +6,7 @@
   ...
 }:
 let
-  ccstatusline = pkgs.callPackage ../../pkg/ccstatusline.nix { };
+  ccstatusline = pkgs.callPackage ../../pkgs/ccstatusline.nix { };
 
   # GitHub MCP ServerのPATをsops-nixで管理されたシークレットから読み込むラッパー
   github-mcp-server-wrapper = pkgs.writeShellApplication {
@@ -21,7 +21,7 @@ let
     '';
   };
 
-  backlog-mcp-server = pkgs.callPackage ../../pkg/backlog-mcp-server.nix { };
+  backlog-mcp-server = pkgs.callPackage ../../pkgs/backlog-mcp-server.nix { };
   # Backlog MCP Serverの認証情報をsops-nixで管理されたシークレットから読み込むラッパー
   backlog-mcp-server-wrapper = pkgs.writeShellApplication {
     name = "backlog-mcp-server-wrapper";
@@ -39,9 +39,9 @@ let
     '';
   };
 
-  mcp-proxy-for-aws = pkgs.callPackage ../../pkg/mcp-proxy-for-aws.nix { };
-  gcloud-mcp = pkgs.callPackage ../../pkg/gcloud-mcp.nix { };
-  azure-mcp = pkgs.callPackage ../../pkg/azure-mcp.nix { };
+  mcp-proxy-for-aws = pkgs.callPackage ../../pkgs/mcp-proxy-for-aws.nix { };
+  gcloud-mcp = pkgs.callPackage ../../pkgs/gcloud-mcp.nix { };
+  azure-mcp = pkgs.callPackage ../../pkgs/azure-mcp.nix { };
 
   # npm, yarn, pnpm, bunで共通のサブコマンドを許可するためのヘルパー
   jsPackageManagers = [

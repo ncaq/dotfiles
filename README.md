@@ -93,7 +93,7 @@ The library files for Nix expressions.
 
 NixOS configuration files.
 
-## [pkg/](./pkg/)
+## [pkgs/](./pkgs/)
 
 Custom Nix packages.
 

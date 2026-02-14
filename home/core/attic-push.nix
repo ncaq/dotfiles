@@ -1,10 +1,5 @@
+{ pkgs, ... }:
 {
-  pkgs,
-  lib,
-  isTermux,
-  ...
-}:
-lib.mkIf (!isTermux) {
   # 全てのビルド結果を非同期にプライベートキャッシュにpushします。
   systemd.user.services.attic-watch-store-ncaq-private = {
     Unit = {

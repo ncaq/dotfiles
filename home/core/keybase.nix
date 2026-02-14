@@ -13,7 +13,6 @@ if !isTermux then
   }
 else
   {
-    # Termux環境ではsystemdサービスが使えないためkeybaseサービスを無効にしますが、
-    # keybaseのパッケージ自体は一応インストールします。
+    # Termux環境ではserviceが利用できないためパッケージだけ明示的にインストールします。
     home.packages = with pkgs; [ keybase ];
   }

@@ -77,7 +77,6 @@
               autoSubmit = true; # 資格情報を自動送信
               defaultGroupAlwaysAsk = true; # 保存時に常にグループを確認
               downloadFaviconAfterSave = true; # 保存後にfaviconをダウンロード
-              passkeysFallback = false; # Passkeysフォールバック無効
               showOTPIcon = false; # TOTPアイコン非表示
             };
           };

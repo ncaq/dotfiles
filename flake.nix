@@ -389,11 +389,6 @@
                   }
                 );
                 includes = [ "*" ];
-                excludes = [
-                  ".git/*"
-                  ".direnv/*"
-                  "result*"
-                ];
               };
             };
           };

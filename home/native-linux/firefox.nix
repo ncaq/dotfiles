@@ -71,14 +71,14 @@
           "keepassxc-browser@keepassxc.org" = {
             # https://github.com/keepassxreboot/keepassxc-browser/blob/master/keepassxc-browser/managed_storage.json
             settings = {
-              autoFillRelevantCredential = true; # 関連する資格情報を自動入力
               autoFillAndSend = true; # HTTP Basic Authを自動入力して送信
-              autoSubmit = true; # 資格情報を自動送信
+              autoFillRelevantCredential = true; # 関連する資格情報を自動入力
               autoFillSingleTotp = false; # TOTP自動入力無効
-              showOTPIcon = false; # TOTPアイコン非表示
-              passkeysFallback = false; # Passkeysフォールバック無効
+              autoSubmit = true; # 資格情報を自動送信
               defaultGroupAlwaysAsk = true; # 保存時に常にグループを確認
               downloadFaviconAfterSave = true; # 保存後にfaviconをダウンロード
+              passkeysFallback = false; # Passkeysフォールバック無効
+              showOTPIcon = false; # TOTPアイコン非表示
             };
           };
           "uBlock0@raymondhill.net" = {

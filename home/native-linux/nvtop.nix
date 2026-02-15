@@ -1,4 +1,8 @@
-{ pkgs, osConfig, ... }:
+{
+  pkgs,
+  osConfig ? null,
+  ...
+}:
 let
   hasNvidia = osConfig != null && (osConfig.hardware.nvidia.enabled or false);
   hasAmd = osConfig != null && (osConfig.hardware.amdgpu.initrd.enable or false);

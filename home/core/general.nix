@@ -1,49 +1,39 @@
 { pkgs, ... }:
 {
   home.packages = with pkgs; [
-    android-tools
     atop
     attic-client
     bc # dcも含まれます。
     cachix
     cloudflared
-    ddcutil
     dig
-    efibootmgr
     fd
     ffmpeg
     file
     findutils
     htop
-    i2c-tools
     iotop
     jq
     libwebp
     license-generator
-    lshw
     lsof
     nkf
     nmap
-    nvtopPackages.full
     openssl
     opusTools
     oxipng
     p7zip
     parallel
     patool
-    pciutils
     plantuml
     plocate
     pstree
     rakudo
-    rwedid
     shellcheck
     sqlite
     sysstat
     trashy
     tree
-    usbutils
-    v4l-utils
     wget
     xxd
   ];

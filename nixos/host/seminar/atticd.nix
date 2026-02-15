@@ -5,7 +5,7 @@
   ...
 }:
 let
-  addr = config.containerAddresses.atticd;
+  addr = config.machineAddresses.atticd;
   user = config.containerUsers.atticd;
   # ホストからコンテナ内のatticd-atticadmコマンドを実行するラッパースクリプト
   atticadmWrapper = pkgs.writeShellScriptBin "atticd-atticadm" ''
@@ -26,7 +26,7 @@ in
     autoStart = true;
     privateNetwork = true;
     hostAddress = addr.host;
-    localAddress = addr.container;
+    localAddress = addr.guest;
     bindMounts = {
       "/run/postgresql" = {
         hostPath = "/run/postgresql";

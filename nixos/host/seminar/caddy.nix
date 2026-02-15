@@ -1,6 +1,6 @@
 { config, ... }:
 let
-  atticdAddr = config.containerAddresses.atticd.container;
+  atticdAddr = config.machineAddresses.atticd.guest;
 in
 {
   services.caddy = {

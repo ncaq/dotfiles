@@ -15,7 +15,8 @@ let
       exec ${pkgs.cloudflared}/bin/cloudflared "$@"
     fi
   '';
-  forgejoAddr = config.containerAddresses.forgejo.container;
+  forgejoAddr = config.machineAddresses.forgejo.guest;
+  mcpNixosAddr = config.machineAddresses.mcp-nixos.guest;
 in
 {
   # Cloudflare認証情報を管理。
@@ -53,6 +54,7 @@ in
       credentialsFile = "/run/secrets/cloudflare-tunnel-credentials";
       ingress = {
         "forgejo.ncaq.net" = "http://${forgejoAddr}:8080";
+        "mcp-nixos.ncaq.net" = "http://${mcpNixosAddr}:8080";
       };
     };
   };

@@ -1,6 +1,6 @@
 { config, pkgs, ... }:
 let
-  addr = config.containerAddresses.forgejo;
+  addr = config.machineAddresses.forgejo;
   user = config.containerUsers.forgejo;
   # ホストからコンテナ内のforgejoコマンドを実行するラッパースクリプト
   forgejoWrapper = pkgs.writeShellScriptBin "forgejo" ''
@@ -13,7 +13,7 @@ in
     autoStart = true;
     privateNetwork = true;
     hostAddress = addr.host;
-    localAddress = addr.container;
+    localAddress = addr.guest;
     forwardPorts = [
       {
         containerPort = 2222;

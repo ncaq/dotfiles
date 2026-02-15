@@ -81,6 +81,8 @@ in
           description = "mcp-nixos HTTP server";
           after = [ "network.target" ];
           wantedBy = [ "multi-user.target" ];
+          StartLimitIntervalSec = 60;
+          StartLimitBurst = 5;
           serviceConfig = {
             # オリジナルのmcp-nixosはHTTPサーバでは動きませんが、
             # オリジナルでも使っているfastmcpを使うことでHTTPサーバとして動かせるようになります。
@@ -88,8 +90,6 @@ in
             DynamicUser = true;
             Restart = "always";
             RestartSec = 5;
-            StartLimitIntervalSec = 60;
-            StartLimitBurst = 5;
             # Hardening
             NoNewPrivileges = true;
             ProtectSystem = "strict";

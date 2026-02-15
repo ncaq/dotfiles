@@ -201,10 +201,6 @@
                             pkgs-unstable = import nixpkgs-unstable {
                               inherit system;
                               config = nixpkgsConfig;
-                              overlays = [
-                                emacs-overlay.overlays.default
-                                firge-nix.overlays.default
-                              ];
                             };
                             isTermux = false;
                             isWSL = config.wsl.enable or false;
@@ -272,10 +268,6 @@
                     pkgs-unstable = import nixpkgs-unstable {
                       inherit system;
                       config = nixpkgsConfig;
-                      overlays = [
-                        emacs-overlay.overlays.default
-                        firge-nix.overlays.default
-                      ];
                     };
                     isTermux = false;
                     isWSL = false;

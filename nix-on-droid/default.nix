@@ -80,11 +80,6 @@ nix-on-droid.lib.nixOnDroidConfiguration {
           pkgs-unstable = import nixpkgs-unstable {
             inherit system;
             config = nixpkgsConfig;
-            overlays = [
-              emacs-overlay.overlays.default
-              firge-nix.overlays.default
-              nix-on-droid.overlays.default
-            ];
           };
           isTermux = true; # アプリとしてはnix-on-droidですがランタイム的にはTermuxの方が妥当な名前。
           isWSL = false;

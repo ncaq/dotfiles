@@ -1,44 +1,20 @@
 { pkgs, ... }:
 {
   home.packages = with pkgs; [
-    atop
     attic-client
     bc # dcも含まれます。
     cachix
-    cloudflared
-    dig
-    fd
-    ffmpeg
-    file
-    findutils
-    htop
-    iotop
-    iproute2
     jq
-    libwebp
     license-generator
-    lsof
-    net-tools
     nkf
-    nmap
     openssl
-    opusTools
-    oxipng
-    p7zip
     parallel
-    patool
     plantuml
-    plocate
-    procps
-    pstree
     rakudo
     shellcheck
     sqlite
     strace
-    sysstat
     trashy
-    tree
-    wget
     xxd
   ];
 }

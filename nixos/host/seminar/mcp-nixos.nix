@@ -79,6 +79,12 @@ in
           DynamicUser = true;
           Restart = "always";
           RestartSec = 5;
+          # Hardening
+          NoNewPrivileges = true;
+          ProtectSystem = "strict";
+          ProtectHome = true;
+          PrivateTmp = true;
+          PrivateDevices = true;
         };
       };
     };

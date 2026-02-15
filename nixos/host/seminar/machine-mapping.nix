@@ -4,11 +4,11 @@ let
     options = {
       host = lib.mkOption {
         type = lib.types.str;
-        description = "Host-side IP address for the container";
+        description = "Host-side IP address";
       };
-      container = lib.mkOption {
+      guest = lib.mkOption {
         type = lib.types.str;
-        description = "Container-side IP address";
+        description = "Guest-side IP address (container or microVM)";
       };
     };
   };
@@ -26,19 +26,23 @@ let
   };
 in
 {
-  options.containerAddresses = lib.mkOption {
+  options.machineAddresses = lib.mkOption {
     type = lib.types.attrsOf addressType;
     default = {
       forgejo = {
         host = "192.168.100.10";
-        container = "192.168.100.11";
+        guest = "192.168.100.11";
       };
       atticd = {
         host = "192.168.100.20";
-        container = "192.168.100.21";
+        guest = "192.168.100.21";
+      };
+      mcp-nixos = {
+        host = "192.168.100.30";
+        guest = "192.168.100.31";
       };
     };
-    description = "Container network addresses";
+    description = "Network addresses for containers and microVMs";
   };
 
   options.containerUsers = lib.mkOption {
@@ -59,9 +63,15 @@ in
   config = {
     networking.nat = {
       enable = true;
-      internalInterfaces = [ "ve-+" ];
+      internalInterfaces = [
+        "ve-+" # container veth interfaces
+        "vm-+" # microVM TAP interfaces
+      ];
     };
-    # Trust container veth interfaces for local host-to-container communication.
-    networking.firewall.trustedInterfaces = [ "ve-+" ];
+    # Trust container/microVM interfaces for local host-to-guest communication.
+    networking.firewall.trustedInterfaces = [
+      "ve-+" # container veth interfaces
+      "vm-+" # microVM TAP interfaces
+    ];
   };
 }

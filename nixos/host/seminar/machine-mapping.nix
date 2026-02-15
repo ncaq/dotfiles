@@ -71,7 +71,6 @@ in
     # Trust container/microVM interfaces for local host-to-guest communication.
     networking.firewall.trustedInterfaces = [
       "ve-+" # container veth interfaces
-      "vm-+" # microVM TAP interfaces
     ];
   };
 }

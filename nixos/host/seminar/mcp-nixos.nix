@@ -125,7 +125,7 @@ in
     requires = [ "microvm-tap-interfaces@mcp-nixos.service" ];
     after = [ "microvm-tap-interfaces@mcp-nixos.service" ];
     bindsTo = [ "microvm-tap-interfaces@mcp-nixos.service" ];
-    wantedBy = [ "multi-user.target" ];
+    wantedBy = [ "microvm-tap-interfaces@mcp-nixos.service" ];
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;

@@ -27,7 +27,7 @@
     patool
     plantuml
     plocate
-    ps
+    procps
     pstree
     rakudo
     shellcheck

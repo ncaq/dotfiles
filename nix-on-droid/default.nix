@@ -2,6 +2,7 @@
   importDirModules,
   inputs,
   nixpkgsConfig,
+  overlays,
   system,
   username,
   ...
@@ -15,9 +16,7 @@ let
   pkgs = import nixpkgs {
     inherit system;
     config = nixpkgsConfig;
-    overlays = [
-      inputs.emacs-overlay.overlays.default
-      inputs.firge-nix.overlays.default
+    overlays = overlays ++ [
       inputs.nix-on-droid.overlays.default
     ];
   };

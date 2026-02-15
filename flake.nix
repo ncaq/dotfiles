@@ -133,6 +133,18 @@
             inherit allowlistedLicenses;
             allowUnfreePredicate = pkg: builtins.elem (nixpkgs.lib.getName pkg) allowedUnfreePackages;
           };
+          # 全環境で共通のoverlays。
+          overlays = [
+            inputs.emacs-overlay.overlays.default
+            inputs.firge-nix.overlays.default
+          ];
+          # system固有のunstable pkgsを生成する関数。
+          importPkgsUnstable =
+            system:
+            import nixpkgs-unstable {
+              inherit system overlays;
+              config = nixpkgsConfig;
+            };
         in
         {
           nixosConfigurations =
@@ -162,10 +174,7 @@
                     (_: {
                       nixpkgs = {
                         config = nixpkgsConfig;
-                        overlays = [
-                          inputs.emacs-overlay.overlays.default
-                          inputs.firge-nix.overlays.default
-                        ];
+                        inherit overlays;
                       };
                     })
                     inputs.disko.nixosModules.default
@@ -181,10 +190,7 @@
                           useGlobalPkgs = true;
                           useUserPackages = true;
                           extraSpecialArgs = specialArgs // {
-                            pkgs-unstable = import nixpkgs-unstable {
-                              inherit system;
-                              config = nixpkgsConfig;
-                            };
+                            pkgs-unstable = importPkgsUnstable system;
                             isTermux = false;
                             isWSL = config.wsl.enable or false;
                           };
@@ -230,12 +236,8 @@
                 }:
                 home-manager.lib.homeManagerConfiguration {
                   pkgs = import nixpkgs {
-                    inherit system;
+                    inherit system overlays;
                     config = nixpkgsConfig;
-                    overlays = [
-                      inputs.emacs-overlay.overlays.default
-                      inputs.firge-nix.overlays.default
-                    ];
                   };
                   extraSpecialArgs = {
                     inherit
@@ -244,10 +246,7 @@
 
                       username
                       ;
-                    pkgs-unstable = import nixpkgs-unstable {
-                      inherit system;
-                      config = nixpkgsConfig;
-                    };
+                    pkgs-unstable = importPkgsUnstable system;
                     isTermux = false;
                     isWSL = false;
                   };
@@ -274,6 +273,7 @@
                 importDirModules
                 inputs
                 nixpkgsConfig
+                overlays
                 ;
               system = "aarch64-linux";
               username = "ncaq";

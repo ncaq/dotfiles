@@ -27,10 +27,12 @@
     patool
     plantuml
     plocate
+    ps
     pstree
     rakudo
     shellcheck
     sqlite
+    strace
     sysstat
     trashy
     tree

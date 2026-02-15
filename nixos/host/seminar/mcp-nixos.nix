@@ -123,6 +123,7 @@ in
     description = "Traffic control for mcp-nixos microVM";
     requires = [ "microvm-tap-interfaces@mcp-nixos.service" ];
     after = [ "microvm-tap-interfaces@mcp-nixos.service" ];
+    bindsTo = [ "microvm-tap-interfaces@mcp-nixos.service" ];
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
       Type = "oneshot";

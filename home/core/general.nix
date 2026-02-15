@@ -13,10 +13,12 @@
     findutils
     htop
     iotop
+    iproute2
     jq
     libwebp
     license-generator
     lsof
+    net-tools
     nkf
     nmap
     openssl

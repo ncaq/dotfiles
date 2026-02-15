@@ -1,6 +1,7 @@
 # mcp-nixosをHTTPエンドポイントで提供します。
-# 以下のURLで提供しています。
-# `https://mcp-nixos.ncaq.net/mcp`
+# 以下のURLで提供しているので、
+# MCPクライアントには以下のURLを入力してください。
+# `https://mcp-nixos.ncaq.net/mcp/`
 # 読み取り専用のMCPサーバなので認証情報は不要です。
 # 万が一の危険を減らすために仮想マシンで隔離しています。
 {

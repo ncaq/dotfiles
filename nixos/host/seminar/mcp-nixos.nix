@@ -10,6 +10,7 @@
 let
   addr = config.machineAddresses.mcp-nixos;
   # Pythonの依存関係とパッケージ自体をまとめて環境にします。
+  # mcp-nixosコマンドを直接実行するわけではないので依存パッケージの別途指定が必要です。
   mcp-nixos-env = pkgs.python3.withPackages (
     _: pkgs.mcp-nixos.propagatedBuildInputs ++ [ pkgs.mcp-nixos ]
   );

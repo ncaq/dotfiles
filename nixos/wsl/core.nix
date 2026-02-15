@@ -1,6 +1,6 @@
-{ nixos-wsl, username, ... }:
+{ inputs, username, ... }:
 {
-  imports = [ nixos-wsl.nixosModules.default ];
+  imports = with inputs; [ nixos-wsl.nixosModules.default ];
   wsl = {
     enable = true;
 

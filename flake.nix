@@ -98,17 +98,6 @@
       flake-parts,
       treefmt-nix,
       home-manager,
-      nixos-wsl,
-      nix-on-droid,
-      nixos-hardware,
-      disko,
-      sops-nix,
-      emacs-overlay,
-      www-ncaq-net,
-      dot-emacs,
-      dot-xmonad,
-      claude-desktop,
-      firge-nix,
       ...
     }:
     flake-parts.lib.mkFlake { inherit inputs; } (top: {
@@ -144,6 +133,18 @@
             inherit allowlistedLicenses;
             allowUnfreePredicate = pkg: builtins.elem (nixpkgs.lib.getName pkg) allowedUnfreePackages;
           };
+          # 全環境で共通のoverlays。
+          overlays = [
+            inputs.emacs-overlay.overlays.default
+            inputs.firge-nix.overlays.default
+          ];
+          # system固有のunstable pkgsを生成する関数。
+          importPkgsUnstable =
+            system:
+            import nixpkgs-unstable {
+              inherit system overlays;
+              config = nixpkgsConfig;
+            };
         in
         {
           nixosConfigurations =
@@ -156,16 +157,10 @@
                 let
                   specialArgs = {
                     inherit
-                      claude-desktop
-                      dot-emacs
-                      dot-xmonad
                       importDirModules
                       inputs
-                      www-ncaq-net
 
                       hostName
-                      nixos-hardware
-                      nixos-wsl
                       ;
                     username = "ncaq";
                   };
@@ -179,14 +174,11 @@
                     (_: {
                       nixpkgs = {
                         config = nixpkgsConfig;
-                        overlays = [
-                          emacs-overlay.overlays.default
-                          firge-nix.overlays.default
-                        ];
+                        inherit overlays;
                       };
                     })
-                    disko.nixosModules.default
-                    sops-nix.nixosModules.sops
+                    inputs.disko.nixosModules.default
+                    inputs.sops-nix.nixosModules.sops
                     ./nixos/configuration.nix
                     ./nixos/host/${hostName}.nix
                     home-manager.nixosModules.home-manager
@@ -198,19 +190,12 @@
                           useGlobalPkgs = true;
                           useUserPackages = true;
                           extraSpecialArgs = specialArgs // {
-                            pkgs-unstable = import nixpkgs-unstable {
-                              inherit system;
-                              config = nixpkgsConfig;
-                              overlays = [
-                                emacs-overlay.overlays.default
-                                firge-nix.overlays.default
-                              ];
-                            };
+                            pkgs-unstable = importPkgsUnstable system;
                             isTermux = false;
                             isWSL = config.wsl.enable or false;
                           };
                           sharedModules = [
-                            sops-nix.homeManagerModules.sops
+                            inputs.sops-nix.homeManagerModules.sops
                           ];
                           users.ncaq = import ./home;
                         };
@@ -251,37 +236,22 @@
                 }:
                 home-manager.lib.homeManagerConfiguration {
                   pkgs = import nixpkgs {
-                    inherit system;
+                    inherit system overlays;
                     config = nixpkgsConfig;
-                    overlays = [
-                      emacs-overlay.overlays.default
-                      firge-nix.overlays.default
-                    ];
                   };
                   extraSpecialArgs = {
                     inherit
-                      claude-desktop
-                      dot-emacs
-                      dot-xmonad
                       importDirModules
                       inputs
-                      www-ncaq-net
 
                       username
                       ;
-                    pkgs-unstable = import nixpkgs-unstable {
-                      inherit system;
-                      config = nixpkgsConfig;
-                      overlays = [
-                        emacs-overlay.overlays.default
-                        firge-nix.overlays.default
-                      ];
-                    };
+                    pkgs-unstable = importPkgsUnstable system;
                     isTermux = false;
                     isWSL = false;
                   };
                   modules = [
-                    sops-nix.homeManagerModules.sops
+                    inputs.sops-nix.homeManagerModules.sops
                     ./home
                   ];
                 };
@@ -300,18 +270,10 @@
           nixOnDroidConfigurations = {
             default = import ./nix-on-droid {
               inherit
-                dot-emacs
-                emacs-overlay
-                firge-nix
-                home-manager
                 importDirModules
                 inputs
-                nix-on-droid
-                nixpkgs
-                nixpkgs-unstable
                 nixpkgsConfig
-                sops-nix
-                www-ncaq-net
+                overlays
                 ;
               system = "aarch64-linux";
               username = "ncaq";

@@ -101,7 +101,7 @@ in
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
-      ExecStart = "${pkgs.iproute2}/bin/tc qdisc add dev vm-mcp-nixos root tbf rate 100mbit burst 10mbit latency 400ms";
+      ExecStart = "${pkgs.iproute2}/bin/tc qdisc replace dev vm-mcp-nixos root tbf rate 100mbit burst 10mbit latency 400ms";
     };
   };
 }

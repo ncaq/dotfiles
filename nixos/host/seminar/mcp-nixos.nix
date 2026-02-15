@@ -68,7 +68,12 @@ in
           networkConfig = {
             Address = "${addr.guest}/24";
             Gateway = addr.host;
-            DNS = "1.1.1.1 1.0.0.1 8.8.8.8 8.8.4.4";
+            DNS = [
+              "1.1.1.1"
+              "1.0.0.1"
+              "8.8.8.8"
+              "8.8.4.4"
+            ];
           };
         };
 

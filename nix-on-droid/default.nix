@@ -1,32 +1,28 @@
 {
-  dot-emacs,
-  emacs-overlay,
-  firge-nix,
-  home-manager,
   importDirModules,
   inputs,
-  nix-on-droid,
-  nixpkgs,
-  nixpkgs-unstable,
   nixpkgsConfig,
-  sops-nix,
   system,
   username,
-  www-ncaq-net,
   ...
 }:
 let
+  inherit (inputs)
+    home-manager
+    nixpkgs
+    nixpkgs-unstable
+    ;
   pkgs = import nixpkgs {
     inherit system;
     config = nixpkgsConfig;
     overlays = [
-      emacs-overlay.overlays.default
-      firge-nix.overlays.default
-      nix-on-droid.overlays.default
+      inputs.emacs-overlay.overlays.default
+      inputs.firge-nix.overlays.default
+      inputs.nix-on-droid.overlays.default
     ];
   };
 in
-nix-on-droid.lib.nixOnDroidConfiguration {
+inputs.nix-on-droid.lib.nixOnDroidConfiguration {
   inherit pkgs;
   modules = [
     {
@@ -70,10 +66,8 @@ nix-on-droid.lib.nixOnDroidConfiguration {
         useUserPackages = true;
         extraSpecialArgs = {
           inherit
-            dot-emacs
             importDirModules
             inputs
-            www-ncaq-net
 
             username
             ;
@@ -85,7 +79,7 @@ nix-on-droid.lib.nixOnDroidConfiguration {
           isWSL = false;
         };
         sharedModules = [
-          sops-nix.homeManagerModules.sops
+          inputs.sops-nix.homeManagerModules.sops
         ];
         config = ../home;
       };

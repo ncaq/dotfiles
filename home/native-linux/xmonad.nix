@@ -1,7 +1,7 @@
 {
   pkgs,
   lib,
-  dot-xmonad,
+  inputs,
   ...
 }:
 lib.mkIf pkgs.stdenv.hostPlatform.isx86_64 {
@@ -11,6 +11,6 @@ lib.mkIf pkgs.stdenv.hostPlatform.isx86_64 {
   };
 
   home.packages = [
-    dot-xmonad.packages.${pkgs.stdenv.hostPlatform.system}.default
+    inputs.dot-xmonad.packages.${pkgs.stdenv.hostPlatform.system}.default
   ];
 }

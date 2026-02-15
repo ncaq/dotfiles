@@ -1,7 +1,7 @@
 # LLMで利用するプロンプトを連結して提供するモジュール。
 {
   lib,
-  www-ncaq-net,
+  inputs,
   ...
 }:
 let
@@ -47,8 +47,8 @@ in
           (builtins.readFile ./user/house.md)
           (builtins.readFile ./user/job.md)
           (builtins.readFile ./user/tech-context.md)
-          (builtins.readFile "${www-ncaq-net}/site/about.md")
-          (builtins.readFile "${www-ncaq-net}/site/entry/2025-12-28-14-43-14.md") # 現在の自分の決済方法
+          (builtins.readFile "${inputs.www-ncaq-net}/site/about.md")
+          (builtins.readFile "${inputs.www-ncaq-net}/site/entry/2025-12-28-14-43-14.md") # 現在の自分の決済方法
         ]
         ++ programmingPrompts
       );

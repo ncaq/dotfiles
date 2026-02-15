@@ -2,14 +2,14 @@
   pkgs,
   config,
   lib,
-  dot-emacs,
+  inputs,
   ...
 }:
 {
   programs.emacs = {
     enable = true;
     package = pkgs.emacsWithPackagesFromUsePackage {
-      config = "${dot-emacs}/init.el"; # init.elが依存しているパッケージをインストールします。
+      config = "${inputs.dot-emacs}/init.el"; # init.elが依存しているパッケージをインストールします。
     };
   };
 

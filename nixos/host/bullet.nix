@@ -1,12 +1,12 @@
-{ nixos-hardware, ... }:
+{ inputs, ... }:
 {
   imports = [
-    nixos-hardware.nixosModules.common-cpu-amd
-    nixos-hardware.nixosModules.common-cpu-amd-pstate
-    nixos-hardware.nixosModules.common-gpu-nvidia-nonprime
-    nixos-hardware.nixosModules.common-hidpi
-    nixos-hardware.nixosModules.common-pc
-    nixos-hardware.nixosModules.common-pc-ssd
+    inputs.nixos-hardware.nixosModules.common-cpu-amd
+    inputs.nixos-hardware.nixosModules.common-cpu-amd-pstate
+    inputs.nixos-hardware.nixosModules.common-gpu-nvidia-nonprime
+    inputs.nixos-hardware.nixosModules.common-hidpi
+    inputs.nixos-hardware.nixosModules.common-pc
+    inputs.nixos-hardware.nixosModules.common-pc-ssd
 
     ../native-linux
 

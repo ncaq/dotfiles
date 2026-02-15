@@ -71,7 +71,7 @@ inputs.nix-on-droid.lib.nixOnDroidConfiguration {
             username
             ;
           pkgs-unstable = import nixpkgs-unstable {
-            inherit system;
+            inherit system overlays;
             config = nixpkgsConfig;
           };
           isTermux = true; # アプリとしてはnix-on-droidですがランタイム的にはTermuxの方が妥当な名前。

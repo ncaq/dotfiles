@@ -67,6 +67,10 @@
         bind -n S-Left copy-mode \; send-keys -X page-up
         bind -n S-Right copy-mode \; send-keys -X page-down
 
+        # PageUp/PageDown = ページスクロール
+        bind -n PageUp copy-mode \; send-keys -X page-up
+        bind -n PageDown copy-mode \; send-keys -X page-down
+
         # クイックウィンドウ切り替え(Alt+数字)
         bind -n M-1 select-window -t 1
         bind -n M-2 select-window -t 2

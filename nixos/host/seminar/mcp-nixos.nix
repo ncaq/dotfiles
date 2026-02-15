@@ -56,48 +56,38 @@ in
 
       networking = {
         hostName = "mcp-nixos";
-        nameservers = [
-          # Cloudflare
-          "2606:4700:4700::1111"
-          "2606:4700:4700::1001"
-          "1.1.1.1"
-          "1.0.0.1"
-          # Google
-          "2001:4860:4860::8888"
-          "2001:4860:4860::8844"
-          "8.8.8.8"
-          "8.8.4.4"
-        ];
-        interfaces.eth0.ipv4.addresses = [
-          {
-            address = addr.guest;
-            prefixLength = 24;
-          }
-        ];
-        defaultGateway = {
-          address = addr.host;
-          interface = "eth0";
-        };
         firewall.allowedTCPPorts = [ 8080 ]; # Cloudflare Tunnelから転送されるポートです。
       };
 
-      systemd.services.mcp-nixos-http = {
-        description = "mcp-nixos HTTP server";
-        after = [ "network.target" ];
-        wantedBy = [ "multi-user.target" ];
-        serviceConfig = {
-          # オリジナルのmcp-nixosはHTTPサーバでは動きませんが、
-          # オリジナルでも使っているfastmcpを使うことでHTTPサーバとして動かせるようになります。
-          ExecStart = "${mcp-nixos-env}/bin/fastmcp run ${serverPy}:mcp --transport streamable-http --host 0.0.0.0 --port 8080";
-          DynamicUser = true;
-          Restart = "always";
-          RestartSec = 5;
-          # Hardening
-          NoNewPrivileges = true;
-          ProtectSystem = "strict";
-          ProtectHome = true;
-          PrivateTmp = true;
-          PrivateDevices = true;
+      systemd = {
+        network.enable = true;
+        network.networks."20-lan" = {
+          matchConfig.Type = "ether";
+          networkConfig = {
+            Address = "${addr.guest}/24";
+            Gateway = addr.host;
+            DNS = "2606:4700:4700::1111 2606:4700:4700::1001 1.1.1.1 1.0.0.1 2001:4860:4860::8888 2001:4860:4860::8844 8.8.8.8 8.8.4.4";
+          };
+        };
+
+        services.mcp-nixos-http = {
+          description = "mcp-nixos HTTP server";
+          after = [ "network.target" ];
+          wantedBy = [ "multi-user.target" ];
+          serviceConfig = {
+            # オリジナルのmcp-nixosはHTTPサーバでは動きませんが、
+            # オリジナルでも使っているfastmcpを使うことでHTTPサーバとして動かせるようになります。
+            ExecStart = "${mcp-nixos-env}/bin/fastmcp run ${serverPy}:mcp --transport streamable-http --host 0.0.0.0 --port 8080";
+            DynamicUser = true;
+            Restart = "always";
+            RestartSec = 5;
+            # Hardening
+            NoNewPrivileges = true;
+            ProtectSystem = "strict";
+            ProtectHome = true;
+            PrivateTmp = true;
+            PrivateDevices = true;
+          };
         };
       };
     };

@@ -88,6 +88,8 @@ in
             DynamicUser = true;
             Restart = "always";
             RestartSec = 5;
+            StartLimitIntervalSec = 60;
+            StartLimitBurst = 5;
             # Hardening
             NoNewPrivileges = true;
             ProtectSystem = "strict";

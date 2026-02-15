@@ -100,6 +100,14 @@ in
     }
   ];
 
+  # microVMの起動時にTAPインターフェースが再作成されるため、
+  # IPアドレス設定がmicroVM起動後に行われるように依存関係を設定します。
+  systemd.services.network-addresses-vm-mcp-nixos = {
+    requires = [ "microvm@mcp-nixos.service" ];
+    after = [ "microvm@mcp-nixos.service" ];
+    partOf = [ "microvm@mcp-nixos.service" ];
+  };
+
   # DoS攻撃に加担しないように、
   # 一応帯域制限をかけておきます。
   systemd.services.mcp-nixos-traffic-control = {

@@ -27,6 +27,21 @@
       ];
 
       extraConfig = ''
+        # modus-vivendi テーマカラー
+        # https://protesilaos.com/emacs/modus-themes
+        # bg-main=#000000 fg-main=#ffffff bg-dim=#1e1e1e fg-dim=#989898
+        # bg-mode-line-active=#505050 border=#646464 blue=#2fafff blue-warmer=#79a8ff
+        # bg-active=#535353 bg-region=#5a5a5a
+        set -g status-style "bg=#1e1e1e,fg=#989898"
+        set -g window-status-style "bg=#1e1e1e,fg=#989898"
+        set -g window-status-current-style "bg=#505050,fg=#ffffff,bold"
+        set -g pane-border-style "fg=#646464"
+        set -g pane-active-border-style "fg=#2fafff"
+        set -g message-style "bg=#000000,fg=#ffffff"
+        set -g message-command-style "bg=#000000,fg=#ffffff"
+        set -g mode-style "bg=#5a5a5a,fg=#ffffff"
+        set -g clock-mode-colour "#79a8ff"
+
         # クリップボードを連携
         set -g set-clipboard on
 
@@ -41,7 +56,7 @@
         set -g set-titles on
         set -g set-titles-string "#{pane_title}"
         set -g window-status-format "#I:#{b:pane_current_path}/#{pane_current_command}"
-        set -g window-status-current-format "#[fg=colour255,bg=colour24,bold] #I:#{b:pane_current_path}/#{pane_current_command} #[default]"
+        set -g window-status-current-format " #I:#{b:pane_current_path}/#{pane_current_command} "
 
         # プレフィックスなしで直接使えるキーバインド
 
@@ -87,7 +102,7 @@
         bind -T root C-M-j \
           set prefix None \;\
           set key-table off \;\
-          set status-style "bg=colour238" \;\
+          set status-style "bg=#535353" \;\
           if -F '#{pane_in_mode}' 'send-keys -X cancel' \;\
           refresh-client -S
         bind -T off C-M-j \

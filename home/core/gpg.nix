@@ -49,7 +49,7 @@ lib.mkMerge [
           lib.hm.dag.entryBetween [ "importGpgKeys" ] [ "createGpgHomedir" ]
             ''
               ${pkgs.gnupg}/bin/gpgconf --kill keyboxd 2>/dev/null || true
-              $DRY_RUN_CMD ${pkgs.trashy}/bin/trash "${config.home.homeDirectory}/.gnupg/public-keys.d/"
+              $DRY_RUN_CMD ${pkgs.trashy}/bin/trash "${config.home.homeDirectory}/.gnupg/public-keys.d/" || true
             '';
         # Termux環境: systemdが使えないためシェル初期化でgpg-agentを起動
         programs.zsh.initContent = ''

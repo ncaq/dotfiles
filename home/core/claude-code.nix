@@ -154,14 +154,26 @@ in
       language = "japanese";
       # その時最適なモデルをデフォルトにします。
       model = "opus";
-      # コミットメッセージにCo-Authored-Byフッターを付与しません。
-      # 私はAIエージェントはテキストエディタの延長線上だと考えているためツール名がコミットに残るのは不適切です。
-      attribution.commit = "";
+      # メッセージにCo-Authored-Byフッターを付与しません。
+      # 私はAIエージェントはテキストエディタの延長線上だと考えているため、
+      # ツール名が書かれるのは不自然だと思っています。
+      attribution = {
+        commit = "";
+        pr = "";
+      };
       # statuslineを設定します。
       # ccstatuslineを使用して豪華な表示にします。
       statusLine = {
         type = "command";
         command = lib.getExe ccstatusline;
+      };
+      sandbox = {
+        # sandboxは通常無効にします。
+        # sandboxであることが由来のトラブルが多すぎるためです。
+        enabled = false;
+        # sandboxを有効にしたときはサンドボックスを抜けるのを許可しません。
+        # sandboxを有効にしたいときはsandbox任せで自動承認させたいと思う時が多いからです。
+        allowUnsandboxedCommands = false;
       };
       permissions = {
         defaultMode = "acceptEdits";
@@ -287,7 +299,7 @@ in
           "Bash(stack repl *)"
           "Bash(stack run *)"
           "Bash(stack test *)"
-          "Bash(systemctl status *)"
+          "Bash(systemctl * status *)"
           "Bash(timedatectl status *)"
           "Bash(touch *)"
           "Bash(trash *)"

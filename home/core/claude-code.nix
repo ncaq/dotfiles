@@ -154,9 +154,13 @@ in
       language = "japanese";
       # その時最適なモデルをデフォルトにします。
       model = "opus";
-      # コミットメッセージにCo-Authored-Byフッターを付与しません。
-      # 私はAIエージェントはテキストエディタの延長線上だと考えているためツール名がコミットに残るのは不適切です。
-      attribution.commit = "";
+      # メッセージにCo-Authored-Byフッターを付与しません。
+      # 私はAIエージェントはテキストエディタの延長線上だと考えているため、
+      # ツール名が書かれるのは不自然だと思っています。
+      attribution = {
+        commit = "";
+        pr = "";
+      };
       # statuslineを設定します。
       # ccstatuslineを使用して豪華な表示にします。
       statusLine = {

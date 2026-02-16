@@ -167,6 +167,14 @@ in
         type = "command";
         command = lib.getExe ccstatusline;
       };
+      sandbox = {
+        # sandboxは通常無効にします。
+        # sandboxであることが由来のトラブルが多すぎるためです。
+        enabled = false;
+        # sandboxを有効にしたときはサンドボックスを抜けるのを許可しません。
+        # sandboxを有効にしたいときはsandbox任せで自動承認させたいと思う時が多いからです。
+        allowUnsandboxedCommands = false;
+      };
       permissions = {
         defaultMode = "acceptEdits";
         additionalDirectories = [

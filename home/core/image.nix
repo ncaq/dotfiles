@@ -1,7 +1,7 @@
 { pkgs, ... }:
 {
   home.packages = with pkgs; [
-    p7zip
-    patool
+    libwebp
+    oxipng
   ];
 }

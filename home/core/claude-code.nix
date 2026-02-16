@@ -299,7 +299,7 @@ in
           "Bash(stack repl *)"
           "Bash(stack run *)"
           "Bash(stack test *)"
-          "Bash(systemctl status *)"
+          "Bash(systemctl * status *)"
           "Bash(timedatectl status *)"
           "Bash(touch *)"
           "Bash(trash *)"

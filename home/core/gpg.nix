@@ -1,5 +1,6 @@
 {
   pkgs,
+  config,
   lib,
   isTermux,
   ...
@@ -40,6 +41,16 @@ lib.mkMerge [
       }
     else
       {
+        # Termux環境ではsystemdによるGPGデーモンのライフサイクル管理がないため、
+        # keyboxdの古いデータベースが残って鍵インポートに失敗することがある。
+        # importGpgKeysの前にクリーンアップして冪等性を確保する。
+        # public-keys.d/はimportGpgKeysで再構築されるため削除しても問題ない。
+        home.activation.cleanupGpgKeyboxd =
+          lib.hm.dag.entryBetween [ "importGpgKeys" ] [ "createGpgHomedir" ]
+            ''
+              $DRY_RUN_CMD ${pkgs.gnupg}/bin/gpgconf --kill keyboxd 2>/dev/null || true
+              $DRY_RUN_CMD ${pkgs.trashy}/bin/trash "${config.home.homeDirectory}/.gnupg/public-keys.d/" || true
+            '';
         # Termux環境: systemdが使えないためシェル初期化でgpg-agentを起動
         programs.zsh.initContent = ''
           # gpg-agentをSSHサポート付きで起動

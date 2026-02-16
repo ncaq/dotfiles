@@ -34,6 +34,9 @@ in
 
       microvm = {
         hypervisor = "cloud-hypervisor";
+
+        vsock.cid = 3;
+
         vcpu = 1;
         mem = 768; # NixOS基盤(120MB) + Python(50MB) + mcp-nixos(150MB) = 320MB程度ですが、余裕を持って768MBにしています。
 

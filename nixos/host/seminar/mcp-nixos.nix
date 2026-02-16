@@ -35,6 +35,20 @@ in
       microvm = {
         hypervisor = "cloud-hypervisor";
 
+        /**
+          vsock CIDは仮想マシンを識別するための32bit整数値です。
+          以下の値が予約されています:
+
+          - 0: ハイパーバイザー
+          - 1: ループバック
+          - 2: ホスト
+
+          したがって3以上の任意の整数を設定すれば問題ありません。
+          microvmが1つしかないので、シンプルに3を設定しています。
+
+          cloud-hypervisorはvsock経由でsystemd-notifyが使えるようになります。
+          これによりホストのsystemdがVM内のサービス起動完了を正確に検知できます。
+        */
         vsock.cid = 3;
 
         vcpu = 1;

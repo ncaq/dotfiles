@@ -57,11 +57,6 @@ lib.mkMerge [
     # 実際のパスはmanifestで明示的に指定済み。
     home.activation.sops-nix = lib.mkForce (
       lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-        # importGpgKeysで起動されたkeyboxdのdotlockファイルが、
-        # sops-install-secretsのGPGアクセスを妨げる問題があります。
-        # ワークアラウンドとしてGPGデーモンを全てkillしてロックファイルを削除します。
-        $DRY_RUN_CMD ${cfg.gnupg.package}/bin/gpgconf --kill all 2>/dev/null || true
-        $DRY_RUN_CMD ${pkgs.trashy}/bin/trash "${cfg.gnupg.home}"/public-keys.d/{.#lk*,*.lock} 2>/dev/null || true
         # Termux環境では`$XDG_RUNTIME_DIR`が設定されていませんが、
         # `sops-install-secrets`は`UserMode`で`$XDG_RUNTIME_DIR`を参照するため、
         # ダミー値を設定します。

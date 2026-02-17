@@ -50,18 +50,19 @@
         set -g remain-on-exit on
         set-hook -g pane-died 'if -F "#{&&:#{==:#{session_windows},1},#{==:#{window_panes},1}}" "respawn-pane" ""'
 
-        # プログラムが設定したタイトルを許可しつつ、
-        # ウィンドウ名にはディレクトリとプロセスを表示
-        set -g allow-rename on
+        # プログラムが設定したタイトルを許可
         set -g set-titles on
         set -g set-titles-string "#{pane_title}"
-        set -g window-status-format "#I:#{b:pane_current_path}/#{pane_current_command}"
-        set -g window-status-current-format " #I:#{b:pane_current_path}/#{pane_current_command} "
 
         # ステータスバー右の時刻表記をISO 8601形式にします
         set -g status-right " \"#{=21:pane_title}\" %Y-%m-%dT%H:%M:%S%z "
         # tmuxの秒更新のデフォルトは15秒なので、秒表示をしたいので1秒更新にします
         set -g status-interval 1
+
+        # ウィンドウ名にはディレクトリとプロセスを表示
+        set -g allow-rename on
+        set -g window-status-format "#I:#{b:pane_current_path}/#{pane_current_command}"
+        set -g window-status-current-format " #I:#{b:pane_current_path}/#{pane_current_command} "
 
         # プレフィックスなしで直接使えるキーバインド
 

@@ -62,7 +62,7 @@
         # ウィンドウ名にはディレクトリとプロセスを表示
         set -g allow-rename on
         set -g window-status-format "#I:#{b:pane_current_path}/#{pane_current_command}"
-        set -g window-status-current-format " #I:#{b:pane_current_path}/#{pane_current_command} "
+        set -g window-status-current-format " #I:#{b:pane_current_path}/#{pane_current_command}"
 
         # プレフィックスなしで直接使えるキーバインド
 

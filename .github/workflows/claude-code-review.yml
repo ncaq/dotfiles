@@ -57,7 +57,7 @@ jobs:
           prompt: "/review-pr REPO: ${{ github.repository }} PR_NUMBER: ${{ github.event.pull_request.number }}"
           claude_args: >-
             --model opus --allowed-tools "
-            Bash(gh api *pulls/*/comments*)
+            Bash(gh api *pulls/*/comments*),
             Bash(gh issue:*),
             Bash(gh pr:*),
             Bash(gh search:*),

@@ -60,6 +60,12 @@ lib.mkMerge [
         # Termux環境では`$XDG_RUNTIME_DIR`が設定されていませんが、
         # `sops-install-secrets`は`UserMode`で`$XDG_RUNTIME_DIR`を参照するため、
         # ダミー値を設定します。
+        echo "=== sops-nix debug ==="
+        echo "common.conf before sops-install-secrets:"
+        cat "${cfg.gnupg.home}/common.conf" 2>&1 || echo "no common.conf"
+        echo "public-keys.d exists:" && ls -la "${cfg.gnupg.home}/public-keys.d/" 2>&1 || echo "no public-keys.d"
+        ${cfg.gnupg.package}/bin/gpg --homedir "${cfg.gnupg.home}" --list-secret-keys 2>&1 || echo "gpg --list-secret-keys FAILED"
+        echo "=== end sops-nix debug ==="
         export XDG_RUNTIME_DIR="${cfg.defaultSecretsMountPoint}"
         export SOPS_GPG_EXEC="${cfg.gnupg.package}/bin/gpg"
         $DRY_RUN_CMD ${sops-install-secrets}/bin/sops-install-secrets -ignore-passwd ${manifest}

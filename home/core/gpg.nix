@@ -49,9 +49,13 @@ lib.mkMerge [
         home.activation.cleanupGpgKeyboxd =
           lib.hm.dag.entryBetween [ "importGpgKeys" ] [ "createGpgHomedir" ]
             ''
+              echo "=== cleanupGpgKeyboxd START ==="
               echo "no-use-keyboxd" > "${config.home.homeDirectory}/.gnupg/common.conf"
+              echo "common.conf after write:"
+              cat "${config.home.homeDirectory}/.gnupg/common.conf"
               $DRY_RUN_CMD ${pkgs.gnupg}/bin/gpgconf --kill keyboxd 2>/dev/null || true
               $DRY_RUN_CMD ${pkgs.trashy}/bin/trash "${config.home.homeDirectory}/.gnupg/public-keys.d/" || true
+              echo "=== cleanupGpgKeyboxd END ==="
             '';
         # Termux環境: systemdが使えないためシェル初期化でgpg-agentを起動
         programs.zsh.initContent = ''

@@ -41,21 +41,19 @@ lib.mkMerge [
       }
     else
       {
-        # Termux環境ではsystemdによるGPGデーモンのライフサイクル管理がないため、
-        # keyboxdのdotlockファイルが残留しsops-nixの復号化を妨げる。
-        # keyboxdを無効化して従来のpubring.kbx形式を使用することで回避する。
         # common.confはimportGpgKeysより前に配置する必要があるため、
-        # home.fileではなくactivation hookで直接書き込む。
+        # home.fileではなくactivation hookで直接書き込みます。
         home.activation.cleanupGpgKeyboxd =
           lib.hm.dag.entryBetween [ "importGpgKeys" ] [ "createGpgHomedir" ]
             ''
-              echo "=== cleanupGpgKeyboxd START ==="
+              # Termux環境ではsystemdによるGPGデーモンのライフサイクル管理がないため、
+              # keyboxdのdotlockファイルが残留しsops-nixの復号化をしばしば妨げます。
+              # keyboxdを無効化して従来のpubring.kbx形式を使用することで回避します。
+              # 並列アクセス性能は低下しますが、
+              # 個人のTermux環境ではほぼ問題にならないため許容します。
               echo "no-use-keyboxd" > "${config.home.homeDirectory}/.gnupg/common.conf"
-              echo "common.conf after write:"
-              cat "${config.home.homeDirectory}/.gnupg/common.conf"
               $DRY_RUN_CMD ${pkgs.gnupg}/bin/gpgconf --kill keyboxd 2>/dev/null || true
               $DRY_RUN_CMD ${pkgs.trashy}/bin/trash "${config.home.homeDirectory}/.gnupg/public-keys.d/" || true
-              echo "=== cleanupGpgKeyboxd END ==="
             '';
         # Termux環境: systemdが使えないためシェル初期化でgpg-agentを起動
         programs.zsh.initContent = ''

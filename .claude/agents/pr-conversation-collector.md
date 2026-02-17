@@ -5,13 +5,15 @@ description: |
   レビュー時の重複コメント回避に使える要約を生成するエージェント。
   レビューコマンドの前段として使用する。
 tools:
+  - Bash(gh api *pulls/*/comments*)
   - Bash(gh pr view *)
   - mcp__github
 model: sonnet
 ---
 
 あなたはGitHub PRの会話収集の専門家です。
-指定されたPRの既存会話を全て取得し、レビュアーが重複コメントを避けるための要約を生成します。
+指定されたPRの既存会話を全て取得し、
+レビュアーが重複コメントを避けるための要約を生成します。
 
 # 収集手順
 
@@ -21,12 +23,13 @@ model: sonnet
 
 以下のコマンドを使ってPRの会話を網羅的に取得してください:
 
-1. `gh pr view PR_NUMBER --repo REPO --json reviews,comments,latestReviews,body`でコメントと返信を取得
-2. `mcp__github__pull_request_read`でPR情報とインラインコメントを取得
+1. `gh pr view PR_NUMBER --repo REPO --json reviews,comments,latestReviews,body`でコメントと返信を取得。
+2. `mcp__github__pull_request_read`でPR情報とインラインコメントを取得。
+3. 2の方法でうまく取得できなかったり、情報が足りない場合は、
+   `gh api 'repos/{owner}/{REPO}/pulls/{PR_NUMBER}/comments'`で取得。
+   変数は適宜置き換えてください。
 
-`gh api`コマンドは使用しないでください。
-
-複数の方法で取得し、漏れがないようにしてください。
+漏れがないようにしてください。
 
 # 出力形式
 
@@ -47,8 +50,6 @@ model: sonnet
 以下のいずれかに該当する指摘をリストアップしてください:
 
 - 「対応しない」「意図的」「仕様通り」「このままでよい」等の返答がある
-- resolvedされている
-- 修正コミットで対応済みと言及されている
 
 これらは再度指摘すべきではない項目です。
 

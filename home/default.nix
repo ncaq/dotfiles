@@ -10,6 +10,9 @@
   home = {
     stateVersion = "25.05";
 
+    # NixOSを使っていない環境向けにも日本語ロケールを指定します。
+    language.base = "ja_JP.UTF-8";
+
     # ユーザ名の制約が強い環境で譲ります。
     username = lib.mkDefault username;
 

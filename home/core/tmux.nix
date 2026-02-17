@@ -55,7 +55,8 @@
         set -g set-titles-string "#{pane_title}"
 
         # ステータスバー右の時刻表記をISO 8601形式にします
-        set -g status-right " \"#{=21:pane_title}\" %Y-%m-%dT%H:%M:%S%z"
+        set -g status-right-length 60 # 日時で24文字でタイトルで30文字なので24+30=54なので余裕を持って60にします。
+        set -g status-right " \"#{=30:pane_title}\" %Y-%m-%dT%H:%M:%S%z"
         # tmuxの秒更新のデフォルトは15秒なので、秒表示をしたいので1秒更新にします
         set -g status-interval 1
 

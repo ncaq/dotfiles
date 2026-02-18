@@ -4,9 +4,10 @@
   ...
 }:
 let
-  githubActionsRunnerPackages = import ../../../lib/github-actions-runner-packages.nix {
-    inherit pkgs;
-  };
+  githubActionsRunnerPackages =
+    (import ../../../lib/github-actions-runner-packages.nix {
+      inherit pkgs;
+    }).all;
   addr = config.machineAddresses.github-runner-seminar-dotfiles-x64;
 in
 {

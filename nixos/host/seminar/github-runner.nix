@@ -13,7 +13,7 @@ let
   # ワークフロー側のif条件が迂回された場合でもランナー側で防御する。
   # 多重防御の一環。
   job-started-hook = pkgs.writeShellApplication {
-    name = "github-runner-job-started-hook";
+    name = "github-runner-job-started-hook.sh";
     runtimeInputs = [ pkgs.jq ];
     text = ''
       echo "Job started hook: event=$GITHUB_EVENT_NAME actor=$GITHUB_ACTOR"
@@ -86,7 +86,7 @@ in
             tokenFile = "/etc/github-runner-dotfiles-token";
             url = "https://github.com/ncaq/dotfiles";
             extraEnvironment = {
-              ACTIONS_RUNNER_HOOK_JOB_STARTED = "${job-started-hook}/bin/github-runner-job-started-hook";
+              ACTIONS_RUNNER_HOOK_JOB_STARTED = "${job-started-hook}/bin/github-runner-job-started-hook.sh";
             };
           };
         };

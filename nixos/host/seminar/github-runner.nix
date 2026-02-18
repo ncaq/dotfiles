@@ -61,10 +61,12 @@ in
       { lib, ... }:
       {
         system.stateVersion = "25.05";
-        # コンテナはホストのnixデーモンソケットを共有するため、
-        # nix.settingsはクライアント側の設定のみ効果があります。
-        # trusted-usersなどデーモン側の設定はホスト側で定義します。
-        nix.settings = (import ../../core/nix-settings.nix { }).nix.settings;
+        # ホストの評価済みnix.settingsを継承します。
+        # trusted-usersなどホスト側で追加された設定も含まれます。
+        # コンテナはホストのnixデーモンソケットを共有しますが、
+        # cachixなどのツールはローカルのnix.confを参照するため
+        # コンテナ側にも同じ設定が必要です。
+        nix.settings = config.nix.settings;
         networking = {
           useHostResolvConf = lib.mkForce false;
           # privateNetworkではDHCPによるDNS設定がないため明示的に指定

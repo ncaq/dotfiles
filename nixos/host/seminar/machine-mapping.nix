@@ -1,4 +1,4 @@
-{ lib, ... }:
+{ lib, config, ... }:
 let
   addressType = lib.types.submodule {
     options = {
@@ -68,13 +68,13 @@ in
     - 0: ハイパーバイザー
     - 1: ループバック
     - 2: ホスト
+    - 0xFFFFFFFF: VMADDR_CID_ANY
 
-    したがって3以上の任意の整数を設定します。
     cloud-hypervisorはvsock経由でsystemd-notifyが使えるため、
     ホストのsystemdがVM内のサービス起動完了を正確に検知できます。
   */
   options.microvmCid = lib.mkOption {
-    type = lib.types.attrsOf lib.types.int;
+    type = lib.types.attrsOf (lib.types.ints.between 3 4294967294);
     default = {
       mcp-nixos = 3;
     };
@@ -82,6 +82,20 @@ in
   };
 
   config = {
+    assertions =
+      let
+        cidValues = lib.attrValues config.microvmCid;
+        uniqueValues = lib.unique cidValues;
+      in
+      [
+        {
+          assertion = lib.length cidValues == lib.length uniqueValues;
+          message = "microvmCid values must be unique, but found duplicates: ${
+            lib.concatMapStringsSep ", " toString cidValues
+          }";
+        }
+      ];
+
     networking.nat = {
       enable = true;
       internalInterfaces = [

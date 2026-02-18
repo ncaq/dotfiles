@@ -41,7 +41,8 @@ let
     powershell
     python3
     ruby
-    swift
+
+    # swiftは現在ビルドに失敗するため除外します。
   ];
 
   packageManagement = with pkgs; [

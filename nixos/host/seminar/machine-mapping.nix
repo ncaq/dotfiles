@@ -1,4 +1,4 @@
-{ lib, ... }:
+{ lib, config, ... }:
 let
   addressType = lib.types.submodule {
     options = {
@@ -60,7 +60,42 @@ in
     description = "Container user/group IDs for PostgreSQL peer authentication";
   };
 
+  /**
+    microVMのvsock CID割り当て一覧です。
+    vsock CIDは仮想マシンを識別するための32bit整数値で、
+    以下の値が予約されています:
+
+    - 0: ハイパーバイザー
+    - 1: ループバック
+    - 2: ホスト
+    - 0xFFFFFFFF: VMADDR_CID_ANY
+
+    cloud-hypervisorはvsock経由でsystemd-notifyが使えるため、
+    ホストのsystemdがVM内のサービス起動完了を正確に検知できます。
+  */
+  options.microvmCid = lib.mkOption {
+    type = lib.types.attrsOf (lib.types.ints.between 3 4294967294);
+    default = {
+      mcp-nixos = 3;
+    };
+    description = "vsock CID assignments for microVMs (must be >= 3, unique per VM)";
+  };
+
   config = {
+    assertions =
+      let
+        cidValues = lib.attrValues config.microvmCid;
+        uniqueValues = lib.unique cidValues;
+      in
+      [
+        {
+          assertion = lib.length cidValues == lib.length uniqueValues;
+          message = "microvmCid values must be unique, but found duplicates: ${
+            lib.concatMapStringsSep ", " toString cidValues
+          }";
+        }
+      ];
+
     networking.nat = {
       enable = true;
       internalInterfaces = [

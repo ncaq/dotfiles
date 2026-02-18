@@ -7,6 +7,8 @@
     nixos-hardware.nixosModules.common-pc
     nixos-hardware.nixosModules.common-pc-ssd
 
+    microvm.nixosModules.host
+
     ../native-linux
 
     ./seminar

@@ -7,7 +7,6 @@
 {
   pkgs,
   config,
-  inputs,
   ...
 }:
 let
@@ -21,10 +20,6 @@ let
   serverPy = "${pkgs.mcp-nixos}/${pkgs.python3.sitePackages}/mcp_nixos/server.py";
 in
 {
-  imports = [
-    inputs.microvm.nixosModules.host
-  ];
-
   # 仮に脆弱性があった場合の被害を最小限に抑えるため、
   # 仮想マシンで動かします。
   microvm.vms.mcp-nixos = {
@@ -35,21 +30,7 @@ in
       microvm = {
         hypervisor = "cloud-hypervisor";
 
-        /**
-          vsock CIDは仮想マシンを識別するための32bit整数値です。
-          以下の値が予約されています:
-
-          - 0: ハイパーバイザー
-          - 1: ループバック
-          - 2: ホスト
-
-          したがって3以上の任意の整数を設定すれば問題ありません。
-          microvmが1つしかないので、シンプルに3を設定しています。
-
-          cloud-hypervisorはvsock経由でsystemd-notifyが使えるようになります。
-          これによりホストのsystemdがVM内のサービス起動完了を正確に検知できます。
-        */
-        vsock.cid = 3;
+        vsock.cid = config.microvmCid.mcp-nixos;
 
         vcpu = 1;
         mem = 768; # NixOS基盤(120MB) + Python(50MB) + mcp-nixos(150MB) = 320MB程度ですが、余裕を持って768MBにしています。

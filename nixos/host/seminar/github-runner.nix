@@ -57,6 +57,13 @@ in
         system.stateVersion = "25.05";
         networking.useHostResolvConf = lib.mkForce false;
         services.resolved.enable = true;
+        # privateNetworkではDHCPによるDNS設定がないため明示的に指定
+        networking.nameservers = [
+          "1.1.1.1"
+          "1.0.0.1"
+          "8.8.8.8"
+          "8.8.4.4"
+        ];
         # Allow incoming connections from host via private network.
         networking.firewall.trustedInterfaces = [ "eth0" ];
         services.github-runners.seminar-dotfiles-x64 = {

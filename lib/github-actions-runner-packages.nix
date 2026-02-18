@@ -102,7 +102,7 @@ let
     buildah
     docker # Docker CLI + daemon
     docker-buildx
-    docker-compose # Docker Compose v2 plugin
+    docker-compose
     podman
     skopeo
 

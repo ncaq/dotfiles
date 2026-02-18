@@ -61,8 +61,8 @@ in
         gid = 988;
       };
       github-runner = {
-        uid = 990;
-        gid = 985;
+        uid = 980;
+        gid = 980;
       };
     };
     description = "Container user/group IDs (must match between host and container)";

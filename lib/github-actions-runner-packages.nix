@@ -51,7 +51,6 @@ let
 
     pipx
 
-    kubernetes-helm
     vcpkg
 
     # HomebrewはNix環境では不要/非推奨。
@@ -110,6 +109,7 @@ let
     # Kubernetes Tools
     kind
     kubectl
+    kubernetes-helm
     kustomize
     minikube
 

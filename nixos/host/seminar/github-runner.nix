@@ -14,6 +14,7 @@ let
       cachix
     ]);
   addr = config.machineAddresses.github-runner-seminar-dotfiles-x64;
+  user = config.containerUsers.github-runner;
   # ジョブ開始前に信頼できないPRを拒否するフックスクリプト。
   # ワークフロー側のif条件が迂回された場合でもランナー側で防御する。
   # 多重防御の一環。
@@ -60,12 +61,10 @@ in
       { lib, ... }:
       {
         system.stateVersion = "25.05";
-        # ホストの基本的なNix設定を継承し、ランナーユーザーをtrusted-usersに追加します。
-        nix.settings =
-          let
-            base = (import ../../core/nix-settings.nix { }).nix.settings;
-          in
-          base // { trusted-users = base.trusted-users ++ [ "github-runner" ]; };
+        # コンテナはホストのnixデーモンソケットを共有するため、
+        # nix.settingsはクライアント側の設定のみ効果があります。
+        # trusted-usersなどデーモン側の設定はホスト側で定義します。
+        nix.settings = (import ../../core/nix-settings.nix { }).nix.settings;
         networking = {
           useHostResolvConf = lib.mkForce false;
           # privateNetworkではDHCPによるDNS設定がないため明示的に指定
@@ -78,17 +77,23 @@ in
           # ネットワーク通信の受け入れを許可します。
           firewall.trustedInterfaces = [ "eth0" ];
         };
+        # UID/GIDはホストと一致させる必要があります。
+        # コンテナのnixコマンドはホストのnixデーモンと通信するため、
+        # ホスト側でユーザーを解決できなければtrusted-usersが機能しません。
+        users = {
+          users.github-runner = {
+            isSystemUser = true;
+            group = "github-runner";
+            inherit (user) uid;
+          };
+          groups.github-runner.gid = user.gid;
+        };
         # コンテナ起動直後はネットワークが一時的に使えずrunner登録が失敗することがあるため、
         # 失敗しても再起動するようにします。
         systemd.services.github-runner-seminar-dotfiles-x64.serviceConfig = {
           Restart = lib.mkForce "always"; # デフォルトでは成功時のみに再起動になっているので失敗時含めて常に再起動。
           RestartSec = 5;
         };
-        users.users.github-runner = {
-          isSystemUser = true;
-          group = "github-runner";
-        };
-        users.groups.github-runner = { };
         services = {
           resolved.enable = true;
           github-runners.seminar-dotfiles-x64 = {
@@ -108,6 +113,21 @@ in
         };
       };
   };
+
+  # ホスト側のユーザー/グループ定義。
+  # NixOSコンテナはホストのnixデーモンソケットを共有するため、
+  # ホスト側でユーザーが解決できる必要があります。
+  users = {
+    users.github-runner = {
+      isSystemUser = true;
+      group = "github-runner";
+      inherit (user) uid;
+    };
+    groups.github-runner.gid = user.gid;
+  };
+
+  # ホストのnixデーモンがコンテナ内のgithub-runnerユーザーを信頼するよう設定します。
+  nix.settings.trusted-users = [ "github-runner" ];
 
   sops.secrets."github-runner/dotfiles" = {
     sopsFile = ../../../secrets/seminar/github-runner/dotfiles.yaml;

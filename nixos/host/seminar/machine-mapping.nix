@@ -60,6 +60,10 @@ in
         uid = 993;
         gid = 988;
       };
+      github-runner = {
+        uid = 990;
+        gid = 985;
+      };
     };
     description = "Container user/group IDs for PostgreSQL peer authentication";
   };

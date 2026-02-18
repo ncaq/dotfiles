@@ -9,6 +9,35 @@ let
       inherit pkgs;
     }).all;
   addr = config.machineAddresses.github-runner-seminar-dotfiles-x64;
+  # ジョブ開始前に信頼できないPRを拒否するフックスクリプト。
+  # ワークフロー側のif条件が迂回された場合でもランナー側で防御する。
+  # 多重防御の一環。
+  job-started-hook = pkgs.writeShellApplication {
+    name = "github-runner-job-started-hook";
+    runtimeInputs = [ pkgs.jq ];
+    text = ''
+      echo "Job started hook: event=$GITHUB_EVENT_NAME actor=$GITHUB_ACTOR"
+
+      # push, merge_group, workflow_dispatchなどはリポジトリへの書き込み権限が必要なため許可
+      if [[ "$GITHUB_EVENT_NAME" != "pull_request" && "$GITHUB_EVENT_NAME" != "pull_request_target" ]]; then
+        echo "Event '$GITHUB_EVENT_NAME' is allowed."
+        exit 0
+      fi
+
+      # PRイベントの場合、作者がリポジトリオーナーか確認
+      author_association=$(jq -r '.pull_request.author_association // "UNKNOWN"' "$GITHUB_EVENT_PATH")
+      sender=$(jq -r '.sender.login // "UNKNOWN"' "$GITHUB_EVENT_PATH")
+      echo "PR author_association=$author_association sender=$sender"
+
+      if [[ "$author_association" == "OWNER" ]]; then
+        echo "PR author is OWNER, allowed."
+        exit 0
+      fi
+
+      echo "ERROR: Untrusted PR (author_association=$author_association, sender=$sender). Rejecting job."
+      exit 1
+    '';
+  };
 in
 {
   containers.github-runner-seminar-dotfiles-x64 = {
@@ -37,6 +66,9 @@ in
           extraPackages = githubActionsRunnerPackages;
           tokenFile = "/etc/github-runner-dotfiles-token";
           url = "https://github.com/ncaq/dotfiles";
+          extraEnvironment = {
+            ACTIONS_RUNNER_HOOK_JOB_STARTED = "${job-started-hook}/bin/github-runner-job-started-hook";
+          };
         };
       };
   };

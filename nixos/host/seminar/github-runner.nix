@@ -55,6 +55,8 @@ in
       { lib, ... }:
       {
         system.stateVersion = "25.05";
+        # ホストの基本的なNix設定を継承します。
+        nix.settings = (import ../../core/nix-settings.nix { }).nix.settings;
         networking = {
           useHostResolvConf = lib.mkForce false;
           # privateNetworkではDHCPによるDNS設定がないため明示的に指定

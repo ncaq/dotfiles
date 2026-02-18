@@ -55,31 +55,36 @@ in
       { lib, ... }:
       {
         system.stateVersion = "25.05";
-        networking.useHostResolvConf = lib.mkForce false;
-        services.resolved.enable = true;
-        # privateNetworkではDHCPによるDNS設定がないため明示的に指定
-        networking.nameservers = [
-          "1.1.1.1"
-          "1.0.0.1"
-          "8.8.8.8"
-          "8.8.4.4"
-        ];
-        # ネットワーク通信の受け入れを許可します。
-        networking.firewall.trustedInterfaces = [ "eth0" ];
-        # コンテナ起動直後はネットワークが一時的に使えずrunner登録が失敗することがあります。
+        networking = {
+          useHostResolvConf = lib.mkForce false;
+          # privateNetworkではDHCPによるDNS設定がないため明示的に指定
+          nameservers = [
+            "1.1.1.1"
+            "1.0.0.1"
+            "8.8.8.8"
+            "8.8.4.4"
+          ];
+          # ネットワーク通信の受け入れを許可します。
+          firewall.trustedInterfaces = [ "eth0" ];
+        };
+        # コンテナ起動直後はネットワークが一時的に使えずrunner登録が失敗することがあるため、
+        # 失敗しても再起動するようにします。
         systemd.services.github-runner-seminar-dotfiles-x64.serviceConfig = {
           Restart = "always";
           RestartSec = 5;
         };
-        services.github-runners.seminar-dotfiles-x64 = {
-          enable = true;
-          ephemeral = true;
-          replace = true;
-          extraPackages = githubActionsRunnerPackages;
-          tokenFile = "/etc/github-runner-dotfiles-token";
-          url = "https://github.com/ncaq/dotfiles";
-          extraEnvironment = {
-            ACTIONS_RUNNER_HOOK_JOB_STARTED = "${job-started-hook}/bin/github-runner-job-started-hook";
+        services = {
+          resolved.enable = true;
+          github-runners.seminar-dotfiles-x64 = {
+            enable = true;
+            ephemeral = true;
+            replace = true;
+            extraPackages = githubActionsRunnerPackages;
+            tokenFile = "/etc/github-runner-dotfiles-token";
+            url = "https://github.com/ncaq/dotfiles";
+            extraEnvironment = {
+              ACTIONS_RUNNER_HOOK_JOB_STARTED = "${job-started-hook}/bin/github-runner-job-started-hook";
+            };
           };
         };
       };

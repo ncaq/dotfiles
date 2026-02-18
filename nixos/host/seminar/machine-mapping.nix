@@ -60,6 +60,27 @@ in
     description = "Container user/group IDs for PostgreSQL peer authentication";
   };
 
+  /**
+    microVMのvsock CID割り当て一覧です。
+    vsock CIDは仮想マシンを識別するための32bit整数値で、
+    以下の値が予約されています:
+
+    - 0: ハイパーバイザー
+    - 1: ループバック
+    - 2: ホスト
+
+    したがって3以上の任意の整数を設定します。
+    cloud-hypervisorはvsock経由でsystemd-notifyが使えるため、
+    ホストのsystemdがVM内のサービス起動完了を正確に検知できます。
+  */
+  options.microvmCid = lib.mkOption {
+    type = lib.types.attrsOf lib.types.int;
+    default = {
+      mcp-nixos = 3;
+    };
+    description = "vsock CID assignments for microVMs (must be >= 3, unique per VM)";
+  };
+
   config = {
     networking.nat = {
       enable = true;

@@ -199,8 +199,7 @@ let
     firefox
     geckodriver
     selenium-server-standalone
-    # google-chromeは`allowUnfree = true`が必要。
-    # Microsoft Edgeはnixpkgsに公式パッケージなし。
+    # `google-chrome`, `microsoft-edge`は`allowUnfree = true`が必要。
   ];
 
   databases = with pkgs; [

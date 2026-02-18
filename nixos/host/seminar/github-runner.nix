@@ -84,6 +84,11 @@ in
           Restart = lib.mkForce "always"; # デフォルトでは成功時のみに再起動になっているので失敗時含めて常に再起動。
           RestartSec = 5;
         };
+        users.users.github-runner = {
+          isSystemUser = true;
+          group = "github-runner";
+        };
+        users.groups.github-runner = { };
         services = {
           resolved.enable = true;
           github-runners.seminar-dotfiles-x64 = {

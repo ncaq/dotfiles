@@ -95,8 +95,8 @@ let
 
     # Infrastructure as Code
     bicep
-    packer
     pulumi
+    # packerを含むHashiCorp製品はbslなため除外。
 
     # Container Tools
     buildah

@@ -16,11 +16,11 @@ let
     options = {
       uid = lib.mkOption {
         type = lib.types.int;
-        description = "User ID (must match between host and container for PostgreSQL peer auth)";
+        description = "Container user/group IDs (must match between host and container)";
       };
       gid = lib.mkOption {
         type = lib.types.int;
-        description = "Group ID (must match between host and container for PostgreSQL peer auth)";
+        description = "Container user/group IDs (must match between host and container)";
       };
     };
   };
@@ -65,7 +65,7 @@ in
         gid = 985;
       };
     };
-    description = "Container user/group IDs for PostgreSQL peer authentication";
+    description = "Container user/group IDs (must match between host and container)";
   };
 
   /**

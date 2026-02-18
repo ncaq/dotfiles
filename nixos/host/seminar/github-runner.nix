@@ -9,7 +9,10 @@ let
     (import ../../../lib/github-actions-runner-packages.nix {
       inherit pkgs;
     }).all
-    ++ [ pkgs.cachix ];
+    ++ (with pkgs; [
+      attic-client
+      cachix
+    ]);
   addr = config.machineAddresses.github-runner-seminar-dotfiles-x64;
   # ジョブ開始前に信頼できないPRを拒否するフックスクリプト。
   # ワークフロー側のif条件が迂回された場合でもランナー側で防御する。

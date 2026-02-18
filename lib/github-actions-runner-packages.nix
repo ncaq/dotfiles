@@ -4,7 +4,7 @@
   - バージョンはnixpkgsのリビジョンに依存するため完全一致ではありません。
   - ひとまずは標準的なバージョンだけを有効にしています。
   - Android SDKはnixpkgs単体では難しいです。android-nixpkgs等を別途利用推奨。今回非対応。
-  - `allowUnfree = true`が必要なパッケージあり。デフォルトでは無効にします。
+  - unfreeなパッケージは現在無効にしています。
 
   参照元: https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md
   イメージバージョン: 20260201.15.1

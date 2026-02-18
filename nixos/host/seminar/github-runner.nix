@@ -81,6 +81,7 @@ in
             enable = true;
             ephemeral = true;
             replace = true;
+            extraLabels = [ "NixOS" ];
             extraPackages = githubActionsRunnerPackages;
             tokenFile = "/etc/github-runner-dotfiles-token";
             url = "https://github.com/ncaq/dotfiles";

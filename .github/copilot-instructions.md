@@ -16,53 +16,6 @@ ASCIIに対応する全角形(Fullwidth Forms)は使用禁止。
 - 全角カンマ `，` → 半角 `,`
 - 全角数字 `０-９` → 半角 `0-9`
 
-# 利用環境
-
-基本的にOSにはNixOSの最新安定版を使っています。
-もしくは他のOSの上にNixパッケージマネージャを使っています。
-
-`$HOST`変数を見れば`flake.nix`で作っているどの環境でインストールされているか分かります。
-
-# リポジトリ構成
-
-`CLAUDE.md`は以下のように`.github/copilot-instructions.md`のシンボリックリンクになっています。
-
-```console
-CLAUDE.md -> .github/copilot-instructions.md
-```
-
-# 重要コマンド
-
-## フォーマット
-
-基本的にファイルはツールで自動フォーマットしています。
-
-### nix fmt
-
-[treefmt-nix](https://github.com/numtide/treefmt-nix)が対応しているファイルは以下のコマンドでフォーマット出来ます。
-
-```console
-nix fmt
-```
-
-Stopフックで`nix fmt`が自動実行されます。
-ファイルの差分が出ることがあります。
-
-## 統合チェック
-
-以下のコマンドでプロジェクト全体のフォーマットチェックとNixOS/home-manager構成の評価チェックが行えます。
-
-```console
-nix-fast-build --no-nom
-```
-
-`nix-fast-build`は`nix-eval-jobs`を使って`checks`を並列評価・ビルドします。
-`nix flake check`と比べて、NixOS構成の評価が並列化されるため高速です。
-
-# 使用する技術スタックやライブラリ
-
-環境構築には[Nix Flakes](https://wiki.nixos.org/wiki/Flakes/ja)を利用しています。
-
 # Nix言語
 
 ## 命名規則
@@ -117,3 +70,50 @@ Termux環境ではsystemdが利用できません。
 インストール時には単にスキップされるだけでエラーにはなりません。
 
 なのでTermux環境であることを検出して条件分岐をする必要は必須ではありません。
+
+# 重要コマンド
+
+## フォーマット
+
+基本的にファイルはツールで自動フォーマットしています。
+
+### nix fmt
+
+[treefmt-nix](https://github.com/numtide/treefmt-nix)が対応しているファイルは以下のコマンドでフォーマット出来ます。
+
+```console
+nix fmt
+```
+
+Stopフックで`nix fmt`が自動実行されます。
+ファイルの差分が出ることがあります。
+
+## 統合チェック
+
+以下のコマンドでプロジェクト全体のフォーマットチェックとNixOS/home-manager構成の評価チェックが行えます。
+
+```console
+nix-fast-build --no-nom
+```
+
+`nix-fast-build`は`nix-eval-jobs`を使って`checks`を並列評価・ビルドします。
+`nix flake check`と比べて、NixOS構成の評価が並列化されるため高速です。
+
+# 利用環境
+
+基本的にOSにはNixOSの最新安定版を使っています。
+もしくは他のOSの上にNixパッケージマネージャを使っています。
+
+`$HOST`変数を見れば`flake.nix`で作っているどの環境でインストールされているか分かります。
+
+# 使用する技術スタックやライブラリ
+
+環境構築には[Nix Flakes](https://wiki.nixos.org/wiki/Flakes/ja)を利用しています。
+
+# リポジトリ構成
+
+`CLAUDE.md`は以下のように`.github/copilot-instructions.md`のシンボリックリンクになっています。
+
+```console
+CLAUDE.md -> .github/copilot-instructions.md
+```

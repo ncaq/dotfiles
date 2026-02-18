@@ -48,6 +48,10 @@ in
 {
   containers.github-runner-seminar-dotfiles-x64 = {
     autoStart = true;
+    # 起動毎にファイルシステムを再生成します。
+    # UID/GID変更時にコンテナ内の/etc/passwdが古い値を保持する問題を防ぎます。
+    # ランナーはephemeralモードなのでジョブ間の状態保持は不要です。
+    ephemeral = true;
     privateNetwork = true;
     hostAddress = addr.host;
     localAddress = addr.guest;

@@ -9,6 +9,24 @@ let
       inherit pkgs;
     }).all;
   addr = config.machineAddresses.github-runner-seminar-dotfiles-x64;
+  # コンテナ起動直後はsystemd-resolvedが準備完了していてもDNS解決できないことがある。
+  # 実際にDNS解決が可能になるまでポーリングして待機する。
+  wait-for-dns = pkgs.writeShellApplication {
+    name = "wait-for-dns";
+    runtimeInputs = [ pkgs.getent ];
+    text = ''
+      for _ in $(seq 1 30); do
+        if getent hosts api.github.com > /dev/null 2>&1; then
+          echo "DNS resolution is available."
+          exit 0
+        fi
+        echo "Waiting for DNS resolution..."
+        sleep 1
+      done
+      echo "ERROR: DNS resolution not available after 30 seconds" >&2
+      exit 1
+    '';
+  };
   # ジョブ開始前に信頼できないPRを拒否するフックスクリプト。
   # ワークフロー側のif条件が迂回された場合でもランナー側で防御する。
   # 多重防御の一環。
@@ -66,6 +84,17 @@ in
         ];
         # Allow incoming connections from host via private network.
         networking.firewall.trustedInterfaces = [ "eth0" ];
+        # コンテナ起動直後のDNS未準備でrunner登録が失敗するのを防ぐ
+        systemd.services.wait-for-dns = {
+          description = "Wait for DNS resolution to become available";
+          wantedBy = [ "github-runner-seminar-dotfiles-x64.service" ];
+          before = [ "github-runner-seminar-dotfiles-x64.service" ];
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+            ExecStart = "${wait-for-dns}/bin/wait-for-dns";
+          };
+        };
         services.github-runners.seminar-dotfiles-x64 = {
           enable = true;
           ephemeral = true;

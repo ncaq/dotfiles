@@ -225,7 +225,8 @@ let
     newman
     sphinxsearch
 
-    # CodeQL, nvm, parcelはnixpkgsにない。
+    # nvm, parcelはnixpkgsにない。
+    # codeqlはunfreeのため除外。
   ];
 
 in

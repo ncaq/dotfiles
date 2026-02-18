@@ -60,8 +60,12 @@ in
       { lib, ... }:
       {
         system.stateVersion = "25.05";
-        # ホストの基本的なNix設定を継承します。
-        nix.settings = (import ../../core/nix-settings.nix { }).nix.settings;
+        # ホストの基本的なNix設定を継承し、ランナーユーザーをtrusted-usersに追加します。
+        nix.settings =
+          let
+            base = (import ../../core/nix-settings.nix { }).nix.settings;
+          in
+          base // { trusted-users = base.trusted-users ++ [ "github-runner" ]; };
         networking = {
           useHostResolvConf = lib.mkForce false;
           # privateNetworkではDHCPによるDNS設定がないため明示的に指定
@@ -86,6 +90,8 @@ in
             enable = true;
             ephemeral = true;
             replace = true;
+            user = "github-runner";
+            group = "github-runner";
             extraLabels = [ "NixOS" ];
             extraPackages = githubActionsRunnerPackages;
             tokenFile = "/etc/github-runner-dotfiles-token";

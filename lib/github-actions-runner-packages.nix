@@ -226,7 +226,7 @@ let
     newman
     sphinxsearch
 
-    # CodeQL, nvm, parcel,はnixpkgsにない。
+    # CodeQL, nvm, parcelはnixpkgsにない。
   ];
 
 in

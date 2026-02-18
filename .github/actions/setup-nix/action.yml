@@ -23,21 +23,27 @@ runs:
         large-packages: false # ARMランナーに存在しないパッケージ削除で警告が出るため触らない
         swap-storage: false # swap設定は初期値のまま
         tool-cache: false # GitHub Actionsのツールは残します
-    - name: Check Nix availability
-      id: nix-check
+    - name: Check tool availability
+      id: tool-check
       shell: bash
       run: |
         if command -v nix &> /dev/null; then
-          echo "installed=true" >> "$GITHUB_OUTPUT"
+          echo "nix=true" >> "$GITHUB_OUTPUT"
         else
-          echo "installed=false" >> "$GITHUB_OUTPUT"
+          echo "nix=false" >> "$GITHUB_OUTPUT"
+        fi
+        if command -v cachix &> /dev/null; then
+          echo "cachix=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "cachix=false" >> "$GITHUB_OUTPUT"
         fi
     - uses: cachix/install-nix-action@4e002c8ec80594ecd40e759629461e26c8abed15 # v31
-      if: steps.nix-check.outputs.installed != 'true'
+      if: steps.tool-check.outputs.nix != 'true'
       with:
         extra_nix_config: |
           accept-flake-config = true
     - uses: cachix/cachix-action@3ba601ff5bbb07c7220846facfa2cd81eeee15a1 # v16
+      if: steps.tool-check.outputs.nix != 'true' || steps.tool-check.outputs.cachix == 'true'
       with:
         name: ncaq-dotfiles
         authToken: "${{ inputs.cachix-auth-token }}"

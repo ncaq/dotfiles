@@ -100,9 +100,7 @@ let
 
     # Container Tools
     buildah
-    docker # Docker CLI + daemon
-    docker-buildx
-    docker-compose
+    docker-client # CLI, buildx, compose。daemonはパッケージ単位で導入するのは望ましくないので除外。
     podman
     skopeo
 

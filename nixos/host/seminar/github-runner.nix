@@ -70,7 +70,7 @@ in
         # コンテナ起動直後はネットワークが一時的に使えずrunner登録が失敗することがあるため、
         # 失敗しても再起動するようにします。
         systemd.services.github-runner-seminar-dotfiles-x64.serviceConfig = {
-          Restart = "always";
+          Restart = lib.mkForce "always"; # デフォルトでは成功時のみに再起動になっているので失敗時含めて常に再起動。
           RestartSec = 5;
         };
         services = {

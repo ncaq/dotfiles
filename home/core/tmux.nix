@@ -70,7 +70,7 @@
         # ctrl+alt+o = 新規ウィンドウ(タブ)、同じディレクトリで開始
         bind -n C-M-o new-window -a -c "#{pane_current_path}"
 
-        # ctrl+alt-q = ウィンドウを閉じる
+        # ctrl+alt+q = ウィンドウを閉じる
         bind -n C-M-q kill-window
 
         # ウィンドウ移動

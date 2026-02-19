@@ -16,11 +16,11 @@ let
     options = {
       uid = lib.mkOption {
         type = lib.types.int;
-        description = "Container user IDs (must match between host and container)";
+        description = "Container user ID (must match between host and container)";
       };
       gid = lib.mkOption {
         type = lib.types.int;
-        description = "Container group IDs (must match between host and container)";
+        description = "Container group ID (must match between host and container)";
       };
     };
   };

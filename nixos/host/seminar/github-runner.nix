@@ -83,26 +83,9 @@ in
         inherit users;
         nix.settings = config.nix.settings;
         networking = {
-          # systemd-resolvedを使うため、ホストのresolv.confは使わずにコンテナ内で解決させるようにします。
           useHostResolvConf = lib.mkForce false;
           # ネットワーク通信の受け入れを許可します。
           firewall.trustedInterfaces = [ "eth0" ];
-        };
-        systemd = {
-          network.enable = true;
-          network.networks."20-lan" = {
-            matchConfig.Type = "ether";
-            networkConfig = {
-              Address = "${addr.guest}/24";
-              Gateway = addr.host;
-              DNS = [
-                "1.1.1.1"
-                "1.0.0.1"
-                "8.8.8.8"
-                "8.8.4.4"
-              ];
-            };
-          };
         };
         services = {
           resolved.enable = true;

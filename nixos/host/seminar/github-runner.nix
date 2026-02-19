@@ -1,5 +1,6 @@
 {
   pkgs,
+  lib,
   config,
   ...
 }:
@@ -105,6 +106,34 @@ in
           };
         };
       };
+  };
+
+  systemd = {
+    # ホスト側systemd-networkdでvethインターフェースにIPアドレスとルートを設定します。
+    # NixOSコンテナモジュールのExecStartPostはコンテナのdefault target到達後に実行されるため、
+    # github-runnerサービスの起動時にはまだホスト側のネットワーク設定が完了していません。
+    # github-runnerサービスの起動にはネットワークが必要なためデッドロックしてしまいます。
+    # systemd-networkdはvethインターフェース作成直後に設定を適用するため、
+    # コンテナ内のサービスが起動する前にネットワークが使用可能になります。
+    network.networks."20-github-runner-veth" = {
+      matchConfig.Name = "ve-github-runner-seminar-dotfiles-x64";
+      addresses = [
+        { Address = "${addr.host}/32"; }
+      ];
+      routes = [
+        { Destination = "${addr.guest}/32"; }
+      ];
+    };
+
+    # NixOSコンテナモジュールが生成するpostStartは`ip addr add`/`ip route add`を使うため、
+    # systemd-networkdが先に設定済みの場合にEEXISTエラーで失敗します。
+    # 冪等にするために`2>/dev/null || true`を付けます。
+    services."container@github-runner-seminar-dotfiles-x64".postStart = lib.mkForce ''
+      ifaceHost=ve-$INSTANCE
+      ip link set dev "$ifaceHost" up
+      ip addr add ${addr.host} dev "$ifaceHost" 2>/dev/null || true
+      ip route add ${addr.guest} dev "$ifaceHost" 2>/dev/null || true
+    '';
   };
 
   # ホストのnixデーモンがコンテナ内のgithub-runnerユーザーを信頼するよう設定します。

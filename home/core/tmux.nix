@@ -67,11 +67,11 @@
 
         # プレフィックスなしで直接使えるキーバインド
 
-        # ctrl+o = 新規ウィンドウ(タブ)、同じディレクトリで開始
-        bind -n C-o new-window -a -c "#{pane_current_path}"
+        # ctrl+alt+o = 新規ウィンドウ(タブ)、同じディレクトリで開始
+        bind -n C-M-o new-window -a -c "#{pane_current_path}"
 
-        # ctrl+q = ウィンドウを閉じる
-        bind -n C-q confirm-before -p "kill window? (y/n)" kill-window
+        # ctrl+alt-q = ウィンドウを閉じる
+        bind -n C-M-q kill-window
 
         # ウィンドウ移動
         bind -n C-M-n next-window

@@ -107,7 +107,7 @@ in
           # 失敗しても再起動するようにします。
           services.github-runner-seminar-dotfiles-x64.serviceConfig = {
             Restart = lib.mkForce "always"; # デフォルトでは成功時のみに再起動になっているので失敗時含めて常に再起動。
-            RestartSec = 5;
+            RestartSec = "15s";
           };
         };
         services = {

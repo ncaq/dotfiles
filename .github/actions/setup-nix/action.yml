@@ -31,10 +31,10 @@ runs:
       with:
         name: ncaq-dotfiles
         authToken: "${{ inputs.cachix-auth-token }}"
-        # デーモンのpost-build-hookではなくwatch-storeによるクライアント側pushを使用する。
-        # セルフホステッドランナー(NixOSコンテナ)ではホストのnixデーモンを共有するため
-        # post-build-hookのパスがデーモンから到達できないが、
-        # watch-storeはクライアント側で動作するため両環境で問題なく使える。
+        # デーモンのpost-build-hookではなくstore scanによるクライアント側pushを使用します。
+        # セルフホステッドランナー(NixOSコンテナ)ではホストのnixデーモンを共有するため、
+        # post-build-hookのパスがデーモンから到達できませんが、
+        # store scanはクライアント側で動作するため両環境で問題なく使えます。
         useDaemon: false
     - name: Setup Attic cache
       if: inputs.attic-token != ''

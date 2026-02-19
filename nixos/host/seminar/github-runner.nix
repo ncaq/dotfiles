@@ -83,6 +83,8 @@ in
         inherit users;
         nix.settings = config.nix.settings;
         networking = {
+          # systemd-resolvedを使うため、ホストのresolv.confは使わずにコンテナ内で解決させるようにします。
+          useHostResolvConf = lib.mkForce false;
           # ネットワーク通信の受け入れを許可します。
           firewall.trustedInterfaces = [ "eth0" ];
         };

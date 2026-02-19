@@ -99,33 +99,33 @@ in
     };
   };
 
-  networking.interfaces.vm-mcp-nixos.ipv4.addresses = [
-    {
-      address = addr.host;
-      prefixLength = 24;
-    }
-  ];
-
-  # microVMの起動時にTAPインターフェースが再作成されるため、
-  # IPアドレス設定がmicroVM起動後に行われるように依存関係を設定します。
-  systemd.services.network-addresses-vm-mcp-nixos = {
-    requires = [ "microvm@mcp-nixos.service" ];
-    after = [ "microvm@mcp-nixos.service" ];
-    partOf = [ "microvm@mcp-nixos.service" ];
-  };
-
-  # DoS攻撃に加担しないように、
-  # 一応帯域制限をかけておきます。
-  systemd.services.mcp-nixos-traffic-control = {
-    description = "Traffic control for mcp-nixos microVM";
-    requires = [ "microvm-tap-interfaces@mcp-nixos.service" ];
-    after = [ "microvm-tap-interfaces@mcp-nixos.service" ];
-    bindsTo = [ "microvm-tap-interfaces@mcp-nixos.service" ];
-    wantedBy = [ "microvm-tap-interfaces@mcp-nixos.service" ];
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-      ExecStart = "${pkgs.iproute2}/bin/tc qdisc replace dev vm-mcp-nixos root tbf rate 100mbit burst 10mbit latency 400ms";
+  systemd = {
+    network = {
+      enable = true;
+      # microvm.nixの推奨に従いsystemd-networkdでTAPインターフェースを設定します。
+      # networking.interfacesが生成するnetwork-addresses-*サービスは、
+      # network.targetより前に順序付けられるため、
+      # network.targetより後に作成されるTAPインターフェースと相性が悪いです。
+      networks."20-vm-mcp-nixos" = {
+        matchConfig.Name = "vm-mcp-nixos";
+        addresses = [
+          { Address = "${addr.host}/24"; }
+        ];
+      };
+    };
+    # DoS攻撃に加担しないように、
+    # 一応帯域制限をかけておきます。
+    services.mcp-nixos-traffic-control = {
+      description = "Traffic control for mcp-nixos microVM";
+      requires = [ "microvm-tap-interfaces@mcp-nixos.service" ];
+      after = [ "microvm-tap-interfaces@mcp-nixos.service" ];
+      bindsTo = [ "microvm-tap-interfaces@mcp-nixos.service" ];
+      wantedBy = [ "microvm-tap-interfaces@mcp-nixos.service" ];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        ExecStart = "${pkgs.iproute2}/bin/tc qdisc replace dev vm-mcp-nixos root tbf rate 100mbit burst 10mbit latency 400ms";
+      };
     };
   };
 }

@@ -24,6 +24,7 @@ in
   environment.systemPackages = [ atticadmWrapper ];
   containers.atticd = {
     autoStart = true;
+    ephemeral = true;
     privateNetwork = true;
     hostAddress = addr.host;
     localAddress = addr.guest;

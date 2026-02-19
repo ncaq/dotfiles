@@ -11,6 +11,7 @@ in
   environment.systemPackages = [ forgejoWrapper ];
   containers.forgejo = {
     autoStart = true;
+    ephemeral = true;
     privateNetwork = true;
     hostAddress = addr.host;
     localAddress = addr.guest;

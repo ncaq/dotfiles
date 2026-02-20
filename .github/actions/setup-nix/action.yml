@@ -32,9 +32,13 @@ runs:
         name: ncaq-dotfiles
         authToken: "${{ inputs.cachix-auth-token }}"
         # デーモンのpost-build-hookではなくstore scanによるクライアント側pushを使用します。
-        # セルフホステッドランナー(NixOSコンテナ)ではホストのnixデーモンを共有するため、
-        # post-build-hookのパスがデーモンから到達できませんが、
+        # 通常セルフホステッドランナーでは、
+        # post-build-hookのパスがデーモンから到達できなかったりするため、
+        # デーモンモードは使用できません。
+        # 現在ホストしているNixOSコンテナや、
+        # 他の場所のUbuntu上のセルフホステッドランナーでdaemonを無効化しないと動作しないことを確認しています。
         # store scanはクライアント側で動作するため両環境で問題なく使えます。
+        # 一貫性のために多少のパフォーマンスより設定を統一して両方の環境で`useDaemon`を`false`にしています。
         useDaemon: false
     - name: Setup Attic cache
       if: inputs.attic-token != ''

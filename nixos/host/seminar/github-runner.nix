@@ -45,7 +45,7 @@ let
         mkdir -p node_modules/@types/node $out/bin
         tar xzf ${types-node} -C node_modules/@types/node --strip-components=1
         cp ${./github-runner-job-started-hook.ts} github-runner-job-started-hook.ts
-        tsc github-runner-job-started-hook.ts --strict --target ES2020 --module node16 --moduleResolution node16 --skipLibCheck --outDir $out/bin
+        tsc github-runner-job-started-hook.ts --strict --target ES2023 --module node16 --moduleResolution node16 --skipLibCheck --outDir $out/bin
       '';
 in
 {

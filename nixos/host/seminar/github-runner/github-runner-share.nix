@@ -46,7 +46,7 @@ let
 in
 {
   # 共有定義を他のランナーモジュールから利用可能にします。
-  _module.args.githubRunnerShared = {
+  _module.args.githubRunnerShare = {
     inherit githubRunnerPackages job-started-hook users;
   };
 

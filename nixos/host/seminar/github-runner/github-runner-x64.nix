@@ -1,11 +1,11 @@
 {
   lib,
   config,
-  githubRunnerShared,
+  githubRunnerShare,
   ...
 }:
 let
-  inherit (githubRunnerShared) users githubRunnerPackages job-started-hook;
+  inherit (githubRunnerShare) users githubRunnerPackages job-started-hook;
   addr = config.machineAddresses.github-runner-x64;
 in
 {

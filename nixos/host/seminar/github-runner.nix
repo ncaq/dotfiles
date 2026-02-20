@@ -116,6 +116,10 @@ in
     # systemd-networkdはvethインターフェース作成直後に設定を適用するため、
     # コンテナ内のサービスが起動する前にネットワークが使用可能になります。
     network.networks."20-github-runner-veth" = {
+      # Linuxのインターフェース名はIFNAMSIZ(15文字)制限があるため、
+      # 実際のインターフェース名は`ve-github-rRhHH`のように短縮されます。
+      # しかしsystemd-networkdのmatchConfig.Nameはaltname(代替名)もマッチするため、
+      # コンテナ名から生成される完全な名前で正しくマッチします。
       matchConfig.Name = "ve-github-runner-seminar-dotfiles-x64";
       addresses = [
         { Address = "${addr.host}/32"; }

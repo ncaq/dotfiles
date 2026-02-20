@@ -64,7 +64,7 @@ in
     # github-runnerサービスの起動にはネットワークが必要なためデッドロックしてしまいます。
     # systemd-networkdはvethインターフェース作成直後に設定を適用するため、
     # コンテナ内のサービスが起動する前にネットワークが使用可能になります。
-    network.networks."20-github-runner-veth" = {
+    network.networks."20-github-runner-x64-veth" = {
       # Linuxのインターフェース名はIFNAMSIZ(15文字)制限があるため、
       # 実際のインターフェース名は`ve-github-rRhHH`のように短縮されます。
       # しかしsystemd-networkdのmatchConfig.Nameはaltname(代替名)もマッチするため、

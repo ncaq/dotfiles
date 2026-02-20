@@ -25,13 +25,18 @@ jobs:
       - run: nix flake check
 
   build-home-manager:
+    # 重たいビルドは未認証のソースからは実行しない。
+    if: github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'push' ||
+      github.event_name == 'merge_group' ||
+      github.event.pull_request.author_association == 'OWNER'
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     strategy:
       matrix:
         include:
           - system: x86_64-linux
-            runner: ubuntu-24.04
+            runner: [self-hosted, Linux, X64]
           - system: aarch64-linux
             runner: ubuntu-24.04-arm
     steps:
@@ -45,6 +50,11 @@ jobs:
       - run: nix build .#homeConfigurations.${{ matrix.system }}.activationPackage
 
   build-nix-on-droid:
+    # 重たいビルドは未認証のソースからは実行しない。
+    if: github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'push' ||
+      github.event_name == 'merge_group' ||
+      github.event.pull_request.author_association == 'OWNER'
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 60
     steps:

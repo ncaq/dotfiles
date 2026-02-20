@@ -16,11 +16,11 @@ let
     options = {
       uid = lib.mkOption {
         type = lib.types.int;
-        description = "User ID (must match between host and container for PostgreSQL peer auth)";
+        description = "Container user ID (must match between host and container)";
       };
       gid = lib.mkOption {
         type = lib.types.int;
-        description = "Group ID (must match between host and container for PostgreSQL peer auth)";
+        description = "Container group ID (must match between host and container)";
       };
     };
   };
@@ -41,6 +41,10 @@ in
         host = "192.168.100.30";
         guest = "192.168.100.31";
       };
+      github-runner-seminar-dotfiles-x64 = {
+        host = "192.168.100.40";
+        guest = "192.168.100.41";
+      };
     };
     description = "Network addresses for containers and microVMs";
   };
@@ -56,8 +60,12 @@ in
         uid = 993;
         gid = 988;
       };
+      github-runner = {
+        uid = 980;
+        gid = 980;
+      };
     };
-    description = "Container user/group IDs for PostgreSQL peer authentication";
+    description = "Container user/group IDs (must match between host and container)";
   };
 
   /**
@@ -84,15 +92,68 @@ in
   config = {
     assertions =
       let
-        cidValues = lib.attrValues config.microvmCid;
-        uniqueValues = lib.unique cidValues;
+        findDuplicates = list: lib.unique (lib.filter (x: lib.count (y: x == y) list > 1) list);
+
+        # { name, value } のリストから重複を検出し「値 (名前1, 名前2)」形式で報告
+        formatDuplicates =
+          toStr: entries:
+          let
+            values = map (e: e.value) entries;
+            dups = findDuplicates values;
+            namesForValue =
+              dupVal: lib.concatMapStringsSep ", " (e: e.name) (lib.filter (e: e.value == dupVal) entries);
+          in
+          lib.concatMapStringsSep "; " (dupVal: "${toStr dupVal} (${namesForValue dupVal})") dups;
+
+        cidEntries = lib.mapAttrsToList (name: value: { inherit name value; }) config.microvmCid;
+        cidValues = map (e: e.value) cidEntries;
+        duplicateCidValues = findDuplicates cidValues;
+
+        addressEntries = lib.concatLists (
+          lib.mapAttrsToList (name: entry: [
+            {
+              name = "${name}.host";
+              value = entry.host;
+            }
+            {
+              name = "${name}.guest";
+              value = entry.guest;
+            }
+          ]) config.machineAddresses
+        );
+        addressValues = map (e: e.value) addressEntries;
+        duplicateAddressValues = findDuplicates addressValues;
+
+        uidEntries = lib.mapAttrsToList (name: user: {
+          inherit name;
+          value = user.uid;
+        }) config.containerUsers;
+        uidValues = map (e: e.value) uidEntries;
+        duplicateUidValues = findDuplicates uidValues;
+
+        gidEntries = lib.mapAttrsToList (name: user: {
+          inherit name;
+          value = user.gid;
+        }) config.containerUsers;
+        gidValues = map (e: e.value) gidEntries;
+        duplicateGidValues = findDuplicates gidValues;
       in
       [
         {
-          assertion = lib.length cidValues == lib.length uniqueValues;
-          message = "microvmCid values must be unique, but found duplicates: ${
-            lib.concatMapStringsSep ", " toString cidValues
-          }";
+          assertion = duplicateCidValues == [ ];
+          message = "microvmCid values must be unique, but found duplicates: ${formatDuplicates toString cidEntries}";
+        }
+        {
+          assertion = duplicateAddressValues == [ ];
+          message = "machineAddresses must be unique, but found duplicates: ${formatDuplicates lib.id addressEntries}";
+        }
+        {
+          assertion = duplicateUidValues == [ ];
+          message = "containerUsers uid values must be unique, but found duplicates: ${formatDuplicates toString uidEntries}";
+        }
+        {
+          assertion = duplicateGidValues == [ ];
+          message = "containerUsers gid values must be unique, but found duplicates: ${formatDuplicates toString gidEntries}";
         }
       ];
 

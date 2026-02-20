@@ -14,7 +14,7 @@ runs:
   using: composite
   steps:
     - uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be # v1.3.1
-      if: runner.os == 'Linux'
+      if: runner.os == 'Linux' && runner.environment == 'github-hosted'
       with:
         android: true # Nixで管理するので不要
         docker-images: true # Dockerイメージは使わない
@@ -31,6 +31,15 @@ runs:
       with:
         name: ncaq-dotfiles
         authToken: "${{ inputs.cachix-auth-token }}"
+        # デーモンのpost-build-hookではなくstore scanによるクライアント側pushを使用します。
+        # 通常セルフホステッドランナーでは、
+        # post-build-hookのパスがデーモンから到達できなかったりするため、
+        # デーモンモードは使用できません。
+        # 現在ホストしているNixOSコンテナや、
+        # 他の場所のUbuntu上のセルフホステッドランナーでdaemonを無効化しないと動作しないことを確認しています。
+        # store scanはクライアント側で動作するため両環境で問題なく使えます。
+        # 一貫性のために多少のパフォーマンスより設定を統一して両方の環境で`useDaemon`を`false`にしています。
+        useDaemon: false
     - name: Setup Attic cache
       if: inputs.attic-token != ''
       uses: ryanccn/attic-action@1887fd507f03327c96c64cca30118c96eb17fdad # v0.4.1

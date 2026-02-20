@@ -41,7 +41,8 @@ let
     powershell
     python3
     ruby
-    swift
+
+    # swiftは現在ビルドに失敗するため除外します。
   ];
 
   packageManagement = with pkgs; [
@@ -51,7 +52,6 @@ let
 
     pipx
 
-    kubernetes-helm
     vcpkg
 
     # HomebrewはNix環境では不要/非推奨。
@@ -95,8 +95,8 @@ let
 
     # Infrastructure as Code
     bicep
-    packer
     pulumi
+    # packerを含むHashiCorp製品はbslなため除外。
 
     # Container Tools
     buildah
@@ -110,6 +110,7 @@ let
     # Kubernetes Tools
     kind
     kubectl
+    kubernetes-helm
     kustomize
     minikube
 

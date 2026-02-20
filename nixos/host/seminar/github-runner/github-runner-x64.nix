@@ -6,7 +6,7 @@
 }:
 let
   # GitHub Actionsの標準イメージ互換リストに個人的に欲しいパッケージを足します。
-  githubActionsRunnerPackages =
+  githubRunnerPackages =
     (import ../../../../lib/github-actions-runner-packages.nix {
       inherit pkgs;
     }).all
@@ -87,7 +87,7 @@ in
             user = "github-runner";
             group = "github-runner";
             extraLabels = [ "NixOS" ];
-            extraPackages = githubActionsRunnerPackages;
+            extraPackages = githubRunnerPackages;
             tokenFile = "/etc/github-runner-dotfiles-token";
             url = "https://github.com/ncaq/dotfiles";
             extraEnvironment = {

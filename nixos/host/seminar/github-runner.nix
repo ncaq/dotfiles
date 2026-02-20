@@ -32,38 +32,21 @@ let
   # ジョブ開始前に信頼できないPRを拒否するフックスクリプト。
   # ワークフロー側のif条件が迂回された場合でもランナー側で防御する。
   # 多重防御の一環。
-  job-started-hook = pkgs.writeShellApplication {
-    name = "github-runner-job-started-hook.sh";
-    runtimeInputs = [ pkgs.jq ];
-    text = ''
-      echo "Job started hook: event=$GITHUB_EVENT_NAME actor=$GITHUB_ACTOR"
-
-      case "$GITHUB_EVENT_NAME" in
-        # リポジトリへの書き込み権限が必要なイベントは許可
-        push|merge_group|workflow_dispatch|schedule)
-          echo "Event '$GITHUB_EVENT_NAME' is allowed."
-          exit 0
-          ;;
-        # PRイベントはオーナーのみ許可
-        pull_request|pull_request_target)
-          author_association=$(jq -r '.pull_request.author_association // "UNKNOWN"' "$GITHUB_EVENT_PATH")
-          sender=$(jq -r '.sender.login // "UNKNOWN"' "$GITHUB_EVENT_PATH")
-          echo "PR author_association=$author_association sender=$sender"
-          if [[ "$author_association" == "OWNER" ]]; then
-            echo "PR author is OWNER, allowed."
-            exit 0
-          fi
-          echo "ERROR: Untrusted PR (author_association=$author_association, sender=$sender). Rejecting job."
-          exit 1
-          ;;
-        # 未知のイベントは拒否
-        *)
-          echo "ERROR: Unknown event type '$GITHUB_EVENT_NAME'. Rejecting job."
-          exit 1
-          ;;
-      esac
-    '';
+  types-node = pkgs.fetchurl {
+    url = "https://registry.npmjs.org/@types/node/-/node-22.15.3.tgz";
+    hash = "sha256-n1pXwQvnwi0XxxtgWtPWm6+7uhiOUm5X3layHMWpFYI=";
   };
+  job-started-hook =
+    pkgs.runCommand "github-runner-job-started-hook"
+      {
+        nativeBuildInputs = [ pkgs.typescript ];
+      }
+      ''
+        mkdir -p node_modules/@types/node $out/bin
+        tar xzf ${types-node} -C node_modules/@types/node --strip-components=1
+        cp ${./github-runner-job-started-hook.ts} github-runner-job-started-hook.ts
+        tsc github-runner-job-started-hook.ts --strict --target ES2020 --module node16 --moduleResolution node16 --skipLibCheck --outDir $out/bin
+      '';
 in
 {
   containers.github-runner-seminar-dotfiles-x64 = {
@@ -107,7 +90,7 @@ in
             tokenFile = "/etc/github-runner-dotfiles-token";
             url = "https://github.com/ncaq/dotfiles";
             extraEnvironment = {
-              ACTIONS_RUNNER_HOOK_JOB_STARTED = "${job-started-hook}/bin/github-runner-job-started-hook.sh";
+              ACTIONS_RUNNER_HOOK_JOB_STARTED = "${job-started-hook}/bin/github-runner-job-started-hook.js";
             };
           };
         };

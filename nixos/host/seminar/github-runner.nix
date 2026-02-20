@@ -38,24 +38,30 @@ let
     text = ''
       echo "Job started hook: event=$GITHUB_EVENT_NAME actor=$GITHUB_ACTOR"
 
-      # push, merge_group, workflow_dispatchなどはリポジトリへの書き込み権限が必要なため許可
-      if [[ "$GITHUB_EVENT_NAME" != "pull_request" && "$GITHUB_EVENT_NAME" != "pull_request_target" ]]; then
-        echo "Event '$GITHUB_EVENT_NAME' is allowed."
-        exit 0
-      fi
-
-      # PRイベントの場合、作者がリポジトリオーナーか確認
-      author_association=$(jq -r '.pull_request.author_association // "UNKNOWN"' "$GITHUB_EVENT_PATH")
-      sender=$(jq -r '.sender.login // "UNKNOWN"' "$GITHUB_EVENT_PATH")
-      echo "PR author_association=$author_association sender=$sender"
-
-      if [[ "$author_association" == "OWNER" ]]; then
-        echo "PR author is OWNER, allowed."
-        exit 0
-      fi
-
-      echo "ERROR: Untrusted PR (author_association=$author_association, sender=$sender). Rejecting job."
-      exit 1
+      case "$GITHUB_EVENT_NAME" in
+        # リポジトリへの書き込み権限が必要なイベントは許可
+        push|merge_group|workflow_dispatch|schedule)
+          echo "Event '$GITHUB_EVENT_NAME' is allowed."
+          exit 0
+          ;;
+        # PRイベントはオーナーのみ許可
+        pull_request|pull_request_target)
+          author_association=$(jq -r '.pull_request.author_association // "UNKNOWN"' "$GITHUB_EVENT_PATH")
+          sender=$(jq -r '.sender.login // "UNKNOWN"' "$GITHUB_EVENT_PATH")
+          echo "PR author_association=$author_association sender=$sender"
+          if [[ "$author_association" == "OWNER" ]]; then
+            echo "PR author is OWNER, allowed."
+            exit 0
+          fi
+          echo "ERROR: Untrusted PR (author_association=$author_association, sender=$sender). Rejecting job."
+          exit 1
+          ;;
+        # 未知のイベントは拒否
+        *)
+          echo "ERROR: Unknown event type '$GITHUB_EVENT_NAME'. Rejecting job."
+          exit 1
+          ;;
+      esac
     '';
   };
 in

@@ -118,15 +118,24 @@ in
       ];
     };
 
-    # NixOSコンテナモジュールが生成するpostStartは`ip addr add`/`ip route add`を使うため、
-    # systemd-networkdが先に設定済みの場合にEEXISTエラーで失敗します。
-    # 冪等にするために`2>/dev/null || true`を付けます。
-    services."container@github-runner-seminar-dotfiles-x64".postStart = lib.mkForce ''
-      ifaceHost=ve-$INSTANCE
-      ip link set dev "$ifaceHost" up
-      ip addr add ${addr.host} dev "$ifaceHost" 2>/dev/null || true
-      ip route add ${addr.guest} dev "$ifaceHost" 2>/dev/null || true
-    '';
+    services."container@github-runner-seminar-dotfiles-x64" = {
+      # NixOSコンテナモジュールが生成するpostStartは`ip addr add`/`ip route add`を使うため、
+      # systemd-networkdが先に設定済みの場合にEEXISTエラーで失敗します。
+      # 冪等にするために`2>/dev/null || true`を付けます。
+      # 実際の設定はsystemd-networkdに任せるため、postStartの内容が失敗していても問題ありません。
+      postStart = lib.mkForce ''
+        ifaceHost=ve-$INSTANCE
+        ip link set dev "$ifaceHost" up
+        ip addr add ${addr.host} dev "$ifaceHost" 2>/dev/null || true
+        ip route add ${addr.guest} dev "$ifaceHost" 2>/dev/null || true
+      '';
+      serviceConfig = {
+        # CIジョブがホストのリソースを過剰に消費しないよう制限します。
+        # CPUQuotaはコア数×100%で指定するため、12スレッド×95%=1140%です。
+        CPUQuota = "1140%";
+        MemoryMax = "32G";
+      };
+    };
   };
 
   # ホストのnixデーモンがコンテナ内のgithub-runnerユーザーを信頼するよう設定します。

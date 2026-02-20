@@ -6,10 +6,10 @@
 }:
 let
   inherit (githubRunnerShared) users githubRunnerPackages job-started-hook;
-  addr = config.machineAddresses.github-runner-dotfiles-x64;
+  addr = config.machineAddresses.github-runner-x64;
 in
 {
-  containers.github-runner-dotfiles-x64 = {
+  containers.github-runner-x64 = {
     autoStart = true;
     ephemeral = true;
     privateNetwork = true;
@@ -69,7 +69,7 @@ in
       # 実際のインターフェース名は`ve-github-rRhHH`のように短縮されます。
       # しかしsystemd-networkdのmatchConfig.Nameはaltname(代替名)もマッチするため、
       # コンテナ名から生成される完全な名前で正しくマッチします。
-      matchConfig.Name = "ve-github-runner-dotfiles-x64";
+      matchConfig.Name = "ve-github-runner-x64";
       addresses = [
         { Address = "${addr.host}/32"; }
       ];
@@ -78,7 +78,7 @@ in
       ];
     };
 
-    services."container@github-runner-dotfiles-x64" = {
+    services."container@github-runner-x64" = {
       # NixOSコンテナモジュールが生成するpostStartは`ip addr add`/`ip route add`を使うため、
       # systemd-networkdが先に設定済みの場合にEEXISTエラーで失敗します。
       # 冪等にするために`2>/dev/null || true`を付けます。

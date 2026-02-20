@@ -106,16 +106,25 @@
 
         # 互いにtmuxを使っているマシンでssh接続などをした時に、
         # C-M-jでネストされた内側のtmuxを優先操作するトグル
+        # offモード: 外側を均一に暗くして内側にフォーカスがあることを明示
         bind -T root C-M-j \
           set prefix None \;\
           set key-table off \;\
-          set status-style "bg=#535353" \;\
+          set status-style "bg=#000000,fg=#535353" \;\
+          set window-status-style "bg=#000000,fg=#535353" \;\
+          set window-status-current-style "bg=#1e1e1e,fg=#646464" \;\
+          set pane-border-style "fg=#535353" \;\
+          set pane-active-border-style "fg=#535353" \;\
           if -F '#{pane_in_mode}' 'send-keys -X cancel' \;\
           refresh-client -S
         bind -T off C-M-j \
           set -u prefix \;\
           set -u key-table \;\
           set -u status-style \;\
+          set -u window-status-style \;\
+          set -u window-status-current-style \;\
+          set -u pane-border-style \;\
+          set -u pane-active-border-style \;\
           refresh-client -S
 
         # tmux-resurrect/continuum

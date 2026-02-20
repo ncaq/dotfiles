@@ -7,7 +7,7 @@
 let
   # GitHub Actionsの標準イメージ互換リストに個人的に欲しいパッケージを足します。
   githubActionsRunnerPackages =
-    (import ../../../lib/github-actions-runner-packages.nix {
+    (import ../../../../lib/github-actions-runner-packages.nix {
       inherit pkgs;
     }).all
     ++ (with pkgs; [
@@ -144,7 +144,7 @@ in
   nix.settings.trusted-users = [ "github-runner" ];
 
   sops.secrets."github-runner/dotfiles" = {
-    sopsFile = ../../../secrets/seminar/github-runner/dotfiles.yaml;
+    sopsFile = ../../../../secrets/seminar/github-runner/dotfiles.yaml;
     key = "pat";
     owner = "root";
     group = "root";

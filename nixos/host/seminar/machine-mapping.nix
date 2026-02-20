@@ -93,13 +93,43 @@ in
     assertions =
       let
         cidValues = lib.attrValues config.microvmCid;
-        uniqueValues = lib.unique cidValues;
+        uniqueCidValues = lib.unique cidValues;
+
+        allAddresses = lib.concatMap (entry: [
+          entry.host
+          entry.guest
+        ]) (lib.attrValues config.machineAddresses);
+        uniqueAddresses = lib.unique allAddresses;
+
+        uidValues = lib.mapAttrsToList (_: user: user.uid) config.containerUsers;
+        uniqueUidValues = lib.unique uidValues;
+
+        gidValues = lib.mapAttrsToList (_: user: user.gid) config.containerUsers;
+        uniqueGidValues = lib.unique gidValues;
       in
       [
         {
-          assertion = lib.length cidValues == lib.length uniqueValues;
+          assertion = lib.length cidValues == lib.length uniqueCidValues;
           message = "microvmCid values must be unique, but found duplicates: ${
             lib.concatMapStringsSep ", " toString cidValues
+          }";
+        }
+        {
+          assertion = lib.length allAddresses == lib.length uniqueAddresses;
+          message = "machineAddresses must be unique, but found duplicates: ${
+            lib.concatMapStringsSep ", " lib.id allAddresses
+          }";
+        }
+        {
+          assertion = lib.length uidValues == lib.length uniqueUidValues;
+          message = "containerUsers uid values must be unique, but found duplicates: ${
+            lib.concatMapStringsSep ", " toString uidValues
+          }";
+        }
+        {
+          assertion = lib.length gidValues == lib.length uniqueGidValues;
+          message = "containerUsers gid values must be unique, but found duplicates: ${
+            lib.concatMapStringsSep ", " toString gidValues
           }";
         }
       ];

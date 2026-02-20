@@ -1,4 +1,4 @@
 { importDirModules, ... }:
 {
-  imports = importDirModules ./.;
+  imports = importDirModules ./. ++ [ ./github-runner ];
 }

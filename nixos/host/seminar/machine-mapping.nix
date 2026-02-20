@@ -41,7 +41,7 @@ in
         host = "192.168.100.30";
         guest = "192.168.100.31";
       };
-      github-runner-seminar-dotfiles-x64 = {
+      github-runner-x64 = {
         host = "192.168.100.40";
         guest = "192.168.100.41";
       };

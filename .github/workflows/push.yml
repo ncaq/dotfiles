@@ -26,7 +26,10 @@ jobs:
 
   build-home-manager:
     # 重たいビルドは未認証のソースからは実行しない。
-    if: github.event_name != 'pull_request' || github.event.pull_request.author_association == 'OWNER'
+    if: github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'push' ||
+      github.event_name == 'merge_group' ||
+      github.event.pull_request.author_association == 'OWNER'
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     strategy:
@@ -48,7 +51,10 @@ jobs:
 
   build-nix-on-droid:
     # 重たいビルドは未認証のソースからは実行しない。
-    if: github.event_name != 'pull_request' || github.event.pull_request.author_association == 'OWNER'
+    if: github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'push' ||
+      github.event_name == 'merge_group' ||
+      github.event.pull_request.author_association == 'OWNER'
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 60
     steps:

@@ -28,7 +28,8 @@ let
         tsc --strict --target ES2023 --module node16 --moduleResolution node16 --skipLibCheck --outDir $out/bin \
           github-runner-job-started-hook.ts
       '';
-  # GitHub Actionsランナーはホストのnixデーモンと通信するため、ユーザーとグループを明示的に定義します。
+  # GitHub Actionsランナーはホストのnixデーモンと通信するため、
+  # 統一されたユーザ値を使います。
   user = config.containerUsers.github-runner;
   # ユーザーとグループ定義。
   # コンテナのnixコマンドはホストのnixデーモンと通信するため、

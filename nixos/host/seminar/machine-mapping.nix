@@ -92,45 +92,68 @@ in
   config = {
     assertions =
       let
-        cidValues = lib.attrValues config.microvmCid;
-        uniqueCidValues = lib.unique cidValues;
+        findDuplicates = list: lib.unique (lib.filter (x: lib.count (y: x == y) list > 1) list);
 
-        allAddresses = lib.concatMap (entry: [
-          entry.host
-          entry.guest
-        ]) (lib.attrValues config.machineAddresses);
-        uniqueAddresses = lib.unique allAddresses;
+        # { name, value } のリストから重複を検出し「値 (名前1, 名前2)」形式で報告
+        formatDuplicates =
+          toStr: entries:
+          let
+            values = map (e: e.value) entries;
+            dups = findDuplicates values;
+            namesForValue =
+              dupVal: lib.concatMapStringsSep ", " (e: e.name) (lib.filter (e: e.value == dupVal) entries);
+          in
+          lib.concatMapStringsSep "; " (dupVal: "${toStr dupVal} (${namesForValue dupVal})") dups;
 
-        uidValues = lib.mapAttrsToList (_: user: user.uid) config.containerUsers;
-        uniqueUidValues = lib.unique uidValues;
+        cidEntries = lib.mapAttrsToList (name: value: { inherit name value; }) config.microvmCid;
+        cidValues = map (e: e.value) cidEntries;
+        duplicateCidValues = findDuplicates cidValues;
 
-        gidValues = lib.mapAttrsToList (_: user: user.gid) config.containerUsers;
-        uniqueGidValues = lib.unique gidValues;
+        addressEntries = lib.concatLists (
+          lib.mapAttrsToList (name: entry: [
+            {
+              name = "${name}.host";
+              value = entry.host;
+            }
+            {
+              name = "${name}.guest";
+              value = entry.guest;
+            }
+          ]) config.machineAddresses
+        );
+        addressValues = map (e: e.value) addressEntries;
+        duplicateAddressValues = findDuplicates addressValues;
+
+        uidEntries = lib.mapAttrsToList (name: user: {
+          inherit name;
+          value = user.uid;
+        }) config.containerUsers;
+        uidValues = map (e: e.value) uidEntries;
+        duplicateUidValues = findDuplicates uidValues;
+
+        gidEntries = lib.mapAttrsToList (name: user: {
+          inherit name;
+          value = user.gid;
+        }) config.containerUsers;
+        gidValues = map (e: e.value) gidEntries;
+        duplicateGidValues = findDuplicates gidValues;
       in
       [
         {
-          assertion = lib.length cidValues == lib.length uniqueCidValues;
-          message = "microvmCid values must be unique, but found duplicates: ${
-            lib.concatMapStringsSep ", " toString cidValues
-          }";
+          assertion = duplicateCidValues == [ ];
+          message = "microvmCid values must be unique, but found duplicates: ${formatDuplicates toString cidEntries}";
         }
         {
-          assertion = lib.length allAddresses == lib.length uniqueAddresses;
-          message = "machineAddresses must be unique, but found duplicates: ${
-            lib.concatMapStringsSep ", " lib.id allAddresses
-          }";
+          assertion = duplicateAddressValues == [ ];
+          message = "machineAddresses must be unique, but found duplicates: ${formatDuplicates lib.id addressEntries}";
         }
         {
-          assertion = lib.length uidValues == lib.length uniqueUidValues;
-          message = "containerUsers uid values must be unique, but found duplicates: ${
-            lib.concatMapStringsSep ", " toString uidValues
-          }";
+          assertion = duplicateUidValues == [ ];
+          message = "containerUsers uid values must be unique, but found duplicates: ${formatDuplicates toString uidEntries}";
         }
         {
-          assertion = lib.length gidValues == lib.length uniqueGidValues;
-          message = "containerUsers gid values must be unique, but found duplicates: ${
-            lib.concatMapStringsSep ", " toString gidValues
-          }";
+          assertion = duplicateGidValues == [ ];
+          message = "containerUsers gid values must be unique, but found duplicates: ${formatDuplicates toString gidEntries}";
         }
       ];
 

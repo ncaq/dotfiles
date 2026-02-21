@@ -63,8 +63,8 @@ in
   sops.secrets."github-runner" = {
     sopsFile = ../../../../secrets/seminar/github-runner.yaml;
     key = "pat";
-    owner = "root";
-    group = "root";
+    owner = "github-runner";
+    group = "github-runner";
     mode = "0400";
   };
 }

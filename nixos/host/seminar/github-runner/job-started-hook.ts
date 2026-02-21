@@ -1,3 +1,11 @@
+/**
+ * GitHub Actions Runnerのジョブ開始フック。
+ *
+ * ジョブ開始前に信頼できないPRを拒否します。
+ * ワークフロー側のif条件が迂回された場合でもランナー側で防御します。
+ * 念の為の多層防御なのでこれだけを信頼しているわけではありません。
+ */
+
 import { readFile } from "node:fs/promises";
 
 interface GitHubEvent {
@@ -10,9 +18,9 @@ interface GitHubEvent {
 }
 
 async function main(): Promise<void> {
-  const eventName = process.env.GITHUB_EVENT_NAME ?? "";
-  const actor = process.env.GITHUB_ACTOR ?? "";
-  const eventPath = process.env.GITHUB_EVENT_PATH ?? "";
+  const eventName = process.env["GITHUB_EVENT_NAME"] ?? "";
+  const actor = process.env["GITHUB_ACTOR"] ?? "";
+  const eventPath = process.env["GITHUB_EVENT_PATH"] ?? "";
 
   console.log(`Job started hook: event=${eventName} actor=${actor}`);
 

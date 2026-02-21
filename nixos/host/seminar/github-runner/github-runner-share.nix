@@ -6,36 +6,26 @@ let
     cachix
   ];
   # GitHub Actionsのホステッドランナーをある程度互換しているパッケージリスト。
-  githubActionsRunnerPackages = (
-    import ../../../../lib/github-actions-runner-packages.nix {
-      inherit pkgs;
-    }
-  );
+  githubActionsRunnerPackages = import ../../../../lib/github-actions-runner-packages.nix {
+    inherit pkgs;
+  };
   # GitHub Actionsのランナー向けの全部盛りパッケージリスト。
   githubRunnerPackagesAll = githubActionsRunnerPackages.all ++ selfHostRunnerPackages;
   # GitHub Actionsのランナー向けの最小限パッケージリスト。
   githubRunnerPackagesMinimal = githubActionsRunnerPackages.minimal ++ selfHostRunnerPackages;
-  # ジョブ開始前に信頼できないPRを拒否するフックスクリプト。
-  # ワークフロー側のif条件が迂回された場合でもランナー側で防御する。
-  # 多重防御の一環。
-  types-node = pkgs.fetchurl {
-    url = "https://registry.npmjs.org/@types/node/-/node-22.15.3.tgz";
-    hash = "sha256-n1pXwQvnwi0XxxtgWtPWm6+7uhiOUm5X3layHMWpFYI=";
-  };
   # TypeScriptコードをビルドしてGitHub Actionsで利用できるようにします。
   # 吐き出されるコードはピュアなJavaScriptなのでアーキテクチャ非依存です。
-  job-started-hook =
-    pkgs.runCommand "github-runner-job-started-hook"
-      {
-        nativeBuildInputs = [ pkgs.typescript ];
-      }
-      ''
-        mkdir -p node_modules/@types/node $out/bin
-        tar xzf ${types-node} -C node_modules/@types/node --strip-components=1
-        cp ${./github-runner-job-started-hook.ts} github-runner-job-started-hook.ts
-        tsc --strict --target ES2023 --module node16 --moduleResolution node16 --skipLibCheck --outDir $out/bin \
-          github-runner-job-started-hook.ts
-      '';
+  dotfiles-github-runner = pkgs.buildNpmPackage {
+    pname = "dotfiles-github-runner";
+    version = "0.0.0";
+    src = ./.;
+    npmDeps = pkgs.importNpmLock { npmRoot = ./.; };
+    inherit (pkgs.importNpmLock) npmConfigHook;
+    dontNpmInstall = true;
+    installPhase = ''
+      cp -r dist $out
+    '';
+  };
   # GitHub Actionsランナーはホストのnixデーモンと通信するため、
   # 統一されたユーザ値を使います。
   user = config.containerUsers.github-runner;
@@ -59,7 +49,7 @@ in
     inherit
       githubRunnerPackagesAll
       githubRunnerPackagesMinimal
-      job-started-hook
+      dotfiles-github-runner
       users
       ;
   };

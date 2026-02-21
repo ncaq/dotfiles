@@ -1,7 +1,16 @@
 {
   "name": "dotfiles-github-runner",
+  "version": "0.0.0",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc"
+  },
   "devDependencies": {
-    "@types/node": "^22.19.11"
+    "@types/node": "^22.19.11",
+    "typescript": "^5.9.3"
   },
   "engines": {
     "node": ">=22.22.0"

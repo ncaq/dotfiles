@@ -86,6 +86,12 @@ let
     swig
   ];
 
+  # クロスコンパイルに問題があるので分離。
+  bazelTools = [
+    bazel
+    bazelisk
+  ];
+
   devopsTools = [
     # Configuration Management
     ansible
@@ -119,10 +125,6 @@ let
     kubernetes-helm
     kustomize
     minikube
-
-    # Bazel
-    bazel
-    bazelisk
   ];
 
   cliTools = [
@@ -240,6 +242,7 @@ in
     allLanguageAndRuntime
     packageManagement
     projectManagement
+    bazelTools
     devopsTools
     cliTools
     browsers

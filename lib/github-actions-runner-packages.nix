@@ -12,38 +12,43 @@
 { pkgs }:
 with pkgs;
 let
-  languageAndRuntime = [
-    # Rust
-    cargo
-    clippy
-    rustc
-    rustfmt
+  allLanguageAndRuntime = [
+    basicLanguageAndRuntime
+    extendLanguageAndRuntime
+  ];
 
-    # Haskell
-    # ghcupはnixpkgsではbroken指定されているので除外します。
-    cabal-install
-    ghc
-    stack
-
+  # 暗黙のうちに要求されることが多いパッケージ。
+  basicLanguageAndRuntime = [
     bash
-    dotnet-sdk
     gcc
     gfortran
     go
-    jdk
-    julia
-    kotlin
     llvmPackages.clang
     llvmPackages.clang-tools
     nodejs
     perl
-    php
-    phpPackages.composer
     powershell
     python3
-    ruby
+  ];
 
+  # ビルドに手間がかかるパッケージ。
+  extendLanguageAndRuntime = [
+    # ghcupは現在nixpkgsでbroken指定されているので除外します。
     # swiftは現在ビルドに失敗するため除外します。
+    cabal-install
+    cargo
+    clippy
+    dotnet-sdk
+    ghc
+    jdk
+    julia
+    kotlin
+    php
+    phpPackages.composer
+    ruby
+    rustc
+    rustfmt
+    stack
   ];
 
   packageManagement = [
@@ -232,7 +237,7 @@ let
 in
 {
   all = builtins.concatLists [
-    languageAndRuntime
+    allLanguageAndRuntime
     packageManagement
     projectManagement
     devopsTools
@@ -245,6 +250,7 @@ in
   ];
 
   minimal = builtins.concatLists [
+    basicLanguageAndRuntime
     projectManagement
     devopsTools
     cliTools
@@ -253,7 +259,7 @@ in
   ];
 
   inherit
-    languageAndRuntime
+    allLanguageAndRuntime
     packageManagement
     projectManagement
     devopsTools

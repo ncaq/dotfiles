@@ -23,7 +23,9 @@ let
     inherit (pkgs.importNpmLock) npmConfigHook;
     dontNpmInstall = true;
     installPhase = ''
+      runHook preInstall
       cp -r dist $out
+      runHook postInstall
     '';
   };
   # GitHub Actionsランナーはホストのnixデーモンと通信するため、

@@ -22,7 +22,6 @@ let
     llvmPackages.clang-tools
     nodejs
     perl
-    powershell
     python3
   ];
 
@@ -40,6 +39,7 @@ let
     kotlin
     php
     phpPackages.composer
+    powershell
     ruby
     rustc
     rustfmt
@@ -110,7 +110,6 @@ let
   cloudClis = [
     awscli2
     azure-cli
-    gh
     google-cloud-sdk
     ssm-session-manager-plugin
   ];
@@ -121,6 +120,9 @@ let
     git-ftp
     git-lfs
     mercurial
+
+    # GitHub CLI
+    gh
 
     # Data Processing
     jq
@@ -247,9 +249,7 @@ in
 
   minimal = builtins.concatLists [
     basicLanguageAndRuntime
-    packageManagement
     cppBuildTools
-    cloudClis
     cliTools
     devLibraries
   ];

@@ -5,12 +5,16 @@ let
     attic-client
     cachix
   ];
-  # GitHub Actionsのランナー向けの全部盛りパッケージリスト。
-  githubRunnerPackagesAll =
-    (import ../../../../lib/github-actions-runner-packages.nix {
+  # GitHub Actionsのホステッドランナーをある程度互換しているパッケージリスト。
+  githubActionsRunnerPackages = (
+    import ../../../../lib/github-actions-runner-packages.nix {
       inherit pkgs;
-    }).all
-    ++ selfHostRunnerPackages;
+    }
+  );
+  # GitHub Actionsのランナー向けの全部盛りパッケージリスト。
+  githubRunnerPackagesAll = githubActionsRunnerPackages.all ++ selfHostRunnerPackages;
+  # GitHub Actionsのランナー向けの最小限パッケージリスト。
+  githubRunnerPackagesMinimal = githubActionsRunnerPackages.minimal ++ selfHostRunnerPackages;
   # ジョブ開始前に信頼できないPRを拒否するフックスクリプト。
   # ワークフロー側のif条件が迂回された場合でもランナー側で防御する。
   # 多重防御の一環。
@@ -50,7 +54,12 @@ in
 {
   # 共有定義を他のランナーモジュールから利用可能にします。
   _module.args.githubRunnerShare = {
-    inherit githubRunnerPackagesAll job-started-hook users;
+    inherit
+      githubRunnerPackagesAll
+      githubRunnerPackagesMinimal
+      job-started-hook
+      users
+      ;
   };
 
   # ホストのnixデーモンがコンテナ内のgithub-runnerユーザーを信頼するよう設定します。

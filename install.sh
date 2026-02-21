@@ -63,8 +63,10 @@ bootstrap_binfmt_aarch64() {
 
 if [ -f /etc/NIXOS ]; then
   # seminarホストはaarch64 microVMをビルドするためbinfmtが必要です。
-  # binfmtが未設定の場合、nixos-rebuildの前にブートストラップします。
-  if [ "$(hostname)" = "seminar" ] && ! test -e /proc/sys/fs/binfmt_misc/aarch64-linux; then
+  # binfmtハンドラの登録とnix.confのextra-platforms設定の両方が必要です。
+  # NixOSリビルド完了後はboot.binfmt.emulatedSystemsが管理するため、
+  # ブートストラップは初回インストール時のみ実行されます。
+  if [ "$(hostname)" = "seminar" ] && ! grep -q "extra-platforms.*aarch64-linux" /etc/nix/nix.conf 2>/dev/null; then
     bootstrap_binfmt_aarch64
   fi
   sudo nixos-rebuild switch --flake ".#$(hostname)"

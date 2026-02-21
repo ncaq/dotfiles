@@ -5,8 +5,8 @@ let
     attic-client
     cachix
   ];
-  # GitHub Actionsの標準イメージ互換リストに個人的に欲しいパッケージを足します。
-  githubRunnerPackages =
+  # GitHub Actionsのランナー向けの全部盛りパッケージリスト。
+  githubRunnerPackagesAll =
     (import ../../../../lib/github-actions-runner-packages.nix {
       inherit pkgs;
     }).all
@@ -50,7 +50,7 @@ in
 {
   # 共有定義を他のランナーモジュールから利用可能にします。
   _module.args.githubRunnerShare = {
-    inherit githubRunnerPackages job-started-hook users;
+    inherit githubRunnerPackagesAll job-started-hook users;
   };
 
   # ホストのnixデーモンがコンテナ内のgithub-runnerユーザーを信頼するよう設定します。

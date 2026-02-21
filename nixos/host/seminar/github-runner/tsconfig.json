@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "outDir": "./dist",
+    "module": "nodenext",
     "target": "ES2023",
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,

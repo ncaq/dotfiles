@@ -15,11 +15,7 @@ let
   # 暗黙のうちに要求されることが多いパッケージ。
   basicLanguageAndRuntime = [
     bash
-    gcc
-    gfortran
     go
-    llvmPackages.clang
-    llvmPackages.clang-tools
     nodejs
     perl
     python3
@@ -33,10 +29,14 @@ let
     cargo
     clippy
     dotnet-sdk
+    gcc
+    gfortran
     ghc
     jdk
     julia
     kotlin
+    llvmPackages.clang
+    llvmPackages.clang-tools
     php
     phpPackages.composer
     powershell

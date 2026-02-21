@@ -5,7 +5,7 @@
   ...
 }:
 let
-  inherit (githubRunnerShare) users githubRunnerPackages job-started-hook;
+  inherit (githubRunnerShare) users githubRunnerPackagesAll dotfiles-github-runner;
   addr = config.machineAddresses.github-runner-x64;
 in
 {
@@ -46,11 +46,11 @@ in
             user = "github-runner";
             group = "github-runner";
             extraLabels = [ "NixOS" ];
-            extraPackages = githubRunnerPackages;
+            extraPackages = githubRunnerPackagesAll;
             tokenFile = "/etc/github-runner-dotfiles-token";
             url = "https://github.com/ncaq/dotfiles";
             extraEnvironment = {
-              ACTIONS_RUNNER_HOOK_JOB_STARTED = "${job-started-hook}/bin/github-runner-job-started-hook.js";
+              ACTIONS_RUNNER_HOOK_JOB_STARTED = "${dotfiles-github-runner}/job-started-hook.js";
             };
           };
         };

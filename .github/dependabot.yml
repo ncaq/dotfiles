@@ -8,3 +8,16 @@ updates:
       - "Type: Dependencies"
     schedule:
       interval: daily
+  - package-ecosystem: npm
+    directories:
+      - "**/*"
+    open-pull-requests-limit: 20
+    labels:
+      - "Type: Dependencies"
+    schedule:
+      interval: weekly
+    ignore:
+      - dependency-name: "@types/node"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"

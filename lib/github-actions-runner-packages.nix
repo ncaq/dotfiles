@@ -243,6 +243,14 @@ in
     additionalTools
   ];
 
+  minimal = builtins.concatLists [
+    projectManagement
+    devopsTools
+    cliTools
+    devLibraries
+    additionalTools
+  ];
+
   inherit
     languageAndRuntime
     packageManagement

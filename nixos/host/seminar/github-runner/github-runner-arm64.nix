@@ -1,0 +1,123 @@
+/**
+  QEMUエミュレーションによるaarch64 GitHub Actionsランナーです。
+  x86_64ホスト上でaarch64ゲストをTCGモードで実行します。
+*/
+{
+  pkgs,
+  lib,
+  config,
+  githubRunnerShare,
+  ...
+}:
+let
+  inherit (githubRunnerShare) users githubRunnerPackagesMinimal dotfiles-github-runner;
+  addr = config.machineAddresses.github-runner-arm64;
+  arm64Pkgs = pkgs.pkgsCross.aarch64-multiplatform;
+  stateDir = "${config.microvm.stateDir}/github-runner-arm64";
+in
+{
+  microvm.vms.github-runner-arm64 = {
+    pkgs = arm64Pkgs;
+    config = _: {
+      system.stateVersion = "25.11";
+      microvm = {
+        hypervisor = "qemu";
+        cpu = "max"; # QEMUのTCGモードで現在サポートしている最大機能セットのaarch64 CPUをエミュレートします。
+        vcpu = 11; # 12(ホストのCPUスレッド) - 1
+        mem = 16384; # 16GB
+        interfaces = [
+          {
+            type = "tap";
+            id = "vm-gh-arm64";
+            mac = "02:00:00:00:00:50"; # 末尾バイトはゲストIPアドレスに対応
+          }
+        ];
+        shares = [
+          {
+            tag = "ro-store";
+            source = "/nix/store";
+            mountPoint = "/nix/.ro-store";
+            proto = "virtiofs";
+          }
+          {
+            tag = "secrets";
+            source = config.sops.secrets."github-runner".path;
+            mountPoint = "/run/secrets/github-runner";
+            proto = "virtiofs";
+          }
+        ];
+        # VM内でnix buildを実行可能にするための書き込み層です。
+        writableStoreOverlay = "/nix/.rw-store";
+        # 継続した永続化はしませんが、
+        # RAMだけではビルド中に容量不足になる可能性があるため、
+        # ディスクイメージをバックエンドにします。
+        # VM起動時に毎回クリーンな状態になります。
+        volumes = [
+          {
+            image = "nix-store-overlay.img";
+            mountPoint = "/nix/.rw-store";
+            size = 20480; # 20GB
+            label = "nix-rw";
+          }
+        ];
+      };
+      # VM内のNixデーモンにホストと同じ設定を適用します。
+      # コンテナと異なりソケット共有ができないため独立稼働しますが、
+      # 一貫性が大事です。
+      inherit users;
+      nix.settings = config.nix.settings;
+      networking = {
+        hostName = "github-runner-arm64";
+        firewall.trustedInterfaces = [ "eth0" ];
+      };
+      systemd = {
+        network = {
+          enable = true;
+          networks."20-lan" = {
+            matchConfig.Type = "ether";
+            networkConfig = {
+              Address = "${addr.guest}/24";
+              Gateway = addr.host;
+              DNS = [
+                "1.1.1.1"
+                "1.0.0.1"
+                "8.8.8.8"
+                "8.8.4.4"
+              ];
+            };
+          };
+        };
+      };
+      services.github-runners.dotfiles-arm64 = {
+        enable = true;
+        ephemeral = true;
+        replace = true;
+        user = "github-runner";
+        group = "github-runner";
+        extraLabels = [ "NixOS" ];
+        extraPackages = githubRunnerPackagesMinimal;
+        tokenFile = "/run/secrets/github-runner";
+        url = "https://github.com/ncaq/dotfiles";
+        extraEnvironment = {
+          ACTIONS_RUNNER_HOOK_JOB_STARTED = "${dotfiles-github-runner}/job-started-hook.js";
+        };
+      };
+    };
+  };
+  systemd = {
+    network = {
+      enable = true;
+      networks."20-vm-gh-arm64" = {
+        matchConfig.Name = "vm-gh-arm64";
+        addresses = [
+          { Address = "${addr.host}/24"; }
+        ];
+      };
+    };
+    # エフェメラルランナーのためVM起動前にボリュームを削除して毎回クリーンな状態にします。
+    # microvm.nixのcreateVolumesScriptがautoCreate=trueのボリュームを再作成します。
+    services."microvm@github-runner-arm64".preStart = lib.mkBefore ''
+      rm -f ${stateDir}/nix-store-overlay.img
+    '';
+  };
+}

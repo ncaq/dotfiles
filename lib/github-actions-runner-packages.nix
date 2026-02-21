@@ -10,8 +10,9 @@
   イメージバージョン: 20260201.15.1
 */
 { pkgs }:
+with pkgs;
 let
-  languageAndRuntime = with pkgs; [
+  languageAndRuntime = [
     # Rust
     cargo
     clippy
@@ -45,7 +46,7 @@ let
     # swiftは現在ビルドに失敗するため除外します。
   ];
 
-  packageManagement = with pkgs; [
+  packageManagement = [
     # npmはnodejsに同梱。
     lerna
     yarn
@@ -57,7 +58,7 @@ let
     # HomebrewはNix環境では不要/非推奨。
   ];
 
-  projectManagement = with pkgs; [
+  projectManagement = [
     # Javaビルドツール
     ant
     gradle
@@ -80,7 +81,7 @@ let
     swig
   ];
 
-  devopsTools = with pkgs; [
+  devopsTools = [
     # Configuration Management
     ansible
 
@@ -119,7 +120,7 @@ let
     bazelisk
   ];
 
-  cliTools = with pkgs; [
+  cliTools = [
     # Version Control
     git
     git-ftp
@@ -192,7 +193,7 @@ let
     noto-fonts-color-emoji
   ];
 
-  browsers = with pkgs; [
+  browsers = [
     chromedriver
     chromium
     firefox
@@ -201,24 +202,24 @@ let
     # `google-chrome`, `microsoft-edge`は`allowUnfree = true`が必要。
   ];
 
-  databases = with pkgs; [
+  databases = [
     mariadb # MySQL互換、nixpkgsではこちらがよりよくメンテナンスされています。
     postgresql
     sqlite
   ];
 
-  webServers = with pkgs; [
+  webServers = [
     apacheHttpd
     nginx
   ];
 
-  devLibraries = with pkgs; [
+  devLibraries = [
     libyaml
     openssl.dev
     sqlite.dev
   ];
 
-  additionalTools = with pkgs; [
+  additionalTools = [
     azure-storage-azcopy # azcopy
     fastlane
     newman

@@ -29,6 +29,7 @@ let
     localSystem = "aarch64-linux";
   };
   stateDir = "${config.microvm.stateDir}/github-runner-arm64";
+  secretsDir = "stateDir/secrets";
 in
 {
   microvm.vms.github-runner-arm64 = {
@@ -60,8 +61,8 @@ in
             }
             {
               tag = "secrets";
-              source = config.sops.secrets."github-runner".path;
-              mountPoint = "/run/secrets/github-runner";
+              source = secretsDir;
+              mountPoint = "/run/secrets";
               proto = "virtiofs";
             }
           ];
@@ -141,11 +142,24 @@ in
         ];
       };
     };
-    # エフェメラルランナーのためVM起動前にボリュームを削除して毎回クリーンな状態にします。
-    # microvm.nixのcreateVolumesScriptがautoCreate=trueのボリュームを再作成します。
-    services."microvm@github-runner-arm64".preStart = lib.mkBefore ''
-      rm -f ${stateDir}/nix-store-overlay.img
-    '';
+    services."microvm@github-runner-arm64" = {
+      # エフェメラルランナーのためVM起動前にボリュームを削除して毎回クリーンな状態にします。
+      # microvm.nixのcreateVolumesScriptがautoCreate=trueのボリュームを再作成します。
+      preStart = lib.mkBefore ''
+        rm -f ${stateDir}/nix-store-overlay.img
+      '';
+    };
+    tmpfiles.rules = [
+      "d ${secretsDir} 0750 github-runner github-runner -"
+    ];
+  };
+  # ホストのシークレットファイルをVMと共有しているディレクトリ内部にbindマウントします
+  fileSystems."${secretsDir}/github-runner" = {
+    device = config.sops.secrets."github-runner".path;
+    options = [
+      "bind"
+      "ro"
+    ];
   };
   # aarch64-linuxバイナリをQEMU user-modeで透過的に実行できるようにします。
   # これはインストールするまでは有効にならないので、

@@ -71,6 +71,22 @@ Termux環境ではsystemdが利用できません。
 
 なのでTermux環境であることを検出して条件分岐をする必要は必須ではありません。
 
+# 設計原則
+
+## 宣言的ファースト
+
+手動の設定手順は避けて、
+なるべく宣言的な方法を使います。
+
+命令的なソリューションを受け入れるのではなく、
+宣言的な回避策を優先してください。
+
+## 既存モジュール調査優先
+
+カスタムアプローチを実装する前に、
+既存のNixOSモジュールやnixpkgsのオプション、
+コミュニティソリューションを調査してください。
+
 # 重要コマンド
 
 ## フォーマット
@@ -117,3 +133,49 @@ nix-fast-build --no-nom
 ```console
 CLAUDE.md -> .github/copilot-instructions.md
 ```
+
+# インフラ構築
+
+マシンの設定を超えるTerraformを使うような外部のインフラの設定は、
+[infra.ncaq.net](https://github.com/ncaq/infra.ncaq.net)
+リポジトリの方で管理しています。
+
+# シークレット管理
+
+シークレットはsops-nixで管理されています。
+gpg鍵で暗号化されたyamlファイルが`secrets/`ディレクトリに格納されています。
+
+設定ファイルは`.sops.yaml`です。
+
+# ネットワーク
+
+このリポジトリで管理している全てのホストはTailscaleに接続されておりtailnet内で通信が可能です。
+
+# seminarサーバ
+
+自宅サーバ`seminar`はNixOSで稼働しており、
+このdotfilesリポジトリで管理されています。
+
+## サービス
+
+ローカルネットワーク向けに様々なサービスを公開しています。
+Tailnetを通じるとインターネットからもアクセス可能です。
+
+Cloudflare Tunnelでインターネットからアクセス可能なサービスを公開しています。
+
+Tailscale Funnelでもインターネットからアクセス可能なサービスを公開しています。
+Cloudflare Tunnelを使わずTailscale Funnelを使う場合がある理由は、
+Cloudflare TunnelはHTTPリクエストに厳しいサイズ制限があるためです。
+
+各種サービスは隔離が容易かつ隔離する意味のあるものは、
+[NixOS Containers](https://wiki.nixos.org/wiki/NixOS_Containers)か、
+[microvm.nix](https://github.com/microvm-nix/microvm.nix)で隔離しています。
+
+## ストレージ
+
+大容量データは`/mnt/noa`にbtrfs RAID1で格納されています。
+
+## データベース
+
+PostgreSQLがホスト上で稼働しています。
+各コンテナはbindMountされたUnixソケット(`/run/postgresql`)経由でpeer認証でアクセスします。

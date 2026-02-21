@@ -53,6 +53,15 @@ nix fmt
 nix flake check
 ```
 
+# Supported Platforms
+
+| Platform                | Configuration              | Description                                                             |
+| ----------------------- | -------------------------- | ----------------------------------------------------------------------- |
+| NixOS (native boot)     | `nixosConfigurations`      | Desktop and server machines booting NixOS directly                      |
+| NixOS on WSL2           | `nixosConfigurations`      | NixOS running under Windows Subsystem for Linux 2                       |
+| home-manager standalone | `homeConfigurations`       | Non-NixOS systems using only home-manager                               |
+| Nix-on-Droid            | `nixOnDroidConfigurations` | Android devices via Nix-on-Droid (Termux-based) using only home-manager |
+
 # Policy
 
 As a general approach,

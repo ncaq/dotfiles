@@ -1,0 +1,9 @@
+{
+  "name": "dotfiles-github-runner",
+  "devDependencies": {
+    "@types/node": "^22.19.11"
+  },
+  "engines": {
+    "node": ">=22.22.0"
+  }
+}

@@ -16,8 +16,8 @@ in
     hostAddress = addr.host;
     localAddress = addr.guest;
     bindMounts = {
-      "/etc/github-runner-dotfiles-token" = {
-        hostPath = config.sops.secrets."github-runner/dotfiles".path;
+      "/etc/github-runner-token" = {
+        hostPath = config.sops.secrets."github-runner".path;
         isReadOnly = true;
       };
     };
@@ -47,7 +47,7 @@ in
             group = "github-runner";
             extraLabels = [ "NixOS" ];
             extraPackages = githubRunnerPackagesAll;
-            tokenFile = "/etc/github-runner-dotfiles-token";
+            tokenFile = "/etc/github-runner-token";
             url = "https://github.com/ncaq/dotfiles";
             extraEnvironment = {
               ACTIONS_RUNNER_HOOK_JOB_STARTED = "${dotfiles-github-runner}/job-started-hook.js";

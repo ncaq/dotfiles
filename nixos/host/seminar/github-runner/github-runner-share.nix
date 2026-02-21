@@ -60,8 +60,8 @@ in
   inherit users;
   nix.settings.trusted-users = [ "github-runner" ];
 
-  sops.secrets."github-runner/dotfiles" = {
-    sopsFile = ../../../../secrets/seminar/github-runner/dotfiles.yaml;
+  sops.secrets."github-runner" = {
+    sopsFile = ../../../../secrets/seminar/github-runner.yaml;
     key = "pat";
     owner = "root";
     group = "root";

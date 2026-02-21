@@ -22,6 +22,8 @@ let
     url = "https://registry.npmjs.org/@types/node/-/node-22.15.3.tgz";
     hash = "sha256-n1pXwQvnwi0XxxtgWtPWm6+7uhiOUm5X3layHMWpFYI=";
   };
+  # TypeScriptコードをビルドしてGitHub Actionsで利用できるようにします。
+  # 吐き出されるコードはピュアなJavaScriptなのでアーキテクチャ非依存です。
   job-started-hook =
     pkgs.runCommand "github-runner-job-started-hook"
       {

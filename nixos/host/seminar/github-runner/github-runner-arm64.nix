@@ -139,7 +139,10 @@ in
       networks."20-vm-gh-arm64" = {
         matchConfig.Name = "vm-gh-arm64";
         addresses = [
-          { Address = "${addr.host}/24"; }
+          { Address = "${addr.host}/32"; }
+        ];
+        routes = [
+          { Destination = "${addr.guest}/32"; }
         ];
       };
     };

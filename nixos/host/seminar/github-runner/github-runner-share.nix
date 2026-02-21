@@ -1,14 +1,16 @@
 { config, pkgs, ... }:
 let
+  # GitHubの標準ランナーにはないけれど個人的に含まれていて欲しいパッケージリスト。
+  selfHostRunnerPackages = with pkgs; [
+    attic-client
+    cachix
+  ];
   # GitHub Actionsの標準イメージ互換リストに個人的に欲しいパッケージを足します。
   githubRunnerPackages =
     (import ../../../../lib/github-actions-runner-packages.nix {
       inherit pkgs;
     }).all
-    ++ (with pkgs; [
-      attic-client
-      cachix
-    ]);
+    ++ selfHostRunnerPackages;
   # ジョブ開始前に信頼できないPRを拒否するフックスクリプト。
   # ワークフロー側のif条件が迂回された場合でもランナー側で防御する。
   # 多重防御の一環。

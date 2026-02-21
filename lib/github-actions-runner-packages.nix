@@ -163,14 +163,6 @@ let
     tree
     yamllint
 
-    # System
-    acl
-    dbus
-    dpkg
-    fakeroot
-    haveged
-    rpm
-
     # Media
     mediainfo
 
@@ -188,6 +180,15 @@ let
 
     # Fonts
     noto-fonts-color-emoji
+  ];
+
+  systemTools = [
+    acl
+    dbus
+    dpkg
+    fakeroot
+    haveged
+    rpm
   ];
 
   browsers = [
@@ -240,6 +241,7 @@ in
     infrastructureAsCode
     cloudClis
     cliTools
+    systemTools
     browsers
     databases
     webServers
@@ -266,6 +268,7 @@ in
     infrastructureAsCode
     cloudClis
     cliTools
+    systemTools
     browsers
     databases
     webServers

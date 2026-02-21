@@ -1,11 +1,9 @@
 /**
   QEMUエミュレーションによるaarch64 GitHub Actionsランナーです。
   x86_64ホスト上でaarch64ゲストをTCGモードで実行します。
-  事前インストールするパッケージには、
-  binfmt emulationによりクロスコンパイルではなくエミュレーションによるネイティブaarch64ビルドを使用します。
-  キャッシュヒット率が高くクロスコンパイル非対応パッケージもビルドできます。
 */
 {
+  pkgs,
   lib,
   config,
   inputs,
@@ -14,8 +12,19 @@
 }:
 let
   inherit (githubRunnerShare) users dotfiles-github-runner;
+  # VMランナーやvirtiofsdなどはホスト(x86_64)で実行されるため、
+  # ホストのpkgsを保持しておきます。
+  # ゲストのpkgsはlocalSystem=aarch64-linuxのみでcrossSystem未指定のため、
+  # buildPackagesも同じaarch64になってしまい、
+  # microvm.nixのデフォルトではqemu自体などのホストツールまでaarch64としてビルドされてしまいます。
+  hostPkgs = pkgs;
   addr = config.machineAddresses.github-runner-arm64;
   # クロスコンパイル(pkgsCross)ではなくネイティブaarch64パッケージセットを使います。
+  # binfmt emulationによりクロスコンパイルではなくエミュレーションによるネイティブaarch64ビルドを使用します。
+  # キャッシュヒット率が高くクロスコンパイル非対応パッケージもビルドできます。
+  # microvm.nixのデフォルト設定とは相性が悪いのですが、
+  # クロスコンパイル非対応パッケージがgithub-runnerのdotnet自体のため、
+  # 避けることはできません。
   arm64Pkgs = import inputs.nixpkgs {
     localSystem = "aarch64-linux";
   };
@@ -29,6 +38,8 @@ in
       {
         system.stateVersion = "25.11";
         microvm = {
+          # クロスコンパイルを避けつつホストの環境を正しく反映させるためにホストのpkgsを渡します。
+          vmHostPackages = hostPkgs;
           hypervisor = "qemu";
           cpu = "max"; # QEMUのTCGモードで現在サポートしている最大機能セットのaarch64 CPUをエミュレートします。
           vcpu = 11; # 12(ホストのCPUスレッド) - 1

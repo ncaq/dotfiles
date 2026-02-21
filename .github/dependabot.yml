@@ -13,6 +13,8 @@ updates:
     open-pull-requests-limit: 20
     labels:
       - "Type: Dependencies"
+    schedule:
+      interval: weekly
     ignore:
       - dependency-name: "@types/node"
         update-types:

@@ -136,7 +136,7 @@ CLAUDE.md -> .github/copilot-instructions.md
 
 # インフラ構築
 
-マシンの設定を超えるTerraFormを使うような外部のインフラの設定は、
+マシンの設定を超えるTerraformを使うような外部のインフラの設定は、
 [infra.ncaq.net](https://github.com/ncaq/infra.ncaq.net)
 リポジトリの方で管理しています。
 

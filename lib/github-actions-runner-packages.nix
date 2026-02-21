@@ -12,11 +12,6 @@
 { pkgs }:
 with pkgs;
 let
-  allLanguageAndRuntime = [
-    basicLanguageAndRuntime
-    extendLanguageAndRuntime
-  ];
-
   # 暗黙のうちに要求されることが多いパッケージ。
   basicLanguageAndRuntime = [
     bash
@@ -63,68 +58,61 @@ let
     # HomebrewはNix環境では不要/非推奨。
   ];
 
-  projectManagement = [
-    # Javaビルドツール
-    ant
-    gradle
-    maven
-
-    # C/C++ビルドツール
+  # C/C++ビルド関係ツールは様々なシステムが依存しています。
+  cppBuildTools = [
     autoconf
     automake
+    bison
     cmake
+    flex
     gnumake
     libtool
     ninja
     pkg-config
-
-    # Parser generators
-    bison
-    flex
-
-    # その他
     swig
   ];
 
-  # クロスコンパイルに問題があるので分離。
+  javaBuildTools = [
+    ant
+    gradle
+    maven
+  ];
+
+  # クロスコンパイルに問題があります。
   bazelTools = [
     bazel
     bazelisk
   ];
 
-  devopsTools = [
-    # Configuration Management
-    ansible
-
-    # Cloud CLIs
-    awscli2
-    azure-cli
-    google-cloud-sdk
-    ssm-session-manager-plugin
-
-    # GitHub
-    gh
-
-    # Infrastructure as Code
-    bicep
-    pulumi
-    # packerを含むHashiCorp製品はbslなため除外。
-
-    # Container Tools
+  containerTools = [
+    amazon-ecr-credential-helper
     buildah
     docker-client # CLI, buildx, compose。daemonはパッケージ単位で導入するのは望ましくないので除外。
     podman
     skopeo
+  ];
 
-    # Container Registry
-    amazon-ecr-credential-helper
-
-    # Kubernetes Tools
+  kubernetesTools = [
     kind
     kubectl
     kubernetes-helm
     kustomize
     minikube
+  ];
+
+  infrastructureAsCode = [
+    # packerを含むHashiCorp製品はbslなため除外。
+    ansible
+    bicep
+    pulumi
+  ];
+
+  cloudClis = [
+    awscli2
+    azure-cli
+    gh
+    google-cloud-sdk
+    ssm-session-manager-plugin
   ];
 
   cliTools = [
@@ -239,11 +227,16 @@ let
 in
 {
   all = builtins.concatLists [
-    allLanguageAndRuntime
+    basicLanguageAndRuntime
+    extendLanguageAndRuntime
     packageManagement
-    projectManagement
+    cppBuildTools
+    javaBuildTools
     bazelTools
-    devopsTools
+    containerTools
+    kubernetesTools
+    infrastructureAsCode
+    cloudClis
     cliTools
     browsers
     databases
@@ -254,18 +247,24 @@ in
 
   minimal = builtins.concatLists [
     basicLanguageAndRuntime
-    projectManagement
-    devopsTools
+    packageManagement
+    cppBuildTools
+    cloudClis
     cliTools
     devLibraries
-    additionalTools
   ];
 
   inherit
-    allLanguageAndRuntime
+    basicLanguageAndRuntime
+    extendLanguageAndRuntime
     packageManagement
-    projectManagement
-    devopsTools
+    cppBuildTools
+    javaBuildTools
+    bazelTools
+    containerTools
+    kubernetesTools
+    infrastructureAsCode
+    cloudClis
     cliTools
     browsers
     databases

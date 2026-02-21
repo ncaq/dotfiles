@@ -5,6 +5,7 @@
 {
   pkgs,
   lib,
+  utils,
   config,
   inputs,
   githubRunnerShare,
@@ -29,7 +30,7 @@ let
     localSystem = "aarch64-linux";
   };
   stateDir = "${config.microvm.stateDir}/github-runner-arm64";
-  secretsDir = "stateDir/secrets";
+  secretsDir = "${stateDir}/secrets";
 in
 {
   microvm.vms.github-runner-arm64 = {
@@ -148,6 +149,9 @@ in
       preStart = lib.mkBefore ''
         rm -f ${stateDir}/nix-store-overlay.img
       '';
+      # VM起動前にsecretsのbindマウントが完了していることを保証します。
+      requires = [ "${utils.escapeSystemdPath (secretsDir + "/github-runner.mount")}" ];
+      after = [ "${utils.escapeSystemdPath (secretsDir + "/github-runner.mount")}" ];
     };
     tmpfiles.rules = [
       "d ${secretsDir} 0750 github-runner github-runner -"

@@ -26,18 +26,20 @@ bootstrap_binfmt_aarch64() {
   local qemu_user
   qemu_user=$(nix build .#qemu-user --print-out-paths --no-link)
 
-  # カーネルにaarch64 binfmtハンドラを登録
+  # カーネルにaarch64 binfmtハンドラを登録(未登録の場合のみ)
   # Fフラグ: 登録時にインタープリタをカーネルにロードするため、
   # Nixサンドボックス内でも追加のパス設定なしで動作します。
   # NixOSのnixos/lib/binfmt-magics.nixからのELFマジックバイトとマスク。
-  local magic mask interpreter
-  magic='\x7fELF\x02\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-  magic+='\x02\x00\xb7\x00'
-  mask='\xff\xff\xff\xff\xff\xff\xff\x00\xff\xff\xff\xff\xff\xff\x00\xff'
-  mask+='\xfe\xff\xff\xff'
-  interpreter="${qemu_user}/bin/qemu-aarch64"
-  printf '%s\n' ":aarch64-linux:M:0:${magic}:${mask}:${interpreter}:F" |
-    sudo tee /proc/sys/fs/binfmt_misc/register >/dev/null
+  if ! test -e /proc/sys/fs/binfmt_misc/aarch64-linux; then
+    local magic mask interpreter
+    magic='\x7fELF\x02\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+    magic+='\x02\x00\xb7\x00'
+    mask='\xff\xff\xff\xff\xff\xff\xff\x00\xff\xff\xff\xff\xff\xff\x00\xff'
+    mask+='\xfe\xff\xff\xff'
+    interpreter="${qemu_user}/bin/qemu-aarch64"
+    printf '%s\n' ":aarch64-linux:M:0:${magic}:${mask}:${interpreter}:F" |
+      sudo tee /proc/sys/fs/binfmt_misc/register >/dev/null
+  fi
 
   # NixOS管理のnix.confを一時的にコピーしてextra-platformsを追加します。
   # nixos-rebuild後にNixOSの活性化スクリプトが正しいシンボリックリンクを復元します。

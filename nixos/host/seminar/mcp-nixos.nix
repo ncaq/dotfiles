@@ -26,15 +26,11 @@ in
     inherit pkgs;
     config = {
       system.stateVersion = "25.11";
-
       microvm = {
         hypervisor = "cloud-hypervisor";
-
         vsock.cid = config.microvmCid.mcp-nixos;
-
         vcpu = 1;
         mem = 768; # NixOS基盤(120MB) + Python(50MB) + mcp-nixos(150MB) = 320MB程度ですが、余裕を持って768MBにしています。
-
         interfaces = [
           {
             type = "tap";
@@ -42,7 +38,6 @@ in
             mac = "02:00:00:00:00:30"; # 末尾バイトはゲストIPアドレスに対応
           }
         ];
-
         # ディスクの書き込みは提供しませんが、
         # Nixのストアは実行ファイルやキャッシュを利用したいので読み取り専用でマウントします。
         shares = [
@@ -54,28 +49,27 @@ in
           }
         ];
       };
-
       networking = {
         hostName = "mcp-nixos";
         firewall.allowedTCPPorts = [ 8080 ]; # Cloudflare Tunnelから転送されるポートです。
       };
-
       systemd = {
-        network.enable = true;
-        network.networks."20-lan" = {
-          matchConfig.Type = "ether";
-          networkConfig = {
-            Address = "${addr.guest}/24";
-            Gateway = addr.host;
-            DNS = [
-              "1.1.1.1"
-              "1.0.0.1"
-              "8.8.8.8"
-              "8.8.4.4"
-            ];
+        network = {
+          enable = true;
+          networks."20-lan" = {
+            matchConfig.Type = "ether";
+            networkConfig = {
+              Address = "${addr.guest}/24";
+              Gateway = addr.host;
+              DNS = [
+                "1.1.1.1"
+                "1.0.0.1"
+                "8.8.8.8"
+                "8.8.4.4"
+              ];
+            };
           };
         };
-
         services.mcp-nixos-http = {
           description = "mcp-nixos HTTP server";
           after = [ "network.target" ];
@@ -98,7 +92,6 @@ in
       };
     };
   };
-
   systemd = {
     network = {
       enable = true;

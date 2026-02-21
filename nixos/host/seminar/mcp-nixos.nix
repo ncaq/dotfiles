@@ -102,7 +102,10 @@ in
       networks."20-vm-mcp-nixos" = {
         matchConfig.Name = "vm-mcp-nixos";
         addresses = [
-          { Address = "${addr.host}/24"; }
+          { Address = "${addr.host}/32"; }
+        ];
+        routes = [
+          { Destination = "${addr.guest}/32"; }
         ];
       };
     };

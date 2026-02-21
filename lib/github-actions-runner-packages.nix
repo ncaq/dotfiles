@@ -10,42 +10,43 @@
   イメージバージョン: 20260201.15.1
 */
 { pkgs }:
+with pkgs;
 let
-  languageAndRuntime = with pkgs; [
-    # Rust
-    cargo
-    clippy
-    rustc
-    rustfmt
-
-    # Haskell
-    # ghcupはnixpkgsではbroken指定されているので除外します。
-    cabal-install
-    ghc
-    stack
-
+  # 暗黙のうちに要求されることが多いパッケージ。
+  basicLanguageAndRuntime = [
     bash
-    dotnet-sdk
     gcc
     gfortran
     go
-    jdk
-    julia
-    kotlin
     llvmPackages.clang
     llvmPackages.clang-tools
     nodejs
     perl
-    php
-    phpPackages.composer
     powershell
     python3
-    ruby
-
-    # swiftは現在ビルドに失敗するため除外します。
   ];
 
-  packageManagement = with pkgs; [
+  # ビルドに手間がかかるパッケージ。
+  extendLanguageAndRuntime = [
+    # ghcupは現在nixpkgsでbroken指定されているので除外します。
+    # swiftは現在ビルドに失敗するため除外します。
+    cabal-install
+    cargo
+    clippy
+    dotnet-sdk
+    ghc
+    jdk
+    julia
+    kotlin
+    php
+    phpPackages.composer
+    ruby
+    rustc
+    rustfmt
+    stack
+  ];
+
+  packageManagement = [
     # npmはnodejsに同梱。
     lerna
     yarn
@@ -57,69 +58,64 @@ let
     # HomebrewはNix環境では不要/非推奨。
   ];
 
-  projectManagement = with pkgs; [
-    # Javaビルドツール
-    ant
-    gradle
-    maven
-
-    # C/C++ビルドツール
+  # C/C++ビルド関係ツールは様々なシステムが依存しています。
+  cppBuildTools = [
     autoconf
     automake
+    bison
     cmake
+    flex
     gnumake
     libtool
     ninja
     pkg-config
-
-    # Parser generators
-    bison
-    flex
-
-    # その他
     swig
   ];
 
-  devopsTools = with pkgs; [
-    # Configuration Management
-    ansible
+  javaBuildTools = [
+    ant
+    gradle
+    maven
+  ];
 
-    # Cloud CLIs
-    awscli2
-    azure-cli
-    google-cloud-sdk
-    ssm-session-manager-plugin
+  # クロスコンパイルに問題があります。
+  bazelTools = [
+    bazel
+    bazelisk
+  ];
 
-    # GitHub
-    gh
-
-    # Infrastructure as Code
-    bicep
-    pulumi
-    # packerを含むHashiCorp製品はbslなため除外。
-
-    # Container Tools
+  containerTools = [
+    amazon-ecr-credential-helper
     buildah
     docker-client # CLI, buildx, compose。daemonはパッケージ単位で導入するのは望ましくないので除外。
     podman
     skopeo
+  ];
 
-    # Container Registry
-    amazon-ecr-credential-helper
-
-    # Kubernetes Tools
+  kubernetesTools = [
     kind
     kubectl
     kubernetes-helm
     kustomize
     minikube
-
-    # Bazel
-    bazel
-    bazelisk
   ];
 
-  cliTools = with pkgs; [
+  infrastructureAsCode = [
+    # packerを含むHashiCorp製品はbslなため除外。
+    ansible
+    bicep
+    pulumi
+  ];
+
+  cloudClis = [
+    awscli2
+    azure-cli
+    gh
+    google-cloud-sdk
+    ssm-session-manager-plugin
+  ];
+
+  cliTools = [
     # Version Control
     git
     git-ftp
@@ -192,7 +188,7 @@ let
     noto-fonts-color-emoji
   ];
 
-  browsers = with pkgs; [
+  browsers = [
     chromedriver
     chromium
     firefox
@@ -201,24 +197,24 @@ let
     # `google-chrome`, `microsoft-edge`は`allowUnfree = true`が必要。
   ];
 
-  databases = with pkgs; [
+  databases = [
     mariadb # MySQL互換、nixpkgsではこちらがよりよくメンテナンスされています。
     postgresql
     sqlite
   ];
 
-  webServers = with pkgs; [
+  webServers = [
     apacheHttpd
     nginx
   ];
 
-  devLibraries = with pkgs; [
+  devLibraries = [
     libyaml
     openssl.dev
     sqlite.dev
   ];
 
-  additionalTools = with pkgs; [
+  additionalTools = [
     azure-storage-azcopy # azcopy
     fastlane
     newman
@@ -231,10 +227,16 @@ let
 in
 {
   all = builtins.concatLists [
-    languageAndRuntime
+    basicLanguageAndRuntime
+    extendLanguageAndRuntime
     packageManagement
-    projectManagement
-    devopsTools
+    cppBuildTools
+    javaBuildTools
+    bazelTools
+    containerTools
+    kubernetesTools
+    infrastructureAsCode
+    cloudClis
     cliTools
     browsers
     databases
@@ -244,18 +246,25 @@ in
   ];
 
   minimal = builtins.concatLists [
-    projectManagement
-    devopsTools
+    basicLanguageAndRuntime
+    packageManagement
+    cppBuildTools
+    cloudClis
     cliTools
     devLibraries
-    additionalTools
   ];
 
   inherit
-    languageAndRuntime
+    basicLanguageAndRuntime
+    extendLanguageAndRuntime
     packageManagement
-    projectManagement
-    devopsTools
+    cppBuildTools
+    javaBuildTools
+    bazelTools
+    containerTools
+    kubernetesTools
+    infrastructureAsCode
+    cloudClis
     cliTools
     browsers
     databases

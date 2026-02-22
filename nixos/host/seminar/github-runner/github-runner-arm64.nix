@@ -5,7 +5,6 @@
 {
   pkgs,
   lib,
-  utils,
   config,
   inputs,
   githubRunnerShare,
@@ -37,9 +36,6 @@ let
   };
   # ホストからも参照しやすいように束縛しておきます。
   stateDir = "${config.microvm.stateDir}/github-runner-arm64";
-  # virtiofsでマウントできるのはファイルではなくディレクトリなので、
-  # secretsDir以下にtokenファイルを置いてvirtiofsでマウントします。
-  secretsDir = "${stateDir}/secrets";
 in
 {
   # aarch64-linuxバイナリをQEMU user-modeで透過的に実行できるようにします。
@@ -73,8 +69,8 @@ in
             }
             {
               tag = "secrets";
-              source = secretsDir;
-              mountPoint = "/run/secrets";
+              source = "/run/secrets/rendered/github-runner";
+              mountPoint = "/run/secrets/rendered/github-runner";
               proto = "virtiofs";
             }
           ];
@@ -129,7 +125,7 @@ in
           extraLabels = [ "NixOS" ];
           # aarch64のpkgsセットを使ってパッケージをインストールします。
           extraPackages = (githubActionsRunnerPackages pkgs).minimal ++ selfHostRunnerPackages pkgs;
-          tokenFile = "/run/secrets/github-runner";
+          tokenFile = "/run/secrets/rendered/github-runner/token";
           url = "https://github.com/ncaq/dotfiles";
           extraEnvironment = {
             ACTIONS_RUNNER_HOOK_JOB_STARTED = "${dotfiles-github-runner}/job-started-hook.js";
@@ -150,30 +146,24 @@ in
         ];
       };
     };
-    services."microvm@github-runner-arm64" =
-      let
-        secretMountName = utils.escapeSystemdPath (secretsDir + "/github-runner.mount");
-      in
-      {
-        # エフェメラルランナーのためVM起動前にボリュームを削除して毎回クリーンな状態にします。
-        # microvm.nixのcreateVolumesScriptがautoCreate=trueのボリュームを再作成します。
-        preStart = lib.mkBefore ''
-          rm -f ${stateDir}/nix-store-overlay.img
-        '';
-        # VM起動前にsecretsのbindマウントが完了していることを保証します。
-        requires = [ secretMountName ];
-        after = [ secretMountName ];
-      };
-    tmpfiles.rules = [
-      "d ${secretsDir} 0750 github-runner github-runner -"
-    ];
+    services."microvm@github-runner-arm64" = {
+      # エフェメラルランナーのためVM起動前にボリュームを削除して毎回クリーンな状態にします。
+      # microvm.nixのcreateVolumesScriptがautoCreate=trueのボリュームを再作成します。
+      preStart = lib.mkBefore ''
+        rm -f ${stateDir}/nix-store-overlay.img
+      '';
+      # VM起動前にGitHubのシークレットが配置されているのを期待します。
+      after = [ "sops-install-secrets.service" ];
+      wants = [ "sops-install-secrets.service" ];
+    };
   };
-  fileSystems."${secretsDir}/github-runner" = {
-    device = config.sops.secrets."github-runner".path;
-    options = [
-      "bind"
-      "ro"
-    ];
+  # sops templatesでシークレットディレクトリを構造化して生成します。
+  # `/run/secrets/rendered/github-runner/token`が作成されます。
+  sops.templates."github-runner/token" = {
+    content = config.sops.placeholder."github-runner";
+    owner = "github-runner";
+    group = "github-runner";
+    mode = "0440";
   };
   # aarch64-linuxバイナリをQEMU user-modeで透過的に実行できるようにします。
   # これはインストールするまでは有効にならないので、

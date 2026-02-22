@@ -59,6 +59,7 @@ jobs:
             --model opus --allowed-tools "
             Bash(gh api *issues/*/comments*),
             Bash(gh api *pulls/*/comments*),
+            Bash(gh api *pulls/*/reviews*),
             Bash(gh issue:*),
             Bash(gh pr:*),
             Bash(gh search:*),

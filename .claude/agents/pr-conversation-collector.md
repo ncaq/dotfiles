@@ -7,6 +7,7 @@ description: |
 tools:
   - Bash(gh api *issues/*/comments*)
   - Bash(gh api *pulls/*/comments*)
+  - Bash(gh api *pulls/*/reviews*)
   - Bash(gh pr view *)
   - mcp__github
 model: sonnet

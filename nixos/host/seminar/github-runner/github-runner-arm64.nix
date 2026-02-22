@@ -124,6 +124,8 @@ in
             after = [ "local-fs.target" ];
             serviceConfig = {
               Type = "oneshot";
+              StandardOutput = "journal+console";
+              StandardError = "journal+console";
               ExecStart = pkgs.writeShellScript "debug-secrets" ''
                 echo "=== Checking /run/secrets/rendered/github-runner ==="
                 ls -la /run/secrets/rendered/ || echo "Directory not found: /run/secrets/rendered/"

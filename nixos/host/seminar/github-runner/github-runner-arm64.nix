@@ -165,7 +165,7 @@ in
         after = [ secretMountName ];
       };
     tmpfiles.rules = [
-      "d ${secretsDir} 0700 root root -"
+      "d ${secretsDir} 0750 github-runner github-runner -"
     ];
   };
   fileSystems."${secretsDir}/github-runner" = {

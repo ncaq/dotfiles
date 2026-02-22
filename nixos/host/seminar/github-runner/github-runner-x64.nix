@@ -1,11 +1,17 @@
 {
+  pkgs,
   lib,
   config,
   githubRunnerShare,
   ...
 }:
 let
-  inherit (githubRunnerShare) users githubRunnerPackagesAll dotfiles-github-runner;
+  inherit (githubRunnerShare)
+    githubActionsRunnerPackages
+    selfHostRunnerPackages
+    dotfiles-github-runner
+    users
+    ;
   addr = config.machineAddresses.github-runner-x64;
 in
 {
@@ -46,7 +52,7 @@ in
             user = "github-runner";
             group = "github-runner";
             extraLabels = [ "NixOS" ];
-            extraPackages = githubRunnerPackagesAll;
+            extraPackages = (githubActionsRunnerPackages pkgs).all ++ selfHostRunnerPackages pkgs;
             tokenFile = "/etc/github-runner-token";
             url = "https://github.com/ncaq/dotfiles";
             extraEnvironment = {

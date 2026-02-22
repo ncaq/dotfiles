@@ -12,36 +12,47 @@
   ...
 }:
 let
-  inherit (githubRunnerShare) users dotfiles-github-runner;
+  inherit (githubRunnerShare)
+    githubActionsRunnerPackages
+    selfHostRunnerPackages
+    dotfiles-github-runner
+    users
+    ;
+  addr = config.machineAddresses.github-runner-arm64;
   # VMランナーやvirtiofsdなどはホスト(x86_64)で実行されるため、
   # ホストのpkgsを保持しておきます。
   # ゲストのpkgsはlocalSystem=aarch64-linuxのみでcrossSystem未指定のため、
   # buildPackagesも同じaarch64になってしまい、
-  # microvm.nixのデフォルトではqemu自体などのホストツールまでaarch64としてビルドされてしまいます。
+  # microvm.nixのデフォルト設定ではqemu自体などのホストツールまでaarch64としてビルドされてしまいます。
+  # それを避けるためにホストのpkgsを直接渡す必要がある部分があります。
   hostPkgs = pkgs;
-  addr = config.machineAddresses.github-runner-arm64;
   # クロスコンパイル(pkgsCross)ではなくネイティブaarch64パッケージセットを使います。
   # binfmt emulationによりクロスコンパイルではなくエミュレーションによるネイティブaarch64ビルドを使用します。
   # キャッシュヒット率が高くクロスコンパイル非対応パッケージもビルドできます。
-  # microvm.nixのデフォルト設定とは相性が悪いのですが、
-  # クロスコンパイル非対応パッケージがgithub-runnerのdotnet自体のため、
-  # 避けることはできません。
+  # microvm.nixのデフォルト設定とは`hostPkgs`のコメントの通り相性が悪いのですが、
+  # クロスコンパイル非対応パッケージがgithub-runner自体が依存しているdotnetのため、
+  # クロスコンパイルを使うことはできません。
   arm64Pkgs = import inputs.nixpkgs {
     localSystem = "aarch64-linux";
   };
+  # ホストからも参照しやすいように束縛しておきます。
   stateDir = "${config.microvm.stateDir}/github-runner-arm64";
+  # virtiofsでマウントできるのはファイルではなくディレクトリなので、
+  # secretsDir以下にtokenファイルを置いてvirtiofsでマウントします。
   secretsDir = "${stateDir}/secrets";
 in
 {
+  # aarch64-linuxバイナリをQEMU user-modeで透過的に実行できるようにします。
+  # これはインストールするまでは有効にならないので、
+  # 初回インストール時は`install.sh`スクリプト内部でハックして有効にする必要があります。
   microvm.vms.github-runner-arm64 = {
-    pkgs = arm64Pkgs;
+    pkgs = arm64Pkgs; # ARMのpkgsを渡すことでarmをエミュレーションすると伝えます。
     config =
       { pkgs, ... }:
       {
         system.stateVersion = "25.11";
         microvm = {
-          # クロスコンパイルを避けつつホストの環境を正しく反映させるためにホストのpkgsを渡します。
-          vmHostPackages = hostPkgs;
+          vmHostPackages = hostPkgs; # クロスコンパイルを避けつつホストの環境を正しく反映させるためにホストのpkgsを渡します。
           hypervisor = "qemu";
           cpu = "max"; # QEMUのTCGモードで現在サポートしている最大機能セットのaarch64 CPUをエミュレートします。
           vcpu = 11; # 12(ホストのCPUスレッド) - 1
@@ -117,14 +128,7 @@ in
           group = "github-runner";
           extraLabels = [ "NixOS" ];
           # aarch64のpkgsセットを使ってパッケージをインストールします。
-          extraPackages =
-            (import ../../../../lib/github-actions-runner-packages.nix {
-              inherit pkgs;
-            }).minimal
-            ++ (with pkgs; [
-              attic-client
-              cachix
-            ]);
+          extraPackages = (githubActionsRunnerPackages pkgs).minimal ++ selfHostRunnerPackages pkgs;
           tokenFile = "/run/secrets/github-runner";
           url = "https://github.com/ncaq/dotfiles";
           extraEnvironment = {
@@ -146,16 +150,20 @@ in
         ];
       };
     };
-    services."microvm@github-runner-arm64" = {
-      # エフェメラルランナーのためVM起動前にボリュームを削除して毎回クリーンな状態にします。
-      # microvm.nixのcreateVolumesScriptがautoCreate=trueのボリュームを再作成します。
-      preStart = lib.mkBefore ''
-        rm -f ${stateDir}/nix-store-overlay.img
-      '';
-      # VM起動前にsecretsのbindマウントが完了していることを保証します。
-      requires = [ "${utils.escapeSystemdPath (secretsDir + "/github-runner.mount")}" ];
-      after = [ "${utils.escapeSystemdPath (secretsDir + "/github-runner.mount")}" ];
-    };
+    services."microvm@github-runner-arm64" =
+      let
+        secretMountName = utils.escapeSystemdPath (secretsDir + "/github-runner.mount");
+      in
+      {
+        # エフェメラルランナーのためVM起動前にボリュームを削除して毎回クリーンな状態にします。
+        # microvm.nixのcreateVolumesScriptがautoCreate=trueのボリュームを再作成します。
+        preStart = lib.mkBefore ''
+          rm -f ${stateDir}/nix-store-overlay.img
+        '';
+        # VM起動前にsecretsのbindマウントが完了していることを保証します。
+        requires = [ secretMountName ];
+        after = [ secretMountName ];
+      };
     tmpfiles.rules = [
       "d ${secretsDir} 0750 github-runner github-runner -"
     ];

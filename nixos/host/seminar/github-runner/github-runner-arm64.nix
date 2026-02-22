@@ -4,7 +4,6 @@
 */
 {
   pkgs,
-  lib,
   utils,
   config,
   inputs,
@@ -80,15 +79,16 @@ in
           ];
           # VM内でnix buildを実行可能にするための書き込み層です。
           writableStoreOverlay = "/nix/.rw-store";
-          # 継続した永続化はしませんが、
           # RAMだけではビルド中に容量不足になる可能性があるため、
           # ディスクイメージをバックエンドにします。
-          # VM起動時に毎回クリーンな状態になります。
+          # またネットワーク越しのキャッシュアクセスは遅く、
+          # QEMUによるオーバーヘッドを加えると相当の遅延になるため、
+          # ローカルのディスクイメージを`/nix/store/`のキャッシュとして使えるようにします。
           volumes = [
             {
               image = "nix-store-overlay.img";
               mountPoint = "/nix/.rw-store";
-              size = 20480; # 20GB
+              size = 50 * 1024; # 50GB
               label = "nix-rw";
             }
           ];
@@ -156,11 +156,6 @@ in
         secretMountName = utils.escapeSystemdPath (secretsDir + "/github-runner") + ".mount";
       in
       {
-        # エフェメラルランナーのためVM起動前にボリュームを削除して毎回クリーンな状態にします。
-        # microvm.nixのcreateVolumesScriptがautoCreate=trueのボリュームを再作成します。
-        preStart = lib.mkBefore ''
-          rm -f ${stateDir}/nix-store-overlay.img
-        '';
         # VM起動前にsecretsのbindマウントが完了していることを保証します。
         requires = [ secretMountName ];
         after = [ secretMountName ];

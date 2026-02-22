@@ -15,14 +15,9 @@ let
   # 暗黙のうちに要求されることが多いパッケージ。
   basicLanguageAndRuntime = [
     bash
-    gcc
-    gfortran
     go
-    llvmPackages.clang
-    llvmPackages.clang-tools
     nodejs
     perl
-    powershell
     python3
   ];
 
@@ -34,12 +29,17 @@ let
     cargo
     clippy
     dotnet-sdk
+    gcc
+    gfortran
     ghc
     jdk
     julia
     kotlin
+    llvmPackages.clang
+    llvmPackages.clang-tools
     php
     phpPackages.composer
+    powershell
     ruby
     rustc
     rustfmt
@@ -110,7 +110,6 @@ let
   cloudClis = [
     awscli2
     azure-cli
-    gh
     google-cloud-sdk
     ssm-session-manager-plugin
   ];
@@ -121,6 +120,9 @@ let
     git-ftp
     git-lfs
     mercurial
+
+    # GitHub CLI
+    gh
 
     # Data Processing
     jq
@@ -161,14 +163,6 @@ let
     tree
     yamllint
 
-    # System
-    acl
-    dbus
-    dpkg
-    fakeroot
-    haveged
-    rpm
-
     # Media
     mediainfo
 
@@ -186,6 +180,18 @@ let
 
     # Fonts
     noto-fonts-color-emoji
+  ];
+
+  systemTools = [
+    acl
+    dbus
+    fakeroot
+    haveged
+  ];
+
+  otherDistributionTools = [
+    dpkg
+    rpm
   ];
 
   browsers = [
@@ -238,6 +244,8 @@ in
     infrastructureAsCode
     cloudClis
     cliTools
+    systemTools
+    otherDistributionTools
     browsers
     databases
     webServers
@@ -247,10 +255,9 @@ in
 
   minimal = builtins.concatLists [
     basicLanguageAndRuntime
-    packageManagement
     cppBuildTools
-    cloudClis
     cliTools
+    systemTools
     devLibraries
   ];
 
@@ -266,6 +273,8 @@ in
     infrastructureAsCode
     cloudClis
     cliTools
+    systemTools
+    otherDistributionTools
     browsers
     databases
     webServers

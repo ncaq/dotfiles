@@ -52,7 +52,8 @@ in
             user = "github-runner";
             group = "github-runner";
             extraLabels = [ "NixOS" ];
-            extraPackages = (githubActionsRunnerPackages pkgs).all ++ selfHostRunnerPackages pkgs;
+            extraPackages =
+              (githubActionsRunnerPackages { inherit pkgs; }).all ++ selfHostRunnerPackages { inherit pkgs; };
             tokenFile = "/etc/github-runner-token";
             url = "https://github.com/ncaq/dotfiles";
             extraEnvironment = {

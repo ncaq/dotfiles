@@ -128,7 +128,8 @@ in
           group = "github-runner";
           extraLabels = [ "NixOS" ];
           # aarch64のpkgsセットを使ってパッケージをインストールします。
-          extraPackages = (githubActionsRunnerPackages pkgs).minimal ++ selfHostRunnerPackages pkgs;
+          extraPackages =
+            (githubActionsRunnerPackages { inherit pkgs; }).minimal ++ selfHostRunnerPackages { inherit pkgs; };
           tokenFile = "/run/secrets/github-runner";
           url = "https://github.com/ncaq/dotfiles";
           extraEnvironment = {

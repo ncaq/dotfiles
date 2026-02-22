@@ -98,6 +98,8 @@ in
           hostName = "github-runner-arm64";
           firewall.trustedInterfaces = [ "eth0" ];
         };
+        # デバッグ用: シリアルコンソールでroot自動ログイン
+        services.getty.autologinUser = "root";
         systemd = {
           network = {
             enable = true;

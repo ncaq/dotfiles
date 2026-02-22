@@ -1,6 +1,6 @@
 ---
 name: log-analyzer
-model: sonnet
+model: haiku
 description: 長大なコマンド出力から重要情報を抽出。メイン会話のコンテキスト消費を抑えたい場合に使用。
 tools:
   - Bash

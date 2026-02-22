@@ -366,6 +366,7 @@
               fastfetch
               git
               home-manager
+              qemu-user
               ;
           };
           devShells.default = pkgs.mkShell { };

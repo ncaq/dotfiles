@@ -1,19 +1,16 @@
-{ config, pkgs, ... }:
+{ pkgs, config, ... }:
 let
-  # GitHubの標準ランナーにはないけれど個人的に含まれていて欲しいパッケージリスト。
-  selfHostRunnerPackages = with pkgs; [
-    attic-client
-    cachix
-  ];
   # GitHub Actionsのホステッドランナーをある程度互換しているパッケージリスト。
-  githubActionsRunnerPackages = import ../../../../lib/github-actions-runner-packages.nix {
-    inherit pkgs;
-  };
-  # GitHub Actionsのランナー向けの全部盛りパッケージリスト。
-  githubRunnerPackagesAll = githubActionsRunnerPackages.all ++ selfHostRunnerPackages;
-  # GitHub Actionsのランナー向けの最小限パッケージリスト。
-  githubRunnerPackagesMinimal = githubActionsRunnerPackages.minimal ++ selfHostRunnerPackages;
-  # TypeScriptコードをビルドしてGitHub Actionsで利用できるようにします。
+  githubActionsRunnerPackages = import ../../../../lib/github-actions-runner-packages.nix;
+  # GitHubの標準ランナーにはないけれど個人的に含まれていて欲しいパッケージリスト。
+  selfHostRunnerPackages =
+    { pkgs, ... }:
+    with pkgs;
+    [
+      attic-client
+      cachix
+    ];
+  # runnerが使うTypeScriptコードをビルドしてGitHub Actionsで利用できるようにします。
   # 吐き出されるコードはピュアなJavaScriptなのでアーキテクチャ非依存です。
   dotfiles-github-runner = pkgs.buildNpmPackage {
     pname = "dotfiles-github-runner";
@@ -49,8 +46,8 @@ in
   # 共有定義を他のランナーモジュールから利用可能にします。
   _module.args.githubRunnerShare = {
     inherit
-      githubRunnerPackagesAll
-      githubRunnerPackagesMinimal
+      githubActionsRunnerPackages
+      selfHostRunnerPackages
       dotfiles-github-runner
       users
       ;
@@ -63,8 +60,8 @@ in
   sops.secrets."github-runner" = {
     sopsFile = ../../../../secrets/seminar/github-runner.yaml;
     key = "pat";
-    owner = "root";
-    group = "root";
+    owner = "github-runner";
+    group = "github-runner";
     mode = "0400";
   };
 }

@@ -45,21 +45,29 @@ in
         };
         services = {
           resolved.enable = true;
-          github-runners.dotfiles-x64 = {
-            enable = true;
-            ephemeral = true;
-            replace = true;
-            user = "github-runner";
-            group = "github-runner";
-            extraLabels = [ "NixOS" ];
-            extraPackages =
-              (githubActionsRunnerPackages { inherit pkgs; }).all ++ selfHostRunnerPackages { inherit pkgs; };
-            tokenFile = "/etc/github-runner-token";
-            url = "https://github.com/ncaq/dotfiles";
-            extraEnvironment = {
-              ACTIONS_RUNNER_HOOK_JOB_STARTED = "${dotfiles-github-runner}/job-started-hook.js";
-            };
-          };
+          github-runners =
+            let
+              runnerNumbers = builtins.genList (x: x) 4;
+              mkRunnerDotfilesX64 = number: {
+                name = "dotfiles-x64-${toString number}";
+                value = {
+                  enable = true;
+                  ephemeral = true;
+                  replace = true;
+                  user = "github-runner";
+                  group = "github-runner";
+                  extraLabels = [ "NixOS" ];
+                  extraPackages =
+                    (githubActionsRunnerPackages { inherit pkgs; }).all ++ selfHostRunnerPackages { inherit pkgs; };
+                  tokenFile = "/etc/github-runner-token";
+                  url = "https://github.com/ncaq/dotfiles";
+                  extraEnvironment = {
+                    ACTIONS_RUNNER_HOOK_JOB_STARTED = "${dotfiles-github-runner}/job-started-hook.js";
+                  };
+                };
+              };
+            in
+            builtins.listToAttrs (map mkRunnerDotfilesX64 runnerNumbers);
         };
       };
   };

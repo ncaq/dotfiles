@@ -120,22 +120,30 @@ in
             };
           };
         };
-        services.github-runners.dotfiles-arm64 = {
-          enable = true;
-          ephemeral = true;
-          replace = true;
-          user = "github-runner";
-          group = "github-runner";
-          extraLabels = [ "NixOS" ];
-          # aarch64のpkgsセットを使ってパッケージをインストールします。
-          extraPackages =
-            (githubActionsRunnerPackages { inherit pkgs; }).minimal ++ selfHostRunnerPackages { inherit pkgs; };
-          tokenFile = "/run/secrets/github-runner";
-          url = "https://github.com/ncaq/dotfiles";
-          extraEnvironment = {
-            ACTIONS_RUNNER_HOOK_JOB_STARTED = "${dotfiles-github-runner}/job-started-hook.js";
-          };
-        };
+        services.github-runners =
+          let
+            runnerNumbers = builtins.genList (x: x) 4;
+            mkRunnerDotfilesArm64 = number: {
+              name = "dotfiles-arm64-${toString number}";
+              value = {
+                enable = true;
+                ephemeral = true;
+                replace = true;
+                user = "github-runner";
+                group = "github-runner";
+                extraLabels = [ "NixOS" ];
+                # aarch64のpkgsセットを使ってパッケージをインストールします。
+                extraPackages =
+                  (githubActionsRunnerPackages { inherit pkgs; }).minimal ++ selfHostRunnerPackages { inherit pkgs; };
+                tokenFile = "/run/secrets/github-runner";
+                url = "https://github.com/ncaq/dotfiles";
+                extraEnvironment = {
+                  ACTIONS_RUNNER_HOOK_JOB_STARTED = "${dotfiles-github-runner}/job-started-hook.js";
+                };
+              };
+            };
+          in
+          builtins.listToAttrs (map mkRunnerDotfilesArm64 runnerNumbers);
       };
   };
   systemd = {

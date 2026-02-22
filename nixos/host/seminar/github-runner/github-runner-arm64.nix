@@ -117,6 +117,23 @@ in
               };
             };
           };
+          # デバッグ用: secretsファイルの状態を確認
+          services.debug-secrets = {
+            description = "Debug secrets directory";
+            wantedBy = [ "multi-user.target" ];
+            after = [ "local-fs.target" ];
+            serviceConfig = {
+              Type = "oneshot";
+              ExecStart = pkgs.writeShellScript "debug-secrets" ''
+                echo "=== Checking /run/secrets/rendered/github-runner ==="
+                ls -la /run/secrets/rendered/ || echo "Directory not found: /run/secrets/rendered/"
+                ls -la /run/secrets/rendered/github-runner/ || echo "Directory not found: /run/secrets/rendered/github-runner/"
+                test -f /run/secrets/rendered/github-runner/token && echo "Token file exists" || echo "Token file NOT found"
+                test -r /run/secrets/rendered/github-runner/token && echo "Token file is readable" || echo "Token file is NOT readable"
+                wc -c /run/secrets/rendered/github-runner/token 2>&1 || echo "Cannot read token file"
+              '';
+            };
+          };
         };
         services.github-runners.dotfiles-arm64 = {
           enable = true;

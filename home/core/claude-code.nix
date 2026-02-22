@@ -213,6 +213,7 @@ in
           "Bash(gen-hie *)"
           "Bash(getent *)"
           "Bash(gh *)"
+          "Bash(gh api *issues/*/comments*)"
           "Bash(gh api *pulls/*/comments*)"
           "Bash(ghc-pkg describe *)"
           "Bash(ghc-pkg field *)"

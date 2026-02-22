@@ -6,6 +6,7 @@
     iproute2
     net-tools
     nmap
+    socat
     wget
   ];
 }

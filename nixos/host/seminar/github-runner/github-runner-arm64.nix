@@ -170,6 +170,8 @@ in
     };
     tmpfiles.rules = [
       "d ${stateDir}/secrets 0755 root root -"
+      "d ${stateDir}/secrets/github-runner 0755 root root -"
+      "f ${stateDir}/secrets/github-runner/token 0644 root root -"
     ];
     services."microvm@github-runner-arm64" = {
       # エフェメラルランナーのためVM起動前にボリュームを削除して毎回クリーンな状態にします。

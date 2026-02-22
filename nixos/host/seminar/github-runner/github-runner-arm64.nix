@@ -69,7 +69,8 @@ in
             }
             {
               tag = "secrets";
-              source = "/run/secrets/rendered/github-runner";
+              # virtiofs経由でアクセス可能なようにstateDirからマウント
+              source = "${stateDir}/secrets/github-runner";
               mountPoint = "/run/secrets/rendered/github-runner";
               proto = "virtiofs";
             }
@@ -167,11 +168,19 @@ in
         ];
       };
     };
+    tmpfiles.rules = [
+      "d ${stateDir}/secrets 0755 root root -"
+    ];
     services."microvm@github-runner-arm64" = {
       # エフェメラルランナーのためVM起動前にボリュームを削除して毎回クリーンな状態にします。
       # microvm.nixのcreateVolumesScriptがautoCreate=trueのボリュームを再作成します。
       preStart = lib.mkBefore ''
         rm -f ${stateDir}/nix-store-overlay.img
+        # virtiofs経由でアクセス可能なようにsecretsをコピー
+        rm -rf ${stateDir}/secrets/github-runner
+        mkdir -p ${stateDir}/secrets/github-runner
+        cp ${config.sops.secrets."github-runner".path} ${stateDir}/secrets/github-runner/token
+        chmod 644 ${stateDir}/secrets/github-runner/token
       '';
       # VM起動前にGitHubのシークレットが配置されているのを期待します。
       after = [ "sops-install-secrets.service" ];

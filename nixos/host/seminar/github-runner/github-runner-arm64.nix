@@ -153,7 +153,7 @@ in
     };
     services."microvm@github-runner-arm64" =
       let
-        secretMountName = utils.escapeSystemdPath (secretsDir + "/github-runner.mount");
+        secretMountName = utils.escapeSystemdPath (secretsDir + "/github-runner") + ".mount";
       in
       {
         # エフェメラルランナーのためVM起動前にボリュームを削除して毎回クリーンな状態にします。

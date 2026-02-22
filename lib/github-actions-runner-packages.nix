@@ -185,9 +185,12 @@ let
   systemTools = [
     acl
     dbus
-    dpkg
     fakeroot
     haveged
+  ];
+
+  otherDistributionTools = [
+    dpkg
     rpm
   ];
 
@@ -242,6 +245,7 @@ in
     cloudClis
     cliTools
     systemTools
+    otherDistributionTools
     browsers
     databases
     webServers
@@ -253,6 +257,7 @@ in
     basicLanguageAndRuntime
     cppBuildTools
     cliTools
+    systemTools
     devLibraries
   ];
 
@@ -269,6 +274,7 @@ in
     cloudClis
     cliTools
     systemTools
+    otherDistributionTools
     browsers
     databases
     webServers

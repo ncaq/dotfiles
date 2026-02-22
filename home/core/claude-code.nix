@@ -215,6 +215,7 @@ in
           "Bash(gh *)"
           "Bash(gh api *issues/*/comments*)"
           "Bash(gh api *pulls/*/comments*)"
+          "Bash(gh api *pulls/*/reviews*)"
           "Bash(ghc-pkg describe *)"
           "Bash(ghc-pkg field *)"
           "Bash(ghci *)"

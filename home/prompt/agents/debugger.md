@@ -1,6 +1,6 @@
 ---
 name: debugger
-model: inherit
+model: sonnet
 description: エラー、テスト失敗、予期しない動作のデバッグ。問題の根本原因を特定して修正。
 tools:
   - Bash

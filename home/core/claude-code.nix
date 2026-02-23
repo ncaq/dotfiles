@@ -41,7 +41,6 @@ let
 
   mcp-proxy-for-aws = pkgs.callPackage ../../pkgs/mcp-proxy-for-aws.nix { };
   gcloud-mcp = pkgs.callPackage ../../pkgs/gcloud-mcp.nix { };
-  azure-mcp = pkgs.callPackage ../../pkgs/azure-mcp.nix { };
 
   # npm, yarn, pnpm, bunで共通のサブコマンドを許可するためのヘルパー
   jsPackageManagers = [
@@ -130,14 +129,6 @@ in
       gcloud = {
         type = "stdio";
         command = lib.getExe gcloud-mcp;
-      };
-      azure = {
-        type = "stdio";
-        command = lib.getExe azure-mcp;
-        args = [
-          "server"
-          "start"
-        ];
       };
       microsoft-learn = {
         type = "http";
@@ -320,13 +311,6 @@ in
           "Skill(nix-check *)"
           "WebFetch"
           "WebSearch"
-          "mcp__azure__azureterraformbestpractices"
-          "mcp__azure__bestpractices"
-          "mcp__azure__bicepschema"
-          "mcp__azure__cloudarchitect"
-          "mcp__azure__documentation"
-          "mcp__azure__quota"
-          "mcp__azure__resourcehealth"
           "mcp__backlog__count_issues"
           "mcp__backlog__count_notifications"
           "mcp__backlog__get_categories"

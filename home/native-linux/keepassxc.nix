@@ -37,7 +37,6 @@ _: {
         ClearClipboard = false; # クリップボードを自動的にクリアしない
         IconDownloadFallback = true; # アイコンダウンロードのフォールバックを有効化
         LockDatabaseIdle = false; # 一定時間操作がないときにデータベースをロックしない、信用できない場所ならシステム全体をロックする
-        PasswordsRepeatVisible = false; # パスワード確認欄を隠さない
       };
       Browser = {
         Enabled = true; # ブラウザ統合を有効化

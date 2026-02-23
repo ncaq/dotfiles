@@ -45,6 +45,10 @@ in
         host = "192.168.100.40";
         guest = "192.168.100.41";
       };
+      github-runner-arm64 = {
+        host = "192.168.100.50";
+        guest = "192.168.100.51";
+      };
     };
     description = "Network addresses for containers and microVMs";
   };
@@ -85,6 +89,7 @@ in
     type = lib.types.attrsOf (lib.types.ints.between 3 4294967294);
     default = {
       mcp-nixos = 3;
+      github-runner-arm64 = 4;
     };
     description = "vsock CID assignments for microVMs (must be >= 3, unique per VM)";
   };

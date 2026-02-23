@@ -35,7 +35,7 @@ in
           {
             type = "tap";
             id = "vm-mcp-nixos";
-            mac = "02:00:00:00:00:30"; # 末尾バイトはゲストIPアドレスに対応
+            mac = "02:00:00:00:00:31"; # 末尾バイトはゲストIPアドレスに対応
           }
         ];
         # ディスクの書き込みは提供しませんが、
@@ -59,7 +59,7 @@ in
           networks."20-lan" = {
             matchConfig.Type = "ether";
             networkConfig = {
-              Address = "${addr.guest}/24";
+              Address = "${addr.guest}/32";
               Gateway = addr.host;
               DNS = [
                 "1.1.1.1"
@@ -102,7 +102,10 @@ in
       networks."20-vm-mcp-nixos" = {
         matchConfig.Name = "vm-mcp-nixos";
         addresses = [
-          { Address = "${addr.host}/24"; }
+          { Address = "${addr.host}/32"; }
+        ];
+        routes = [
+          { Destination = "${addr.guest}/32"; }
         ];
       };
     };

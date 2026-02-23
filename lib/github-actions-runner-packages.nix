@@ -9,7 +9,7 @@
   参照元: https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md
   イメージバージョン: 20260201.15.1
 */
-{ pkgs }:
+{ pkgs, ... }:
 with pkgs;
 let
   # 暗黙のうちに要求されることが多いパッケージ。

@@ -7,6 +7,7 @@
     duperemove
     exfatprogs
     gnome.gvfs
+    gocryptfs
     ntfs3g
     parted
     samba

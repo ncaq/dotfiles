@@ -167,6 +167,12 @@ in
         # VM起動前にsecretsのbindマウントが完了していることを保証します。
         requires = [ secretMountName ];
         after = [ secretMountName ];
+        # QEMU自体がリソースに制約をかけていますが、
+        # 念の為サービスレベルでも制約をかけておきます。
+        serviceConfig = {
+          CPUQuota = "1140%"; # x64コンテナと同等の制限
+          MemoryMax = "20G"; # VM自体の16GB + QEMUオーバーヘッド分
+        };
       };
     tmpfiles.rules = [
       "d ${secretsDir} 0750 github-runner github-runner -"

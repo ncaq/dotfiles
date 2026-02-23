@@ -46,6 +46,7 @@ jobs:
           persist-credentials: false
           fetch-depth: 50
       - uses: ./.github/actions/setup-nix
+        if: runner.environment != 'github-hosted'
         with:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
           attic-token: "${{ secrets.ATTIC_TOKEN }}"

@@ -2,6 +2,7 @@ _: {
   programs.keepassxc = {
     enable = true;
     settings = {
+      # https://github.com/keepassxreboot/keepassxc/blob/develop/src/core/Config.cpp
       General = {
         AutoReloadOnChange = true; # 外部でデータベースが変更された時に自動的に再読み込み
         AutoSaveAfterEveryChange = true; # 変更後に自動保存してパスワード生成後の保存忘れを防ぐ

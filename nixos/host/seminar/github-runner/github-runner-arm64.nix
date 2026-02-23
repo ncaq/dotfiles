@@ -108,7 +108,7 @@ in
             networks."20-lan" = {
               matchConfig.Type = "ether";
               networkConfig = {
-                Address = "${addr.guest}/24";
+                Address = "${addr.guest}/32";
                 Gateway = addr.host;
                 DNS = [
                   "1.1.1.1"

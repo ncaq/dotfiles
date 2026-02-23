@@ -27,8 +27,8 @@ bootstrap_binfmt_aarch64() {
   qemu_user=$(nix build .#qemu-user --print-out-paths --no-link)
 
   # カーネルにaarch64 binfmtハンドラを登録(未登録の場合のみ)
-  # Fフラグ: 登録時にインタープリタをカーネルにロードするため、
-  # Nixサンドボックス内でも追加のパス設定なしで動作します。
+  # Fフラグ: 登録時にカーネルがインタープリタのファイルディスクリプタを保持するため、
+  # Nixサンドボックス内でインタープリタのパスが見えなくても動作します。
   # NixOSのnixos/lib/binfmt-magics.nixからのELFマジックバイトとマスク。
   if ! test -e /proc/sys/fs/binfmt_misc/aarch64-linux; then
     local magic mask interpreter

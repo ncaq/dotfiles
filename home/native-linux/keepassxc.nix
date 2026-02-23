@@ -37,6 +37,9 @@ _: {
         IconDownloadFallback = true; # アイコンダウンロードのフォールバックを有効化
         PasswordsRepeatVisible = false; # パスワード確認欄を隠さない
       };
+      Browser = {
+        Enabled = true; # ブラウザ統合を有効化
+      };
     };
   };
 }

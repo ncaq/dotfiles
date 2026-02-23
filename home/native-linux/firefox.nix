@@ -69,7 +69,7 @@
       "3rdparty" = {
         Extensions = {
           "keepassxc-browser@keepassxc.org" = {
-            # https://github.com/keepassxreboot/keepassxc-browser/blob/master/keepassxc-browser/managed_storage.json
+            # https://github.com/keepassxreboot/keepassxc-browser/blob/develop/keepassxc-browser/managed_storage.json
             settings = {
               autoFillAndSend = true; # HTTP Basic Authを自動入力して送信
               autoFillRelevantCredential = true; # 関連する資格情報を自動入力

@@ -184,7 +184,7 @@ in
               text = ''
                 # MCPサーバのHTTPエンドポイントにアクセスして応答を確認
                 # 2xx/4xxレスポンスならサーバは動作している
-                # 5xxエラーやタイムアウトの場合のみ失敗とする
+                # それ以外は異常とみなす
                 http_code=$(curl -s --max-time 3 -o /dev/null -w "%{http_code}" \
                   http://${config.machineAddresses.mcp-nixos.guest}:8080/mcp || echo "000")
                 if [[ "$http_code" =~ ^[24][0-9][0-9]$ ]]; then

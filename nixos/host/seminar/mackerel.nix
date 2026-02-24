@@ -6,7 +6,7 @@
 }:
 let
   # 分単位で指定する標準的なチェックの間隔。
-  check_interval = 1;
+  check_interval = 3;
 in
 {
   services.mackerel-agent = {

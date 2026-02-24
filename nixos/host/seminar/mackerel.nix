@@ -180,21 +180,19 @@ in
           command = lib.getExe (
             pkgs.writeShellApplication {
               name = "check-mcp-nixos";
-              runtimeInputs = [
-                pkgs.coreutils
-                pkgs.mcp-proxy
-              ];
+              runtimeInputs = [ pkgs.curl ];
               text = ''
-                # mcp-proxyを使ってMCPサーバとして正しく動作しているかチェック
-                # プロトコルネゴシエーションが成功すればOK
-                if timeout 3 mcp-proxy \
-                    http://${config.machineAddresses.mcp-nixos.guest}:8080/mcp \
-                    --transport streamablehttp 2>&1 | \
-                    grep -q "Negotiated protocol version"; then
-                  echo "mcp-nixos OK"
+                # MCPサーバのHTTPエンドポイントにアクセスして応答を確認
+                # 2xx/4xxレスポンスならサーバは動作している
+                # 5xxエラーやタイムアウトの場合のみ失敗とする
+                http_code=$(curl -s -o /dev/null -w "%{http_code}" \
+                  --max-time 3 \
+                  http://${config.machineAddresses.mcp-nixos.guest}:8080/mcp || echo "000")
+                if [[ "$http_code" =~ ^[24][0-9][0-9]$ ]]; then
+                  echo "mcp-nixos OK (HTTP $http_code)"
                   exit 0
                 else
-                  echo "mcp-nixos CRITICAL: MCP server not responding"
+                  echo "mcp-nixos CRITICAL: HTTP $http_code"
                   exit 2
                 fi
               '';

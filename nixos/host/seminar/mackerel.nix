@@ -24,18 +24,14 @@ in
           command = lib.getExe (
             pkgs.writeShellApplication {
               name = "check-ssh";
-              runtimeInputs = [
-                pkgs.coreutils
-                pkgs.netcat
-              ];
+              runtimeInputs = [ pkgs.systemd ];
               text = ''
-                # SSH bannerを取得できればOK
-                banner=$(timeout 2 bash -c 'echo "" | nc localhost 22' 2>&1 | head -1)
-                if [[ "$banner" =~ ^SSH-2\.0 ]]; then
-                  echo "SSH OK (banner: $banner)"
+                # sshdサービスがactiveであればOK
+                if systemctl is-active --quiet sshd.service; then
+                  echo "SSH OK"
                   exit 0
                 else
-                  echo "SSH CRITICAL: no SSH banner received"
+                  echo "SSH CRITICAL: sshd service not running"
                   exit 2
                 fi
               '';

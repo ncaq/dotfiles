@@ -1,5 +1,4 @@
-{ pkgs, config, ... }:
-{
+_: {
   # ヘルスチェック用システムユーザー
   users = {
     users.healthcheck = {

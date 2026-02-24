@@ -112,7 +112,8 @@
               name = "check-atticd";
               runtimeInputs = [ pkgs.curl ];
               text = ''
-                if curl -f -s http://${config.machineAddresses.atticd.guest}:8080 > /dev/null 2>&1; then
+                if curl -f -s -H "Host: seminar.border-saurolophus.ts.net" \
+                  http://${config.machineAddresses.atticd.guest}:8080 > /dev/null 2>&1; then
                   echo "Atticd OK"
                   exit 0
                 else

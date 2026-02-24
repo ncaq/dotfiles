@@ -16,6 +16,31 @@
       filesystems.use_mountpoint = true;
       # ヘルスチェックプラグイン
       plugin.checks = {
+        tailscale = {
+          command = lib.getExe (
+            pkgs.writeShellApplication {
+              name = "check-tailscale";
+              runtimeInputs = [
+                pkgs.jq
+                pkgs.tailscale
+              ];
+              text = ''
+                # BackendStateがRunningかつSelf.OnlineがtrueであればOK
+                status=$(tailscale status --json 2>&1)
+                backend_state=$(echo "$status" | jq -r '.BackendState' 2>/dev/null || echo "unknown")
+                online=$(echo "$status" | jq -r '.Self.Online' 2>/dev/null || echo "false")
+                if [[ "$backend_state" == "Running" ]] && [[ "$online" == "true" ]]; then
+                  echo "Tailscale OK (connected to tailnet)"
+                  exit 0
+                else
+                  echo "Tailscale CRITICAL: BackendState=$backend_state, Online=$online"
+                  exit 2
+                fi
+              '';
+            }
+          );
+          check_interval = 1;
+        };
         cloudflared = {
           command = lib.getExe (
             pkgs.writeShellApplication {

@@ -308,7 +308,7 @@
                   )
                   (
                     nixpkgs.lib.filterAttrs (
-                      _: nixosConfig: nixosConfig.pkgs.system == system
+                      _: nixosConfig: nixosConfig.pkgs.stdenv.hostPlatform.system == system
                     ) top.config.flake.nixosConfigurations
                   );
               # home-manager構成の評価チェック

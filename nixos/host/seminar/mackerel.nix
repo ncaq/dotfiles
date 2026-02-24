@@ -206,6 +206,42 @@ in
           );
           inherit check_interval;
         };
+        github-runner-x64 = {
+          command = lib.getExe (
+            pkgs.writeShellApplication {
+              name = "check-github-runner-x64";
+              runtimeInputs = [ pkgs.iputils ];
+              text = ''
+                if ping -c 1 -W 2 ${config.machineAddresses.github-runner-x64.guest} > /dev/null 2>&1; then
+                  echo "GitHub Runner x64 OK"
+                  exit 0
+                else
+                  echo "GitHub Runner x64 CRITICAL: ping failed"
+                  exit 2
+                fi
+              '';
+            }
+          );
+          inherit check_interval;
+        };
+        github-runner-arm64 = {
+          command = lib.getExe (
+            pkgs.writeShellApplication {
+              name = "check-github-runner-arm64";
+              runtimeInputs = [ pkgs.iputils ];
+              text = ''
+                if ping -c 1 -W 2 ${config.machineAddresses.github-runner-arm64.guest} > /dev/null 2>&1; then
+                  echo "GitHub Runner arm64 OK"
+                  exit 0
+                else
+                  echo "GitHub Runner arm64 CRITICAL: ping failed"
+                  exit 2
+                fi
+              '';
+            }
+          );
+          inherit check_interval;
+        };
       };
     };
   };

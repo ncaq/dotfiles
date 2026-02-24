@@ -11,10 +11,16 @@
     # サービス側で追加する方が良いかもしれませんが、
     # ここでデータベース一覧をまとめるメリットもあるのでこちらでの定義を選択します。
     ensureDatabases = [
+      "healthcheck"
       "atticd"
       "forgejo"
     ];
     ensureUsers = [
+      {
+        # mackerel-agentのヘルスチェック専用ユーザー
+        name = "healthcheck";
+        ensureDBOwnership = true;
+      }
       {
         name = "atticd";
         ensureDBOwnership = true;

@@ -74,9 +74,12 @@
           command = lib.getExe (
             pkgs.writeShellApplication {
               name = "check-postgresql";
-              runtimeInputs = [ pkgs.postgresql ];
+              runtimeInputs = [
+                pkgs.postgresql
+                pkgs.util-linux
+              ];
               text = ''
-                if psql -U postgres -c "SELECT 1" > /dev/null 2>&1; then
+                if runuser -u healthcheck -- psql -d healthcheck -c "SELECT 1" > /dev/null 2>&1; then
                   echo "PostgreSQL OK"
                   exit 0
                 else

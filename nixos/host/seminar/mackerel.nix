@@ -20,6 +20,29 @@ in
       filesystems.use_mountpoint = true;
       # ヘルスチェックプラグイン
       plugin.checks = {
+        ssh = {
+          command = lib.getExe (
+            pkgs.writeShellApplication {
+              name = "check-ssh";
+              runtimeInputs = [
+                pkgs.coreutils
+                pkgs.netcat
+              ];
+              text = ''
+                # SSH bannerを取得できればOK
+                banner=$(timeout 2 bash -c 'echo "" | nc localhost 22' 2>&1 | head -1)
+                if [[ "$banner" =~ ^SSH-2\.0 ]]; then
+                  echo "SSH OK (banner: $banner)"
+                  exit 0
+                else
+                  echo "SSH CRITICAL: no SSH banner received"
+                  exit 2
+                fi
+              '';
+            }
+          );
+          inherit check_interval;
+        };
         tailscale = {
           command = lib.getExe (
             pkgs.writeShellApplication {

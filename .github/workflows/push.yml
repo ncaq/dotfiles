@@ -26,10 +26,13 @@ jobs:
 
   build-home-manager:
     # 重たいビルドは未認証のソースからは実行しない。
-    if: github.event_name == 'workflow_dispatch' ||
+    if: |
+      github.event_name == 'workflow_dispatch' ||
       github.event_name == 'push' ||
       github.event_name == 'merge_group' ||
-      github.event.pull_request.author_association == 'OWNER'
+      github.event.pull_request.author_association == 'OWNER' ||
+      github.event.pull_request.user.login == 'dependabot[bot]' ||
+      github.event.pull_request.user.login == 'renovate[bot]'
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 360
     strategy:
@@ -51,10 +54,13 @@ jobs:
 
   build-nix-on-droid:
     # 重たいビルドは未認証のソースからは実行しない。
-    if: github.event_name == 'workflow_dispatch' ||
+    if: |
+      github.event_name == 'workflow_dispatch' ||
       github.event_name == 'push' ||
       github.event_name == 'merge_group' ||
-      github.event.pull_request.author_association == 'OWNER'
+      github.event.pull_request.author_association == 'OWNER' ||
+      github.event.pull_request.user.login == 'dependabot[bot]' ||
+      github.event.pull_request.user.login == 'renovate[bot]'
     runs-on: [self-hosted, Linux, ARM64]
     timeout-minutes: 360
     steps:

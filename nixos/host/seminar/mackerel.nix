@@ -88,7 +88,7 @@ in
               name = "check-caddy";
               runtimeInputs = [ pkgs.curl ];
               text = ''
-                if curl -f -s http://127.0.0.1:8080 > /dev/null 2>&1; then
+                if curl -f -s --max-time 3 http://127.0.0.1:8080 > /dev/null 2>&1; then
                   echo "Caddy OK"
                   exit 0
                 else
@@ -145,7 +145,7 @@ in
               name = "check-forgejo";
               runtimeInputs = [ pkgs.curl ];
               text = ''
-                if curl -f -s http://${config.machineAddresses.forgejo.guest}:8080 > /dev/null 2>&1; then
+                if curl -f -s --max-time 3 http://${config.machineAddresses.forgejo.guest}:8080 > /dev/null 2>&1; then
                   echo "Forgejo OK"
                   exit 0
                 else
@@ -163,7 +163,7 @@ in
               name = "check-atticd";
               runtimeInputs = [ pkgs.curl ];
               text = ''
-                if curl -f -s -H "Host: seminar.border-saurolophus.ts.net" \
+                if curl -f -s --max-time 3 -H "Host: seminar.border-saurolophus.ts.net" \
                   http://${config.machineAddresses.atticd.guest}:8080 > /dev/null 2>&1; then
                   echo "Atticd OK"
                   exit 0
@@ -185,8 +185,7 @@ in
                 # MCPサーバのHTTPエンドポイントにアクセスして応答を確認
                 # 2xx/4xxレスポンスならサーバは動作している
                 # 5xxエラーやタイムアウトの場合のみ失敗とする
-                http_code=$(curl -s -o /dev/null -w "%{http_code}" \
-                  --max-time 3 \
+                http_code=$(curl -s --max-time 3 -o /dev/null -w "%{http_code}" \
                   http://${config.machineAddresses.mcp-nixos.guest}:8080/mcp || echo "000")
                 if [[ "$http_code" =~ ^[24][0-9][0-9]$ ]]; then
                   echo "mcp-nixos OK (HTTP $http_code)"

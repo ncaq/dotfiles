@@ -4,6 +4,10 @@
   config,
   ...
 }:
+let
+  # 分単位で指定する標準的なチェックの間隔。
+  check_interval = 1;
+in
 {
   services.mackerel-agent = {
     enable = true;
@@ -39,7 +43,7 @@
               '';
             }
           );
-          check_interval = 1;
+          inherit check_interval;
         };
         cloudflared = {
           command = lib.getExe (
@@ -57,7 +61,7 @@
               '';
             }
           );
-          check_interval = 1;
+          inherit check_interval;
         };
         caddy = {
           command = lib.getExe (
@@ -75,7 +79,7 @@
               '';
             }
           );
-          check_interval = 1;
+          inherit check_interval;
         };
         samba = {
           command = lib.getExe (
@@ -93,7 +97,7 @@
               '';
             }
           );
-          check_interval = 1;
+          inherit check_interval;
         };
         postgresql = {
           command = lib.getExe (
@@ -114,7 +118,7 @@
               '';
             }
           );
-          check_interval = 1;
+          inherit check_interval;
         };
         forgejo = {
           command = lib.getExe (
@@ -132,7 +136,7 @@
               '';
             }
           );
-          check_interval = 1;
+          inherit check_interval;
         };
         atticd = {
           command = lib.getExe (
@@ -151,7 +155,7 @@
               '';
             }
           );
-          check_interval = 1;
+          inherit check_interval;
         };
         mcp-nixos = {
           command = lib.getExe (
@@ -177,7 +181,7 @@
               '';
             }
           );
-          check_interval = 1;
+          inherit check_interval;
         };
       };
     };

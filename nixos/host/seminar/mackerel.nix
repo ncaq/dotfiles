@@ -132,13 +132,21 @@
           command = lib.getExe (
             pkgs.writeShellApplication {
               name = "check-mcp-nixos";
-              runtimeInputs = [ pkgs.curl ];
+              runtimeInputs = [
+                pkgs.coreutils
+                pkgs.mcp-proxy
+              ];
               text = ''
-                if curl -f -s http://${config.machineAddresses.mcp-nixos.guest}:8080 > /dev/null 2>&1; then
+                # mcp-proxyを使ってMCPサーバとして正しく動作しているかチェック
+                # プロトコルネゴシエーションが成功すればOK
+                if timeout 3 mcp-proxy \
+                    http://${config.machineAddresses.mcp-nixos.guest}:8080/mcp \
+                    --transport streamablehttp 2>&1 | \
+                    grep -q "Negotiated protocol version"; then
                   echo "mcp-nixos OK"
                   exit 0
                 else
-                  echo "mcp-nixos CRITICAL: microVM not responding"
+                  echo "mcp-nixos CRITICAL: MCP server not responding"
                   exit 2
                 fi
               '';

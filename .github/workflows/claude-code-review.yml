@@ -52,7 +52,7 @@ jobs:
           attic-token: "${{ secrets.ATTIC_TOKEN }}"
       - name: Run Claude Code Review
         id: claude-review
-        uses: anthropics/claude-code-action@fa3312a107acfa81df144e00a50bb0ef147f0eef # v1
+        uses: anthropics/claude-code-action@48fe7dd592a95d1620f0194d0c3d741a6211408f # v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           prompt: "/review-pr REPO: ${{ github.repository }} PR_NUMBER: ${{ github.event.pull_request.number }}"

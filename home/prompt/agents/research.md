@@ -1,6 +1,6 @@
 ---
 name: research
-model: sonnet
+model: haiku
 description: 情報を横断検索。技術調査、ドキュメント検索、ライブラリのissue/PR確認、パッケージ情報取得などあらゆる情報収集に使用。
 tools:
   - Glob

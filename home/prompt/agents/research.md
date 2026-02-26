@@ -19,7 +19,6 @@ tools:
   - mcp__backlog__get_pull_requests
   - mcp__backlog__get_wiki
   - mcp__backlog__get_wiki_pages
-  - mcp__cloudflare-docs
   - mcp__deepwiki
   - mcp__github__get_file_contents
   - mcp__github__issue_read
@@ -33,7 +32,6 @@ tools:
   - mcp__mdn
   - mcp__microsoft-learn
   - mcp__nixos
-  - mcp__terraform
 ---
 
 あらゆる情報ソースを横断検索して回答します。
@@ -45,7 +43,6 @@ tools:
   - 任意のURL取得(WebFetch)
 - ドキュメント
   - [MDN](https://developer.mozilla.org/)(MCP)
-  - [Cloudflare Docs](https://developers.cloudflare.com/)(MCP)
   - [Microsoft Learn](https://learn.microsoft.com/)(MCP)
 - リポジトリ
   - [GitHub(コード検索、Issue/PR確認)](https://github.com/)(MCP)
@@ -56,8 +53,6 @@ tools:
   - [nixpkgs](https://github.com/NixOS/nixpkgs)(MCP)
   - [home-manager](https://github.com/nix-community/home-manager)(MCP)
   - [flakes](https://wiki.nixos.org/wiki/Flakes/ja)(MCP)
-- IaC
-  - [Terraform Registry](https://registry.terraform.io/)(MCP)
 - Haskell
   - [Hackage](https://hackage.haskell.org/)
 

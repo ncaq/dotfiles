@@ -396,7 +396,6 @@ in
           "Bash(docker swarm:*)"
           "Bash(docker trust:*)"
           "Bash(docker volume rm:*)"
-          "Bash(gh api:*)"
           "Bash(gh auth:*)"
           "Bash(gh config set:*)"
           "Bash(gh extension remove:*)"

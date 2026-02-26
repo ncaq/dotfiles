@@ -39,9 +39,6 @@ let
     '';
   };
 
-  mcp-proxy-for-aws = pkgs.callPackage ../../pkgs/mcp-proxy-for-aws.nix { };
-  gcloud-mcp = pkgs.callPackage ../../pkgs/gcloud-mcp.nix { };
-
   # npm, yarn, pnpm, bunで共通のサブコマンドを許可するためのヘルパー
   jsPackageManagers = [
     "npm"
@@ -113,26 +110,9 @@ in
         type = "http";
         url = "https://mdn-mcp-0445ad8e765a.herokuapp.com/mcp";
       };
-      cloudflare-docs = {
-        type = "http";
-        url = "https://docs.mcp.cloudflare.com/mcp";
-      };
-      aws = {
-        type = "stdio";
-        command = lib.getExe mcp-proxy-for-aws;
-        args = [ "https://aws-mcp.us-east-1.api.aws/mcp" ];
-      };
-      gcloud = {
-        type = "stdio";
-        command = lib.getExe gcloud-mcp;
-      };
       microsoft-learn = {
         type = "http";
         url = "https://learn.microsoft.com/api/mcp";
-      };
-      terraform = {
-        type = "stdio";
-        command = lib.getExe pkgs.terraform-mcp-server;
       };
     };
 
@@ -338,7 +318,6 @@ in
           "mcp__backlog__get_wiki"
           "mcp__backlog__get_wiki_pages"
           "mcp__backlog__get_wikis_count"
-          "mcp__cloudflare-docs"
           "mcp__deepwiki"
           "mcp__github__get_commit"
           "mcp__github__get_file_contents"
@@ -366,7 +345,6 @@ in
           "mcp__mdn"
           "mcp__microsoft-learn"
           "mcp__nixos"
-          "mcp__terraform"
         ];
         ask = [
           "Bash(docker compose rm:*)"

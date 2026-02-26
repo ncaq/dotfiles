@@ -92,10 +92,6 @@ in
     commandsDir = ../prompt/commands;
 
     mcpServers = {
-      playwright = {
-        type = "stdio";
-        command = lib.getExe pkgs.playwright-mcp;
-      };
       github = {
         type = "stdio";
         command = lib.getExe github-mcp-server-wrapper;
@@ -370,10 +366,6 @@ in
           "mcp__mdn"
           "mcp__microsoft-learn"
           "mcp__nixos"
-          "mcp__playwright__browser_console_messages"
-          "mcp__playwright__browser_network_requests"
-          "mcp__playwright__browser_snapshot"
-          "mcp__playwright__browser_take_screenshot"
           "mcp__terraform"
         ];
         ask = [

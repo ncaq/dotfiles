@@ -103,8 +103,8 @@ in
         command = lib.getExe backlog-mcp-server-wrapper;
       };
       nixos = {
-        type = "stdio";
-        command = lib.getExe pkgs.mcp-nixos;
+        type = "http";
+        url = "https://mcp-nixos.ncaq.net/mcp/";
       };
     };
 

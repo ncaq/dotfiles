@@ -104,7 +104,7 @@ in
       };
       nixos = {
         type = "http";
-        url = "https://mcp-nixos.ncaq.net/mcp/";
+        url = "https://mcp-nixos.ncaq.net/mcp";
       };
     };
 

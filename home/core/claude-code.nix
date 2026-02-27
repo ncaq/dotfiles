@@ -103,16 +103,8 @@ in
         command = lib.getExe backlog-mcp-server-wrapper;
       };
       nixos = {
-        type = "stdio";
-        command = lib.getExe pkgs.mcp-nixos;
-      };
-      mdn = {
         type = "http";
-        url = "https://mdn-mcp-0445ad8e765a.herokuapp.com/mcp";
-      };
-      microsoft-learn = {
-        type = "http";
-        url = "https://learn.microsoft.com/api/mcp";
+        url = "https://mcp-nixos.ncaq.net/mcp";
       };
     };
 
@@ -342,8 +334,6 @@ in
           "mcp__github__search_pull_requests"
           "mcp__github__search_repositories"
           "mcp__github__search_users"
-          "mcp__mdn"
-          "mcp__microsoft-learn"
           "mcp__nixos"
         ];
         ask = [

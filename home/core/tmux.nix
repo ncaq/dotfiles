@@ -67,6 +67,20 @@
 
         # プレフィックスなしで直接使えるキーバインド
 
+        # htnsbf形式: ctrl+h/ctrl+sなどを左右矢印などに変換してアプリに渡します
+        # GNU readlineやzleはそれぞれhtnsbf形式を設定済みですが、
+        # claude-codeなどのNode.js TUIアプリはreadlineを使わないためtmuxレベルで変換してやります
+        bind -n C-h send-keys Left
+        bind -n M-h send-keys M-Left
+        bind -n C-t send-keys Up
+        bind -n M-t send-keys M-Up
+        bind -n C-n send-keys Down
+        bind -n M-n send-keys M-Down
+        bind -n C-s send-keys Right
+        bind -n M-s send-keys M-Right
+        bind -n C-b send-keys BSpace
+        bind -n M-b send-keys M-BSpace
+
         # ctrl+alt+o = 新規ウィンドウ(タブ)、同じディレクトリで開始
         bind -n C-M-o new-window -a -c "#{pane_current_path}"
 

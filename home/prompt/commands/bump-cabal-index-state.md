@@ -6,7 +6,7 @@ allowed-tools:
   - Bash(gh pr create --assignee @me --fill --web --label "dependencies" --title "build(deps): cabalのindex-stateを更新")
   - Bash(git commit *)
   - Bash(git push --verbose --set-upstream origin)
-  - Bash(nix flake check *)
+  - Bash(nix-fast-build *)
   - Edit
   - Glob
   - Grep
@@ -52,7 +52,7 @@ The index-state is set to 2026-01-11T09:48:01Z.
 Nixを使用している場合は以下のコマンドを実行してください。
 
 ```bash
-nix flake check
+nix-fast-build
 ```
 
 Nixを使用していない場合は以下のコマンドを実行してください。

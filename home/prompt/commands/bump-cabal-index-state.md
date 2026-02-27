@@ -1,12 +1,12 @@
 ---
 description: cabalのindex-stateを最新に更新
 allowed-tools:
-  - Bash(cabal build *)
-  - Bash(cabal update *)
+  - Bash(cabal build:*)
+  - Bash(cabal update:*)
   - Bash(gh pr create --assignee @me --fill --web --label "dependencies" --title "build(deps): cabalのindex-stateを更新")
-  - Bash(git commit *)
+  - Bash(git commit:*)
   - Bash(git push --verbose --set-upstream origin)
-  - Bash(nix-fast-build *)
+  - Bash(nix-fast-build:*)
   - Edit
   - Glob
   - Grep

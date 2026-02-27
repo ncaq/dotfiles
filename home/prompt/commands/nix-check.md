@@ -1,9 +1,9 @@
 ---
 description: Nixプロジェクトのフォーマットとチェックを実行
 allowed-tools:
-  - Bash(git add *)
-  - Bash(nix fmt *)
-  - Bash(nix-fast-build *)
+  - Bash(git add:*)
+  - Bash(nix fmt:*)
+  - Bash(nix-fast-build:*)
 ---
 
 Nixで管理しているプロジェクトが正常かチェックします。

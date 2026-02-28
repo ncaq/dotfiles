@@ -2,14 +2,16 @@
 
 ## PC
 
-書いた時に取得したものなので過信しないでください。
+取得した日の結果なので、
+時間が経つと情報が古くなります。
 特にディスクの利用サイズなどは日々変動します。
+過信はしてはいけません。
+
+以下のコマンドでほぼ同最新の情報を取得できます。
 
 ```console
 nix run "$HOME/dotfiles#fastfetch" -- --config "$HOME/dotfiles/home/prompt/environment/fastfetch-hardware.json"
 ```
-
-コマンドを動いているマシンで実行することでほぼ同じ最新の情報を取得できます。
 
 ### デスクトップ
 

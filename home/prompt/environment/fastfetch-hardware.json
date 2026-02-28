@@ -1,0 +1,15 @@
+{
+  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/master/doc/json_schema.json",
+  "logo": {
+    "type": "none"
+  },
+  "modules": [
+    "host",
+    "display",
+    "cpu",
+    "gpu",
+    { "type": "memory", "format": "{2}" },
+    { "type": "swap", "format": "{2}" },
+    { "type": "disk", "showSubvolumes": false }
+  ]
+}

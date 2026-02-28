@@ -6,7 +6,7 @@
 特にディスクの利用サイズなどは日々変動します。
 
 ```console
-nix run "$HOME/dotfiles#fastfetch" -- --logo none
+nix run "$HOME/dotfiles#fastfetch" -- --config "$HOME/dotfiles/home/prompt/environment/fastfetch-hardware.json"
 ```
 
 コマンドを動いているマシンで実行することでほぼ同じ最新の情報を取得できます。

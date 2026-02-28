@@ -63,13 +63,20 @@ SSDとソフトウェアスタック以外を共有するpristineとSSD0086も�
 
 メインのサーバの簡単なハードウェアの情報は以下の通りです。
 
+- ncaq@seminar
+- ------------
+- OS: NixOS 25.11 (Xantusia) x86_64
 - Host: A620M-HDV/M.2+
+- Kernel: Linux 6.12.70
+- Shell: zsh 5.9
+- Terminal: tmux 3.6a
 - CPU: AMD Ryzen 5 7600 (12) @ 5.17 GHz
 - GPU: AMD Raphael [Integrated]
-- Memory: 64 GB
-- Swap: 34 GiB
-- Disk (/): 144.04 GiB / 929.51 GiB (15%) - btrfs
-- Disk (/mnt/noa): 608.59 GiB / 12.73 TiB (5%) - btrfs
+- Memory: 61.89 GiB
+- Swap: 34.95 GiB
+- Disk (/): 403.14 GiB / 929.51 GiB (43%) - btrfs
+- Disk (/mnt/noa): 2.45 TiB / 12.73 TiB (19%) - btrfs
+- Locale: ja_JP.UTF-8
 
 ## スマートデバイス
 

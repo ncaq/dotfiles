@@ -8,8 +8,17 @@
     "display",
     "cpu",
     "gpu",
-    { "type": "memory", "format": "{2}" },
-    { "type": "swap", "format": "{2}" },
-    { "type": "disk", "showSubvolumes": false }
+    {
+      "type": "memory",
+      "format": "{total}"
+    },
+    {
+      "type": "swap",
+      "format": "{total}"
+    },
+    {
+      "type": "disk",
+      "showSubvolumes": false
+    }
   ]
 }

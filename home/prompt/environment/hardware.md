@@ -34,7 +34,7 @@ SSDとソフトウェアスタック以外を共有するpristineとSSD0086も�
 - Host: MS-7E51 (1.0)
 - Kernel: Linux 6.12.74
 - Shell: zsh 5.9
-- Display (AW2725Q): 3840x2160 @ 1.5x in 27", 144 Hz [External] *
+- Display (AW2725Q): 3840x2160 @ 1.5x in 27", 144 Hz [External] \*
 - Display (LG HDR 4K): 3840x2160 @ 1.5x in 27", 60 Hz [External]
 - Display (Acer VG270K): 3840x2160 @ 1.5x in 27", 60 Hz [External]
 - Display (GSM5BBF): 3840x2160 @ 1.5x in 27", 144 Hz [External]

@@ -16,17 +16,25 @@ nix run "$HOME/dotfiles#fastfetch" -- --config "$HOME/dotfiles/home/prompt/envir
 #### bullet, pristine, SSD0086
 
 メインのデスクトップPCの簡単なハードウェアの情報は以下の通りです。
+この結果は便宜上bulletホストで実行しています。
+SSDとソフトウェアスタック以外を共有するpristineとSSD0086もここに記載します。
 
+- OS: NixOS 25.11 (Xantusia) x86_64
 - Host: MS-7E51 (1.0)
-- Display (AW2725Q): 3840x2160 @ 1.5x in 27", 144 Hz [External]
+- Kernel: Linux 6.12.74
+- Shell: zsh 5.9
+- Display (AW2725Q): 3840x2160 @ 1.5x in 27", 144 Hz [External] *
 - Display (LG HDR 4K): 3840x2160 @ 1.5x in 27", 60 Hz [External]
 - Display (Acer VG270K): 3840x2160 @ 1.5x in 27", 60 Hz [External]
 - Display (GSM5BBF): 3840x2160 @ 1.5x in 27", 144 Hz [External]
+- WM: hm-xsession (X11)
+- Terminal: tmux 3.6a
 - CPU: AMD Ryzen 9 9950X3D (32) @ 5.75 GHz
 - GPU: NVIDIA GeForce RTX 5090 [Discrete]
-- Memory: 96 GB
-- Swap: 50 GiB
-- Disk (/): 474.76 GiB / 1.82 TiB (26%)
+- Memory: 93.85 GiB
+- Swap: 50.92 GiB
+- Disk (/): 501.77 GiB / 1.82 TiB (27%) - btrfs
+- Locale: ja_JP.UTF-8
 
 同じマザーボードにSSDを分けて3つ入っているいずれのOSも、
 2TBのNVMe SSD(SN8100, SN850X, SN850)のうち一つにインストールされています。

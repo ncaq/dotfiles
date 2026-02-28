@@ -21,6 +21,8 @@ nix run "$HOME/dotfiles#fastfetch" -- --config "$HOME/dotfiles/home/prompt/envir
 この結果は便宜上bulletホストで実行しています。
 SSDとソフトウェアスタック以外を共有するpristineとSSD0086もここに記載します。
 
+- ncaq@bullet
+- -----------
 - OS: NixOS 25.11 (Xantusia) x86_64
 - Host: MS-7E51 (1.0)
 - Kernel: Linux 6.12.74
@@ -35,7 +37,7 @@ SSDとソフトウェアスタック以外を共有するpristineとSSD0086も�
 - GPU: NVIDIA GeForce RTX 5090 [Discrete]
 - Memory: 93.85 GiB
 - Swap: 50.92 GiB
-- Disk (/): 501.77 GiB / 1.82 TiB (27%) - btrfs
+- Disk (/): 501.34 GiB / 1.82 TiB (27%) - btrfs
 - Locale: ja_JP.UTF-8
 
 同じマザーボードにSSDを分けて3つ入っているいずれのOSも、

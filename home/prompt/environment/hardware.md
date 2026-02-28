@@ -1,13 +1,15 @@
 # ハードウェア情報
 
-## PC
+簡単なハードウェアの情報を記載します。
 
 取得した日の結果なので、
 時間が経つと情報が古くなります。
 特にディスクの利用サイズなどは日々変動します。
 過信はしてはいけません。
 
-以下のコマンドでほぼ同最新の情報を取得できます。
+## PC
+
+以下のコマンドでほぼ同じ最新の情報を取得できます。
 
 ```console
 nix run "$HOME/dotfiles#fastfetch" -- --config "$HOME/dotfiles/home/prompt/environment/fastfetch-hardware.json"
@@ -17,9 +19,15 @@ nix run "$HOME/dotfiles#fastfetch" -- --config "$HOME/dotfiles/home/prompt/envir
 
 #### bullet, pristine, SSD0086
 
-メインのデスクトップPCの簡単なハードウェアの情報は以下の通りです。
-この結果は便宜上bulletホストで実行しています。
+デスクトップです。
+自作組み立てです。
+
+3つのSSDを刺していて、
+それぞれ個別のOSがブートしています。
+この実行結果は便宜上bulletホスト上のものです。
 SSDとソフトウェアスタック以外を共有するpristineとSSD0086もここに記載します。
+いずれのOSも、
+2TBのNVMe SSD(SN8100, SN850X, SN850)のうち一つにインストールされています。
 
 - ncaq@bullet
 - -----------
@@ -40,14 +48,12 @@ SSDとソフトウェアスタック以外を共有するpristineとSSD0086も�
 - Disk (/): 501.34 GiB / 1.82 TiB (27%) - btrfs
 - Locale: ja_JP.UTF-8
 
-同じマザーボードにSSDを分けて3つ入っているいずれのOSも、
-2TBのNVMe SSD(SN8100, SN850X, SN850)のうち一つにインストールされています。
-
 ### ラップトップ
 
 #### creep
 
-メインのラップトップPCであるThinkPad P16s Gen 2の簡単なハードウェアの情報は以下の通りです。
+ラップトップです。
+[ThinkPad P16s Gen 2](https://www.lenovo.com/jp/ja/p/laptops/thinkpad/thinkpad-p-series/thinkpad-p16s-gen-2-16-inch-amd-mobile-workstation/len101t0075)です。
 
 - Host: 21K9CTO1WW (ThinkPad P16s Gen 2)
 - Display (AUOD49C): 1920x1200 in 16", 60 Hz [Built-in]
@@ -61,7 +67,8 @@ SSDとソフトウェアスタック以外を共有するpristineとSSD0086も�
 
 #### seminar
 
-メインのサーバの簡単なハードウェアの情報は以下の通りです。
+サーバ用PCです。
+自作組み立てPCです。
 
 - ncaq@seminar
 - ------------
@@ -82,9 +89,9 @@ SSDとソフトウェアスタック以外を共有するpristineとSSD0086も�
 
 ### スマートフォン
 
-#### Galaxy Z Fold7
+#### paint
 
-メインのスマートフォンの簡単なハードウェアの情報は以下の通りです。
+[Galaxy Z Fold7](https://www.samsung.com/jp/smartphones/galaxy-z-fold7/)
 
 - Host: samsung SM-F966Q
 - CPU: Qualcomm Snapdragon 8 Elite for Galaxy [SM8750] (8)
@@ -96,9 +103,9 @@ SSDとソフトウェアスタック以外を共有するpristineとSSD0086も�
 
 ### タブレット
 
-#### Galaxy Tab S9 Ultra
+#### dream
 
-メインのタブレットの簡単なハードウェアの情報は以下の通りです。
+[Galaxy Tab S9 Ultra](https://www.samsung.com/jp/tablets/galaxy-tab-s/galaxy-tab-s9-ultra-wi-fi-graphite-512gb-sm-x910nzaexjp/)
 
 - Host: samsung SM-X910
 - CPU: Qualcomm Snapdragon 8 Gen 2 for Galaxy [SM8550] (8)

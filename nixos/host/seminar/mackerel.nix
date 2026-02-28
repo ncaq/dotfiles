@@ -63,6 +63,8 @@ in
             }
           );
           inherit check_interval;
+          # 一時的な瞬断で自動復帰するケースが多いため、2回連続失敗時のみアラートを発火する
+          max_check_attempts = 2;
         };
         cloudflared = {
           command = lib.getExe (

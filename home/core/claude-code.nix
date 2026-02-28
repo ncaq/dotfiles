@@ -395,6 +395,10 @@ in
     };
   };
 
+  # Claude Codeがnativeインストール時に`~/.local/bin/claude`が存在していないと警告を出すため、
+  # シンボリックリンクを作成して警告を抑制します。
+  home.file.".local/bin/claude".source = "${config.programs.claude-code.finalPackage}/bin/claude";
+
   # GitHub MCP Server用のPersonal Access Tokenをsops-nixで管理します。
   # シークレットファイルは `sops secrets/github-mcp-server.yaml` で編集してください。
   # 形式:

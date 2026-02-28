@@ -167,6 +167,7 @@ in
           "Bash(docker:*)"
           "Bash(echo:*)"
           "Bash(env)"
+          "Bash(fastfetch:*)"
           "Bash(fd:*)"
           "Bash(find:*)"
           "Bash(gen-hie:*)"

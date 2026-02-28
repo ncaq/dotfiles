@@ -120,6 +120,21 @@ in
         commit = "";
         pr = "";
       };
+      # グローバルに有効なhookを設定します。
+      hooks = {
+        SessionStart = [
+          {
+            matcher = "startup|clear"; # resume時はもう知っているはずなので除外。
+            hooks = [
+              # 起動時にfastfetchを実行してどのマシンで動いているかをわからせます。
+              {
+                type = "command";
+                command = "fastfetch --logo none";
+              }
+            ];
+          }
+        ];
+      };
       # statuslineを設定します。
       # ccstatuslineを使用して豪華な表示にします。
       statusLine = {
@@ -167,6 +182,7 @@ in
           "Bash(docker:*)"
           "Bash(echo:*)"
           "Bash(env)"
+          "Bash(fastfetch:*)"
           "Bash(fd:*)"
           "Bash(find:*)"
           "Bash(gen-hie:*)"

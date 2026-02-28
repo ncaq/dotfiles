@@ -4,8 +4,13 @@
     "type": "none"
   },
   "modules": [
+    "os",
     "host",
+    "kernel",
+    "shell",
     "display",
+    "wm",
+    "terminal",
     "cpu",
     "gpu",
     {
@@ -19,6 +24,7 @@
     {
       "type": "disk",
       "showSubvolumes": false
-    }
+    },
+    "locale"
   ]
 }

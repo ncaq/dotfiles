@@ -30,7 +30,6 @@ SSDとソフトウェアスタック以外を共有するpristineとSSD0086も�
 2TBのNVMe SSD(SN8100, SN850X, SN850)のうち一つにインストールされています。
 
 - ncaq@bullet
-- -----------
 - OS: NixOS 25.11 (Xantusia) x86_64
 - Host: MS-7E51 (1.0)
 - Kernel: Linux 6.12.74
@@ -73,7 +72,6 @@ ThinkPadですが指紋センサーはありません。
 自作組み立てPCです。
 
 - ncaq@seminar
-- ------------
 - OS: NixOS 25.11 (Xantusia) x86_64
 - Host: A620M-HDV/M.2+
 - Kernel: Linux 6.12.70

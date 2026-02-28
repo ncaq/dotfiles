@@ -55,6 +55,8 @@ SSDとソフトウェアスタック以外を共有するpristineとSSD0086も�
 ラップトップです。
 [ThinkPad P16s Gen 2](https://www.lenovo.com/jp/ja/p/laptops/thinkpad/thinkpad-p-series/thinkpad-p16s-gen-2-16-inch-amd-mobile-workstation/len101t0075)です。
 
+ThinkPadですが指紋センサーはありません。
+
 - Host: 21K9CTO1WW (ThinkPad P16s Gen 2)
 - Display (AUOD49C): 1920x1200 in 16", 60 Hz [Built-in]
 - CPU: AMD Ryzen 5 PRO 7540U (12) @ 4.98 GHz

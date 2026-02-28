@@ -6,6 +6,9 @@
   isWSL,
   ...
 }:
+let
+  nativeLinux = !(isTermux || isWSL);
+in
 {
   home = {
     stateVersion = "25.05";
@@ -22,11 +25,14 @@
 
   programs.home-manager.enable = true;
 
+  # ネイティブのLinuxと言うのはホストシステムを意識しなくても単体で使える環境という程度の意味です。
+  _module.args.nativeLinux = nativeLinux;
+
   imports = [
     ./link.nix
     ./prompt
     ./core
   ]
-  ++ lib.optional (!(isTermux || isWSL)) ./native-linux
+  ++ lib.optional nativeLinux ./native-linux
   ++ lib.optional isWSL ./wsl;
 }

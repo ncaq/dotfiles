@@ -10,6 +10,7 @@ let
   atticdUser = {
     inherit (user) uid;
     group = "atticd";
+    isSystemUser = true;
   };
   # ホストからコンテナ内のatticd-atticadmコマンドを実行するラッパースクリプト
   atticadmWrapper = pkgs.writeShellScriptBin "atticd-atticadm" ''

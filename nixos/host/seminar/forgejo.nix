@@ -6,6 +6,7 @@ let
   forgejoUser = {
     inherit (user) uid;
     group = "forgejo";
+    isSystemUser = true;
   };
   # ホストからコンテナ内のforgejoコマンドを実行するラッパースクリプト
   forgejoWrapper = pkgs.writeShellScriptBin "forgejo" ''

@@ -17,6 +17,8 @@ in
     # 非NixOS環境だとOpenGLの問題があるため、システムのパッケージを使う。
     package = if osConfig == null then kitty-wrapper else pkgs.kitty;
 
+    themeFile = "Modus_Vivendi";
+
     settings = {
       font_size = 12;
 

@@ -3,7 +3,7 @@
   programs.bat = {
     enable = true;
     config = {
-      theme = "Solarized (dark)";
+      theme = "ansi";
       style = "grid,header,snip";
     };
     extraPackages = with pkgs.bat-extras; [

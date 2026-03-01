@@ -9,6 +9,7 @@
     autoconf
     automake
     ccls
+    clang-tools
     cmake
     gdb
     libgcc

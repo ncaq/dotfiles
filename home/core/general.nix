@@ -10,7 +10,6 @@
     openssl
     parallel
     plantuml
-    rakudo
     shellcheck
     sqlite
     strace

@@ -26,7 +26,7 @@ in
     localAddress = addr.guest;
     bindMounts = {
       "/etc/atticd.env" = {
-        hostPath = "/run/secrets/atticd-env";
+        hostPath = config.sops.secrets."atticd-env".path;
         isReadOnly = true;
       };
       "/run/postgresql" = {

@@ -32,10 +32,10 @@ in
   services.cloudflared = {
     enable = true;
     package = cloudflaredWrapper;
-    certificateFile = "/run/secrets/cloudflare-cert";
+    certificateFile = config.sops.secrets."cloudflare-cert".path;
     tunnels.seminar = {
       default = "http_status:404";
-      credentialsFile = "/run/secrets/cloudflare-tunnel-credentials";
+      credentialsFile = config.sops.secrets."cloudflare-tunnel-credentials".path;
       ingress = {
         "forgejo.ncaq.net" = "http://${forgejoAddr}:8080";
         "mcp-nixos.ncaq.net" = "http://${mcpNixosAddr}:8080";

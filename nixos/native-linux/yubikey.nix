@@ -12,6 +12,6 @@
 
   environment.systemPackages = with pkgs; [
     yubikey-manager # ykman コマンド - YubiKeyの状態確認やPIN管理に便利。
-    yubikey-personalization # よりEasyなYubiKeyの設定ツール。
+    yubikey-personalization # これのコマンドはあまり使いませんが、どうせudevのためにインストールされるので指定。
   ];
 }

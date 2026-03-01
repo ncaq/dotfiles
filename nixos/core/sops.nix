@@ -4,8 +4,6 @@
   ...
 }:
 {
-  # sops-nix: NixOS用のシークレット管理。
-
   sops.gnupg = {
     home = "/home/${username}/.gnupg";
     sshKeyPaths = [ ];

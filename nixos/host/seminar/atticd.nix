@@ -1,27 +1,23 @@
 {
   config,
-  username,
   pkgs,
   ...
 }:
 let
   addr = config.machineAddresses.atticd;
   user = config.containerUsers.atticd;
+  # ファイルシステムとPostgreSQLの認証で必要なためホストとゲストで設定が共通している必要があります。
+  atticdUser = {
+    inherit (user) uid;
+    group = "atticd";
+    isSystemUser = true;
+  };
   # ホストからコンテナ内のatticd-atticadmコマンドを実行するラッパースクリプト
   atticadmWrapper = pkgs.writeShellScriptBin "atticd-atticadm" ''
     exec nixos-container run atticd -- atticd-atticadm "$@"
   '';
 in
 {
-  # atticdのJWT署名鍵を管理。
-  sops.secrets."atticd-env" = {
-    sopsFile = ../../../secrets/seminar/atticd.yaml;
-    key = "attic_env";
-    owner = "atticd";
-    group = "atticd";
-    mode = "0400";
-  };
-  environment.systemPackages = [ atticadmWrapper ];
   containers.atticd = {
     autoStart = true;
     ephemeral = true;
@@ -29,6 +25,10 @@ in
     hostAddress = addr.host;
     localAddress = addr.guest;
     bindMounts = {
+      "/etc/atticd.env" = {
+        hostPath = config.sops.secrets."atticd-env".path;
+        isReadOnly = true;
+      };
       "/run/postgresql" = {
         hostPath = "/run/postgresql";
         isReadOnly = true;
@@ -37,10 +37,6 @@ in
         hostPath = "/mnt/noa/atticd";
         isReadOnly = false;
       };
-      "/etc/atticd.env" = {
-        hostPath = "/run/secrets/atticd-env";
-        isReadOnly = true;
-      };
     };
     config =
       { lib, ... }:
@@ -48,25 +44,11 @@ in
         system.stateVersion = "25.05";
         networking.useHostResolvConf = lib.mkForce false;
         services.resolved.enable = true;
-        # Allow incoming connections from host via private network.
         networking.firewall.trustedInterfaces = [ "eth0" ];
-        # UID/GID must match host for PostgreSQL peer authentication via bindMounted socket.
-        users.users.atticd = {
-          inherit (user) uid;
-          group = "atticd";
-        };
+        users.users.atticd = atticdUser;
         users.groups.atticd.gid = user.gid;
         services.atticd = {
           enable = true;
-          # Managed by sops-nix. To update the secret:
-          # ```
-          # sops secrets/seminar/atticd.yaml
-          # ```
-          # To generate a new key:
-          # ```
-          # openssl genrsa -traditional 4096 | base64 -w0
-          # ```
-          # Then set attic_env to: ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64="<generated_key>"
           environmentFile = "/etc/atticd.env";
           settings = {
             listen = "[::]:8080";
@@ -88,25 +70,32 @@ in
       };
   };
 
-  # Host-side user/group configuration for bindMount permissions.
-  # UID/GID must match between host and container for PostgreSQL peer authentication.
-  users.users.atticd = {
-    isSystemUser = true;
-    group = "atticd";
-    inherit (user) uid;
-  };
-  users.groups.atticd = {
-    inherit (user) gid;
-    members = [ username ];
-  };
+  users.users.atticd = atticdUser;
+  users.groups.atticd.gid = user.gid;
+
   systemd.tmpfiles.rules = [
     "d /mnt/noa/atticd 0755 atticd atticd -"
   ];
 
   # Wait for PostgreSQL to be ready before starting container.
   systemd.services."container@atticd" = {
-    after = [ "postgresql.service" ];
     requires = [ "postgresql.service" ];
+    after = [ "postgresql.service" ];
+  };
+
+  # コンテナ外部から使える管理CLIコマンド。
+  environment.systemPackages = [ atticadmWrapper ];
+
+  # ```
+  # openssl genrsa -traditional 4096 | base64 -w0
+  # ```
+  # で生成した鍵を`ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64`に指定。
+  sops.secrets."atticd-env" = {
+    sopsFile = ../../../secrets/seminar/atticd.yaml;
+    key = "attic_env";
+    owner = "atticd";
+    group = "atticd";
+    mode = "0400";
   };
 
   # 基本的には自動化されているので手動でトークンを発行する必要はないですが、

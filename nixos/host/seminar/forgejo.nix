@@ -2,13 +2,18 @@
 let
   addr = config.machineAddresses.forgejo;
   user = config.containerUsers.forgejo;
+  # ファイルシステムとPostgreSQLの認証で必要なためホストとゲストで設定が共通している必要があります。
+  forgejoUser = {
+    inherit (user) uid;
+    group = "forgejo";
+    isSystemUser = true;
+  };
   # ホストからコンテナ内のforgejoコマンドを実行するラッパースクリプト
   forgejoWrapper = pkgs.writeShellScriptBin "forgejo" ''
     exec nixos-container run forgejo -- forgejo "$@"
   '';
 in
 {
-  environment.systemPackages = [ forgejoWrapper ];
   containers.forgejo = {
     autoStart = true;
     ephemeral = true;
@@ -38,13 +43,8 @@ in
         system.stateVersion = "25.05";
         networking.useHostResolvConf = lib.mkForce false;
         services.resolved.enable = true;
-        # Allow incoming connections from host via private network.
         networking.firewall.trustedInterfaces = [ "eth0" ];
-        # UID/GID must match host for PostgreSQL peer authentication via bindMounted socket.
-        users.users.forgejo = {
-          inherit (user) uid;
-          group = "forgejo";
-        };
+        users.users.forgejo = forgejoUser;
         users.groups.forgejo.gid = user.gid;
         services.forgejo = {
           enable = true;
@@ -80,21 +80,19 @@ in
       };
   };
 
-  # Host-side user/group configuration for bindMount permissions.
-  # UID/GID must match between host and container for PostgreSQL peer authentication.
-  users.users.forgejo = {
-    isSystemUser = true;
-    group = "forgejo";
-    inherit (user) uid;
-  };
+  users.users.forgejo = forgejoUser;
   users.groups.forgejo.gid = user.gid;
+
   systemd.tmpfiles.rules = [
     "d /var/lib/forgejo 0750 forgejo forgejo -"
   ];
 
+  # コンテナ外部から使える管理CLIコマンド。
+  environment.systemPackages = [ forgejoWrapper ];
+
   # Wait for PostgreSQL to be ready before starting container.
   systemd.services."container@forgejo" = {
-    after = [ "postgresql.service" ];
     requires = [ "postgresql.service" ];
+    after = [ "postgresql.service" ];
   };
 }

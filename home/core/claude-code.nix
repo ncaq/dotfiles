@@ -135,6 +135,39 @@ in
           }
         ];
       };
+      # インストール時にclaude-plugins-officialは登録されますが、
+      # ファイルが消えると再登録されないため宣言的に追加もしておきます。
+      # またインストール時にclaude-plugins-officialを名乗っているのはclaude-codeのサブディレクトリであることもあるので、
+      # 安定性のために明示的に指定します。
+      extraKnownMarketplaces = {
+        "claude-plugins-official" = {
+          source = {
+            source = "github";
+            repo = "anthropics/claude-plugins-official";
+          };
+        };
+      };
+      # pluginを記述しておくことで起動時にインストールされていない場合自動でインストールされます。
+      enabledPlugins = {
+        "feature-dev@claude-plugins-official" = true;
+        "frontend-design@claude-plugins-official" = true;
+        "hookify@claude-plugins-official" = true;
+        "plugin-dev@claude-plugins-official" = true;
+        "security-guidance@claude-plugins-official" = true;
+        "skill-creator@claude-plugins-official" = true;
+        # lsp単体のplugin。
+        "clangd-lsp@claude-plugins-official" = true;
+        "csharp-lsp@claude-plugins-official" = true;
+        "gopls-lsp@claude-plugins-official" = true;
+        "jdtls-lsp@claude-plugins-official" = true;
+        "kotlin-lsp@claude-plugins-official" = true;
+        "lua-lsp@claude-plugins-official" = true;
+        "php-lsp@claude-plugins-official" = true;
+        "pyright-lsp@claude-plugins-official" = true;
+        "rust-analyzer-lsp@claude-plugins-official" = true;
+        "swift-lsp@claude-plugins-official" = true;
+        "typescript-lsp@claude-plugins-official" = true;
+      };
       # statuslineを設定します。
       # ccstatuslineを使用して豪華な表示にします。
       statusLine = {

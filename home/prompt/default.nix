@@ -38,6 +38,7 @@ in
         [
           (builtins.readFile ./assistant/language.md)
           (builtins.readFile ./assistant/form.md)
+          (builtins.readFile ./assistant/markdown.md)
           (builtins.readFile ./assistant/communication-guideline.md)
           (builtins.readFile ./assistant/persona.md)
           (builtins.readFile ./environment/software.md)
@@ -58,6 +59,7 @@ in
       codingAgent = lib.concatStringsSep "\n" (
         [
           (builtins.readFile ./assistant/form.md)
+          (builtins.readFile ./assistant/markdown.md)
           (builtins.readFile ./environment/software.md)
         ]
         ++ programmingPrompts

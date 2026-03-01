@@ -10,12 +10,6 @@ in
     useRoutingFeatures = "both";
   };
 
-  # IP転送を有効化。
-  boot.kernel.sysctl = {
-    "net.ipv4.ip_forward" = 1;
-    "net.ipv6.conf.all.forwarding" = 1;
-  };
-
   # Tailscale Funnelでサーバをパブリックインターネットに公開する設定。
   # [ncaq/infra.ncaq.net: Infrastructure as Code for ncaq.net](https://github.com/ncaq/infra.ncaq.net/)
   # でFunnelを有効化しています。
@@ -38,5 +32,11 @@ in
       Restart = "on-failure";
       RestartSec = "10s";
     };
+  };
+
+  # IP転送を有効化。
+  boot.kernel.sysctl = {
+    "net.ipv4.ip_forward" = 1;
+    "net.ipv6.conf.all.forwarding" = 1;
   };
 }

@@ -1,9 +1,11 @@
-# mcp-nixosをHTTPエンドポイントで提供します。
-# 以下のURLで提供しているので、
-# MCPクライアントには以下のURLを入力してください。
-# `https://mcp-nixos.ncaq.net/mcp`
-# 読み取り専用のMCPサーバなので認証情報は不要です。
-# 万が一の危険を減らすために仮想マシンで隔離しています。
+/**
+  mcp-nixosをHTTPエンドポイントで提供します。
+  以下のURLで提供しているので、
+  MCPクライアントには以下のURLを入力してください。
+  `https://mcp-nixos.ncaq.net/mcp`
+  読み取り専用のMCPサーバなので認証情報は不要です。
+  万が一の危険を減らすために仮想マシンで隔離しています。
+*/
 {
   pkgs,
   config,
@@ -20,8 +22,7 @@ let
   serverPy = "${pkgs.mcp-nixos}/${pkgs.python3.sitePackages}/mcp_nixos/server.py";
 in
 {
-  # 仮に脆弱性があった場合の被害を最小限に抑えるため、
-  # 仮想マシンで動かします。
+  # 仮に脆弱性があった場合の被害を最小限に抑えるため仮想マシンで動かします。
   microvm.vms.mcp-nixos = {
     inherit pkgs;
     config = {

@@ -1,4 +1,37 @@
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
+let
+  tmux-trash-window = pkgs.writeShellApplication {
+    name = "tmux-trash-window";
+    runtimeInputs = with pkgs; [
+      coreutils
+      tmux
+    ];
+    text = ''
+      if [ "$(tmux list-windows | wc -l)" -eq 1 ]; then
+        tmux new-window -d
+      fi
+      tmux move-window -t trash: 2>/dev/null ||
+      (tmux new-session -d -s trash && tmux move-window -t trash:)
+    '';
+  };
+
+  tmux-restore-window = pkgs.writeShellApplication {
+    name = "tmux-restore-window";
+    runtimeInputs = with pkgs; [
+      fzf
+      gawk
+      tmux
+    ];
+    text = ''
+      window=$(tmux list-windows -t trash -F '#{window_index} #{b:pane_current_path}/#{pane_current_command}' 2>/dev/null |
+        fzf-tmux -p --prompt='restore window> ')
+      if [ -n "$window" ]; then
+        idx=$(echo "$window" | awk '{print $1}')
+        tmux move-window -a -s "trash:$idx" -t .
+      fi
+    '';
+  };
+in
 {
   # テキストの容量は大したことがないと考えているため、
   # 履歴は大きめに取り、
@@ -86,21 +119,10 @@
 
         # ctrl+alt+q = ウィンドウをゴミ箱セッションに退避(復元可能)
         # セッション最後のウィンドウの場合は先に新しいウィンドウを作成してから退避する
-        bind -n C-M-q run-shell "\
-          if [ \"\$(tmux list-windows | wc -l)\" -eq 1 ]; then \
-            tmux new-window -d; \
-          fi; \
-          tmux move-window -t trash: 2>/dev/null || \
-          (tmux new-session -d -s trash && tmux move-window -t trash:)"
+        bind -n C-M-q run-shell "${lib.getExe tmux-trash-window}"
 
         # alt+o = ゴミ箱セッションからウィンドウをfzfで選択して復元
-        bind -n M-o run-shell "\
-          window=\$(tmux list-windows -t trash -F '#{window_index} #{b:pane_current_path}/#{pane_current_command}' 2>/dev/null | \
-            fzf-tmux -p --prompt='restore window> '); \
-          if [ -n \"\$window\" ]; then \
-            idx=\$(echo \"\$window\" | awk '{print \$1}'); \
-            tmux move-window -a -s \"trash:\$idx\" -t .; \
-          fi"
+        bind -n M-o run-shell "${lib.getExe tmux-restore-window}"
 
         # ウィンドウ移動
         bind -n C-M-n next-window

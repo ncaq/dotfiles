@@ -88,7 +88,7 @@
         # セッション最後のウィンドウの場合は先に新しいウィンドウを作成してから退避する
         bind -n C-M-q run-shell "\
           if [ \"\$(tmux list-windows | wc -l)\" -eq 1 ]; then \
-            tmux new-window; \
+            tmux new-window -d; \
           fi; \
           tmux move-window -t trash: 2>/dev/null || \
           (tmux new-session -d -s trash && tmux move-window -t trash:)"

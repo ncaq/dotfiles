@@ -2,12 +2,9 @@
 let
   tmux-trash-window = pkgs.writeShellApplication {
     name = "tmux-trash-window";
-    runtimeInputs = with pkgs; [
-      coreutils
-      tmux
-    ];
+    runtimeInputs = [ pkgs.tmux ];
     text = ''
-      if [ "$(tmux list-windows | wc -l)" -eq 1 ]; then
+      if [ "$(tmux display-message -p '#{session_windows}')" -eq 1 ]; then
         tmux new-window -d
       fi
       tmux move-window -t trash: 2>/dev/null ||

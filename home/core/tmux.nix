@@ -84,8 +84,23 @@
         # ctrl+alt+o = 新規ウィンドウ(タブ)、同じディレクトリで開始
         bind -n C-M-o new-window -a -c "#{pane_current_path}"
 
-        # ctrl+alt+q = ウィンドウを閉じる
-        bind -n C-M-q kill-window
+        # ctrl+alt+q = ウィンドウをゴミ箱セッションに退避(復元可能)
+        # セッション最後のウィンドウの場合は先に新しいウィンドウを作成してから退避する
+        bind -n C-M-q run-shell "\
+          if [ \"\$(tmux list-windows | wc -l)\" -eq 1 ]; then \
+            tmux new-window; \
+          fi; \
+          tmux move-window -t trash 2>/dev/null || \
+          (tmux new-session -d -s trash && tmux move-window -t trash)"
+
+        # alt+o = ゴミ箱セッションからウィンドウをfzfで選択して復元
+        bind -n M-o run-shell "\
+          window=\$(tmux list-windows -t trash -F '#{window_index} #{b:pane_current_path}/#{pane_current_command}' 2>/dev/null | \
+            fzf-tmux -p --prompt='restore window> '); \
+          if [ -n \"\$window\" ]; then \
+            idx=\$(echo \"\$window\" | awk '{print \$1}'); \
+            tmux move-window -s \"trash:\$idx\" -t .; \
+          fi"
 
         # ウィンドウ移動
         bind -n C-M-n next-window

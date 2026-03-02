@@ -99,7 +99,7 @@
             fzf-tmux -p --prompt='restore window> '); \
           if [ -n \"\$window\" ]; then \
             idx=\$(echo \"\$window\" | awk '{print \$1}'); \
-            tmux move-window -s \"trash:\$idx\" -t .; \
+            tmux move-window -a -s \"trash:\$idx\" -t .; \
           fi"
 
         # ウィンドウ移動

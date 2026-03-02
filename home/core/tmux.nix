@@ -90,8 +90,8 @@
           if [ \"\$(tmux list-windows | wc -l)\" -eq 1 ]; then \
             tmux new-window; \
           fi; \
-          tmux move-window -t trash 2>/dev/null || \
-          (tmux new-session -d -s trash && tmux move-window -t trash)"
+          tmux move-window -t trash: 2>/dev/null || \
+          (tmux new-session -d -s trash && tmux move-window -t trash:)"
 
         # alt+o = ゴミ箱セッションからウィンドウをfzfで選択して復元
         bind -n M-o run-shell "\

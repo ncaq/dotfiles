@@ -1,4 +1,36 @@
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
+let
+  tmux-trash-window = pkgs.writeShellApplication {
+    name = "tmux-trash-window";
+    runtimeInputs = [ pkgs.tmux ];
+    text = ''
+      if [ "$(tmux display-message -p '#{session_windows}')" -eq 1 ]; then
+        tmux new-window -d
+      fi
+      if ! tmux has-session -t trash 2>/dev/null; then
+        tmux new-session -d -s trash
+      fi
+      tmux move-window -t trash:
+    '';
+  };
+
+  tmux-restore-window = pkgs.writeShellApplication {
+    name = "tmux-restore-window";
+    runtimeInputs = with pkgs; [
+      fzf
+      gawk
+      tmux
+    ];
+    text = ''
+      window=$(tmux list-windows -t trash -F '#{window_index} #{b:pane_current_path}/#{pane_current_command}' 2>/dev/null |
+        fzf-tmux -p --prompt='restore window> ')
+      if [ -n "$window" ]; then
+        idx=$(echo "$window" | awk '{print $1}')
+        tmux move-window -a -s "trash:$idx" -t .
+      fi
+    '';
+  };
+in
 {
   # テキストの容量は大したことがないと考えているため、
   # 履歴は大きめに取り、
@@ -84,8 +116,12 @@
         # ctrl+alt+o = 新規ウィンドウ(タブ)、同じディレクトリで開始
         bind -n C-M-o new-window -a -c "#{pane_current_path}"
 
-        # ctrl+alt+q = ウィンドウを閉じる
-        bind -n C-M-q kill-window
+        # ctrl+alt+q = ウィンドウをゴミ箱セッションに退避(復元可能)
+        # セッション最後のウィンドウの場合は先に新しいウィンドウを作成してから退避する
+        bind -n C-M-q run-shell "${lib.getExe tmux-trash-window}"
+
+        # alt+o = ゴミ箱セッションからウィンドウをfzfで選択して復元
+        bind -n M-o run-shell "${lib.getExe tmux-restore-window}"
 
         # ウィンドウ移動
         bind -n C-M-n next-window

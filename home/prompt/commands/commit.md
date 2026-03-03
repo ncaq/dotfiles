@@ -141,7 +141,7 @@ git log -1 --format=%B
 amendで上書きしてください。
 
 ```bash
-git commit --amend --no-edit -F /tmp/coding-agent-work/COMMIT_EDITMSG
+git commit --amend -F /tmp/coding-agent-work/COMMIT_EDITMSG
 ```
 
 # 完了報告

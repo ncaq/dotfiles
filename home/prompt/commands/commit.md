@@ -1,5 +1,5 @@
 ---
-description: AIがコミットメッセージを生成し、$EDITORで修正してからコミットします
+description: AIがコミットメッセージを生成し、$EDITORでユーザが修正してからコミットします
 model: sonnet
 disable-model-invocation: true
 allowed-tools:

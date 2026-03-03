@@ -24,7 +24,7 @@ in
         color.ui = true;
         core = {
           autocrlf = false;
-          editor = "emacsclient";
+          editor = "emacsclient --reuse-frame --alternate-editor=emacs";
           quotePath = false;
           symlinks = true;
         };

@@ -139,6 +139,7 @@ git log -1 --format=%B
 
 誤字があれば修正したメッセージを一時ファイルに書き出し、
 amendで上書きしてください。
+初回コミットで`--no-verify`を使った場合はamendでも同様に指定してください。
 
 ```bash
 git commit --amend -F /tmp/coding-agent-work/COMMIT_EDITMSG

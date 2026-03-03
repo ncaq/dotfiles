@@ -410,7 +410,6 @@ in
           "Bash(gh label delete:*)"
           "Bash(gh pr merge:*)"
           "Bash(gh run delete:*)"
-          "Bash(git commit:*)"
         ];
         deny = [
           "Bash(gh gist delete:*)"

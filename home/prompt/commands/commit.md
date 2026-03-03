@@ -11,6 +11,7 @@ allowed-tools:
   - Bash(git show:*)
   - Bash(git status:*)
   - Bash(mkdir:*)
+  - Bash(trash:*)
   - Glob
   - Grep
   - Read
@@ -151,6 +152,14 @@ amendで上書きしてください。
 
 ```bash
 git commit --amend -F /tmp/coding-agent-work/repo-name/COMMIT_EDITMSG
+```
+
+## コミットファイルのクリーンアップ
+
+コミットが完了したら一時ファイルを削除してください。
+
+```bash
+trash /tmp/coding-agent-work/repo-name/COMMIT_EDITMSG
 ```
 
 # 完了報告

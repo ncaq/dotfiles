@@ -4,6 +4,7 @@ model: sonnet
 context: fork
 disable-model-invocation: true
 allowed-tools:
+  - Bash($EDITOR:*)
   - Bash(git add:*)
   - Bash(git commit:*)
   - Bash(git diff:*)

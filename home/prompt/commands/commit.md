@@ -117,7 +117,8 @@ git commit -F /tmp/coding-agent-work/COMMIT_EDITMSG
 
 ## commit-msgフック失敗時の対応
 
-commit-msgフックが失敗した場合、プロジェクト固有のコミットメッセージ規約とグローバルなgit-hookが衝突していることが原因であれば`--no-verify`で再試行してください。
+commit-msgフックが失敗した場合、
+プロジェクト固有のコミットメッセージ規約とグローバルなgit-hookが衝突していることが原因であれば`--no-verify`で再試行してください。
 
 ```bash
 git commit -F /tmp/coding-agent-work/COMMIT_EDITMSG --no-verify
@@ -128,13 +129,15 @@ git commit -F /tmp/coding-agent-work/COMMIT_EDITMSG --no-verify
 
 ## コミット後の誤字チェック
 
-コミットが成功したら、コミットメッセージを取得して誤字がないか確認してください。
+コミットが成功したら、
+コミットメッセージを取得して誤字がないか確認してください。
 
 ```bash
 git log -1 --format=%B
 ```
 
-誤字があれば修正したメッセージを一時ファイルに書き出し、amendで上書きしてください。
+誤字があれば修正したメッセージを一時ファイルに書き出し、
+amendで上書きしてください。
 
 ```bash
 git commit --amend --no-edit -F /tmp/coding-agent-work/COMMIT_EDITMSG

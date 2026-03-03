@@ -121,7 +121,7 @@ commit-msgフックが失敗した場合、
 プロジェクト固有のコミットメッセージ規約とグローバルなgit-hookが衝突していることが原因であれば`--no-verify`で再試行してください。
 
 ```bash
-git commit -F /tmp/coding-agent-work/COMMIT_EDITMSG --no-verify
+git commit --no-verify -F /tmp/coding-agent-work/COMMIT_EDITMSG
 ```
 
 単純に書き方が間違っている場合は、

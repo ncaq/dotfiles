@@ -149,5 +149,4 @@ git commit --amend -F /tmp/coding-agent-work/repo-name/COMMIT_EDITMSG
 
 # 完了報告
 
-コミットが完了したら、
-コミットハッシュとメッセージを報告してください。
+コミットが完了したら報告してください。

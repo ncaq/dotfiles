@@ -1,7 +1,6 @@
 ---
 description: AIがコミットメッセージを生成し、$EDITORで修正してからコミットします
 model: sonnet
-context: fork
 disable-model-invocation: true
 allowed-tools:
   - Bash($EDITOR:*)

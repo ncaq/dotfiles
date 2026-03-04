@@ -142,7 +142,7 @@ git commit -F /tmp/coding-agent-work/repo-name/COMMIT_EDITMSG
 ## commit-msgフック失敗時の対応
 
 commit-msgフックが失敗した場合、
-プロジェクト固有のコミットメッセージ規約とグローバルなgit-hookが衝突していることが原因であれば`--no-verify`で再試行してください。
+プロジェクト固有のコミットメッセージ規約とグローバルなgitフックが衝突していることが原因であれば`--no-verify`で再試行してください。
 
 ```bash
 git commit --no-verify -F /tmp/coding-agent-work/repo-name/COMMIT_EDITMSG

@@ -4,9 +4,14 @@ description: Install Nix and configure caches
 inputs:
   cachix-auth-token:
     description: Cachix authentication token
-    required: true
+    required: false
+    default: ""
+  cachix-name:
+    description: Cachix cache name
+    required: false
+    default: ""
   attic-token:
-    description: Attic cache authentication token for private cache
+    description: Attic cache authentication token
     required: false
     default: ""
 
@@ -17,9 +22,11 @@ runs:
       with:
         extra_nix_config: |
           accept-flake-config = true
-    - uses: cachix/cachix-action@3ba601ff5bbb07c7220846facfa2cd81eeee15a1 # v16
+    - name: Setup Cachix cache
+      if: inputs.cachix-auth-token != '' && inputs.cachix-name != ''
+      uses: cachix/cachix-action@3ba601ff5bbb07c7220846facfa2cd81eeee15a1 # v16
       with:
-        name: ncaq-dotfiles
+        name: "${{ inputs.cachix-name }}"
         authToken: "${{ inputs.cachix-auth-token }}"
         # デーモンのpost-build-hookではなくstore scanによるクライアント側pushを使用します。
         # 通常セルフホステッドランナーでは、

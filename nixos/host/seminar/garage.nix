@@ -59,11 +59,11 @@ in
               root_domain = ".garage.ncaq.net";
             };
             s3_web = {
-              bind_addr = "[::]:3902";
+              bind_addr = "localhost:3902";
               root_domain = ".web.garage.ncaq.net";
             };
             admin = {
-              api_bind_addr = "[::]:3903";
+              api_bind_addr = "localhost:3903";
             };
           };
         };

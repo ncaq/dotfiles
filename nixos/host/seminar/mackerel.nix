@@ -141,6 +141,26 @@ in
           );
           inherit check_interval;
         };
+        garage = {
+          command = lib.getExe (
+            pkgs.writeShellApplication {
+              name = "check-garage";
+              runtimeInputs = [ pkgs.curl ];
+              text = ''
+                http_code=$(curl -s --max-time 3 -o /dev/null -w "%{http_code}" \
+                  http://${config.machineAddresses.garage.guest}:3900 || echo "000")
+                if [[ "$http_code" =~ ^[24][0-9][0-9]$ ]]; then
+                  echo "Garage OK (HTTP $http_code)"
+                  exit 0
+                else
+                  echo "Garage CRITICAL: HTTP $http_code"
+                  exit 2
+                fi
+              '';
+            }
+          );
+          inherit check_interval;
+        };
         forgejo = {
           command = lib.getExe (
             pkgs.writeShellApplication {

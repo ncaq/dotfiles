@@ -120,6 +120,22 @@ mkdir -p /tmp/coding-agent-work/repo-name/
 ```
 
 生成したコミットメッセージをWriteツールで以下のパスに書き出してください。
+`git commit --verbose`と同様にエディタで差分を確認できるようにするため、
+コミットメッセージの後にシザーズライン(scissors line)と差分を付加します。
+
+差分は前のステップで取得した`git diff --cached`の出力を使用してください。
+
+ファイルの内容は以下の形式にしてください。
+
+```
+ここにコミットメッセージ
+
+# ------------------------ >8 ------------------------
+
+(git diff --cached の出力)
+```
+
+書き出し先:
 
 ```
 /tmp/coding-agent-work/repo-name/COMMIT_EDITMSG
@@ -139,7 +155,7 @@ $EDITOR /tmp/coding-agent-work/repo-name/COMMIT_EDITMSG
 以下のコマンドでコミットを実行してください。
 
 ```bash
-git commit -F /tmp/coding-agent-work/repo-name/COMMIT_EDITMSG
+git commit --cleanup=scissors -F /tmp/coding-agent-work/repo-name/COMMIT_EDITMSG
 ```
 
 ## commit-msgフック失敗時の対応
@@ -148,7 +164,7 @@ commit-msgフックが失敗した場合、
 プロジェクト固有のコミットメッセージ規約とグローバルなgitフックが衝突していることが原因であれば`--no-verify`で再試行してください。
 
 ```bash
-git commit --no-verify -F /tmp/coding-agent-work/repo-name/COMMIT_EDITMSG
+git commit --no-verify --cleanup=scissors -F /tmp/coding-agent-work/repo-name/COMMIT_EDITMSG
 ```
 
 単純に書き方が間違っている場合は、
@@ -168,7 +184,7 @@ amendで上書きしてください。
 初回コミットで`--no-verify`を使った場合はamendでも同様に指定してください。
 
 ```bash
-git commit --amend -F /tmp/coding-agent-work/repo-name/COMMIT_EDITMSG
+git commit --amend --cleanup=scissors -F /tmp/coding-agent-work/repo-name/COMMIT_EDITMSG
 ```
 
 ## コミットファイルのクリーンアップ

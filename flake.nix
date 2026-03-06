@@ -366,6 +366,7 @@
               fastfetch
               git
               home-manager
+              nix-fast-build
               qemu-user
               ;
           };

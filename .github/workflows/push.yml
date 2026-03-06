@@ -11,7 +11,7 @@ permissions:
   contents: read # リポジトリコンテンツの読み取り
 
 jobs:
-  nix-flake-check:
+  nix-fast-build:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -23,7 +23,7 @@ jobs:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
           cachix-name: ncaq-dotfiles
           attic-token: "${{ secrets.ATTIC_TOKEN }}"
-      - run: nix flake check
+      - run: nix run '.#nix-fast-build' -- --option eval-cache false --no-link --skip-cached --no-nom
 
   build-home-manager:
     # 重たいビルドは未認証のソースからは実行しない。

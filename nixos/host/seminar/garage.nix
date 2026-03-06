@@ -37,9 +37,11 @@ in
       { lib, ... }:
       {
         system.stateVersion = "25.11";
-        networking.useHostResolvConf = lib.mkForce false;
+        networking = {
+          useHostResolvConf = lib.mkForce false;
+          firewall.allowedTCPPorts = [ 3900 ];
+        };
         services.resolved.enable = true;
-        allowedTCPPorts = [ 3900 ];
         users.users.garage = garageUser;
         users.groups.garage.gid = user.gid;
         services.garage = {

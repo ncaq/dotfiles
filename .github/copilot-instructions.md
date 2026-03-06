@@ -109,7 +109,7 @@ Stopフックで`nix fmt`が自動実行されます。
 以下のコマンドでプロジェクト全体のフォーマットチェックとNixOS/home-manager構成の評価チェックが行えます。
 
 ```console
-nix-fast-build --no-nom
+nix-fast-build --option eval-cache false --no-link --skip-cached --no-nom
 ```
 
 `nix-fast-build`は`nix-eval-jobs`を使って`checks`を並列評価・ビルドします。

@@ -118,6 +118,6 @@ in
   # ```
   # sudo garage status
   # sudo garage layout assign <node-id> -z dc1 -c 8T
-  # sudo garage layout apply
+  # sudo garage layout apply --version 1
   # ```
 }

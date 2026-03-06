@@ -24,8 +24,8 @@ in
         hostPath = config.sops.secrets."garage-env".path;
         isReadOnly = true;
       };
-      "/mnt/noa/garage/meta" = {
-        hostPath = "/mnt/noa/garage/meta";
+      "/var/lib/garage/meta" = {
+        hostPath = "/var/lib/garage/meta";
         isReadOnly = false;
       };
       "/mnt/noa/garage/data" = {
@@ -47,7 +47,7 @@ in
           package = pkgs.garage_2;
           environmentFile = "/etc/garage.env";
           settings = {
-            metadata_dir = "/mnt/noa/garage/meta";
+            metadata_dir = "/var/lib/garage/meta";
             data_dir = "/mnt/noa/garage/data";
             db_engine = "lmdb";
             metadata_auto_snapshot_interval = "6h";
@@ -86,8 +86,7 @@ in
   users.groups.garage.gid = user.gid;
 
   systemd.tmpfiles.rules = [
-    "d /mnt/noa/garage 0750 garage garage -"
-    "d /mnt/noa/garage/meta 0750 garage garage -"
+    "d /var/lib/garage/meta 0750 garage garage -"
     "d /mnt/noa/garage/data 0750 garage garage -"
   ];
 

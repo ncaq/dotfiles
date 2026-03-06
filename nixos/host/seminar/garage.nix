@@ -117,7 +117,7 @@ in
   # Initial cluster setup (manual, first time only):
   # ```
   # sudo garage status
-  # sudo garage layout assign <node-id> -z dc1 -c 8T
+  # sudo garage layout assign <node-id> -z seminar -c 8T
   # sudo garage layout apply --version 1
   # ```
 }

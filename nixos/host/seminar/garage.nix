@@ -41,31 +41,35 @@ in
           useHostResolvConf = lib.mkForce false;
           firewall.allowedTCPPorts = [ 3900 ];
         };
-        services.resolved.enable = true;
-        users.users.garage = garageUser;
-        users.groups.garage.gid = user.gid;
-        services.garage = {
-          enable = true;
-          package = pkgs.garage_2;
-          environmentFile = "/etc/garage.env";
-          settings = {
-            metadata_dir = "/var/lib/garage/meta";
-            data_dir = "/mnt/noa/garage/data";
-            db_engine = "lmdb";
-            metadata_auto_snapshot_interval = "6h";
-            replication_factor = 1;
-            rpc_bind_addr = "localhost:3901";
-            s3_api = {
-              s3_region = "garage";
-              api_bind_addr = "[::]:3900";
-              root_domain = ".garage.ncaq.net";
-            };
-            s3_web = {
-              bind_addr = "localhost:3902";
-              root_domain = ".web.garage.ncaq.net";
-            };
-            admin = {
-              api_bind_addr = "localhost:3903";
+        users = {
+          users.garage = garageUser;
+          groups.garage.gid = user.gid;
+        };
+        services = {
+          resolved.enable = true;
+          garage = {
+            enable = true;
+            package = pkgs.garage_2;
+            environmentFile = "/etc/garage.env";
+            settings = {
+              metadata_dir = "/var/lib/garage/meta";
+              data_dir = "/mnt/noa/garage/data";
+              db_engine = "lmdb";
+              metadata_auto_snapshot_interval = "6h";
+              replication_factor = 1;
+              rpc_bind_addr = "localhost:3901";
+              s3_api = {
+                s3_region = "garage";
+                api_bind_addr = "[::]:3900";
+                root_domain = ".garage.ncaq.net";
+              };
+              s3_web = {
+                bind_addr = "localhost:3902";
+                root_domain = ".web.garage.ncaq.net";
+              };
+              admin = {
+                api_bind_addr = "localhost:3903";
+              };
             };
           };
         };
@@ -84,8 +88,10 @@ in
       };
   };
 
-  users.users.garage = garageUser;
-  users.groups.garage.gid = user.gid;
+  users = {
+    users.garage = garageUser;
+    groups.garage.gid = user.gid;
+  };
 
   systemd.tmpfiles.rules = [
     "d /var/lib/garage/meta 0750 garage garage -"

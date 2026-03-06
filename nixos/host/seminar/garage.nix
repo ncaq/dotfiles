@@ -52,7 +52,7 @@ in
             db_engine = "lmdb";
             metadata_auto_snapshot_interval = "6h";
             replication_factor = 1;
-            rpc_bind_addr = "[::]:3901";
+            rpc_bind_addr = "localhost:3901";
             s3_api = {
               s3_region = "garage";
               api_bind_addr = "[::]:3900";

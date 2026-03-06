@@ -39,7 +39,7 @@ in
         system.stateVersion = "25.11";
         networking.useHostResolvConf = lib.mkForce false;
         services.resolved.enable = true;
-        networking.firewall.trustedInterfaces = [ "eth0" ];
+        allowedTCPPorts = [ 3900 ];
         users.users.garage = garageUser;
         users.groups.garage.gid = user.gid;
         services.garage = {

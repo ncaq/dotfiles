@@ -96,8 +96,16 @@ in
   systemd.tmpfiles.rules = [
     "d /var/lib/garage      0750 garage garage -"
     "d /var/lib/garage/meta 0750 garage garage -"
-    "d /mnt/noa/garage      0750 garage garage -"
-    "d /mnt/noa/garage/data 0750 garage garage -"
+  ];
+
+  # /mnt/noa is owned by ncaq, so systemd-tmpfiles refuses to create
+  # subdirectories owned by garage due to "unsafe path transition" detection.
+  # Use ExecStartPre instead.
+  systemd.services."container@garage".serviceConfig.ExecStartPre = [
+    "+${pkgs.writeShellScript "garage-create-data-dir" ''
+      install -d -m 0750 -o garage -g garage /mnt/noa/garage
+      install -d -m 0750 -o garage -g garage /mnt/noa/garage/data
+    ''}"
   ];
 
   environment.systemPackages = [ garageWrapper ];

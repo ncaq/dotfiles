@@ -49,6 +49,10 @@ in
         host = "192.168.100.50";
         guest = "192.168.100.51";
       };
+      garage = {
+        host = "192.168.100.60";
+        guest = "192.168.100.61";
+      };
     };
     description = "Network addresses for containers and microVMs";
   };
@@ -67,6 +71,10 @@ in
       github-runner = {
         uid = 980;
         gid = 980;
+      };
+      garage = {
+        uid = 979;
+        gid = 979;
       };
     };
     description = "Container user/group IDs (must match between host and container)";

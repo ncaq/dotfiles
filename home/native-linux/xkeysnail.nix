@@ -5,17 +5,19 @@
   ...
 }:
 {
-  home.packages = with pkgs; [
-    xkeysnail
-  ];
+  home = {
+    packages = with pkgs; [
+      xkeysnail
+    ];
 
-  home.activation.cloneXkeysnailConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    if [ ! -d "${config.home.homeDirectory}/.xkeysnail" ]; then
-      $DRY_RUN_CMD ${pkgs.git}/bin/git clone \
-        https://github.com/ncaq/.xkeysnail.git \
-        "${config.home.homeDirectory}/.xkeysnail"
-    fi
-  '';
+    activation.cloneXkeysnailConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      if [ ! -d "${config.home.homeDirectory}/.xkeysnail" ]; then
+        $DRY_RUN_CMD ${pkgs.git}/bin/git clone \
+          https://github.com/ncaq/.xkeysnail.git \
+          "${config.home.homeDirectory}/.xkeysnail"
+      fi
+    '';
+  };
 
   systemd.user.services.xkeysnail = {
     Unit = {

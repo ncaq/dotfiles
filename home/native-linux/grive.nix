@@ -23,9 +23,17 @@ let
   });
 in
 {
-  home.packages = [
-    grive2WithScript
-  ];
+  home = {
+    packages = [
+      grive2WithScript
+    ];
+
+    activation.createGoogleDriveDir = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      if [ ! -d "${config.home.homeDirectory}/GoogleDrive" ]; then
+        $DRY_RUN_CMD mkdir "${config.home.homeDirectory}/GoogleDrive"
+      fi
+    '';
+  };
 
   # 固定パスのサービスを定義することで単純化。
   systemd.user = {
@@ -73,9 +81,4 @@ in
     };
   };
 
-  home.activation.createGoogleDriveDir = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    if [ ! -d "${config.home.homeDirectory}/GoogleDrive" ]; then
-      $DRY_RUN_CMD mkdir "${config.home.homeDirectory}/GoogleDrive"
-    fi
-  '';
 }

@@ -41,16 +41,6 @@ lib.mkMerge [
       }
     else
       {
-        # Termux環境ではsystemdによるGPGデーモンのライフサイクル管理がないため、
-        # keyboxdのdotlockファイルが残留しsops-nixの復号化を妨げることがあります。
-        # importGpgKeysの前にkeyboxdをkillしてpublic-keys.d/を削除し、
-        # stale lockのない状態で鍵を再インポートします。
-        home.activation.cleanupGpgKeyboxd =
-          lib.hm.dag.entryBetween [ "importGpgKeys" ] [ "createGpgHomedir" ]
-            ''
-              $DRY_RUN_CMD ${pkgs.gnupg}/bin/gpgconf --kill keyboxd 2>/dev/null || true
-              $DRY_RUN_CMD ${pkgs.trashy}/bin/trash "${config.home.homeDirectory}/.gnupg/public-keys.d/" 2>/dev/null || true
-            '';
         # Termux環境: systemdが使えないためシェル初期化でgpg-agentを起動
         programs.zsh.initContent = ''
           # gpg-agentをSSHサポート付きで起動
@@ -58,17 +48,29 @@ lib.mkMerge [
           gpgconf --launch gpg-agent
           export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
         '';
-        home.file.".gnupg/gpg-agent.conf".text = ''
-          enable-ssh-support
-          pinentry-program ${pkgs.pinentry-curses}/bin/pinentry-curses
-        '';
-        home.file.".gnupg/sshcontrol".text = ''
-          # SSH認証に使用するGPGサブキーのkeygrip
-          ${sshKeygrip}
-        '';
-        home.packages = with pkgs; [
-          pinentry-curses
-        ];
+        home = {
+          file = {
+            ".gnupg/gpg-agent.conf".text = ''
+              enable-ssh-support
+              pinentry-program ${pkgs.pinentry-curses}/bin/pinentry-curses
+            '';
+            ".gnupg/sshcontrol".text = ''
+              # SSH認証に使用するGPGサブキーのkeygrip
+              ${sshKeygrip}
+            '';
+          };
+          # Termux環境ではsystemdによるGPGデーモンのライフサイクル管理がないため、
+          # keyboxdのdotlockファイルが残留しsops-nixの復号化を妨げることがあります。
+          # importGpgKeysの前にkeyboxdをkillしてpublic-keys.d/を削除し、
+          # stale lockのない状態で鍵を再インポートします。
+          activation.cleanupGpgKeyboxd = lib.hm.dag.entryBetween [ "importGpgKeys" ] [ "createGpgHomedir" ] ''
+            $DRY_RUN_CMD ${pkgs.gnupg}/bin/gpgconf --kill keyboxd 2>/dev/null || true
+            $DRY_RUN_CMD ${pkgs.trashy}/bin/trash "${config.home.homeDirectory}/.gnupg/public-keys.d/" 2>/dev/null || true
+          '';
+          packages = with pkgs; [
+            pinentry-curses
+          ];
+        };
       }
   )
 ]

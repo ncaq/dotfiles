@@ -45,18 +45,20 @@ in
     };
   };
   # Cloudflare認証情報を管理。
-  sops.secrets."cloudflare-cert" = {
-    sopsFile = ../../../secrets/seminar/cloudflare.yaml;
-    key = "cert_pem";
-    owner = "root";
-    group = "root";
-    mode = "0400";
-  };
-  sops.secrets."cloudflare-tunnel-credentials" = {
-    sopsFile = ../../../secrets/seminar/cloudflare.yaml;
-    key = "tunnel_credentials";
-    owner = "root";
-    group = "root";
-    mode = "0400";
+  sops.secrets = {
+    "cloudflare-cert" = {
+      sopsFile = ../../../secrets/seminar/cloudflare.yaml;
+      key = "cert_pem";
+      owner = "root";
+      group = "root";
+      mode = "0400";
+    };
+    "cloudflare-tunnel-credentials" = {
+      sopsFile = ../../../secrets/seminar/cloudflare.yaml;
+      key = "tunnel_credentials";
+      owner = "root";
+      group = "root";
+      mode = "0400";
+    };
   };
 }

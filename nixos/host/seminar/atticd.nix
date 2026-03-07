@@ -42,45 +42,54 @@ in
       { lib, ... }:
       {
         system.stateVersion = "25.05";
-        networking.useHostResolvConf = lib.mkForce false;
-        services.resolved.enable = true;
-        networking.firewall.trustedInterfaces = [ "eth0" ];
-        users.users.atticd = atticdUser;
-        users.groups.atticd.gid = user.gid;
-        services.atticd = {
-          enable = true;
-          environmentFile = "/etc/atticd.env";
-          settings = {
-            listen = "[::]:8080";
-            allowed-hosts = [ "seminar.border-saurolophus.ts.net" ];
-            # 他のホストを指定してもプログラムが自動で設定し直してしまうことがあるため、
-            # tailnet内部からでも外部からでもアクセス可能なエンドポイントを指定。
-            api-endpoint = "https://seminar.border-saurolophus.ts.net/nix/cache/";
-            database.url = "postgresql:///atticd?host=/run/postgresql";
-            storage = {
-              type = "local";
-              path = "/mnt/noa/atticd";
-            };
-            garbage-collection = {
-              interval = "1 day";
-              default-retention-period = "6 months";
+        networking = {
+          useHostResolvConf = lib.mkForce false;
+          firewall.trustedInterfaces = [ "eth0" ];
+        };
+        users = {
+          users.atticd = atticdUser;
+          groups.atticd.gid = user.gid;
+        };
+        services = {
+          resolved.enable = true;
+          atticd = {
+            enable = true;
+            environmentFile = "/etc/atticd.env";
+            settings = {
+              listen = "[::]:8080";
+              allowed-hosts = [ "seminar.border-saurolophus.ts.net" ];
+              # 他のホストを指定してもプログラムが自動で設定し直してしまうことがあるため、
+              # tailnet内部からでも外部からでもアクセス可能なエンドポイントを指定。
+              api-endpoint = "https://seminar.border-saurolophus.ts.net/nix/cache/";
+              database.url = "postgresql:///atticd?host=/run/postgresql";
+              storage = {
+                type = "local";
+                path = "/mnt/noa/atticd";
+              };
+              garbage-collection = {
+                interval = "1 day";
+                default-retention-period = "6 months";
+              };
             };
           };
         };
       };
   };
 
-  users.users.atticd = atticdUser;
-  users.groups.atticd.gid = user.gid;
+  users = {
+    users.atticd = atticdUser;
+    groups.atticd.gid = user.gid;
+  };
 
-  systemd.tmpfiles.rules = [
-    "d /mnt/noa/atticd 0755 atticd atticd -"
-  ];
-
-  # Wait for PostgreSQL to be ready before starting container.
-  systemd.services."container@atticd" = {
-    requires = [ "postgresql.service" ];
-    after = [ "postgresql.service" ];
+  systemd = {
+    tmpfiles.rules = [
+      "d /mnt/noa/atticd 0755 atticd atticd -"
+    ];
+    # Wait for PostgreSQL to be ready before starting container.
+    services."container@atticd" = {
+      requires = [ "postgresql.service" ];
+      after = [ "postgresql.service" ];
+    };
   };
 
   # コンテナ外部から使える管理CLIコマンド。

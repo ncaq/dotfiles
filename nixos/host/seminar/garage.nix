@@ -8,8 +8,9 @@ let
     isSystemUser = true;
   };
   # Host wrapper to execute garage CLI inside the container.
+  # Export the environment file to provide GARAGE_RPC_SECRET etc.
   garageWrapper = pkgs.writeShellScriptBin "garage" ''
-    exec nixos-container run garage -- garage "$@"
+    exec nixos-container run garage -- bash -c 'export $(cat /etc/garage.env | xargs) && exec garage "$@"' _ "$@"
   '';
 in
 {

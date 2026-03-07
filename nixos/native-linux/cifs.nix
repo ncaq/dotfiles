@@ -28,6 +28,7 @@ lib.mkIf (hostName != "seminar") {
       # ネットワークデバイス
       "_netdev"
       # セキュリティ
+      "nodev"
       "noexec"
       "nosuid"
       # パフォーマンス

@@ -111,8 +111,8 @@ in
     settings = {
       # 応答に使う自然言語です。
       language = "japanese";
-      # 設定時に最適な値を切り替えていきます。opusplanはプランはopusで行い、実装はsonnetで行う設定です。
-      model = "opusplan";
+      # 設定時に最適な値を切り替えていきます。
+      model = "opus";
       # メッセージにCo-Authored-Byフッターを付与しません。
       # 私はAIエージェントはテキストエディタの延長線上だと考えているため、
       # ツール名が書かれるのは不自然だと思っています。

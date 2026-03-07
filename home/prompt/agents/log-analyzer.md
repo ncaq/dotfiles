@@ -6,9 +6,7 @@ tools:
   - Bash
   - Glob
   - Grep
-  - ListMcpResourcesTool
   - Read
-  - ReadMcpResourceTool
   - Skill
   - TodoWrite
   - WebFetch

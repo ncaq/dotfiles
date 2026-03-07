@@ -94,7 +94,9 @@ in
   };
 
   systemd.tmpfiles.rules = [
+    "d /var/lib/garage      0750 garage garage -"
     "d /var/lib/garage/meta 0750 garage garage -"
+    "d /mnt/noa/garage      0750 garage garage -"
     "d /mnt/noa/garage/data 0750 garage garage -"
   ];
 

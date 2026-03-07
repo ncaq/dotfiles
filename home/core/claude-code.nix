@@ -256,6 +256,7 @@ in
           "Bash(localectl status:*)"
           "Bash(ls:*)"
           "Bash(mkdir:*)"
+          "Bash(mktemp:*)"
           "Bash(mount)"
           "Bash(networkctl status:*)"
           "Bash(nix build:*)"

@@ -1,0 +1,63 @@
+{
+  pkgs,
+  lib,
+  config,
+  hostName,
+  username,
+  ...
+}:
+let
+  userConfig = config.users.users.${username};
+in
+lib.mkIf (hostName != "seminar") {
+  # seminarサーバーのchihiro共有を手動マウントするための設定。
+  # `sudo mount /mnt/chihiro`で手動マウント、
+  # `sudo umount /mnt/chihiro`でアンマウント。
+  fileSystems."/mnt/chihiro" = {
+    device = "//seminar/chihiro";
+    fsType = "cifs";
+    options = [
+      # 認証
+      "credentials=${config.sops.templates."cifs-credentials".path}"
+      "uid=${toString userConfig.uid}"
+      "gid=${toString config.users.groups.${userConfig.group}.gid}"
+      # ブート時に自動マウントしない
+      "noauto"
+      # マウント失敗時にブートをブロックしない
+      "nofail"
+      # ネットワークデバイス
+      "_netdev"
+      # セキュリティ
+      "nodev"
+      "noexec"
+      "nosuid"
+      # パフォーマンス
+      "noatime"
+      # systemd経由でマウントしたときのタイムアウトを短く設定してハングを防ぐ
+      "x-systemd.device-timeout=5s"
+      "x-systemd.mount-timeout=5s"
+    ];
+  };
+
+  systemd.tmpfiles.rules = [
+    "d /mnt/chihiro 0700 root root -"
+  ];
+
+  environment.systemPackages = with pkgs; [ cifs-utils ];
+
+  sops = {
+    templates."cifs-credentials" = {
+      # サーバ側が固定でユーザ名`ncaq`を期待しているのでハードコーディングしています。
+      content = ''
+        username=ncaq
+        password=${config.sops.placeholder."cifs-password"}
+      '';
+      mode = "0400";
+    };
+    secrets."cifs-password" = {
+      sopsFile = ../../secrets/samba.yaml;
+      key = "password";
+      mode = "0400";
+    };
+  };
+}

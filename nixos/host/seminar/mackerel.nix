@@ -260,19 +260,21 @@ in
       };
     };
   };
-  # Mackerel APIキー(純粋なキー文字列)をsopsで管理
-  sops.secrets."mackerel-api-key" = {
-    sopsFile = ../../../secrets/seminar/mackerel.yaml;
-    key = "api_key";
-    owner = "root";
-    group = "root";
-    mode = "0400";
-  };
-  # sops.templatesでTOML形式の設定ファイルを生成
-  sops.templates."mackerel-api-key.conf" = {
-    content = ''
-      apikey = "${config.sops.placeholder."mackerel-api-key"}"
-    '';
-    mode = "0400";
+  sops = {
+    # Mackerel APIキー(純粋なキー文字列)をsopsで管理
+    secrets."mackerel-api-key" = {
+      sopsFile = ../../../secrets/seminar/mackerel.yaml;
+      key = "api_key";
+      owner = "root";
+      group = "root";
+      mode = "0400";
+    };
+    # sops.templatesでTOML形式の設定ファイルを生成
+    templates."mackerel-api-key.conf" = {
+      content = ''
+        apikey = "${config.sops.placeholder."mackerel-api-key"}"
+      '';
+      mode = "0400";
+    };
   };
 }

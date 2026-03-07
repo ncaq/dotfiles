@@ -33,7 +33,7 @@ lib.mkIf (hostName != "seminar") {
       "nosuid"
       # パフォーマンス
       "noatime"
-      # タイムアウトを短く設定しハング防止
+      # systemd経由でマウントしたときのタイムアウトを短く設定してハングを防ぐ
       "x-systemd.device-timeout=5s"
       "x-systemd.mount-timeout=5s"
     ];

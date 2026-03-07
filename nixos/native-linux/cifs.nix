@@ -47,6 +47,7 @@ lib.mkIf (hostName != "seminar") {
 
   sops = {
     templates."cifs-credentials" = {
+      # サーバ側が固定でユーザ名`ncaq`を期待しているのでハードコーディングしています。
       content = ''
         username=ncaq
         password=${config.sops.placeholder."cifs-password"}

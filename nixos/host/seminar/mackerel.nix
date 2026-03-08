@@ -179,6 +179,26 @@ in
           );
           inherit check_interval;
         };
+        niks3-public = {
+          command = lib.getExe (
+            pkgs.writeShellApplication {
+              name = "check-niks3-public";
+              runtimeInputs = [ pkgs.curl ];
+              text = ''
+                http_code=$(curl -s --max-time 3 -o /dev/null -w "%{http_code}" \
+                  http://${config.machineAddresses.niks3-public.guest}:5751 || echo "000")
+                if [[ "$http_code" =~ ^[23][0-9][0-9]$ ]]; then
+                  echo "niks3-public OK (HTTP $http_code)"
+                  exit 0
+                else
+                  echo "niks3-public CRITICAL: HTTP $http_code"
+                  exit 2
+                fi
+              '';
+            }
+          );
+          inherit check_interval;
+        };
         atticd = {
           command = lib.getExe (
             pkgs.writeShellApplication {

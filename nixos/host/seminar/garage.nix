@@ -1,4 +1,8 @@
-{ pkgs, config, ... }:
+{
+  pkgs,
+  config,
+  ...
+}:
 let
   addr = config.machineAddresses.garage;
   user = config.containerUsers.garage;
@@ -9,9 +13,18 @@ let
   };
   # Host wrapper to execute garage CLI inside the container.
   # Export the environment file to provide GARAGE_RPC_SECRET etc.
-  garageWrapper = pkgs.writeShellScriptBin "garage" ''
-    exec nixos-container run garage -- bash -c 'export $(cat /etc/garage.env | xargs) && exec garage "$@"' _ "$@"
-  '';
+  garageWrapper = pkgs.writeShellApplication {
+    name = "garage";
+    runtimeInputs = with pkgs; [
+      bash
+      coreutils
+      findutils
+      nixos-container
+    ];
+    text = ''
+      exec nixos-container run garage -- bash -c 'export $(cat /etc/garage.env | xargs) && exec garage "$@"' _ "$@"
+    '';
+  };
 in
 {
   containers.garage = {
@@ -111,6 +124,7 @@ in
   };
 
   environment.systemPackages = [ garageWrapper ];
+  _module.args.garageWrapper = garageWrapper;
 
   # Managed by sops-nix.
   # To create (first time only):

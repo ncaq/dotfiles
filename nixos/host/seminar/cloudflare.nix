@@ -18,6 +18,7 @@ let
   forgejoAddr = config.machineAddresses.forgejo.guest;
   mcpNixosAddr = config.machineAddresses.mcp-nixos.guest;
   garageAddr = config.machineAddresses.garage.guest;
+  niks3PublicAddr = config.machineAddresses.niks3-public.guest;
 in
 {
   # Managed by sops-nix. To update the secrets:
@@ -41,6 +42,7 @@ in
         "forgejo.ncaq.net" = "http://${forgejoAddr}:8080";
         "mcp-nixos.ncaq.net" = "http://${mcpNixosAddr}:8080";
         "garage.ncaq.net" = "http://${garageAddr}:3900";
+        "niks3-public.ncaq.net" = "http://${niks3PublicAddr}:5751";
       };
     };
   };

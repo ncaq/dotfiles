@@ -44,7 +44,7 @@ in
         system.stateVersion = "25.05";
         networking = {
           useHostResolvConf = lib.mkForce false;
-          firewall.trustedInterfaces = [ "eth0" ];
+          firewall.allowedTCPPorts = [ 8080 ];
         };
         users = {
           users.atticd = atticdUser;

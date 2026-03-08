@@ -40,8 +40,7 @@ in
         nix.settings = config.nix.settings;
         networking = {
           useHostResolvConf = lib.mkForce false;
-          # ネットワーク通信の受け入れを許可します。
-          firewall.trustedInterfaces = [ "eth0" ];
+          firewall.trustedInterfaces = [ "eth0" ]; # CIジョブ中に任意のポートでリッスンするため全許可
         };
         services = {
           resolved.enable = true;

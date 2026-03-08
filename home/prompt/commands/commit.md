@@ -155,6 +155,12 @@ mkdir -p /tmp/coding-agent-work/ && mktemp -d /tmp/coding-agent-work/commit.XXXX
 $EDITOR <mktemp出力>/COMMIT_EDITMSG
 ```
 
+エディタが正常終了したら次のステップに進んでください。
+
+エディタが異常終了した場合、
+ユーザがコミットをキャンセルしたいという意思表示であると解釈して、
+コミット作業をキャンセルしてください。
+
 ## コミットの実行
 
 以下のコマンドでコミットを実行してください。

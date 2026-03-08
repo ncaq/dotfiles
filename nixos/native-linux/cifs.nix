@@ -25,17 +25,12 @@ lib.mkIf (hostName != "seminar") {
       "noauto"
       # マウント失敗時にブートをブロックしない
       "nofail"
-      # ネットワークデバイス
-      "_netdev"
       # セキュリティ
       "nodev"
       "noexec"
       "nosuid"
       # パフォーマンス
       "noatime"
-      # systemd経由でマウントしたときのタイムアウトを短く設定してハングを防ぐ
-      "x-systemd.device-timeout=5s"
-      "x-systemd.mount-timeout=5s"
     ];
   };
 

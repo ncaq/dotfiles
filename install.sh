@@ -61,18 +61,11 @@ bootstrap_binfmt_aarch64() {
   echo "binfmtブートストラップ完了"
 }
 
-if [ -f /etc/NIXOS ]; then
-  # seminarホストはaarch64 microVMをビルドするためbinfmtが必要です。
-  # binfmtハンドラの登録とnix.confのextra-platforms設定の両方が必要です。
-  # NixOSリビルド完了後はboot.binfmt.emulatedSystemsが管理するため、
-  # ブートストラップは初回インストール時のみ実行されます。
-  if [ "$(hostname)" = "seminar" ] && ! grep -q "extra-platforms.*aarch64-linux" /etc/nix/nix.conf 2>/dev/null; then
-    bootstrap_binfmt_aarch64
-  fi
-  # 最新コミットのsubjectとdirty状態をファイルに保存します。
-  # flakeはstagingされたファイルのみをソースに含めるため、
-  # 一時的に強制的にgit addしてrebuild後に削除します。
-  # last-commitのstagingで必ずdirtyになるため、注入前に本来のdirty状態を記録します。
+# 最新コミットのsubjectとdirty状態をlast-commitファイルに保存してstagingします。
+# flakeはstagingされたファイルのみをソースに含めるため、
+# 一時的にgit addで注入してrebuild後にunstageします。
+# last-commitのstagingで必ずdirtyになるため、注入前に本来のdirty状態を記録します。
+stage_last_commit() {
   git log -1 --format=%s >last-commit
   if git diff --quiet && git diff --cached --quiet; then
     echo "clean" >>last-commit
@@ -81,6 +74,17 @@ if [ -f /etc/NIXOS ]; then
   fi
   git add -f last-commit
   trap 'git reset -- last-commit 2>/dev/null || true' EXIT
+}
+
+if [ -f /etc/NIXOS ]; then
+  # seminarホストはaarch64 microVMをビルドするためbinfmtが必要です。
+  # binfmtハンドラの登録とnix.confのextra-platforms設定の両方が必要です。
+  # NixOSリビルド完了後はboot.binfmt.emulatedSystemsが管理するため、
+  # ブートストラップは初回インストール時のみ実行されます。
+  if [ "$(hostname)" = "seminar" ] && ! grep -q "extra-platforms.*aarch64-linux" /etc/nix/nix.conf 2>/dev/null; then
+    bootstrap_binfmt_aarch64
+  fi
+  stage_last_commit
   sudo nixos-rebuild switch --flake ".#$(hostname)"
 elif [ -n "${TERMUX_VERSION:-}" ]; then
   nix-on-droid switch --flake "."

@@ -190,7 +190,6 @@
   boot = {
     kernelModules = [ "bcache" ];
     initrd = {
-      systemd.enable = true;
       availableKernelModules = [ "bcache" ];
       luks.devices = {
         "noa0" = {

@@ -215,7 +215,7 @@ in
       lib.mapAttrs (name: _device: {
         SUBVOLUME = "/mnt/${name}";
         TIMELINE_CREATE = false;
-        TIMELINE_CLEANUP = true;
+        TIMELINE_CLEANUP = false;
       }) cfg.devices
     );
   };

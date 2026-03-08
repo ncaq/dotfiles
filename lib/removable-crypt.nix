@@ -103,7 +103,7 @@ let
           if [[ ! -d "$mount_point/.snapshots" ]]; then
             btrfs subvolume create "$mount_point/.snapshots"
           fi
-          snapper -c "$mapper_name" create --description "mount"
+          snapper -c "$mapper_name" create --cleanup-algorithm timeline --description "mount"
           snapper -c "$mapper_name" cleanup timeline
         fi
 
@@ -135,7 +135,7 @@ let
         if [[ -e "/dev/mapper/$mapper_name" ]]; then
           fs_type=$(blkid -s TYPE -o value "/dev/mapper/$mapper_name" 2>/dev/null || true)
           if [[ "$fs_type" == "btrfs" ]]; then
-            if ! snapper -c "$mapper_name" create --description "unmount"; then
+            if ! snapper -c "$mapper_name" create --cleanup-algorithm timeline --description "unmount"; then
               echo "warning: failed to create snapshot for $mapper_name" >&2
               has_error=1
             fi

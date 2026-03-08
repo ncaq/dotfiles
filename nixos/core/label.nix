@@ -33,20 +33,28 @@ let
     else
       false;
   dirtySuffix = if isDirty then "-dirty" else "";
-  # conventional commitsのtype(scope)をパースしてラベルに使います。
-  # 例: "fix(boot): message" → "fix.boot", "feat: message" → "feat"
-  parsed =
+  # コミットsubjectからラベルを生成します。
+  # conventional commits: "fix(boot): message" → "fix.boot", "feat: message" → "feat"
+  # GitHubマージ: "Merge pull request #717 from ncaq/branch-name" → "merge.branch-name"
+  conventionalParsed =
     if lastCommitSubject != null then
       builtins.match "([a-zA-Z]+)(\\(([a-zA-Z0-9._-]+)\\))?: *(.*)" lastCommitSubject
     else
       null;
-  commitType = if parsed != null then builtins.elemAt parsed 0 else null;
-  commitScope = if parsed != null then builtins.elemAt parsed 2 else null;
+  mergeParsed =
+    if lastCommitSubject != null then
+      builtins.match "Merge pull request #([0-9]+) from [^/]+/(.*)" lastCommitSubject
+    else
+      null;
   commitLabel =
-    if commitType != null && commitScope != null then
-      "${commitType}.${commitScope}"
-    else if commitType != null then
-      commitType
+    if conventionalParsed != null then
+      let
+        commitType = builtins.elemAt conventionalParsed 0;
+        commitScope = builtins.elemAt conventionalParsed 2;
+      in
+      if commitScope != null then "${commitType}.${commitScope}" else commitType
+    else if mergeParsed != null then
+      "merge.${builtins.replaceStrings [ "/" ] [ "." ] (builtins.elemAt mergeParsed 1)}"
     else
       "unknown";
 in

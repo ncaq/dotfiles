@@ -100,7 +100,7 @@ in
         nix.settings = config.nix.settings;
         networking = {
           hostName = "github-runner-arm64";
-          firewall.trustedInterfaces = [ "eth0" ];
+          firewall.trustedInterfaces = [ "eth0" ]; # CIジョブ中に任意のポートでリッスンするため全許可
         };
         systemd = {
           network = {

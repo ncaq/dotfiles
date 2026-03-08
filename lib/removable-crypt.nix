@@ -1,7 +1,7 @@
 {
-  config,
-  lib,
   pkgs,
+  lib,
+  config,
   ...
 }:
 let
@@ -43,6 +43,8 @@ let
     pkgs.writeShellApplication {
       name = "mnt-${name}";
       runtimeInputs = with pkgs; [
+        btrfs-progs
+        snapper
         systemd
         util-linux
       ];
@@ -96,6 +98,15 @@ let
 
         chown "$target_user:" "$mount_point"
 
+        # btrfs: create snapshot and cleanup old ones
+        if [[ "$fs_type" == "btrfs" ]]; then
+          if [[ ! -d "$mount_point/.snapshots" ]]; then
+            btrfs subvolume create "$mount_point/.snapshots"
+          fi
+          snapper -c "$mapper_name" create --description "mount"
+          snapper -c "$mapper_name" cleanup timeline
+        fi
+
         # Success - disable cleanup
         trap - EXIT
       '';
@@ -106,6 +117,7 @@ let
     pkgs.writeShellApplication {
       name = "umnt-${name}";
       runtimeInputs = with pkgs; [
+        snapper
         systemd
         util-linux
       ];
@@ -118,6 +130,17 @@ let
         mapper_name="${name}"
         mount_point="/mnt/${name}"
         has_error=0
+
+        # btrfs: create snapshot before unmount
+        if [[ -e "/dev/mapper/$mapper_name" ]]; then
+          fs_type=$(blkid -s TYPE -o value "/dev/mapper/$mapper_name" 2>/dev/null || true)
+          if [[ "$fs_type" == "btrfs" ]]; then
+            if ! snapper -c "$mapper_name" create --description "unmount"; then
+              echo "warning: failed to create snapshot for $mapper_name" >&2
+              has_error=1
+            fi
+          fi
+        fi
 
         if ! umount "$mount_point"; then
           echo "warning: failed to unmount $mount_point" >&2

@@ -69,6 +69,18 @@ if [ -f /etc/NIXOS ]; then
   if [ "$(hostname)" = "seminar" ] && ! grep -q "extra-platforms.*aarch64-linux" /etc/nix/nix.conf 2>/dev/null; then
     bootstrap_binfmt_aarch64
   fi
+  # 最新コミットのsubjectとdirty状態をファイルに保存します。
+  # flakeはstagingされたファイルのみをソースに含めるため、
+  # 一時的に強制的にgit addしてrebuild後に削除します。
+  # last-commitのstagingで必ずdirtyになるため、注入前に本来のdirty状態を記録します。
+  git log -1 --format=%s >last-commit
+  if git diff --quiet && git diff --cached --quiet; then
+    echo "clean" >>last-commit
+  else
+    echo "dirty" >>last-commit
+  fi
+  git add -f last-commit
+  trap 'git reset -- last-commit 2>/dev/null || true' EXIT
   sudo nixos-rebuild switch --flake ".#$(hostname)"
 elif [ -n "${TERMUX_VERSION:-}" ]; then
   nix-on-droid switch --flake "."

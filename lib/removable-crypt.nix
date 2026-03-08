@@ -184,6 +184,12 @@ in
         };
       '';
     };
+
+    snapper = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "automatically generate snapper configs for btrfs devices";
+    };
   };
 
   config = lib.mkIf (cfg.enable && cfg.devices != { }) {
@@ -204,5 +210,13 @@ in
         }
       ];
     environment.systemPackages = allCommands;
+
+    services.snapper.configs = lib.mkIf cfg.snapper (
+      lib.mapAttrs (name: _device: {
+        SUBVOLUME = "/mnt/${name}";
+        TIMELINE_CREATE = false;
+        TIMELINE_CLEANUP = true;
+      }) cfg.devices
+    );
   };
 }

@@ -14,5 +14,10 @@
         default = "saved";
       };
     };
+    initrd = {
+      systemd = {
+        enable = true;
+      };
+    };
   };
 }

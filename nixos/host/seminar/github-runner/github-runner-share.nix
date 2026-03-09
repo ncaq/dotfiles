@@ -10,6 +10,16 @@ let
       attic-client
       cachix
     ];
+  # GitHub Actionsランナーの並列数。
+  # PRが複数ある場合はもちろん、
+  # オプショナルであるビルドを飛ばしてマージしたときなどはたくさんのジョブが走ります。
+  # コンテナや仮想マシンでリソースを制限しているため、
+  # 複数立ち上げてもサーバのリソース量が破綻する心配はあまりありません。
+  # またNixを使っている今のワークロードは殆どはIO待ちなので、
+  # コンカレントに処理させたほうが効率的です。
+  # とりあえずこのサーバのCPUの論理コア数と合わせています。
+  # コンテナや仮想マシンのリミットよりも多いですが前述の理由でIO待ちを効率的に処理するためです。
+  runnerNum = 12;
   # runnerが使うTypeScriptコードをビルドしてGitHub Actionsで利用できるようにします。
   # 吐き出されるコードはピュアなJavaScriptなのでアーキテクチャ非依存です。
   dotfiles-github-runner = pkgs.buildNpmPackage {
@@ -48,6 +58,7 @@ in
     inherit
       githubActionsRunnerPackages
       selfHostRunnerPackages
+      runnerNum
       dotfiles-github-runner
       users
       ;

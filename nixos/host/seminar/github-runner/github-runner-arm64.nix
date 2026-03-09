@@ -14,6 +14,7 @@ let
   inherit (githubRunnerShare)
     githubActionsRunnerPackages
     selfHostRunnerPackages
+    runnerNum
     dotfiles-github-runner
     users
     ;
@@ -122,7 +123,7 @@ in
         };
         services.github-runners =
           let
-            runnerNumbers = builtins.genList (x: x) 4;
+            runnerNumbers = builtins.genList (x: x) runnerNum;
             mkRunnerDotfilesArm64 = number: {
               name = "dotfiles-arm64-${toString number}";
               value = {

@@ -61,6 +61,18 @@ bootstrap_binfmt_aarch64() {
   echo "binfmtブートストラップ完了"
 }
 
+# `stage_last_commit`で利用するファイルをクリーンアップすることを試みます。
+# 失敗しても無害なファイルが残るだけなため、
+# エラーは無視します。
+cleanup_last_commit() {
+  git reset -- last-commit 2>/dev/null || true
+  if command -v trash >/dev/null 2>&1; then
+    trash last-commit 2>/dev/null || true
+  else
+    rm last-commit 2>/dev/null || true
+  fi
+}
+
 # 最新コミットのsubjectとdirty状態をlast-commitファイルに保存してstagingします。
 # flakeはstagingされたファイルのみをソースに含めるため、
 # 一時的にgit addで注入してrebuild後にunstageします。
@@ -73,7 +85,7 @@ stage_last_commit() {
     echo "dirty" >>last-commit
   fi
   git add -f last-commit
-  trap 'git reset -- last-commit 2>/dev/null; trash last-commit 2>/dev/null || true' EXIT
+  trap cleanup_last_commit EXIT
 }
 
 if [ -f /etc/NIXOS ]; then

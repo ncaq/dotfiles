@@ -73,7 +73,7 @@ stage_last_commit() {
     echo "dirty" >>last-commit
   fi
   git add -f last-commit
-  trap 'git reset -- last-commit 2>/dev/null || true' EXIT
+  trap 'trash last-commit 2>/dev/null || true' EXIT
 }
 
 if [ -f /etc/NIXOS ]; then

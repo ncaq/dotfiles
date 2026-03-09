@@ -10,9 +10,9 @@
   ...
 }:
 let
-  # `lastModifiedDate`は"20260308123456"形式。ISO 8601に変換します。
+  # `lastModifiedDate`は"20260308123456"形式。日付は他で表示されるため時刻部分のみ使用します。
   d = inputs.self.lastModifiedDate or "00000000000000";
-  isoDateTime = "${builtins.substring 0 4 d}-${builtins.substring 4 2 d}-${builtins.substring 6 2 d}T${builtins.substring 8 2 d}:${builtins.substring 10 2 d}:${builtins.substring 12 2 d}";
+  time = "${builtins.substring 8 2 d}:${builtins.substring 10 2 d}:${builtins.substring 12 2 d}";
   # コミットリビジョン。
   # `install.sh`が`last-commit`をstagingするため必ずdirtyになります。
   # "-dirty"サフィックスは自前の注入によるものなので除去します。
@@ -59,5 +59,5 @@ let
       "unknown";
 in
 {
-  system.nixos.label = "${isoDateTime}-${config.system.nixos.release}-${shortRev}${dirtySuffix}-${commitLabel}";
+  system.nixos.label = "${time}-${config.system.nixos.release}-${shortRev}${dirtySuffix}-${commitLabel}";
 }

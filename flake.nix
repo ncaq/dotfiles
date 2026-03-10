@@ -2,8 +2,7 @@
   description = "dotfiles, NixOS and home-manager.";
 
   inputs = {
-    nixpkgs.follows = "nixpkgs-2511";
-    nixpkgs-2511.url = "github:NixOS/nixpkgs/nixos-25.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
     flake-parts.url = "github:hercules-ci/flake-parts";

@@ -352,7 +352,7 @@
         "type": "github"
       }
     },
-    "nixpkgs-2511": {
+    "nixpkgs": {
       "locked": {
         "lastModified": 1772822230,
         "narHash": "sha256-yf3iYLGbGVlIthlQIk5/4/EQDZNNEmuqKZkQssMljuw=",
@@ -517,10 +517,7 @@
         "nix-on-droid": "nix-on-droid",
         "nixos-hardware": "nixos-hardware",
         "nixos-wsl": "nixos-wsl",
-        "nixpkgs": [
-          "nixpkgs-2511"
-        ],
-        "nixpkgs-2511": "nixpkgs-2511",
+        "nixpkgs": "nixpkgs",
         "nixpkgs-unstable": "nixpkgs-unstable",
         "sops-nix": "sops-nix",
         "treefmt-nix": "treefmt-nix",

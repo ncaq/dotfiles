@@ -48,11 +48,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    emacs-overlay = {
-      url = "github:nix-community/emacs-overlay";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     git-hooks = {
       url = "github:ncaq/git-hooks";
       inputs = {
@@ -69,7 +64,11 @@
 
     dot-emacs = {
       url = "github:ncaq/.emacs.d";
-      flake = false;
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-parts.follows = "flake-parts";
+        treefmt-nix.follows = "treefmt-nix";
+      };
     };
 
     dot-xmonad = {
@@ -128,7 +127,6 @@
           allowedUnfreePackages = [
             "claude-code" # 一番使いやすいLLMエージェントのため仕方がない。
             "claude-code-bin" # Node版とBun版両方受け入れると指定する必要があります。
-            "copilot-language-server" # 一番いい補完のため仕方がない。
             "discord" # ネイティブ版の方が音声などが安定しているため仕方がない。
             "slack" # ネイティブ版の方が通知などが安定しているため仕方がない。
             "zoom" # ネイティブ版の方が動画などが安定しているため仕方がない。
@@ -139,7 +137,6 @@
           };
           # 全環境で共通のoverlays。
           overlays = [
-            inputs.emacs-overlay.overlays.default
             inputs.firge-nix.overlays.default
           ];
           # system固有のunstable pkgsを生成する関数。

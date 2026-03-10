@@ -8,9 +8,7 @@
 {
   programs.emacs = {
     enable = true;
-    package = pkgs.emacsWithPackagesFromUsePackage {
-      config = "${inputs.dot-emacs}/init.el"; # init.elが依存しているパッケージをインストールします。
-    };
+    package = inputs.dot-emacs.packages.${pkgs.stdenv.hostPlatform.system}.default;
   };
 
   services.emacs = {
@@ -26,18 +24,13 @@
   };
 
   home = {
-    # Emacsが必要とするネイティブパッケージ。
-    packages = with pkgs; [
-      copilot-language-server
-    ];
-
     # Emacsの設定はEmacs Lispで行うのがDSLとして最適化されていて楽なので、
-    # Nix言語ではなく`.emacs.d`で基本的に管理します。
+    # 基本的にNix言語ではなく`.emacs.d`に直接Emacs Lispを書いて管理します。
     # またEmacsの設定は即座に反映したいため、
-    # currentとしてはinputs頼りではなくcloneしたものを直接参照します。
-    # inputsにも入れていますが、
-    # それは外部ライブラリを自動的に入れるためのもので、
-    # あくまでショートカットです。
+    # git cloneしたものを直接参照します。
+    # `inputs.dot-emacs`も利用していますが、
+    # それは外部依存ライブラリを解決するためのものです。
+    # Emacsの設定自体はローカルのファイルシステムで管理します。
     activation.cloneEmacsConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       if [ ! -d "${config.home.homeDirectory}/.emacs.d" ]; then
         $DRY_RUN_CMD ${pkgs.git}/bin/git clone \

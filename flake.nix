@@ -48,11 +48,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    emacs-overlay = {
-      url = "github:nix-community/emacs-overlay";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     git-hooks = {
       url = "github:ncaq/git-hooks";
       inputs = {
@@ -69,7 +64,11 @@
 
     dot-emacs = {
       url = "github:ncaq/.emacs.d";
-      flake = false;
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-parts.follows = "flake-parts";
+        treefmt-nix.follows = "treefmt-nix";
+      };
     };
 
     dot-xmonad = {
@@ -139,7 +138,6 @@
           };
           # 全環境で共通のoverlays。
           overlays = [
-            inputs.emacs-overlay.overlays.default
             inputs.firge-nix.overlays.default
           ];
           # system固有のunstable pkgsを生成する関数。

@@ -169,12 +169,13 @@ in
               )
               chown niks3-public:niks3-public /run/niks3-public/s3-access-key /run/niks3-public/s3-secret-key
 
-              # Create bucket with global alias, or get existing bucket ID.
-              if BUCKET_JSON=$(garage_api POST /v2/CreateBucket \
-                "{\"globalAlias\": \"niks3-public\"}"); then
+              # Get existing bucket or create a new one.
+              if BUCKET_JSON=$(garage_api GET "/v2/GetBucketInfo?globalAlias=niks3-public" 2>/dev/null); then
                 BUCKET_ID=$(echo "$BUCKET_JSON" | jq -r '.id')
               else
-                BUCKET_ID=$(garage_api GET "/v2/GetBucketInfo?alias=niks3-public" | jq -r '.id')
+                BUCKET_JSON=$(garage_api POST /v2/CreateBucket \
+                  "{\"globalAlias\": \"niks3-public\"}")
+                BUCKET_ID=$(echo "$BUCKET_JSON" | jq -r '.id')
               fi
 
               # Grant read/write permissions.

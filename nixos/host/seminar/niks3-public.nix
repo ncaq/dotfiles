@@ -128,7 +128,7 @@ in
               SECRET_KEY=$(cat ${config.sops.secrets."niks3-public-s3-secret-key".path})
 
               # Import key (ignore error if key already exists).
-              garage key import "$ACCESS_KEY" "$SECRET_KEY" || true
+              garage key import --yes "$ACCESS_KEY" "$SECRET_KEY" || true
 
               # Create bucket (ignore error if bucket already exists).
               garage bucket create niks3-public || true

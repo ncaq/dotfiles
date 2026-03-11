@@ -134,7 +134,7 @@ in
               garage bucket create niks3-public || true
 
               # Grant permissions.
-              garage bucket allow --read --write --owner niks3-public --key "$ACCESS_KEY"
+              garage bucket allow --read --write niks3-public --key "$ACCESS_KEY"
             '';
           }
         );

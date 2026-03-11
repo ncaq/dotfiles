@@ -195,7 +195,6 @@ in
   # ```
   # API_TOKEN=$(openssl rand -base64 36)
   # nix key generate-secret --key-name niks3-public.ncaq.net-1 > /tmp/niks3-sign-key
-  # nix key convert-secret-to-public < /tmp/niks3-sign-key
   # ```
   # Then `sops secrets/seminar/niks3-public.yaml` and set:
   # ```

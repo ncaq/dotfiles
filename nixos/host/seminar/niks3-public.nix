@@ -122,20 +122,19 @@ in
           pkgs.writeShellApplication {
             name = "garage-setup-niks3-public";
             runtimeInputs = with pkgs; [
+              curl
               jq
-              nixos-container
             ];
             text = ''
               ADMIN_TOKEN=$(cat ${config.sops.secrets."garage-admin-token".path})
-              GARAGE_API="http://127.0.0.1:3903"
-              CURL="${pkgs.curl}/bin/curl --fail --silent --show-error"
+              GARAGE_API="http://${config.machineAddresses.garage.guest}:3903"
 
               garage_api() {
-                nixos-container run garage -- \
-                  "$CURL" --request "$1" "$GARAGE_API$2" \
-                    -H "Authorization: Bearer $ADMIN_TOKEN" \
-                    -H "Content-Type: application/json" \
-                    ''${3:+-d "$3"}
+                curl --fail --silent --show-error \
+                  --request "$1" "$GARAGE_API$2" \
+                  -H "Authorization: Bearer $ADMIN_TOKEN" \
+                  -H "Content-Type: application/json" \
+                  ''${3:+-d "$3"}
               }
 
               # Wait for garage to be ready.

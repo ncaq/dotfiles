@@ -62,7 +62,10 @@ in
         system.stateVersion = "25.11";
         networking = {
           useHostResolvConf = lib.mkForce false;
-          firewall.allowedTCPPorts = [ 3900 ];
+          firewall.allowedTCPPorts = [
+            3900 # S3 API
+            3903 # Admin API (host access only via private network)
+          ];
         };
         users = {
           users.garage = garageUser;
@@ -91,7 +94,7 @@ in
                 root_domain = ".web.garage.ncaq.net";
               };
               admin = {
-                api_bind_addr = "127.0.0.1:3903";
+                api_bind_addr = "[::]:3903";
               };
             };
           };

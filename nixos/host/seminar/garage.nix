@@ -18,7 +18,7 @@ let
       findutils
     ];
     text = ''
-      export $(cat /etc/garage.env | xargs)
+      export "$(cat /etc/garage.env | xargs)"
       exec garage "$@"
     '';
   };

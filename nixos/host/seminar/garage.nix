@@ -11,18 +11,26 @@ let
     group = "garage";
     isSystemUser = true;
   };
+  garageWithEnv = pkgs.writeShellApplication {
+    name = "garage-runner";
+    runtimeInputs = with pkgs; [
+      coreutils
+      findutils
+    ];
+    text = ''
+      export $(cat /etc/garage.env | xargs)
+      exec garage "$@"
+    '';
+  };
   # Host wrapper to execute garage CLI inside the container.
   # Export the environment file to provide GARAGE_RPC_SECRET etc.
   garageWrapper = pkgs.writeShellApplication {
     name = "garage";
     runtimeInputs = with pkgs; [
-      bash
-      coreutils
-      findutils
       nixos-container
     ];
     text = ''
-      exec nixos-container run garage -- bash -c 'export $(cat /etc/garage.env | xargs) && exec garage "$@"' _ "$@"
+      exec nixos-container run garage -- ${garageWithEnv} "$@"
     '';
   };
 in

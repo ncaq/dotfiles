@@ -51,6 +51,7 @@ let
   jsDirectSubcommands = [
     "ci:*"
     "install:*"
+    "ls:*"
     "view:*"
   ];
 

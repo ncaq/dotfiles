@@ -2,7 +2,7 @@ name: Push to niks3-public
 description: ビルド前後のnix storeの差分をniks3-publicにOIDC認証でpushします
 
 runs:
-  using: node22
+  using: node24
   main: main.mjs
   post: post.mjs
   post-if: success()

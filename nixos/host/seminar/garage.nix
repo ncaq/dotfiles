@@ -1,5 +1,6 @@
 {
   pkgs,
+  lib,
   config,
   ...
 }:
@@ -30,7 +31,7 @@ let
       nixos-container
     ];
     text = ''
-      exec nixos-container run garage -- ${garageWithEnv} "$@"
+      exec nixos-container run garage -- ${lib.getExe garageWithEnv} "$@"
     '';
   };
 in

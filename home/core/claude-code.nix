@@ -49,7 +49,9 @@ let
 
   # 直接実行するサブコマンド (install等)
   jsDirectSubcommands = [
-    "install"
+    "ci:*"
+    "install:*"
+    "ls:*"
     "view:*"
   ];
 
@@ -243,6 +245,7 @@ in
           "Bash(git restore:*)"
           "Bash(git show-branch:*)"
           "Bash(git show:*)"
+          "Bash(git stash:*)"
           "Bash(git status:*)"
           "Bash(git switch:*)"
           "Bash(grep:*)"

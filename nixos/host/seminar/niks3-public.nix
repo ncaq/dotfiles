@@ -132,7 +132,7 @@ in
 
               garage_api() {
                 nixos-container run garage -- \
-                  $CURL --request "$1" "$GARAGE_API$2" \
+                  "$CURL" --request "$1" "$GARAGE_API$2" \
                     -H "Authorization: Bearer $ADMIN_TOKEN" \
                     -H "Content-Type: application/json" \
                     ''${3:+-d "$3"}

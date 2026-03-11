@@ -234,6 +234,7 @@ in
           "Bash(git -C * show *)"
           "Bash(git -C * status *)"
           "Bash(git add:*)"
+          "Bash(git checkout:*)"
           "Bash(git clone:*)"
           "Bash(git diff:*)"
           "Bash(git fetch:*)"

@@ -198,8 +198,8 @@ in
   # ```
   # Then `sops secrets/seminar/niks3-public.yaml` and set:
   # ```
-  # api_token: "<base64>"
-  # sign_key: "niks3-public.ncaq.net-1:<base64>"
+  # api_token: <base64>
+  # sign_key: niks3-public.ncaq.net-1:<base64>
   # ```
   # The public key output from `nix key convert-secret-to-public` should be added
   # to nix.conf as `trusted-public-keys` on clients.

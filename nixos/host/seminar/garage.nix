@@ -14,12 +14,12 @@ let
   };
   garageWithEnv = pkgs.writeShellApplication {
     name = "garage-runner";
-    runtimeInputs = with pkgs; [
-      coreutils
-      findutils
-    ];
+    runtimeInputs = [ ];
     text = ''
-      export "$(cat /etc/garage.env | xargs)"
+      set -a
+      # shellcheck source=/dev/null
+      source /etc/garage.env
+      set +a
       exec garage "$@"
     '';
   };

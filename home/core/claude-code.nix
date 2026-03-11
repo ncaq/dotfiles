@@ -49,7 +49,7 @@ let
 
   # 直接実行するサブコマンド (install等)
   jsDirectSubcommands = [
-    "install"
+    "install:*"
     "view:*"
   ];
 

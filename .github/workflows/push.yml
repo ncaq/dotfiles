@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: read # リポジトリコンテンツの読み取り
+  id-token: write # niks3-publicへのOIDC認証に必要
 
 jobs:
   is-trusted:

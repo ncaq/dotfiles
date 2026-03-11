@@ -44,7 +44,7 @@ in
     localAddress = addr.guest;
     bindMounts = {
       "/etc/garage.env" = {
-        hostPath = config.sops.secrets."garage-env".path;
+        hostPath = config.sops.templates."garage-env".path;
         isReadOnly = true;
       };
       "/var/lib/garage/meta" = {
@@ -135,25 +135,51 @@ in
   environment.systemPackages = [ garageWrapper ];
   _module.args.garageWrapper = garageWrapper;
 
-  # Managed by sops-nix.
-  # To create (first time only):
-  # ```
-  # RPC_SECRET=$(openssl rand -hex 32)
-  # ADMIN_TOKEN=$(openssl rand -base64 32)
-  # METRICS_TOKEN=$(openssl rand -base64 32)
-  # ```
-  # Then `sops secrets/seminar/garage.yaml` and set garage_env to:
-  # ```
-  # GARAGE_RPC_SECRET="<hex>"
-  # GARAGE_ADMIN_TOKEN="<base64>"
-  # GARAGE_METRICS_TOKEN="<base64>"
-  # ```
-  sops.secrets."garage-env" = {
-    sopsFile = ../../../secrets/seminar/garage.yaml;
-    key = "garage_env";
+  sops.templates."garage-env" = {
+    content = ''
+      GARAGE_RPC_SECRET="${config.sops.placeholder."garage-rpc-secret"}"
+      GARAGE_ADMIN_TOKEN="${config.sops.placeholder."garage-admin-token"}"
+      GARAGE_METRICS_TOKEN="${config.sops.placeholder."garage-metrics-token"}"
+    '';
     owner = "garage";
     group = "garage";
     mode = "0400";
+  };
+  # Managed by sops-nix.
+  # To create (first time only):
+  # ```
+  # rpc_secret=$(openssl rand -hex 32)
+  # admin_token=$(openssl rand -base64 32)
+  # metrics_token=$(openssl rand -base64 32)
+  # ```
+  # Then `sops secrets/seminar/garage.yaml` and set:
+  # ```
+  # rpc_secret: <hex>
+  # admin_token: <base64>
+  # metrics_token: <base64>
+  # ```
+  sops.secrets = {
+    "garage-rpc-secret" = {
+      sopsFile = ../../../secrets/seminar/garage.yaml;
+      key = "rpc_secret";
+      owner = "garage";
+      group = "garage";
+      mode = "0400";
+    };
+    "garage-admin-token" = {
+      sopsFile = ../../../secrets/seminar/garage.yaml;
+      key = "admin_token";
+      owner = "garage";
+      group = "garage";
+      mode = "0400";
+    };
+    "garage-metrics-token" = {
+      sopsFile = ../../../secrets/seminar/garage.yaml;
+      key = "metrics_token";
+      owner = "garage";
+      group = "garage";
+      mode = "0400";
+    };
   };
 
   # Initial cluster setup (manual, first time only):

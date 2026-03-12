@@ -1,6 +1,9 @@
 // @ts-check
-import { execFileSync } from "node:child_process";
+import { execFileSync, execFile } from "node:child_process";
 import { readFile, writeFile, unlink } from "node:fs/promises";
+import { promisify } from "node:util";
+
+const execFileAsync = promisify(execFile);
 
 const SERVER_URL = "https://niks3-public.ncaq.net";
 
@@ -59,24 +62,37 @@ try {
   const tokenFile = "/tmp/niks3-oidc-token";
   await writeFile(tokenFile, token, { mode: 0o600 });
 
+  // niks3をビルドしてバイナリパスを取得
+  const niks3Ref =
+    "git+https://github.com/Mic92/niks3?ref=v1.4.0&rev=bb87dcb1b46a1f0c9426b733f4fe325245e386fa";
+  const niks3Bin = execFileSync(
+    "nix",
+    ["build", "--no-link", "--print-out-paths", niks3Ref],
+    { encoding: "utf-8" },
+  ).trim();
+
+  // ARG_MAXを回避するためバッチに分割し、並列でpush
+  const BATCH_SIZE = 500;
+  const batches = Array.from(
+    { length: Math.ceil(newPaths.length / BATCH_SIZE) },
+    (_, i) => newPaths.slice(i * BATCH_SIZE, (i + 1) * BATCH_SIZE),
+  );
+  const niks3Env = {
+    ...process.env,
+    NIKS3_SERVER_URL: SERVER_URL,
+    NIKS3_AUTH_TOKEN_FILE: tokenFile,
+  };
+
   try {
-    execFileSync(
-      "nix",
-      [
-        "run",
-        "git+https://github.com/Mic92/niks3?ref=v1.4.0&rev=bb87dcb1b46a1f0c9426b733f4fe325245e386fa",
-        "--",
-        "push",
-        ...newPaths,
-      ],
-      {
-        stdio: "inherit",
-        env: {
-          ...process.env,
-          NIKS3_SERVER_URL: SERVER_URL,
-          NIKS3_AUTH_TOKEN_FILE: tokenFile,
-        },
-      },
+    await Promise.all(
+      batches.map((batch, i) => {
+        console.log(
+          `niks3-push: Pushing batch ${i + 1}/${batches.length} (${batch.length} paths)`,
+        );
+        return execFileAsync(`${niks3Bin}/bin/niks3`, ["push", ...batch], {
+          env: niks3Env,
+        });
+      }),
     );
     console.log("niks3-push: Push completed successfully");
   } finally {

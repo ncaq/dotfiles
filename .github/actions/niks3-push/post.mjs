@@ -15,8 +15,7 @@ async function getOidcToken() {
   const requestToken = process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN;
 
   if (!requestUrl || !requestToken) {
-    console.log("niks3-push: OIDC not available, skipping push");
-    return;
+    throw new Error("OIDC not available (ACTIONS_ID_TOKEN_REQUEST_URL or ACTIONS_ID_TOKEN_REQUEST_TOKEN is not set)");
   }
 
   const url = `${requestUrl}&audience=${encodeURIComponent(SERVER_URL)}`;
@@ -36,9 +35,6 @@ async function getOidcToken() {
 /** トークンを取得してストアパスを1件pushする。一時ファイルは呼び出しごとに隔離する。 */
 async function pushStorePath(/** @type {string} */ niks3Bin, /** @type {string} */ storePath) {
   const freshToken = await getOidcToken();
-  if (!freshToken) {
-    throw new Error("OIDC token unavailable during push");
-  }
   const tokenDir = await mkdtemp(join(tempDir, "niks3-token-"));
   const tokenFile = join(tokenDir, "token");
   try {
@@ -86,9 +82,8 @@ try {
 
   console.log(`niks3-push: Found ${newPaths.length} new store paths to push`);
 
-  // OIDCが利用可能か確認
-  const initialToken = await getOidcToken();
-  if (!initialToken) process.exit(0);
+  // OIDCが利用可能か確認(利用不可なら例外で外側のcatchに落ちる)
+  await getOidcToken();
 
   // niks3をビルドしてバイナリパスを取得
   const niks3Ref = "git+https://github.com/Mic92/niks3?ref=v1.4.0&rev=bb87dcb1b46a1f0c9426b733f4fe325245e386fa";

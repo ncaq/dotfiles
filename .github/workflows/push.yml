@@ -9,7 +9,6 @@ on:
 
 permissions:
   contents: read # リポジトリコンテンツの読み取り
-  id-token: write # niks3-publicへのOIDC認証に必要
 
 jobs:
   is-trusted:
@@ -28,6 +27,9 @@ jobs:
 
   nix-fast-build:
     needs: is-trusted
+    permissions:
+      contents: read
+      id-token: write # niks3-publicへのOIDC認証に必要
     # 信頼できるソースの場合はセルフホステッドランナーで高速化し、
     # それ以外はGitHubランナーで実行します。
     # is-trustedがスキップされてもこのジョブは実行する必要があるためalways()を使用します。
@@ -49,6 +51,9 @@ jobs:
 
   build-home-manager:
     needs: is-trusted
+    permissions:
+      contents: read
+      id-token: write # niks3-publicへのOIDC認証に必要
     # セルフホステッドランナーは未認証のソースからは実行しない。
     if: needs.is-trusted.result == 'success'
     runs-on: ${{ matrix.runner }}
@@ -73,6 +78,9 @@ jobs:
 
   build-nix-on-droid:
     needs: is-trusted
+    permissions:
+      contents: read
+      id-token: write # niks3-publicへのOIDC認証に必要
     # セルフホステッドランナーは未認証のソースからは実行しない。
     if: needs.is-trusted.result == 'success'
     runs-on: [self-hosted, Linux, ARM64]

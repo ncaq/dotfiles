@@ -128,6 +128,39 @@ in
         RemainAfterExit = true;
         RuntimeDirectory = "niks3-public";
         RuntimeDirectoryMode = "0700";
+        # Hardening
+        CapabilityBoundingSet = [
+          "CAP_CHOWN"
+          "CAP_DAC_READ_SEARCH"
+          "CAP_FOWNER"
+        ];
+        LockPersonality = true;
+        MemoryDenyWriteExecute = true;
+        NoNewPrivileges = true;
+        PrivateDevices = true;
+        PrivateTmp = true;
+        ProtectClock = true;
+        ProtectControlGroups = true;
+        ProtectHome = true;
+        ProtectHostname = true;
+        ProtectKernelLogs = true;
+        ProtectKernelModules = true;
+        ProtectKernelTunables = true;
+        ProtectSystem = "strict";
+        RestrictAddressFamilies = [
+          "AF_INET"
+          "AF_INET6"
+          "AF_UNIX"
+        ];
+        RestrictNamespaces = true;
+        RestrictRealtime = true;
+        RestrictSUIDSGID = true;
+        SystemCallArchitectures = "native";
+        SystemCallFilter = [
+          "@system-service"
+          "~@privileged"
+          "@chown"
+        ];
         ExecStart = pkgs.lib.getExe (
           pkgs.writeShellApplication {
             name = "garage-setup-niks3-public";
@@ -150,14 +183,15 @@ in
               # Wait for garage to be ready.
               garage_ready=false
               for _ in $(seq 1 30); do
-                if garage_api GET /v2/GetClusterHealth > /dev/null 2>&1; then
+                health_output=$(garage_api GET /v2/GetClusterHealth 2>&1) && {
                   garage_ready=true
                   break
-                fi
+                }
                 sleep 2
               done
               if [ "$garage_ready" = false ]; then
-                echo "Garage health check timed out" >&2
+                echo "Garage health check timed out. Last response:" >&2
+                echo "$health_output" >&2
                 exit 1
               fi
 
@@ -172,8 +206,7 @@ in
               SECRET_KEY=$(echo "$KEY_JSON" | jq -r '.secretAccessKey')
 
               if [ -z "$ACCESS_KEY" ] || [ "$ACCESS_KEY" = "null" ] || [ -z "$SECRET_KEY" ] || [ "$SECRET_KEY" = "null" ]; then
-                echo "Failed to create key via admin API:" >&2
-                echo "$KEY_JSON" >&2
+                echo "Failed to create S3 key for niks3-public via Garage admin API" >&2
                 exit 1
               fi
 

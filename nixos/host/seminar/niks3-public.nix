@@ -194,8 +194,7 @@ in
               SECRET_KEY=$(echo "$KEY_JSON" | jq -r '.secretAccessKey')
 
               if [ -z "$ACCESS_KEY" ] || [ "$ACCESS_KEY" = "null" ] || [ -z "$SECRET_KEY" ] || [ "$SECRET_KEY" = "null" ]; then
-                echo "Failed to create key via admin API:" >&2
-                echo "$KEY_JSON" >&2
+                echo "Failed to create S3 key for niks3-public via Garage admin API" >&2
                 exit 1
               fi
 

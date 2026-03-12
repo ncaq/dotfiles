@@ -55,7 +55,7 @@ in
           vmHostPackages = hostPkgs; # クロスコンパイルを避けつつホストの環境を正しく反映させるためにホストのpkgsを渡します。
           hypervisor = "qemu";
           cpu = "max"; # QEMUのTCGモードで現在サポートしている最大機能セットのaarch64 CPUをエミュレートします。
-          vcpu = 11; # 12(ホストのCPUスレッド) - 1
+          vcpu = 6; # 12(ホストのCPUスレッド)の半分。
           mem = 16384; # 16GB
           interfaces = [
             {
@@ -171,7 +171,7 @@ in
         # QEMU自体がリソースに制約をかけていますが、
         # 念の為サービスレベルでも制約をかけておきます。
         serviceConfig = {
-          CPUQuota = "1140%"; # x64コンテナと同等の制限
+          CPUQuota = "600%"; # x64コンテナと同等の6スレッド制限
           MemoryMax = "20G"; # VM自体の16GB + QEMUオーバーヘッド分
         };
       };

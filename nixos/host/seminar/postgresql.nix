@@ -14,6 +14,7 @@
       "healthcheck"
       "atticd"
       "forgejo"
+      "niks3-public"
     ];
     ensureUsers = [
       {
@@ -27,6 +28,10 @@
       }
       {
         name = "forgejo";
+        ensureDBOwnership = true;
+      }
+      {
+        name = "niks3-public";
         ensureDBOwnership = true;
       }
     ];

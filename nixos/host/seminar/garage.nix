@@ -1,4 +1,9 @@
-{ pkgs, config, ... }:
+{
+  pkgs,
+  lib,
+  config,
+  ...
+}:
 let
   addr = config.machineAddresses.garage;
   user = config.containerUsers.garage;
@@ -7,11 +12,28 @@ let
     group = "garage";
     isSystemUser = true;
   };
+  garageWithEnv = pkgs.writeShellApplication {
+    name = "garage-runner";
+    runtimeInputs = [ ];
+    text = ''
+      set -a
+      # shellcheck source=/dev/null
+      source /etc/garage.env
+      set +a
+      exec garage "$@"
+    '';
+  };
   # Host wrapper to execute garage CLI inside the container.
   # Export the environment file to provide GARAGE_RPC_SECRET etc.
-  garageWrapper = pkgs.writeShellScriptBin "garage" ''
-    exec nixos-container run garage -- bash -c 'export $(cat /etc/garage.env | xargs) && exec garage "$@"' _ "$@"
-  '';
+  garageWrapper = pkgs.writeShellApplication {
+    name = "garage";
+    runtimeInputs = with pkgs; [
+      nixos-container
+    ];
+    text = ''
+      exec nixos-container run garage -- ${lib.getExe garageWithEnv} "$@"
+    '';
+  };
 in
 {
   containers.garage = {
@@ -22,7 +44,7 @@ in
     localAddress = addr.guest;
     bindMounts = {
       "/etc/garage.env" = {
-        hostPath = config.sops.secrets."garage-env".path;
+        hostPath = config.sops.templates."garage-env".path;
         isReadOnly = true;
       };
       "/var/lib/garage/meta" = {
@@ -40,7 +62,10 @@ in
         system.stateVersion = "25.11";
         networking = {
           useHostResolvConf = lib.mkForce false;
-          firewall.allowedTCPPorts = [ 3900 ];
+          firewall.allowedTCPPorts = [
+            3900 # S3 API
+            3903 # Admin API (host access only via private network)
+          ];
         };
         users = {
           users.garage = garageUser;
@@ -69,7 +94,7 @@ in
                 root_domain = ".web.garage.ncaq.net";
               };
               admin = {
-                api_bind_addr = "127.0.0.1:3903";
+                api_bind_addr = "[::]:3903";
               };
             };
           };
@@ -112,25 +137,51 @@ in
 
   environment.systemPackages = [ garageWrapper ];
 
-  # Managed by sops-nix.
-  # To create (first time only):
-  # ```
-  # RPC_SECRET=$(openssl rand -hex 32)
-  # ADMIN_TOKEN=$(openssl rand -base64 32)
-  # METRICS_TOKEN=$(openssl rand -base64 32)
-  # ```
-  # Then `sops secrets/seminar/garage.yaml` and set garage_env to:
-  # ```
-  # GARAGE_RPC_SECRET="<hex>"
-  # GARAGE_ADMIN_TOKEN="<base64>"
-  # GARAGE_METRICS_TOKEN="<base64>"
-  # ```
-  sops.secrets."garage-env" = {
-    sopsFile = ../../../secrets/seminar/garage.yaml;
-    key = "garage_env";
+  sops.templates."garage-env" = {
+    content = ''
+      GARAGE_RPC_SECRET="${config.sops.placeholder."garage-rpc-secret"}"
+      GARAGE_ADMIN_TOKEN="${config.sops.placeholder."garage-admin-token"}"
+      GARAGE_METRICS_TOKEN="${config.sops.placeholder."garage-metrics-token"}"
+    '';
     owner = "garage";
     group = "garage";
     mode = "0400";
+  };
+  # Managed by sops-nix.
+  # To create (first time only):
+  # ```
+  # rpc_secret=$(openssl rand -hex 32)
+  # admin_token=$(openssl rand -base64 32)
+  # metrics_token=$(openssl rand -base64 32)
+  # ```
+  # Then `sops secrets/seminar/garage.yaml` and set:
+  # ```
+  # rpc_secret: <hex>
+  # admin_token: <base64>
+  # metrics_token: <base64>
+  # ```
+  sops.secrets = {
+    "garage-rpc-secret" = {
+      sopsFile = ../../../secrets/seminar/garage.yaml;
+      key = "rpc_secret";
+      owner = "garage";
+      group = "garage";
+      mode = "0400";
+    };
+    "garage-admin-token" = {
+      sopsFile = ../../../secrets/seminar/garage.yaml;
+      key = "admin_token";
+      owner = "garage";
+      group = "garage";
+      mode = "0400";
+    };
+    "garage-metrics-token" = {
+      sopsFile = ../../../secrets/seminar/garage.yaml;
+      key = "metrics_token";
+      owner = "garage";
+      group = "garage";
+      mode = "0400";
+    };
   };
 
   # Initial cluster setup (manual, first time only):

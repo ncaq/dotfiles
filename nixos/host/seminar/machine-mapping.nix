@@ -54,6 +54,10 @@ in
           host = "192.168.100.60";
           guest = "192.168.100.61";
         };
+        niks3-public = {
+          host = "192.168.100.70";
+          guest = "192.168.100.71";
+        };
       };
       description = "Network addresses for containers and microVMs";
     };
@@ -76,6 +80,10 @@ in
         garage = {
           uid = 979;
           gid = 979;
+        };
+        niks3-public = {
+          uid = 978;
+          gid = 978;
         };
       };
       description = "Container user/group IDs (must match between host and container)";

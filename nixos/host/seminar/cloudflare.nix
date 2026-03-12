@@ -18,6 +18,7 @@ let
   forgejoAddr = config.machineAddresses.forgejo.guest;
   mcpNixosAddr = config.machineAddresses.mcp-nixos.guest;
   garageAddr = config.machineAddresses.garage.guest;
+  niks3PublicAddr = config.machineAddresses.niks3-public.guest;
 in
 {
   # Managed by sops-nix. To update the secrets:
@@ -41,6 +42,7 @@ in
         "forgejo.ncaq.net" = "http://${forgejoAddr}:8080";
         "mcp-nixos.ncaq.net" = "http://${mcpNixosAddr}:8080";
         "garage.ncaq.net" = "http://${garageAddr}:3900";
+        "niks3-public.ncaq.net" = "http://${niks3PublicAddr}:5751";
       };
     };
   };
@@ -60,5 +62,22 @@ in
       group = "root";
       mode = "0400";
     };
+    "cloudflare-dns-api-token" = {
+      sopsFile = ../../../secrets/seminar/cloudflare.yaml;
+      key = "dns_api_token";
+      owner = "root";
+      group = "root";
+      mode = "0400";
+    };
+  };
+  # security.acmeのDNS-01チャレンジ用環境変数ファイル。
+  # lego(ACMEクライアント)がCloudflare DNS APIでTXTレコードを操作する。
+  sops.templates."cloudflare-dns-env" = {
+    content = ''
+      CF_DNS_API_TOKEN=${config.sops.placeholder."cloudflare-dns-api-token"}
+    '';
+    owner = "root";
+    group = "root";
+    mode = "0400";
   };
 }

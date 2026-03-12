@@ -148,7 +148,7 @@ in
               runtimeInputs = [ pkgs.curl ];
               text = ''
                 http_code=$(curl -s --max-time 3 -o /dev/null -w "%{http_code}" \
-                  http://${config.machineAddresses.garage.guest}:3900 || echo "000")
+                  http://${config.machineAddresses.garage.guest}:3900 || true)
                 if [[ "$http_code" =~ ^[24][0-9][0-9]$ ]]; then
                   echo "Garage OK (HTTP $http_code)"
                   exit 0
@@ -172,6 +172,26 @@ in
                   exit 0
                 else
                   echo "Forgejo CRITICAL: container not responding"
+                  exit 2
+                fi
+              '';
+            }
+          );
+          inherit check_interval;
+        };
+        niks3-public = {
+          command = lib.getExe (
+            pkgs.writeShellApplication {
+              name = "check-niks3-public";
+              runtimeInputs = [ pkgs.curl ];
+              text = ''
+                http_code=$(curl -s --max-time 3 -o /dev/null -w "%{http_code}" \
+                  http://${config.machineAddresses.niks3-public.guest}:5751 || true)
+                if [[ "$http_code" =~ ^[23][0-9][0-9]$ ]]; then
+                  echo "niks3-public OK (HTTP $http_code)"
+                  exit 0
+                else
+                  echo "niks3-public CRITICAL: HTTP $http_code"
                   exit 2
                 fi
               '';
@@ -208,7 +228,7 @@ in
                 # 2xx/4xxレスポンスならサーバは動作している
                 # それ以外は異常とみなす
                 http_code=$(curl -s --max-time 3 -o /dev/null -w "%{http_code}" \
-                  http://${config.machineAddresses.mcp-nixos.guest}:8080/mcp || echo "000")
+                  http://${config.machineAddresses.mcp-nixos.guest}:8080/mcp || true)
                 if [[ "$http_code" =~ ^[24][0-9][0-9]$ ]]; then
                   echo "mcp-nixos OK (HTTP $http_code)"
                   exit 0

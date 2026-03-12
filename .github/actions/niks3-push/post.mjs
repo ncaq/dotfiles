@@ -17,6 +17,11 @@ async function getOidcToken() {
   const response = await fetch(url, {
     headers: { Authorization: `bearer ${requestToken}` },
   });
+  if (!response.ok) {
+    throw new Error(
+      `OIDC token request failed: ${response.status} ${response.statusText}`,
+    );
+  }
   const { value } = await response.json();
   return value;
 }

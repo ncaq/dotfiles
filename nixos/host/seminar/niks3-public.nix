@@ -171,14 +171,15 @@ in
               # Wait for garage to be ready.
               garage_ready=false
               for _ in $(seq 1 30); do
-                if garage_api GET /v2/GetClusterHealth > /dev/null 2>&1; then
+                health_output=$(garage_api GET /v2/GetClusterHealth 2>&1) && {
                   garage_ready=true
                   break
-                fi
+                }
                 sleep 2
               done
               if [ "$garage_ready" = false ]; then
-                echo "Garage health check timed out" >&2
+                echo "Garage health check timed out. Last response:" >&2
+                echo "$health_output" >&2
                 exit 1
               fi
 

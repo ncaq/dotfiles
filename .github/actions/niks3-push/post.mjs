@@ -1,6 +1,6 @@
 // @ts-check
 import { execFile } from "node:child_process";
-import { readFile, writeFile, unlink } from "node:fs/promises";
+import { mkdtemp, readFile, writeFile, unlink, rmdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
@@ -33,6 +33,29 @@ async function getOidcToken() {
   return value;
 }
 
+/** トークンを取得してストアパスを1件pushする。一時ファイルは呼び出しごとに隔離する。 */
+async function pushStorePath(/** @type {string} */ niks3Bin, /** @type {string} */ storePath) {
+  const freshToken = await getOidcToken();
+  if (!freshToken) {
+    throw new Error("OIDC token unavailable during push");
+  }
+  const tokenDir = await mkdtemp(join(tempDir, "niks3-token-"));
+  const tokenFile = join(tokenDir, "token");
+  try {
+    await writeFile(tokenFile, freshToken, { mode: 0o600 });
+    await execFileAsync(`${niks3Bin}/bin/niks3`, ["push", storePath], {
+      env: {
+        ...process.env,
+        NIKS3_SERVER_URL: SERVER_URL,
+        NIKS3_AUTH_TOKEN_FILE: tokenFile,
+      },
+    });
+  } finally {
+    await unlink(tokenFile).catch(() => {});
+    await rmdir(tokenDir).catch(() => {});
+  }
+}
+
 try {
   const snapshotPath = process.env.STATE_snapshot_path;
   if (!snapshotPath) {
@@ -56,12 +79,9 @@ try {
 
   console.log(`niks3-push: Found ${newPaths.length} new store paths to push`);
 
-  const token = await getOidcToken();
-  if (!token) process.exit(0);
-
-  // トークンをファイル経由で渡す(プロセスリストへの漏洩防止)
-  const tokenFile = join(tempDir, "niks3-oidc-token");
-  await writeFile(tokenFile, token, { mode: 0o600 });
+  // OIDCが利用可能か確認
+  const initialToken = await getOidcToken();
+  if (!initialToken) process.exit(0);
 
   // niks3をビルドしてバイナリパスを取得
   const niks3Ref = "git+https://github.com/Mic92/niks3?ref=v1.4.0&rev=bb87dcb1b46a1f0c9426b733f4fe325245e386fa";
@@ -72,37 +92,24 @@ try {
   );
   const niks3Bin = niks3BuildOutput.trim();
 
-  // ARG_MAXを回避するためバッチに分割し、並列でpush
-  const BATCH_SIZE = 500;
-  const batches = Array.from({ length: Math.ceil(newPaths.length / BATCH_SIZE) }, (_, i) =>
-    newPaths.slice(i * BATCH_SIZE, (i + 1) * BATCH_SIZE),
-  );
-  const niks3Env = {
-    ...process.env,
-    NIKS3_SERVER_URL: SERVER_URL,
-    NIKS3_AUTH_TOKEN_FILE: tokenFile,
-  };
-
+  let failureCount = 0;
   try {
-    const results = await Promise.allSettled(
-      batches.map((batch, i) => {
-        console.log(`niks3-push: Pushing batch ${i + 1}/${batches.length} (${batch.length} paths)`);
-        return execFileAsync(`${niks3Bin}/bin/niks3`, ["push", ...batch], {
-          env: niks3Env,
-        });
-      }),
-    );
-    const failures = results.flatMap((r, i) => (r.status === "rejected" ? [{ batch: i + 1, reason: r.reason }] : []));
-    if (failures.length > 0) {
-      failures.forEach(({ batch, reason }) =>
-        console.error(`niks3-push: Batch ${batch}/${batches.length} failed:`, reason),
-      );
-      console.error(`niks3-push: ${failures.length}/${batches.length} batches failed`);
+    for (const [i, storePath] of newPaths.entries()) {
+      try {
+        console.log(`niks3-push: Pushing ${i + 1}/${newPaths.length}: ${storePath}`);
+        await pushStorePath(niks3Bin, storePath);
+      } catch (err) {
+        failureCount++;
+        console.error(`niks3-push: Failed to push ${storePath}:`, err);
+      }
+    }
+    if (failureCount > 0) {
+      console.error(`niks3-push: ${failureCount}/${newPaths.length} paths failed`);
     } else {
       console.log("niks3-push: Push completed successfully");
     }
   } finally {
-    await Promise.all([unlink(tokenFile).catch(() => {}), unlink(snapshotPath).catch(() => {})]);
+    await unlink(snapshotPath).catch(() => {});
   }
 } catch (err) {
   console.error("niks3-push:", err);

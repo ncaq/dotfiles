@@ -1,10 +1,13 @@
 // @ts-check
 import { execFile } from "node:child_process";
 import { readFile, writeFile, unlink } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
 
+const tempDir = process.env.RUNNER_TEMP || tmpdir();
 const SERVER_URL = "https://niks3-public.ncaq.net";
 
 async function getOidcToken() {
@@ -62,7 +65,7 @@ try {
   if (!token) process.exit(0);
 
   // トークンをファイル経由で渡す(プロセスリストへの漏洩防止)
-  const tokenFile = "/tmp/niks3-oidc-token";
+  const tokenFile = join(tempDir, "niks3-oidc-token");
   await writeFile(tokenFile, token, { mode: 0o600 });
 
   // niks3をビルドしてバイナリパスを取得

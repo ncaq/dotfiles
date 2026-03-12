@@ -1,12 +1,16 @@
 // @ts-check
 import { execFile } from "node:child_process";
 import { writeFile, appendFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
 
+const tempDir = process.env.RUNNER_TEMP || tmpdir();
+
 // ビルド前のnix storeパスのスナップショットを保存
-const snapshotPath = "/tmp/niks3-pre-build-paths.txt";
+const snapshotPath = join(tempDir, "niks3-pre-build-paths.txt");
 const { stdout: paths } = await execFileAsync("nix", ["path-info", "--all"], {
   encoding: "utf-8",
   maxBuffer: 50 * 1024 * 1024,

@@ -81,7 +81,7 @@ try {
   };
 
   try {
-    await Promise.all(
+    const results = await Promise.allSettled(
       batches.map((batch, i) => {
         console.log(`niks3-push: Pushing batch ${i + 1}/${batches.length} (${batch.length} paths)`);
         return execFileAsync(`${niks3Bin}/bin/niks3`, ["push", ...batch], {
@@ -89,7 +89,15 @@ try {
         });
       }),
     );
-    console.log("niks3-push: Push completed successfully");
+    const failures = results.flatMap((r, i) => (r.status === "rejected" ? [{ batch: i + 1, reason: r.reason }] : []));
+    if (failures.length > 0) {
+      failures.forEach(({ batch, reason }) =>
+        console.error(`niks3-push: Batch ${batch}/${batches.length} failed:`, reason),
+      );
+      console.error(`niks3-push: ${failures.length}/${batches.length} batches failed`);
+    } else {
+      console.log("niks3-push: Push completed successfully");
+    }
   } finally {
     await Promise.all([unlink(tokenFile).catch(() => {}), unlink(snapshotPath).catch(() => {})]);
   }

@@ -131,6 +131,7 @@ in
         # Hardening
         CapabilityBoundingSet = [
           "CAP_CHOWN"
+          "CAP_DAC_READ_SEARCH"
           "CAP_FOWNER"
         ];
         LockPersonality = true;

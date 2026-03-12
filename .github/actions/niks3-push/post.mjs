@@ -1,5 +1,5 @@
 // @ts-check
-import { execFileSync, execFile } from "node:child_process";
+import { execFile } from "node:child_process";
 import { readFile, writeFile, unlink } from "node:fs/promises";
 import { promisify } from "node:util";
 
@@ -40,9 +40,12 @@ try {
   const prePaths = new Set(
     (await readFile(snapshotPath, "utf-8")).trim().split("\n").filter(Boolean),
   );
-  const currentPaths = execFileSync("nix", ["path-info", "--all"], {
-    encoding: "utf-8",
-  })
+  const { stdout: currentPathsOutput } = await execFileAsync(
+    "nix",
+    ["path-info", "--all"],
+    { encoding: "utf-8", maxBuffer: 50 * 1024 * 1024 },
+  );
+  const currentPaths = currentPathsOutput
     .trim()
     .split("\n")
     .filter(Boolean);
@@ -65,11 +68,12 @@ try {
   // niks3をビルドしてバイナリパスを取得
   const niks3Ref =
     "git+https://github.com/Mic92/niks3?ref=v1.4.0&rev=bb87dcb1b46a1f0c9426b733f4fe325245e386fa";
-  const niks3Bin = execFileSync(
+  const { stdout: niks3BuildOutput } = await execFileAsync(
     "nix",
     ["build", "--no-link", "--print-out-paths", niks3Ref],
     { encoding: "utf-8" },
-  ).trim();
+  );
+  const niks3Bin = niks3BuildOutput.trim();
 
   // ARG_MAXを回避するためバッチに分割し、並列でpush
   const BATCH_SIZE = 500;

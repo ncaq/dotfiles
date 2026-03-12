@@ -1,6 +1,6 @@
 // @ts-check
 import { execFile, spawn } from "node:child_process";
-import { mkdtemp, readFile, writeFile, unlink, rmdir } from "node:fs/promises";
+import { mkdtemp, readFile, writeFile, unlink, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
@@ -59,8 +59,7 @@ async function pushStorePath(/** @type {string} */ niks3Bin, /** @type {string} 
       });
     });
   } finally {
-    await unlink(tokenFile).catch(() => {});
-    await rmdir(tokenDir).catch(() => {});
+    await rm(tokenDir, { recursive: true, force: true }).catch(() => {});
   }
 }
 

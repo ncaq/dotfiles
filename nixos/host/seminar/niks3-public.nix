@@ -129,7 +129,10 @@ in
         RuntimeDirectory = "niks3-public";
         RuntimeDirectoryMode = "0700";
         # Hardening
-        CapabilityBoundingSet = [ "CAP_CHOWN" "CAP_FOWNER" ];
+        CapabilityBoundingSet = [
+          "CAP_CHOWN"
+          "CAP_FOWNER"
+        ];
         LockPersonality = true;
         MemoryDenyWriteExecute = true;
         NoNewPrivileges = true;
@@ -143,12 +146,20 @@ in
         ProtectKernelModules = true;
         ProtectKernelTunables = true;
         ProtectSystem = "strict";
-        RestrictAddressFamilies = [ "AF_INET" "AF_INET6" "AF_UNIX" ];
+        RestrictAddressFamilies = [
+          "AF_INET"
+          "AF_INET6"
+          "AF_UNIX"
+        ];
         RestrictNamespaces = true;
         RestrictRealtime = true;
         RestrictSUIDSGID = true;
         SystemCallArchitectures = "native";
-        SystemCallFilter = [ "@system-service" "~@privileged" "@chown" ];
+        SystemCallFilter = [
+          "@system-service"
+          "~@privileged"
+          "@chown"
+        ];
         ExecStart = pkgs.lib.getExe (
           pkgs.writeShellApplication {
             name = "garage-setup-niks3-public";

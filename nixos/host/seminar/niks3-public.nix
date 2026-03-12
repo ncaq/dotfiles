@@ -50,6 +50,14 @@ in
         networking = {
           useHostResolvConf = lib.mkForce false;
           firewall.allowedTCPPorts = [ 5751 ];
+          # Cloudflare Tunnel経由だと`Content-Encoding: zstd`が透過的に解凍され、
+          # readProxyのnarinfo読み取りが壊れるため、
+          # ホスト上のCaddy経由でGarageコンテナに接続する。
+          # CaddyがLet's Encrypt証明書(DNS-01)でTLS terminationし、
+          # GarageへはHTTPで転送する。
+          # presigned URLはhttps://garage.ncaq.net/...のままなので、
+          # 外部クライアントはCloudflare Tunnel経由でアクセスできる。
+          hosts."${addr.host}" = [ "garage.ncaq.net" ];
         };
         users = {
           users.niks3-public = niks3User;
@@ -98,12 +106,14 @@ in
   systemd.services = {
     "container@niks3-public" = {
       requires = [
-        "postgresql.service"
+        "caddy.service"
         "garage-setup-niks3-public.service"
+        "postgresql.service"
       ];
       after = [
-        "postgresql.service"
+        "caddy.service"
         "garage-setup-niks3-public.service"
+        "postgresql.service"
       ];
     };
     # Garage bucket setup for niks3-public.

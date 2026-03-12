@@ -136,7 +136,6 @@ in
   };
 
   environment.systemPackages = [ garageWrapper ];
-  _module.args.garageWrapper = garageWrapper;
 
   sops.templates."garage-env" = {
     content = ''

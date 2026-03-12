@@ -100,11 +100,11 @@ try {
         await pushStorePath(niks3Bin, storePath);
       } catch (err) {
         failureCount++;
-        console.error(`niks3-push: Failed to push ${storePath}:`, err);
+        console.warn(`::warning::niks3-push: Failed to push ${storePath}: ${err}`);
       }
     }
     if (failureCount > 0) {
-      console.error(`niks3-push: ${failureCount}/${newPaths.length} paths failed`);
+      console.warn(`::warning::niks3-push: ${failureCount}/${newPaths.length} paths failed`);
     } else {
       console.log("niks3-push: Push completed successfully");
     }
@@ -112,6 +112,6 @@ try {
     await unlink(snapshotPath).catch(() => {});
   }
 } catch (err) {
-  console.error("niks3-push:", err);
+  console.warn(`::warning::niks3-push: ${err}`);
   // post stepの失敗でジョブ全体を失敗させない
 }

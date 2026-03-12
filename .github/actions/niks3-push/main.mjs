@@ -24,5 +24,5 @@ try {
   await appendFile(githubState, `snapshot_path=${snapshotPath}\n`);
   console.log("niks3-push: Saved pre-build store snapshot");
 } catch (err) {
-  console.error("niks3-push: Failed to save pre-build snapshot:", err);
+  console.warn(`::warning::niks3-push: Failed to save pre-build snapshot: ${err}`);
 }

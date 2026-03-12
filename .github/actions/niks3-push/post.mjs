@@ -1,5 +1,5 @@
 // @ts-check
-import { execFile } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import { mkdtemp, readFile, writeFile, unlink, rmdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -43,12 +43,20 @@ async function pushStorePath(/** @type {string} */ niks3Bin, /** @type {string} 
   const tokenFile = join(tokenDir, "token");
   try {
     await writeFile(tokenFile, freshToken, { mode: 0o600 });
-    await execFileAsync(`${niks3Bin}/bin/niks3`, ["push", storePath], {
-      env: {
-        ...process.env,
-        NIKS3_SERVER_URL: SERVER_URL,
-        NIKS3_AUTH_TOKEN_FILE: tokenFile,
-      },
+    await new Promise((resolve, reject) => {
+      const child = spawn(`${niks3Bin}/bin/niks3`, ["push", storePath], {
+        stdio: ["ignore", "inherit", "inherit"],
+        env: {
+          ...process.env,
+          NIKS3_SERVER_URL: SERVER_URL,
+          NIKS3_AUTH_TOKEN_FILE: tokenFile,
+        },
+      });
+      child.on("error", reject);
+      child.on("close", (code) => {
+        if (code === 0) resolve(undefined);
+        else reject(new Error(`niks3 push exited with code ${code}`));
+      });
     });
   } finally {
     await unlink(tokenFile).catch(() => {});

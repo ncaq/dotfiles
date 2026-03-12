@@ -1,6 +1,6 @@
 // @ts-check
 import { execFile, spawn } from "node:child_process";
-import { mkdtemp, readFile, writeFile, unlink, rm } from "node:fs/promises";
+import { mkdtemp, readFile, writeFile, unlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
@@ -32,17 +32,38 @@ async function getOidcToken() {
   return value;
 }
 
-/** OIDCトークンを取得し、一時ファイルに書き出してコールバックに渡す。終了後にファイルを削除する。 */
+/** JWTのペイロードからexpクレームを取得する。 */
+function getJwtExp(/** @type {string} */ jwt) {
+  const payload = JSON.parse(Buffer.from(jwt.split(".")[1], "base64url").toString());
+  return typeof payload.exp === "number" ? payload.exp : 0;
+}
+
+// トークンファイルのキャッシュ。期限が十分残っていれば再利用する。
+const TOKEN_MARGIN_SECONDS = 30;
+/** @type {{ tokenFile: string; exp: number } | undefined} */
+let cachedToken = undefined;
+
+/**
+ * OIDCトークンファイルのパスをコールバックに渡す。
+ * キャッシュ済みトークンの期限が十分残っていれば再利用し、不足していれば新規取得する。
+ * トークンファイルは削除しない。
+ * GitHubホステッドランナーまたはエフェメラルなセルフホステッドランナーを前提としており、
+ * ランナー自体がジョブ終了後に破棄される。
+ * 加えてmktempでディレクトリを作成しているため、
+ * 仮にランナーが永続的であってもファイルが衝突する心配は少ない。
+ */
 async function withTokenFile(/** @type {(tokenFile: string) => Promise<void>} */ fn) {
+  const now = Math.floor(Date.now() / 1000);
+  if (cachedToken && cachedToken.exp - now > TOKEN_MARGIN_SECONDS) {
+    await fn(cachedToken.tokenFile);
+    return;
+  }
   const freshToken = await getOidcToken();
   const tokenDir = await mkdtemp(join(tempDir, "niks3-token-"));
   const tokenFile = join(tokenDir, "token");
-  try {
-    await writeFile(tokenFile, freshToken, { mode: 0o600 });
-    await fn(tokenFile);
-  } finally {
-    await rm(tokenDir, { recursive: true, force: true }).catch(() => {});
-  }
+  await writeFile(tokenFile, freshToken, { mode: 0o600 });
+  cachedToken = { tokenFile, exp: getJwtExp(freshToken) };
+  await fn(tokenFile);
 }
 
 /** ストアパスを1件pushする。 */
@@ -88,9 +109,6 @@ try {
   }
 
   console.log(`niks3-push: Found ${newPaths.length} new store paths to push`);
-
-  // OIDCが利用可能か確認(利用不可なら例外で外側のcatchに落ちる)
-  await getOidcToken();
 
   // niks3をビルドしてバイナリパスを取得
   const niks3Ref = "git+https://github.com/Mic92/niks3?ref=v1.4.0&rev=bb87dcb1b46a1f0c9426b733f4fe325245e386fa";

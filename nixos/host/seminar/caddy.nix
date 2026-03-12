@@ -32,6 +32,8 @@ in
       '';
     };
   };
+  # コンテナのvethインターフェースからCaddyの443への接続を許可する。
+  networking.firewall.interfaces."ve-+".allowedTCPPorts = [ 443 ];
   # garage.ncaq.netのLet's Encrypt証明書をDNS-01チャレンジで取得。
   # Cloudflare Tunnelの接続先は変更せず(Garage直接のまま)、
   # niks3-publicコンテナからの内部アクセスのみCaddy HTTPS経由にする。

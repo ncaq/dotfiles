@@ -32,13 +32,22 @@ async function getOidcToken() {
   return value;
 }
 
-/** トークンを取得してストアパスを1件pushする。一時ファイルは呼び出しごとに隔離する。 */
-async function pushStorePath(/** @type {string} */ niks3Bin, /** @type {string} */ storePath) {
+/** OIDCトークンを取得し、一時ファイルに書き出してコールバックに渡す。終了後にファイルを削除する。 */
+async function withTokenFile(/** @type {(tokenFile: string) => Promise<void>} */ fn) {
   const freshToken = await getOidcToken();
   const tokenDir = await mkdtemp(join(tempDir, "niks3-token-"));
   const tokenFile = join(tokenDir, "token");
   try {
     await writeFile(tokenFile, freshToken, { mode: 0o600 });
+    await fn(tokenFile);
+  } finally {
+    await rm(tokenDir, { recursive: true, force: true }).catch(() => {});
+  }
+}
+
+/** ストアパスを1件pushする。 */
+async function pushStorePath(/** @type {string} */ niks3Bin, /** @type {string} */ storePath) {
+  await withTokenFile(async (tokenFile) => {
     await new Promise((resolve, reject) => {
       const child = spawn(`${niks3Bin}/bin/niks3`, ["push", storePath], {
         stdio: ["ignore", "inherit", "inherit"],
@@ -54,9 +63,7 @@ async function pushStorePath(/** @type {string} */ niks3Bin, /** @type {string} 
         else reject(new Error(`niks3 push exited with code ${code}`));
       });
     });
-  } finally {
-    await rm(tokenDir, { recursive: true, force: true }).catch(() => {});
-  }
+  });
 }
 
 try {

@@ -62,7 +62,13 @@ try {
   try {
     execFileSync(
       "nix",
-      ["run", "github:Mic92/niks3", "--", "push", ...newPaths],
+      [
+        "run",
+        "git+https://github.com/Mic92/niks3?ref=v1.4.0&rev=bb87dcb1b46a1f0c9426b733f4fe325245e386fa",
+        "--",
+        "push",
+        ...newPaths,
+      ],
       {
         stdio: "inherit",
         env: {

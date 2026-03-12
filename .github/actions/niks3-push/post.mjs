@@ -103,7 +103,10 @@ try {
     );
     console.log("niks3-push: Push completed successfully");
   } finally {
-    await unlink(tokenFile).catch(() => {});
+    await Promise.all([
+      unlink(tokenFile).catch(() => {}),
+      unlink(snapshotPath).catch(() => {}),
+    ]);
   }
 } catch (err) {
   console.error("niks3-push:", err);

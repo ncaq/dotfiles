@@ -138,12 +138,18 @@ in
               }
 
               # Wait for garage to be ready.
+              garage_ready=false
               for _ in $(seq 1 30); do
                 if garage_api GET /v2/GetClusterHealth > /dev/null 2>&1; then
+                  garage_ready=true
                   break
                 fi
                 sleep 2
               done
+              if [ "$garage_ready" = false ]; then
+                echo "Garage health check timed out" >&2
+                exit 1
+              fi
 
               # Calculate expiration date (1 year from now) in RFC 3339 format.
               EXPIRATION=$(date -u -d '+365 days' '+%Y-%m-%dT%H:%M:%SZ')

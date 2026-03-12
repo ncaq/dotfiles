@@ -27,6 +27,9 @@ async function getOidcToken() {
     throw new Error(`OIDC token request failed: ${response.status} ${response.statusText}`);
   }
   const { value } = await response.json();
+  if (typeof value !== "string" || value.length === 0) {
+    throw new Error("OIDC token response did not contain a valid token");
+  }
   return value;
 }
 

@@ -27,6 +27,9 @@ jobs:
 
   nix-fast-build:
     needs: is-trusted
+    permissions:
+      contents: read
+      id-token: write # niks3-publicへのOIDC認証に必要
     # 信頼できるソースの場合はセルフホステッドランナーで高速化し、
     # それ以外はGitHubランナーで実行します。
     # is-trustedがスキップされてもこのジョブは実行する必要があるためalways()を使用します。
@@ -44,10 +47,14 @@ jobs:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
           cachix-name: ncaq-dotfiles
           attic-token: "${{ secrets.ATTIC_TOKEN }}"
+          niks3-push: "${{ needs.is-trusted.result == 'success' }}"
       - run: nix run '.#nix-fast-build' -- --option eval-cache false --no-link --skip-cached --no-nom
 
   build-home-manager:
     needs: is-trusted
+    permissions:
+      contents: read
+      id-token: write # niks3-publicへのOIDC認証に必要
     # セルフホステッドランナーは未認証のソースからは実行しない。
     if: needs.is-trusted.result == 'success'
     runs-on: [self-hosted, Linux, X64]
@@ -61,10 +68,14 @@ jobs:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
           cachix-name: ncaq-dotfiles
           attic-token: "${{ secrets.ATTIC_TOKEN }}"
+          niks3-push: "true"
       - run: nix build .#homeConfigurations.x86_64-linux.activationPackage
 
   build-nix-on-droid:
     needs: is-trusted
+    permissions:
+      contents: read
+      id-token: write # niks3-publicへのOIDC認証に必要
     # セルフホステッドランナーは未認証のソースからは実行しない。
     if: needs.is-trusted.result == 'success'
     runs-on: [self-hosted, Linux, ARM64]
@@ -78,5 +89,6 @@ jobs:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
           cachix-name: ncaq-dotfiles
           attic-token: "${{ secrets.ATTIC_TOKEN }}"
+          niks3-push: "true"
       # Nix-on-Droidのビルドはimpureモードで行う必要があります
       - run: nix build .#nixOnDroidConfigurations.default.activationPackage --impure

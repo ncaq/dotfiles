@@ -1,0 +1,10 @@
+name: Push to niks3-public
+description: >
+  ビルド前後のnix storeの差分をniks3-publicにOIDC認証でpushします。
+  呼び出し元のジョブにid-token: write権限が必要です。
+
+runs:
+  using: node24
+  main: main.mjs
+  post: post.mjs
+  post-if: always()

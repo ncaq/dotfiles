@@ -1,6 +1,6 @@
 // @ts-check
 import { execFile, spawn } from "node:child_process";
-import { mkdtemp, readFile, writeFile, unlink } from "node:fs/promises";
+import { mkdtemp, readFile, writeFile, unlink, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
@@ -40,17 +40,33 @@ function getJwtExp(/** @type {string} */ jwt) {
 
 // トークンファイルのキャッシュ。期限が十分残っていれば再利用する。
 const TOKEN_MARGIN_SECONDS = 30;
+/** @type {string | undefined} */
+let tokenDir = undefined;
 /** @type {{ tokenFile: string; exp: number } | undefined} */
 let cachedToken = undefined;
+
+/** トークンディレクトリを取得する。未作成なら作成する。 */
+async function getTokenDir() {
+  if (tokenDir == null) {
+    tokenDir = await mkdtemp(join(tempDir, "niks3-token-"));
+  }
+  return tokenDir;
+}
+
+/** トークンディレクトリを削除する。 */
+async function cleanupTokenDir() {
+  if (tokenDir != null) {
+    await rm(tokenDir, { recursive: true, force: true }).catch((err) => {
+      console.warn(`::warning::niks3-push: Failed to cleanup token directory: ${err}`);
+    });
+    tokenDir = undefined;
+    cachedToken = undefined;
+  }
+}
 
 /**
  * OIDCトークンファイルのパスをコールバックに渡す。
  * キャッシュ済みトークンの期限が十分残っていれば再利用し、不足していれば新規取得する。
- * トークンファイルは削除しない。
- * GitHubホステッドランナーまたはエフェメラルなセルフホステッドランナーを前提としており、
- * ランナー自体がジョブ終了後に破棄される。
- * 加えてmktempでディレクトリを作成しているため、
- * 仮にランナーが永続的であってもファイルが衝突する心配は少ない。
  */
 async function withTokenFile(/** @type {(tokenFile: string) => Promise<void>} */ fn) {
   const now = Math.floor(Date.now() / 1000);
@@ -59,8 +75,8 @@ async function withTokenFile(/** @type {(tokenFile: string) => Promise<void>} */
     return;
   }
   const freshToken = await getOidcToken();
-  const tokenDir = await mkdtemp(join(tempDir, "niks3-token-"));
-  const tokenFile = join(tokenDir, "token");
+  const dir = await getTokenDir();
+  const tokenFile = join(dir, "token");
   await writeFile(tokenFile, freshToken, { mode: 0o600 });
   cachedToken = { tokenFile, exp: getJwtExp(freshToken) };
   await fn(tokenFile);
@@ -137,6 +153,7 @@ try {
     }
   } finally {
     await unlink(snapshotPath).catch(() => {});
+    await cleanupTokenDir();
   }
 } catch (err) {
   console.warn(`::warning::niks3-push: ${err}`);

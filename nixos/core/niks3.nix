@@ -6,7 +6,6 @@
 }:
 let
   inherit (inputs.niks3.packages.${pkgs.stdenv.hostPlatform.system}) niks3;
-  authTokenPath = config.sops.secrets."niks3-private-client-api-token".path;
 in
 {
   environment.systemPackages = [ niks3 ];
@@ -24,10 +23,11 @@ in
         # Nixデーモンはhookのstdout/stderrをクライアントに転送するため、
         # logger経由でjournalに送ることでターミナルへの出力を抑制する。
         if [ -n "''${OUT_PATHS:-}" ]; then
+          NIKS3_AUTH_TOKEN_FILE=${config.sops.secrets."niks3-private-client-api-token".path}
+          export NIKS3_AUTH_TOKEN_FILE
           # shellcheck disable=SC2086
           niks3 push \
             --server-url "https://seminar.border-saurolophus.ts.net:8443/niks3/private/" \
-            --auth-token "$(cat "${authTokenPath}")" \
             $OUT_PATHS 2>&1 | logger -t niks3-private-push || logger -t niks3-private-push "push failed, ignoring"
         fi
       '';

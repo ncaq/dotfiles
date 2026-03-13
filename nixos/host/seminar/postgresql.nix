@@ -15,6 +15,7 @@
       "atticd"
       "forgejo"
       "niks3-public"
+      "niks3-private"
     ];
     ensureUsers = [
       {
@@ -32,6 +33,10 @@
       }
       {
         name = "niks3-public";
+        ensureDBOwnership = true;
+      }
+      {
+        name = "niks3-private";
         ensureDBOwnership = true;
       }
     ];

@@ -3,6 +3,8 @@ let
   atticdAddr = config.machineAddresses.atticd.guest;
   garageAddr = config.machineAddresses.garage.guest;
   niks3PublicHostAddr = config.machineAddresses.niks3-public.host;
+  niks3PrivateAddr = config.machineAddresses.niks3-private.guest;
+  niks3PrivateHostAddr = config.machineAddresses.niks3-private.host;
 in
 {
   services.caddy = {
@@ -19,25 +21,32 @@ in
       }
       redir /nix/cache /nix/cache/
     '';
-    # niks3-publicコンテナからGarageへのCloudflare Tunnelバイパス用TLS termination proxy。
+    # niks3コンテナからGarageへのTLS termination proxy。
     # Cloudflare Tunnel経由だとContent-Encoding: zstdが透過的に解凍され、
     # niks3のreadProxyがS3上のzstd圧縮narinfoを正しく読めなくなる。
     # コンテナ内のhostsでgarage.ncaq.netをhostAddressに向け、
     # Caddy(Let's Encrypt証明書)経由でGarageに直接HTTP接続することでバイパスする。
     # presigned URLはhttps://garage.ncaq.net/...のまま維持され、
     # 外部クライアント(GitHub Actions)はCloudflare Tunnel経由でアクセスする。
-    # Tailscale Funnelがホストの443を使うため、
-    # niks3-publicコンテナのhostAddress側vethのみにバインドする。
-    # vethはコンテナ起動時に作成されるため、
-    # Caddy起動時に存在しない場合があり、
-    # boot.kernel.sysctl."net.ipv4.ip_nonlocal_bind"が必要。
+    # ホストの443を完全に占有してしまわないように、
+    # niks3コンテナのhostAddress側vethのみにバインドする。
     virtualHosts."garage.ncaq.net" = {
       useACMEHost = "garage.ncaq.net";
       extraConfig = ''
-        bind ${niks3PublicHostAddr}
+        bind ${niks3PublicHostAddr} ${niks3PrivateHostAddr}
         reverse_proxy http://${garageAddr}:3900
       '';
     };
+    # Tailscale Serve(tailnet専用)からのリクエストを受けるリバースプロキシ。
+    # Tailscale ServeがTLS終端し、ここにHTTPで転送する。
+    # Funnelの:8080とは別ポートにすることで、
+    # tailnet専用サービスがパブリックインターネットに露出しない。
+    virtualHosts."localhost:8081".extraConfig = ''
+      handle_path /niks3/private/* {
+        reverse_proxy http://${niks3PrivateAddr}:5751
+      }
+      redir /niks3/private /niks3/private/
+    '';
   };
   # コンテナのvethインターフェースからCaddyの443への接続を許可する。
   networking.firewall.interfaces."ve-+".allowedTCPPorts = [ 443 ];

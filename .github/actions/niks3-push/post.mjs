@@ -1,8 +1,8 @@
 // @ts-check
 import { execFile, spawn } from "node:child_process";
-import { mkdtemp, readFile, writeFile, unlink, rm } from "node:fs/promises";
+import { mkdtemp, readFile, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
@@ -152,7 +152,7 @@ try {
       console.log("niks3-push: Push completed successfully");
     }
   } finally {
-    await unlink(snapshotPath).catch(() => {});
+    await rm(dirname(snapshotPath), { recursive: true, force: true }).catch(() => {});
     await cleanupTokenDir();
   }
 } catch (err) {

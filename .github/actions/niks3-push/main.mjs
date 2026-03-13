@@ -1,6 +1,6 @@
 // @ts-check
 import { execFile } from "node:child_process";
-import { writeFile, appendFile } from "node:fs/promises";
+import { mkdtemp, writeFile, appendFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
@@ -11,9 +11,8 @@ try {
   const tempDir = process.env.RUNNER_TEMP || tmpdir();
 
   // ビルド前のnix storeパスのスナップショットを保存
-  const runId = process.env.GITHUB_RUN_ID || "unknown-run";
-  const job = process.env.GITHUB_JOB || "unknown-job";
-  const snapshotPath = join(tempDir, `niks3-pre-build-paths-${runId}-${job}.txt`);
+  const snapshotDir = await mkdtemp(join(tempDir, "niks3-snapshot-"));
+  const snapshotPath = join(snapshotDir, "pre-build-paths.txt");
   const { stdout: paths } = await execFileAsync("nix", ["path-info", "--all"], {
     encoding: "utf-8",
     maxBuffer: 50 * 1024 * 1024,

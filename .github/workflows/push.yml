@@ -88,4 +88,5 @@ jobs:
           cachix-name: ncaq-dotfiles
           niks3-push: "true"
       # Nix-on-Droidのビルドはimpureモードで行う必要があります
-      - run: nix build .#nixOnDroidConfigurations.default.activationPackage --impure
+      # セルフホステッドランナーのNix設定にあるpost-build-hookが外部ネットワークにpushしようとするため無効化する
+      - run: nix build .#nixOnDroidConfigurations.default.activationPackage --impure --option post-build-hook ""

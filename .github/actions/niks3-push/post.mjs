@@ -3,6 +3,7 @@ import { execFile, spawn } from "node:child_process";
 import { mkdtemp, readFile, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { createInterface } from "node:readline";
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
@@ -11,11 +12,21 @@ const tempDir = process.env.RUNNER_TEMP || tmpdir();
 
 /** nix store内の全パスを一覧として取得する。 */
 async function getAllStorePaths() {
-  const { stdout } = await execFileAsync("nix", ["path-info", "--all"], {
-    encoding: "utf-8",
-    maxBuffer: 50 * 1024 * 1024,
+  /** @type {string[]} */
+  const paths = [];
+  await new Promise((resolve, reject) => {
+    const child = spawn("nix", ["path-info", "--all"], { stdio: ["ignore", "pipe", "inherit"] });
+    const rl = createInterface({ input: child.stdout });
+    rl.on("line", (line) => {
+      if (line) paths.push(line);
+    });
+    child.on("error", reject);
+    child.on("close", (code) => {
+      if (code === 0) resolve(undefined);
+      else reject(new Error(`nix path-info exited with code ${code}`));
+    });
   });
-  return stdout.trim().split("\n").filter(Boolean);
+  return paths;
 }
 
 /** ビルド前後のnix storeの差分を計算する。 */

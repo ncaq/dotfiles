@@ -1,19 +1,22 @@
 // @ts-check
-import { execFile } from "node:child_process";
-import { mkdtemp, writeFile, appendFile } from "node:fs/promises";
+import { spawn } from "node:child_process";
+import { createWriteStream } from "node:fs";
+import { mkdtemp, appendFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { promisify } from "node:util";
 
-const execFileAsync = promisify(execFile);
-
-/** nix store内の全パスを取得する。 */
-async function getAllStorePaths() {
-  const { stdout } = await execFileAsync("nix", ["path-info", "--all"], {
-    encoding: "utf-8",
-    maxBuffer: 50 * 1024 * 1024,
+/** nix store内の全パスをファイルに書き出す。 */
+async function saveStorePathsToFile(/** @type {string} */ filePath) {
+  return new Promise((resolve, reject) => {
+    const child = spawn("nix", ["path-info", "--all"], { stdio: ["ignore", "pipe", "inherit"] });
+    const out = createWriteStream(filePath);
+    child.stdout.pipe(out);
+    child.on("error", reject);
+    child.on("close", (code) => {
+      if (code === 0) resolve(undefined);
+      else reject(new Error(`nix path-info exited with code ${code}`));
+    });
   });
-  return stdout;
 }
 
 try {
@@ -22,8 +25,7 @@ try {
   // ビルド前のnix storeパスのスナップショットを保存
   const snapshotDir = await mkdtemp(join(tempDir, "niks3-snapshot-"));
   const snapshotPath = join(snapshotDir, "pre-build-paths.txt");
-  const paths = await getAllStorePaths();
-  await writeFile(snapshotPath, paths);
+  await saveStorePathsToFile(snapshotPath);
   const githubState = process.env.GITHUB_STATE;
   if (githubState == null || githubState === "") {
     throw new Error("GITHUB_STATE is not set");

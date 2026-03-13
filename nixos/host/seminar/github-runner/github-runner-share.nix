@@ -7,7 +7,6 @@ let
     { pkgs, ... }:
     with pkgs;
     [
-      attic-client
       cachix
     ];
   # GitHub Actionsランナーの並列数。

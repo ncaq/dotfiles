@@ -10,10 +10,6 @@ inputs:
     description: Cachix cache name
     required: false
     default: ""
-  attic-token:
-    description: Attic cache authentication token
-    required: false
-    default: ""
   niks3-push:
     description: Enable pushing to niks3-public cache (disable for untrusted sources)
     required: false
@@ -55,13 +51,6 @@ runs:
         # store scanはクライアント側で動作するため両環境で問題なく使えます。
         # 一貫性のために多少のパフォーマンスより設定を統一して両方の環境で`useDaemon`を`false`にしています。
         useDaemon: false
-    - name: Setup Attic cache
-      if: inputs.attic-token != ''
-      uses: ryanccn/attic-action@1887fd507f03327c96c64cca30118c96eb17fdad # v0.4.1
-      with:
-        endpoint: https://seminar.border-saurolophus.ts.net/nix/cache/
-        cache: private
-        token: "${{ inputs.attic-token }}"
     - name: Setup niks3-public push
       if: inputs.niks3-push == 'true'
       uses: ./.github/actions/niks3-push

@@ -24,10 +24,11 @@ in
         # Nixデーモンはhookのstdout/stderrをクライアントに転送するため、
         # logger経由でjournalに送ることでターミナルへの出力を抑制する。
         if [ -n "''${OUT_PATHS:-}" ]; then
+          # shellcheck disable=SC2086
           niks3 push \
             --server-url "https://seminar.border-saurolophus.ts.net:8443/niks3/private/" \
             --auth-token "$(cat "${authTokenPath}")" \
-            "$OUT_PATHS" 2>&1 | logger -t niks3-private-push || logger -t niks3-private-push "push failed, ignoring"
+            $OUT_PATHS 2>&1 | logger -t niks3-private-push || logger -t niks3-private-push "push failed, ignoring"
         fi
       '';
     }

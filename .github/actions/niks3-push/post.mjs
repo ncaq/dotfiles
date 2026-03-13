@@ -132,18 +132,18 @@ async function pushStorePath(/** @type {string} */ niks3Bin, /** @type {string} 
   });
 }
 
-try {
+async function main() {
   const snapshotPath = process.env.STATE_snapshot_path;
   if (!snapshotPath) {
     console.log("niks3-push: No snapshot found, skipping push");
-    process.exit(0);
+    return;
   }
 
   const newPaths = await getNewStorePaths(snapshotPath);
 
   if (newPaths.length === 0) {
     console.log("niks3-push: No new store paths to push");
-    process.exit(0);
+    return;
   }
 
   console.log(`niks3-push: Found ${newPaths.length} new store paths to push`);
@@ -177,7 +177,9 @@ try {
     await rm(dirname(snapshotPath), { recursive: true, force: true }).catch(() => {});
     await cleanupTokenDir();
   }
-} catch (err) {
+}
+
+main().catch((err) => {
   console.warn(`::warning::niks3-push: ${err}`);
   // post stepの失敗でジョブ全体を失敗させない
-}
+});

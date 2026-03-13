@@ -19,7 +19,7 @@ async function saveStorePathsToFile(/** @type {string} */ filePath) {
   });
 }
 
-try {
+async function main() {
   const tempDir = process.env.RUNNER_TEMP || tmpdir();
 
   // ビルド前のnix storeパスのスナップショットを保存
@@ -32,6 +32,8 @@ try {
   }
   await appendFile(githubState, `snapshot_path=${snapshotPath}\n`);
   console.log("niks3-push: Saved pre-build store snapshot");
-} catch (err) {
-  console.warn(`::warning::niks3-push: Failed to save pre-build snapshot: ${err}`);
 }
+
+main().catch((err) => {
+  console.warn(`::warning::niks3-push: Failed to save pre-build snapshot: ${err}`);
+});

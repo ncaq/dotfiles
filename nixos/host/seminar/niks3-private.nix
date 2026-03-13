@@ -85,7 +85,7 @@ in
             apiTokenFile = "/etc/niks3-private/api-token";
             signKeyFiles = [ "/etc/niks3-private/sign-key" ];
             # Tailscale Serve経由でHTTPSアクセスされるURL。
-            cacheUrl = "https://seminar:8443/niks3/private/";
+            cacheUrl = "https://seminar.border-saurolophus.ts.net:8443/niks3/private/";
             # readはTailscaleネットワーク認証、writeはAPIトークン認証。
             readProxy.enable = true;
           };

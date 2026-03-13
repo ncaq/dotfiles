@@ -1,22 +1,13 @@
 // @ts-check
-import { spawn } from "node:child_process";
-import { createWriteStream } from "node:fs";
-import { mkdtemp, appendFile } from "node:fs/promises";
+import { mkdtemp, appendFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { listStorePaths } from "./store.mjs";
 
-/** nix store内の全パスをファイルに書き出す。 */
+/** /nix/store内のパスを列挙してファイルに書き出す。 */
 async function saveStorePathsToFile(/** @type {string} */ filePath) {
-  return new Promise((resolve, reject) => {
-    const child = spawn("nix", ["path-info", "--all"], { stdio: ["ignore", "pipe", "inherit"] });
-    const out = createWriteStream(filePath);
-    child.stdout.pipe(out);
-    child.on("error", reject);
-    child.on("close", (code) => {
-      if (code === 0) resolve(undefined);
-      else reject(new Error(`nix path-info exited with code ${code}`));
-    });
-  });
+  const paths = await listStorePaths();
+  await writeFile(filePath, paths.join("\n") + "\n");
 }
 
 async function main() {

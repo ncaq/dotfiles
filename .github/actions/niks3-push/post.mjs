@@ -3,36 +3,17 @@ import { execFile, spawn } from "node:child_process";
 import { mkdtemp, readFile, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { createInterface } from "node:readline";
 import { promisify } from "node:util";
+import { listStorePaths } from "./store.mjs";
 
 const execFileAsync = promisify(execFile);
 
 const tempDir = process.env.RUNNER_TEMP || tmpdir();
 
-/** nix store内の全パスを一覧として取得する。 */
-async function getAllStorePaths() {
-  /** @type {string[]} */
-  const paths = [];
-  await new Promise((resolve, reject) => {
-    const child = spawn("nix", ["path-info", "--all"], { stdio: ["ignore", "pipe", "inherit"] });
-    const rl = createInterface({ input: child.stdout });
-    rl.on("line", (line) => {
-      if (line) paths.push(line);
-    });
-    child.on("error", reject);
-    child.on("close", (code) => {
-      if (code === 0) resolve(undefined);
-      else reject(new Error(`nix path-info exited with code ${code}`));
-    });
-  });
-  return paths;
-}
-
 /** ビルド前後のnix storeの差分を計算する。 */
 async function getNewStorePaths(/** @type {string} */ snapshotPath) {
   const prePaths = new Set((await readFile(snapshotPath, "utf-8")).trim().split("\n").filter(Boolean));
-  const currentPaths = await getAllStorePaths();
+  const currentPaths = await listStorePaths();
   return currentPaths.filter((p) => !prePaths.has(p));
 }
 

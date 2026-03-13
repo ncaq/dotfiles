@@ -10,27 +10,53 @@ in
     useRoutingFeatures = "both";
   };
 
-  # Tailscale Funnelでサーバをパブリックインターネットに公開する設定。
+  # Tailscale Funnel/Serveの設定。
   # [ncaq/infra.ncaq.net: Infrastructure as Code for ncaq.net](https://github.com/ncaq/infra.ncaq.net/)
   # でFunnelを有効化しています。
-  systemd.services.tailscale-funnel = {
-    description = "Configure Tailscale Funnel";
-    requires = [
-      "tailscaled.service"
-      "caddy.service"
-    ];
-    after = [
-      "tailscaled.service"
-      "caddy.service"
-    ];
-    wantedBy = [ "multi-user.target" ];
-    serviceConfig = {
-      Type = "oneshot";
-      ExecStart = "${tailscale}/bin/tailscale funnel --bg http://127.0.0.1:8080";
-      ExecStop = "${tailscale}/bin/tailscale funnel --bg off";
-      RemainAfterExit = true;
-      Restart = "on-failure";
-      RestartSec = "10s";
+  systemd.services = {
+    # Funnelはパブリックインターネットに公開する。
+    # Caddy :8080がパス毎に公開サービスをルーティングする。
+    tailscale-funnel = {
+      description = "Configure Tailscale Funnel";
+      requires = [
+        "caddy.service"
+        "tailscaled.service"
+      ];
+      after = [
+        "caddy.service"
+        "tailscaled.service"
+      ];
+      wantedBy = [ "multi-user.target" ];
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = "${tailscale}/bin/tailscale funnel --bg http://127.0.0.1:8080";
+        ExecStop = "${tailscale}/bin/tailscale funnel --bg off";
+        RemainAfterExit = true;
+        Restart = "on-failure";
+        RestartSec = "10s";
+      };
+    };
+    # Serveはtailnet内のみに公開する(Funnelではない)。
+    # Caddy :8081がパス毎にtailnet専用サービスをルーティングする。
+    tailscale-serve = {
+      description = "Configure Tailscale Serve";
+      requires = [
+        "caddy.service"
+        "tailscaled.service"
+      ];
+      after = [
+        "caddy.service"
+        "tailscaled.service"
+      ];
+      wantedBy = [ "multi-user.target" ];
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = "${tailscale}/bin/tailscale serve --bg --https=8443 http://127.0.0.1:8081";
+        ExecStop = "${tailscale}/bin/tailscale serve --https=8443 off";
+        RemainAfterExit = true;
+        Restart = "on-failure";
+        RestartSec = "10s";
+      };
     };
   };
 

@@ -336,6 +336,7 @@ in
           "Bash(true)"
           "Bash(tsc --noEmit:*)"
           "Bash(update-nix-fetchgit:*)"
+          "Bash(wc:*)"
           "Bash(xargs:*)"
           "Skill(nix-check:*)"
           "WebFetch"

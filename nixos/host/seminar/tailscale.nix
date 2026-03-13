@@ -46,6 +46,7 @@ in
       ];
       after = [
         "caddy.service"
+        "tailscale-funnel.service"
         "tailscaled.service"
       ];
       wantedBy = [ "multi-user.target" ];

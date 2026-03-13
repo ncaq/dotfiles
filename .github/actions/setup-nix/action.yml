@@ -14,6 +14,10 @@ inputs:
     description: Attic cache authentication token
     required: false
     default: ""
+  niks3-push:
+    description: Enable pushing to niks3-public cache (disable for untrusted sources)
+    required: false
+    default: "false"
 
 runs:
   using: composite
@@ -59,4 +63,5 @@ runs:
         cache: private
         token: "${{ inputs.attic-token }}"
     - name: Setup niks3-public push
+      if: inputs.niks3-push == 'true'
       uses: ./.github/actions/niks3-push

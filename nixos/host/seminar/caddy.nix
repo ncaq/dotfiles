@@ -41,7 +41,11 @@ in
     # Tailscale ServeがTLS終端し、ここにHTTPで転送する。
     # Funnelの:8080とは別ポートにすることで、
     # tailnet専用サービスがパブリックインターネットに露出しない。
-    virtualHosts."localhost:8081".extraConfig = ''
+    # Caddy v2では`localhost`はlocal CAによる自動HTTPSの対象になるため、
+    # `localhost:8081`だとHTTPSが有効化され、Tailscale ServeからのHTTPプロキシが失敗する。
+    # `:8081`(ホスト名なし)にしてbind 127.0.0.1でHTTPのみに限定する。
+    virtualHosts.":8081".extraConfig = ''
+      bind 127.0.0.1
       handle_path /niks3/private/* {
         reverse_proxy http://${niks3PrivateAddr}:5751
       }

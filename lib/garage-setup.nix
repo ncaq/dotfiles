@@ -58,7 +58,9 @@
       pkgs.writeShellApplication {
         name = "garage-setup-${name}";
         runtimeInputs = with pkgs; [
+          coreutils
           curl
+          findutils
           jq
         ];
         text = ''

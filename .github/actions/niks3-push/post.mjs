@@ -111,11 +111,11 @@ async function withTokenFile(/** @type {(tokenFile: string) => Promise<void>} */
   await fn(tokenFile);
 }
 
-/** ストアパスを1件pushする。 */
-async function pushStorePath(/** @type {string} */ niks3Bin, /** @type {string} */ storePath) {
+/** 指定されたストアパスをpushする。 */
+async function pushStorePaths(/** @type {string} */ niks3Bin, /** @type {string[]} */ storePaths) {
   await withTokenFile(async (tokenFile) => {
     await new Promise((resolve, reject) => {
-      const child = spawn(`${niks3Bin}/bin/niks3`, ["push", storePath], {
+      const child = spawn(`${niks3Bin}/bin/niks3`, ["push", ...storePaths], {
         stdio: ["ignore", "inherit", "inherit"],
         env: {
           ...process.env,
@@ -157,16 +157,24 @@ async function main() {
   );
   const niks3Bin = niks3BuildOutput.trim();
 
+  const BATCH_SIZE = 32;
+  const batches = Array.from({ length: Math.ceil(newPaths.length / BATCH_SIZE) }, (_, i) =>
+    newPaths.slice(i * BATCH_SIZE, (i + 1) * BATCH_SIZE),
+  );
   let failureCount = 0;
   try {
-    for (const [i, storePath] of newPaths.entries()) {
+    let pushed = 0;
+    for (const batch of batches) {
+      const start = pushed + 1;
+      const end = pushed + batch.length;
       try {
-        console.log(`niks3-push: Pushing ${i + 1}/${newPaths.length}: ${storePath}`);
-        await pushStorePath(niks3Bin, storePath);
+        console.log(`niks3-push: Pushing ${start}-${end}/${newPaths.length}`);
+        await pushStorePaths(niks3Bin, batch);
       } catch (err) {
-        failureCount++;
-        console.warn(`::warning::niks3-push: Failed to push ${storePath}: ${err}`);
+        failureCount += batch.length;
+        console.warn(`::warning::niks3-push: Failed to push batch ${start}-${end}: ${err}`);
       }
+      pushed = end;
     }
     if (failureCount > 0) {
       console.warn(`::warning::niks3-push: ${failureCount}/${newPaths.length} paths failed`);

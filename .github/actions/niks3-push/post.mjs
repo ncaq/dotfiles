@@ -10,6 +10,7 @@ const execFileAsync = promisify(execFile);
 const tempDir = process.env.RUNNER_TEMP || tmpdir();
 const SERVER_URL = "https://niks3-public.ncaq.net";
 
+/** GitHub ActionsのOIDCトークンエンドポイントからトークンを取得する。 */
 async function getOidcToken() {
   const requestUrl = process.env.ACTIONS_ID_TOKEN_REQUEST_URL;
   const requestToken = process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN;

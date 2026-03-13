@@ -7,16 +7,22 @@ import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
 
+/** nix store内の全パスを取得する。 */
+async function getAllStorePaths() {
+  const { stdout } = await execFileAsync("nix", ["path-info", "--all"], {
+    encoding: "utf-8",
+    maxBuffer: 50 * 1024 * 1024,
+  });
+  return stdout;
+}
+
 try {
   const tempDir = process.env.RUNNER_TEMP || tmpdir();
 
   // ビルド前のnix storeパスのスナップショットを保存
   const snapshotDir = await mkdtemp(join(tempDir, "niks3-snapshot-"));
   const snapshotPath = join(snapshotDir, "pre-build-paths.txt");
-  const { stdout: paths } = await execFileAsync("nix", ["path-info", "--all"], {
-    encoding: "utf-8",
-    maxBuffer: 50 * 1024 * 1024,
-  });
+  const paths = await getAllStorePaths();
   await writeFile(snapshotPath, paths);
   const githubState = process.env.GITHUB_STATE;
   if (githubState == null || githubState === "") {

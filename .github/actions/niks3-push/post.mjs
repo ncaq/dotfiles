@@ -8,6 +8,23 @@ import { promisify } from "node:util";
 const execFileAsync = promisify(execFile);
 
 const tempDir = process.env.RUNNER_TEMP || tmpdir();
+
+/** nix store内の全パスを一覧として取得する。 */
+async function getAllStorePaths() {
+  const { stdout } = await execFileAsync("nix", ["path-info", "--all"], {
+    encoding: "utf-8",
+    maxBuffer: 50 * 1024 * 1024,
+  });
+  return stdout.trim().split("\n").filter(Boolean);
+}
+
+/** ビルド前後のnix storeの差分を計算する。 */
+async function getNewStorePaths(/** @type {string} */ snapshotPath) {
+  const prePaths = new Set((await readFile(snapshotPath, "utf-8")).trim().split("\n").filter(Boolean));
+  const currentPaths = await getAllStorePaths();
+  return currentPaths.filter((p) => !prePaths.has(p));
+}
+
 const SERVER_URL = "https://niks3-public.ncaq.net";
 
 /** GitHub ActionsのOIDCトークンエンドポイントからトークンを取得する。 */
@@ -111,14 +128,7 @@ try {
     process.exit(0);
   }
 
-  // ビルド前後のnix storeの差分を計算
-  const prePaths = new Set((await readFile(snapshotPath, "utf-8")).trim().split("\n").filter(Boolean));
-  const { stdout: currentPathsOutput } = await execFileAsync("nix", ["path-info", "--all"], {
-    encoding: "utf-8",
-    maxBuffer: 50 * 1024 * 1024,
-  });
-  const currentPaths = currentPathsOutput.trim().split("\n").filter(Boolean);
-  const newPaths = currentPaths.filter((p) => !prePaths.has(p));
+  const newPaths = await getNewStorePaths(snapshotPath);
 
   if (newPaths.length === 0) {
     console.log("niks3-push: No new store paths to push");

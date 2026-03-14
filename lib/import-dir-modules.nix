@@ -39,11 +39,11 @@
 dir:
 let
   # ディレクトリ内の全エントリを `{ name = type; ... }` のattrsetとして取得する。
-  nixFiles = builtins.readDir dir;
+  dirEntries = builtins.readDir dir;
   # default.nixを除く通常の.nixファイルだけを抽出する。
   moduleFiles = lib.filterAttrs (
     name: type: type == "regular" && lib.hasSuffix ".nix" name && name != "default.nix"
-  ) nixFiles;
+  ) dirEntries;
 in
 # ファイル名をディレクトリパスと結合してフルパスのリストに変換する。
 lib.mapAttrsToList (name: _: lib.path.append dir name) moduleFiles

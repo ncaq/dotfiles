@@ -12,6 +12,7 @@ let
     runnerNum
     dotfiles-github-runner
     users
+    ciNixSettings
     ;
   addr = config.machineAddresses.github-runner-x64;
 in
@@ -32,13 +33,12 @@ in
       { lib, ... }:
       {
         system.stateVersion = "25.05";
-        # ホストの評価済みnix.settingsを継承します。
-        # trusted-usersなどホスト側で追加された設定も含まれます。
-        # コンテナはホストのnixデーモンソケットを共有しますが、
-        # cachixなどのツールはローカルのnix.confを参照するため
-        # コンテナ側にも同じ設定が必要です。
+        # NixデーモンにCI用の設定を渡します。
+        # `trusted-users`などが含まれます。
+        # コンテナはホストのnixデーモンソケットを共有するので、
+        # ある程度設定を同期させる必要があります。
         inherit users;
-        nix.settings = config.nix.settings;
+        nix.settings = ciNixSettings;
         networking = {
           useHostResolvConf = lib.mkForce false;
           firewall.trustedInterfaces = [ "eth0" ]; # CIジョブ中に任意のポートでリッスンするため全許可

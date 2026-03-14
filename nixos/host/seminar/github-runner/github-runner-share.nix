@@ -52,6 +52,20 @@ let
     };
     groups.github-runner.gid = user.gid;
   };
+  # CI用のnix設定。
+  # ホストの`nix.settings`をベースにしますが、
+  # キャッシュ設定などはCIの設定側で設定するべきなのと、
+  # ホスト側のビルドフックは動かないので、
+  # 必要な設定だけを抜き出します。
+  ciNixSettings = {
+    inherit (config.nix.settings)
+      experimental-features
+      cores
+      max-jobs
+      accept-flake-config
+      trusted-users
+      ;
+  };
 in
 {
   # 共有定義を他のランナーモジュールから利用可能にします。
@@ -62,6 +76,7 @@ in
       runnerNum
       dotfiles-github-runner
       users
+      ciNixSettings
       ;
   };
 

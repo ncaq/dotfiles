@@ -276,6 +276,10 @@ in
             }
           );
           inherit check_interval;
+          # エミュレートされた仮想マシンで起動が遅いのと、
+          # GitHub側がランナーの起動を待ってくれるため、
+          # ある程度の沈黙を許容します。
+          max_check_attempts = 3;
         };
       };
     };

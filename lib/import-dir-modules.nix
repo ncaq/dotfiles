@@ -17,7 +17,7 @@
 
   戻り値:
     NixOSモジュールやhome-managerモジュールのimportsに直接渡せるパスのリスト。
-    例: `[ /home/ncaq/dotfiles/nixos/core/networking.nix /home/ncaq/dotfiles/nixos/core/nix.nix ... ]`
+    例: `[ ./networking.nix ./nix.nix ... ]`
 
   使用パターン:
     各ディレクトリのdefault.nixから以下のように呼び出す:

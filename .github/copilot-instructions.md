@@ -59,6 +59,36 @@ Nix言語では識別子にハイフンを使用できます。
 基本的に`writeShellScript`などよりも、
 `writeShellApplication`を優先的に使用します。
 
+## `importDirModules`関数
+
+`lib/import-dir-modules.nix`で定義されているユーティリティ関数です。
+型は`Path -> [Path]`で、
+ディレクトリパスを受け取り、
+モジュールパスのリストを返します。
+
+指定ディレクトリ内の`.nix`ファイルを自動的に収集し、
+NixOSモジュールやhome-managerモジュールの`imports`に渡せるパスのリストを返します。
+`default.nix`は呼び出し元自身の再帰importを防ぐため除外されます。
+サブディレクトリは走査しません(1階層のみ)。
+
+各ディレクトリの`default.nix`で以下のように使用します:
+
+```nix
+{ importDirModules, ... }:
+{ imports = importDirModules ./.; }
+```
+
+これにより新しい`.nixファイル`を追加するだけで自動的にimportされ、
+`default.nix`の`imports`リストを手動で更新する必要がありません。
+
+サブディレクトリのモジュールが必要な場合は手動で追加します:
+
+```nix
+imports = importDirModules ./. ++ [ ./github-runner ];
+```
+
+`importDirModules`は`flake.nix`で`specialArgs`/`extraSpecialArgs`経由で全モジュールに渡されています。
+
 # home-manager
 
 ## Termux

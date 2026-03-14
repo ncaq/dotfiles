@@ -187,9 +187,9 @@
     device = "/mnt/noa/backup.encrypted";
     fsType = "fuse.gocryptfs";
     options = [
-      "noauto"
-      "nofail"
-      "allow_other"
+      "noauto" # 起動時に自動マウントしない。
+      "nofail" # 失敗を許容する。
+      "allow_other" # 通常ユーザがアクセス出来るようにする。
     ];
   };
   environment.systemPackages = [ pkgs.gocryptfs ];

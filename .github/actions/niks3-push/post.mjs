@@ -17,6 +17,22 @@ async function getNewStorePaths(/** @type {string} */ snapshotPath) {
   return currentPaths.filter((p) => !prePaths.has(p));
 }
 
+/** nix storeで有効なパスのみをフィルタリングする。 */
+async function filterValidPaths(/** @type {string[]} */ paths) {
+  const validationResults = await Promise.all(
+    paths.map(async (p) => {
+      try {
+        await execFileAsync("nix", ["path-info", p], { encoding: "utf-8" });
+        return p;
+      } catch {
+        console.debug(`niks3-push: Skipping invalid path: ${p}`);
+        return undefined;
+      }
+    }),
+  );
+  return validationResults.filter((p) => p != null);
+}
+
 const SERVER_URL = "https://niks3-public.ncaq.net";
 
 /** GitHub ActionsのOIDCトークンエンドポイントからトークンを取得する。 */
@@ -120,7 +136,13 @@ async function main() {
     return;
   }
 
-  const newPaths = await getNewStorePaths(snapshotPath);
+  const allNewPaths = await getNewStorePaths(snapshotPath);
+  console.debug(`niks3-push: Found ${allNewPaths.length} new store paths, validating...`);
+  const newPaths = await filterValidPaths(allNewPaths);
+  const skippedCount = allNewPaths.length - newPaths.length;
+  if (0 < skippedCount) {
+    console.debug(`niks3-push: Skipped ${skippedCount} invalid paths`);
+  }
 
   if (newPaths.length === 0) {
     console.log("niks3-push: No new store paths to push");

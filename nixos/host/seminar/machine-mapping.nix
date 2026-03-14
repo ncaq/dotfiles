@@ -34,10 +34,6 @@ in
           host = "192.168.100.10";
           guest = "192.168.100.11";
         };
-        atticd = {
-          host = "192.168.100.20";
-          guest = "192.168.100.21";
-        };
         mcp-nixos = {
           host = "192.168.100.30";
           guest = "192.168.100.31";
@@ -72,10 +68,6 @@ in
         forgejo = {
           uid = 991;
           gid = 986;
-        };
-        atticd = {
-          uid = 993;
-          gid = 988;
         };
         github-runner = {
           uid = 980;

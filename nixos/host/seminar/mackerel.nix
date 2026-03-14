@@ -199,25 +199,6 @@ in
           );
           inherit check_interval;
         };
-        atticd = {
-          command = lib.getExe (
-            pkgs.writeShellApplication {
-              name = "check-atticd";
-              runtimeInputs = [ pkgs.curl ];
-              text = ''
-                if curl -f -s --max-time 3 -H "Host: seminar.border-saurolophus.ts.net" \
-                  http://${config.machineAddresses.atticd.guest}:8080 > /dev/null 2>&1; then
-                  echo "Atticd OK"
-                  exit 0
-                else
-                  echo "Atticd CRITICAL: container not responding"
-                  exit 2
-                fi
-              '';
-            }
-          );
-          inherit check_interval;
-        };
         mcp-nixos = {
           command = lib.getExe (
             pkgs.writeShellApplication {

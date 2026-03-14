@@ -227,7 +227,7 @@
   };
   systemd.tmpfiles.rules = [
     # gocryptfs backup mountpoint
-    "d /mnt/noa/backup 0755 root root -"
+    "d /mnt/noa/backup 0755 ncaq ncaq -"
     # writebackモードを有効化
     "w /sys/block/bcache0/bcache/cache_mode - - - - writeback"
     "w /sys/block/bcache1/bcache/cache_mode - - - - writeback"

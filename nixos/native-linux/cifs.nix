@@ -35,7 +35,7 @@ lib.mkIf (hostName != "seminar") {
   };
 
   systemd.tmpfiles.rules = [
-    "d /mnt/chihiro 0700 root root -"
+    "d /mnt/chihiro 0000 root root -"
   ];
 
   environment.systemPackages = with pkgs; [ cifs-utils ];

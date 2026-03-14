@@ -1,5 +1,5 @@
 /**
-  importDirModules: ディレクトリ内の.nixファイルを自動的にモジュールリストとして返す関数。
+  importDirModules: ディレクトリ内の.nixファイルを自動的にモジュールをimportするためのパスのリストとして返す関数。
 
   型: Path -> [Path]
 

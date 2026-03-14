@@ -19,6 +19,6 @@ in
     };
   };
   systemd.tmpfiles.rules = [
-    "d /mnt/turugi 0755 root root -"
+    "d /mnt/turugi 0000 root root -"
   ];
 }

@@ -193,10 +193,6 @@ Tailnetを通じるとインターネットからもアクセス可能です。
 
 Cloudflare Tunnelでインターネットからアクセス可能なサービスを公開しています。
 
-Tailscale Funnelでもインターネットからアクセス可能なサービスを公開しています。
-Cloudflare Tunnelを使わずTailscale Funnelを使う場合がある理由は、
-Cloudflare TunnelはHTTPリクエストに厳しいサイズ制限があるためです。
-
 各種サービスは隔離が容易かつ隔離する意味のあるものは、
 [NixOS Containers](https://wiki.nixos.org/wiki/NixOS_Containers)か、
 [microvm.nix](https://github.com/microvm-nix/microvm.nix)で隔離しています。

@@ -17,6 +17,7 @@ let
     runnerNum
     dotfiles-github-runner
     users
+    ciNixSettings
     ;
   addr = config.machineAddresses.github-runner-arm64;
   # VMランナーやvirtiofsdなどはホスト(x86_64)で実行されるため、
@@ -94,11 +95,9 @@ in
             }
           ];
         };
-        # VM内のNixデーモンにホストと同じ設定を適用します。
-        # コンテナと異なりソケット共有ができないため独立稼働しますが、
-        # 一貫性が大事です。
+        # NixデーモンにCI用の設定を渡します。
         inherit users;
-        nix.settings = config.nix.settings;
+        nix.settings = ciNixSettings;
         networking = {
           hostName = "github-runner-arm64";
           firewall.trustedInterfaces = [ "eth0" ]; # CIジョブ中に任意のポートでリッスンするため全許可

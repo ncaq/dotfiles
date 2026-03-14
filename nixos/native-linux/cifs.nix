@@ -8,11 +8,23 @@
 }:
 let
   userConfig = config.users.users.${username};
+
+  # Tailscaleがtailnet内で接続確立するのを待つスクリプト。
+  # `tailscaled.service`がactiveになってもDNS設定が完了するまで時間がかかるため、
+  # `tailscale status`で接続状態を確認してからマウントを試行する必要がある。
+  wait-for-tailscale = pkgs.writeShellApplication {
+    name = "wait-for-tailscale";
+    runtimeInputs = [ config.services.tailscale.package ];
+    text = ''
+      until tailscale status --peers=false > /dev/null 2>&1; do
+        sleep 1
+      done
+    '';
+  };
 in
 lib.mkIf (hostName != "seminar") {
   # seminarサーバーのchihiro共有を自動マウントするための設定。
   # ネットワーク、Tailscale、sopsシークレットが揃った時点でマウントを試行する。
-  # nofailにより失敗してもブートをブロックしない。
   #
   # `fileSystems`ではなく`systemd.mounts`を使用する理由:
   # NixOSの`fileSystems`はfstabエントリのみ生成し、
@@ -20,17 +32,36 @@ lib.mkIf (hostName != "seminar") {
   # しかし`switch-to-configuration`は静的ユニットファイルを直接開こうとするため、
   # ライブスイッチ時に"Failed to open unit file"エラーが発生する(nixpkgs#398523)。
   # `systemd.mounts`を使えば静的ユニットファイルが生成され、この問題を回避できる。
+
+  # Tailscale接続確立を待つサービス。
+  # tailscaled.serviceが起動してからtailnet接続が確立されるまでの遅延を吸収する。
+  systemd.services.tailscale-online = {
+    description = "Wait for Tailscale to be online";
+    requires = [ "tailscaled.service" ];
+    wants = [ "network-online.target" ];
+    after = [
+      "network-online.target"
+      "tailscaled.service"
+    ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStart = lib.getExe wait-for-tailscale;
+      TimeoutStartSec = 60;
+    };
+  };
+
   systemd.mounts = [
     {
       requires = [ "network-online.target" ];
       wants = [
         "sops-install-secrets.service"
-        "tailscaled.service"
+        "tailscale-online.service"
       ];
       after = [
         "network-online.target"
         "sops-install-secrets.service"
-        "tailscaled.service"
+        "tailscale-online.service"
       ];
       what = "//seminar/chihiro";
       where = "/mnt/chihiro";

@@ -81,7 +81,10 @@ lib.mkIf (hostName != "seminar") {
       mountConfig = {
         TimeoutSec = 30;
       };
-      wantedBy = [ "remote-fs.target" ];
+      # remote-fs.targetはmulti-user.targetのクリティカルチェーン上にあるため、
+      # ここにwantedByすると、Tailscale接続待ち+CIFSマウントがブート時間に加算される。
+      # multi-user.targetへのWantsにすることでブートと並行して非同期にマウントを試行する。
+      wantedBy = [ "multi-user.target" ];
     }
   ];
 

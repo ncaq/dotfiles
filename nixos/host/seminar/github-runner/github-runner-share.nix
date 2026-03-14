@@ -58,11 +58,13 @@ let
   # ホスト側のビルドフックは動かないので、
   # 必要な設定だけを抜き出します。
   ciNixSettings = {
-    inherit (config.nix.settings) experimental-features;
-    inherit (config.nix.settings) cores;
-    inherit (config.nix.settings) max-jobs;
-    inherit (config.nix.settings) accept-flake-config;
-    inherit (config.nix.settings) trusted-users;
+    inherit (config.nix.settings)
+      experimental-features
+      cores
+      max-jobs
+      accept-flake-config
+      trusted-users
+      ;
   };
 in
 {

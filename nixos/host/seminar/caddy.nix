@@ -1,6 +1,5 @@
 { config, ... }:
 let
-  atticdAddr = config.machineAddresses.atticd.guest;
   garageAddr = config.machineAddresses.garage.guest;
   niks3PublicHostAddr = config.machineAddresses.niks3-public.host;
   niks3PrivateAddr = config.machineAddresses.niks3-private.guest;
@@ -16,10 +15,6 @@ in
     # Caddyが443をlistenする必要はありません。
     virtualHosts.":8080".extraConfig = ''
       bind 127.0.0.1
-      handle_path /nix/cache/* {
-        reverse_proxy http://${atticdAddr}:8080
-      }
-      redir /nix/cache /nix/cache/
     '';
     # niks3コンテナからGarageへのTLS termination proxy。
     # Cloudflare Tunnel経由だとContent-Encoding: zstdが透過的に解凍され、

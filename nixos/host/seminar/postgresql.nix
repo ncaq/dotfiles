@@ -12,7 +12,6 @@
     # ここでデータベース一覧をまとめるメリットもあるのでこちらでの定義を選択します。
     ensureDatabases = [
       "healthcheck"
-      "atticd"
       "forgejo"
       "niks3-public"
       "niks3-private"
@@ -21,10 +20,6 @@
       {
         # mackerel-agentのヘルスチェック専用ユーザー
         name = "healthcheck";
-        ensureDBOwnership = true;
-      }
-      {
-        name = "atticd";
         ensureDBOwnership = true;
       }
       {

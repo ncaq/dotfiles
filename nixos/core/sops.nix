@@ -1,12 +1,13 @@
+{ pkgs, username, ... }:
 {
-  pkgs,
-  username,
-  ...
-}:
-{
-  sops.gnupg = {
-    home = "/home/${username}/.gnupg";
-    sshKeyPaths = [ ];
+  sops = {
+    # sops-install-secrets.serviceを生成し、他のサービスから明示的に依存可能にする。
+    useSystemdActivation = true;
+    # gnupgの設定を明示的に指定します。
+    gnupg = {
+      home = "/home/${username}/.gnupg";
+      sshKeyPaths = [ ];
+    };
   };
 
   environment.systemPackages = [ pkgs.sops ];

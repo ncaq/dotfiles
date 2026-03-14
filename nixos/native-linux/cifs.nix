@@ -10,9 +10,9 @@ let
   userConfig = config.users.users.${username};
 in
 lib.mkIf (hostName != "seminar") {
-  # seminarサーバーのchihiro共有を手動マウントするための設定。
-  # `sudo mount /mnt/chihiro`で手動マウント、
-  # `sudo umount /mnt/chihiro`でアンマウント。
+  # seminarサーバーのchihiro共有を自動マウントするための設定。
+  # ネットワーク、Tailscale、sopsシークレットが揃った時点でマウントを試行する。
+  # nofailにより失敗してもブートをブロックしない。
   fileSystems."/mnt/chihiro" = {
     device = "//seminar/chihiro";
     fsType = "cifs";
@@ -21,8 +21,13 @@ lib.mkIf (hostName != "seminar") {
       "credentials=${config.sops.templates."cifs-credentials".path}"
       "uid=${toString userConfig.uid}"
       "gid=${toString config.users.groups.${userConfig.group}.gid}"
-      # ブート時に自動マウントしない
-      "noauto"
+      # ネットワーク依存(network-online.targetを自動追加)
+      "_netdev"
+      # sopsシークレットとTailscaleとの準備完了後にマウント
+      "x-systemd.after=sops-install-secrets.service"
+      "x-systemd.after=tailscaled.service"
+      # マウントタイムアウト
+      "x-systemd.mount-timeout=30"
       # マウント失敗時にブートをブロックしない
       "nofail"
       # セキュリティ

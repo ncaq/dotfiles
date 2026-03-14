@@ -21,6 +21,7 @@ in
     autoStart = true;
     ephemeral = true;
     privateNetwork = true;
+    privateUsers = "identity";
     hostAddress = addr.host;
     localAddress = addr.guest;
     bindMounts = {

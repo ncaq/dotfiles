@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, username, ... }:
 {
   # gocryptfsで暗号化されたバックアップディレクトリを、
   # `sudo mount /mnt/noa/backup`で対話的にパスフレーズ入力してマウントできるようにする。
@@ -14,6 +14,6 @@
   environment.systemPackages = [ pkgs.gocryptfs ];
   systemd.tmpfiles.rules = [
     # gocryptfs backup mountpoint
-    "d /mnt/noa/backup 0755 ncaq ncaq -"
+    "d /mnt/noa/backup 0755 ${username} users -"
   ];
 }

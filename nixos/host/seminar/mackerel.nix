@@ -7,6 +7,13 @@
 let
   # 分単位で指定する標準的なチェックの間隔。
   check_interval = 3;
+  # 標準的なチェックの連続失敗の上限。
+  # どのサービスもリビルドが入ったりして再起動した時に一瞬停止するのは避けられないことのため、
+  # 1回の失敗は許容します。
+  # この自宅サーバでダウン時間ゼロを達成する気は基本的にありません。
+  # なのでブルーグリーンデプロイメントなどは行いません。
+  # 再起動時の一瞬の停止は許容しています。
+  max_check_attempts = 2;
 in
 {
   services.mackerel-agent = {
@@ -37,7 +44,10 @@ in
               '';
             }
           );
-          inherit check_interval;
+          inherit
+            check_interval
+            max_check_attempts
+            ;
         };
         tailscale = {
           command = lib.getExe (
@@ -63,7 +73,8 @@ in
             }
           );
           inherit check_interval;
-          # 一時的な瞬断で自動復帰するケースが多いため、一定数の連続失敗時のみアラートを発火します
+          # 一時的な瞬断で自動復帰するケースが多いため、
+          # 失敗を多めに許容します。
           max_check_attempts = 3;
         };
         cloudflared = {
@@ -82,7 +93,10 @@ in
               '';
             }
           );
-          inherit check_interval;
+          inherit
+            check_interval
+            max_check_attempts
+            ;
         };
         caddy = {
           command = lib.getExe (
@@ -100,7 +114,10 @@ in
               '';
             }
           );
-          inherit check_interval;
+          inherit
+            check_interval
+            max_check_attempts
+            ;
         };
         samba = {
           command = lib.getExe (
@@ -118,7 +135,10 @@ in
               '';
             }
           );
-          inherit check_interval;
+          inherit
+            check_interval
+            max_check_attempts
+            ;
         };
         postgresql = {
           command = lib.getExe (
@@ -139,7 +159,10 @@ in
               '';
             }
           );
-          inherit check_interval;
+          inherit
+            check_interval
+            max_check_attempts
+            ;
         };
         garage = {
           command = lib.getExe (
@@ -159,7 +182,10 @@ in
               '';
             }
           );
-          inherit check_interval;
+          inherit
+            check_interval
+            max_check_attempts
+            ;
         };
         forgejo = {
           command = lib.getExe (
@@ -177,7 +203,10 @@ in
               '';
             }
           );
-          inherit check_interval;
+          inherit
+            check_interval
+            max_check_attempts
+            ;
         };
         niks3-public = {
           command = lib.getExe (
@@ -197,7 +226,10 @@ in
               '';
             }
           );
-          inherit check_interval;
+          inherit
+            check_interval
+            max_check_attempts
+            ;
         };
         mcp-nixos = {
           command = lib.getExe (
@@ -220,7 +252,10 @@ in
               '';
             }
           );
-          inherit check_interval;
+          inherit
+            check_interval
+            max_check_attempts
+            ;
         };
         github-runner-x64 = {
           command = lib.getExe (
@@ -238,7 +273,10 @@ in
               '';
             }
           );
-          inherit check_interval;
+          inherit
+            check_interval
+            max_check_attempts
+            ;
         };
         github-runner-arm64 = {
           command = lib.getExe (

@@ -78,7 +78,7 @@ NixOSモジュールやhome-managerモジュールの`imports`に渡せるパス
 { imports = importDirModules ./.; }
 ```
 
-これにより新しい`.nixファイル`を追加するだけで自動的にimportされ、
+これにより新しい`.nix`ファイルを追加するだけで自動的にimportされ、
 `default.nix`の`imports`リストを手動で更新する必要がありません。
 
 サブディレクトリのモジュールが必要な場合は手動で追加します:

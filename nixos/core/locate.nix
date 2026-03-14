@@ -37,6 +37,7 @@
       "_cache"
       "_site"
       "appcache"
+      "backup.encrypted"
       "cache"
       "cache2"
       "cached"

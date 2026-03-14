@@ -37,7 +37,7 @@
 { lib }:
 dir:
 let
-  # ディレクトリ内の全エントリを `{ name = type; ... }` のattrsetとして取得する。
+  # ディレクトリ内の全エントリを `{ "foo.nix" = "regular"; "bar" = "directory"; ... }` のようなattrsetとして取得する。
   dirEntries = builtins.readDir dir;
   # default.nixを除く通常の.nixファイルだけを抽出する。
   moduleFiles = lib.filterAttrs (

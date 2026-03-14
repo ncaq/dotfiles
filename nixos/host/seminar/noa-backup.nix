@@ -14,6 +14,6 @@
   environment.systemPackages = [ pkgs.gocryptfs ];
   systemd.tmpfiles.rules = [
     # gocryptfs backup mountpoint
-    "d /mnt/noa/backup 0755 ${username} users -"
+    "d /mnt/noa/backup 0000 ${username} users -"
   ];
 }

@@ -90,7 +90,7 @@ in
               name = "check-caddy";
               runtimeInputs = [ pkgs.curl ];
               text = ''
-                if curl -f -s --max-time 3 http://127.0.0.1:8080 > /dev/null 2>&1; then
+                if curl -f -s --max-time 3 http://localhost:2019/config/ > /dev/null 2>&1; then
                   echo "Caddy OK"
                   exit 0
                 else

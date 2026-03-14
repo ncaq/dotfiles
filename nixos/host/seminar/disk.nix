@@ -1,3 +1,4 @@
+{ pkgs, ... }:
 {
   disko.devices = {
     disk = {
@@ -181,6 +182,17 @@
       };
     };
   };
+  # gocryptfsで暗号化されたバックアップディレクトリを`sudo mount /mnt/noa/backup`で対話的にパスフレーズ入力してマウントできるようにする。
+  fileSystems."/mnt/noa/backup" = {
+    device = "/mnt/noa/backup.encrypted";
+    fsType = "fuse.gocryptfs";
+    options = [
+      "noauto"
+      "nofail"
+      "allow_other"
+    ];
+  };
+  environment.systemPackages = [ pkgs.gocryptfs ];
   swapDevices = [
     {
       device = "/swap/swapfile";

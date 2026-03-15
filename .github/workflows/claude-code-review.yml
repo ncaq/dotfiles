@@ -39,7 +39,7 @@ jobs:
         if: runner.environment != 'github-hosted'
         with:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
-          cachix-name: ncaq-dotfiles
+          cachix-name: ncaq
       - name: Run Claude Code Review
         id: claude-review
         uses: anthropics/claude-code-action@5d0cc745cd0cce4c0e9e0b3511de26c3bc285eb5 # v1

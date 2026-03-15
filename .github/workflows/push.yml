@@ -45,7 +45,7 @@ jobs:
       - uses: ./.github/actions/setup-nix
         with:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
-          cachix-name: ncaq-dotfiles
+          cachix-name: ncaq
           niks3-push: "${{ needs.is-trusted.result == 'success' }}"
       - run: nix run '.#nix-fast-build' -- --option eval-cache false --no-link --skip-cached --no-nom
 
@@ -65,7 +65,7 @@ jobs:
       - uses: ./.github/actions/setup-nix
         with:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
-          cachix-name: ncaq-dotfiles
+          cachix-name: ncaq
           niks3-push: "true"
       - run: nix build .#homeConfigurations.x86_64-linux.activationPackage
 
@@ -85,7 +85,7 @@ jobs:
       - uses: ./.github/actions/setup-nix
         with:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
-          cachix-name: ncaq-dotfiles
+          cachix-name: ncaq
           niks3-push: "true"
       # Nix-on-Droidのビルドはimpureモードで行う必要があります
       - run: nix build .#nixOnDroidConfigurations.default.activationPackage --impure

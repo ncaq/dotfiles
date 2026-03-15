@@ -258,6 +258,7 @@ in
           "Bash(ip:*)"
           "Bash(journalctl:*)"
           "Bash(jq:*)"
+          "Bash(ln:*)"
           "Bash(localectl status:*)"
           "Bash(ls:*)"
           "Bash(mkdir:*)"

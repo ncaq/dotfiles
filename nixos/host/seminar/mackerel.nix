@@ -278,28 +278,6 @@ in
             max_check_attempts
             ;
         };
-        github-runner-arm64 = {
-          command = lib.getExe (
-            pkgs.writeShellApplication {
-              name = "check-github-runner-arm64";
-              runtimeInputs = [ pkgs.iputils ];
-              text = ''
-                if ping -c 1 -W 2 ${config.machineAddresses.github-runner-arm64.guest} > /dev/null 2>&1; then
-                  echo "GitHub Runner arm64 OK"
-                  exit 0
-                else
-                  echo "GitHub Runner arm64 CRITICAL: ping failed"
-                  exit 2
-                fi
-              '';
-            }
-          );
-          inherit check_interval;
-          # エミュレートされた仮想マシンで起動が遅いのと、
-          # GitHub側がランナーの起動を待ってくれるため、
-          # ある程度の沈黙を許容します。
-          max_check_attempts = 3;
-        };
       };
     };
   };

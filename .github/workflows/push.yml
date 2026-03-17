@@ -36,7 +36,7 @@ jobs:
     if: always() && !cancelled()
     runs-on: >-
       ${{ needs.is-trusted.result == 'success'
-        && fromJSON('["self-hosted", "Linux", "X64"]') || 'ubuntu-24.04' }}
+        && fromJSON('["self-hosted", "Linux"]') || 'ubuntu-24.04' }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -56,7 +56,7 @@ jobs:
       id-token: write # niks3-publicへのOIDC認証に必要
     # セルフホステッドランナーは未認証のソースからは実行しない。
     if: needs.is-trusted.result == 'success'
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: [self-hosted, Linux]
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -76,7 +76,7 @@ jobs:
       id-token: write # niks3-publicへのOIDC認証に必要
     # セルフホステッドランナーは未認証のソースからは実行しない。
     if: needs.is-trusted.result == 'success'
-    runs-on: [self-hosted, Linux, ARM64]
+    runs-on: [self-hosted, Linux]
     timeout-minutes: 360
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6

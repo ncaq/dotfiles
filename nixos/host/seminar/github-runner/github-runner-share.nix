@@ -17,9 +17,6 @@ let
   # またNixを使っている今のワークロードは殆どはIO待ちなので、
   # コンカレントに処理させたほうが効率的です。
   # このサーバのCPUの物理コア数と合わせています。
-  # ARM64ランナーはQEMU TCGモードで動作するため、
-  # .NETランタイムの同時起動数が多すぎるとメモリ不足で登録に失敗します。
-  # ARM64でも安定して全ランナーが登録できる数に抑えています。
   runnerNum = 6;
   # runnerが使うTypeScriptコードをビルドしてGitHub Actionsで利用できるようにします。
   # 吐き出されるコードはピュアなJavaScriptなのでアーキテクチャ非依存です。
@@ -83,6 +80,12 @@ in
   # ホストのnixデーモンがコンテナ内のgithub-runnerユーザーを信頼するよう設定します。
   inherit users;
   nix.settings.trusted-users = [ "github-runner" ];
+
+  # Nix-on-Droidなどaarch64-linuxのビルドを必要にするものがあるので、
+  # aarch64-linuxバイナリをQEMU user-modeで透過的に実行できるようにします。
+  # ホストのnixデーモンがビルドサンドボックスを作成するため、
+  # コンテナ側ではなくホストレベルで設定が必要です。
+  boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
 
   sops.secrets."github-runner" = {
     sopsFile = ../../../../secrets/seminar/github-runner.yaml;

@@ -1,4 +1,9 @@
-{ pkgs, config, ... }:
+{
+  pkgs,
+  config,
+  inputs,
+  ...
+}:
 let
   # GitHub Actionsのホステッドランナーをある程度互換しているパッケージリスト。
   githubActionsRunnerPackages = import ../../../../lib/github-actions-runner-packages.nix;
@@ -8,6 +13,7 @@ let
     with pkgs;
     [
       cachix
+      inputs.niks3.packages.${pkgs.stdenv.hostPlatform.system}.niks3
     ];
   # GitHub Actionsランナーの並列数。
   # PRが複数ある場合はもちろん、

@@ -2,46 +2,37 @@ name: Setup Nix
 description: Install Nix and configure caches
 
 inputs:
+  cachix-name:
+    description: Cachix cache name
+    required: false
+    default: ncaq
   cachix-auth-token:
     description: Cachix authentication token
     required: false
     default: ""
-  cachix-name:
-    description: Cachix cache name
+  niks3-endpoint:
+    description: niks3 server endpoint URL
     required: false
-    default: ""
-  niks3-push:
-    description: Enable pushing to niks3-public cache (disable for untrusted sources)
-    required: false
-    default: "false"
+    default: "https://niks3-public.ncaq.net"
 
 runs:
   using: composite
   steps:
     - uses: cachix/install-nix-action@4e002c8ec80594ecd40e759629461e26c8abed15 # v31
       with:
-        extra_nix_config: >
-          extra-substituters =
-          https://cache.nixos.org/
-          https://niks3-public.ncaq.net/
-          https://ncaq.cachix.org/
-          https://nix-community.cachix.org/
-          https://nix-on-droid.cachix.org/
-          https://microvm.cachix.org/
+        # セルフホストランナーでうっかり外部からの悪意あるPRを実行許可してしまい、
+        # flake.nixの設定を受け入れると好きなキャッシュを入れられたりしてセキュリティリスクがあるため、
+        # GitHubホストランナーでのみflake.nixの設定を自動で受け入れるようにしています。
+        extra_nix_config: ${{ runner.environment == 'github-hosted' && 'accept-flake-config = true' || '' }}
 
-          extra-trusted-public-keys =
-          cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
-          niks3-public.ncaq.net-1:e/B9GomqDchMBmx3IW/TMQDF8sjUCQzEofKhpehXl04=
-          ncaq.cachix.org-1:XF346GXI2n77SB5Yzqwhdfo7r0nFcZBaHsiiMOEljiE=
-          nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=
-          nix-on-droid.cachix.org-1:56snoMJTXmDRC1Ei24CmKoUqvHJ9XCp+nidK7qkMQrU=
-          microvm.cachix.org-1:oXnBc6hRE3eX5rSYdRyMYXnfzcCxC7yKPTbZXALsqys=
     - name: Setup Cachix cache
-      if: inputs.cachix-auth-token != '' && inputs.cachix-name != ''
+      if: inputs.cachix-name != '' && inputs.cachix-auth-token != ''
       uses: cachix/cachix-action@3ba601ff5bbb07c7220846facfa2cd81eeee15a1 # v16
       with:
         name: "${{ inputs.cachix-name }}"
         authToken: "${{ inputs.cachix-auth-token }}"
+        # フォークからのPRのみキャッシュへのプッシュをスキップ
+        skipPush: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
         # デーモンのpost-build-hookではなくstore scanによるクライアント側pushを使用します。
         # 通常セルフホステッドランナーでは、
         # post-build-hookのパスがデーモンから到達できなかったりするため、
@@ -51,6 +42,15 @@ runs:
         # store scanはクライアント側で動作するため両環境で問題なく使えます。
         # 一貫性のために多少のパフォーマンスより設定を統一して両方の環境で`useDaemon`を`false`にしています。
         useDaemon: false
-    - name: Setup niks3-public push
-      if: inputs.niks3-push == 'true'
-      uses: ./.github/actions/niks3-push
+
+    - name: Setup niks3 cache
+      uses: ncaq/niks3-action@e3aa293e5786158d6db0aee9f1e4f91a337df192 # dist branch
+      with:
+        endpoint: "${{ inputs.niks3-endpoint }}"
+        use-oidc: true
+        push-flake-inputs: true
+        # フォークからのPRのみキャッシュへのプッシュをスキップ
+        skip-push: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
+        # セルフホステッドランナーではNixOSコンテナのためpost-build-hookが動作しないので、
+        # store-scan(差分計算)モードを使用します。
+        use-daemon: false

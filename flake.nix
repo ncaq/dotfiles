@@ -334,19 +334,12 @@
               prettier.enable = true;
               shellcheck.enable = true;
               shfmt.enable = true;
+              typos.enable = true;
               zizmor.enable = true;
 
               statix = {
                 enable = true;
                 disabled-lints = [ "eta_reduction" ];
-              };
-              typos = {
-                enable = true;
-                excludes = [
-                  "key/*"
-                  "mozc/*"
-                  "secrets/*"
-                ];
               };
             };
             settings.formatter = {

@@ -1,2 +1,9 @@
+[files]
+extend-exclude = [
+"key/",
+"mozc/",
+"secrets/",
+]
+
 [default.extend-words]
 Hashi = "Hashi"

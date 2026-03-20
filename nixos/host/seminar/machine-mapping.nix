@@ -16,11 +16,11 @@ let
     options = {
       uid = lib.mkOption {
         type = lib.types.int;
-        description = "Container user ID (must match between host and container)";
+        description = "Service user ID (must match between host and isolated environment)";
       };
       gid = lib.mkOption {
         type = lib.types.int;
-        description = "Container group ID (must match between host and container)";
+        description = "Service group ID (must match between host and isolated environment)";
       };
     };
   };
@@ -59,7 +59,7 @@ in
       description = "Network addresses for containers and microVMs";
     };
 
-    containerUsers = lib.mkOption {
+    serviceUser = lib.mkOption {
       type = lib.types.attrsOf userType;
       default = {
         # ユーザはより汎用的なものを前に配置してソートします。
@@ -93,7 +93,7 @@ in
           gid = 986;
         };
       };
-      description = "Container user/group IDs (must match between host and container)";
+      description = "Service user/group IDs (must match between host and isolated environment)";
     };
 
     /**
@@ -164,14 +164,14 @@ in
         uidEntries = lib.mapAttrsToList (name: user: {
           inherit name;
           value = user.uid;
-        }) config.containerUsers;
+        }) config.serviceUser;
         uidValues = map (e: e.value) uidEntries;
         duplicateUidValues = findDuplicates uidValues;
 
         gidEntries = lib.mapAttrsToList (name: user: {
           inherit name;
           value = user.gid;
-        }) config.containerUsers;
+        }) config.serviceUser;
         gidValues = map (e: e.value) gidEntries;
         duplicateGidValues = findDuplicates gidValues;
       in
@@ -186,11 +186,11 @@ in
         }
         {
           assertion = duplicateUidValues == [ ];
-          message = "containerUsers uid values must be unique, but found duplicates: ${formatDuplicates toString uidEntries}";
+          message = "serviceUser uid values must be unique, but found duplicates: ${formatDuplicates toString uidEntries}";
         }
         {
           assertion = duplicateGidValues == [ ];
-          message = "containerUsers gid values must be unique, but found duplicates: ${formatDuplicates toString gidEntries}";
+          message = "serviceUser gid values must be unique, but found duplicates: ${formatDuplicates toString gidEntries}";
         }
       ];
   };

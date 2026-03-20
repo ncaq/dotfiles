@@ -1,6 +1,6 @@
 { config, ... }:
 let
-  user = config.containerUsers.healthcheck;
+  user = config.serviceUser.healthcheck;
 in
 {
   # ヘルスチェックに使うシステムユーザー。

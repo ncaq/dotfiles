@@ -6,8 +6,8 @@
 }:
 let
   addr = config.machineAddresses.niks3-private;
-  user = config.containerUsers.niks3-private;
-  postgresGid = config.containerUsers.postgres.gid;
+  user = config.serviceUser.niks3-private;
+  postgresGid = config.serviceUser.postgres.gid;
   niks3User = {
     inherit (user) uid;
     group = "niks3-private";

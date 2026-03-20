@@ -5,7 +5,7 @@
   ...
 }:
 let
-  postgresUser = config.containerUsers.postgres;
+  postgresUser = config.serviceUser.postgres;
   clientNames = config.postgresClient;
 in
 {
@@ -59,7 +59,7 @@ in
               map (name: {
                 inherit name;
                 value = {
-                  inherit (config.containerUsers.${name}) uid;
+                  inherit (config.serviceUser.${name}) uid;
                   group = name;
                   isSystemUser = true;
                 };
@@ -71,7 +71,7 @@ in
             // lib.listToAttrs (
               map (name: {
                 inherit name;
-                value.gid = config.containerUsers.${name}.gid;
+                value.gid = config.serviceUser.${name}.gid;
               }) clientNames
             );
           };

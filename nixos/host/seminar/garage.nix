@@ -6,7 +6,7 @@
 }:
 let
   addr = config.machineAddresses.garage;
-  user = config.containerUsers.garage;
+  user = config.serviceUser.garage;
   garageUser = {
     inherit (user) uid;
     group = "garage";

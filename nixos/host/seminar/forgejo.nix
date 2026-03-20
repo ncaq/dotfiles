@@ -1,8 +1,8 @@
 { config, pkgs, ... }:
 let
   addr = config.machineAddresses.forgejo;
-  user = config.containerUsers.forgejo;
-  postgresGid = config.containerUsers.postgres.gid;
+  user = config.serviceUser.forgejo;
+  postgresGid = config.serviceUser.postgres.gid;
   forgejoUser = {
     inherit (user) uid;
     group = "forgejo";

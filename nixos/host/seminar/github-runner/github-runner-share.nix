@@ -41,7 +41,7 @@ let
   };
   # GitHub Actionsランナーはホストのnixデーモンと通信するため、
   # 統一されたユーザ値を使います。
-  user = config.containerUsers.github-runner;
+  user = config.serviceUser.github-runner;
   # ユーザーとグループ定義。
   # コンテナのnixコマンドはホストのnixデーモンと通信するため、
   # UIDとGIDはホストと一致させる必要があります。

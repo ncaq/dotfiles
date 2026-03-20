@@ -89,9 +89,9 @@ jobs:
       - uses: ./.github/actions/setup-nix
         with:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
-      - env:
+      - run: nix build ".#nixosConfigurations.$HOST.config.system.build.toplevel"
+        env:
           HOST: ${{ matrix.host }}
-        run: nix build ".#nixosConfigurations.$HOST.config.system.build.toplevel"
 
   build-home-manager:
     needs: is-trusted

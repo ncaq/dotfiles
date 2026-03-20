@@ -69,7 +69,9 @@ jobs:
         run: echo "hosts=$(nix eval --json .#nixosConfigurations --apply builtins.attrNames)" >> "$GITHUB_OUTPUT"
 
   build-nixos:
-    needs: list-nixos-hosts
+    needs:
+      - is-trusted
+      - list-nixos-hosts
     permissions:
       contents: read
       id-token: write # niks3-publicへのOIDC認証に必要

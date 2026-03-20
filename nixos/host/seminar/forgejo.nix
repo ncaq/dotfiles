@@ -59,7 +59,7 @@ in
             enable = true;
             database = {
               type = "postgres";
-              # PostgreSQL runs on host, accessed via bindMounted socket.
+              # PostgreSQLは直接接続されないため、NixOSによるデータベース自動生成機能は無効にします。
               createDatabase = false;
               socket = "/run/postgresql";
             };

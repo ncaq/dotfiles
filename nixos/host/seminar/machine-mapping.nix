@@ -62,7 +62,7 @@ in
     containerUsers = lib.mkOption {
       type = lib.types.attrsOf userType;
       default = {
-        # ユーザはより汎用的なものを前に配置します。
+        # ユーザはより汎用的なものを前に配置してソートします。
         healthcheck = {
           uid = 976;
           gid = 976;

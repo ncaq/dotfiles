@@ -25,6 +25,27 @@ jobs:
     steps:
       - run: echo "Trusted source confirmed"
 
+  list-nixos-hosts:
+    needs: is-trusted
+    permissions:
+      contents: read
+      id-token: write # niks3-publicへのOIDC認証に必要
+    # セルフホステッドランナーは未認証のソースからは実行しない。
+    if: needs.is-trusted.result == 'success'
+    runs-on: [self-hosted, Linux]
+    timeout-minutes: 10
+    outputs:
+      hosts: ${{ steps.list.outputs.hosts }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-nix
+        with:
+          cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+      - id: list
+        run: echo "hosts=$(nix eval --json .#nixosConfigurations --apply builtins.attrNames)" >> "$GITHUB_OUTPUT"
+
   nix-fast-build:
     needs: is-trusted
     permissions:
@@ -46,27 +67,6 @@ jobs:
         with:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - run: nix run '.#nix-fast-build' -- --option eval-cache false --no-link --skip-cached --no-nom
-
-  list-nixos-hosts:
-    needs: is-trusted
-    permissions:
-      contents: read
-      id-token: write # niks3-publicへのOIDC認証に必要
-    # セルフホステッドランナーは未認証のソースからは実行しない。
-    if: needs.is-trusted.result == 'success'
-    runs-on: [self-hosted, Linux]
-    timeout-minutes: 10
-    outputs:
-      hosts: ${{ steps.list.outputs.hosts }}
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/setup-nix
-        with:
-          cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
-      - id: list
-        run: echo "hosts=$(nix eval --json .#nixosConfigurations --apply builtins.attrNames)" >> "$GITHUB_OUTPUT"
 
   build-nixos:
     needs:

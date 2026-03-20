@@ -9,6 +9,12 @@ let
   clientNames = config.postgresClient;
 in
 {
+  options.postgresClient = lib.mkOption {
+    type = lib.types.listOf lib.types.str;
+    default = [ ];
+    description = "PostgreSQLへpeer認証で接続するクライアントユーザー名のリスト";
+  };
+
   config = {
     containers.postgresql = {
       autoStart = true;
@@ -130,11 +136,5 @@ in
           message = "postgresClient contains names not defined in serviceUser: ${lib.concatStringsSep ", " unknownClient}";
         }
       ];
-  };
-
-  options.postgresClient = lib.mkOption {
-    type = lib.types.listOf lib.types.str;
-    default = [ ];
-    description = "PostgreSQLへpeer認証で接続するクライアントユーザー名のリスト";
   };
 }

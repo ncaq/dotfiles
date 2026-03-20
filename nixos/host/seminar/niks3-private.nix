@@ -103,13 +103,13 @@ in
     "container@niks3-private" = {
       requires = [
         "caddy.service"
+        "container@postgresql.service"
         "garage-setup-niks3-private.service"
-        "postgresql.service"
       ];
       after = [
         "caddy.service"
+        "container@postgresql.service"
         "garage-setup-niks3-private.service"
-        "postgresql.service"
       ];
     };
     garage-setup-niks3-private = import ../../../lib/garage-setup.nix {

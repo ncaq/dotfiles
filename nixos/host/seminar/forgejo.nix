@@ -99,10 +99,10 @@ in
     tmpfiles.rules = [
       "d /var/lib/forgejo 0750 forgejo forgejo -"
     ];
-    # Wait for PostgreSQL to be ready before starting container.
+    # Wait for PostgreSQL container to be ready before starting.
     services."container@forgejo" = {
-      requires = [ "postgresql.service" ];
-      after = [ "postgresql.service" ];
+      requires = [ "container@postgresql.service" ];
+      after = [ "container@postgresql.service" ];
     };
   };
 

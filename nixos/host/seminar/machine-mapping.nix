@@ -30,9 +30,14 @@ in
     machineAddresses = lib.mkOption {
       type = lib.types.attrsOf addressType;
       default = {
+        # ソートは重要度にするか悩ましいですが、IPアドレス剥き出しなここでは、IPアドレスでソートしておきます。
         forgejo = {
           host = "192.168.100.10";
           guest = "192.168.100.11";
+        };
+        postgresql = {
+          host = "192.168.100.20";
+          guest = "192.168.100.21";
         };
         mcp-nixos = {
           host = "192.168.100.30";
@@ -61,13 +66,15 @@ in
     containerUsers = lib.mkOption {
       type = lib.types.attrsOf userType;
       default = {
-        forgejo = {
-          uid = 991;
-          gid = 986;
+        # ユーザはより汎用的なものを前に配置します。
+        healthcheck = {
+          uid = 976;
+          gid = 976;
         };
-        github-runner = {
-          uid = 980;
-          gid = 980;
+        postgresql = {
+          # NixOSのデフォルトpostgres UID/GID (nixos/modules/misc/ids.nix)
+          uid = 71;
+          gid = 71;
         };
         garage = {
           uid = 979;
@@ -80,6 +87,14 @@ in
         niks3-private = {
           uid = 977;
           gid = 977;
+        };
+        github-runner = {
+          uid = 980;
+          gid = 980;
+        };
+        forgejo = {
+          uid = 991;
+          gid = 986;
         };
       };
       description = "Container user/group IDs (must match between host and container)";

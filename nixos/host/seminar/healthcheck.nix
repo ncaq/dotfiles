@@ -1,10 +1,15 @@
-_: {
-  # ヘルスチェック用システムユーザー
+{ config, ... }:
+let
+  user = config.containerUsers.healthcheck;
+in
+{
+  # ヘルスチェックに使うシステムユーザー。
   users = {
     users.healthcheck = {
-      isSystemUser = true;
+      inherit (user) uid;
       group = "healthcheck";
+      isSystemUser = true;
     };
-    groups.healthcheck = { };
+    groups.healthcheck.gid = user.gid;
   };
 }

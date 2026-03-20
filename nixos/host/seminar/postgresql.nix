@@ -9,12 +9,6 @@ let
   clientNames = config.postgresClient;
 in
 {
-  options.postgresClient = lib.mkOption {
-    type = lib.types.listOf lib.types.str;
-    default = [ ];
-    description = "PostgreSQLへpeer認証で接続するクライアントユーザー名のリスト";
-  };
-
   config = {
     containers.postgresql = {
       autoStart = true;
@@ -123,5 +117,24 @@ in
       "d /run/postgresql 0750 postgres postgres -"
       "d /var/lib/postgresql 0750 postgres postgres -"
     ];
+
+    # postgresClientに定義されているクライアントユーザ名がserviceUserに定義されていることを検査。
+    assertions =
+      let
+        serviceUserNames = lib.attrNames config.serviceUser;
+        unknownClient = lib.filter (name: !(lib.elem name serviceUserNames)) clientNames;
+      in
+      [
+        {
+          assertion = unknownClient == [ ];
+          message = "postgresClient contains names not defined in serviceUser: ${lib.concatStringsSep ", " unknownClient}";
+        }
+      ];
+  };
+
+  options.postgresClient = lib.mkOption {
+    type = lib.types.listOf lib.types.str;
+    default = [ ];
+    description = "PostgreSQLへpeer認証で接続するクライアントユーザー名のリスト";
   };
 }

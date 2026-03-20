@@ -42,10 +42,17 @@ in
         { lib, ... }:
         {
           system.stateVersion = "25.05";
-          # peer認証で接続元のUIDからユーザー名を解決するため、
-          # 全てのDB接続ユーザーをコンテナ内にも登録する必要があります。
+          # `privateUsers = "identity"`によりpeer認証でコンテナ内外のUID/GIDが一致する必要があるため、
+          # postgresユーザとDB接続クライアントのUID/GIDを明示的に指定します。
           users = {
-            users = lib.listToAttrs (
+            users = {
+              postgres = {
+                inherit (postgresUser) uid;
+                group = "postgres";
+                isSystemUser = true;
+              };
+            }
+            // lib.listToAttrs (
               map (name: {
                 inherit name;
                 value = {
@@ -55,7 +62,10 @@ in
                 };
               }) clientNames
             );
-            groups = lib.listToAttrs (
+            groups = {
+              postgres.gid = postgresUser.gid;
+            }
+            // lib.listToAttrs (
               map (name: {
                 inherit name;
                 value.gid = config.containerUsers.${name}.gid;

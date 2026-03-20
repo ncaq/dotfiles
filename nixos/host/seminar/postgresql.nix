@@ -126,10 +126,18 @@ in
       services.postgresql-ready = {
         requires = [ "container@postgresql.service" ];
         after = [ "container@postgresql.service" ];
+        # ソケットファイルが未生成の場合`pg_isready`は`--timeout`に関わらず即座に終了するため、
+        # systemdのリスタートでリトライさせます。
+        # 1秒間隔で最大30回リトライし、
+        # それでも接続できなければ失敗とします。
+        startLimitBurst = 30;
+        startLimitIntervalSec = 60;
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
-          ExecStart = "${pkgs.postgresql}/bin/pg_isready -h /run/postgresql --timeout=60";
+          ExecStart = "${pkgs.postgresql}/bin/pg_isready -h /run/postgresql --timeout=5";
+          Restart = "on-failure";
+          RestartSec = "1s";
         };
       };
 

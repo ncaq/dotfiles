@@ -95,6 +95,8 @@ in
     groups.forgejo.gid = user.gid;
   };
 
+  postgresClient = [ "forgejo" ];
+
   systemd = {
     tmpfiles.rules = [
       "d /var/lib/forgejo 0750 forgejo forgejo -"

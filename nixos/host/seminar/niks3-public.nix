@@ -104,6 +104,8 @@ in
     groups.niks3-public.gid = user.gid;
   };
 
+  postgresClient = [ "niks3-public" ];
+
   systemd.services = {
     "container@niks3-public" = {
       requires = [

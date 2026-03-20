@@ -12,4 +12,6 @@ in
     };
     groups.healthcheck.gid = user.gid;
   };
+
+  postgresClient = [ "healthcheck" ];
 }

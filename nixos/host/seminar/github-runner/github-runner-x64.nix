@@ -107,9 +107,9 @@ in
       '';
       serviceConfig = {
         # CIジョブがホストのリソースを過剰に消費しないよう制限します。
-        # CPUQuotaはコア数×100%で指定するため、6スレッド制限にします。
-        CPUQuota = "600%";
-        MemoryMax = "16G";
+        # CPUQuotaはコア数×100%で指定するため、8スレッド制限にします。
+        CPUQuota = "800%";
+        MemoryMax = "20G";
       };
     };
   };

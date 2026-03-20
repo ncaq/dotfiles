@@ -22,8 +22,7 @@ let
   # 複数立ち上げてもサーバのリソース量が破綻する心配はあまりありません。
   # またNixを使っている今のワークロードは殆どはIO待ちなので、
   # コンカレントに処理させたほうが効率的です。
-  # このサーバのCPUの物理コア数と合わせています。
-  runnerNum = 6;
+  runnerNum = 8;
   # runnerが使うTypeScriptコードをビルドしてGitHub Actionsで利用できるようにします。
   # 吐き出されるコードはピュアなJavaScriptなのでアーキテクチャ非依存です。
   dotfiles-github-runner = pkgs.buildNpmPackage {

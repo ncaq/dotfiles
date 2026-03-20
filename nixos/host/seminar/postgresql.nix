@@ -19,8 +19,9 @@ in
     containers.postgresql = {
       autoStart = true;
       ephemeral = true;
-      # Unixソケット経由でのみ接続を受け付けるため、
-      # ネットワークスタックを隔離してTCP接続を遮断する。
+      # ネットワークを有効化するためではなく、
+      # ホストのネットワークスタックから隔離してTCP接続を遮断するために有効化している。
+      # hostAddress/localAddressを意図的に設定せず、IPアドレスを持たない状態にしている。
       privateNetwork = true;
       privateUsers = "identity";
       bindMounts = {

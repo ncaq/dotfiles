@@ -2,7 +2,7 @@
 let
   addr = config.machineAddresses.forgejo;
   user = config.containerUsers.forgejo;
-  # ファイルシステムとPostgreSQLの認証で必要なためホストとゲストで設定が共通している必要があります。
+  postgresGid = config.containerUsers.postgres.gid;
   forgejoUser = {
     inherit (user) uid;
     group = "forgejo";
@@ -50,8 +50,13 @@ in
           ];
         };
         users = {
-          users.forgejo = forgejoUser;
-          groups.forgejo.gid = user.gid;
+          users.forgejo = forgejoUser // {
+            extraGroups = [ "postgres" ];
+          };
+          groups = {
+            forgejo.gid = user.gid;
+            postgres.gid = postgresGid;
+          };
         };
         services = {
           resolved.enable = true;

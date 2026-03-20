@@ -7,6 +7,7 @@
 let
   addr = config.machineAddresses.niks3-private;
   user = config.containerUsers.niks3-private;
+  postgresGid = config.containerUsers.postgres.gid;
   niks3User = {
     inherit (user) uid;
     group = "niks3-private";
@@ -61,8 +62,13 @@ in
           hosts."${addr.host}" = [ "garage.ncaq.net" ];
         };
         users = {
-          users.niks3-private = niks3User;
-          groups.niks3-private.gid = user.gid;
+          users.niks3-private = niks3User // {
+            extraGroups = [ "postgres" ];
+          };
+          groups = {
+            niks3-private.gid = user.gid;
+            postgres.gid = postgresGid;
+          };
         };
         services = {
           resolved.enable = true;

@@ -97,17 +97,27 @@ in
     # ホスト側にもpostgresユーザーを作成。
     # bindMountディレクトリの所有権とtmpfilesルールに必要。
     users = {
-      users.postgres = {
-        inherit (postgresUser) uid;
-        group = "postgres";
-        isSystemUser = true;
-        home = "/var/lib/postgresql";
-      };
+      users = {
+        postgres = {
+          inherit (postgresUser) uid;
+          group = "postgres";
+          isSystemUser = true;
+          home = "/var/lib/postgresql";
+        };
+      }
+      # /run/postgresqlが0750 postgres:postgresのため、
+      # ソケットにアクセスするクライアントユーザをpostgresグループに追加する。
+      // lib.listToAttrs (
+        map (name: {
+          inherit name;
+          value.extraGroups = [ "postgres" ];
+        }) clientNames
+      );
       groups.postgres.gid = postgresUser.gid;
     };
 
     systemd.tmpfiles.rules = [
-      "d /run/postgresql 0755 postgres postgres -"
+      "d /run/postgresql 0750 postgres postgres -"
       "d /var/lib/postgresql 0750 postgres postgres -"
     ];
   };

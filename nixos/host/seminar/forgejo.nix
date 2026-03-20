@@ -1,8 +1,8 @@
 { config, pkgs, ... }:
 let
   addr = config.machineAddresses.forgejo;
-  user = config.containerUsers.forgejo;
-  # ファイルシステムとPostgreSQLの認証で必要なためホストとゲストで設定が共通している必要があります。
+  user = config.serviceUser.forgejo;
+  postgresGid = config.serviceUser.postgres.gid;
   forgejoUser = {
     inherit (user) uid;
     group = "forgejo";
@@ -50,8 +50,13 @@ in
           ];
         };
         users = {
-          users.forgejo = forgejoUser;
-          groups.forgejo.gid = user.gid;
+          users.forgejo = forgejoUser // {
+            extraGroups = [ "postgres" ];
+          };
+          groups = {
+            forgejo.gid = user.gid;
+            postgres.gid = postgresGid;
+          };
         };
         services = {
           resolved.enable = true;
@@ -59,7 +64,7 @@ in
             enable = true;
             database = {
               type = "postgres";
-              # PostgreSQL runs on host, accessed via bindMounted socket.
+              # PostgreSQLは直接接続されないため、NixOSによるデータベース自動生成機能は無効にします。
               createDatabase = false;
               socket = "/run/postgresql";
             };
@@ -95,15 +100,16 @@ in
     groups.forgejo.gid = user.gid;
   };
 
+  postgresClient = [ "forgejo" ];
+
   systemd = {
+    services."container@forgejo" = {
+      requires = [ "postgresql-ready.service" ];
+      after = [ "postgresql-ready.service" ];
+    };
     tmpfiles.rules = [
       "d /var/lib/forgejo 0750 forgejo forgejo -"
     ];
-    # Wait for PostgreSQL to be ready before starting container.
-    services."container@forgejo" = {
-      requires = [ "postgresql.service" ];
-      after = [ "postgresql.service" ];
-    };
   };
 
   # コンテナ外部から使える管理CLIコマンド。

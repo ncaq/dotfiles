@@ -6,7 +6,8 @@
 }:
 let
   addr = config.machineAddresses.niks3-public;
-  user = config.containerUsers.niks3-public;
+  user = config.serviceUser.niks3-public;
+  postgresGid = config.serviceUser.postgres.gid;
   niks3User = {
     inherit (user) uid;
     group = "niks3-public";
@@ -61,8 +62,13 @@ in
           hosts."${addr.host}" = [ "garage.ncaq.net" ];
         };
         users = {
-          users.niks3-public = niks3User;
-          groups.niks3-public.gid = user.gid;
+          users.niks3-public = niks3User // {
+            extraGroups = [ "postgres" ];
+          };
+          groups = {
+            niks3-public.gid = user.gid;
+            postgres.gid = postgresGid;
+          };
         };
         services = {
           resolved.enable = true;
@@ -104,17 +110,19 @@ in
     groups.niks3-public.gid = user.gid;
   };
 
+  postgresClient = [ "niks3-public" ];
+
   systemd.services = {
     "container@niks3-public" = {
       requires = [
         "caddy.service"
         "garage-setup-niks3-public.service"
-        "postgresql.service"
+        "postgresql-ready.service"
       ];
       after = [
         "caddy.service"
         "garage-setup-niks3-public.service"
-        "postgresql.service"
+        "postgresql-ready.service"
       ];
     };
     garage-setup-niks3-public = import ../../../lib/garage-setup.nix {

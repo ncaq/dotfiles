@@ -203,5 +203,5 @@ Cloudflare Tunnelでインターネットからアクセス可能なサービス
 
 ## データベース
 
-PostgreSQLがホスト上で稼働しています。
-各コンテナはbindMountされたUnixソケット(`/run/postgresql`)経由でpeer認証でアクセスします。
+PostgreSQLがコンテナ上で稼働しています。
+各クライアントはbindMountされたUnixソケット(`/run/postgresql`)経由でpeer認証でアクセスします。

@@ -16,11 +16,11 @@ let
     options = {
       uid = lib.mkOption {
         type = lib.types.int;
-        description = "Container user ID (must match between host and container)";
+        description = "Service user ID (must match between host and isolated environment)";
       };
       gid = lib.mkOption {
         type = lib.types.int;
-        description = "Container group ID (must match between host and container)";
+        description = "Service group ID (must match between host and isolated environment)";
       };
     };
   };
@@ -30,6 +30,7 @@ in
     machineAddresses = lib.mkOption {
       type = lib.types.attrsOf addressType;
       default = {
+        # ソートは重要度にするか悩ましいですが、IPアドレス剥き出しなここでは、IPアドレスでソートしておきます。
         forgejo = {
           host = "192.168.100.10";
           guest = "192.168.100.11";
@@ -58,16 +59,18 @@ in
       description = "Network addresses for containers and microVMs";
     };
 
-    containerUsers = lib.mkOption {
+    serviceUser = lib.mkOption {
       type = lib.types.attrsOf userType;
       default = {
-        forgejo = {
-          uid = 991;
-          gid = 986;
+        # ユーザはより汎用的なものを前に配置してソートします。
+        healthcheck = {
+          uid = 976;
+          gid = 976;
         };
-        github-runner = {
-          uid = 980;
-          gid = 980;
+        postgres = {
+          # NixOSのデフォルトUID/GID(nixos/modules/misc/ids.nix)
+          uid = 71;
+          gid = 71;
         };
         garage = {
           uid = 979;
@@ -81,8 +84,16 @@ in
           uid = 977;
           gid = 977;
         };
+        github-runner = {
+          uid = 980;
+          gid = 980;
+        };
+        forgejo = {
+          uid = 991;
+          gid = 986;
+        };
       };
-      description = "Container user/group IDs (must match between host and container)";
+      description = "Service user/group IDs (must match between host and isolated environment)";
     };
 
     /**
@@ -108,6 +119,14 @@ in
   };
 
   config = {
+    networking.nat = {
+      enable = true;
+      internalInterfaces = [
+        "ve-+" # container veth interfaces
+        "vm-+" # microVM TAP interfaces
+      ];
+    };
+
     assertions =
       let
         findDuplicates = list: lib.unique (lib.filter (x: lib.count (y: x == y) list > 1) list);
@@ -145,14 +164,14 @@ in
         uidEntries = lib.mapAttrsToList (name: user: {
           inherit name;
           value = user.uid;
-        }) config.containerUsers;
+        }) config.serviceUser;
         uidValues = map (e: e.value) uidEntries;
         duplicateUidValues = findDuplicates uidValues;
 
         gidEntries = lib.mapAttrsToList (name: user: {
           inherit name;
           value = user.gid;
-        }) config.containerUsers;
+        }) config.serviceUser;
         gidValues = map (e: e.value) gidEntries;
         duplicateGidValues = findDuplicates gidValues;
       in
@@ -167,20 +186,12 @@ in
         }
         {
           assertion = duplicateUidValues == [ ];
-          message = "containerUsers uid values must be unique, but found duplicates: ${formatDuplicates toString uidEntries}";
+          message = "serviceUser uid values must be unique, but found duplicates: ${formatDuplicates toString uidEntries}";
         }
         {
           assertion = duplicateGidValues == [ ];
-          message = "containerUsers gid values must be unique, but found duplicates: ${formatDuplicates toString gidEntries}";
+          message = "serviceUser gid values must be unique, but found duplicates: ${formatDuplicates toString gidEntries}";
         }
       ];
-
-    networking.nat = {
-      enable = true;
-      internalInterfaces = [
-        "ve-+" # container veth interfaces
-        "vm-+" # microVM TAP interfaces
-      ];
-    };
   };
 }

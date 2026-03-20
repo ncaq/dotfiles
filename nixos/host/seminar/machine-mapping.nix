@@ -119,6 +119,14 @@ in
   };
 
   config = {
+    networking.nat = {
+      enable = true;
+      internalInterfaces = [
+        "ve-+" # container veth interfaces
+        "vm-+" # microVM TAP interfaces
+      ];
+    };
+
     assertions =
       let
         findDuplicates = list: lib.unique (lib.filter (x: lib.count (y: x == y) list > 1) list);
@@ -185,13 +193,5 @@ in
           message = "containerUsers gid values must be unique, but found duplicates: ${formatDuplicates toString gidEntries}";
         }
       ];
-
-    networking.nat = {
-      enable = true;
-      internalInterfaces = [
-        "ve-+" # container veth interfaces
-        "vm-+" # microVM TAP interfaces
-      ];
-    };
   };
 }

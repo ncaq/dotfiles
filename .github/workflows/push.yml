@@ -70,6 +70,8 @@ jobs:
     permissions:
       contents: read
       id-token: write # niks3-publicへのOIDC認証に必要
+    # セルフホステッドランナーは未認証のソースからは実行しない。
+    if: needs.is-trusted.result == 'success'
     runs-on: [self-hosted, Linux]
     timeout-minutes: 120
     strategy:

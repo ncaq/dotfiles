@@ -128,6 +128,7 @@ in
       services.postgresql-ready = {
         requires = [ "container@postgresql.service" ];
         after = [ "container@postgresql.service" ];
+        bindTo = [ "container@postgresql.service" ];
         # ソケットファイルが未生成の場合`pg_isready`は`--timeout`に関わらず即座に終了するため、
         # systemdのリスタートでリトライさせます。
         # 1秒間隔で最大30回リトライし、

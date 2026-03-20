@@ -138,6 +138,8 @@ in
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
+          User = "postgres";
+          Group = "postgres";
           ExecStart = "${postgresql}/bin/pg_isready -h /run/postgresql --timeout=5";
           Restart = "on-failure";
           RestartSec = "1s";

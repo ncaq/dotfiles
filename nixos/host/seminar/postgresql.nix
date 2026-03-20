@@ -79,6 +79,12 @@ in
             # JITコンパイラは単純なクエリには使われないためデメリットが薄いため、
             # 有効にしておくメリットの方が大きいと判断して雑に有効化。
             package = pkgs.postgresql_17_jit;
+            # sameuser: データベース名とユーザ名が一致する場合のみ接続を許可する。
+            # 各クライアントが他のクライアントのデータベースに接続することを防ぐ。
+            authentication = lib.mkForce ''
+              local sameuser all peer
+              local all postgres peer
+            '';
             ensureDatabases = clientNames;
             ensureUsers = map (name: {
               inherit name;

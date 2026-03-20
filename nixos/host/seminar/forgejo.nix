@@ -104,6 +104,7 @@ in
 
   systemd = {
     services."container@forgejo" = {
+      requires = [ "postgresql-ready.service" ];
       after = [ "postgresql-ready.service" ];
     };
     tmpfiles.rules = [

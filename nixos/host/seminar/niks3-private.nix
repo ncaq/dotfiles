@@ -112,6 +112,7 @@ in
       requires = [
         "caddy.service"
         "garage-setup-niks3-private.service"
+        "postgresql-ready.service"
       ];
       after = [
         "caddy.service"

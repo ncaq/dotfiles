@@ -1,7 +1,7 @@
 { pkgs, config, ... }:
 let
   addr = config.machineAddresses.postgresql;
-  postgresUser = config.containerUsers.postgresql;
+  postgresUser = config.containerUsers.postgres;
 
   forgejoUser = config.containerUsers.forgejo;
   healthcheckUser = config.containerUsers.healthcheck;

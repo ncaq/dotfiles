@@ -71,8 +71,8 @@ in
           uid = 976;
           gid = 976;
         };
-        postgresql = {
-          # NixOSのデフォルトpostgres UID/GID (nixos/modules/misc/ids.nix)
+        postgres = {
+          # NixOSのデフォルトUID/GID(nixos/modules/misc/ids.nix)
           uid = 71;
           gid = 71;
         };

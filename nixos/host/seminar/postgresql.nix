@@ -42,6 +42,9 @@ in
         { lib, ... }:
         {
           system.stateVersion = "25.05";
+          # データベースがホスト側で`ja_JP.UTF-8`で初期化されているため、
+          # コンテナ内でも同じロケールが必要。
+          i18n.defaultLocale = "ja_JP.UTF-8";
           # `privateUsers = "identity"`によりpeer認証でコンテナ内外のUID/GIDが一致する必要があるため、
           # postgresユーザとDB接続クライアントのUID/GIDを明示的に指定します。
           users = {

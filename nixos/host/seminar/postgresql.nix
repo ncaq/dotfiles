@@ -5,6 +5,12 @@
   ...
 }:
 let
+  # PostgreSQLのバージョンによってdataDirなどが変更される。
+  # `stateVersion`依存でデフォルトバージョンは定まりますが、
+  # 明示的に指定して意図しないアップグレードを防ぎます。
+  # JITコンパイラは単純なクエリには使われないためデメリットが薄いため、
+  # 有効にしておくメリットの方が大きいと判断して雑に有効化しておきます。
+  postgresql = pkgs.postgresql_17_jit;
   postgresUser = config.serviceUser.postgres;
   clientNames = config.postgresClient;
 in
@@ -77,11 +83,7 @@ in
           };
           services.postgresql = {
             enable = true;
-            # PostgreSQLのバージョンによってdataDirなどが変更される。
-            # `stateVersion`依存で定まるが、明示的に指定して意図しないアップグレードを防ぐ。
-            # JITコンパイラは単純なクエリには使われないためデメリットが薄いため、
-            # 有効にしておくメリットの方が大きいと判断して雑に有効化。
-            package = pkgs.postgresql_17_jit;
+            package = postgresql;
             # sameuser: データベース名とユーザ名が一致する場合のみ接続を許可する。
             # 各クライアントが他のクライアントのデータベースに接続することを防ぐ。
             authentication = lib.mkForce ''
@@ -135,7 +137,7 @@ in
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
-          ExecStart = "${pkgs.postgresql}/bin/pg_isready -h /run/postgresql --timeout=5";
+          ExecStart = "${postgresql}/bin/pg_isready -h /run/postgresql --timeout=5";
           Restart = "on-failure";
           RestartSec = "1s";
         };

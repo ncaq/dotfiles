@@ -12,7 +12,7 @@ in
   options.postgresClient = lib.mkOption {
     type = lib.types.listOf lib.types.str;
     default = [ ];
-    description = "List of container user names that need PostgreSQL access via peer authentication";
+    description = "PostgreSQLへpeer認証で接続するクライアントユーザー名のリスト";
   };
 
   config = {

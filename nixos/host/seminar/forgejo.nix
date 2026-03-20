@@ -103,14 +103,12 @@ in
   postgresClient = [ "forgejo" ];
 
   systemd = {
+    services."container@forgejo" = {
+      after = [ "postgresql-ready.service" ];
+    };
     tmpfiles.rules = [
       "d /var/lib/forgejo 0750 forgejo forgejo -"
     ];
-    # Wait for PostgreSQL container to be ready before starting.
-    services."container@forgejo" = {
-      requires = [ "container@postgresql.service" ];
-      after = [ "container@postgresql.service" ];
-    };
   };
 
   # コンテナ外部から使える管理CLIコマンド。

@@ -119,10 +119,25 @@ in
       groups.postgres.gid = postgresUser.gid;
     };
 
-    systemd.tmpfiles.rules = [
-      "d /run/postgresql 0750 postgres postgres -"
-      "d /var/lib/postgresql 0750 postgres postgres -"
-    ];
+    systemd = {
+      # コンテナの起動とPostgreSQLの接続受付開始にはタイムラグがあるため、
+      # `pg_isready`で実際に接続可能になるまで待機するサービスを用意する。
+      # 依存サービスは`container@postgresql.service`ではなくこのサービスをafterに指定する。
+      services.postgresql-ready = {
+        requires = [ "container@postgresql.service" ];
+        after = [ "container@postgresql.service" ];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStart = "${pkgs.postgresql}/bin/pg_isready -h /run/postgresql --timeout=60";
+        };
+      };
+
+      tmpfiles.rules = [
+        "d /run/postgresql 0750 postgres postgres -"
+        "d /var/lib/postgresql 0750 postgres postgres -"
+      ];
+    };
 
     # postgresClientに定義されているクライアントユーザ名がserviceUserに定義されていることを検査。
     assertions =

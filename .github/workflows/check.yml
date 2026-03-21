@@ -25,29 +25,6 @@ jobs:
     steps:
       - run: echo "Trusted source confirmed"
 
-  list-nixos-hosts:
-    permissions:
-      contents: read
-      id-token: write # niks3-publicへのOIDC認証に必要
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    outputs:
-      hosts: ${{ steps.list.outputs.hosts }}
-      boot-test-hosts: ${{ steps.list.outputs.boot-test-hosts }}
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/setup-nix
-        with:
-          cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
-      - id: list
-        run: |
-          echo "hosts=$(nix eval --json .#nixosConfigurations --apply builtins.attrNames)" \
-            >> "$GITHUB_OUTPUT"
-          echo "boot-test-hosts=$(nix eval --json .#nixosBootTests --apply builtins.attrNames)" \
-            >> "$GITHUB_OUTPUT"
-
   nix-fast-build:
     needs: is-trusted
     permissions:
@@ -71,9 +48,7 @@ jobs:
       - run: nix run '.#nix-fast-build' -- --option eval-cache false --no-link --skip-cached --no-nom
 
   build-nixos:
-    needs:
-      - is-trusted
-      - list-nixos-hosts
+    needs: is-trusted
     permissions:
       contents: read
       id-token: write # niks3-publicへのOIDC認証に必要
@@ -81,9 +56,6 @@ jobs:
     if: needs.is-trusted.result == 'success'
     runs-on: [self-hosted, Linux]
     timeout-minutes: 60 # キャッシュが切れている時は時間がかかるため長めに設定。
-    strategy:
-      matrix:
-        host: ${{ fromJSON(needs['list-nixos-hosts'].outputs.hosts) }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
@@ -91,14 +63,14 @@ jobs:
       - uses: ./.github/actions/setup-nix
         with:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
-      - run: nix build ".#nixosConfigurations.$HOST.config.system.build.toplevel"
-        env:
-          HOST: ${{ matrix.host }}
+      - name: nix build
+        run: >-
+          nix eval --json .#nixosConfigurations --apply builtins.attrNames |
+          jq -r '.[] | ".#nixosConfigurations.\(.).config.system.build.toplevel"' |
+          xargs nix build -L --keep-going
 
   boot-test-nixos:
-    needs:
-      - is-trusted
-      - list-nixos-hosts
+    needs: is-trusted
     permissions:
       contents: read
       id-token: write # niks3-publicへのOIDC認証に必要
@@ -106,9 +78,6 @@ jobs:
     if: needs.is-trusted.result == 'success'
     runs-on: [self-hosted, Linux]
     timeout-minutes: 60 # キャッシュが切れている時は時間がかかるため長めに設定。
-    strategy:
-      matrix:
-        host: ${{ fromJSON(needs['list-nixos-hosts'].outputs['boot-test-hosts']) }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
@@ -116,9 +85,11 @@ jobs:
       - uses: ./.github/actions/setup-nix
         with:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
-      - run: nix build -L ".#nixosBootTests.$HOST"
-        env:
-          HOST: ${{ matrix.host }}
+      - name: nix build
+        run: >-
+          nix eval --json .#nixosBootTests --apply builtins.attrNames |
+          jq -r '.[] | ".#nixosBootTests.\(.)"' |
+          xargs nix build -L --keep-going
 
   build-home-manager:
     needs: is-trusted
@@ -140,7 +111,7 @@ jobs:
       - uses: ./.github/actions/setup-nix
         with:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
-      - run: nix build .#homeConfigurations.x86_64-linux.activationPackage
+      - run: nix build -L .#homeConfigurations.x86_64-linux.activationPackage
 
   build-nix-on-droid:
     needs: is-trusted
@@ -159,4 +130,4 @@ jobs:
         with:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       # Nix-on-Droidのビルドはimpureモードで行う必要があります
-      - run: nix build .#nixOnDroidConfigurations.default.activationPackage --impure
+      - run: nix build -L .#nixOnDroidConfigurations.default.activationPackage --impure

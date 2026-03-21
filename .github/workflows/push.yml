@@ -34,6 +34,7 @@ jobs:
     timeout-minutes: 5
     outputs:
       hosts: ${{ steps.list.outputs.hosts }}
+      boot-test-hosts: ${{ steps.list.outputs.boot-test-hosts }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
@@ -42,7 +43,11 @@ jobs:
         with:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - id: list
-        run: echo "hosts=$(nix eval --json .#nixosConfigurations --apply builtins.attrNames)" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "hosts=$(nix eval --json .#nixosConfigurations --apply builtins.attrNames)" \
+            >> "$GITHUB_OUTPUT"
+          echo "boot-test-hosts=$(nix eval --json .#nixosBootTests --apply builtins.attrNames)" \
+            >> "$GITHUB_OUTPUT"
 
   nix-fast-build:
     needs: is-trusted
@@ -88,6 +93,32 @@ jobs:
         with:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - run: nix build ".#nixosConfigurations.$HOST.config.system.build.toplevel"
+        env:
+          HOST: ${{ matrix.host }}
+
+  boot-test-nixos:
+    needs:
+      - is-trusted
+      - list-nixos-hosts
+      - build-nixos
+    permissions:
+      contents: read
+      id-token: write # niks3-publicへのOIDC認証に必要
+    # セルフホステッドランナーは未認証のソースからは実行しない。
+    if: needs.is-trusted.result == 'success'
+    runs-on: [self-hosted, Linux]
+    timeout-minutes: 120
+    strategy:
+      matrix:
+        host: ${{ fromJSON(needs['list-nixos-hosts'].outputs['boot-test-hosts']) }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-nix
+        with:
+          cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+      - run: nix build ".#nixosBootTests.$HOST" -L
         env:
           HOST: ${{ matrix.host }}
 

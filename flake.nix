@@ -254,8 +254,7 @@
                 node = {
                   # runNixOSTestが追加するnixpkgsの読み込み専用設定を無効化します。
                   # hardware-configuration.nixが存在する時nixpkgs.hostPlatformを設定しているので、
-                  # それにより上書き動作が行われますが、
-                  # pkgsが読み込み専用だとそれでエラーになります。
+                  # 読み込み専用にされたnixpkgsオプションへの設定がエラーになります。
                   # 基本的にモジュール単位のテスト機構であり全体のブートを想定していないゆえの挙動でしょう。
                   # 自動生成ファイルであるhardware-configuration.nixを編集したくないため、
                   # 上書きを有効にしてしまいます。

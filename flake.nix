@@ -233,10 +233,6 @@
                 system = "x86_64-linux";
                 hostName = "seminar";
               };
-              "vanitas" = mkNixosSystem {
-                system = "x86_64-linux";
-                hostName = "vanitas";
-              };
             };
 
           nixosConfigurations = nixpkgs.lib.mapAttrs (_: def: def.nixosSystem) top.config.flake.hostDefs;

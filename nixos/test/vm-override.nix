@@ -57,4 +57,7 @@
   # Tailscaleがネットワークのない状態で起動しようとかなり粘ってしまいテストが無意味に遅くなるので無効化しておきます。
   services.tailscale.enable = lib.mkForce false;
   home-manager.users.${username}.custom.trayscale.enable = lib.mkForce false;
+
+  # どうせ失敗するが無意味に粘るので無効化。
+  virtualisation.virtualbox.guest.enable = lib.mkForce false;
 }

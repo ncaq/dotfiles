@@ -22,16 +22,6 @@
   # VMではvirtualisationモジュールがファイルシステムを管理します。
   disko.devices = lib.mkForce { };
 
-  # 仮想マシンの特殊なブートになるので普通のブート手順を無効化。
-  boot = {
-    loader = {
-      efi.canTouchEfiVariables = lib.mkForce false;
-      systemd-boot.enable = lib.mkForce false;
-      grub.enable = lib.mkForce false;
-    };
-    initrd.luks.devices = lib.mkForce { };
-  };
-
   # sopsをモックにして必要とするサービスを誤魔化します。
   sops = {
     validateSopsFiles = false;

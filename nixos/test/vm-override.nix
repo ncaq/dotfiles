@@ -39,8 +39,9 @@
     RemainAfterExit = true;
   };
 
-  # Tailscaleがネットワークのない状態で起動しようとかなり粘ってしまいテストが無意味に遅くなるので無効化しておきます。
+  # Tailscale関係サービスがネットワークのない状態で起動しようとかなり粘ってしまいテストが無意味に遅くなるので無効化しておきます。
   services.tailscale.enable = lib.mkForce false;
+  custom.tailscale-exit-node.enable = lib.mkForce false;
   home-manager.users.${username}.custom.trayscale.enable = lib.mkForce false;
 
   # どうせ失敗するが無意味に粘るので無効化。

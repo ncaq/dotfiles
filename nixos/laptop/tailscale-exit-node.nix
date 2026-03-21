@@ -1,7 +1,13 @@
 # ラップトップでは外出時の一応のセキュリティのためseminarをexit nodeとして使用します。
 # ただしseminarと同じローカルネットワークにいる場合は無駄なので通常の通信を行います。
-{ pkgs, ... }:
+{
+  pkgs,
+  lib,
+  config,
+  ...
+}:
 let
+  cfg = config.custom.tailscale-exit-node;
   # tailscale pingのレイテンシでローカルネットワークにいるかを判定し、
   # exit nodeの設定を切り替えるスクリプト。
   # ローカルネットワークなら数ms、外部なら数10ms以上になります。
@@ -39,10 +45,18 @@ let
   '';
 in
 {
-  networking.networkmanager.dispatcherScripts = [
-    {
-      source = tailscaleExitNodeScript;
-      type = "basic";
-    }
-  ];
+  options.custom.tailscale-exit-node.enable = lib.mkOption {
+    type = lib.types.bool;
+    default = true;
+    description = "Whether to enable tailscale-exit-node.";
+  };
+
+  config = lib.mkIf cfg.enable {
+    networking.networkmanager.dispatcherScripts = [
+      {
+        source = tailscaleExitNodeScript;
+        type = "basic";
+      }
+    ];
+  };
 }

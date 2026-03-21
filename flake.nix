@@ -268,6 +268,10 @@
                     ./nixos/test/vm-override.nix
                   ];
                 };
+                # テスト環境はネットワークに繋がっていないため、
+                # ネットワーク依存のユニットは失敗します。
+                # よって全体成功を期待することはできません。
+                # multi-user.targetに到達すればひとまず成功とみなしています。
                 testScript = ''
                   machine.wait_for_unit("multi-user.target")
                 '';

@@ -125,9 +125,13 @@ jobs:
     permissions:
       contents: read
       id-token: write # niks3-publicへのOIDC認証に必要
-    # セルフホステッドランナーは未認証のソースからは実行しない。
-    if: needs.is-trusted.result == 'success'
-    runs-on: [self-hosted, Linux]
+    # 信頼できるソースの場合はセルフホステッドランナーで高速化し、
+    # それ以外はGitHubランナーで実行します。
+    # is-trustedがスキップされてもこのジョブは実行する必要があるためalways()を使用します。
+    if: always() && !cancelled()
+    runs-on: >-
+      ${{ needs.is-trusted.result == 'success'
+        && fromJSON('["self-hosted", "Linux"]') || 'ubuntu-24.04' }}
     timeout-minutes: 60 # キャッシュが切れている時は時間がかかるため長めに設定。
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6

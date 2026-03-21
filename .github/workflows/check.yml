@@ -67,7 +67,7 @@ jobs:
         run: >-
           nix eval --json .#nixosConfigurations --apply builtins.attrNames |
           jq -r '.[] | ".#nixosConfigurations.\(.).config.system.build.toplevel"' |
-          xargs nix build -L
+          xargs nix build -L --keep-going
 
   boot-test-nixos:
     needs: is-trusted
@@ -89,7 +89,7 @@ jobs:
         run: >-
           nix eval --json .#nixosBootTests --apply builtins.attrNames |
           jq -r '.[] | ".#nixosBootTests.\(.)"' |
-          xargs nix build -L
+          xargs nix build -L --keep-going
 
   build-home-manager:
     needs: is-trusted

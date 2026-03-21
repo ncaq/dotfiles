@@ -117,7 +117,7 @@ jobs:
       - uses: ./.github/actions/setup-nix
         with:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
-      - run: nix build ".#nixosBootTests.$HOST" -L
+      - run: nix build -L ".#nixosBootTests.$HOST"
         env:
           HOST: ${{ matrix.host }}
 

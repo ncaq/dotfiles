@@ -67,7 +67,7 @@ jobs:
         run: >-
           nix eval --json .#nixosConfigurations --apply builtins.attrNames |
           jq -r '.[] | ".#nixosConfigurations.\(.).config.system.build.toplevel"' |
-          xargs nix build
+          xargs nix build -L --keep-going
 
   test-nixos-boot:
     needs: is-trusted
@@ -89,7 +89,7 @@ jobs:
         run: >-
           nix eval --json .#testNixosBoot --apply builtins.attrNames |
           jq -r '.[] | ".#testNixosBoot.\(.)"' |
-          xargs nix build -L
+          xargs nix build -L --keep-going
 
   build-home-manager:
     needs: is-trusted
@@ -111,7 +111,7 @@ jobs:
       - uses: ./.github/actions/setup-nix
         with:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
-      - run: nix build .#homeConfigurations.x86_64-linux.activationPackage
+      - run: nix build -L .#homeConfigurations.x86_64-linux.activationPackage
 
   build-nix-on-droid:
     needs: is-trusted
@@ -130,4 +130,4 @@ jobs:
         with:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       # Nix-on-Droidのビルドはimpureモードで行う必要があります
-      - run: nix build .#nixOnDroidConfigurations.default.activationPackage --impure
+      - run: nix build -L .#nixOnDroidConfigurations.default.activationPackage --impure

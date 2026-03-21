@@ -16,7 +16,6 @@
   virtualisation = {
     cores = 6;
     memorySize = 4096;
-    graphics = false;
   };
 
   # diskoのデバイス定義を無効化。
@@ -33,9 +32,6 @@
     };
     initrd.luks.devices = lib.mkForce { };
   };
-
-  # GPUドライバを無効化。
-  services.xserver.videoDrivers = lib.mkForce [ ];
 
   # sopsをモックにして必要とするサービスを誤魔化します。
   sops = {

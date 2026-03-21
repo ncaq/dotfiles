@@ -69,7 +69,7 @@ jobs:
           jq -r '.[] | ".#nixosConfigurations.\(.).config.system.build.toplevel"' |
           xargs nix build -L --keep-going
 
-  boot-test-nixos:
+  test-nixos-boot:
     needs: is-trusted
     permissions:
       contents: read
@@ -87,8 +87,8 @@ jobs:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - name: nix build
         run: >-
-          nix eval --json .#nixosBootTests --apply builtins.attrNames |
-          jq -r '.[] | ".#nixosBootTests.\(.)"' |
+          nix eval --json .#testNixosBoot --apply builtins.attrNames |
+          jq -r '.[] | ".#testNixosBoot.\(.)"' |
           xargs nix build -L --keep-going
 
   build-home-manager:

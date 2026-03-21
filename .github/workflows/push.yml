@@ -15,6 +15,7 @@ jobs:
     # 信頼できるソースからのトリガーかを判定します。
     # セルフホステッドランナーの利用を制御するために使用します。
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     if: >-
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'push' ||

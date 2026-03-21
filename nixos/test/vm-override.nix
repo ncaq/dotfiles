@@ -21,7 +21,6 @@
   # diskoのデバイス定義を無効化。
   # VMではvirtualisationモジュールがファイルシステムを管理します。
   disko.devices = lib.mkForce { };
-  swapDevices = lib.mkForce [ ];
 
   # 仮想マシンの特殊なブートになるので普通のブート手順を無効化。
   boot = {

@@ -27,14 +27,11 @@ jobs:
       - run: echo "Trusted source confirmed"
 
   list-nixos-hosts:
-    needs: is-trusted
     permissions:
       contents: read
       id-token: write # niks3-publicへのOIDC認証に必要
-    # セルフホステッドランナーは未認証のソースからは実行しない。
-    if: needs.is-trusted.result == 'success'
-    runs-on: [self-hosted, Linux]
-    timeout-minutes: 10
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
     outputs:
       hosts: ${{ steps.list.outputs.hosts }}
     steps:

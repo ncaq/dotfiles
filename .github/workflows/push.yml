@@ -100,7 +100,6 @@ jobs:
     needs:
       - is-trusted
       - list-nixos-hosts
-      - build-nixos
     permissions:
       contents: read
       id-token: write # niks3-publicへのOIDC認証に必要

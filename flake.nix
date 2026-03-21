@@ -148,16 +148,18 @@
           overlays = [
             inputs.firge-nix.overlays.default
           ];
-          # system固有のunstable pkgsを生成する関数。
-          importPkgsUnstable =
-            system:
-            import nixpkgs-unstable {
+          # system固有のpkgsを生成する関数。
+          importPkgsStable = importPkgsFor nixpkgs;
+          importPkgsUnstable = importPkgsFor nixpkgs-unstable;
+          importPkgsFor =
+            pkgset: system:
+            import pkgset {
               inherit system overlays;
               config = nixpkgsConfig;
             };
         in
         {
-          nixosConfigurations =
+          hostDefs =
             let
               mkNixosSystem =
                 {
@@ -174,12 +176,6 @@
                       ;
                     username = "ncaq";
                   };
-                in
-                nixpkgs.lib.nixosSystem {
-                  inherit
-                    specialArgs
-                    system
-                    ;
                   modules = [
                     (_: {
                       nixpkgs = {
@@ -212,6 +208,12 @@
                       }
                     )
                   ];
+                in
+                {
+                  nixosSystem = nixpkgs.lib.nixosSystem {
+                    inherit modules specialArgs system;
+                  };
+                  inherit modules specialArgs system;
                 };
             in
             {
@@ -237,6 +239,44 @@
               };
             };
 
+          nixosConfigurations = nixpkgs.lib.mapAttrs (_: def: def.nixosSystem) top.config.flake.hostDefs;
+
+          nixosBootTests =
+            let
+              bootTestableHosts = nixpkgs.lib.filterAttrs (
+                _: def: !(def.nixosSystem.config.wsl.enable or false)
+              ) top.config.flake.hostDefs;
+            in
+            nixpkgs.lib.mapAttrs (
+              name: hostDef:
+              (importPkgsStable hostDef.system).testers.runNixOSTest {
+                name = "boot-test-${name}";
+                node = {
+                  # runNixOSTestが追加するnixpkgsの読み込み専用設定を無効化します。
+                  # hardware-configuration.nixが存在する時nixpkgs.hostPlatformを設定しているので、
+                  # 読み込み専用にされたnixpkgsオプションへの設定がエラーになります。
+                  # 基本的にモジュール単位のテスト機構であり全体のブートを想定していないゆえの挙動でしょう。
+                  # 自動生成ファイルであるhardware-configuration.nixを編集したくないため、
+                  # 上書きを有効にしてしまいます。
+                  # ブートのテストの場合ではあまり問題にならないはずです。
+                  pkgsReadOnly = false;
+                  inherit (hostDef) specialArgs;
+                };
+                nodes.machine = {
+                  imports = hostDef.modules ++ [
+                    ./nixos/test/vm-override.nix
+                  ];
+                };
+                # テスト環境はネットワークに繋がっていないため、
+                # ネットワーク依存のユニットは失敗します。
+                # よって全体成功を期待することはできません。
+                # multi-user.targetに到達すればひとまず成功とみなしています。
+                testScript = ''
+                  machine.wait_for_unit("multi-user.target")
+                '';
+              }
+            ) bootTestableHosts;
+
           homeConfigurations =
             let
               mkLinuxHome =
@@ -245,10 +285,7 @@
                   username,
                 }:
                 home-manager.lib.homeManagerConfiguration {
-                  pkgs = import nixpkgs {
-                    inherit system overlays;
-                    config = nixpkgsConfig;
-                  };
+                  pkgs = importPkgsStable system;
                   extraSpecialArgs = {
                     inherit
                       importDirModules

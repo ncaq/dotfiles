@@ -15,6 +15,7 @@ jobs:
     # 信頼できるソースからのトリガーかを判定します。
     # セルフホステッドランナーの利用を制御するために使用します。
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     if: >-
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'push' ||
@@ -26,16 +27,14 @@ jobs:
       - run: echo "Trusted source confirmed"
 
   list-nixos-hosts:
-    needs: is-trusted
     permissions:
       contents: read
       id-token: write # niks3-publicへのOIDC認証に必要
-    # セルフホステッドランナーは未認証のソースからは実行しない。
-    if: needs.is-trusted.result == 'success'
-    runs-on: [self-hosted, Linux]
-    timeout-minutes: 10
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
     outputs:
       hosts: ${{ steps.list.outputs.hosts }}
+      boot-test-hosts: ${{ steps.list.outputs.boot-test-hosts }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
@@ -44,7 +43,11 @@ jobs:
         with:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - id: list
-        run: echo "hosts=$(nix eval --json .#nixosConfigurations --apply builtins.attrNames)" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "hosts=$(nix eval --json .#nixosConfigurations --apply builtins.attrNames)" \
+            >> "$GITHUB_OUTPUT"
+          echo "boot-test-hosts=$(nix eval --json .#nixosBootTests --apply builtins.attrNames)" \
+            >> "$GITHUB_OUTPUT"
 
   nix-fast-build:
     needs: is-trusted
@@ -78,7 +81,7 @@ jobs:
     # セルフホステッドランナーは未認証のソースからは実行しない。
     if: needs.is-trusted.result == 'success'
     runs-on: [self-hosted, Linux]
-    timeout-minutes: 120
+    timeout-minutes: 60 # キャッシュが切れている時は時間がかかるため長めに設定。
     strategy:
       matrix:
         host: ${{ fromJSON(needs['list-nixos-hosts'].outputs.hosts) }}
@@ -93,6 +96,31 @@ jobs:
         env:
           HOST: ${{ matrix.host }}
 
+  boot-test-nixos:
+    needs:
+      - is-trusted
+      - list-nixos-hosts
+    permissions:
+      contents: read
+      id-token: write # niks3-publicへのOIDC認証に必要
+    # セルフホステッドランナーは未認証のソースからは実行しない。
+    if: needs.is-trusted.result == 'success'
+    runs-on: [self-hosted, Linux]
+    timeout-minutes: 60 # キャッシュが切れている時は時間がかかるため長めに設定。
+    strategy:
+      matrix:
+        host: ${{ fromJSON(needs['list-nixos-hosts'].outputs['boot-test-hosts']) }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-nix
+        with:
+          cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+      - run: nix build -L ".#nixosBootTests.$HOST"
+        env:
+          HOST: ${{ matrix.host }}
+
   build-home-manager:
     needs: is-trusted
     permissions:
@@ -101,7 +129,7 @@ jobs:
     # セルフホステッドランナーは未認証のソースからは実行しない。
     if: needs.is-trusted.result == 'success'
     runs-on: [self-hosted, Linux]
-    timeout-minutes: 60
+    timeout-minutes: 60 # キャッシュが切れている時は時間がかかるため長めに設定。
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
@@ -119,7 +147,7 @@ jobs:
     # セルフホステッドランナーは未認証のソースからは実行しない。
     if: needs.is-trusted.result == 'success'
     runs-on: [self-hosted, Linux]
-    timeout-minutes: 360
+    timeout-minutes: 360 # キャッシュが切れている時は時間がかかる上QEMUエミュレーションでのビルドになるため長めに設定。
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:

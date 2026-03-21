@@ -1,0 +1,55 @@
+/**
+  NixOS Testのマシンがブートするかを確認するときのVMの設定。
+  テスト時には機能しないものなどを無効化したりモックにしたりします。
+*/
+{
+  pkgs,
+  lib,
+  options,
+  username,
+  ...
+}:
+lib.mkMerge [
+  {
+    # NixOS Testでいくらリソースを使っていいかの設定。
+    # CIで実行する時はサーバのコンテナ単位でリソースを制限しているので、
+    # 多めに設定していても破綻はしませんが、
+    # リソース制限をわかりやすくするためにこちらでも記述しておきます。
+    virtualisation = {
+      cores = 6;
+      memorySize = 4096;
+    };
+
+    # diskoのデバイス定義を無効化。
+    # VMではvirtualisationモジュールがファイルシステムを管理します。
+    disko.devices = lib.mkForce { };
+
+    # sopsをモックにして必要とするサービスを誤魔化します。
+    sops = {
+      validateSopsFiles = false;
+      gnupg = {
+        home = lib.mkForce "/run/sops-dummy";
+        sshKeyPaths = lib.mkForce [ ];
+      };
+    };
+    home-manager.sharedModules = lib.mkAfter [
+      { sops.validateSopsFiles = false; }
+    ];
+    systemd.services.sops-install-secrets.serviceConfig = lib.mkForce {
+      Type = "oneshot";
+      ExecStart = "${pkgs.coreutils}/bin/true";
+      RemainAfterExit = true;
+    };
+
+    # Tailscale関係サービスがネットワークのない状態で起動しようとかなり粘ってしまいテストが無意味に遅くなるので無効化しておきます。
+    services.tailscale.enable = lib.mkForce false;
+    home-manager.users.${username}.custom.trayscale.enable = lib.mkForce false;
+
+    # どうせ失敗するが無意味に粘るので無効化。
+    virtualisation.virtualbox.guest.enable = lib.mkForce false;
+  }
+  # ホスト限定オプションなので分岐して無効化。
+  (lib.optionalAttrs (options ? custom.tailscale-exit-node.enable) {
+    custom.tailscale-exit-node.enable = lib.mkForce false;
+  })
+]

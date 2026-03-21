@@ -2,7 +2,12 @@
   NixOS Testのマシンがブートするかを確認するときのVMの設定。
   テスト時には機能しないものなどを無効化したりモックにしたりします。
 */
-{ pkgs, lib, ... }:
+{
+  pkgs,
+  lib,
+  username,
+  ...
+}:
 {
   # NixOS Testでいくらリソースを使っていいかの設定。
   # CIで実行する時はサーバのコンテナ単位でリソースを制限しているので、
@@ -48,4 +53,8 @@
     ExecStart = "${pkgs.coreutils}/bin/true";
     RemainAfterExit = true;
   };
+
+  # Tailscaleがネットワークのない状態で起動しようとかなり粘ってしまいテストが無意味に遅くなるので無効化しておきます。
+  services.tailscale.enable = lib.mkForce false;
+  home-manager.users.${username}.custom.trayscale.enable = lib.mkForce false;
 }

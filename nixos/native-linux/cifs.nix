@@ -32,6 +32,11 @@ lib.mkMerge [
             "sops-install-secrets.service"
             "tailscale-online.service"
           ];
+          # `cifs-mount.target`に向けてwantedByする。
+          # systemdはマウントユニットのwantedBy先に暗黙的に`Before=`を追加するが、
+          # `cifs-mount.target`自体は`multi-user.target`に対して`Before=`を持たないため、
+          # ブートをブロックしない。
+          wantedBy = [ "cifs-mount.target" ];
           what = "//seminar/chihiro";
           where = "/mnt/chihiro";
           type = "cifs";
@@ -40,6 +45,10 @@ lib.mkMerge [
             "credentials=${config.sops.templates."cifs-credentials".path}"
             "uid=${toString userConfig.uid}"
             "gid=${toString config.users.groups.${userConfig.group}.gid}"
+            # systemdはデフォルトだと`Before=remote-fs.target`を追加します。
+            # `nofail`を指定することでその挙動が抑制され、
+            # `remote-fs.target`経由のブートブロックを防ぎます。
+            "nofail"
             # セキュリティ
             "nodev"
             "noexec"
@@ -50,15 +59,18 @@ lib.mkMerge [
           mountConfig = {
             TimeoutSec = 30;
           };
-          # remote-fs.targetはmulti-user.targetのクリティカルチェーン上にあるため、
-          # ここにwantedByすると、Tailscale接続待ち+CIFSマウントがブート時間に加算される。
-          # multi-user.targetへのWantsにすることでブートと並行して非同期にマウントを試行する。
-          wantedBy = [ "multi-user.target" ];
         }
       ];
 
+      # ターゲットユニットにはwantedBy先への暗黙的`Before=`が付かないため、
+      # `multi-user.target`をブロックせずにマウントを引き込める。
+      targets.cifs-mount = {
+        description = "CIFS Network Mounts";
+        wantedBy = [ "multi-user.target" ];
+      };
+
       # Tailscale接続確立を待つサービス。
-      # tailscaled.serviceが起動してからtailnet接続が確立されるまでの遅延を吸収する。
+      # `tailscaled.service`が起動してからtailnet接続が確立されるまでの遅延を吸収する。
       services.tailscale-online = {
         description = "Wait for Tailscale to be online";
         requires = [ "tailscaled.service" ];

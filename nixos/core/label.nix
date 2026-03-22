@@ -17,22 +17,18 @@ let
   # `install.sh`が`last-commit`をstagingするため必ずdirtyになります。
   # "-dirty"サフィックスは自前の注入によるものなので除去します。
   shortRev = lib.strings.removeSuffix "-dirty" inputs.self.dirtyShortRev or inputs.self.shortRev;
-  # `install.sh`が最新コミットのsubjectとdirty状態を`last-commit`ファイルに保存してstagingします。
-  # 1行目: コミットsubject、2行目: clean/dirty(注入前の本来の状態)
-  lastCommitFile = "${inputs.self}/last-commit";
-  lastCommitLines =
-    if builtins.pathExists lastCommitFile then
-      lib.splitString "\n" (builtins.readFile lastCommitFile)
-    else
-      null;
-  lastCommitSubject = if lastCommitLines != null then builtins.elemAt lastCommitLines 0 else null;
+  # `install.sh`が最新コミットの情報を`last-commit.nix`に保存してstagingします。
+  lastCommitFile = "${inputs.self}/last-commit.nix";
+  lastCommit = if builtins.pathExists lastCommitFile then import lastCommitFile else null;
+  lastCommitSubject = if lastCommit != null then lastCommit.subject else null;
   # install.shが注入前に記録した本来のdirty状態。
-  isDirty =
-    if lastCommitLines != null && builtins.length lastCommitLines >= 2 then
-      builtins.elemAt lastCommitLines 1 == "dirty"
+  dirtySuffix = if lastCommit != null && lastCommit.dirty then "-dirty-" else "";
+  # install.shが記録したブランチ名。
+  branchLabel =
+    if lastCommit != null && lastCommit.branch != "" then
+      "-${builtins.replaceStrings [ "/" ] [ "." ] lastCommit.branch}-"
     else
-      false;
-  dirtySuffix = if isDirty then "-dirty-" else "";
+      "";
   # コミットsubjectからラベルを生成します。
   # conventional commits: "fix(boot): message" → "fix.boot", "feat: message" → "feat"
   # GitHubマージ: "Merge pull request #717 from ncaq/branch-name" → "merge.branch-name"
@@ -59,5 +55,5 @@ let
       "unknown";
 in
 {
-  system.nixos.label = "${time}-${config.system.nixos.release}-${shortRev}${dirtySuffix}${commitLabel}";
+  system.nixos.label = "${time}-${config.system.nixos.release}-${shortRev}${dirtySuffix}${branchLabel}${commitLabel}";
 }

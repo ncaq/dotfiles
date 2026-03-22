@@ -12,26 +12,37 @@ fi
 # 失敗しても無害なファイルが残るだけなため、
 # エラーは無視します。
 cleanup_last_commit() {
-  git reset -- last-commit 2>/dev/null || true
+  git reset -- last-commit.nix 2>/dev/null || true
   if command -v trash >/dev/null 2>&1; then
-    trash last-commit 2>/dev/null || true
+    trash last-commit.nix 2>/dev/null || true
   else
-    rm last-commit 2>/dev/null || true
+    rm last-commit.nix 2>/dev/null || true
   fi
 }
 
-# 最新コミットのsubjectとdirty状態をlast-commitファイルに保存してstagingします。
+# 最新コミットの情報をlast-commit.nixに保存してstagingします。
 # flakeはstagingされたファイルのみをソースに含めるため、
 # 一時的にgit addで注入してrebuild後にunstageします。
-# last-commitのstagingで必ずdirtyになるため、注入前に本来のdirty状態を記録します。
+# last-commit.nixのstagingで必ずdirtyになるため、注入前に本来のdirty状態を記録します。
 stage_last_commit() {
-  git log -1 --format=%s >last-commit
+  local subject branch dirty
+  subject=$(git log -1 --format=%s)
+  branch=$(git rev-parse --abbrev-ref HEAD)
   if git diff --quiet && git diff --cached --quiet; then
-    echo "clean" >>last-commit
+    dirty=false
   else
-    echo "dirty" >>last-commit
+    dirty=true
   fi
-  git add -f last-commit
+  # Nix文字列のエスケープ: \と"と${をエスケープ
+  nix_escape() { printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g; s/\${/\\${/g'; }
+  cat >last-commit.nix <<EOF
+{
+  subject = "$(nix_escape "$subject")";
+  dirty = $dirty;
+  branch = "$(nix_escape "$branch")";
+}
+EOF
+  git add -f last-commit.nix
   trap cleanup_last_commit EXIT
 }
 

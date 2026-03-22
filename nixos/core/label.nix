@@ -32,7 +32,7 @@ let
       builtins.elemAt lastCommitLines 1 == "dirty"
     else
       false;
-  dirtySuffix = if isDirty then "-dirty" else "";
+  dirtySuffix = if isDirty then "-dirty-" else "";
   # コミットsubjectからラベルを生成します。
   # conventional commits: "fix(boot): message" → "fix.boot", "feat: message" → "feat"
   # GitHubマージ: "Merge pull request #717 from ncaq/branch-name" → "merge.branch-name"
@@ -59,5 +59,5 @@ let
       "unknown";
 in
 {
-  system.nixos.label = "${time}-${config.system.nixos.release}-${shortRev}${dirtySuffix}-${commitLabel}";
+  system.nixos.label = "${time}-${config.system.nixos.release}-${shortRev}${dirtySuffix}${commitLabel}";
 }

@@ -14,7 +14,7 @@ let
   d = inputs.self.lastModifiedDate or "00000000000000";
   time = "${builtins.substring 8 2 d}:${builtins.substring 10 2 d}:${builtins.substring 12 2 d}";
   # コミットリビジョン。
-  # `install.sh`が`last-commit`をstagingするため必ずdirtyになります。
+  # `install.sh`が最後のコミット情報ファイルをstagingするため必ずdirtyになります。
   # "-dirty"サフィックスは自前の注入によるものなので除去します。
   shortRev = lib.strings.removeSuffix "-dirty" inputs.self.dirtyShortRev or inputs.self.shortRev;
   # `install.sh`が最新コミットの情報を`last-commit.json`に保存してstagingします。

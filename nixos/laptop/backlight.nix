@@ -1,7 +1,7 @@
 _: {
   location.provider = "geoclue2";
   services.clight = {
-    enable = true;
+    enable = false;
     settings = {
       # 無操作時に時間経過で暗くするのを無効化。
       # AC接続時には切りたいが、片方だけ切る方法が分からなかった。

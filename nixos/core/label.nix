@@ -17,9 +17,13 @@ let
   # `install.sh`が`last-commit`をstagingするため必ずdirtyになります。
   # "-dirty"サフィックスは自前の注入によるものなので除去します。
   shortRev = lib.strings.removeSuffix "-dirty" inputs.self.dirtyShortRev or inputs.self.shortRev;
-  # `install.sh`が最新コミットの情報を`last-commit.nix`に保存してstagingします。
-  lastCommitFile = "${inputs.self}/last-commit.nix";
-  lastCommit = if builtins.pathExists lastCommitFile then import lastCommitFile else null;
+  # `install.sh`が最新コミットの情報を`last-commit.json`に保存してstagingします。
+  lastCommitFile = "${inputs.self}/last-commit.json";
+  lastCommit =
+    if builtins.pathExists lastCommitFile then
+      builtins.fromJSON (builtins.readFile lastCommitFile)
+    else
+      null;
   lastCommitSubject = if lastCommit != null then lastCommit.subject else null;
   # install.shが注入前に記録した本来のdirty状態。
   dirtySuffix = if lastCommit != null && lastCommit.dirty then "-dirty" else "";

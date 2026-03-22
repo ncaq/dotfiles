@@ -28,7 +28,7 @@ let
     if lastCommit != null && lastCommit.branch != "" then
       "-${builtins.replaceStrings [ "/" ] [ "." ] lastCommit.branch}"
     else
-      "";
+      "-missing-branch";
   # コミットsubjectからラベルを生成します。
   # conventional commits: "fix(boot): message" → "fix.boot", "feat: message" → "feat"
   # GitHubマージ: "Merge pull request #717 from ncaq/branch-name" → "merge.branch-name"

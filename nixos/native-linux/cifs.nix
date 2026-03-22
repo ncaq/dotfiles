@@ -40,6 +40,10 @@ lib.mkMerge [
             "credentials=${config.sops.templates."cifs-credentials".path}"
             "uid=${toString userConfig.uid}"
             "gid=${toString config.users.groups.${userConfig.group}.gid}"
+            # systemdはデフォルトだと`Before=remote-fs.target`を追加します。
+            # `nofail`を指定することでその挙動が抑制され、
+            # `remote-fs.target`経由のブートブロックを防ぎます。
+            "nofail"
             # セキュリティ
             "nodev"
             "noexec"

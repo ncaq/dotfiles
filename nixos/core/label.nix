@@ -22,11 +22,11 @@ let
   lastCommit = if builtins.pathExists lastCommitFile then import lastCommitFile else null;
   lastCommitSubject = if lastCommit != null then lastCommit.subject else null;
   # install.shが注入前に記録した本来のdirty状態。
-  dirtySuffix = if lastCommit != null && lastCommit.dirty then "-dirty-" else "";
+  dirtySuffix = if lastCommit != null && lastCommit.dirty then "-dirty" else "";
   # install.shが記録したブランチ名。
   branchLabel =
     if lastCommit != null && lastCommit.branch != "" then
-      "-${builtins.replaceStrings [ "/" ] [ "." ] lastCommit.branch}-"
+      "-${builtins.replaceStrings [ "/" ] [ "." ] lastCommit.branch}"
     else
       "";
   # コミットsubjectからラベルを生成します。
@@ -50,9 +50,9 @@ let
       in
       if commitScope != null then "${commitType}.${commitScope}" else commitType
     else if mergeParsed != null then
-      "merge.${builtins.replaceStrings [ "/" ] [ "." ] (builtins.elemAt mergeParsed 1)}"
+      "-merge.${builtins.replaceStrings [ "/" ] [ "." ] (builtins.elemAt mergeParsed 1)}"
     else
-      "unknown";
+      "-unknown";
 in
 {
   system.nixos.label = "${time}-${config.system.nixos.release}-${shortRev}${dirtySuffix}${branchLabel}${commitLabel}";

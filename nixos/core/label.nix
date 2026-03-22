@@ -52,7 +52,7 @@ let
         commitType = builtins.elemAt conventionalParsed 0;
         commitScope = builtins.elemAt conventionalParsed 2;
       in
-      if commitScope != null then "${commitType}.${commitScope}" else commitType
+      if commitScope != null then "-${commitType}.${commitScope}" else commitType
     else if mergeParsed != null then
       "-merge.${builtins.replaceStrings [ "/" ] [ "." ] (builtins.elemAt mergeParsed 1)}"
     else

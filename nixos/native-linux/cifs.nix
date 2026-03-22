@@ -32,6 +32,11 @@ lib.mkMerge [
             "sops-install-secrets.service"
             "tailscale-online.service"
           ];
+          # `cifs-mount.target`に向けてwantedByする。
+          # systemdはマウントユニットのwantedBy先に暗黙的に`Before=`を追加するが、
+          # `cifs-mount.target`自体は`multi-user.target`に対して`Before=`を持たないため、
+          # ブートをブロックしない。
+          wantedBy = [ "cifs-mount.target" ];
           what = "//seminar/chihiro";
           where = "/mnt/chihiro";
           type = "cifs";
@@ -54,55 +59,41 @@ lib.mkMerge [
           mountConfig = {
             TimeoutSec = 30;
           };
-          # wantedByはここに書かない。
-          # systemdはマウントユニットのwantedBy先ターゲットに対して暗黙的にBefore=を追加するため、
-          # `wantedBy = [ "multi-user.target" ]`とするとmulti-user.targetがマウント完了を待ってしまう。
-          # 代わりにサービスユニット(mount-chihiro)経由でマウントを引き込む。
-          # サービスユニットにはこの暗黙的Before=が付与されないため、ブートをブロックしない。
         }
       ];
 
-      services = {
-        # マウントユニットを直接wantedByすると暗黙のBefore=でブートがブロックされるため、
-        # サービスユニット経由で引き込む。サービスユニットにはこの暗黙的順序依存がない。
-        mount-chihiro = {
-          description = "Pull in chihiro CIFS mount";
-          wants = [ "mnt-chihiro.mount" ];
-          after = [ "mnt-chihiro.mount" ];
-          wantedBy = [ "multi-user.target" ];
-          serviceConfig = {
-            Type = "oneshot";
-            RemainAfterExit = true;
-            ExecStart = "${pkgs.coreutils}/bin/true";
-          };
-        };
+      # ターゲットユニットにはwantedBy先への暗黙的`Before=`が付かないため、
+      # `multi-user.target`をブロックせずにマウントを引き込める。
+      targets.cifs-mount = {
+        description = "CIFS Network Mounts";
+        wantedBy = [ "multi-user.target" ];
+      };
 
-        # Tailscale接続確立を待つサービス。
-        # tailscaled.serviceが起動してからtailnet接続が確立されるまでの遅延を吸収する。
-        tailscale-online = {
-          description = "Wait for Tailscale to be online";
-          requires = [ "tailscaled.service" ];
-          wants = [ "network-online.target" ];
-          after = [
-            "network-online.target"
-            "tailscaled.service"
-          ];
-          serviceConfig = {
-            Type = "oneshot";
-            RemainAfterExit = true;
-            ExecStart = lib.getExe (
-              pkgs.writeShellApplication {
-                name = "wait-for-tailscale";
-                runtimeInputs = [ config.services.tailscale.package ];
-                text = ''
-                  until tailscale status --peers=false > /dev/null 2>&1; do
-                    sleep 1
-                  done
-                '';
-              }
-            );
-            TimeoutStartSec = 60;
-          };
+      # Tailscale接続確立を待つサービス。
+      # `tailscaled.service`が起動してからtailnet接続が確立されるまでの遅延を吸収する。
+      services.tailscale-online = {
+        description = "Wait for Tailscale to be online";
+        requires = [ "tailscaled.service" ];
+        wants = [ "network-online.target" ];
+        after = [
+          "network-online.target"
+          "tailscaled.service"
+        ];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStart = lib.getExe (
+            pkgs.writeShellApplication {
+              name = "wait-for-tailscale";
+              runtimeInputs = [ config.services.tailscale.package ];
+              text = ''
+                until tailscale status --peers=false > /dev/null 2>&1; do
+                  sleep 1
+                done
+              '';
+            }
+          );
+          TimeoutStartSec = 60;
         };
       };
 

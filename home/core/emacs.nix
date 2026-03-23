@@ -5,14 +5,16 @@
   inputs,
   ...
 }:
+let
+  # programs.emacs.enableを使うとhome-managerがemacsWithPackagesで二重ラップし、
+  # .emacs.d/flake.nixのextraEmacsPackagesでリンクしたバイナリが消えるため、
+  # .emacs.dのパッケージを指定します。
+  emacsPackage = inputs.dot-emacs.packages.${pkgs.stdenv.hostPlatform.system}.default;
+in
 {
-  programs.emacs = {
-    enable = true;
-    package = inputs.dot-emacs.packages.${pkgs.stdenv.hostPlatform.system}.default;
-  };
-
   services.emacs = {
     enable = true;
+    package = emacsPackage;
     client = {
       enable = true;
       arguments = [
@@ -38,5 +40,7 @@
           "${config.home.homeDirectory}/.emacs.d"
       fi
     '';
+
+    packages = [ emacsPackage ];
   };
 }

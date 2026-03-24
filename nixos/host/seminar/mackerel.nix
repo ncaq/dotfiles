@@ -231,6 +231,29 @@ in
             max_check_attempts
             ;
         };
+        niks3-private = {
+          command = lib.getExe (
+            pkgs.writeShellApplication {
+              name = "check-niks3-private";
+              runtimeInputs = [ pkgs.curl ];
+              text = ''
+                http_code=$(curl -s --max-time 3 -o /dev/null -w "%{http_code}" \
+                  http://${config.machineAddresses.niks3-private.guest}:5751 || true)
+                if [[ "$http_code" =~ ^[23][0-9][0-9]$ ]]; then
+                  echo "niks3-private OK (HTTP $http_code)"
+                  exit 0
+                else
+                  echo "niks3-private CRITICAL: HTTP $http_code"
+                  exit 2
+                fi
+              '';
+            }
+          );
+          inherit
+            check_interval
+            max_check_attempts
+            ;
+        };
         mcp-nixos = {
           command = lib.getExe (
             pkgs.writeShellApplication {

@@ -3,108 +3,168 @@
   "lines": [
     [
       {
-        "id": "1",
+        "id": "model",
         "type": "model",
         "color": "cyan"
       },
       {
-        "id": "2",
-        "type": "separator",
-        "character": " | "
-      },
-      {
-        "id": "3",
-        "type": "context-length",
-        "color": "brightBlack"
-      },
-      {
-        "id": "3a",
+        "id": "sep-model-effort",
         "type": "separator",
         "character": " "
       },
       {
-        "id": "4",
-        "type": "context-percentage",
-        "color": "brightBlack"
+        "id": "thinking-effort",
+        "type": "thinking-effort",
+        "color": "cyan"
       },
       {
-        "id": "5",
+        "id": "sep-effort-context",
         "type": "separator",
         "character": " | "
       },
       {
-        "id": "6",
+        "id": "context-length",
+        "type": "context-length",
+        "color": "white"
+      },
+      {
+        "id": "sep-context-length-pct",
+        "type": "separator",
+        "character": " "
+      },
+      {
+        "id": "context-percentage-usable",
+        "type": "context-percentage-usable",
+        "color": "white"
+      },
+      {
+        "id": "sep-context-tokens",
+        "type": "separator",
+        "character": " | "
+      },
+      {
+        "id": "tokens-input",
         "type": "tokens-input",
         "color": "green"
       },
       {
-        "id": "6a",
+        "id": "sep-tokens-input-output",
         "type": "separator",
         "character": " "
       },
       {
-        "id": "7",
+        "id": "tokens-output",
         "type": "tokens-output",
         "color": "yellow"
       },
       {
-        "id": "7a",
+        "id": "sep-tokens-output-cached",
         "type": "separator",
         "character": " "
       },
       {
-        "id": "8",
+        "id": "tokens-cached",
         "type": "tokens-cached",
         "color": "blue"
       },
       {
-        "id": "8a",
+        "id": "sep-tokens-cached-total",
         "type": "separator",
         "character": " "
       },
       {
-        "id": "9",
+        "id": "tokens-total",
         "type": "tokens-total",
         "color": "white"
       },
       {
-        "id": "10",
+        "id": "sep-tokens-speed",
         "type": "separator",
         "character": " | "
       },
       {
-        "id": "11",
+        "id": "input-speed",
+        "type": "input-speed",
+        "color": "green"
+      },
+      {
+        "id": "sep-speed-input-output",
+        "type": "separator",
+        "character": " "
+      },
+      {
+        "id": "output-speed",
+        "type": "output-speed",
+        "color": "yellow"
+      },
+      {
+        "id": "sep-speed-output-total",
+        "type": "separator",
+        "character": " "
+      },
+      {
+        "id": "total-speed",
+        "type": "total-speed",
+        "color": "white"
+      },
+      {
+        "id": "sep-speed-git",
+        "type": "separator",
+        "character": " | "
+      },
+      {
+        "id": "git-branch",
         "type": "git-branch",
         "color": "magenta"
       },
       {
-        "id": "11a",
+        "id": "sep-git-branch-changes",
         "type": "separator",
         "character": " "
       },
       {
-        "id": "12",
+        "id": "git-changes",
         "type": "git-changes",
         "color": "yellow"
       },
       {
-        "id": "13",
-        "type": "separator",
-        "character": " | "
-      },
-      {
-        "id": "14",
-        "type": "session-clock",
-        "color": "green"
-      },
-      {
-        "id": "14a",
+        "id": "sep-git-changes-worktree",
         "type": "separator",
         "character": " "
       },
       {
-        "id": "15",
+        "id": "git-worktree",
+        "type": "git-worktree",
+        "color": "magenta"
+      },
+      {
+        "id": "sep-git-time",
+        "type": "separator",
+        "character": " | "
+      },
+      {
+        "id": "session-usage",
+        "type": "session-usage",
+        "color": "green"
+      },
+      {
+        "id": "sep-session-block",
+        "type": "separator",
+        "character": " "
+      },
+      {
+        "id": "block-timer",
         "type": "block-timer",
+        "color": "brightBlack"
+      },
+      {
+        "id": "sep-block-weekly",
+        "type": "separator",
+        "character": " "
+      },
+      {
+        "id": "weekly-usage",
+        "type": "weekly-usage",
         "color": "brightBlack"
       }
     ],

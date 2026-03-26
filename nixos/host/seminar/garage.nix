@@ -90,10 +90,6 @@ in
                 api_bind_addr = "[::]:3900";
                 root_domain = ".garage.ncaq.net";
               };
-              s3_web = {
-                bind_addr = "127.0.0.1:3902";
-                root_domain = ".web.garage.ncaq.net";
-              };
               admin = {
                 api_bind_addr = "[::]:3903";
               };

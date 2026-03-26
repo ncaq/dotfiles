@@ -10,14 +10,14 @@ in
     enable = true;
     email = "ncaq@ncaq.net";
     # niks3コンテナからGarageへのTLS termination proxy。
-    # Cloudflare Tunnel経由だとContent-Encoding: zstdが透過的に解凍され、
-    # niks3のreadProxyがS3上のzstd圧縮narinfoを正しく読めなくなる。
+    # 同じサーバ上の通信なのにいちいちCloudflare Tunnelを経由すると無駄なので、
+    # ローカルのCaddyで通信を橋渡しします。
     # コンテナ内のhostsでgarage.ncaq.netをhostAddressに向け、
-    # Caddy(Let's Encrypt証明書)経由でGarageに直接HTTP接続することでバイパスする。
-    # presigned URLはhttps://garage.ncaq.net/...のまま維持され、
-    # 外部クライアント(GitHub Actions)はCloudflare Tunnel経由でアクセスする。
+    # Caddy(Let's Encrypt証明書)経由でGarageに直接HTTP接続することでバイパスします。
+    # それによりpresigned URLはhttps://garage.ncaq.net/...のまま維持されます。
+    # 外部クライアント(GitHub Actionsなど)はCloudflare Tunnel経由でアクセスします。
     # ホストの443を完全に占有してしまわないように、
-    # niks3コンテナのhostAddress側vethのみにバインドする。
+    # niks3コンテナのhostAddress側vethのみにバインドします。
     virtualHosts."garage.ncaq.net" = {
       useACMEHost = "garage.ncaq.net";
       extraConfig = ''

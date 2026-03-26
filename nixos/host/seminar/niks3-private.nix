@@ -52,13 +52,12 @@ in
         networking = {
           useHostResolvConf = lib.mkForce false;
           firewall.allowedTCPPorts = [ 5751 ];
-          # Cloudflare Tunnel経由だと`Content-Encoding: zstd`が透過的に解凍され、
-          # readProxyのnarinfo読み取りが壊れるため、
-          # ホスト上のCaddy経由でGarageコンテナに接続する。
+          # 同じサーバ上にあるのにわざわざCloudflare Tunnelを経由すると無駄なので、
+          # 同じサーバ上のCaddy経由でGarageコンテナに接続します。
           # CaddyがLet's Encrypt証明書(DNS-01)でTLS terminationし、
-          # GarageへはHTTPで転送する。
+          # GarageへはHTTPで転送します。
           # presigned URLはhttps://garage.ncaq.net/...のままなので、
-          # 外部クライアントはCloudflare Tunnel経由でアクセスできる。
+          # 外部クライアントはCloudflare Tunnel経由でアクセスできます。
           hosts."${addr.host}" = [ "garage.ncaq.net" ];
         };
         users = {

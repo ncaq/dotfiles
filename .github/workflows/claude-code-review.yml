@@ -41,7 +41,7 @@ jobs:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - name: Run Claude Code Review
         id: claude-review
-        uses: anthropics/claude-code-action@ff9acae5886d41a99ed4ec14b7dc147d55834722 # v1
+        uses: anthropics/claude-code-action@3ac52d0da9f8ec9ca7b4dc23bb477e36ef9c77a9 # v1
         if: env.HAS_CLAUDE_TOKEN == 'true' # Dependabotでの実行など実行コンテキストが異なり認証情報がない場合はスキップ。
         continue-on-error: true # 設定変更などで想定通り動かなくなることがあっても全体のCIが失敗表示にならないようにします。
         with:

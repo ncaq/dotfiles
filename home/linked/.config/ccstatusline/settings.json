@@ -40,72 +40,24 @@
       {
         "id": "sep-context-tokens",
         "type": "separator",
-        "character": " | "
-      },
-      {
-        "id": "tokens-input",
-        "type": "tokens-input",
-        "color": "green"
-      },
-      {
-        "id": "sep-tokens-input-output",
-        "type": "separator",
-        "character": " "
-      },
-      {
-        "id": "tokens-output",
-        "type": "tokens-output",
-        "color": "yellow"
-      },
-      {
-        "id": "sep-tokens-output-cached",
-        "type": "separator",
-        "character": " "
-      },
-      {
-        "id": "tokens-cached",
-        "type": "tokens-cached",
-        "color": "blue"
-      },
-      {
-        "id": "sep-tokens-cached-total",
-        "type": "separator",
-        "character": " "
+        "character": " | Tok "
       },
       {
         "id": "tokens-total",
         "type": "tokens-total",
-        "color": "white"
+        "color": "brightBlue",
+        "rawValue": true
       },
       {
         "id": "sep-tokens-speed",
         "type": "separator",
-        "character": " | "
-      },
-      {
-        "id": "input-speed",
-        "type": "input-speed",
-        "color": "green"
-      },
-      {
-        "id": "sep-speed-input-output",
-        "type": "separator",
-        "character": " "
-      },
-      {
-        "id": "output-speed",
-        "type": "output-speed",
-        "color": "yellow"
-      },
-      {
-        "id": "sep-speed-output-total",
-        "type": "separator",
-        "character": " "
+        "character": " Spd "
       },
       {
         "id": "total-speed",
         "type": "total-speed",
-        "color": "white"
+        "color": "brightMagenta",
+        "rawValue": true
       },
       {
         "id": "sep-speed-git",
@@ -155,7 +107,7 @@
       {
         "id": "block-timer",
         "type": "block-timer",
-        "color": "brightBlack"
+        "color": "blue"
       },
       {
         "id": "sep-block-weekly",
@@ -165,7 +117,7 @@
       {
         "id": "weekly-usage",
         "type": "weekly-usage",
-        "color": "brightBlack"
+        "color": "cyan"
       }
     ],
     [],

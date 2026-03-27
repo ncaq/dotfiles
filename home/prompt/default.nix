@@ -58,6 +58,7 @@ in
       # プログラミングに直接関係ない情報は省きます。
       codingAgent = lib.concatStringsSep "\n" (
         [
+          (builtins.readFile ./assistant/language.md)
           (builtins.readFile ./assistant/form.md)
           (builtins.readFile ./assistant/markdown.md)
           (builtins.readFile ./environment/software.md)

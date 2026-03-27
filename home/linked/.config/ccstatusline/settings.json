@@ -105,7 +105,7 @@
       {
         "id": "block-timer",
         "type": "block-timer",
-        "color": "brightBlack"
+        "color": "blue"
       },
       {
         "id": "sep-block-weekly",
@@ -115,7 +115,7 @@
       {
         "id": "weekly-usage",
         "type": "weekly-usage",
-        "color": "brightBlack"
+        "color": "cyan"
       }
     ],
     [],

@@ -45,7 +45,7 @@
       {
         "id": "tokens-total",
         "type": "tokens-total",
-        "color": "white"
+        "color": "brightBlue"
       },
       {
         "id": "sep-tokens-speed",
@@ -55,7 +55,7 @@
       {
         "id": "total-speed",
         "type": "total-speed",
-        "color": "white"
+        "color": "brightMagenta"
       },
       {
         "id": "sep-speed-git",

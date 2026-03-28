@@ -15,7 +15,7 @@
     description =
       "Wait for Tailscale to be online"
       + " - absorbs the delay between tailscaled.service startup and tailnet connection establishment";
-    requires = [ "tailscaled.service" ];
+    bindsTo = [ "tailscaled.service" ];
     wants = [ "network-online.target" ];
     after = [
       "network-online.target"

@@ -1,5 +1,3 @@
-# ラップトップでは外出時の一応のセキュリティのためseminarをexit nodeとして使用します。
-# ただしseminarと同じローカルネットワークにいる場合は無駄なので通常の通信を行います。
 {
   pkgs,
   lib,
@@ -11,8 +9,6 @@ let
   # tailscale pingのレイテンシでローカルネットワークにいるかを判定し、
   # exit nodeの設定を切り替えるスクリプト。
   # ローカルネットワークなら数ms、外部なら数10ms以上になります。
-  # セキュリティ的にあまり厳密な判定ではありませんが、
-  # そもそもそこまで差し迫ってVPNを使いたいわけではないので許容します。
   tailscaleExitNodeScript = lib.getExe (
     pkgs.writeShellApplication {
       name = "tailscale-exit-node";
@@ -51,7 +47,22 @@ in
   options.custom.tailscale-exit-node.enable = lib.mkOption {
     type = lib.types.bool;
     default = true;
-    description = "Whether to enable tailscale-exit-node.";
+    description = ''
+      自動的にTailscaleのexit nodeを切り替えます。
+
+      外出時はexit nodeをseminarにします。
+      ただしseminarと同じローカルネットワークにいる場合は無駄なので通常の通信を行います。
+
+      切り替えることで家のネットワークのリソースを自然に使えます。
+      一応あまり信頼できないネットワーク上でも多重に暗号化をかけることが出来ます。
+      普通は今どきTLSなどアプリケーション側で既に暗号化されているはずですが。
+
+      差し迫ったセキュリティ要件が自分にあるわけではないので、
+      ローカルネットワークの判定はかなり雑にレイテンシで行っています。
+      WIFIのSSIDとかMACアドレスとかはそれはそれで偽装可能なので行っていません。
+      真面目にやるとしたらサーバの認証機構などを作るべきでしょうが、
+      現在はそこまですることでもないと判断しています。
+    '';
   };
 
   config = lib.mkIf cfg.enable {

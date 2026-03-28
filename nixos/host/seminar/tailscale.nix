@@ -16,11 +16,15 @@ in
   systemd.services.tailscale-serve = {
     description = "Configure Tailscale Serve";
     requires = [
-      "caddy.service"
       "tailscaled.service"
+    ];
+    wants = [
+      "caddy.service"
+      "tailscale-online.service"
     ];
     after = [
       "caddy.service"
+      "tailscale-online.service"
       "tailscaled.service"
     ];
     wantedBy = [ "multi-user.target" ];

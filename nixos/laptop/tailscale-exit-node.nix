@@ -21,13 +21,8 @@ let
       exit 0
     fi
 
-    # Tailscaleが準備できるまでリトライ
-    for _ in $(seq 1 10); do
-      if ${pkgs.tailscale}/bin/tailscale status > /dev/null 2>&1; then
-        break
-      fi
-      sleep 1
-    done
+    # tailscale-online.serviceでTailscaleの準備完了を待つ
+    ${pkgs.systemd}/bin/systemctl start tailscale-online.service
 
     # tailscale pingでレイテンシを取得
     # 出力例: pong from seminar (100.82.4.93) via 192.168.10.88:41641 in 4ms

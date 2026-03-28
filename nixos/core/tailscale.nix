@@ -1,8 +1,41 @@
-{ lib, ... }:
+{
+  pkgs,
+  lib,
+  config,
+  ...
+}:
 {
   services.tailscale = {
     enable = true;
     # ベースとなる設定。
     useRoutingFeatures = lib.mkDefault "client";
+  };
+
+  # Tailscale接続確立を待つサービス。
+  # `tailscaled.service`が起動してからtailnet接続が確立されるまでの遅延を吸収する。
+  systemd.services.tailscale-online = {
+    description = "Wait for Tailscale to be online";
+    requires = [ "tailscaled.service" ];
+    wants = [ "network-online.target" ];
+    after = [
+      "network-online.target"
+      "tailscaled.service"
+    ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStart = lib.getExe (
+        pkgs.writeShellApplication {
+          name = "wait-for-tailscale";
+          runtimeInputs = [ config.services.tailscale.package ];
+          text = ''
+            until tailscale status --peers=false > /dev/null 2>&1; do
+              sleep 1
+            done
+          '';
+        }
+      );
+      TimeoutStartSec = 60;
+    };
   };
 }

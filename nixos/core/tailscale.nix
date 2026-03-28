@@ -11,10 +11,10 @@
     useRoutingFeatures = lib.mkDefault "client";
   };
 
-  # Tailscale接続確立を待つサービス。
-  # `tailscaled.service`が起動してからtailnet接続が確立されるまでの遅延を吸収する。
   systemd.services.tailscale-online = {
-    description = "Wait for Tailscale to be online";
+    description =
+      "Wait for Tailscale to be online"
+      + " - absorbs the delay between tailscaled.service startup and tailnet connection establishment";
     requires = [ "tailscaled.service" ];
     wants = [ "network-online.target" ];
     after = [

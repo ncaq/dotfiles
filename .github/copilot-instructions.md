@@ -158,11 +158,14 @@ nix-fast-build --option eval-cache false --no-link --skip-cached --no-nom
 
 # リポジトリ構成
 
-`CLAUDE.md`は以下のように`.github/copilot-instructions.md`のシンボリックリンクになっています。
+Codex向けの`AGENTS.md`とClaude Code向けの`CLAUDE.md`は以下のように`.github/copilot-instructions.md`のシンボリックリンクになっています。
 
 ```console
+AGENTS.md -> .github/copilot-instructions.md
 CLAUDE.md -> .github/copilot-instructions.md
 ```
+
+これにより各種LLM向けのドキュメントを一元管理しています。
 
 # インフラ構築
 

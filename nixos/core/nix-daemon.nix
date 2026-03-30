@@ -29,11 +29,11 @@ _: {
     };
     gc = {
       automatic = true;
-      dates = "weekly";
+      dates = "Mon *-*-* 12:30:00";
     };
     optimise = {
       automatic = true;
-      dates = "weekly";
+      dates = "Fri *-*-* 12:30:00";
     };
   };
 }

@@ -29,18 +29,13 @@
           name = "wait-for-tailscale";
           runtimeInputs = [ config.services.tailscale.package ];
           text = ''
-            tailscale status --peers=false > /dev/null 2>&1
+            until tailscale status --peers=false > /dev/null 2>&1; do
+              sleep 1
+            done
           '';
         }
       );
-      Restart = "on-failure";
-      RestartSec = "1s";
-      RestartSteps = 20;
-      RestartMaxDelaySec = "60s";
-    };
-    unitConfig = {
-      StartLimitIntervalSec = "10min";
-      StartLimitBurst = 20;
+      TimeoutStartSec = "10min";
     };
   };
 }

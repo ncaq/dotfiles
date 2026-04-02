@@ -6,9 +6,10 @@ on:
 
 # Reusable workflows are constrained by the caller's permissions,
 # so they must be explicitly declared here.
+# Claude GitHub App manages its own token, so only minimal permissions are needed.
 permissions:
   contents: read # Read repository contents for checkout
-  id-token: write # Required for Claude Code Action OIDC authentication
+  id-token: write # GitHub App token exchange via OIDC (needed regardless of Claude API auth method)
 
 jobs:
   kyosei:

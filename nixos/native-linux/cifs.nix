@@ -33,9 +33,8 @@ lib.mkMerge [
             "tailscale-online.service"
           ];
           # `cifs-mount.target`に向けてwantedByする。
-          # systemdはマウントユニットのwantedBy先に暗黙的に`Before=`を追加するが、
-          # `cifs-mount.target`自体は`multi-user.target`に対して`Before=`を持たないため、
-          # ブートをブロックしない。
+          # `cifs-mount.target`は`DefaultDependencies=false`のため、
+          # `multi-user.target`からの暗黙的な順序依存が追加されず、ブートをブロックしない。
           wantedBy = [ "cifs-mount.target" ];
           what = "//seminar/chihiro";
           where = "/mnt/chihiro";
@@ -62,11 +61,16 @@ lib.mkMerge [
         }
       ];
 
-      # ターゲットユニットにはwantedBy先への暗黙的`Before=`が付かないため、
-      # `multi-user.target`をブロックせずにマウントを引き込める。
+      # systemd.target(5)により、
+      # ターゲットが`Wants=`で引き込んだユニットの両方が`DefaultDependencies=yes`の場合、
+      # 暗黙的に`After=`が追加される。
+      # `DefaultDependencies=false`を設定することで、
+      # `multi-user.target`が暗黙的に`After=cifs-mount.target`を追加するのを防ぎ、
+      # ブートをブロックしない。
       targets.cifs-mount = {
         description = "CIFS Network Mounts";
         wantedBy = [ "multi-user.target" ];
+        unitConfig.DefaultDependencies = false;
       };
 
       tmpfiles.rules = [

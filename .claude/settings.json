@@ -1,4 +1,15 @@
 {
+  "extraKnownMarketplaces": {
+    "konoka": {
+      "source": {
+        "repo": "ncaq/konoka",
+        "source": "github"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "kyosei@konoka": true
+  },
   "permissions": {
     "allow": ["Bash(./install.sh:*)"],
     "additionalDirectories": ["~/.claude", "~/Desktop/nixpkgs", "~/Desktop/home-manager", "~/Desktop/infra.ncaq.net"]

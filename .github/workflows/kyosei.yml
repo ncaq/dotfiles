@@ -1,0 +1,17 @@
+name: Kyosei
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+# Reusable workflows are constrained by the caller's permissions,
+# so they must be explicitly declared here.
+permissions:
+  contents: read # Read repository contents for checkout
+  id-token: write # Required for Claude Code Action OIDC authentication
+
+jobs:
+  kyosei:
+    uses: ncaq/kyosei-action/.github/workflows/review.yml@v0.2.1
+    secrets:
+      claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}

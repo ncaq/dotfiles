@@ -6,6 +6,26 @@
   ...
 }:
 let
+  # Claude Codeのパッケージをsopsシークレットから環境変数を注入するラッパーで包む。
+  # api.githubcopilot.comがOAuth Dynamic Client Registrationをサポートしないのと、
+  # それを正しくClaude Codeが処理しないため、
+  # PATをBearer tokenとしてHTTPヘッダーで渡す必要がある。
+  # 全シェルにトークンを展開するのはあまりやりたくないため、
+  # コマンドだけに注入する方法を取ります。
+  claude-code-wrapped = pkgs.symlinkJoin {
+    name = "claude-code";
+    paths = [ pkgs-unstable.claude-code-bin ];
+    nativeBuildInputs = [ pkgs.makeWrapper ];
+    postBuild = ''
+      wrapProgram $out/bin/claude \
+        --run 'if [[ -r ${config.sops.secrets."github-mcp-server/pat".path} ]]; then
+          GITHUB_PERSONAL_ACCESS_TOKEN="$(< ${config.sops.secrets."github-mcp-server/pat".path})"
+          export GITHUB_PERSONAL_ACCESS_TOKEN
+        fi'
+    '';
+    inherit (pkgs-unstable.claude-code-bin) meta;
+  };
+
   ccstatusline = pkgs.callPackage ../../pkgs/ccstatusline.nix { };
 
   backlog-mcp-server = pkgs.callPackage ../../pkgs/backlog-mcp-server.nix { };
@@ -71,7 +91,7 @@ in
 {
   programs.claude-code = {
     enable = true;
-    package = pkgs-unstable.claude-code-bin;
+    package = claude-code-wrapped;
 
     # `CLAUDE.md`と同等です。
     memory.text = config.prompt.codingAgent;
@@ -83,6 +103,9 @@ in
       github = {
         type = "http";
         url = "https://api.githubcopilot.com/mcp/";
+        headers = {
+          Authorization = "Bearer \${GITHUB_PERSONAL_ACCESS_TOKEN}";
+        };
       };
       deepwiki = {
         type = "http";
@@ -463,6 +486,15 @@ in
   };
 
   sops.secrets = {
+    # GitHub MCP Server用のPersonal Access Tokenをsops-nixで管理します。
+    # シークレットファイルは `sops secrets/github-mcp-server.yaml` で編集してください。
+    # 形式:
+    # pat: ghp_xxxxxxxxxxxxxxxxxxxxx
+    "github-mcp-server/pat" = {
+      sopsFile = ../../secrets/github-mcp-server.yaml;
+      key = "pat";
+      mode = "0400";
+    };
     # Backlog MCP Server用の認証情報をsops-nixで管理します。
     # シークレットファイルは `sops secrets/backlog-mcp-server.yaml` で編集してください。
     # 形式:

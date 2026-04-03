@@ -2,8 +2,8 @@
   "extraKnownMarketplaces": {
     "konoka": {
       "source": {
-        "repo": "ncaq/konoka",
         "source": "github",
+        "repo": "ncaq/konoka",
         "ref": "v1.1.0"
       }
     }

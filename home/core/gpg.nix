@@ -29,7 +29,7 @@ lib.mkMerge [
     home.activation.cleanupGpgStaleLocks =
       lib.hm.dag.entryBetween [ "importGpgKeys" ] [ "createGpgHomedir" ]
         ''
-          $DRY_RUN_CMD ${pkgs.trashy}/bin/trash "${config.home.homeDirectory}/.gnupg/gnupg_spawn_agent_sentinel.lock" 2>/dev/null || true
+          $DRY_RUN_CMD ${pkgs.trashy}/bin/trash "${config.programs.gpg.homedir}/gnupg_spawn_agent_sentinel.lock" 2>/dev/null || true
         '';
     home.packages = with pkgs; [ paperkey ];
   }

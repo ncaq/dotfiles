@@ -8,19 +8,6 @@
 let
   ccstatusline = pkgs.callPackage ../../pkgs/ccstatusline.nix { };
 
-  # GitHub MCP ServerのPATをsops-nixで管理されたシークレットから読み込むラッパー
-  github-mcp-server-wrapper = pkgs.writeShellApplication {
-    name = "github-mcp-server-wrapper";
-    runtimeInputs = [ pkgs.github-mcp-server ];
-    text = ''
-      if [[ -r ${config.sops.secrets."github-mcp-server/pat".path} ]]; then
-        GITHUB_PERSONAL_ACCESS_TOKEN="$(< ${config.sops.secrets."github-mcp-server/pat".path})"
-        export GITHUB_PERSONAL_ACCESS_TOKEN
-      fi
-      exec github-mcp-server "$@"
-    '';
-  };
-
   backlog-mcp-server = pkgs.callPackage ../../pkgs/backlog-mcp-server.nix { };
   # Backlog MCP Serverの認証情報をsops-nixで管理されたシークレットから読み込むラッパー
   backlog-mcp-server-wrapper = pkgs.writeShellApplication {
@@ -94,9 +81,8 @@ in
 
     mcpServers = {
       github = {
-        type = "stdio";
-        command = lib.getExe github-mcp-server-wrapper;
-        args = [ "stdio" ];
+        type = "http";
+        url = "https://api.githubcopilot.com/mcp/";
       };
       deepwiki = {
         type = "http";
@@ -477,15 +463,6 @@ in
   };
 
   sops.secrets = {
-    # GitHub MCP Server用のPersonal Access Tokenをsops-nixで管理します。
-    # シークレットファイルは `sops secrets/github-mcp-server.yaml` で編集してください。
-    # 形式:
-    # pat: ghp_xxxxxxxxxxxxxxxxxxxxx
-    "github-mcp-server/pat" = {
-      sopsFile = ../../secrets/github-mcp-server.yaml;
-      key = "pat";
-      mode = "0400";
-    };
     # Backlog MCP Server用の認証情報をsops-nixで管理します。
     # シークレットファイルは `sops secrets/backlog-mcp-server.yaml` で編集してください。
     # 形式:

@@ -23,6 +23,14 @@ lib.mkMerge [
         }
       ];
     };
+    # 非gracefulなシャットダウン(WSL終了など)でgpg-agentのsentinel lockが残留し、
+    # importGpgKeysでgpg-agentに接続できなくなることがあります。
+    # importGpgKeysの前にstaleなロックファイルを削除して回避します。
+    home.activation.cleanupGpgStaleLocks =
+      lib.hm.dag.entryBetween [ "importGpgKeys" ] [ "createGpgHomedir" ]
+        ''
+          $DRY_RUN_CMD ${pkgs.trashy}/bin/trash "${config.programs.gpg.homedir}/gnupg_spawn_agent_sentinel.lock" 2>/dev/null || true
+        '';
     home.packages = with pkgs; [ paperkey ];
   }
   (

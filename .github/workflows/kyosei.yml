@@ -13,6 +13,6 @@ permissions:
 
 jobs:
   kyosei:
-    uses: ncaq/kyosei-action/.github/workflows/review.yml@1ea049562573091cf82f9522965620197368c106 # v0.2.1
+    uses: ncaq/kyosei-action/.github/workflows/review.yml@7ee7fb3fef4b320252487576a22ed1b65793e50b # v0.3.0
     secrets:
       claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}

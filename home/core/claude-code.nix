@@ -12,18 +12,17 @@ let
   # PATをBearer tokenとしてHTTPヘッダーで渡す必要がある。
   # 全シェルにトークンを展開するのはあまりやりたくないため、
   # コマンドだけに注入する方法を取ります。
-  claude-code-wrapped = pkgs.symlinkJoin {
-    name = "claude-code";
-    paths = [ pkgs-unstable.claude-code-bin ];
-    nativeBuildInputs = [ pkgs.makeWrapper ];
-    postBuild = ''
-      wrapProgram $out/bin/claude \
-        --run 'if [[ -r ${config.sops.secrets."github-mcp-server/pat".path} ]]; then
-          GITHUB_PERSONAL_ACCESS_TOKEN="$(< ${config.sops.secrets."github-mcp-server/pat".path})"
-          export GITHUB_PERSONAL_ACCESS_TOKEN
-        fi'
+  # symlinkJoin+wrapProgramではなくwriteShellApplicationを使うことで、
+  # home-managerの--mcp-configラッピングと合わせて二重wrappingを避けます。
+  claude-code-wrapped = pkgs.writeShellApplication {
+    name = "claude";
+    text = ''
+      if [[ -r ${config.sops.secrets."github-mcp-server/pat".path} ]]; then
+        GITHUB_PERSONAL_ACCESS_TOKEN="$(< ${config.sops.secrets."github-mcp-server/pat".path})"
+        export GITHUB_PERSONAL_ACCESS_TOKEN
+      fi
+      exec ${lib.getExe pkgs-unstable.claude-code-bin} "$@"
     '';
-    inherit (pkgs-unstable.claude-code-bin) meta;
   };
 
   ccstatusline = pkgs.callPackage ../../pkgs/ccstatusline.nix { };

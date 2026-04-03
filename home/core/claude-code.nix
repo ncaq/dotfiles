@@ -95,9 +95,6 @@ in
     # `CLAUDE.md`と同等です。
     memory.text = config.prompt.codingAgent;
 
-    agentsDir = ../prompt/agents;
-    commandsDir = ../prompt/commands;
-
     mcpServers = {
       github = {
         type = "http";
@@ -158,6 +155,13 @@ in
             repo = "anthropics/claude-plugins-official";
           };
         };
+        konoka = {
+          source = {
+            source = "github";
+            repo = "ncaq/konoka";
+            ref = "v2.0.0";
+          };
+        };
       };
       # pluginを記述しておくことで起動時にインストールされていない場合自動でインストールされます。
       enabledPlugins = {
@@ -177,6 +181,14 @@ in
         "rust-analyzer-lsp@claude-plugins-official" = true;
         "swift-lsp@claude-plugins-official" = true;
         "typescript-lsp@claude-plugins-official" = true;
+        # konokaプラグイン。
+        "bump-cabal-index-state@konoka" = true;
+        "commit@konoka" = true;
+        "dependency-update-report@konoka" = true;
+        "kyosei@konoka" = true;
+        "log-analyzer@konoka" = true;
+        "proofreading-ja@konoka" = true;
+        "research@konoka" = true;
       };
       # statuslineを設定します。
       # ccstatuslineを使用して豪華な表示にします。
@@ -358,7 +370,6 @@ in
           "Bash(update-nix-fetchgit:*)"
           "Bash(wc:*)"
           "Bash(xargs:*)"
-          "Skill(nix-check:*)"
           "WebFetch"
           "WebSearch"
           "mcp__backlog__count_issues"

@@ -3,6 +3,7 @@
   pkgs-unstable,
   config,
   lib,
+  osConfig ? null,
   ...
 }:
 let
@@ -86,6 +87,16 @@ let
   jsRunnerPermissions = lib.concatMap (
     pkg: mkJsDirectPermissions pkg ++ mkJsRunPermissions pkg
   ) jsPackageManagers;
+
+  # コーディングエージェントの作業ディレクトリ。
+  # konokaプラグインは`${XDG_RUNTIME_DIR:-/tmp}/coding-agent-work/`を使用します。
+  # NixOS環境ではosConfigからUIDを取得して`/run/user/<uid>/coding-agent-work/`を構築します。
+  # 非NixOS環境(Termux等)ではXDG_RUNTIME_DIRが設定されない場合があるため`/tmp`にフォールバックします。
+  codingAgentWorkDirFullPath =
+    let
+      uid = if osConfig != null then osConfig.users.users.${config.home.username}.uid else null;
+    in
+    if uid != null then "/run/user/${toString uid}/coding-agent-work/" else "/tmp/coding-agent-work/";
 in
 {
   programs.claude-code = {
@@ -211,8 +222,8 @@ in
       permissions = {
         defaultMode = "acceptEdits";
         additionalDirectories = [
+          codingAgentWorkDirFullPath
           "/nix/store/"
-          "/tmp/coding-agent-work/"
           "~/dotfiles/"
         ];
         allow = jsRunnerPermissions ++ [

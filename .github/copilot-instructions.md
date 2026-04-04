@@ -169,6 +169,31 @@ CLAUDE.md -> .github/copilot-instructions.md
 
 これにより各種LLM向けのドキュメントを一元管理しています。
 
+# Claude Code設定
+
+Claude Codeの設定は2箇所で管理されています。
+
+## `home/core/claude-code.nix`
+
+home-managerの`programs.claude-code`モジュールで全ホスト共通の設定を宣言的に管理します。
+MCPサーバ、プラグイン、権限、フックなどの主要な設定はここで管理します。
+
+ビルド時にユーザの`~/.claude/settings.json`として展開されます。
+
+また、`.claude/settings.json`で管理できないタイプの設定は、
+home-managerによって生成されたラッパープログラムを通じて渡されます。
+
+## `.claude/settings.json`
+
+このリポジトリ(dotfilesプロジェクト)固有の設定です。
+
+dotfilesでclaude codeを起動している時はNix管理のグローバル設定とマージされます。
+
+両方のファイルで同じ設定項目(例: `extraKnownMarketplaces`のプラグインバージョン)を管理している場合、
+両方を同時に更新する必要があります。
+
+一つに統一できないのはCIなどの都合上やむを得ないことです。
+
 # インフラ構築
 
 マシンの設定を超えるTerraformを使うような外部のインフラの設定は、

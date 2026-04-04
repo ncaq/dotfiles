@@ -159,7 +159,7 @@ in
           source = {
             source = "github";
             repo = "ncaq/konoka";
-            ref = "v2.0.1";
+            ref = "v2.0.2";
           };
         };
       };

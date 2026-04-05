@@ -11,7 +11,6 @@
       serviceConfig = {
         Type = "oneshot";
         ExecStart = "${pkgs.xorg.xset}/bin/xset s 1800 1800";
-        Environment = [ "DISPLAY=:0" ];
         Restart = "on-failure";
         RestartSec = "5s";
       };

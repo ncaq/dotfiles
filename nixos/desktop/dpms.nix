@@ -15,9 +15,6 @@
         # DPMS設定 (スタンバイ:6時間, サスペンド:7時間, オフ:8時間)
         ${pkgs.xorg.xset}/bin/xset dpms 21600 25200 28800
       '';
-      Environment = [
-        "DISPLAY=:0"
-      ];
       Restart = "on-failure";
       RestartSec = "5s";
     };

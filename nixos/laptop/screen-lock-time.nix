@@ -27,9 +27,16 @@
         ExecStart = lib.getExe (
           pkgs.writeShellApplication {
             name = "lid-close-lock-and-suspend";
-            runtimeInputs = [ pkgs.systemd ];
+            runtimeInputs = with pkgs; [
+              coreutils
+              systemd
+            ];
+            # xss-lockがsleep inhibitor lockを取得するため、
+            # ロッカーが起動するまでsuspendはブロックされます。
+            # 念のためsleepも挟んでいます。
             text = ''
               loginctl lock-sessions
+              sleep 1
               systemctl suspend
             '';
           }

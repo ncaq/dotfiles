@@ -29,7 +29,7 @@
             name = "lid-close-lock-and-suspend";
             runtimeInputs = [ pkgs.systemd ];
             text = ''
-              loginctl lock-session
+              loginctl lock-sessions
               systemctl suspend
             '';
           }

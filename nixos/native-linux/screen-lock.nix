@@ -5,12 +5,13 @@ let
   # 自分の所有するYubiKeyで、
   # 自分の指紋でロック解除できても何も困らないため、
   # 全ホストで有効にしています。
-  # 登録コマンド: `pamu2fcfg -u ncaq -o pam://ncaq.net`
+  # 登録コマンド: `pamu2fcfg -n -o pam://ncaq.net`
+  # 先頭の`:`を除いて貼ります。
   u2fKeys = {
     # Device type: YubiKey Bio - FIDO Edition
     # Serial number: 34849987
     # Firmware version: 5.7.4
-    alice = "ncaq:+nkdBXuOuCKqJ41VEal3/kJaET23fIQzBEky8PgTKEaGfAAu7lmpvjey1Fai4cSNHZvnx7GPOWZJryfvMXZoFQ==,B7lUv5xvIO6UUhd3OMzBhlNaGCKwfHBb/aXBzxf1E1PvOI09uYq+Ot+seZhMwCUti3NDS3Ina06thkmE4NRPPw==,es256,+presence";
+    alice = "+nkdBXuOuCKqJ41VEal3/kJaET23fIQzBEky8PgTKEaGfAAu7lmpvjey1Fai4cSNHZvnx7GPOWZJryfvMXZoFQ==,B7lUv5xvIO6UUhd3OMzBhlNaGCKwfHBb/aXBzxf1E1PvOI09uYq+Ot+seZhMwCUti3NDS3Ina06thkmE4NRPPw==,es256,+presence";
   };
 in
 {
@@ -22,7 +23,9 @@ in
       # YubiKey Bioの指紋認証のようにセキュリティキー側で認証を行うことを前提にしています。
       control = "sufficient";
       settings = {
-        authfile = pkgs.writeText "u2f-mappings" "${lib.concatStringsSep ":" (lib.attrValues u2fKeys)}";
+        authfile = pkgs.writeText "u2f-mappings" (
+          "ncaq:${lib.concatStringsSep ":" (lib.attrValues u2fKeys)}"
+        );
         origin = "pam://ncaq.net";
         cue = true; # "Please touch the device." を表示。
       };

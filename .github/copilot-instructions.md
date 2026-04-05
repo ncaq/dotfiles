@@ -160,6 +160,10 @@ nix-fast-build --option eval-cache false --no-link --skip-cached --no-nom
 
 # リポジトリ構成
 
+## ルートディレクトリ
+
+### LLM向けのシンボリックリンク
+
 Codex向けの`AGENTS.md`とClaude Code向けの`CLAUDE.md`は以下のように`.github/copilot-instructions.md`のシンボリックリンクになっています。
 
 ```console
@@ -168,6 +172,31 @@ CLAUDE.md -> .github/copilot-instructions.md
 ```
 
 これにより各種LLM向けのドキュメントを一元管理しています。
+
+## homeディレクトリ
+
+home-managerの設定ディレクトリです。
+`home/default.nix`がエントリポイントです。
+
+- `core/`: 全環境で共通の設定
+- `linked/`: シンボリックリンクで配置される設定ファイル
+- `native-linux/`: ネイティブLinux環境(NixOSなど、WSLやTermuxではない環境)専用の設定
+- `prompt/`: LLM向けのプロンプト設定
+- `wsl/`: WSL2環境専用の設定
+
+## nixosディレクトリ
+
+NixOSのシステム設定ディレクトリです。
+`nixos/configuration.nix`がエントリポイントで`core/`をimportします。
+各ホストの設定(`host/`)が追加のモジュールを選択的にimportする構造です。
+
+- `core/`: 全NixOSホスト共通の設定
+- `desktop/`: 据え置きデスクトップPC固有の設定、ラップトップPCには適用されない
+- `host/`: ホストごとの個別設定、各ホストがモジュールを組み合わせてimportする
+- `laptop/`: ラップトップPC固有の設定、据え置きデスクトップPCには適用されない
+- `native-linux/`: ネイティブLinux環境(WSLではない)のシステム設定
+- `test/`: テスト用設定
+- `wsl/`: WSL2環境専用のNixOS設定
 
 # Claude Code設定
 

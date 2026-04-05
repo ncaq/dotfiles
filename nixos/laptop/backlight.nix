@@ -1,13 +1,16 @@
 _: {
   location.provider = "geoclue2";
   services.clight = {
-    enable = false;
+    enable = true;
     settings = {
       # 無操作時に時間経過で暗くするのを無効化。
       # AC接続時には切りたいが、片方だけ切る方法が分からなかった。
       # バッテリー接続時もそんなに頻繁に中途半端に暗くしてもあまり意味がないと思ったので、
       # 諦めて全体を無効化します。
       dimmer.disabled = true;
+      # 一瞬画面が暗転する問題の切り分けのため無効化。
+      # gamma(色温度)の適用が怪しい。
+      gamma.disabled = true;
       dpms = {
         # 無操作時に画面の電源を切るまでの時間。
         ac_timeouts = [ (2 * 60 * 60) ]; # AC電源時: 2時間

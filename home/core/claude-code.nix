@@ -458,6 +458,7 @@ in
           "mcp__github__search_pull_requests"
           "mcp__github__search_repositories"
           "mcp__github__search_users"
+          "mcp__plugin_context7-plugin_context7"
           "mcp__plugin_nix-tasuke_nixos"
         ];
         ask = [

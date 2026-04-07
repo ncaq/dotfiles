@@ -169,6 +169,13 @@ in
             ref = "v5.1.0";
           };
         };
+        context7-marketplace = {
+          source = {
+            source = "github";
+            repo = "upstash/context7";
+            ref = "v1.0.30";
+          };
+        };
       };
       # pluginを記述しておくことで起動時にインストールされていない場合自動でインストールされます。
       enabledPlugins = {
@@ -199,6 +206,8 @@ in
         "proofreading-ja@konoka" = true;
         "research@konoka" = true;
         "web-tasuke@konoka" = true;
+        # Context7: ライブラリドキュメント検索。
+        "context7-plugin@context7-marketplace" = true;
       };
       # statuslineを設定します。
       # ccstatuslineを使用して豪華な表示にします。

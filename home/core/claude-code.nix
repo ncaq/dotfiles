@@ -446,6 +446,7 @@ in
           "mcp__github__search_repositories"
           "mcp__github__search_users"
           "mcp__nixos"
+          "mcp__plugin_context7-plugin_context7"
         ];
         ask = [
           "Bash(docker compose rm:*)"

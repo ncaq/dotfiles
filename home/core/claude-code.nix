@@ -156,7 +156,7 @@ in
       # またインストール時にclaude-plugins-officialを名乗っているのはclaude-codeのサブディレクトリであることもあるので、
       # 安定性のために明示的に指定します。
       extraKnownMarketplaces = {
-        "claude-plugins-official" = {
+        claude-plugins-official = {
           source = {
             source = "github";
             repo = "anthropics/claude-plugins-official";

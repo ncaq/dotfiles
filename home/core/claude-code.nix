@@ -166,7 +166,7 @@ in
           source = {
             source = "github";
             repo = "ncaq/konoka";
-            ref = "v2.1.0";
+            ref = "v2.2.0";
           };
         };
       };
@@ -197,6 +197,7 @@ in
         "nix-tasuke@konoka" = true;
         "proofreading-ja@konoka" = true;
         "research@konoka" = true;
+        "typescript-tasuke@konoka" = true;
       };
       # statuslineを設定します。
       # ccstatuslineを使用して豪華な表示にします。

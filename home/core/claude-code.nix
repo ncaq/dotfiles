@@ -122,10 +122,6 @@ in
         type = "stdio";
         command = lib.getExe backlog-mcp-server-wrapper;
       };
-      nixos = {
-        type = "http";
-        url = "https://mcp-nixos.ncaq.net/mcp";
-      };
     };
 
     settings = {
@@ -170,7 +166,7 @@ in
           source = {
             source = "github";
             repo = "ncaq/konoka";
-            ref = "v2.0.3";
+            ref = "v2.1.0";
           };
         };
       };
@@ -198,6 +194,7 @@ in
         "dependency-update-report@konoka" = true;
         "kyosei@konoka" = true;
         "log-analyzer@konoka" = true;
+        "nix-tasuke@konoka" = true;
         "proofreading-ja@konoka" = true;
         "research@konoka" = true;
       };

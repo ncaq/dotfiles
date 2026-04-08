@@ -125,10 +125,18 @@ in
     # subdirectories owned by garage due to "unsafe path transition" detection.
     # Use ExecStartPre instead.
     services."container@garage".serviceConfig.ExecStartPre = [
-      "+${pkgs.writeShellScript "garage-create-data-dir" ''
-        install -d -m 0750 -o garage -g garage /mnt/noa/garage
-        install -d -m 0750 -o garage -g garage /mnt/noa/garage/data
-      ''}"
+      "+${
+        lib.getExe (
+          pkgs.writeShellApplication {
+            name = "garage-create-data-dir";
+            runtimeInputs = with pkgs; [ coreutils ];
+            text = ''
+              install -d -m 0750 -o garage -g garage /mnt/noa/garage
+              install -d -m 0750 -o garage -g garage /mnt/noa/garage/data
+            '';
+          }
+        )
+      }"
     ];
   };
 

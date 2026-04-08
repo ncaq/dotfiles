@@ -4,14 +4,14 @@
       "source": {
         "source": "github",
         "repo": "ncaq/konoka",
-        "ref": "v2.2.1"
+        "ref": "v3.0.1"
       }
     }
   },
   "enabledPlugins": {
     "kyosei@konoka": true,
     "nix-tasuke@konoka": true,
-    "typescript-tasuke@konoka": true
+    "web-tasuke@konoka": true
   },
   "permissions": {
     "allow": ["Bash(./install.sh:*)"],

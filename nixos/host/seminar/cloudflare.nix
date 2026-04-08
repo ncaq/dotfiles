@@ -7,15 +7,14 @@ let
   # workaround script that adds --protocol http2 flag to tunnel command.
   cloudflaredWrapper = pkgs.writeShellApplication {
     name = "cloudflared";
-    runtimeInputs = with pkgs; [ cloudflared ];
     text = ''
       # Check if this is a tunnel command
       if [[ "''${1:-}" == "tunnel" ]]; then
         # Insert --protocol http2 before other tunnel arguments
-        exec cloudflared "$@" --protocol http2
+        exec ${pkgs.cloudflared}/bin/cloudflared "$@" --protocol http2
       else
         # For non-tunnel commands, pass through as-is
-        exec cloudflared "$@"
+        exec ${pkgs.cloudflared}/bin/cloudflared "$@"
       fi
     '';
   };

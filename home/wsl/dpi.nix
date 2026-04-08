@@ -14,14 +14,14 @@
             xorg.xset
           ];
           text = ''
-            timeout=10
-            while [ "$timeout" -gt 0 ]; do
+            for _ in $(seq 10); do
               if [ -S /tmp/.X11-unix/X0 ] && xset q &>/dev/null; then
-                break
+                exit 0
               fi
               sleep 1
-              timeout=$((timeout - 1))
             done
+            echo "Timed out waiting for X server" >&2
+            exit 1
           '';
         }
       );

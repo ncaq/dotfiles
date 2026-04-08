@@ -183,8 +183,10 @@ in
         "csharp-lsp@claude-plugins-official" = true;
         "gopls-lsp@claude-plugins-official" = true;
         "jdtls-lsp@claude-plugins-official" = true;
+        "kotlin-lsp@claude-plugins-official" = true;
         "lua-lsp@claude-plugins-official" = true;
         "pyright-lsp@claude-plugins-official" = true;
+        "ruby-lsp@claude-plugins-official" = true;
         "rust-analyzer-lsp@claude-plugins-official" = true;
         "swift-lsp@claude-plugins-official" = true;
         "typescript-lsp@claude-plugins-official" = true;

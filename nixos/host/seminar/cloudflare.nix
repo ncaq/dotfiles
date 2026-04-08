@@ -5,16 +5,20 @@
 }:
 let
   # workaround script that adds --protocol http2 flag to tunnel command.
-  cloudflaredWrapper = pkgs.writeShellScriptBin "cloudflared" ''
-    # Check if this is a tunnel command
-    if [[ "$1" == "tunnel" ]]; then
-      # Insert --protocol http2 before other tunnel arguments
-      exec ${pkgs.cloudflared}/bin/cloudflared "$@" --protocol http2
-    else
-      # For non-tunnel commands, pass through as-is
-      exec ${pkgs.cloudflared}/bin/cloudflared "$@"
-    fi
-  '';
+  cloudflaredWrapper = pkgs.writeShellApplication {
+    name = "cloudflared";
+    runtimeInputs = with pkgs; [ cloudflared ];
+    text = ''
+      # Check if this is a tunnel command
+      if [[ "''${1:-}" == "tunnel" ]]; then
+        # Insert --protocol http2 before other tunnel arguments
+        exec cloudflared "$@" --protocol http2
+      else
+        # For non-tunnel commands, pass through as-is
+        exec cloudflared "$@"
+      fi
+    '';
+  };
   forgejoAddr = config.machineAddresses.forgejo.guest;
   mcpNixosAddr = config.machineAddresses.mcp-nixos.guest;
   garageAddr = config.machineAddresses.garage.guest;

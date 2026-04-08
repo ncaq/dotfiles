@@ -9,9 +9,13 @@ let
     isSystemUser = true;
   };
   # ホストからコンテナ内のforgejoコマンドを実行するラッパースクリプト
-  forgejoWrapper = pkgs.writeShellScriptBin "forgejo" ''
-    exec nixos-container run forgejo -- forgejo "$@"
-  '';
+  forgejoWrapper = pkgs.writeShellApplication {
+    name = "forgejo";
+    runtimeInputs = with pkgs; [ nixos-container ];
+    text = ''
+      exec nixos-container run forgejo -- forgejo "$@"
+    '';
+  };
 in
 {
   containers.forgejo = {

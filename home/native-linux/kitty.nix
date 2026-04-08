@@ -1,13 +1,16 @@
 { pkgs, osConfig, ... }:
 let
-  kitty-wrapper = pkgs.writeShellScriptBin "kitty-wrapper" ''
-    if command -v kitty >/dev/null 2>&1; then
-      exec kitty "$@"
-    else
-      echo "kitty not found in system PATH. Please install kitty via your system package manager." >&2
-      exit 1
-    fi
-  '';
+  kitty-wrapper = pkgs.writeShellApplication {
+    name = "kitty-wrapper";
+    text = ''
+      if command -v kitty >/dev/null 2>&1; then
+        exec kitty "$@"
+      else
+        echo "kitty not found in system PATH. Please install kitty via your system package manager." >&2
+        exit 1
+      fi
+    '';
+  };
 in
 {
   # tmuxに任せられるところは任せます。

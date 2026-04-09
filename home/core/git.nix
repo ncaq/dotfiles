@@ -1,4 +1,5 @@
 {
+  pkgs,
   inputs,
   ...
 }:
@@ -52,7 +53,9 @@ in
         "Thumbs.db"
       ];
     };
-    gh.enable = true;
     git-hooks.enable = true;
+
+    gh.enable = true;
   };
+  home.packages = with pkgs; [ zizmor ];
 }

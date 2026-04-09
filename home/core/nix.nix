@@ -19,6 +19,7 @@ let
 in
 {
   home.packages = with pkgs; [
+    cachix
     nil
     nix-diff
     nix-fast-build-wrapper

@@ -261,9 +261,9 @@ in
           "Bash(gen-hie:*)"
           "Bash(getent:*)"
           "Bash(gh alias list:*)"
-          "Bash(gh api *issues/*/comments*)"
-          "Bash(gh api *pulls/*/comments*)"
-          "Bash(gh api *pulls/*/reviews*)"
+          "Bash(gh api *issues/*/comments*)" # kyoseiスキルの今の仕組み的に仕方がない。
+          "Bash(gh api *pulls/*/comments*)" # kyoseiスキルの今の仕組み的に仕方がない。
+          "Bash(gh api *pulls/*/reviews*)" # kyoseiスキルの今の仕組み的に仕方がない。
           "Bash(gh attestation download:*)"
           "Bash(gh attestation trusted-root:*)"
           "Bash(gh attestation verify:*)"

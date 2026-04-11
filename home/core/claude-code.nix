@@ -525,9 +525,11 @@ in
           "Bash(docker volume rm:*)"
         ];
         deny = [
+          "Bash(gh codespace delete:*)"
           "Bash(gh gist delete:*)"
           "Bash(gh gpg-key delete:*)"
           "Bash(gh issue delete:*)"
+          "Bash(gh label delete:*)"
           "Bash(gh project delete:*)"
           "Bash(gh project field-delete:*)"
           "Bash(gh project item-delete:*)"
@@ -536,6 +538,7 @@ in
           "Bash(gh repo archive:*)"
           "Bash(gh repo delete:*)"
           "Bash(gh repo rename:*)"
+          "Bash(gh run delete:*)"
           "Bash(gh secret delete:*)"
           "Bash(gh ssh-key delete:*)"
           "Bash(gh variable delete:*)"

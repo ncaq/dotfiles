@@ -9,8 +9,13 @@ on:
 permissions:
   contents: read # リポジトリコンテンツの読み取り
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   is-trusted:
+    name: is-trusted
     # 信頼できるソースからのトリガーかを判定します。
     # セルフホステッドランナーの利用を制御するために使用します。
     runs-on: ubuntu-24.04
@@ -26,6 +31,7 @@ jobs:
       - run: echo "Trusted source confirmed"
 
   nix-fast-build:
+    name: nix-fast-build
     needs: is-trusted
     permissions:
       contents: read
@@ -48,6 +54,7 @@ jobs:
       - run: nix run '.#nix-fast-build' -- --option eval-cache false --no-link --skip-cached --no-nom
 
   build-nixos:
+    name: build-nixos
     needs: is-trusted
     permissions:
       contents: read
@@ -70,6 +77,7 @@ jobs:
           xargs nix build -L --keep-going
 
   test-nixos-boot:
+    name: test-nixos-boot
     needs: is-trusted
     permissions:
       contents: read
@@ -92,6 +100,7 @@ jobs:
           xargs nix build -L --keep-going
 
   build-home-manager:
+    name: build-home-manager
     needs: is-trusted
     permissions:
       contents: read
@@ -114,6 +123,7 @@ jobs:
       - run: nix build -L .#homeConfigurations.x86_64-linux.activationPackage
 
   build-nix-on-droid:
+    name: build-nix-on-droid
     needs: is-trusted
     permissions:
       contents: read

@@ -104,6 +104,9 @@ in
       content = ''
         NIX_CONFIG=access-tokens = github.com=${config.sops.placeholder."read-token"}
       '';
+      owner = "root";
+      group = "root";
+      mode = "0400";
     };
     secrets = {
       # 最小権限のPATで`access-tokens`を設定します。

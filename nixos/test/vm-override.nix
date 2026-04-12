@@ -20,6 +20,11 @@ lib.mkMerge [
       memorySize = 4096;
     };
 
+    # NixOSテストフレームワークがrootに`hashedPasswordFile`を自動設定するため、
+    # user.nixで設定している`hashedPassword`と重複定義の警告が出ます。
+    # テスト環境ではrootパスワードは不要なので`hashedPassword`を無効化して警告を除去します。
+    users.users.root.hashedPassword = lib.mkForce null;
+
     # diskoのデバイス定義を無効化。
     # VMではvirtualisationモジュールがファイルシステムを管理します。
     disko.devices = lib.mkForce { };

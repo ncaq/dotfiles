@@ -94,6 +94,10 @@ in
 
   # nix-daemonの環境変数としてGitHubのアクセストークンを渡します。
   # 内部で`nix profile add`などを実行した際のGitHubのAPI rate limitを回避するために必要です。
+  # nix-daemonはホスト全体で共有されるため、このトークンは全ユーザのビルドに適用されます。
+  # しかし自分のアカウントの、
+  # Publicリポジトリを読み込めるだけの権限のトークンを設定しているだけなので、
+  # 全体に適用されても無害であると考えています。
   systemd.services.nix-daemon.serviceConfig.EnvironmentFile = [
     config.sops.templates."nix-daemon-github-env".path
   ];

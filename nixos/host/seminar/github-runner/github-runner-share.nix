@@ -92,11 +92,39 @@ in
   # コンテナ側ではなくホストレベルで設定が必要です。
   boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
 
-  sops.secrets."github-runner" = {
-    sopsFile = ../../../../secrets/seminar/github-runner.yaml;
-    key = "pat";
-    owner = "github-runner";
-    group = "github-runner";
-    mode = "0400";
+  # nix-daemonの環境変数としてGitHubのアクセストークンを渡します。
+  # 内部で`nix profile add`などを実行した際のGitHubのAPI rate limitを回避するために必要です。
+  systemd.services.nix-daemon.serviceConfig.EnvironmentFile = [
+    config.sops.templates."nix-daemon-github-env".path
+  ];
+
+  sops = {
+    # systemdの`EnvironmentFile`で読み込むGitHubのアクセストークンを定義します。
+    templates."nix-daemon-github-env" = {
+      content = ''
+        NIX_CONFIG=access-tokens = github.com=${config.sops.placeholder."read-token"}
+      '';
+    };
+    secrets = {
+      # 最小権限のPATで`access-tokens`を設定します。
+      # `access-tokens`は`fetchSettings`に属しクライアントからdaemonに転送されないため、
+      # [Specify access token via file · Issue #6536 · NixOS/nix](https://github.com/NixOS/nix/issues/6536)
+      # daemonプロセスの`NIX_CONFIG`環境変数で直接設定する必要があります。
+      "read-token" = {
+        sopsFile = ../../../../secrets/seminar/github-runner.yaml;
+        key = "read-token";
+        owner = "github-runner";
+        group = "github-runner";
+        mode = "0400";
+      };
+      # セルフホストランナーがGitHub Actionsに自身を登録するためのトークン。
+      "runner-registration-token" = {
+        sopsFile = ../../../../secrets/seminar/github-runner.yaml;
+        key = "runner-registration-token";
+        owner = "github-runner";
+        group = "github-runner";
+        mode = "0400";
+      };
+    };
   };
 }

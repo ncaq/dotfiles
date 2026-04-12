@@ -113,7 +113,6 @@ in
       # `access-tokens`はクライアントからdaemonに転送されない設定のため、
       # daemonプロセスの`NIX_CONFIG`環境変数で直接設定する必要があります。
       # 関連: [Specify access token via file · Issue #6536 · NixOS/nix](https://github.com/NixOS/nix/issues/6536)
-      # daemonプロセスの`NIX_CONFIG`環境変数で直接設定する必要があります。
       "read-token" = {
         sopsFile = ../../../../secrets/seminar/github-runner.yaml;
         key = "read-token";

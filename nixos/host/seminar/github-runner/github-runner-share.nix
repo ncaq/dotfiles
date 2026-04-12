@@ -113,8 +113,8 @@ in
       "read-token" = {
         sopsFile = ../../../../secrets/seminar/github-runner.yaml;
         key = "read-token";
-        owner = "github-runner";
-        group = "github-runner";
+        owner = "root";
+        group = "root";
         mode = "0400";
       };
       # セルフホストランナーがGitHub Actionsに自身を登録するためのトークン。

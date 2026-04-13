@@ -51,7 +51,7 @@ runs:
         # 現在ホストしているNixOSコンテナや、
         # 他の場所のUbuntu上のセルフホステッドランナーでdaemonを無効化しないと動作しないことを確認しています。
         # store scanはクライアント側で動作するため両環境で問題なく使えます。
-        useDaemon: ${{ runner.environment != 'github-hosted' }}
+        useDaemon: ${{ runner.environment == 'github-hosted' }}
 
     # niks3-action v0.4.2ではskip-pushがpost-build hookに反映されないバグがあり、
     # push失敗時にビルド全体が巻き込まれて失敗する。
@@ -66,4 +66,4 @@ runs:
         push-flake-inputs: true
         # セルフホステッドランナーではNixOSコンテナのためpost-build-hookが動作しないので、
         # store-scan(差分計算)モードを使用します。
-        use-daemon: ${{ runner.environment != 'github-hosted' }}
+        use-daemon: ${{ runner.environment == 'github-hosted' }}

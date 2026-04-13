@@ -42,7 +42,7 @@ in
           '';
         }
       );
-      Restart = "on-failure";
+      Restart = "always";
       RestartSec = "10s";
     };
     wantedBy = [ "graphical-session.target" ];

@@ -16,17 +16,27 @@ in
             xorg.xset
           ];
           text = ''
+            # 頻繁なxset呼び出しを避けるため、状態が変わったときのみDPMSを更新する。
+            current_state=""
             set_dpms() {
               if upower -i /org/freedesktop/UPower | grep -q "on-battery:.*yes"; then
-                xset dpms ${toString battTimeout} ${toString battTimeout} ${toString battTimeout}
+                new_state="battery"
               else
-                xset dpms ${toString acTimeout} ${toString acTimeout} ${toString acTimeout}
+                new_state="ac"
+              fi
+              if [ "$new_state" != "$current_state" ]; then
+                current_state="$new_state"
+                if [ "$current_state" == "battery" ]; then
+                  xset dpms ${toString battTimeout} ${toString battTimeout} ${toString battTimeout}
+                else
+                  xset dpms ${toString acTimeout} ${toString acTimeout} ${toString acTimeout}
+                fi
               fi
             }
             # Set initial state
             set_dpms
             # Monitor for power state changes
-            upower --monitor | while read -r _line; do
+            upower --monitor | grep "battery" | while read -r _line; do
               set_dpms
             done
           '';

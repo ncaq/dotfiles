@@ -49,7 +49,8 @@ runs:
         # post-build-hookのパスがデーモンから到達できなかったりするため、
         # デーモンモードは使用できません。
         # 現在ホストしているNixOSコンテナや、
-        # 他の場所のUbuntu上のセルフホステッドランナーでdaemonを無効化しないと動作しないことを確認しています。
+        # 他の場所のUbuntu上のセルフホステッドランナーでdaemonを無効化しないと、
+        # 動作しないことを確認しています。
         # store scanはクライアント側で動作するため両環境で問題なく使えます。
         useDaemon: ${{ runner.environment == 'github-hosted' }}
 

@@ -42,15 +42,17 @@ runs:
         authToken: "${{ inputs.cachix-auth-token }}"
         # フォークからのPRのみキャッシュへのプッシュをスキップ
         skipPush: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
-        # デーモンのpost-build-hookではなくstore scanによるクライアント側pushを使用します。
+        # セルフホステッドランナーでは、
+        # デーモンのpost-build-hookではなく、
+        # store scanによるクライアント側pushを使用します。
         # 通常セルフホステッドランナーでは、
         # post-build-hookのパスがデーモンから到達できなかったりするため、
         # デーモンモードは使用できません。
         # 現在ホストしているNixOSコンテナや、
-        # 他の場所のUbuntu上のセルフホステッドランナーでdaemonを無効化しないと動作しないことを確認しています。
+        # 他の場所のUbuntu上のセルフホステッドランナーでdaemonを無効化しないと、
+        # 動作しないことを確認しています。
         # store scanはクライアント側で動作するため両環境で問題なく使えます。
-        # 一貫性のために多少のパフォーマンスより設定を統一して両方の環境で`useDaemon`を`false`にしています。
-        useDaemon: false
+        useDaemon: ${{ runner.environment == 'github-hosted' }}
 
     # niks3-action v0.4.2ではskip-pushがpost-build hookに反映されないバグがあり、
     # push失敗時にビルド全体が巻き込まれて失敗する。
@@ -65,4 +67,4 @@ runs:
         push-flake-inputs: true
         # セルフホステッドランナーではNixOSコンテナのためpost-build-hookが動作しないので、
         # store-scan(差分計算)モードを使用します。
-        use-daemon: false
+        use-daemon: ${{ runner.environment == 'github-hosted' }}

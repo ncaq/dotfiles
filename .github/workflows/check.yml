@@ -20,15 +20,41 @@ jobs:
     # セルフホステッドランナーの利用を制御するために使用します。
     runs-on: ubuntu-24.04
     timeout-minutes: 5
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      github.event_name == 'push' ||
-      github.event_name == 'merge_group' ||
-      github.event.pull_request.author_association == 'OWNER' ||
-      github.event.pull_request.user.login == 'dependabot[bot]' ||
-      github.event.pull_request.user.login == 'renovate[bot]'
     steps:
-      - run: echo "Trusted source confirmed"
+      - name: Log trust conditions and decide
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_AUTHOR_ASSOCIATION: ${{ github.event.pull_request.author_association || '' }}
+          PR_USER_LOGIN: ${{ github.event.pull_request.user.login || '' }}
+          IS_WORKFLOW_DISPATCH: ${{ github.event_name == 'workflow_dispatch' }}
+          IS_PUSH: ${{ github.event_name == 'push' }}
+          IS_MERGE_GROUP: ${{ github.event_name == 'merge_group' }}
+          IS_OWNER_ASSOCIATION: ${{ github.event.pull_request.author_association == 'OWNER' }}
+          IS_DEPENDABOT: ${{ github.event.pull_request.user.login == 'dependabot[bot]' }}
+          IS_RENOVATE: ${{ github.event.pull_request.user.login == 'renovate[bot]' }}
+          TRUSTED: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.event_name == 'merge_group' || github.event.pull_request.author_association == 'OWNER' || github.event.pull_request.user.login == 'dependabot[bot]' || github.event.pull_request.user.login == 'renovate[bot]' }}
+        run: |
+          set -euo pipefail
+
+          echo "is-trusted: evaluating trust conditions"
+          echo "github.event_name=${EVENT_NAME}"
+          echo "github.event.pull_request.author_association=${PR_AUTHOR_ASSOCIATION}"
+          echo "github.event.pull_request.user.login=${PR_USER_LOGIN}"
+          echo "condition workflow_dispatch=${IS_WORKFLOW_DISPATCH}"
+          echo "condition push=${IS_PUSH}"
+          echo "condition merge_group=${IS_MERGE_GROUP}"
+          echo "condition pull_request owner_association=${IS_OWNER_ASSOCIATION}"
+          echo "condition pull_request dependabot=${IS_DEPENDABOT}"
+          echo "condition pull_request renovate=${IS_RENOVATE}"
+          echo "trusted=${TRUSTED}"
+
+          if [ "${TRUSTED}" = "true" ]; then
+            echo "Trusted source confirmed"
+            exit 0
+          fi
+
+          echo "Untrusted source: self-hosted runner jobs will not run"
+          exit 1
 
   nix-fast-build:
     name: nix-fast-build

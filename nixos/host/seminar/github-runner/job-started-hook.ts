@@ -54,11 +54,11 @@ async function main(): Promise<void> {
   if (prEvents.has(eventName)) {
     const content = await readFile(eventPath, "utf-8");
     const event = JSON.parse(content) as GitHubEvent;
-    const sender = event.sender?.login ?? "UNKNOWN";
-    const prHeadRepoFullName = event.pull_request?.head?.repo?.full_name ?? "UNKNOWN";
-    const prBaseRepoFullName = event.pull_request?.base?.repo?.full_name ?? event.repository?.full_name ?? "UNKNOWN";
+    const sender = event.sender?.login;
+    const prHeadRepoFullName = event.pull_request?.head?.repo?.full_name;
+    const prBaseRepoFullName = event.pull_request?.base?.repo?.full_name ?? event.repository?.full_name;
     const isInternalPullRequest =
-      prHeadRepoFullName !== "UNKNOWN" && prBaseRepoFullName !== "UNKNOWN" && prHeadRepoFullName === prBaseRepoFullName;
+      prHeadRepoFullName != null && prBaseRepoFullName != null && prHeadRepoFullName === prBaseRepoFullName;
     console.log(
       `PR head.repo.full_name=${prHeadRepoFullName} base.repo.full_name=${prBaseRepoFullName} ` +
         `internal=${String(isInternalPullRequest)} sender=${sender}`,

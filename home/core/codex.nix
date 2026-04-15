@@ -1,4 +1,4 @@
-{ config, pkgs-unstable, ... }:
+{ pkgs-unstable, config, ... }:
 {
   programs = {
     codex = {

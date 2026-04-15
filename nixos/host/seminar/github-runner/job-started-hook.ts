@@ -11,9 +11,22 @@ import { readFile } from "node:fs/promises";
 interface GitHubEvent {
   readonly pull_request?: {
     readonly author_association?: string;
+    readonly head?: {
+      readonly repo?: {
+        readonly full_name?: string;
+      };
+    };
+    readonly base?: {
+      readonly repo?: {
+        readonly full_name?: string;
+      };
+    };
     readonly user?: {
       readonly login?: string;
     };
+  };
+  readonly repository?: {
+    readonly full_name?: string;
   };
   readonly sender?: {
     readonly login?: string;
@@ -35,32 +48,30 @@ async function main(): Promise<void> {
     process.exit(0);
   }
 
-  // PRイベントはオーナーまたは信頼できるbotのみ許可
+  // PRイベントは内部PRのみ許可
   const prEvents = new Set(["pull_request", "pull_request_target"]);
 
   if (prEvents.has(eventName)) {
     const content = await readFile(eventPath, "utf-8");
     const event = JSON.parse(content) as GitHubEvent;
-    const authorAssociation = event.pull_request?.author_association ?? "UNKNOWN";
-    const userLogin = event.pull_request?.user?.login ?? "UNKNOWN";
     const sender = event.sender?.login ?? "UNKNOWN";
-    console.log(`PR author_association=${authorAssociation} user.login=${userLogin} sender=${sender}`);
+    const prHeadRepoFullName = event.pull_request?.head?.repo?.full_name ?? "UNKNOWN";
+    const prBaseRepoFullName = event.pull_request?.base?.repo?.full_name ?? event.repository?.full_name ?? "UNKNOWN";
+    const isInternalPullRequest =
+      prHeadRepoFullName !== "UNKNOWN" && prBaseRepoFullName !== "UNKNOWN" && prHeadRepoFullName === prBaseRepoFullName;
+    console.log(
+      `PR head.repo.full_name=${prHeadRepoFullName} base.repo.full_name=${prBaseRepoFullName} ` +
+        `internal=${String(isInternalPullRequest)} sender=${sender}`,
+    );
 
-    if (authorAssociation === "OWNER") {
-      console.log("PR author is OWNER, allowed.");
-      process.exit(0);
-    }
-
-    // 信頼できるbotからのPRを許可
-    const trustedBots = new Set(["dependabot[bot]", "renovate[bot]"]);
-    if (trustedBots.has(userLogin)) {
-      console.log(`PR from trusted bot '${userLogin}', allowed.`);
+    if (isInternalPullRequest) {
+      console.log("Internal PR, allowed.");
       process.exit(0);
     }
 
     console.error(
-      `ERROR: Untrusted PR (author_association=${authorAssociation}, ` +
-        `user.login=${userLogin}, sender=${sender}). Rejecting job.`,
+      `ERROR: External PR is not allowed on self-hosted runner (sender=${sender}, ` +
+        `head.repo.full_name=${prHeadRepoFullName}, base.repo.full_name=${prBaseRepoFullName}). Rejecting job.`,
     );
     process.exit(1);
   }

@@ -3,6 +3,6 @@
   "extends": ["github>ncaq/renovate-config"],
   "lockFileMaintenance": {
     "enabled": true,
-    "schedule": ["after 6am and before 7am every day"]
+    "schedule": ["after 6am and before 7am"]
   }
 }

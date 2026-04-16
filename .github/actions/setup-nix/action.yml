@@ -54,7 +54,7 @@ runs:
         # store scanはクライアント側で動作するため両環境で問題なく使えます。
         useDaemon: ${{ runner.environment == 'github-hosted' }}
 
-    # niks3-action v0.4.2ではskip-pushがpost-build hookに反映されないバグがあり、
+    # niks3-actionではskip-pushがpost-build hookに反映されないバグがあり、
     # push失敗時にビルド全体が巻き込まれて失敗する。
     # secretが渡らないフォークPRではaction自体をスキップする。
     # See: https://github.com/aleadag/niks3-action/issues/3

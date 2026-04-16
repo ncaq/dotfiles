@@ -50,6 +50,7 @@ in
       ignores = [
         "**/.claude/settings.local.json"
         ".DS_Store"
+        ".codex"
         "Thumbs.db"
       ];
     };

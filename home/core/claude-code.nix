@@ -166,7 +166,7 @@ in
           source = {
             source = "github";
             repo = "ncaq/konoka";
-            ref = "v4.2.0";
+            ref = "v5.0.2";
           };
         };
       };
@@ -193,7 +193,6 @@ in
         # konokaプラグイン。
         "bump-cabal-index-state@konoka" = true;
         "commit@konoka" = true;
-        "dependency-update-report@konoka" = true;
         "kyosei@konoka" = true;
         "log-analyzer@konoka" = true;
         "nix-tasuke@konoka" = true;

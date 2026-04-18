@@ -166,7 +166,7 @@ in
           source = {
             source = "github";
             repo = "ncaq/konoka";
-            ref = "v5.0.2";
+            ref = "v5.0.4";
           };
         };
       };

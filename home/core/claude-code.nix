@@ -453,10 +453,10 @@ in
         ];
         ask = [
           "Bash(docker compose rm:*)"
-          "Bash(docker exec:*)"
           "Bash(docker config:*)"
           "Bash(docker container rm:*)"
           "Bash(docker context:*)"
+          "Bash(docker exec:*)"
           "Bash(docker image rm:*)"
           "Bash(docker login:*)"
           "Bash(docker logout:*)"
@@ -464,9 +464,9 @@ in
           "Bash(docker node:*)"
           "Bash(docker plugin:*)"
           "Bash(docker push:*)"
-          "Bash(docker run:*)"
           "Bash(docker rm:*)"
           "Bash(docker rmi:*)"
+          "Bash(docker run:*)"
           "Bash(docker secret:*)"
           "Bash(docker service:*)"
           "Bash(docker stack:*)"

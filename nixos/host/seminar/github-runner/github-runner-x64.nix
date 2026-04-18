@@ -9,8 +9,10 @@ let
   inherit (githubRunnerShare)
     githubActionsRunnerPackages
     selfHostRunnerPackages
+    runnerNum
     dotfiles-github-runner
     users
+    ciNixSettings
     ;
   addr = config.machineAddresses.github-runner-x64;
 in
@@ -19,11 +21,12 @@ in
     autoStart = true;
     ephemeral = true;
     privateNetwork = true;
+    privateUsers = "identity";
     hostAddress = addr.host;
     localAddress = addr.guest;
     bindMounts = {
-      "/etc/github-runner-token" = {
-        hostPath = config.sops.secrets."github-runner".path;
+      "/etc/runner-registration-token" = {
+        hostPath = config.sops.secrets."runner-registration-token".path;
         isReadOnly = true;
       };
     };
@@ -31,23 +34,21 @@ in
       { lib, ... }:
       {
         system.stateVersion = "25.05";
-        # ホストの評価済みnix.settingsを継承します。
-        # trusted-usersなどホスト側で追加された設定も含まれます。
-        # コンテナはホストのnixデーモンソケットを共有しますが、
-        # cachixなどのツールはローカルのnix.confを参照するため
-        # コンテナ側にも同じ設定が必要です。
+        # NixデーモンにCI用の設定を渡します。
+        # `trusted-users`などが含まれます。
+        # コンテナはホストのnixデーモンソケットを共有するので、
+        # ある程度設定を同期させる必要があります。
         inherit users;
-        nix.settings = config.nix.settings;
+        nix.settings = ciNixSettings;
         networking = {
           useHostResolvConf = lib.mkForce false;
-          # ネットワーク通信の受け入れを許可します。
-          firewall.trustedInterfaces = [ "eth0" ];
+          firewall.trustedInterfaces = [ "eth0" ]; # CIジョブ中に任意のポートでリッスンするため全許可
         };
         services = {
           resolved.enable = true;
           github-runners =
             let
-              runnerNumbers = builtins.genList (x: x) 4;
+              runnerNumbers = builtins.genList (x: x) runnerNum;
               mkRunnerDotfilesX64 = number: {
                 name = "dotfiles-x64-${toString number}";
                 value = {
@@ -59,7 +60,7 @@ in
                   extraLabels = [ "NixOS" ];
                   extraPackages =
                     (githubActionsRunnerPackages { inherit pkgs; }).all ++ selfHostRunnerPackages { inherit pkgs; };
-                  tokenFile = "/etc/github-runner-token";
+                  tokenFile = "/etc/runner-registration-token";
                   url = "https://github.com/ncaq/dotfiles";
                   extraEnvironment = {
                     ACTIONS_RUNNER_HOOK_JOB_STARTED = "${dotfiles-github-runner}/job-started-hook.js";
@@ -106,9 +107,9 @@ in
       '';
       serviceConfig = {
         # CIジョブがホストのリソースを過剰に消費しないよう制限します。
-        # CPUQuotaはコア数×100%で指定するため、12スレッド×95%=1140%です。
-        CPUQuota = "1140%";
-        MemoryMax = "32G";
+        # CPUQuotaはコア数×100%で指定するため、8スレッド制限にします。
+        CPUQuota = "800%";
+        MemoryMax = "20G";
       };
     };
   };

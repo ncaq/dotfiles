@@ -5,3 +5,10 @@
 result*
 
 .env*local
+
+# Project
+
+# `install.sh`がrebuild時に一時的にstagingするファイル。
+# flakeはstagingされたファイルを見るため、
+# `git add -f`で注入します。
+/last-commit.json

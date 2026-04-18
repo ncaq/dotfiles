@@ -16,8 +16,6 @@
       "context": "Autocomplete",
       "bindings": {
         "ctrl+g": "autocomplete:dismiss",
-        "t": "autocomplete:previous",
-        "n": "autocomplete:next",
         "ctrl+t": "autocomplete:previous",
         "ctrl+n": "autocomplete:next"
       }
@@ -25,8 +23,6 @@
     {
       "context": "Settings",
       "bindings": {
-        "t": "select:previous",
-        "n": "select:next",
         "ctrl+t": "select:previous",
         "ctrl+n": "select:next"
       }
@@ -35,8 +31,6 @@
       "context": "Confirmation",
       "bindings": {
         "ctrl+g": "confirm:no",
-        "t": "confirm:previous",
-        "n": "confirm:next",
         "ctrl+t": "confirm:previous",
         "ctrl+n": "confirm:next"
       }
@@ -74,8 +68,6 @@
     {
       "context": "MessageSelector",
       "bindings": {
-        "t": "messageSelector:up",
-        "n": "messageSelector:down",
         "ctrl+t": "messageSelector:up",
         "ctrl+n": "messageSelector:down"
       }
@@ -84,8 +76,6 @@
       "context": "DiffDialog",
       "bindings": {
         "ctrl+g": "diff:dismiss",
-        "t": "diff:previousFile",
-        "n": "diff:nextFile",
         "ctrl+t": "diff:previousFile",
         "ctrl+n": "diff:nextFile"
       }
@@ -94,8 +84,6 @@
       "context": "Select",
       "bindings": {
         "ctrl+g": "select:cancel",
-        "t": "select:previous",
-        "n": "select:next",
         "ctrl+t": "select:previous",
         "ctrl+n": "select:next"
       }

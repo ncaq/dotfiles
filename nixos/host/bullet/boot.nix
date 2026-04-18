@@ -34,5 +34,10 @@
         '';
       };
     };
+    initrd = {
+      systemd = {
+        enable = true;
+      };
+    };
   };
 }

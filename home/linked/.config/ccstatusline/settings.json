@@ -3,109 +3,121 @@
   "lines": [
     [
       {
-        "id": "1",
+        "id": "model",
         "type": "model",
         "color": "cyan"
       },
       {
-        "id": "2",
+        "id": "sep-model-effort",
+        "type": "separator",
+        "character": " "
+      },
+      {
+        "id": "thinking-effort",
+        "type": "thinking-effort",
+        "color": "cyan"
+      },
+      {
+        "id": "sep-effort-context",
         "type": "separator",
         "character": " | "
       },
       {
-        "id": "3",
+        "id": "context-length",
         "type": "context-length",
-        "color": "brightBlack"
-      },
-      {
-        "id": "3a",
-        "type": "separator",
-        "character": " "
-      },
-      {
-        "id": "4",
-        "type": "context-percentage",
-        "color": "brightBlack"
-      },
-      {
-        "id": "5",
-        "type": "separator",
-        "character": " | "
-      },
-      {
-        "id": "6",
-        "type": "tokens-input",
-        "color": "green"
-      },
-      {
-        "id": "6a",
-        "type": "separator",
-        "character": " "
-      },
-      {
-        "id": "7",
-        "type": "tokens-output",
-        "color": "yellow"
-      },
-      {
-        "id": "7a",
-        "type": "separator",
-        "character": " "
-      },
-      {
-        "id": "8",
-        "type": "tokens-cached",
-        "color": "blue"
-      },
-      {
-        "id": "8a",
-        "type": "separator",
-        "character": " "
-      },
-      {
-        "id": "9",
-        "type": "tokens-total",
         "color": "white"
       },
       {
-        "id": "10",
+        "id": "sep-context-length-pct",
+        "type": "separator",
+        "character": " "
+      },
+      {
+        "id": "context-percentage-usable",
+        "type": "context-percentage-usable",
+        "color": "white"
+      },
+      {
+        "id": "sep-context-tokens",
+        "type": "separator",
+        "character": " | Tok "
+      },
+      {
+        "id": "tokens-total",
+        "type": "tokens-total",
+        "color": "brightBlue",
+        "rawValue": true
+      },
+      {
+        "id": "sep-tokens-speed",
+        "type": "separator",
+        "character": " Spd "
+      },
+      {
+        "id": "total-speed",
+        "type": "total-speed",
+        "color": "brightMagenta",
+        "rawValue": true
+      },
+      {
+        "id": "sep-speed-git",
         "type": "separator",
         "character": " | "
       },
       {
-        "id": "11",
+        "id": "git-branch",
         "type": "git-branch",
         "color": "magenta"
       },
       {
-        "id": "11a",
+        "id": "sep-git-branch-changes",
         "type": "separator",
         "character": " "
       },
       {
-        "id": "12",
+        "id": "git-changes",
         "type": "git-changes",
         "color": "yellow"
       },
       {
-        "id": "13",
-        "type": "separator",
-        "character": " | "
-      },
-      {
-        "id": "14",
-        "type": "session-clock",
-        "color": "green"
-      },
-      {
-        "id": "14a",
+        "id": "sep-git-changes-worktree",
         "type": "separator",
         "character": " "
       },
       {
-        "id": "15",
+        "id": "git-worktree",
+        "type": "git-worktree",
+        "color": "magenta"
+      },
+      {
+        "id": "sep-git-time",
+        "type": "separator",
+        "character": " | "
+      },
+      {
+        "id": "session-usage",
+        "type": "session-usage",
+        "color": "green"
+      },
+      {
+        "id": "sep-session-block",
+        "type": "separator",
+        "character": " "
+      },
+      {
+        "id": "block-timer",
         "type": "block-timer",
-        "color": "brightBlack"
+        "color": "blue"
+      },
+      {
+        "id": "sep-block-weekly",
+        "type": "separator",
+        "character": " "
+      },
+      {
+        "id": "weekly-usage",
+        "type": "weekly-usage",
+        "color": "cyan"
       }
     ],
     [],

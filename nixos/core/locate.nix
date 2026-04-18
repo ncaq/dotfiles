@@ -37,6 +37,7 @@
       "_cache"
       "_site"
       "appcache"
+      "backup.encrypted"
       "cache"
       "cache2"
       "cached"
@@ -49,6 +50,7 @@
       "file-backup"
       "htmlcache"
       "node_modules"
+      "plugins" # claude code
       "projects" # claude code
       "site-packages"
       "steam-runtime"

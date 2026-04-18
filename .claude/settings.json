@@ -1,19 +1,25 @@
 {
+  "extraKnownMarketplaces": {
+    "konoka": {
+      "source": {
+        "source": "github",
+        "repo": "ncaq/konoka",
+        "ref": "v5.0.2"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "kyosei@konoka": true,
+    "nix-tasuke@konoka": true,
+    "web-tasuke@konoka": true
+  },
   "permissions": {
     "allow": ["Bash(./install.sh:*)"],
-    "additionalDirectories": ["~/.claude", "~/Desktop/nixpkgs", "~/Desktop/home-manager", "~/Desktop/infra.ncaq.net"]
-  },
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Stop",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "cd $CLAUDE_PROJECT_DIR && nix fmt"
-          }
-        ]
-      }
+    "additionalDirectories": [
+      "~/.claude",
+      "~/Desktop/nixpkgs",
+      "~/Desktop/home-manager",
+      "~/Desktop/infra.ncaq.net"
     ]
   }
 }

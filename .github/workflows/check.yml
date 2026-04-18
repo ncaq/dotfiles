@@ -1,0 +1,157 @@
+name: check
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+  merge_group:
+
+permissions:
+  contents: read # リポジトリコンテンツの読み取り
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  is-trusted:
+    name: is-trusted
+    # 信頼できるソースからのトリガーかを判定します。
+    # セルフホステッドランナーの利用を制御するために使用します。
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Log trust conditions and decide
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_HEAD_REPO_FULL_NAME: ${{ github.event.pull_request.head.repo.full_name || '' }}
+          REPO_FULL_NAME: ${{ github.repository }}
+          IS_PUSH: ${{ github.event_name == 'push' }}
+          IS_MERGE_GROUP: ${{ github.event_name == 'merge_group' }}
+          IS_INTERNAL: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+        run: |
+          set -euo pipefail
+
+          echo "is-trusted: evaluating trust conditions"
+          echo "github.event_name=${EVENT_NAME}"
+          echo "github.event.pull_request.head.repo.full_name=${PR_HEAD_REPO_FULL_NAME}"
+          echo "github.repository=${REPO_FULL_NAME}"
+          echo "condition push=${IS_PUSH}"
+          echo "condition merge_group=${IS_MERGE_GROUP}"
+          echo "condition internal=${IS_INTERNAL}"
+          trusted="false"
+          if [ "${IS_PUSH}" = "true" ] || \
+            [ "${IS_MERGE_GROUP}" = "true" ] || \
+            [ "${IS_INTERNAL}" = "true" ]; then
+            trusted="true"
+          fi
+          echo "trusted=${trusted}"
+
+          if [ "${trusted}" = "true" ]; then
+            echo "Trusted source confirmed"
+            exit 0
+          fi
+
+          echo "Untrusted source: self-hosted runner jobs will not run"
+          exit 1
+
+  nix-fast-build:
+    name: nix-fast-build
+    needs: is-trusted
+    permissions:
+      contents: read
+      id-token: write # niks3-publicへのOIDC認証に必要
+    # セルフホステッドランナーは未認証のソースからは実行しない。
+    if: needs.is-trusted.result == 'success'
+    runs-on: [self-hosted, Linux]
+    timeout-minutes: 60 # キャッシュが切れている時は時間がかかるため長めに設定。
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-nix
+        with:
+          cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+      - run: nix run '.#nix-fast-build' -- --option eval-cache false --no-link --skip-cached --no-nom
+
+  build-nixos:
+    name: build-nixos
+    needs: is-trusted
+    permissions:
+      contents: read
+      id-token: write # niks3-publicへのOIDC認証に必要
+    # セルフホステッドランナーは未認証のソースからは実行しない。
+    if: needs.is-trusted.result == 'success'
+    runs-on: [self-hosted, Linux]
+    timeout-minutes: 60 # キャッシュが切れている時は時間がかかるため長めに設定。
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-nix
+        with:
+          cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+      - name: nix build
+        run: >-
+          nix eval --json .#nixosConfigurations --apply builtins.attrNames |
+          jq -r '.[] | ".#nixosConfigurations.\(.).config.system.build.toplevel"' |
+          xargs nix build -L --keep-going
+
+  test-nixos-boot:
+    name: test-nixos-boot
+    needs: is-trusted
+    permissions:
+      contents: read
+      id-token: write # niks3-publicへのOIDC認証に必要
+    # セルフホステッドランナーは未認証のソースからは実行しない。
+    if: needs.is-trusted.result == 'success'
+    runs-on: [self-hosted, Linux]
+    timeout-minutes: 60 # キャッシュが切れている時は時間がかかるため長めに設定。
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-nix
+        with:
+          cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+      - name: nix build
+        run: >-
+          nix eval --json .#testNixosBoot --apply builtins.attrNames |
+          jq -r '.[] | ".#testNixosBoot.\(.)"' |
+          xargs nix build -L --keep-going
+
+  build-home-manager:
+    name: build-home-manager
+    permissions:
+      contents: read
+      id-token: write # niks3-publicへのOIDC認証に必要
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60 # キャッシュが切れている時は時間がかかるため長めに設定。
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-nix
+        with:
+          cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+      - run: nix build -L .#homeConfigurations.x86_64-linux.activationPackage
+
+  build-nix-on-droid:
+    name: build-nix-on-droid
+    needs: is-trusted
+    permissions:
+      contents: read
+      id-token: write # niks3-publicへのOIDC認証に必要
+    # セルフホステッドランナーは未認証のソースからは実行しない。
+    if: needs.is-trusted.result == 'success'
+    runs-on: [self-hosted, Linux]
+    timeout-minutes: 360 # キャッシュが切れている時は時間がかかる上QEMUエミュレーションでのビルドになるため長めに設定。
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-nix
+        with:
+          cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+      # Nix-on-Droidのビルドはimpureモードで行う必要があります
+      - run: nix build -L .#nixOnDroidConfigurations.default.activationPackage --impure

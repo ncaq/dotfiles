@@ -3,23 +3,30 @@
   pkgs-unstable,
   config,
   lib,
+  osConfig ? null,
   ...
 }:
 let
-  ccstatusline = pkgs.callPackage ../../pkgs/ccstatusline.nix { };
-
-  # GitHub MCP ServerのPATをsops-nixで管理されたシークレットから読み込むラッパー
-  github-mcp-server-wrapper = pkgs.writeShellApplication {
-    name = "github-mcp-server-wrapper";
-    runtimeInputs = [ pkgs.github-mcp-server ];
+  # Claude Codeのパッケージをsopsシークレットから環境変数を注入するラッパーで包む。
+  # api.githubcopilot.comがOAuth Dynamic Client Registrationをサポートしないのと、
+  # それを正しくClaude Codeが処理しないため、
+  # PATをBearer tokenとしてHTTPヘッダーで渡す必要がある。
+  # 全シェルにトークンを展開するのはあまりやりたくないため、
+  # コマンドだけに注入する方法を取ります。
+  # symlinkJoin+wrapProgramではなくwriteShellApplicationを使うことで、
+  # home-managerの--mcp-configラッピングと合わせて二重wrappingを避けます。
+  claude-code-wrapped = pkgs.writeShellApplication {
+    name = "claude";
     text = ''
       if [[ -r ${config.sops.secrets."github-mcp-server/pat".path} ]]; then
         GITHUB_PERSONAL_ACCESS_TOKEN="$(< ${config.sops.secrets."github-mcp-server/pat".path})"
         export GITHUB_PERSONAL_ACCESS_TOKEN
       fi
-      exec github-mcp-server "$@"
+      exec ${lib.getExe pkgs-unstable.claude-code-bin} "$@"
     '';
   };
+
+  ccstatusline = pkgs.callPackage ../../pkgs/ccstatusline.nix { };
 
   backlog-mcp-server = pkgs.callPackage ../../pkgs/backlog-mcp-server.nix { };
   # Backlog MCP Serverの認証情報をsops-nixで管理されたシークレットから読み込むラッパー
@@ -49,7 +56,10 @@ let
 
   # 直接実行するサブコマンド (install等)
   jsDirectSubcommands = [
-    "install"
+    "ci:*"
+    "info:*"
+    "install:*"
+    "ls:*"
     "view:*"
   ];
 
@@ -62,6 +72,7 @@ let
     "lint:eslint"
     "lint:prettier"
     "lint:tsc"
+    "npm:*"
     "prettier:*"
     "preview:*"
     "test:*"
@@ -76,23 +87,32 @@ let
   jsRunnerPermissions = lib.concatMap (
     pkg: mkJsDirectPermissions pkg ++ mkJsRunPermissions pkg
   ) jsPackageManagers;
+
+  # コーディングエージェントの作業ディレクトリ。
+  # konokaプラグインは`${XDG_RUNTIME_DIR:-/tmp}/coding-agent-work/`を使用します。
+  # NixOS環境ではosConfigからUIDを取得して`/run/user/<uid>/coding-agent-work/`を構築します。
+  # 非NixOS環境(Termux等)ではXDG_RUNTIME_DIRが設定されない場合があるため`/tmp`にフォールバックします。
+  codingAgentWorkDirFullPath =
+    let
+      uid = if osConfig != null then osConfig.users.users.${config.home.username}.uid else null;
+    in
+    if uid != null then "/run/user/${toString uid}/coding-agent-work/" else "/tmp/coding-agent-work/";
 in
 {
   programs.claude-code = {
     enable = true;
-    package = pkgs-unstable.claude-code-bin;
+    package = claude-code-wrapped;
 
     # `CLAUDE.md`と同等です。
     memory.text = config.prompt.codingAgent;
 
-    agentsDir = ../prompt/agents;
-    commandsDir = ../prompt/commands;
-
     mcpServers = {
       github = {
-        type = "stdio";
-        command = lib.getExe github-mcp-server-wrapper;
-        args = [ "stdio" ];
+        type = "http";
+        url = "https://api.githubcopilot.com/mcp/";
+        headers = {
+          Authorization = "Bearer \${GITHUB_PERSONAL_ACCESS_TOKEN}";
+        };
       };
       deepwiki = {
         type = "http";
@@ -102,17 +122,13 @@ in
         type = "stdio";
         command = lib.getExe backlog-mcp-server-wrapper;
       };
-      nixos = {
-        type = "http";
-        url = "https://mcp-nixos.ncaq.net/mcp";
-      };
     };
 
     settings = {
       # 応答に使う自然言語です。
       language = "japanese";
-      # 設定時に最適な値を切り替えていきます。opusplanはプランはopusで行い、実装はsonnetで行う設定です。
-      model = "opusplan";
+      # 設定時に最適な値を切り替えていきます。
+      model = "opus[1m]";
       # メッセージにCo-Authored-Byフッターを付与しません。
       # 私はAIエージェントはテキストエディタの延長線上だと考えているため、
       # ツール名が書かれるのは不自然だと思っています。
@@ -146,6 +162,13 @@ in
             repo = "anthropics/claude-plugins-official";
           };
         };
+        konoka = {
+          source = {
+            source = "github";
+            repo = "ncaq/konoka";
+            ref = "v5.0.2";
+          };
+        };
       };
       # pluginを記述しておくことで起動時にインストールされていない場合自動でインストールされます。
       enabledPlugins = {
@@ -160,17 +183,32 @@ in
         "csharp-lsp@claude-plugins-official" = true;
         "gopls-lsp@claude-plugins-official" = true;
         "jdtls-lsp@claude-plugins-official" = true;
+        "kotlin-lsp@claude-plugins-official" = true;
         "lua-lsp@claude-plugins-official" = true;
         "pyright-lsp@claude-plugins-official" = true;
+        "ruby-lsp@claude-plugins-official" = true;
         "rust-analyzer-lsp@claude-plugins-official" = true;
         "swift-lsp@claude-plugins-official" = true;
         "typescript-lsp@claude-plugins-official" = true;
+        # konokaプラグイン。
+        "bump-cabal-index-state@konoka" = true;
+        "commit@konoka" = true;
+        "kyosei@konoka" = true;
+        "log-analyzer@konoka" = true;
+        "nix-tasuke@konoka" = true;
+        "proofreading-ja@konoka" = true;
+        "research@konoka" = true;
+        "web-tasuke@konoka" = true;
       };
       # statuslineを設定します。
       # ccstatuslineを使用して豪華な表示にします。
       statusLine = {
         type = "command";
         command = lib.getExe ccstatusline;
+      };
+      # 全てのセッションでremote-controlを有効にします。
+      remoteControl = {
+        enabled = true;
       };
       sandbox = {
         # sandboxは通常無効にします。
@@ -183,15 +221,17 @@ in
       permissions = {
         defaultMode = "acceptEdits";
         additionalDirectories = [
+          codingAgentWorkDirFullPath
           "/nix/store/"
-          "/tmp/coding-agent-work/"
           "~/dotfiles/"
         ];
         allow = jsRunnerPermissions ++ [
           "Bash($EDITOR:*)"
           "Bash(* --help *)"
           "Bash(* --version)"
+          "Bash(awk:*)"
           "Bash(cabal build:*)"
+          "Bash(cabal check:*)"
           "Bash(cabal clean:*)"
           "Bash(cabal haddock:*)"
           "Bash(cabal help:*)"
@@ -219,10 +259,32 @@ in
           "Bash(find:*)"
           "Bash(gen-hie:*)"
           "Bash(getent:*)"
-          "Bash(gh api *issues/*/comments*)"
-          "Bash(gh api *pulls/*/comments*)"
-          "Bash(gh api *pulls/*/reviews*)"
-          "Bash(gh:*)"
+          "Bash(gh * browse:*)"
+          "Bash(gh * check:*)"
+          "Bash(gh * checkout:*)"
+          "Bash(gh * checks:*)"
+          "Bash(gh * clone:*)"
+          "Bash(gh * diff:*)"
+          "Bash(gh * download:*)"
+          "Bash(gh * get:*)"
+          "Bash(gh * list:*)"
+          "Bash(gh * logs:*)"
+          "Bash(gh * ports:*)"
+          "Bash(gh * search:*)"
+          "Bash(gh * status:*)"
+          "Bash(gh * verify:*)"
+          "Bash(gh * view:*)"
+          "Bash(gh * watch:*)"
+          "Bash(gh api *issues/*/comments*)" # kyoseiスキルの今の仕組み的に仕方がない。
+          "Bash(gh api *pulls/*/comments*)" # kyoseiスキルの今の仕組み的に仕方がない。
+          "Bash(gh api *pulls/*/reviews*)" # kyoseiスキルの今の仕組み的に仕方がない。
+          "Bash(gh attestation trusted-root:*)"
+          "Bash(gh browse:*)"
+          "Bash(gh completion:*)"
+          "Bash(gh repo gitignore:*)"
+          "Bash(gh repo license:*)"
+          "Bash(gh search:*)"
+          "Bash(gh status:*)"
           "Bash(ghc-pkg describe:*)"
           "Bash(ghc-pkg field:*)"
           "Bash(ghci:*)"
@@ -232,6 +294,7 @@ in
           "Bash(git -C * show *)"
           "Bash(git -C * status *)"
           "Bash(git add:*)"
+          "Bash(git checkout:*)"
           "Bash(git clone:*)"
           "Bash(git diff:*)"
           "Bash(git fetch:*)"
@@ -241,11 +304,14 @@ in
           "Bash(git ls-tree:*)"
           "Bash(git mv:*)"
           "Bash(git restore:*)"
+          "Bash(git show-branch:*)"
           "Bash(git show:*)"
+          "Bash(git stash:*)"
           "Bash(git status:*)"
           "Bash(git switch:*)"
           "Bash(grep:*)"
           "Bash(hadolint:*)"
+          "Bash(hash:*)"
           "Bash(hlint:*)"
           "Bash(hostname)"
           "Bash(hostnamectl status:*)"
@@ -253,9 +319,11 @@ in
           "Bash(ip:*)"
           "Bash(journalctl:*)"
           "Bash(jq:*)"
+          "Bash(ln:*)"
           "Bash(localectl status:*)"
           "Bash(ls:*)"
           "Bash(mkdir:*)"
+          "Bash(mktemp:*)"
           "Bash(mount)"
           "Bash(networkctl status:*)"
           "Bash(nix build:*)"
@@ -265,6 +333,7 @@ in
           "Bash(nix eval:*)"
           "Bash(nix flake check:*)"
           "Bash(nix flake info:*)"
+          "Bash(nix flake lock:*)"
           "Bash(nix flake metadata:*)"
           "Bash(nix flake prefetch:*)"
           "Bash(nix flake show:*)"
@@ -295,6 +364,8 @@ in
           "Bash(ping:*)"
           "Bash(prefetch-npm-deps:*)"
           "Bash(prefetch-yarn-deps:*)"
+          "Bash(prettier:*)"
+          "Bash(printenv:*)"
           "Bash(printf:*)"
           "Bash(readlink:*)"
           "Bash(rg:*)"
@@ -315,16 +386,22 @@ in
           "Bash(stack repl:*)"
           "Bash(stack run:*)"
           "Bash(stack test:*)"
+          "Bash(systemctl * cat *)"
+          "Bash(systemctl * list-units *)"
+          "Bash(systemctl * show *)"
           "Bash(systemctl * status *)"
+          "Bash(systemd-analyze:*)"
           "Bash(tailscale status:*)"
+          "Bash(tee:*)"
           "Bash(timedatectl status:*)"
           "Bash(touch:*)"
           "Bash(trash:*)"
           "Bash(tree:*)"
           "Bash(true)"
+          "Bash(tsc --noEmit:*)"
           "Bash(update-nix-fetchgit:*)"
+          "Bash(wc:*)"
           "Bash(xargs:*)"
-          "Skill(nix-check:*)"
           "WebFetch"
           "WebSearch"
           "mcp__backlog__count_issues"
@@ -382,7 +459,7 @@ in
           "mcp__github__search_pull_requests"
           "mcp__github__search_repositories"
           "mcp__github__search_users"
-          "mcp__nixos"
+          "mcp__plugin_nix-tasuke_nixos"
         ];
         ask = [
           "Bash(docker compose rm:*)"
@@ -404,21 +481,10 @@ in
           "Bash(docker swarm:*)"
           "Bash(docker trust:*)"
           "Bash(docker volume rm:*)"
-          "Bash(gh auth:*)"
-          "Bash(gh config set:*)"
-          "Bash(gh extension remove:*)"
-          "Bash(gh issue create:*)"
-          "Bash(gh label delete:*)"
-          "Bash(gh pr merge:*)"
-          "Bash(gh run delete:*)"
         ];
         deny = [
-          "Bash(gh gist delete:*)"
-          "Bash(gh issue delete:*)"
-          "Bash(gh project delete:*)"
-          "Bash(gh release delete:*)"
+          "Bash(gh * delete:*)"
           "Bash(gh repo archive:*)"
-          "Bash(gh repo delete:*)"
           "Bash(gh repo rename:*)"
           "Bash(rm:*)"
         ];
@@ -426,49 +492,54 @@ in
     };
   };
 
-  # Claude Codeがnativeインストール時に`~/.local/bin/claude`が存在していないと警告を出すため、
-  # シンボリックリンクを作成して警告を抑制します。
-  home.file.".local/bin/claude".source = "${config.programs.claude-code.finalPackage}/bin/claude";
+  home = {
+    # Claude Codeがnativeインストール時に`~/.local/bin/claude`が存在していないと警告を出すため、
+    # シンボリックリンクを作成して警告を抑制します。
+    file.".local/bin/claude".source = "${config.programs.claude-code.finalPackage}/bin/claude";
 
-  # GitHub MCP Server用のPersonal Access Tokenをsops-nixで管理します。
-  # シークレットファイルは `sops secrets/github-mcp-server.yaml` で編集してください。
-  # 形式:
-  # pat: ghp_xxxxxxxxxxxxxxxxxxxxx
-  sops.secrets."github-mcp-server/pat" = {
-    sopsFile = ../../secrets/github-mcp-server.yaml;
-    key = "pat";
-    mode = "0400";
+    # Clone repositories for additionalDirectories if they don't exist
+    activation = {
+      cloneNixpkgs = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+        if [ ! -d "${config.home.homeDirectory}/Desktop/nixpkgs" ]; then
+          $DRY_RUN_CMD ${pkgs.git}/bin/git clone --depth=50 \
+            https://github.com/NixOS/nixpkgs.git \
+            "${config.home.homeDirectory}/Desktop/nixpkgs"
+        fi
+      '';
+      cloneHomeManager = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+        if [ ! -d "${config.home.homeDirectory}/Desktop/home-manager" ]; then
+          $DRY_RUN_CMD ${pkgs.git}/bin/git clone --depth=50 \
+            https://github.com/nix-community/home-manager.git \
+            "${config.home.homeDirectory}/Desktop/home-manager"
+        fi
+      '';
+    };
   };
 
-  # Backlog MCP Server用の認証情報をsops-nixで管理します。
-  # シークレットファイルは `sops secrets/backlog-mcp-server.yaml` で編集してください。
-  # 形式:
-  # domain: your-space.backlog.com
-  # api-key: your-api-key
-  sops.secrets."backlog-mcp-server/domain" = {
-    sopsFile = ../../secrets/backlog-mcp-server.yaml;
-    key = "domain";
-    mode = "0400";
+  sops.secrets = {
+    # GitHub MCP Server用のPersonal Access Tokenをsops-nixで管理します。
+    # シークレットファイルは `sops secrets/github-mcp-server.yaml` で編集してください。
+    # 形式:
+    # pat: ghp_xxxxxxxxxxxxxxxxxxxxx
+    "github-mcp-server/pat" = {
+      sopsFile = ../../secrets/github-mcp-server.yaml;
+      key = "pat";
+      mode = "0400";
+    };
+    # Backlog MCP Server用の認証情報をsops-nixで管理します。
+    # シークレットファイルは `sops secrets/backlog-mcp-server.yaml` で編集してください。
+    # 形式:
+    # domain: your-space.backlog.com
+    # api-key: your-api-key
+    "backlog-mcp-server/domain" = {
+      sopsFile = ../../secrets/backlog-mcp-server.yaml;
+      key = "domain";
+      mode = "0400";
+    };
+    "backlog-mcp-server/api-key" = {
+      sopsFile = ../../secrets/backlog-mcp-server.yaml;
+      key = "api-key";
+      mode = "0400";
+    };
   };
-  sops.secrets."backlog-mcp-server/api-key" = {
-    sopsFile = ../../secrets/backlog-mcp-server.yaml;
-    key = "api-key";
-    mode = "0400";
-  };
-
-  # Clone repositories for additionalDirectories if they don't exist
-  home.activation.cloneNixpkgs = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    if [ ! -d "${config.home.homeDirectory}/Desktop/nixpkgs" ]; then
-      $DRY_RUN_CMD ${pkgs.git}/bin/git clone --depth=50 \
-        https://github.com/NixOS/nixpkgs.git \
-        "${config.home.homeDirectory}/Desktop/nixpkgs"
-    fi
-  '';
-  home.activation.cloneHomeManager = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    if [ ! -d "${config.home.homeDirectory}/Desktop/home-manager" ]; then
-      $DRY_RUN_CMD ${pkgs.git}/bin/git clone --depth=50 \
-        https://github.com/nix-community/home-manager.git \
-        "${config.home.homeDirectory}/Desktop/home-manager"
-    fi
-  '';
 }

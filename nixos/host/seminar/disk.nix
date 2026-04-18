@@ -1,4 +1,4 @@
-{
+_: {
   disko.devices = {
     disk = {
       main = {
@@ -187,27 +187,30 @@
       size = 4 * 1024;
     }
   ];
-  boot.kernelModules = [ "bcache" ];
-  boot.initrd.systemd.enable = true;
-  boot.initrd.availableKernelModules = [ "bcache" ];
-  boot.initrd.luks.devices = {
-    "noa0" = {
-      device = "/dev/disk/by-partlabel/disk-noa0-luks";
-      crypttabExtraOpts = [
-        "tpm2-device=auto"
-      ];
-    };
-    "noa1" = {
-      device = "/dev/disk/by-partlabel/disk-noa1-luks";
-      crypttabExtraOpts = [
-        "tpm2-device=auto"
-      ];
-    };
-    "noa2" = {
-      device = "/dev/disk/by-partlabel/disk-noa2-luks";
-      crypttabExtraOpts = [
-        "tpm2-device=auto"
-      ];
+  boot = {
+    kernelModules = [ "bcache" ];
+    initrd = {
+      availableKernelModules = [ "bcache" ];
+      luks.devices = {
+        "noa0" = {
+          device = "/dev/disk/by-partlabel/disk-noa0-luks";
+          crypttabExtraOpts = [
+            "tpm2-device=auto"
+          ];
+        };
+        "noa1" = {
+          device = "/dev/disk/by-partlabel/disk-noa1-luks";
+          crypttabExtraOpts = [
+            "tpm2-device=auto"
+          ];
+        };
+        "noa2" = {
+          device = "/dev/disk/by-partlabel/disk-noa2-luks";
+          crypttabExtraOpts = [
+            "tpm2-device=auto"
+          ];
+        };
+      };
     };
   };
   systemd.tmpfiles.rules = [

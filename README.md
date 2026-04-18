@@ -115,5 +115,6 @@ Custom Nix packages.
 - [ncaq/git-hooks: My Git global hooks](https://github.com/ncaq/git-hooks)
 - [ncaq/infra.ncaq.net: Infrastructure as Code for ncaq.net](https://github.com/ncaq/infra.ncaq.net)
 - [ncaq/keyhac-config](https://github.com/ncaq/keyhac-config)
+- [ncaq/konoka: AI prompts, agents, and skills as loadable plugins.](https://github.com/ncaq/konoka)
 - [ncaq/surfingkeys-config: My Surfingkeys config](https://github.com/ncaq/surfingkeys-config)
 - [ncaq/winconf: My Windows configuration files](https://github.com/ncaq/winconf)

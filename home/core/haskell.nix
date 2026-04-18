@@ -31,29 +31,31 @@ let
   };
 in
 {
-  home.packages =
-    (with pkgs; [
-      alex
-      cabal-install
-      cabal2nix
-      fourmolu
-      ghc
-      happy
-      haskell-ci
-      haskell-language-server
-      hlint
-      hpack
-      pandoc
-      stack
-      stylish-haskell
-    ])
-    ++ (with pkgs.haskellPackages; [
-      cabal-fmt
-      cabal-gild
-      cabal-plan
-      implicit-hie
-      uniq-deep
-    ]);
+  home = {
+    packages =
+      (with pkgs; [
+        alex
+        cabal-install
+        cabal2nix
+        fourmolu
+        ghc
+        happy
+        haskell-ci
+        haskell-language-server
+        hlint
+        hpack
+        pandoc
+        stack
+        stylish-haskell
+      ])
+      ++ (with pkgs.haskellPackages; [
+        cabal-fmt
+        cabal-gild
+        cabal-plan
+        implicit-hie
+        uniq-deep
+      ]);
 
-  home.file.".stack/config.yaml".source = yamlFormat.generate "stack-config" stackConfig;
+    file.".stack/config.yaml".source = yamlFormat.generate "stack-config" stackConfig;
+  };
 }

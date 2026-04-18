@@ -1,5 +1,5 @@
 # `linked`に存在するファイル全てに対してシンボリックリンクを作成する。
-{ config, lib, ... }:
+{ lib, ... }:
 let
   baseDir = ./linked;
 
@@ -15,12 +15,8 @@ let
     in
     lib.removePrefix baseStr absStr;
 
-  # `home.file` 用の1要素を生成。
-  mkPair =
-    absPath:
-    lib.nameValuePair (relPath absPath) {
-      source = config.lib.file.mkOutOfStoreSymlink absPath;
-    };
+  # `home.file` 用の1要素を生成。Nixストアにコピーされる標準方式。
+  mkPair = absPath: lib.nameValuePair (relPath absPath) { source = absPath; };
 
   homeFileAttrs = builtins.listToAttrs (map mkPair files);
 in

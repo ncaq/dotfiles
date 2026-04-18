@@ -12,8 +12,10 @@
 
       desktop = "${config.home.homeDirectory}/Desktop";
       download = "${config.home.homeDirectory}/Downloads";
-      pictures = "${config.home.homeDirectory}/Pictures";
-      videos = "${config.home.homeDirectory}/Videos";
+
+      # シンボリックリンクで管理するため、自動作成対象から外します。
+      pictures = null;
+      videos = null;
 
       # publicShareとtemplatesは何に使うべきなのか未だによくわからないので作らない。
       publicShare = null;

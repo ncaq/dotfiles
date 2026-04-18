@@ -10,33 +10,31 @@ in
     useRoutingFeatures = "both";
   };
 
-  # Tailscale Funnelでサーバをパブリックインターネットに公開する設定。
-  # [ncaq/infra.ncaq.net: Infrastructure as Code for ncaq.net](https://github.com/ncaq/infra.ncaq.net/)
-  # でFunnelを有効化しています。
-  systemd.services.tailscale-funnel = {
-    description = "Configure Tailscale Funnel";
+  # Tailscale Serveの設定。
+  # Serveはtailnet内のみに公開する。
+  # Caddy :8081がパス毎にtailnet専用サービスをルーティングする。
+  systemd.services.tailscale-serve = {
+    description = "Configure Tailscale Serve";
     requires = [
       "tailscaled.service"
+    ];
+    wants = [
       "caddy.service"
+      "tailscale-online.service"
     ];
     after = [
-      "tailscaled.service"
       "caddy.service"
+      "tailscale-online.service"
+      "tailscaled.service"
     ];
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
       Type = "oneshot";
-      ExecStart = "${tailscale}/bin/tailscale funnel --bg http://127.0.0.1:8080";
-      ExecStop = "${tailscale}/bin/tailscale funnel --bg off";
+      ExecStart = "${tailscale}/bin/tailscale serve --bg --https=8443 http://127.0.0.1:8081";
+      ExecStop = "${tailscale}/bin/tailscale serve --https=8443 off";
       RemainAfterExit = true;
       Restart = "on-failure";
       RestartSec = "10s";
     };
-  };
-
-  # IP転送を有効化。
-  boot.kernel.sysctl = {
-    "net.ipv4.ip_forward" = 1;
-    "net.ipv6.conf.all.forwarding" = 1;
   };
 }

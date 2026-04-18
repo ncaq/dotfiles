@@ -6,12 +6,16 @@
         efiSysMountPoint = "/efi";
       };
       timeout = 1;
-      grub = {
+      systemd-boot = {
         enable = true;
-        device = "nodev";
-        efiSupport = true;
-        gfxmodeEfi = "1024x768";
-        default = "saved";
+        consoleMode = "auto";
+        xbootldrMountPoint = "/boot";
+        configurationLimit = 100;
+      };
+    };
+    initrd = {
+      systemd = {
+        enable = true;
       };
     };
   };

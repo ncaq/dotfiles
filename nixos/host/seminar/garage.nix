@@ -1,0 +1,198 @@
+{
+  pkgs,
+  lib,
+  config,
+  ...
+}:
+let
+  addr = config.machineAddresses.garage;
+  user = config.serviceUser.garage;
+  garageUser = {
+    inherit (user) uid;
+    group = "garage";
+    isSystemUser = true;
+  };
+  garageWithEnv = pkgs.writeShellApplication {
+    name = "garage-runner";
+    runtimeInputs = [ ];
+    text = ''
+      set -a
+      # shellcheck source=/dev/null
+      source /etc/garage.env
+      set +a
+      exec garage "$@"
+    '';
+  };
+  # Host wrapper to execute garage CLI inside the container.
+  # Export the environment file to provide GARAGE_RPC_SECRET etc.
+  garageWrapper = pkgs.writeShellApplication {
+    name = "garage";
+    runtimeInputs = with pkgs; [
+      nixos-container
+    ];
+    text = ''
+      exec nixos-container run garage -- ${lib.getExe garageWithEnv} "$@"
+    '';
+  };
+in
+{
+  containers.garage = {
+    autoStart = true;
+    ephemeral = true;
+    privateNetwork = true;
+    privateUsers = "identity";
+    hostAddress = addr.host;
+    localAddress = addr.guest;
+    bindMounts = {
+      "/etc/garage.env" = {
+        hostPath = config.sops.templates."garage-env".path;
+        isReadOnly = true;
+      };
+      "/var/lib/garage/meta" = {
+        hostPath = "/var/lib/garage/meta";
+        isReadOnly = false;
+      };
+      "/mnt/noa/garage/data" = {
+        hostPath = "/mnt/noa/garage/data";
+        isReadOnly = false;
+      };
+    };
+    config =
+      { lib, ... }:
+      {
+        system.stateVersion = "25.11";
+        networking = {
+          useHostResolvConf = lib.mkForce false;
+          firewall.allowedTCPPorts = [
+            3900 # S3 API
+            3903 # Admin API (host access only via private network)
+          ];
+        };
+        users = {
+          users.garage = garageUser;
+          groups.garage.gid = user.gid;
+        };
+        services = {
+          resolved.enable = true;
+          garage = {
+            enable = true;
+            package = pkgs.garage_2;
+            environmentFile = "/etc/garage.env";
+            settings = {
+              metadata_dir = "/var/lib/garage/meta";
+              data_dir = "/mnt/noa/garage/data";
+              db_engine = "lmdb";
+              metadata_auto_snapshot_interval = "6h";
+              replication_factor = 1;
+              rpc_bind_addr = "127.0.0.1:3901";
+              s3_api = {
+                s3_region = "garage";
+                api_bind_addr = "[::]:3900";
+                root_domain = ".garage.ncaq.net";
+              };
+              admin = {
+                api_bind_addr = "[::]:3903";
+              };
+            };
+          };
+        };
+        # Override DynamicUser to use explicit UIDs matching host bind-mount ownership.
+        # Re-enable security settings that DynamicUser=true would implicitly activate.
+        systemd.services.garage.serviceConfig = {
+          DynamicUser = lib.mkForce false;
+          User = "garage";
+          Group = "garage";
+          ProtectSystem = "strict";
+          PrivateTmp = true;
+          RestrictSUIDSGID = true;
+          RemoveIPC = true;
+        };
+        environment.systemPackages = [ pkgs.garage_2 ];
+      };
+  };
+
+  users = {
+    users.garage = garageUser;
+    groups.garage.gid = user.gid;
+  };
+
+  systemd = {
+    tmpfiles.rules = [
+      "d /var/lib/garage      0750 garage garage -"
+      "d /var/lib/garage/meta 0750 garage garage -"
+    ];
+    # /mnt/noa is owned by ncaq, so systemd-tmpfiles refuses to create
+    # subdirectories owned by garage due to "unsafe path transition" detection.
+    # Use ExecStartPre instead.
+    services."container@garage".serviceConfig.ExecStartPre = [
+      "+${
+        lib.getExe (
+          pkgs.writeShellApplication {
+            name = "garage-create-data-dir";
+            runtimeInputs = with pkgs; [ coreutils ];
+            text = ''
+              install -d -m 0750 -o garage -g garage /mnt/noa/garage
+              install -d -m 0750 -o garage -g garage /mnt/noa/garage/data
+            '';
+          }
+        )
+      }"
+    ];
+  };
+
+  environment.systemPackages = [ garageWrapper ];
+
+  sops.templates."garage-env" = {
+    content = ''
+      GARAGE_RPC_SECRET="${config.sops.placeholder."garage-rpc-secret"}"
+      GARAGE_ADMIN_TOKEN="${config.sops.placeholder."garage-admin-token"}"
+      GARAGE_METRICS_TOKEN="${config.sops.placeholder."garage-metrics-token"}"
+    '';
+    owner = "garage";
+    group = "garage";
+    mode = "0400";
+  };
+  # Managed by sops-nix.
+  # To create (first time only):
+  # ```
+  # rpc_secret=$(openssl rand -hex 32)
+  # admin_token=$(openssl rand -base64 32)
+  # metrics_token=$(openssl rand -base64 32)
+  # ```
+  # Then `sops secrets/seminar/garage.yaml` and set:
+  # ```
+  # rpc_secret: <hex>
+  # admin_token: <base64>
+  # metrics_token: <base64>
+  # ```
+  sops.secrets = {
+    "garage-rpc-secret" = {
+      sopsFile = ../../../secrets/seminar/garage.yaml;
+      key = "rpc_secret";
+      owner = "garage";
+      group = "garage";
+      mode = "0400";
+    };
+    "garage-admin-token" = {
+      sopsFile = ../../../secrets/seminar/garage.yaml;
+      key = "admin_token";
+      owner = "garage";
+      group = "garage";
+      mode = "0400";
+    };
+    "garage-metrics-token" = {
+      sopsFile = ../../../secrets/seminar/garage.yaml;
+      key = "metrics_token";
+      owner = "garage";
+      group = "garage";
+      mode = "0400";
+    };
+  };
+
+  # Initial cluster setup (manual, first time only):
+  # ```
+  # sudo garage status
+  # sudo garage layout assign <node-id> -z seminar -c 8T
+  # sudo garage layout apply --version 1
+  # ```
+}

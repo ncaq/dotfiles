@@ -1,4 +1,5 @@
 {
+  pkgs,
   inputs,
   ...
 }:
@@ -49,10 +50,13 @@ in
       ignores = [
         "**/.claude/settings.local.json"
         ".DS_Store"
+        ".codex"
         "Thumbs.db"
       ];
     };
-    gh.enable = true;
     git-hooks.enable = true;
+
+    gh.enable = true;
   };
+  home.packages = with pkgs; [ zizmor ];
 }

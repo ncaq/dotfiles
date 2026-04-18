@@ -16,85 +16,117 @@ let
     options = {
       uid = lib.mkOption {
         type = lib.types.int;
-        description = "Container user ID (must match between host and container)";
+        description = "Service user ID (must match between host and isolated environment)";
       };
       gid = lib.mkOption {
         type = lib.types.int;
-        description = "Container group ID (must match between host and container)";
+        description = "Service group ID (must match between host and isolated environment)";
       };
     };
   };
 in
 {
-  options.machineAddresses = lib.mkOption {
-    type = lib.types.attrsOf addressType;
-    default = {
-      forgejo = {
-        host = "192.168.100.10";
-        guest = "192.168.100.11";
+  options = {
+    machineAddresses = lib.mkOption {
+      type = lib.types.attrsOf addressType;
+      default = {
+        # ソートは重要度にするか悩ましいですが、IPアドレス剥き出しなここでは、IPアドレスでソートしておきます。
+        forgejo = {
+          host = "192.168.100.10";
+          guest = "192.168.100.11";
+        };
+        mcp-nixos = {
+          host = "192.168.100.30";
+          guest = "192.168.100.31";
+        };
+        github-runner-x64 = {
+          host = "192.168.100.40";
+          guest = "192.168.100.41";
+        };
+        garage = {
+          host = "192.168.100.60";
+          guest = "192.168.100.61";
+        };
+        niks3-public = {
+          host = "192.168.100.70";
+          guest = "192.168.100.71";
+        };
+        niks3-private = {
+          host = "192.168.100.80";
+          guest = "192.168.100.81";
+        };
       };
-      atticd = {
-        host = "192.168.100.20";
-        guest = "192.168.100.21";
-      };
-      mcp-nixos = {
-        host = "192.168.100.30";
-        guest = "192.168.100.31";
-      };
-      github-runner-x64 = {
-        host = "192.168.100.40";
-        guest = "192.168.100.41";
-      };
-      github-runner-arm64 = {
-        host = "192.168.100.50";
-        guest = "192.168.100.51";
-      };
+      description = "Network addresses for containers and microVMs";
     };
-    description = "Network addresses for containers and microVMs";
-  };
 
-  options.containerUsers = lib.mkOption {
-    type = lib.types.attrsOf userType;
-    default = {
-      forgejo = {
-        uid = 991;
-        gid = 986;
+    serviceUser = lib.mkOption {
+      type = lib.types.attrsOf userType;
+      default = {
+        # ユーザはより汎用的なものを前に配置してソートします。
+        healthcheck = {
+          uid = 976;
+          gid = 976;
+        };
+        postgres = {
+          # NixOSのデフォルトUID/GID(nixos/modules/misc/ids.nix)
+          uid = 71;
+          gid = 71;
+        };
+        garage = {
+          uid = 979;
+          gid = 979;
+        };
+        niks3-public = {
+          uid = 978;
+          gid = 978;
+        };
+        niks3-private = {
+          uid = 977;
+          gid = 977;
+        };
+        github-runner = {
+          uid = 980;
+          gid = 980;
+        };
+        forgejo = {
+          uid = 991;
+          gid = 986;
+        };
       };
-      atticd = {
-        uid = 993;
-        gid = 988;
-      };
-      github-runner = {
-        uid = 980;
-        gid = 980;
-      };
+      description = "Service user/group IDs (must match between host and isolated environment)";
     };
-    description = "Container user/group IDs (must match between host and container)";
-  };
 
-  /**
-    microVMのvsock CID割り当て一覧です。
-    vsock CIDは仮想マシンを識別するための32bit整数値で、
-    以下の値が予約されています:
+    /**
+      microVMのvsock CID割り当て一覧です。
+      vsock CIDは仮想マシンを識別するための32bit整数値で、
+      以下の値が予約されています:
 
-    - 0: ハイパーバイザー
-    - 1: ループバック
-    - 2: ホスト
-    - 0xFFFFFFFF: VMADDR_CID_ANY
+      - 0: ハイパーバイザー
+      - 1: ループバック
+      - 2: ホスト
+      - 0xFFFFFFFF: VMADDR_CID_ANY
 
-    cloud-hypervisorはvsock経由でsystemd-notifyが使えるため、
-    ホストのsystemdがVM内のサービス起動完了を正確に検知できます。
-  */
-  options.microvmCid = lib.mkOption {
-    type = lib.types.attrsOf (lib.types.ints.between 3 4294967294);
-    default = {
-      mcp-nixos = 3;
-      github-runner-arm64 = 4;
+      cloud-hypervisorはvsock経由でsystemd-notifyが使えるため、
+      ホストのsystemdがVM内のサービス起動完了を正確に検知できます。
+    */
+    microvmCid = lib.mkOption {
+      type = lib.types.attrsOf (lib.types.ints.between 3 4294967294);
+      default = {
+        mcp-nixos = 3;
+      };
+      description = "vsock CID assignments for microVMs (must be >= 3, unique per VM)";
     };
-    description = "vsock CID assignments for microVMs (must be >= 3, unique per VM)";
   };
 
   config = {
+    networking.nat = {
+      enable = true;
+      internalInterfaces = [
+        "ve-+" # container veth interfaces
+        "vm-+" # microVM TAP interfaces
+      ];
+    };
+
     assertions =
       let
         findDuplicates = list: lib.unique (lib.filter (x: lib.count (y: x == y) list > 1) list);
@@ -132,14 +164,14 @@ in
         uidEntries = lib.mapAttrsToList (name: user: {
           inherit name;
           value = user.uid;
-        }) config.containerUsers;
+        }) config.serviceUser;
         uidValues = map (e: e.value) uidEntries;
         duplicateUidValues = findDuplicates uidValues;
 
         gidEntries = lib.mapAttrsToList (name: user: {
           inherit name;
           value = user.gid;
-        }) config.containerUsers;
+        }) config.serviceUser;
         gidValues = map (e: e.value) gidEntries;
         duplicateGidValues = findDuplicates gidValues;
       in
@@ -154,20 +186,12 @@ in
         }
         {
           assertion = duplicateUidValues == [ ];
-          message = "containerUsers uid values must be unique, but found duplicates: ${formatDuplicates toString uidEntries}";
+          message = "serviceUser uid values must be unique, but found duplicates: ${formatDuplicates toString uidEntries}";
         }
         {
           assertion = duplicateGidValues == [ ];
-          message = "containerUsers gid values must be unique, but found duplicates: ${formatDuplicates toString gidEntries}";
+          message = "serviceUser gid values must be unique, but found duplicates: ${formatDuplicates toString gidEntries}";
         }
       ];
-
-    networking.nat = {
-      enable = true;
-      internalInterfaces = [
-        "ve-+" # container veth interfaces
-        "vm-+" # microVM TAP interfaces
-      ];
-    };
   };
 }

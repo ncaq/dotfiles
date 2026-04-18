@@ -2,8 +2,7 @@
   description = "dotfiles, NixOS and home-manager.";
 
   inputs = {
-    nixpkgs.follows = "nixpkgs-2511";
-    nixpkgs-2511.url = "github:NixOS/nixpkgs/nixos-25.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
     flake-parts.url = "github:hercules-ci/flake-parts";
@@ -49,9 +48,13 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    emacs-overlay = {
-      url = "github:nix-community/emacs-overlay";
-      inputs.nixpkgs.follows = "nixpkgs";
+    niks3 = {
+      url = "github:Mic92/niks3";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-parts.follows = "flake-parts";
+        treefmt-nix.follows = "treefmt-nix";
+      };
     };
 
     git-hooks = {
@@ -70,7 +73,11 @@
 
     dot-emacs = {
       url = "github:ncaq/.emacs.d";
-      flake = false;
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-parts.follows = "flake-parts";
+        treefmt-nix.follows = "treefmt-nix";
+      };
     };
 
     dot-xmonad = {
@@ -129,7 +136,6 @@
           allowedUnfreePackages = [
             "claude-code" # 一番使いやすいLLMエージェントのため仕方がない。
             "claude-code-bin" # Node版とBun版両方受け入れると指定する必要があります。
-            "copilot-language-server" # 一番いい補完のため仕方がない。
             "discord" # ネイティブ版の方が音声などが安定しているため仕方がない。
             "slack" # ネイティブ版の方が通知などが安定しているため仕方がない。
             "zoom" # ネイティブ版の方が動画などが安定しているため仕方がない。
@@ -140,19 +146,20 @@
           };
           # 全環境で共通のoverlays。
           overlays = [
-            inputs.emacs-overlay.overlays.default
             inputs.firge-nix.overlays.default
           ];
-          # system固有のunstable pkgsを生成する関数。
-          importPkgsUnstable =
-            system:
-            import nixpkgs-unstable {
+          # system固有のpkgsを生成する関数。
+          importPkgsStable = importPkgsFor nixpkgs;
+          importPkgsUnstable = importPkgsFor nixpkgs-unstable;
+          importPkgsFor =
+            pkgset: system:
+            import pkgset {
               inherit system overlays;
               config = nixpkgsConfig;
             };
         in
         {
-          nixosConfigurations =
+          hostDefs =
             let
               mkNixosSystem =
                 {
@@ -169,12 +176,6 @@
                       ;
                     username = "ncaq";
                   };
-                in
-                nixpkgs.lib.nixosSystem {
-                  inherit
-                    specialArgs
-                    system
-                    ;
                   modules = [
                     (_: {
                       nixpkgs = {
@@ -207,6 +208,12 @@
                       }
                     )
                   ];
+                in
+                {
+                  nixosSystem = nixpkgs.lib.nixosSystem {
+                    inherit modules specialArgs system;
+                  };
+                  inherit modules specialArgs system;
                 };
             in
             {
@@ -226,11 +233,46 @@
                 system = "x86_64-linux";
                 hostName = "seminar";
               };
-              "vanitas" = mkNixosSystem {
-                system = "x86_64-linux";
-                hostName = "vanitas";
-              };
             };
+
+          nixosConfigurations = nixpkgs.lib.mapAttrs (_: def: def.nixosSystem) top.config.flake.hostDefs;
+
+          testNixosBoot =
+            nixpkgs.lib.mapAttrs
+              (
+                name: hostDef:
+                (importPkgsStable hostDef.system).testers.runNixOSTest {
+                  name = "test-nixos-boot-${name}";
+                  node = {
+                    # runNixOSTestが追加するnixpkgsの読み込み専用設定を無効化します。
+                    # hardware-configuration.nixが存在する時nixpkgs.hostPlatformを設定しているので、
+                    # 読み込み専用にされたnixpkgsオプションへの設定がエラーになります。
+                    # 基本的にモジュール単位のテスト機構であり全体のブートを想定していないゆえの挙動でしょう。
+                    # 自動生成ファイルであるhardware-configuration.nixを編集したくないため、
+                    # 上書きを有効にしてしまいます。
+                    # ブートのテストの場合ではあまり問題にならないはずです。
+                    pkgsReadOnly = false;
+                    inherit (hostDef) specialArgs;
+                  };
+                  nodes.machine = {
+                    imports = hostDef.modules ++ [
+                      ./nixos/test/vm-override.nix
+                    ];
+                  };
+                  # テスト環境はネットワークに繋がっていないため、
+                  # ネットワーク依存のユニットは失敗します。
+                  # よって全体成功を期待することはできません。
+                  # multi-user.targetに到達すればひとまず成功とみなしています。
+                  testScript = ''
+                    machine.wait_for_unit("multi-user.target")
+                  '';
+                }
+              )
+              (
+                nixpkgs.lib.filterAttrs (
+                  _: def: !(def.nixosSystem.config.wsl.enable or false)
+                ) top.config.flake.hostDefs
+              );
 
           homeConfigurations =
             let
@@ -240,10 +282,7 @@
                   username,
                 }:
                 home-manager.lib.homeManagerConfiguration {
-                  pkgs = import nixpkgs {
-                    inherit system overlays;
-                    config = nixpkgsConfig;
-                  };
+                  pkgs = importPkgsStable system;
                   extraSpecialArgs = {
                     inherit
                       importDirModules
@@ -329,34 +368,16 @@
               prettier.enable = true;
               shellcheck.enable = true;
               shfmt.enable = true;
+              statix.enable = true;
+              typos.enable = true;
               zizmor.enable = true;
-
-              statix = {
-                enable = true;
-                disabled-lints = [ "eta_reduction" ];
-              };
-              typos = {
-                enable = true;
-                excludes = [
-                  "key/*"
-                  "mozc/*"
-                  "secrets/*"
-                ];
-              };
             };
             settings.formatter = {
               editorconfig-checker = {
-                command = pkgs.lib.getExe (
-                  pkgs.writeShellApplication {
-                    name = "editorconfig-checker-wrapper";
-                    runtimeInputs = [ pkgs.editorconfig-checker ];
-                    text = ''
-                      editorconfig-checker -config .editorconfig-checker.json "$@"
-                    '';
-                  }
-                );
+                command = pkgs.editorconfig-checker;
                 includes = [ "*" ];
               };
+              zizmor.options = [ "--pedantic" ];
             };
           };
           packages = {
@@ -366,27 +387,51 @@
               fastfetch
               git
               home-manager
+              nix-fast-build
               qemu-user
               ;
           };
-          devShells.default = pkgs.mkShell { };
+          devShells.default = pkgs.mkShell {
+            buildInputs = with pkgs; [
+              # treefmtで指定したプログラムの単体版。
+              actionlint
+              deadnix
+              editorconfig-checker
+              nixfmt
+              prettier
+              shellcheck
+              shfmt
+              statix
+              typos
+              zizmor
+
+              # nixの関連ツール。
+              nil
+              nix-fast-build
+
+              # GitHub関連ツール。
+              gh
+            ];
+          };
         };
     });
 
   nixConfig = {
     extra-substituters = [
       "https://cache.nixos.org/"
+      "https://niks3-public.ncaq.net/"
+      "https://ncaq.cachix.org/"
       "https://nix-community.cachix.org/"
       "https://nix-on-droid.cachix.org/"
       "https://microvm.cachix.org/"
-      "https://ncaq-dotfiles.cachix.org/"
     ];
     extra-trusted-public-keys = [
       "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+      "niks3-public.ncaq.net-1:e/B9GomqDchMBmx3IW/TMQDF8sjUCQzEofKhpehXl04="
+      "ncaq.cachix.org-1:XF346GXI2n77SB5Yzqwhdfo7r0nFcZBaHsiiMOEljiE="
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
       "nix-on-droid.cachix.org-1:56snoMJTXmDRC1Ei24CmKoUqvHJ9XCp+nidK7qkMQrU="
       "microvm.cachix.org-1:oXnBc6hRE3eX5rSYdRyMYXnfzcCxC7yKPTbZXALsqys="
-      "ncaq-dotfiles.cachix.org-1:oEM1SL5sNteDM16I23/rFZwKl+Anca/PnEWp6LWUrws="
     ];
   };
 }

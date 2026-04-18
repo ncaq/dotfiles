@@ -10,10 +10,13 @@
         enable = true;
         consoleMode = "auto";
         xbootldrMountPoint = "/boot";
+        configurationLimit = 100;
       };
     };
     initrd = {
-      systemd.enable = true;
+      systemd = {
+        enable = true;
+      };
       luks.devices = {
         nixos-root = {
           device = "/dev/disk/by-label/nixos-root-crypt";

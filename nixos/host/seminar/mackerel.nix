@@ -7,6 +7,13 @@
 let
   # 分単位で指定する標準的なチェックの間隔。
   check_interval = 3;
+  # 標準的なチェックの連続失敗の上限。
+  # どのサービスもリビルドが入ったりして再起動した時に一瞬停止するのは避けられないことのため、
+  # 1回の失敗は許容します。
+  # この自宅サーバでダウン時間ゼロを達成する気は基本的にありません。
+  # なのでブルーグリーンデプロイメントなどは行いません。
+  # 再起動時の一瞬の停止は許容しています。
+  max_check_attempts = 2;
 in
 {
   services.mackerel-agent = {
@@ -37,7 +44,10 @@ in
               '';
             }
           );
-          inherit check_interval;
+          inherit
+            check_interval
+            max_check_attempts
+            ;
         };
         tailscale = {
           command = lib.getExe (
@@ -63,7 +73,8 @@ in
             }
           );
           inherit check_interval;
-          # 一時的な瞬断で自動復帰するケースが多いため、一定数の連続失敗時のみアラートを発火します
+          # 一時的な瞬断で自動復帰するケースが多いため、
+          # 失敗を多めに許容します。
           max_check_attempts = 3;
         };
         cloudflared = {
@@ -82,7 +93,10 @@ in
               '';
             }
           );
-          inherit check_interval;
+          inherit
+            check_interval
+            max_check_attempts
+            ;
         };
         caddy = {
           command = lib.getExe (
@@ -90,7 +104,7 @@ in
               name = "check-caddy";
               runtimeInputs = [ pkgs.curl ];
               text = ''
-                if curl -f -s --max-time 3 http://127.0.0.1:8080 > /dev/null 2>&1; then
+                if curl -f -s --max-time 3 http://localhost:2019/config/ > /dev/null 2>&1; then
                   echo "Caddy OK"
                   exit 0
                 else
@@ -100,7 +114,10 @@ in
               '';
             }
           );
-          inherit check_interval;
+          inherit
+            check_interval
+            max_check_attempts
+            ;
         };
         samba = {
           command = lib.getExe (
@@ -118,7 +135,10 @@ in
               '';
             }
           );
-          inherit check_interval;
+          inherit
+            check_interval
+            max_check_attempts
+            ;
         };
         postgresql = {
           command = lib.getExe (
@@ -139,7 +159,33 @@ in
               '';
             }
           );
-          inherit check_interval;
+          inherit
+            check_interval
+            max_check_attempts
+            ;
+        };
+        garage = {
+          command = lib.getExe (
+            pkgs.writeShellApplication {
+              name = "check-garage";
+              runtimeInputs = [ pkgs.curl ];
+              text = ''
+                http_code=$(curl -s --max-time 3 -o /dev/null -w "%{http_code}" \
+                  http://${config.machineAddresses.garage.guest}:3900 || true)
+                if [[ "$http_code" =~ ^[24][0-9][0-9]$ ]]; then
+                  echo "Garage OK (HTTP $http_code)"
+                  exit 0
+                else
+                  echo "Garage CRITICAL: HTTP $http_code"
+                  exit 2
+                fi
+              '';
+            }
+          );
+          inherit
+            check_interval
+            max_check_attempts
+            ;
         };
         forgejo = {
           command = lib.getExe (
@@ -157,26 +203,56 @@ in
               '';
             }
           );
-          inherit check_interval;
+          inherit
+            check_interval
+            max_check_attempts
+            ;
         };
-        atticd = {
+        niks3-public = {
           command = lib.getExe (
             pkgs.writeShellApplication {
-              name = "check-atticd";
+              name = "check-niks3-public";
               runtimeInputs = [ pkgs.curl ];
               text = ''
-                if curl -f -s --max-time 3 -H "Host: seminar.border-saurolophus.ts.net" \
-                  http://${config.machineAddresses.atticd.guest}:8080 > /dev/null 2>&1; then
-                  echo "Atticd OK"
+                http_code=$(curl -s --max-time 3 -o /dev/null -w "%{http_code}" \
+                  http://${config.machineAddresses.niks3-public.guest}:5751 || true)
+                if [[ "$http_code" =~ ^[23][0-9][0-9]$ ]]; then
+                  echo "niks3-public OK (HTTP $http_code)"
                   exit 0
                 else
-                  echo "Atticd CRITICAL: container not responding"
+                  echo "niks3-public CRITICAL: HTTP $http_code"
                   exit 2
                 fi
               '';
             }
           );
-          inherit check_interval;
+          inherit
+            check_interval
+            max_check_attempts
+            ;
+        };
+        niks3-private = {
+          command = lib.getExe (
+            pkgs.writeShellApplication {
+              name = "check-niks3-private";
+              runtimeInputs = [ pkgs.curl ];
+              text = ''
+                http_code=$(curl -s --max-time 3 -o /dev/null -w "%{http_code}" \
+                  http://${config.machineAddresses.niks3-private.guest}:5751 || true)
+                if [[ "$http_code" =~ ^[23][0-9][0-9]$ ]]; then
+                  echo "niks3-private OK (HTTP $http_code)"
+                  exit 0
+                else
+                  echo "niks3-private CRITICAL: HTTP $http_code"
+                  exit 2
+                fi
+              '';
+            }
+          );
+          inherit
+            check_interval
+            max_check_attempts
+            ;
         };
         mcp-nixos = {
           command = lib.getExe (
@@ -188,7 +264,7 @@ in
                 # 2xx/4xxレスポンスならサーバは動作している
                 # それ以外は異常とみなす
                 http_code=$(curl -s --max-time 3 -o /dev/null -w "%{http_code}" \
-                  http://${config.machineAddresses.mcp-nixos.guest}:8080/mcp || echo "000")
+                  http://${config.machineAddresses.mcp-nixos.guest}:8080/mcp || true)
                 if [[ "$http_code" =~ ^[24][0-9][0-9]$ ]]; then
                   echo "mcp-nixos OK (HTTP $http_code)"
                   exit 0
@@ -199,7 +275,10 @@ in
               '';
             }
           );
-          inherit check_interval;
+          inherit
+            check_interval
+            max_check_attempts
+            ;
         };
         github-runner-x64 = {
           command = lib.getExe (
@@ -217,42 +296,29 @@ in
               '';
             }
           );
-          inherit check_interval;
-        };
-        github-runner-arm64 = {
-          command = lib.getExe (
-            pkgs.writeShellApplication {
-              name = "check-github-runner-arm64";
-              runtimeInputs = [ pkgs.iputils ];
-              text = ''
-                if ping -c 1 -W 2 ${config.machineAddresses.github-runner-arm64.guest} > /dev/null 2>&1; then
-                  echo "GitHub Runner arm64 OK"
-                  exit 0
-                else
-                  echo "GitHub Runner arm64 CRITICAL: ping failed"
-                  exit 2
-                fi
-              '';
-            }
-          );
-          inherit check_interval;
+          inherit
+            check_interval
+            max_check_attempts
+            ;
         };
       };
     };
   };
-  # Mackerel APIキー(純粋なキー文字列)をsopsで管理
-  sops.secrets."mackerel-api-key" = {
-    sopsFile = ../../../secrets/seminar/mackerel.yaml;
-    key = "api_key";
-    owner = "root";
-    group = "root";
-    mode = "0400";
-  };
-  # sops.templatesでTOML形式の設定ファイルを生成
-  sops.templates."mackerel-api-key.conf" = {
-    content = ''
-      apikey = "${config.sops.placeholder."mackerel-api-key"}"
-    '';
-    mode = "0400";
+  sops = {
+    # Mackerel APIキー(純粋なキー文字列)をsopsで管理
+    secrets."mackerel-api-key" = {
+      sopsFile = ../../../secrets/seminar/mackerel.yaml;
+      key = "api_key";
+      owner = "root";
+      group = "root";
+      mode = "0400";
+    };
+    # sops.templatesでTOML形式の設定ファイルを生成
+    templates."mackerel-api-key.conf" = {
+      content = ''
+        apikey = "${config.sops.placeholder."mackerel-api-key"}"
+      '';
+      mode = "0400";
+    };
   };
 }

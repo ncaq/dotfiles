@@ -13,6 +13,7 @@
     "nix-tasuke@konoka": true,
     "web-tasuke@konoka": true
   },
+  "enableAllProjectMcpServers": true,
   "permissions": {
     "allow": ["Bash(./install.sh:*)"],
     "additionalDirectories": [

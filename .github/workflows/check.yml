@@ -69,7 +69,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
-      - uses: ncaq/nix-composite-action@4c872727d475a1b79c4314d6d6b6f09fecaf25f4 # v1.1.0
+      - uses: ncaq/nix-composite-action@6e28cd44693083d063bed5baf36e912c6807a151 # v1.1.1
         with:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - run: nix run '.#nix-fast-build' -- --option eval-cache false --no-link --skip-cached --no-nom
@@ -88,7 +88,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
-      - uses: ncaq/nix-composite-action@4c872727d475a1b79c4314d6d6b6f09fecaf25f4 # v1.1.0
+      - uses: ncaq/nix-composite-action@6e28cd44693083d063bed5baf36e912c6807a151 # v1.1.1
         with:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - name: nix build
@@ -111,7 +111,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
-      - uses: ncaq/nix-composite-action@4c872727d475a1b79c4314d6d6b6f09fecaf25f4 # v1.1.0
+      - uses: ncaq/nix-composite-action@6e28cd44693083d063bed5baf36e912c6807a151 # v1.1.1
         with:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - name: nix build
@@ -131,7 +131,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
-      - uses: ncaq/nix-composite-action@4c872727d475a1b79c4314d6d6b6f09fecaf25f4 # v1.1.0
+      - uses: ncaq/nix-composite-action@6e28cd44693083d063bed5baf36e912c6807a151 # v1.1.1
         with:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - run: nix build -L .#homeConfigurations.x86_64-linux.activationPackage
@@ -150,7 +150,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
-      - uses: ncaq/nix-composite-action@4c872727d475a1b79c4314d6d6b6f09fecaf25f4 # v1.1.0
+      - uses: ncaq/nix-composite-action@6e28cd44693083d063bed5baf36e912c6807a151 # v1.1.1
         with:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       # Nix-on-Droidのビルドはimpureモードで行う必要があります

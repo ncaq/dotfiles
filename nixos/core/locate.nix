@@ -1,23 +1,28 @@
-{ pkgs, ... }:
+{
+  lib,
+  pkgs,
+  username,
+  ...
+}:
 {
   services.locate = {
     enable = true;
     package = pkgs.plocate;
     interval = "hourly";
-    pruneNames = [
+    prunePaths = lib.mkOptionDefault [
+      "/home/${username}/.claude/plugins"
+      "/home/${username}/.claude/projects"
+    ];
+    pruneNames = lib.mkOptionDefault [
       "$Recycle.Bin"
       ".Trash"
       ".Trash-1000"
-      ".bzr"
       ".cabal"
-      ".cache"
       ".cargo"
       ".dub"
       ".gem"
       ".ghcup"
-      ".git"
       ".go"
-      ".hg"
       ".julia"
       ".metals"
       ".npm"
@@ -30,7 +35,6 @@
       ".stack-work-fast"
       ".stack-work-profile"
       ".stack-work-test"
-      ".svn"
       "Trash"
       "WinSxS"
       "__pycache__"
@@ -50,11 +54,8 @@
       "file-backup"
       "htmlcache"
       "node_modules"
-      "plugins" # claude code
-      "projects" # claude code
       "site-packages"
       "steam-runtime"
-      "store"
       "target"
       "texmf-dist"
       "undo-tree"

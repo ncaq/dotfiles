@@ -1,9 +1,14 @@
-{ pkgs, ... }:
+{ pkgs, username, ... }:
 {
   services.locate = {
     enable = true;
     package = pkgs.plocate;
     interval = "hourly";
+    prunePaths = [
+      "/home/${username}/.claude/plugins"
+      "/home/${username}/.claude/projects"
+      "/nix/store"
+    ];
     pruneNames = [
       "$Recycle.Bin"
       ".Trash"
@@ -50,11 +55,8 @@
       "file-backup"
       "htmlcache"
       "node_modules"
-      "plugins" # claude code
-      "projects" # claude code
       "site-packages"
       "steam-runtime"
-      "store"
       "target"
       "texmf-dist"
       "undo-tree"

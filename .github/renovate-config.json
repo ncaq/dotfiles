@@ -1,0 +1,14 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "onboarding": false,
+  "requireConfig": "ignored",
+  "repositories": ["ncaq/dotfiles"],
+  "extends": ["github>ncaq/renovate-config"],
+  "ignorePresets": [
+    "github>ncaq/renovate-config//preset/lock-file-maintenance"
+  ],
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["* * * * *"]
+  }
+}

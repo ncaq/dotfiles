@@ -2,6 +2,7 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "onboarding": false,
   "requireConfig": "ignored",
+  "branchPrefix": "renovate-action/",
   "repositories": ["ncaq/dotfiles"],
   "extends": ["github>ncaq/renovate-config"],
   "ignorePresets": [

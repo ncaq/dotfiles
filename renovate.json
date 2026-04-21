@@ -1,5 +1,4 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "description": "Hosted Renovate無効化用。実設定は`.github/renovate-config.json`、実行は`.github/workflows/renovate.yml`から。",
-  "enabled": false
+  "extends": ["github>ncaq/renovate-config"]
 }

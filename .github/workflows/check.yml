@@ -66,7 +66,7 @@ jobs:
     runs-on: [self-hosted, Linux]
     timeout-minutes: 60 # キャッシュが切れている時は時間がかかるため長めに設定。
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - uses: ncaq/nix-composite-action@6e28cd44693083d063bed5baf36e912c6807a151 # v1.1.1
@@ -85,7 +85,7 @@ jobs:
     runs-on: [self-hosted, Linux]
     timeout-minutes: 60 # キャッシュが切れている時は時間がかかるため長めに設定。
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - uses: ncaq/nix-composite-action@6e28cd44693083d063bed5baf36e912c6807a151 # v1.1.1
@@ -108,7 +108,7 @@ jobs:
     runs-on: [self-hosted, Linux]
     timeout-minutes: 60 # キャッシュが切れている時は時間がかかるため長めに設定。
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - uses: ncaq/nix-composite-action@6e28cd44693083d063bed5baf36e912c6807a151 # v1.1.1
@@ -128,7 +128,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 60 # キャッシュが切れている時は時間がかかるため長めに設定。
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - uses: ncaq/nix-composite-action@6e28cd44693083d063bed5baf36e912c6807a151 # v1.1.1
@@ -147,7 +147,7 @@ jobs:
     runs-on: [self-hosted, Linux]
     timeout-minutes: 360 # キャッシュが切れている時は時間がかかる上QEMUエミュレーションでのビルドになるため長めに設定。
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - uses: ncaq/nix-composite-action@6e28cd44693083d063bed5baf36e912c6807a151 # v1.1.1

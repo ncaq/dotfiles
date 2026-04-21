@@ -1,4 +1,5 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Hosted Renovate(App)とGitHub Actions版の2系統運用。Hostedはissue dashboardからのマニュアル更新用。Actions設定は`.github/renovate-config.json`、実行は`.github/workflows/renovate.yml`。",
   "extends": ["github>ncaq/renovate-config"]
 }

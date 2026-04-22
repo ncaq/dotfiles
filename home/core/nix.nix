@@ -26,6 +26,7 @@ in
     nix-init
     nix-update
     nixfmt
+    nvd
     update-nix-fetchgit
   ];
 }

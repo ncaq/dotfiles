@@ -30,6 +30,10 @@ in
         };
       };
       # Windows環境で起動したときはWSLのシェルを起動するようにします。
+      # WSLのalacrittyを起動することはあまり考慮していません。
+      # 話を単純にするために全ての環境でenableにしているだけなので。
+      # 軽量なパッケージなのでインストールの負担にもあまりなりません。
+      # Windowsのalacrittyはwingetでインストールすることを想定しています。
       terminal = lib.mkIf isWSL {
         shell = {
           program = "wsl.exe";

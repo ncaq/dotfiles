@@ -7,8 +7,8 @@
   ...
 }:
 let
-  windowsAppData = osConfig.wsl.windowsAppData or null;
   alacrittyConfigFile = config.xdg.configFile."alacritty/alacritty.toml".source;
+  inherit (osConfig.wsl) windowsAppData;
   windowsAlacrittyConfigFile = "${windowsAppData}/alacritty/alacritty.toml";
 in
 {

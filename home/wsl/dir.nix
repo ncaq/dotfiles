@@ -1,11 +1,10 @@
 {
   config,
-  username,
+  osConfig,
   ...
 }:
 let
-  windowsUsername = username;
-  windowsUserHome = "/mnt/c/Users/${windowsUsername}";
+  inherit (osConfig.wsl) windowsUserHome;
 in
 {
   home.file = {

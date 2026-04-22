@@ -2,12 +2,11 @@
   pkgs,
   lib,
   isWSL,
-  nativeLinux,
   ...
 }:
 {
   programs.alacritty = {
-    enable = nativeLinux;
+    enable = true;
     package = pkgs.alacritty-graphics; # 画像表示対応版を選択。
     # TODO: themeにmodus-vivendiを追加して設定します。
 

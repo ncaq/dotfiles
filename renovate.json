@@ -1,5 +1,11 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "description": "Hosted Renovate(App)とGitHub Actions版の2系統運用。Hostedはdependency dashboard可視化およびissue dashboardからの手動トリガ用途。Actionsは`.github/renovate-config.json`+`.github/workflows/renovate.yml`で日次自動実行。自動PR重複は許容。",
-  "extends": ["github>ncaq/renovate-config"]
+  "extends": ["github>ncaq/renovate-config"],
+  "ignorePresets": [
+    "github>ncaq/renovate-config//preset/lock-file-maintenance"
+  ],
+  "lockFileMaintenance": {
+    "enabled": true,
+    "extends": ["schedule:daily"]
+  }
 }

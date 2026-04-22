@@ -14,9 +14,6 @@
     # Windows環境(WSLではなくWindowsネイティブの話)では`%APPDATA%\alacritty\alacritty.toml`です。
     # TODO: Windows環境に設定ファイルを展開する。
     settings = {
-      general = {
-        working_directory = "~"; # 起動時のカレントディレクトリをホームディレクトリにする。
-      };
       window = {
         decorations = "None"; # タイトルバーを消す。
         startup_mode = "Maximized"; # 起動時に最大化する。

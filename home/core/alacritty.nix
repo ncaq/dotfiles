@@ -1,9 +1,16 @@
 {
   pkgs,
   lib,
+  config,
   isWSL,
+  osConfig,
   ...
 }:
+let
+  windowsAppData = osConfig.wsl.windowsAppData or null;
+  alacrittyConfigFile = config.xdg.configFile."alacritty/alacritty.toml".source;
+  windowsAlacrittyConfigFile = "${windowsAppData}/alacritty/alacritty.toml";
+in
 {
   programs.alacritty = {
     enable = true;
@@ -12,7 +19,6 @@
 
     # UNIX環境で最優先されるパスは`$XDG_CONFIG_HOME/alacritty/alacritty.toml`であり、
     # Windows環境(WSLではなくWindowsネイティブの話)では`%APPDATA%\alacritty\alacritty.toml`です。
-    # TODO: Windows環境に設定ファイルを展開する。
     settings = {
       window = {
         decorations = "None"; # タイトルバーを消す。
@@ -49,4 +55,15 @@
       };
     };
   };
+
+  home.activation.deployAlacrittyConfigToWindows = lib.mkIf isWSL (
+    lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      if [ -d ${lib.escapeShellArg windowsAppData} ]; then
+        $DRY_RUN_CMD mkdir -p "$(dirname ${lib.escapeShellArg windowsAlacrittyConfigFile})"
+        $DRY_RUN_CMD install -m 0644 ${lib.escapeShellArg alacrittyConfigFile} ${lib.escapeShellArg windowsAlacrittyConfigFile}
+      else
+        $DRY_RUN_CMD echo "Windows AppData directory is not mounted: ${windowsAppData}" >&2
+      fi
+    ''
+  );
 }

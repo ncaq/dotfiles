@@ -4,7 +4,7 @@
       "source": {
         "source": "github",
         "repo": "ncaq/konoka",
-        "ref": "v5.0.2"
+        "ref": "v5.1.0"
       }
     }
   },
@@ -13,6 +13,7 @@
     "nix-tasuke@konoka": true,
     "web-tasuke@konoka": true
   },
+  "enableAllProjectMcpServers": true,
   "permissions": {
     "allow": ["Bash(./install.sh:*)"],
     "additionalDirectories": [

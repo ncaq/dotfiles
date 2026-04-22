@@ -1,8 +1,11 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["github>ncaq/renovate-config"],
+  "ignorePresets": [
+    "github>ncaq/renovate-config//preset/lock-file-maintenance"
+  ],
   "lockFileMaintenance": {
     "enabled": true,
-    "schedule": ["after 6am and before 7am"]
+    "extends": ["schedule:daily"]
   }
 }

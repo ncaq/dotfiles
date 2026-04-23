@@ -1,15 +1,22 @@
 {
   pkgs,
-  config,
   lib,
+  config,
+  isWSL,
   inputs,
   ...
 }:
 let
-  # programs.emacs.enableを使うとhome-managerがemacsWithPackagesで二重ラップし、
-  # .emacs.d/flake.nixのextraEmacsPackagesでリンクしたバイナリが消えるため、
-  # .emacs.dのパッケージを指定します。
-  emacsPackage = inputs.dot-emacs.packages.${pkgs.stdenv.hostPlatform.system}.default;
+  # `programs.emacs.enable`を使うとhome-managerが`emacsWithPackages`で二重ラップし、
+  # `.emacs.d/flake.nix`の`extraEmacsPackages`でリンクしたバイナリが消えるため、
+  # `.emacs.d`の定義を指定します。
+  dotEmacsPackages = inputs.dot-emacs.packages.${pkgs.stdenv.hostPlatform.system};
+  # WSLgはWaylandで動作するためWSL環境ではpgtkを指定します。
+  # 別にXWaylandを経由してデフォルトパッケージでもそのまま動きますが、
+  # せっかくなのでpgtkを使ってWaylandネイティブで動作させます。
+  # Linuxネイティブの環境ではxmonadでX11をまだ使っているため、
+  # デフォルトのEmacsを指定します。
+  emacsPackage = if isWSL then dotEmacsPackages.pgtk else dotEmacsPackages.default;
 in
 {
   services.emacs = {

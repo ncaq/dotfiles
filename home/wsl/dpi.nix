@@ -1,14 +1,14 @@
 { pkgs, lib, ... }:
 {
-  systemd.user.services.wsl-dpi = {
+  systemd.user.services.wsl-set-xorg-dpi = {
     Unit = {
-      Description = "Set DPI for WSLg environment";
+      Description = "Set DPI for WSLg xorg environment";
     };
     Service = {
       Type = "oneshot";
       ExecStartPre = lib.getExe (
         pkgs.writeShellApplication {
-          name = "wsl-set-dpi-wait-xorg";
+          name = "wsl-set-xorg-dpi-wait-start-server";
           runtimeInputs = with pkgs; [
             coreutils
             xorg.xset
@@ -27,7 +27,7 @@
       );
       ExecStart = lib.getExe (
         pkgs.writeShellApplication {
-          name = "wsl-set-dpi";
+          name = "wsl-set-xorg-dpi";
           runtimeInputs = with pkgs; [
             xorg.xrandr
             xorg.xrdb

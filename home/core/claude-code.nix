@@ -156,7 +156,7 @@ in
       # またインストール時にclaude-plugins-officialを名乗っているのはclaude-codeのサブディレクトリであることもあるので、
       # 安定性のために明示的に指定します。
       extraKnownMarketplaces = {
-        "claude-plugins-official" = {
+        claude-plugins-official = {
           source = {
             source = "github";
             repo = "anthropics/claude-plugins-official";
@@ -167,6 +167,13 @@ in
             source = "github";
             repo = "ncaq/konoka";
             ref = "v5.1.0";
+          };
+        };
+        context7-marketplace = {
+          source = {
+            source = "github";
+            repo = "upstash/context7";
+            ref = "@upstash/context7-tools-ai-sdk@0.2.3";
           };
         };
       };
@@ -199,6 +206,8 @@ in
         "proofreading-ja@konoka" = true;
         "research@konoka" = true;
         "web-tasuke@konoka" = true;
+        # Context7: ライブラリドキュメント検索。
+        "context7-plugin@context7-marketplace" = true;
       };
       # statuslineを設定します。
       # ccstatuslineを使用して豪華な表示にします。
@@ -449,6 +458,7 @@ in
           "mcp__github__search_pull_requests"
           "mcp__github__search_repositories"
           "mcp__github__search_users"
+          "mcp__plugin_context7-plugin_context7"
           "mcp__plugin_nix-tasuke_nixos"
         ];
         ask = [

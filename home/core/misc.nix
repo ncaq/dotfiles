@@ -7,5 +7,6 @@
     sqlite
     strace
     trashy
+    wl-clipboard
   ];
 }

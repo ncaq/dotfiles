@@ -159,10 +159,6 @@ in
         type = "command";
         command = lib.getExe ccstatusline;
       };
-      # 全てのセッションでremote-controlを有効にします。
-      remoteControl = {
-        enabled = true;
-      };
       sandbox = {
         # sandboxは通常無効にします。
         # sandboxであることが由来のトラブルが多すぎるためです。

@@ -1,4 +1,5 @@
-_: {
+{ config, ... }:
+{
   nix = {
     settings = {
       experimental-features = [
@@ -34,6 +35,47 @@ _: {
     optimise = {
       automatic = true;
       dates = "Fri *-*-* 12:30:00";
+    };
+    # nix-daemonにGitHubのアクセストークンを渡します。
+    # `nix profile add`などを実行した際のGitHubのAPI rate limitを回避するために有用です。
+    # `access-tokens`はクライアントからdaemonに転送されない設定のため、
+    # 直接設定する必要があります。
+    # nix-daemonはホスト全体で共有されるため、
+    # このトークンは全ユーザのビルドに適用されます。
+    # 本当は構造化された`access-tokens`フィールドを使いたいけれど、
+    # sopsのファイルをパスで読み込ませる方法が分からないため、
+    # nix.confのフラグメントをsopsで生成して読み込む方法で回避します。
+    # 関連: [Specify access token via file · Issue #6536 · NixOS/nix](https://github.com/NixOS/nix/issues/6536)
+    extraOptions = ''
+      !include ${config.sops.templates."github-nix-avoid-rate-limit-token.conf".path}
+    '';
+  };
+
+  sops = {
+    # nix.confのfragmentを生成することでクライアント側にも読める設定ファイルにします。
+    # 自分のアカウントだけのFine-grained personal access tokensで、
+    # Fine-grainedの最小限の権限であるPublic Repository権限だけを持ちます。
+    # なので万が一漏れても大した問題はないので、
+    # 権限は緩めで問題ありません。
+    templates."github-nix-avoid-rate-limit-token.conf" = {
+      content = ''
+        access-tokens = github.com=${config.sops.placeholder."github-nix-avoid-rate-limit-token"}
+      '';
+      owner = "root";
+      group = "wheel"; # 信頼できるとしたユーザも読めるようにしておきます。
+      mode = "0440"; # グループ所属のユーザも読み取れます。
+    };
+    secrets = {
+      # 最小権限の権限で`access-tokens`を設定します。
+      # こちらはtemplatesが作れれば良いため、
+      # rootさえ読めれば問題ありません。
+      "github-nix-avoid-rate-limit-token" = {
+        sopsFile = ../../secrets/github-nix-avoid-rate-limit.yaml;
+        key = "nix-avoid-rate-limit";
+        owner = "root";
+        group = "root";
+        mode = "0400";
+      };
     };
   };
 }

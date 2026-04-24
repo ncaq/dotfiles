@@ -507,7 +507,7 @@ in
           fi
 
           # 書き込みを行います。
-          echo "$MERGED" | ${pkgs.coreutils}/bin/install -m 644 /dev/stdin "$CLAUDE_JSON"
+          echo "$MERGED" | $DRY_RUN_CMD ${pkgs.coreutils}/bin/install -m 644 /dev/stdin "$CLAUDE_JSON"
 
           echo "merged $CLAUDE_JSON"
         '';

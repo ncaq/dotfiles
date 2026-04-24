@@ -229,8 +229,9 @@ in
         # Context7: ライブラリドキュメント検索。
         "context7-plugin@context7-marketplace" = true;
       };
+      skipAutoPermissionPrompt = true; # auto modeをdefaultModeにしているので許可を求めない。
       permissions = {
-        defaultMode = "acceptEdits";
+        defaultMode = "auto";
         additionalDirectories = [
           codingAgentWorkDirFullPath
           "/nix/store/"

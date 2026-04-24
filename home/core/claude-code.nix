@@ -151,6 +151,8 @@ in
           }
         ];
       };
+      # ちらつきが少ないことが期待できる表示方法選びます。
+      tui = "fullscreen";
       # statuslineを設定します。
       # ccstatuslineを使用して豪華な表示にします。
       statusLine = {

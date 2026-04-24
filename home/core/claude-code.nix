@@ -151,6 +151,24 @@ in
           }
         ];
       };
+      # statuslineを設定します。
+      # ccstatuslineを使用して豪華な表示にします。
+      statusLine = {
+        type = "command";
+        command = lib.getExe ccstatusline;
+      };
+      # 全てのセッションでremote-controlを有効にします。
+      remoteControl = {
+        enabled = true;
+      };
+      sandbox = {
+        # sandboxは通常無効にします。
+        # sandboxであることが由来のトラブルが多すぎるためです。
+        enabled = false;
+        # sandboxを有効にしたときはサンドボックスを抜けるのを許可しません。
+        # sandboxを有効にしたいときはsandbox任せで自動承認させたいと思う時が多いからです。
+        allowUnsandboxedCommands = false;
+      };
       # インストール時にclaude-plugins-officialは登録されますが、
       # ファイルが消えると再登録されないため宣言的に追加もしておきます。
       # またインストール時にclaude-plugins-officialを名乗っているのはclaude-codeのサブディレクトリであることもあるので、
@@ -208,24 +226,6 @@ in
         "web-tasuke@konoka" = true;
         # Context7: ライブラリドキュメント検索。
         "context7-plugin@context7-marketplace" = true;
-      };
-      # statuslineを設定します。
-      # ccstatuslineを使用して豪華な表示にします。
-      statusLine = {
-        type = "command";
-        command = lib.getExe ccstatusline;
-      };
-      # 全てのセッションでremote-controlを有効にします。
-      remoteControl = {
-        enabled = true;
-      };
-      sandbox = {
-        # sandboxは通常無効にします。
-        # sandboxであることが由来のトラブルが多すぎるためです。
-        enabled = false;
-        # sandboxを有効にしたときはサンドボックスを抜けるのを許可しません。
-        # sandboxを有効にしたいときはsandbox任せで自動承認させたいと思う時が多いからです。
-        allowUnsandboxedCommands = false;
       };
       permissions = {
         defaultMode = "acceptEdits";

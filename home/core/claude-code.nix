@@ -151,7 +151,7 @@ in
           }
         ];
       };
-      # ちらつきが少ないことが期待できる表示方法選びます。
+      # ちらつきが少ないことが期待できる表示方法を選びます。
       tui = "fullscreen";
       # statuslineを設定します。
       # ccstatuslineを使用して豪華な表示にします。
@@ -474,7 +474,7 @@ in
         let
           claudeJsonOverrides = {
             externalEditorContext = true; # 外部エディタでプロンプトを編集するとき最後の応答がエディタに表示される。
-            remoteControlAtStartup = true; # 起動時にリモートロントロールを有効にする。
+            remoteControlAtStartup = true; # 起動時にリモートコントロールを有効にする。
           };
           overrideJson = pkgs.writeText "claude-overrides.json" (builtins.toJSON claudeJsonOverrides);
         in

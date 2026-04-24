@@ -151,6 +151,22 @@ in
           }
         ];
       };
+      # ちらつきが少ないことが期待できる表示方法を選びます。
+      tui = "fullscreen";
+      # statuslineを設定します。
+      # ccstatuslineを使用して豪華な表示にします。
+      statusLine = {
+        type = "command";
+        command = lib.getExe ccstatusline;
+      };
+      sandbox = {
+        # sandboxは通常無効にします。
+        # sandboxであることが由来のトラブルが多すぎるためです。
+        enabled = false;
+        # sandboxを有効にしたときはサンドボックスを抜けるのを許可しません。
+        # sandboxを有効にしたいときはsandbox任せで自動承認させたいと思う時が多いからです。
+        allowUnsandboxedCommands = false;
+      };
       # インストール時にclaude-plugins-officialは登録されますが、
       # ファイルが消えると再登録されないため宣言的に追加もしておきます。
       # またインストール時にclaude-plugins-officialを名乗っているのはclaude-codeのサブディレクトリであることもあるので、
@@ -209,26 +225,9 @@ in
         # Context7: ライブラリドキュメント検索。
         "context7-plugin@context7-marketplace" = true;
       };
-      # statuslineを設定します。
-      # ccstatuslineを使用して豪華な表示にします。
-      statusLine = {
-        type = "command";
-        command = lib.getExe ccstatusline;
-      };
-      # 全てのセッションでremote-controlを有効にします。
-      remoteControl = {
-        enabled = true;
-      };
-      sandbox = {
-        # sandboxは通常無効にします。
-        # sandboxであることが由来のトラブルが多すぎるためです。
-        enabled = false;
-        # sandboxを有効にしたときはサンドボックスを抜けるのを許可しません。
-        # sandboxを有効にしたいときはsandbox任せで自動承認させたいと思う時が多いからです。
-        allowUnsandboxedCommands = false;
-      };
+      skipAutoPermissionPrompt = true; # auto modeをdefaultModeにしているので許可を求めない。
       permissions = {
-        defaultMode = "acceptEdits";
+        defaultMode = "auto";
         additionalDirectories = [
           codingAgentWorkDirFullPath
           "/nix/store/"
@@ -239,18 +238,6 @@ in
           "Bash(* --help *)"
           "Bash(* --version)"
           "Bash(awk:*)"
-          "Bash(cabal build:*)"
-          "Bash(cabal check:*)"
-          "Bash(cabal clean:*)"
-          "Bash(cabal haddock:*)"
-          "Bash(cabal help:*)"
-          "Bash(cabal info:*)"
-          "Bash(cabal list:*)"
-          "Bash(cabal test:*)"
-          "Bash(cabal update:*)"
-          "Bash(cabal-fmt:*)"
-          "Bash(cabal-gild:*)"
-          "Bash(cargo add:*)"
           "Bash(cat:*)"
           "Bash(chmod:*)"
           "Bash(coredumpctl:*)"
@@ -264,7 +251,6 @@ in
           "Bash(fastfetch:*)"
           "Bash(fd:*)"
           "Bash(find:*)"
-          "Bash(gen-hie:*)"
           "Bash(getent:*)"
           "Bash(gh * browse:*)"
           "Bash(gh * check:*)"
@@ -282,9 +268,6 @@ in
           "Bash(gh * verify:*)"
           "Bash(gh * view:*)"
           "Bash(gh * watch:*)"
-          "Bash(gh api *issues/*/comments*)" # kyoseiスキルの今の仕組み的に仕方がない。
-          "Bash(gh api *pulls/*/comments*)" # kyoseiスキルの今の仕組み的に仕方がない。
-          "Bash(gh api *pulls/*/reviews*)" # kyoseiスキルの今の仕組み的に仕方がない。
           "Bash(gh attestation trusted-root:*)"
           "Bash(gh browse:*)"
           "Bash(gh completion:*)"
@@ -292,8 +275,6 @@ in
           "Bash(gh repo license:*)"
           "Bash(gh search:*)"
           "Bash(gh status:*)"
-          "Bash(ghc-pkg describe:*)"
-          "Bash(ghc-pkg field:*)"
           "Bash(git -C * add *)"
           "Bash(git -C * diff *)"
           "Bash(git -C * log *)"
@@ -318,7 +299,6 @@ in
           "Bash(grep:*)"
           "Bash(hadolint:*)"
           "Bash(hash:*)"
-          "Bash(hlint:*)"
           "Bash(hostname)"
           "Bash(hostnamectl status:*)"
           "Bash(infocmp:*)"
@@ -375,17 +355,6 @@ in
           "Bash(sops --encrypt:*)"
           "Bash(sort:*)"
           "Bash(ss:*)"
-          "Bash(stack bench:*)"
-          "Bash(stack build:*)"
-          "Bash(stack clean:*)"
-          "Bash(stack dot:*)"
-          "Bash(stack haddock:*)"
-          "Bash(stack hoogle:*)"
-          "Bash(stack list:*)"
-          "Bash(stack ls:*)"
-          "Bash(stack path:*)"
-          "Bash(stack run:*)"
-          "Bash(stack test:*)"
           "Bash(systemctl * cat *)"
           "Bash(systemctl * list-units *)"
           "Bash(systemctl * show *)"
@@ -398,7 +367,6 @@ in
           "Bash(trash:*)"
           "Bash(tree:*)"
           "Bash(true)"
-          "Bash(tsc --noEmit:*)"
           "Bash(update-nix-fetchgit:*)"
           "Bash(wc:*)"
           "WebFetch"
@@ -499,23 +467,79 @@ in
     # シンボリックリンクを作成して警告を抑制します。
     file.".local/bin/claude".source = "${config.programs.claude-code.finalPackage}/bin/claude";
 
-    # Clone repositories for additionalDirectories if they don't exist
     activation = {
-      cloneNixpkgs = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-        if [ ! -d "${config.home.homeDirectory}/Desktop/nixpkgs" ]; then
-          $DRY_RUN_CMD ${pkgs.git}/bin/git clone --depth=50 \
-            https://github.com/NixOS/nixpkgs.git \
-            "${config.home.homeDirectory}/Desktop/nixpkgs"
-        fi
-      '';
-      cloneHomeManager = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-        if [ ! -d "${config.home.homeDirectory}/Desktop/home-manager" ]; then
-          $DRY_RUN_CMD ${pkgs.git}/bin/git clone --depth=50 \
-            https://github.com/nix-community/home-manager.git \
-            "${config.home.homeDirectory}/Desktop/home-manager"
-        fi
-      '';
-    };
+      # `~/.claude.json`に書き込まれる設定をインストール時に設定。
+      # `settings.json`では設定できません。
+      mergeClaudeJson =
+        let
+          claudeJsonOverrides = {
+            externalEditorContext = true; # 外部エディタでプロンプトを編集するとき最後の応答がエディタに表示される。
+            remoteControlAtStartup = true; # 起動時にリモートコントロールを有効にする。
+          };
+          overrideJson = pkgs.writeText "claude-overrides.json" (builtins.toJSON claudeJsonOverrides);
+        in
+        lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          CLAUDE_JSON="$HOME/.claude.json"
+          # Claude Codeの設定が存在していない場合はマージせずに終了します。
+          # 初回起動時にClaude Code自身がファイルを生成します。
+          if [ ! -f "$CLAUDE_JSON" ]; then
+            echo "Claude Code config not found at $CLAUDE_JSON, skipping merge."
+            exit 0
+          fi
+
+          # jqを使ってマージします。
+          if ! MERGED=$(${pkgs.jq}/bin/jq \
+            -S --slurpfile overrides ${overrideJson} '. * $overrides[0]' "$CLAUDE_JSON"); then
+            # マージが失敗したらエラーを出して終了します。
+            echo "Failed to merge Claude Code config, invalid JSON format."
+            exit 1
+          fi
+
+          CURRENT=$(${pkgs.jq}/bin/jq -S . "$CLAUDE_JSON")
+
+          # マージ結果と既存の内容が同じならスキップ。
+          if [ "$MERGED" = "$CURRENT" ]; then
+            # スキップするのは何事もないときなので特にメッセージは出力しません。
+            exit 0
+          fi
+
+          # 書き込みを行います。
+          echo "$MERGED" | $DRY_RUN_CMD ${pkgs.coreutils}/bin/install -m 644 /dev/stdin "$CLAUDE_JSON"
+
+          echo "merged $CLAUDE_JSON"
+        '';
+    }
+    //
+      # dotfilesの編集に常に参考にするリポジトリをDesktopにクローンしておきます。
+      builtins.listToAttrs (
+        let
+          cloneGitHubRepo =
+            { owner, name }:
+            lib.nameValuePair name (
+              lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+                if [ ! -d "${config.home.homeDirectory}/Desktop/${name}" ]; then
+                  $DRY_RUN_CMD ${pkgs.git}/bin/git clone --depth=50 \
+                    https://github.com/${owner}/${name}.git \
+                    "${config.home.homeDirectory}/Desktop/${name}"
+                fi
+              ''
+            );
+        in
+        [
+          (cloneGitHubRepo {
+            owner = "NixOS";
+            name = "nixpkgs";
+          })
+          (cloneGitHubRepo {
+            owner = "nix-community";
+            name = "home-manager";
+          })
+          (cloneGitHubRepo {
+            owner = "ncaq";
+            name = "infra.ncaq.net";
+          })
+        ]
+      );
   };
 
   sops.secrets = {

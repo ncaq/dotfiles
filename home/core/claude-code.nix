@@ -506,23 +506,34 @@ in
 
           echo "merged $CLAUDE_JSON"
         '';
+    }
+    //
       # dotfilesの編集に常に参考にするリポジトリをDesktopにクローンしておきます。
-      cloneNixpkgs = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-        if [ ! -d "${config.home.homeDirectory}/Desktop/nixpkgs" ]; then
-          $DRY_RUN_CMD ${pkgs.git}/bin/git clone --depth=50 \
-            https://github.com/NixOS/nixpkgs.git \
-            "${config.home.homeDirectory}/Desktop/nixpkgs"
-        fi
-      '';
-      # dotfilesの編集に常に参考にするリポジトリをDesktopにクローンしておきます。
-      cloneHomeManager = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-        if [ ! -d "${config.home.homeDirectory}/Desktop/home-manager" ]; then
-          $DRY_RUN_CMD ${pkgs.git}/bin/git clone --depth=50 \
-            https://github.com/nix-community/home-manager.git \
-            "${config.home.homeDirectory}/Desktop/home-manager"
-        fi
-      '';
-    };
+      builtins.listToAttrs (
+        let
+          cloneGitHubRepo =
+            { owner, name }:
+            lib.nameValuePair name (
+              lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+                if [ ! -d "${config.home.homeDirectory}/Desktop/${name}" ]; then
+                  $DRY_RUN_CMD ${pkgs.git}/bin/git clone --depth=50 \
+                    https://github.com/${owner}/${name}.git \
+                    "${config.home.homeDirectory}/Desktop/${name}"
+                fi
+              ''
+            );
+        in
+        [
+          (cloneGitHubRepo {
+            owner = "NixOS";
+            name = "nixpkgs";
+          })
+          (cloneGitHubRepo {
+            owner = "nix-community";
+            name = "home-manager";
+          })
+        ]
+      );
   };
 
   sops.secrets = {

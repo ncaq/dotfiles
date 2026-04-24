@@ -532,6 +532,10 @@ in
             owner = "nix-community";
             name = "home-manager";
           })
+          (cloneGitHubRepo {
+            owner = "ncaq";
+            name = "infra.ncaq.net";
+          })
         ]
       );
   };

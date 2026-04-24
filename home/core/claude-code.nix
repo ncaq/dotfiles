@@ -491,6 +491,13 @@ in
           MERGED=$(${pkgs.jq}/bin/jq -S \
             --slurpfile overrides ${overrideJson} \
             '. * $overrides[0]' "$CLAUDE_JSON")
+
+          # マージが失敗したらエラーを出して終了します。
+          if [ $? -ne 0 ]; then
+            echo "Failed to merge Claude Code config, invalid JSON format."
+            exit 1
+          fi
+
           CURRENT=$(${pkgs.jq}/bin/jq -S . "$CLAUDE_JSON")
 
           # マージ結果と既存の内容が同じならスキップ。

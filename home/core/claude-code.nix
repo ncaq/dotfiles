@@ -272,9 +272,6 @@ in
           "Bash(gh * verify:*)"
           "Bash(gh * view:*)"
           "Bash(gh * watch:*)"
-          "Bash(gh api *issues/*/comments*)" # kyoseiスキルの今の仕組み的に仕方がない。
-          "Bash(gh api *pulls/*/comments*)" # kyoseiスキルの今の仕組み的に仕方がない。
-          "Bash(gh api *pulls/*/reviews*)" # kyoseiスキルの今の仕組み的に仕方がない。
           "Bash(gh attestation trusted-root:*)"
           "Bash(gh browse:*)"
           "Bash(gh completion:*)"

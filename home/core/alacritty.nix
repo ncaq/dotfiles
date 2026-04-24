@@ -28,6 +28,7 @@ in
         normal = {
           family = "FirgeNerd Console";
         };
+        size = 12;
       };
       # Windows環境で起動したときはWSLのシェルを起動するようにします。
       # WSLのalacrittyを起動することはあまり考慮していません。

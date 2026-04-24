@@ -469,8 +469,44 @@ in
     # シンボリックリンクを作成して警告を抑制します。
     file.".local/bin/claude".source = "${config.programs.claude-code.finalPackage}/bin/claude";
 
-    # Clone repositories for additionalDirectories if they don't exist
     activation = {
+      # `~/.claude.json`に書き込まれる設定をインストール時に設定。
+      # `settings.json`では設定できません。
+      mergeClaudeJson =
+        let
+          claudeJsonOverrides = {
+            externalEditorContext = true; # 外部エディタでプロンプトを編集するとき最後の応答がエディタに表示される。
+            remoteControlAtStartup = true; # 起動時にリモートロントロールを有効にする。
+          };
+          overrideJson = pkgs.writeText "claude-overrides.json" (builtins.toJSON claudeJsonOverrides);
+        in
+        lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          CLAUDE_JSON="$HOME/.claude.json"
+          # Claude Codeの設定が存在していない場合はマージせずに終了します。
+          # 初回起動時にClaude Code自身がファイルを生成します。
+          if [ ! -f "$CLAUDE_JSON" ]; then
+            echo "Claude Code config not found at $CLAUDE_JSON, skipping merge."
+            exit 0
+          fi
+
+          # jqを使ってマージします。
+          MERGED=$(${pkgs.jq}/bin/jq -S \
+            --slurpfile overrides ${overrideJson} \
+            '. * $overrides[0]' "$CLAUDE_JSON")
+          CURRENT=$(${pkgs.jq}/bin/jq -S . "$CLAUDE_JSON")
+
+          # マージ結果と既存の内容が同じならスキップ。
+          if [ "$MERGED" = "$CURRENT" ]; then
+            # スキップするのは何事もないときなので特にメッセージは出力しません。
+            exit 0
+          fi
+
+          # 書き込みを行います。
+          echo "$MERGED" | ${pkgs.coreutils}/bin/install -m 644 /dev/stdin "$CLAUDE_JSON"
+
+          echo "merged $CLAUDE_JSON"
+        '';
+      # dotfilesの編集に常に参考にするリポジトリをDesktopにクローンしておきます。
       cloneNixpkgs = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
         if [ ! -d "${config.home.homeDirectory}/Desktop/nixpkgs" ]; then
           $DRY_RUN_CMD ${pkgs.git}/bin/git clone --depth=50 \
@@ -478,6 +514,7 @@ in
             "${config.home.homeDirectory}/Desktop/nixpkgs"
         fi
       '';
+      # dotfilesの編集に常に参考にするリポジトリをDesktopにクローンしておきます。
       cloneHomeManager = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
         if [ ! -d "${config.home.homeDirectory}/Desktop/home-manager" ]; then
           $DRY_RUN_CMD ${pkgs.git}/bin/git clone --depth=50 \

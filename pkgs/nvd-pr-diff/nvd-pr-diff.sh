@@ -62,10 +62,17 @@ fi
 # やむを得ず`gh api`を使用します。
 # 使用する機能がある程度固定化されているため、
 # そう危険ではないはずです。
-existing_id=$(gh api --paginate \
-  "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" \
-  --jq ".[] | select(.user.login == \"github-actions[bot]\") | select(.body | startswith(\"$MARKER\")) | .id" |
-  head -n1)
+existing_id=$(gh api --paginate --slurp \
+  "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" |
+  jq -r "
+    first(
+      .[]
+      | .[]
+      | select(.user.login == \"github-actions[bot]\")
+      | select(.body | startswith(\"$MARKER\"))
+      | .id
+    ) // empty
+  ")
 
 if [ -n "$existing_id" ]; then
   jq -n --rawfile body "$body_file" '{body: $body}' |

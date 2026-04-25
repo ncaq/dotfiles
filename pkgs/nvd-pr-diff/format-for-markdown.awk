@@ -16,7 +16,7 @@ BEGIN { section = ""; has_content = 0; closure = "" }
 }
 
 /^[[:space:]]*$/ { next }
-/^<<<|^>>>/ { next }
+/^(<<<|>>>)/  { next }
 
 {
   if (section == "change") {

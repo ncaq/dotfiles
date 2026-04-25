@@ -35,8 +35,32 @@ git worktree add --detach "$base_tree" -- "origin/$BASE_REF"
 host="seminar"
 attr=".#nixosConfigurations.\"$host\".config.system.build.toplevel"
 
-before=$(cd "$base_tree" && nix build --no-link --print-out-paths "$attr")
-after=$(nix build --no-link --print-out-paths "$attr")
+# wall-clockを短縮するためbase/PRのnix buildを並列実行します。
+# 評価フェーズで一時的にメモリ使用量が増えますが、
+# Nixデーモンが共有のロック機構を持っているのでビルド競合は起きません。
+# stderrの進捗表示は混ざりますが致命的ではないのでそのままにします。
+(cd "$base_tree" && nix build --no-link --print-out-paths "$attr" >"$workdir/before") &
+before_pid=$!
+nix build --no-link --print-out-paths "$attr" >"$workdir/after" &
+after_pid=$!
+
+# `set -e`下での`wait`の挙動はバージョン依存があるため、
+# 両方とも明示的にステータスを取って判定します。
+before_status=0
+after_status=0
+wait "$before_pid" || before_status=$?
+wait "$after_pid" || after_status=$?
+if [ "$before_status" -ne 0 ]; then
+  echo "Error: base nix build failed with status $before_status" >&2
+  exit "$before_status"
+fi
+if [ "$after_status" -ne 0 ]; then
+  echo "Error: PR nix build failed with status $after_status" >&2
+  exit "$after_status"
+fi
+
+before=$(<"$workdir/before")
+after=$(<"$workdir/after")
 
 MARKER='<!-- nvd-pr-diff -->'
 body_file="$workdir/body.md"

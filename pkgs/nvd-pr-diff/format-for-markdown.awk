@@ -19,8 +19,10 @@ BEGIN { section = ""; has_content = 0; closure = "" }
 /^(<<<|>>>)/  { next }
 
 {
+  if ($3 ~ /^nixos-system-/) {
+    next
+  }
   if (section == "change") {
-    if ($3 ~ /^nixos-system-/) next
     type = substr($1, 2, 2)
     pkg = $3
     from = $4
@@ -30,7 +32,6 @@ BEGIN { section = ""; has_content = 0; closure = "" }
     print "- [" type "] " pkg ": " from " -> " to
     has_content = 1
   } else if (section == "added" || section == "removed") {
-    if ($3 ~ /^nixos-system-/) next
     type = substr($1, 2, 2)
     pkg = $3
     ver = ""

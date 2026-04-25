@@ -64,7 +64,7 @@ fi
 # そう危険ではないはずです。
 existing_id=$(gh api --paginate \
   "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" \
-  --jq ".[] | select(.body | startswith(\"$MARKER\")) | .id" |
+  --jq ".[] | select(.user.login == \"github-actions[bot]\") | select(.body | startswith(\"$MARKER\")) | .id" |
   head -n1)
 
 if [ -n "$existing_id" ]; then

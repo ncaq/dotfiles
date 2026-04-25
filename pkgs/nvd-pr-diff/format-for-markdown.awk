@@ -21,7 +21,7 @@ BEGIN { section = ""; has_content = 0; closure = "" }
 {
   if (section == "change") {
     if ($3 ~ /^nixos-system-/) next
-    type = substr($1, 2, 1)
+    type = substr($1, 2, 2)
     pkg = $3
     from = $4
     # $5 is "->"
@@ -31,7 +31,7 @@ BEGIN { section = ""; has_content = 0; closure = "" }
     has_content = 1
   } else if (section == "added" || section == "removed") {
     if ($3 ~ /^nixos-system-/) next
-    type = substr($1, 2, 1)
+    type = substr($1, 2, 2)
     pkg = $3
     ver = ""
     for (i = 4; i <= NF; i++) ver = ver (i == 4 ? "" : " ") $i

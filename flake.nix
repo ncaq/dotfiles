@@ -101,6 +101,15 @@
       url = "github:ncaq/firge-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # nixpkgs側にまだ求めている更新がないため、
+    # 上流から直接最新のテーマを取得します。
+    # nixpkgsのalacritty-theme derivationを`overrideAttrs`で再利用するので、
+    # `flake = false`で生のソースだけを参照します。
+    alacritty-theme = {
+      url = "github:alacritty/alacritty-theme";
+      flake = false;
+    };
   };
 
   outputs =

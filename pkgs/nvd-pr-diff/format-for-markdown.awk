@@ -42,7 +42,9 @@ BEGIN { section = ""; has_content = 0; closure = "" }
 }
 
 END {
-  if (has_content == 0) print "no version changes"
+  if (has_content == 0) {
+    print "no package version changes"
+  }
   if (closure != "") {
     print ""
     print "Closure size: " closure

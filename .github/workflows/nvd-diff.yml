@@ -29,7 +29,7 @@ jobs:
     permissions:
       contents: read # リポジトリコンテンツの読み取り
       pull-requests: write # PRコメントのupsert
-      id-token: write # niks3-publicへのOIDC認証に必要
+      id-token: write # `ncaq/nix-composite-action`内のniks3-publicとのOIDC認証に使用
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:

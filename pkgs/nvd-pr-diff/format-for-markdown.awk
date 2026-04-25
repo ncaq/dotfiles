@@ -1,5 +1,5 @@
 # nvd diffの標準出力をMarkdownリストに整形するawkスクリプト。
-# Version changesセクションのnixos-system-*行は除外します。
+# nixos-system-*行は除外します。
 # nixos-system-*行はdotfiles更新で必ず変わるのでノイズになるためです。
 
 BEGIN { section = ""; has_content = 0; closure = "" }

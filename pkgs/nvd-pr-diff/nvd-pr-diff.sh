@@ -24,8 +24,10 @@ trap 'rm -rf "$workdir"' EXIT
 base_tree="$workdir/base"
 
 # base側をworktreeで別ディレクトリに展開します。
-git fetch origin "$BASE_REF"
-git worktree add --detach "$base_tree" "origin/$BASE_REF"
+# private repoとかで失敗してもGitHub Actionsで取っていれば大丈夫なのでfallbackします。
+git fetch --no-tags origin -- "$BASE_REF" || true
+# こちらのworktreeは必要なので失敗したら全体失敗です。
+git worktree add --detach "$base_tree" -- "origin/$BASE_REF"
 
 # 評価対象はseminarのみ。
 # 他ホスト分はノイズが多いため当面は含めません。

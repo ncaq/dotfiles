@@ -68,11 +68,8 @@ body_file="$workdir/body.md"
 # stderrはキャプチャせずにそのまま継承し、CIログ側で確認できるようにします。
 if ! raw=$(nvd diff "$before" "$after"); then
   echo "Warning: nvd diff failed" >&2
-  {
-    printf '%s\n' "$MARKER"
-    printf '## nvd diff: %s\n\n' "$host"
-    printf 'nvd diff failed. See workflow logs for details.\n'
-  } >"$body_file"
+  printf 'nvd diff failed. See workflow logs for details.\n' >&2
+  exit 1
 else
   listed=$(printf '%s\n' "$raw" | awk -f "$script_dir/format-for-markdown.awk")
   {

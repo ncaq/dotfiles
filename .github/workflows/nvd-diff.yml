@@ -1,0 +1,52 @@
+name: nvd-diff
+
+# checkワークフローの完了後に動かし、
+# ビルドキャッシュのヒット率を高めます。
+on:
+  # zizmor: ignore[dangerous-triggers] -- workflow_runはhead_shaのチェックアウト + 内部PR限定のガードで安全に使います。
+  workflow_run:
+    workflows: [check]
+    types: [completed]
+
+permissions: {}
+
+# 最新の差分が見れていれば十分なので、
+# 同一ブランチでの複数のPRは古い方をキャンセルします。
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: true
+
+jobs:
+  nvd-diff:
+    name: nvd-diff
+    # check成功時のPRトリガのみ対象。
+    # フォークPRは除外されます。
+    if: >-
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      github.event.workflow_run.pull_requests[0] != null
+    permissions:
+      contents: read # リポジトリコンテンツの読み取り
+      pull-requests: write # PRコメントのupsert
+      id-token: write # `ncaq/nix-composite-action`内のniks3-publicとのOIDC認証に使用
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          # base refのworktree展開のために全オブジェクトを要求。
+          # 履歴の浅さに依存しない安全側に倒しています。
+          # そこまで重いリポジトリでもないのでフルに要求しても問題はありません。
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ncaq/nix-composite-action@6e28cd44693083d063bed5baf36e912c6807a151 # v1.1.1
+        with:
+          cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+      - name: Run nvd-pr-diff
+        env:
+          BASE_REF: ${{ github.event.workflow_run.pull_requests[0].base.ref }}
+          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: nix run .#nvd-pr-diff

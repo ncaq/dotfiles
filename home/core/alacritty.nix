@@ -4,6 +4,7 @@
   config,
   isWSL,
   osConfig,
+  inputs,
   ...
 }:
 let
@@ -12,6 +13,15 @@ let
   alacrittyConfigFile = config.xdg.configFile."alacritty/alacritty.toml".source;
   # Windows環境(WSLではなく)では設定パスの場所は`%APPDATA%\alacritty\alacritty.toml`です。
   windowsAlacrittyConfigFile = "${windowsAppData}/alacritty/alacritty.toml";
+  # `modus_vivendi`はnixpkgsピン時点ではまだ含まれていないため、
+  # 上流リポジトリの最新版を直接参照したテーマパッケージを構築します。
+  # nixpkgsのderivationを`overrideAttrs`で再利用して`installPhase`等の重複を避けます。
+  # flake input側に`name`属性が無いため、`sourceRoot`も明示的に上書きします。
+  alacrittyThemeLatest = pkgs.alacritty-theme.overrideAttrs (_: {
+    version = "0-unstable-${inputs.alacritty-theme.shortRev}";
+    src = inputs.alacritty-theme;
+    sourceRoot = "source/themes";
+  });
 in
 {
   programs.alacritty = {
@@ -25,9 +35,8 @@ in
     enable = true;
     # 画像表示対応版を選択。
     package = pkgs.alacritty-graphics;
-    # TODO: themeにmodus_vivendiを追加して設定します。
-    # theme = "modus_vivendi";
-    # themePackage = pkgs.alacritty-themes;
+    theme = "modus_vivendi";
+    themePackage = alacrittyThemeLatest;
 
     settings = {
       window = {

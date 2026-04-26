@@ -77,6 +77,7 @@ fi
 # - <<< / >>> のstore path行は除外
 # - セクションラベル(Version changes 等)は ### 見出しに変換
 # - Closure size 行はそのまま残す
+# - nixos-system-*行はdotfiles更新で必ず変わるノイズなので除外
 # - その他のパッケージ行はリストアイテムに変換
 {
   printf '%s\n' "$MARKER"
@@ -89,6 +90,7 @@ fi
     'Added packages:') printf '### Added packages\n' ;;
     'Closure size:'*) printf '%s\n' "$line" ;;
     '') printf '\n' ;;
+    *nixos-system-*) ;;
     *) printf -- '- %s\n' "$line" ;;
     esac
   done <<<"$diff_output"

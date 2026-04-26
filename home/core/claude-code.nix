@@ -195,13 +195,9 @@ in
       };
       # pluginを記述しておくことで起動時にインストールされていない場合自動でインストールされます。
       enabledPlugins = {
-        "feature-dev@claude-plugins-official" = true;
-        "frontend-design@claude-plugins-official" = true;
-        "hookify@claude-plugins-official" = true;
+        # claude-plugins-official
         "plugin-dev@claude-plugins-official" = true;
-        "security-guidance@claude-plugins-official" = true;
-        "skill-creator@claude-plugins-official" = true;
-        # lsp単体のplugin。
+        ## lsp plugin
         "clangd-lsp@claude-plugins-official" = true;
         "csharp-lsp@claude-plugins-official" = true;
         "gopls-lsp@claude-plugins-official" = true;
@@ -213,7 +209,7 @@ in
         "rust-analyzer-lsp@claude-plugins-official" = true;
         "swift-lsp@claude-plugins-official" = true;
         "typescript-lsp@claude-plugins-official" = true;
-        # konokaプラグイン。
+        # konoka
         "bump-cabal-index-state@konoka" = true;
         "commit@konoka" = true;
         "kyosei@konoka" = true;
@@ -222,8 +218,8 @@ in
         "proofreading-ja@konoka" = true;
         "research@konoka" = true;
         "web-tasuke@konoka" = true;
-        # Context7: ライブラリドキュメント検索。
-        "context7-plugin@context7-marketplace" = true;
+        # Context7
+        "context7-plugin@context7-marketplace" = true; # ライブラリドキュメント検索
       };
       skipAutoPermissionPrompt = true; # auto modeをdefaultModeにしているので許可を求めない。
       permissions = {

@@ -381,20 +381,6 @@
               zizmor.enable = true;
             };
             settings.formatter = {
-              awk-lint = {
-                # gawk --lint=fatalで.awkファイルを静的検査する。
-                # 標準入力を空にし標準出力を破棄してBEGIN/ENDの副作用を抑える。
-                command = pkgs.writeShellApplication {
-                  name = "awk-lint";
-                  runtimeInputs = with pkgs; [ gawk ];
-                  text = ''
-                    for f in "$@"; do
-                      gawk --lint=fatal -f "$f" </dev/null >/dev/null
-                    done
-                  '';
-                };
-                includes = [ "*.awk" ];
-              };
               editorconfig-checker = {
                 command = pkgs.editorconfig-checker;
                 includes = [ "*" ];

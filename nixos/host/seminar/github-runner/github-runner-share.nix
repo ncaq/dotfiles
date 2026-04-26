@@ -16,13 +16,12 @@ let
       inputs.niks3.packages.${pkgs.stdenv.hostPlatform.system}.niks3
     ];
   # GitHub Actionsランナーの並列数。
-  # PRが複数ある場合はもちろん、
-  # オプショナルであるビルドを飛ばしてマージしたときなどはたくさんのジョブが走ります。
-  # コンテナや仮想マシンでリソースを制限しているため、
-  # 複数立ち上げてもサーバのリソース量が破綻する心配はあまりありません。
-  # またNixを使っている今のワークロードは殆どはIO待ちなので、
-  # コンカレントに処理させたほうが効率的です。
-  runnerNum = 8;
+  # 上位レベルでリソースを制限しているため、
+  # 複数立ち上げてもサーバの全体のリソース量が破綻する心配はあまりありません。
+  # あまりCPUを使い切れなくても、
+  # Nixが動く時は大抵はキャッシュダウンロードのIO待ちなので、
+  # 並列動作したほうが効率的です。
+  runnerNum = 4;
   # runnerが使うTypeScriptコードをビルドしてGitHub Actionsで利用できるようにします。
   # 吐き出されるコードはピュアなJavaScriptなのでアーキテクチャ非依存です。
   dotfiles-github-runner = pkgs.buildNpmPackage {

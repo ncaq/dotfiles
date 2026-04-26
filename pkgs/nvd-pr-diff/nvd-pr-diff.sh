@@ -2,7 +2,11 @@
 set -euo pipefail
 
 # base(master)とPR側のNix評価結果をnvdで比較し、
-# 差分をMarkdownリストに整形してPRコメントとしてupsertします。
+# 差分をPRコメントとしてupsertします。
+#
+# nvdの出力構造をそのまま受け継ぎつつ、
+# セクション見出しは Markdown の見出しに、
+# パッケージ行はリストアイテムに変換します。
 #
 # 必須環境変数:
 #   BASE_REF           PRのベースブランチ名 (例: master)
@@ -16,8 +20,6 @@ set -euo pipefail
 : "${PR_NUMBER:?required: PR number}"
 : "${GITHUB_REPOSITORY:?required: owner/repo}"
 : "${GH_TOKEN:?required: GitHub API token}"
-
-script_dir=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 
 workdir=$(mktemp -d)
 trap 'rm -rf "$workdir"' EXIT
@@ -66,18 +68,31 @@ MARKER='<!-- nvd-pr-diff -->'
 body_file="$workdir/body.md"
 
 # stderrはキャプチャせずにそのまま継承し、CIログ側で確認できるようにします。
-if ! raw=$(nvd diff "$before" "$after"); then
+if ! diff_output=$(nvd diff "$before" "$after"); then
   echo "Warning: nvd diff failed" >&2
-  printf 'nvd diff failed. See workflow logs for details.\n' >&2
   exit 1
-else
-  listed=$(printf '%s\n' "$raw" | awk -f "$script_dir/format-for-markdown.awk")
-  {
-    printf '%s\n' "$MARKER"
-    printf '## nvd diff: %s (base: %s)\n\n' "$host" "$BASE_REF"
-    printf '%s\n' "$listed"
-  } >"$body_file"
 fi
+
+# nvdの出力をMarkdownに変換します。
+# - <<< / >>> のstore path行は除外
+# - セクションラベル(Version changes 等)は ### 見出しに変換
+# - Closure size 行はそのまま残す
+# - その他のパッケージ行はリストアイテムに変換
+{
+  printf '%s\n' "$MARKER"
+  printf '## nvd diff: %s (base: %s)\n\n' "$host" "$BASE_REF"
+  while IFS= read -r line; do
+    case "$line" in
+    '<<<'* | '>>>'*) ;;
+    'Version changes:') printf '### Version changes\n' ;;
+    'Removed packages:') printf '### Removed packages\n' ;;
+    'Added packages:') printf '### Added packages\n' ;;
+    'Closure size:'*) printf '%s\n' "$line" ;;
+    '') printf '\n' ;;
+    *) printf -- '- %s\n' "$line" ;;
+    esac
+  done <<<"$diff_output"
+} >"$body_file"
 
 # 既存コメントを検索してupsertします。
 # `gh pr comment`にはコメント編集機能がないため、

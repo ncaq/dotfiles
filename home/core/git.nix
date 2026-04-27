@@ -48,6 +48,7 @@ in
         github.user = "ncaq";
       };
       ignores = [
+        "**/.claude/scheduled_tasks.lock"
         "**/.claude/settings.local.json"
         ".DS_Store"
         ".codex"

@@ -91,7 +91,7 @@ fi
     'Closure size:'*) printf '%s\n' "$line" ;;
     '') printf '\n' ;;
     *nixos-system-*) ;;
-    *) printf -- '- %s\n' "$line" ;;
+    *) printf -- "- \`%s\`\n" "$line" ;;
     esac
   done <<<"$diff_output"
 } >"$body_file"

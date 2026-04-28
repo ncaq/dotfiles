@@ -52,7 +52,7 @@ in
         "emoji" # 絵文字向けフォールバック。
       ];
       serif = [
-        "Zilla Slab" # Mozillaが開発したセリフ書体。
+        "Noto Serif" # GoogleとAdobeが開発したセリフ体。
         "Noto Serif CJK JP" # GoogleとAdobeが開発した日本語のセリフ体。源ノ明朝とも呼ばれます。
         "emoji" # 絵文字向けフォールバック。
       ];
@@ -83,6 +83,5 @@ in
     noto-fonts-cjk-sans
     noto-fonts-cjk-serif
     noto-fonts-color-emoji
-    zilla-slab
   ];
 }

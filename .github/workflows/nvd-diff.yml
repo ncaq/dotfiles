@@ -30,7 +30,7 @@ jobs:
       contents: read # リポジトリコンテンツの読み取り
       pull-requests: write # PRコメントのupsert
       id-token: write # `ncaq/nix-composite-action`内のniks3-publicとのOIDC認証に使用
-    runs-on: ubuntu-24.04
+    runs-on: [self-hosted, Linux]
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2

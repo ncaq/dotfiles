@@ -122,10 +122,13 @@ jobs:
 
   build-home-manager:
     name: build-home-manager
+    needs: is-trusted
     permissions:
       contents: read
       id-token: write # `ncaq/nix-composite-action`内のniks3-publicとのOIDC認証に使用
-    runs-on: ubuntu-24.04
+    # セルフホステッドランナーは未認証のソースからは実行しない。
+    if: needs.is-trusted.result == 'success'
+    runs-on: [self-hosted, Linux]
     timeout-minutes: 60 # キャッシュが切れている時は時間がかかるため長めに設定。
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2

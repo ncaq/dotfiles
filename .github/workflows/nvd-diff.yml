@@ -1,37 +1,25 @@
 name: nvd-diff
 
-# checkワークフローの完了後に動かし、
-# ビルドキャッシュのヒット率を高めます。
 on:
-  # zizmor: ignore[dangerous-triggers] -- workflow_runはhead_shaのチェックアウト + 内部PR限定のガードで安全に使います。
-  workflow_run:
-    workflows: [check]
-    types: [completed]
+  pull_request:
 
 permissions: {}
 
-# 最新の差分が見れていれば十分なので、
-# 同一ブランチでの複数のPRは古い方をキャンセルします。
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.workflow_run.head_branch }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   nvd-diff:
     name: nvd-diff
-    # check成功時のPRトリガのみ対象。
     # フォークPRは除外されます。
-    if: >-
-      github.event.workflow_run.event == 'pull_request' &&
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.head_repository.full_name == github.repository &&
-      github.event.workflow_run.pull_requests[0] != null
+    if: github.event.pull_request.head.repo.full_name == github.repository
     permissions:
       contents: read # リポジトリコンテンツの読み取り
-      pull-requests: write # PRコメントのupsert
       id-token: write # `ncaq/nix-composite-action`内のniks3-publicとのOIDC認証に使用
+      pull-requests: write # PRコメントのupsert
     runs-on: [self-hosted, Linux]
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -46,7 +34,7 @@ jobs:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - name: Run nvd-pr-diff
         env:
-          BASE_REF: ${{ github.event.workflow_run.pull_requests[0].base.ref }}
-          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: nix run .#nvd-pr-diff

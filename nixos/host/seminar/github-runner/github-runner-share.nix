@@ -21,7 +21,7 @@ let
   # あまりCPUを使い切れなくても、
   # Nixが動く時は大抵はキャッシュダウンロードのIO待ちなので、
   # 並列動作したほうが効率的です。
-  runnerNum = 5;
+  runnerNum = 6;
   # runnerが使うTypeScriptコードをビルドしてGitHub Actionsで利用できるようにします。
   # 吐き出されるコードはピュアなJavaScriptなのでアーキテクチャ非依存です。
   dotfiles-github-runner = pkgs.buildNpmPackage {

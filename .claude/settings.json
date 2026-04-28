@@ -11,6 +11,7 @@
   "enabledPlugins": {
     "kyosei@konoka": true,
     "nix-tasuke@konoka": true,
+    "programming-tasuke@konoka": true,
     "web-tasuke@konoka": true
   },
   "enableAllProjectMcpServers": true,

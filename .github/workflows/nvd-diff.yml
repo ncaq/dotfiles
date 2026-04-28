@@ -23,7 +23,6 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
           # base refのworktree展開のために全オブジェクトを要求。
           # 履歴の浅さに依存しない安全側に倒しています。
           # そこまで重いリポジトリでもないのでフルに要求しても問題はありません。

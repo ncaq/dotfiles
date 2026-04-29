@@ -4,7 +4,6 @@
     android-tools
     ddcutil
     efibootmgr
-    fastfetch
     i2c-tools
     lshw
     pciutils

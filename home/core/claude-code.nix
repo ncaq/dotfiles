@@ -145,7 +145,7 @@ in
               # 起動時にfastfetchを実行してどのマシンで動いているかをわからせます。
               {
                 type = "command";
-                command = "fastfetch --logo none";
+                command = "fastfetch";
               }
             ];
           }

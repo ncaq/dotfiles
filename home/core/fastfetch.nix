@@ -6,50 +6,77 @@ _: {
       logo = "none";
       modules = [
         "title"
+        {
+          "type" = "custom";
+          "key" = "Core Software";
+        }
         "os"
-        "host"
-        "board"
         "kernel"
         "bios"
         "bootmgr"
         "initsystem"
         "lm"
         "shell"
-        "display"
         "de"
         "wm"
-        "wmtheme"
         "terminal"
         "terminalfont"
         "terminalsize"
         "terminaltheme"
-        "cpu"
-        "cpucache"
-        "cpuusage"
-        "gpu"
-        "disk"
-        "memory"
-        "swap"
-        "battery"
-        "bluetooth"
-        "bluetoothradio"
-        "brightness"
-        "camera"
-        "dns"
-        "font"
-        "gamepad"
-        "keyboard"
         "locale"
-        "localip"
-        "mouse"
+        "users"
+        {
+          "type" = "custom";
+          "key" = "Computing";
+        }
+        "cpu"
+        "tpm"
+        "gpu"
         "opencl"
         "opengl"
         "vulkan"
-        "sound"
-        "tpm"
-        "uptime"
-        "users"
+        "memory"
+        "swap"
+        "disk"
+        {
+          "type" = "custom";
+          "key" = "Network";
+        }
+        "localip"
+        "dns"
         "wifi"
+        "bluetooth"
+        "bluetoothradio"
+        {
+          "type" = "custom";
+          "key" = "Output";
+        }
+        "display"
+        "brightness"
+        "font"
+        "sound"
+        {
+          "type" = "custom";
+          "key" = "Input";
+        }
+        "keyboard"
+        "mouse"
+        "camera"
+        "gamepad"
+        {
+          "type" = "custom";
+          "key" = "Core Hardware";
+        }
+        "host"
+        "board"
+        {
+          "type" = "custom";
+          "key" = "Current State";
+        }
+        "battery"
+        "poweradapter"
+        "datetime"
+        "uptime"
       ];
     };
   };

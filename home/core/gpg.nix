@@ -29,7 +29,7 @@ lib.mkMerge [
     home.activation.cleanupGpgStaleLocks =
       lib.hm.dag.entryBetween [ "importGpgKeys" ] [ "createGpgHomedir" ]
         ''
-          $DRY_RUN_CMD ${pkgs.trashy}/bin/trash "${config.programs.gpg.homedir}/gnupg_spawn_agent_sentinel.lock" 2>/dev/null || true
+          $DRY_RUN_CMD ${pkgs.trash-cli}/bin/trash "${config.programs.gpg.homedir}/gnupg_spawn_agent_sentinel.lock" 2>/dev/null || true
         '';
     home.packages = with pkgs; [ paperkey ];
   }
@@ -73,7 +73,7 @@ lib.mkMerge [
           # stale lockのない状態で鍵を再インポートします。
           activation.cleanupGpgKeyboxd = lib.hm.dag.entryBetween [ "importGpgKeys" ] [ "createGpgHomedir" ] ''
             $DRY_RUN_CMD ${pkgs.gnupg}/bin/gpgconf --kill keyboxd 2>/dev/null || true
-            $DRY_RUN_CMD ${pkgs.trashy}/bin/trash "${config.home.homeDirectory}/.gnupg/public-keys.d/" 2>/dev/null || true
+            $DRY_RUN_CMD ${pkgs.trash-cli}/bin/trash "${config.home.homeDirectory}/.gnupg/public-keys.d/" 2>/dev/null || true
           '';
           packages = with pkgs; [
             pinentry-curses

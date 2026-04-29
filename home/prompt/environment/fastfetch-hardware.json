@@ -1,19 +1,35 @@
 {
   "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/master/doc/json_schema.json",
-  "logo": {
-    "type": "none"
-  },
+  "logo": "none",
   "modules": [
     "title",
+    {
+      "format": "Core Software",
+      "outputColor": "#FF00FF",
+      "type": "custom"
+    },
     "os",
-    "host",
     "kernel",
+    "bios",
+    "bootmgr",
+    "initsystem",
+    "lm",
     "shell",
-    "display",
+    "de",
     "wm",
     "terminal",
+    "locale",
+    {
+      "format": "Computing",
+      "outputColor": "#FF00FF",
+      "type": "custom"
+    },
     "cpu",
+    "tpm",
     "gpu",
+    "opencl",
+    "opengl",
+    "vulkan",
     {
       "type": "memory",
       "format": "{total}"
@@ -26,6 +42,30 @@
       "type": "disk",
       "showSubvolumes": false
     },
-    "locale"
+    {
+      "format": "Output",
+      "outputColor": "#FF00FF",
+      "type": "custom"
+    },
+    "display",
+    "brightness",
+    "font",
+    "sound",
+    {
+      "format": "Input",
+      "outputColor": "#FF00FF",
+      "type": "custom"
+    },
+    "keyboard",
+    "mouse",
+    "camera",
+    "gamepad",
+    {
+      "format": "Core Hardware",
+      "outputColor": "#FF00FF",
+      "type": "custom"
+    },
+    "host",
+    "board"
   ]
 }

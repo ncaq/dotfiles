@@ -22,7 +22,7 @@ let
         GITHUB_PERSONAL_ACCESS_TOKEN="$(< ${config.sops.secrets."github-mcp-server/pat".path})"
         export GITHUB_PERSONAL_ACCESS_TOKEN
       fi
-      exec ${lib.getExe pkgs-unstable.claude-code-bin} "$@"
+      exec ${lib.getExe pkgs-unstable.claude-code} "$@"
     '';
   };
 

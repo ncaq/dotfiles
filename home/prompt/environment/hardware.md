@@ -104,18 +104,31 @@ ThinkPadですが指紋センサーはありません。
 自作組み立てPCです。
 
 - ncaq@seminar
+- Core Software
 - OS: NixOS 25.11 (Xantusia) x86_64
-- Host: A620M-HDV/M.2+
-- Kernel: Linux 6.12.70
+- Kernel: Linux 6.12.78
+- BIOS (UEFI): 3.30 (5.35)
+- Bootmgr: UEFI OS - BOOTX64.EFI
+- Init System: systemd 258.5
+- LM: sshd 10.2p1 (TTY)
 - Shell: zsh 5.9
 - Terminal: tmux 3.6a
-- CPU: AMD Ryzen 5 7600 (12) @ 5.17 GHz
-- GPU: AMD Raphael [Integrated]
-- Memory: 61.89 GiB
-- Swap: 34.95 GiB
-- Disk (/): 403.14 GiB / 929.51 GiB (43%) - btrfs
-- Disk (/mnt/noa): 2.45 TiB / 12.73 TiB (19%) - btrfs
 - Locale: ja_JP.UTF-8
+- Computing
+- CPU: AMD Ryzen 5 7600 (12) @ 5.17 GHz
+- TPM: TPM 2.0 Device
+- GPU: AMD Raphael [Integrated]
+- OpenGL: 4.6 (Compatibility Profile) Mesa 25.2.6
+- Vulkan: 1.4.318 - radv [Mesa 25.2.6]
+- Memory: 61.89 GiB
+- Swap: 62.95 GiB
+- Disk (/): 359.49 GiB / 929.51 GiB (39%) - btrfs
+- Disk (/mnt/noa): 2.58 TiB / 12.73 TiB (20%) - btrfs
+- Output
+- Input
+- Core Hardware
+- Host: A620M-HDV/M.2+
+- Board: A620M-HDV/M.2+
 
 ## スマートデバイス
 

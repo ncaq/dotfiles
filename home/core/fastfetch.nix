@@ -8,7 +8,8 @@ _: {
         "title"
         {
           "type" = "custom";
-          "key" = "Core Software";
+          "outputColor" = "#FF00FF";
+          "format" = "Core Software";
         }
         "os"
         "kernel"
@@ -27,7 +28,8 @@ _: {
         "users"
         {
           "type" = "custom";
-          "key" = "Computing";
+          "outputColor" = "#FF00FF";
+          "format" = "Computing";
         }
         "cpu"
         "tpm"
@@ -40,7 +42,8 @@ _: {
         "disk"
         {
           "type" = "custom";
-          "key" = "Network";
+          "outputColor" = "#FF00FF";
+          "format" = "Network";
         }
         "localip"
         "dns"
@@ -49,7 +52,8 @@ _: {
         "bluetoothradio"
         {
           "type" = "custom";
-          "key" = "Output";
+          "outputColor" = "#FF00FF";
+          "format" = "Output";
         }
         "display"
         "brightness"
@@ -57,7 +61,8 @@ _: {
         "sound"
         {
           "type" = "custom";
-          "key" = "Input";
+          "outputColor" = "#FF00FF";
+          "format" = "Input";
         }
         "keyboard"
         "mouse"
@@ -65,13 +70,15 @@ _: {
         "gamepad"
         {
           "type" = "custom";
-          "key" = "Core Hardware";
+          "outputColor" = "#FF00FF";
+          "format" = "Core Hardware";
         }
         "host"
         "board"
         {
           "type" = "custom";
-          "key" = "Current State";
+          "outputColor" = "#FF00FF";
+          "format" = "Current State";
         }
         "battery"
         "poweradapter"

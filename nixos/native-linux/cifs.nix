@@ -54,6 +54,11 @@ lib.mkMerge [
             "nosuid"
             # パフォーマンス
             "noatime"
+            # SMBダイアレクトを明示的に指定。
+            # 未指定だとkernelが`No dialect specified on mount`の警告を出す。
+            # `vers=3`はSMB3.0以上を意味し、ネゴシエーションで3.x系の最新版が選択される。
+            # SMB1/SMB2系を排除しつつ、将来のマイナーバージョン更新にも自動追従する。
+            "vers=3"
           ];
           mountConfig = {
             TimeoutSec = 30;

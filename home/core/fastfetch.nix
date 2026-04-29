@@ -7,9 +7,9 @@ _: {
       modules = [
         "title"
         {
-          "type" = "custom";
-          "outputColor" = "#FF00FF";
-          "format" = "Core Software";
+          type = "custom";
+          outputColor = "#FF00FF";
+          format = "Core Software";
         }
         "os"
         "kernel"
@@ -27,9 +27,9 @@ _: {
         "locale"
         "users"
         {
-          "type" = "custom";
-          "outputColor" = "#FF00FF";
-          "format" = "Computing";
+          type = "custom";
+          outputColor = "#FF00FF";
+          format = "Computing";
         }
         "cpu"
         "tpm"
@@ -41,9 +41,9 @@ _: {
         "swap"
         "disk"
         {
-          "type" = "custom";
-          "outputColor" = "#FF00FF";
-          "format" = "Network";
+          type = "custom";
+          outputColor = "#FF00FF";
+          format = "Network";
         }
         "localip"
         "dns"
@@ -51,34 +51,34 @@ _: {
         "bluetooth"
         "bluetoothradio"
         {
-          "type" = "custom";
-          "outputColor" = "#FF00FF";
-          "format" = "Output";
+          type = "custom";
+          outputColor = "#FF00FF";
+          format = "Output";
         }
         "display"
         "brightness"
         "font"
         "sound"
         {
-          "type" = "custom";
-          "outputColor" = "#FF00FF";
-          "format" = "Input";
+          type = "custom";
+          outputColor = "#FF00FF";
+          format = "Input";
         }
         "keyboard"
         "mouse"
         "camera"
         "gamepad"
         {
-          "type" = "custom";
-          "outputColor" = "#FF00FF";
-          "format" = "Core Hardware";
+          type = "custom";
+          outputColor = "#FF00FF";
+          format = "Core Hardware";
         }
         "host"
         "board"
         {
-          "type" = "custom";
-          "outputColor" = "#FF00FF";
-          "format" = "Current State";
+          type = "custom";
+          outputColor = "#FF00FF";
+          format = "Current State";
         }
         "battery"
         "poweradapter"

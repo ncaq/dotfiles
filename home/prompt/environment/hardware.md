@@ -15,6 +15,11 @@
 nix run "$HOME/dotfiles#fastfetch" -- --config "$HOME/dotfiles/home/prompt/environment/fastfetch-hardware.json"
 ```
 
+fastfetchはメモリなどの容量をGiB単位で表示します。
+GB単位と混同しないでください。
+
+fastfetchの機能でGB単位系で表示させようとすると管理領域なども含むので合わせるのは困難です。
+
 ### デスクトップ
 
 #### bullet, pristine, SSD0086

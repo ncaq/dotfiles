@@ -6,7 +6,7 @@
     plantuml
     sqlite
     strace
-    trashy
+    trash-cli
     wl-clipboard
   ];
 }

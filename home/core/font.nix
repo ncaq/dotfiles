@@ -3,9 +3,12 @@ let
   # フォントエイリアスをマッピングで管理。
   fontAliases = {
     # webサイトが指定しがちな典型的なGNU/Linux環境を想定したフォントを総称フォントに戻して自分の好きなフォントで読みます。
+    # sans-serif系。
     "DejaVu Sans" = "sans-serif";
-    "Liberation Mono" = "monospace";
     "Liberation Sans" = "sans-serif";
+    # monospace系。
+    "DejaVu Sans Mono" = "monospace";
+    "Liberation Mono" = "monospace";
     # MS系レガシーフォントを総称フォントにマッピングします。
     # PostScript名をだいたいカバーしたものを指定します。
     # ゴシック系のプロポーショナル。

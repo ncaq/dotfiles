@@ -672,11 +672,11 @@
     "www-ncaq-net": {
       "flake": false,
       "locked": {
-        "lastModified": 1777602245,
-        "narHash": "sha256-QyUiJNVx4TFrg2H6t8oEQ0FMzl+mdqr1TcJrIGVcj0M=",
+        "lastModified": 1777619518,
+        "narHash": "sha256-SS2gVcP0qRVi1lrnHcvGaNfhNPDPKa8MHrbIAo2x2FY=",
         "owner": "ncaq",
         "repo": "www.ncaq.net",
-        "rev": "ad547cb753e148f667b4b325314d5ba2fc4eab41",
+        "rev": "f5fb011ecaecafedd5a601915e262c15f49655f9",
         "type": "github"
       },
       "original": {

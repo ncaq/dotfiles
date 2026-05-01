@@ -47,46 +47,47 @@ let
     header + "\n" + body + "\n" + footer;
 in
 {
-  fonts.fontconfig = {
-    allowBitmaps = false; # ビットマップフォントを無効化します。
-    defaultFonts = {
-      sansSerif = [
-        "Fira Sans" # Mozillaが開発したサンセリフ書体。
-        "BIZ UDGothic" # 日本語のユニバーサルデザインのゴシック体。
-        "emoji" # 絵文字向けフォールバック。
-      ];
-      serif = [
-        "Noto Serif" # GoogleとAdobeが開発したセリフ体。
-        "Noto Serif CJK JP" # GoogleとAdobeが開発した日本語のセリフ体。源ノ明朝とも呼ばれます。
-        "emoji" # 絵文字向けフォールバック。
-      ];
-      monospace = [
-        # Fira Mono と源真ゴシックを合成したプログラミングフォント。
-        # Console版はFira Monoを優先して多くの記号が半角になります。
-        # Nerd Fonts版はアイコンなどが追加されています。
-        "FirgeNerd Console"
-        "emoji" # 絵文字向けフォールバック。
-      ];
-      emoji = [
-        "Noto Color Emoji" # Googleが開発したカラーフォントの絵文字。
-      ];
+  fonts = {
+    fontconfig = {
+      allowBitmaps = false; # ビットマップフォントを無効化します。
+      defaultFonts = {
+        sansSerif = [
+          "Fira Sans" # Mozillaが開発したサンセリフ書体。
+          "BIZ UDGothic" # 日本語のユニバーサルデザインのゴシック体。
+          "emoji" # 絵文字向けフォールバック。
+        ];
+        serif = [
+          "Noto Serif" # GoogleとAdobeが開発したセリフ体。
+          "Noto Serif CJK JP" # GoogleとAdobeが開発した日本語のセリフ体。源ノ明朝とも呼ばれます。
+          "emoji" # 絵文字向けフォールバック。
+        ];
+        monospace = [
+          # Fira Mono と源真ゴシックを合成したプログラミングフォント。
+          # Console版はFira Monoを優先して多くの記号が半角になります。
+          # Nerd Fonts版はアイコンなどが追加されています。
+          "FirgeNerd Console"
+          "emoji" # 絵文字向けフォールバック。
+        ];
+        emoji = [
+          "Noto Color Emoji" # Googleが開発したカラーフォントの絵文字。
+        ];
+      };
+      # `localConf`は`/etc/fonts/local.conf`に書き出され、`51-local.conf`によりpriority 51で評価されます。
+      # priority 51は`60-latin.conf`より前ですが、`binding="strong"`により後続の弱バインディングを上書きできます。
+      localConf = generateOverrideConf fontAliases;
     };
+
+    # 表示されてあまり困らないフォントパッケージを雑に追加します。
+    packages = with pkgs; [
+      biz-ud-gothic
+      fira
+      firge-font
+      firge-nerd-font
+      hackgen-nf-font
+      noto-fonts
+      noto-fonts-cjk-sans
+      noto-fonts-cjk-serif
+      noto-fonts-color-emoji
+    ];
   };
-
-  # `localConf`は`/etc/fonts/local.conf`に書き出され、`51-local.conf`によりpriority 51で評価されます。
-  # priority 51は`60-latin.conf`より前ですが、`binding="strong"`により後続の弱バインディングを上書きできます。
-  fonts.fontconfig.localConf = generateOverrideConf fontAliases;
-
-  # 表示されてあまり困らないフォントパッケージを雑に追加します。
-  fonts.packages = with pkgs; [
-    biz-ud-gothic
-    fira
-    firge-font
-    firge-nerd-font
-    hackgen-nf-font
-    noto-fonts
-    noto-fonts-cjk-sans
-    noto-fonts-cjk-serif
-    noto-fonts-color-emoji
-  ];
 }

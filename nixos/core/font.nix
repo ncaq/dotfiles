@@ -73,12 +73,9 @@ in
     };
   };
 
-  # `60-latin.conf`や`65-nonlatin.conf`でsans-serifなど総称フォントの優先候補にDejaVu Sansが追加された後で評価される必要があるため、
-  # 90番台のファイル名でシステム領域に設置します。
-  # ユーザ設定(`~/.config/fontconfig/conf.d`)は`fonts.conf`の`50-user.conf`でincludeされ、
-  # 数値プレフィックスを大きくしてもシステムの`60-latin.conf`より前に評価されてしまうため、
-  # ユーザレベルでの上書きでは効果がありません。
-  environment.etc."fonts/conf.d/95-override.conf".text = generateOverrideConf fontAliases;
+  # `localConf`は`/etc/fonts/local.conf`に書き出され、`51-local.conf`によりpriority 51で評価されます。
+  # priority 51は`60-latin.conf`より前ですが、`binding="strong"`により後続の弱バインディングを上書きできます。
+  fonts.fontconfig.localConf = generateOverrideConf fontAliases;
 
   # 表示されてあまり困らないフォントパッケージを雑に追加します。
   fonts.packages = with pkgs; [

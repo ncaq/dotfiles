@@ -1,27 +1,65 @@
+// -*- mode: jsonc -*-
+// vim: set filetype=jsonc:
 {
   "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
-    "target": "es2023",
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
-    "noUncheckedSideEffectImports": true,
-    "verbatimModuleSyntax": true,
-    "isolatedModules": true,
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "outDir": "dist",
-    "isolatedDeclarations": true,
-    "erasableSyntaxOnly": true,
-    "strict": true,
-    "exactOptionalPropertyTypes": true,
-    "noFallthroughCasesInSwitch": true,
-    "noImplicitOverride": true,
-    "noImplicitReturns": true,
-    "noPropertyAccessFromIndexSignature": true,
-    "noUncheckedIndexedAccess": true,
-    "forceConsistentCasingInFileNames": true,
+    /*
+     * 全体の動作モード。
+     */
+    // 指定したECMAScriptバージョンで動く基準。
+    // libが未指定ならデフォルトlibもこの値から導出されます。
+    "target": "es2024",
+    // 出力するモジュール形式。
+    // バンドラに委ねる`preserve`、Node.jsの解決に委ねる`node20`、純粋ESMの`es2022`。
+    // あたりから大抵は選択することになります。
+    "module": "node20",
+    // import文のパス解決アルゴリズム。
+    // バンドラを想定した寛容な解決を行う`bundler`、Node.js公式の解決を行う`node16`。
+    // あたりから大抵は選択することになります。
+    "moduleResolution": "node16",
+    // JSONファイルをimportできるようになります。
+    // インポートされたJSONは型安全なオブジェクトとして扱われます。
+    "resolveJsonModule": true,
+    /*
+     * 厳格レベル。
+     */
+    "strict": true, // strict系の型チェックオプションを一括で有効化できます。
+    // strictでは有効にならない厳格さを以下で制御します。
+    "erasableSyntaxOnly": true, // 型を消すだけで動くTypeScript構文に限定し独自のランタイム構文を禁止できます。
+    "exactOptionalPropertyTypes": true, // optionalなプロパティで未定義と明示的な`undefined`を区別できます。
+    "forceConsistentCasingInFileNames": true, // import文とファイル実体の大文字小文字を一致させられます。
+    "isolatedDeclarations": false, // 単独で`.d.ts`を生成できるか検証。ライブラリ向けなのでアプリケーションでは`false`にします。
+    "isolatedModules": true, // 各ファイルを単独でトランスパイル可能な形に制限できます。曖昧なexportなどを許可しません。
+    "noFallthroughCasesInSwitch": true, // `switch`文で`case`間のフォールスルーをエラーにできます。
+    "noImplicitOverride": true, // 親クラスのメンバを上書きする際に`override`キーワードを必須にできます。
+    "noImplicitReturns": true, // 関数の全分岐で値を返すかを検査できます。
+    "noPropertyAccessFromIndexSignature": true, // index signature型のプロパティをドット記法で参照することを禁止できます。
+    "noUncheckedIndexedAccess": true, // index signatureや配列の添字アクセス結果を`T | undefined`として扱うようにできます。
+    "noUncheckedSideEffectImports": true, // 副作用目的の`import "foo"`について実体ファイルの存在を検査できます。
+    "verbatimModuleSyntax": true, // import/export構文を勝手に書き換えず、型のみのimportは`import type`の明示を必須にできます。
+    /*
+     * 出力設定。
+     */
+    "noEmit": false, // JSを出力せず、型チェックのみ行う設定ができます。
+    // `noEmit`が`true`の場合は何も出力されないのでこれ以下の設定は意味はないですが害もありません。
+    // `noEmit`を`false`の場合の設定も残したいので常に記述します。
+    "declaration": true, // 型定義ファイル(.d.ts)を生成できます。
+    "declarationMap": true, // `.d.ts`からソースへのソースマップを生成できます。
+    "outDir": "dist", // 出力先ディレクトリを指定できます。
+    "sourceMap": true, // 出力JSに対するソースマップ(.js.map)を生成できます。
+    /*
+     * 型チェックの範囲。
+     */
+    // `node_modules`内の`.d.ts`の型チェックをスキップしてコンパイルを高速化できます。
+    // こちらが対処する必要のない外部型定義のエラーを無視できます。
     "skipLibCheck": true,
+    /*
+     * 読み込む対象。
+     */
+    // 明示的にimportしなくても有効になる`@types/*`の対象を設定できます。
+    // ここに列挙されたものだけ暗黙時に有効になります。
     "types": ["node"]
-  }
+  },
+  // コンパイル対象から除外するパスのglobパターンを記述できます。
+  "exclude": ["node_modules", "dist", "result", "result-*"]
 }

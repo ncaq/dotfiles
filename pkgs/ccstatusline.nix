@@ -10,11 +10,11 @@
 }:
 stdenv.mkDerivation rec {
   pname = "ccstatusline";
-  version = "2.2.7";
+  version = "2.2.12";
 
   src = fetchurl {
     url = "https://registry.npmjs.org/${pname}/-/${pname}-${version}.tgz";
-    hash = "sha256-vMAoLVLSpY+cov1doxX7247c79H+3fQlxUAffYqfD/Q=";
+    hash = "sha256-m1bXfJlf0CJWmGlFzf980FRLMugVKwtotn36i0dCcgw=";
   };
 
   nativeBuildInputs = [ makeWrapper ];

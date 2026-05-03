@@ -454,6 +454,7 @@ in
           "Bash(gh * delete:*)"
           "Bash(gh repo archive:*)"
           "Bash(gh repo rename:*)"
+          "Bash(git rm:*)"
           "Bash(rm:*)"
         ];
       };

@@ -182,7 +182,7 @@ in
           source = {
             source = "github";
             repo = "ncaq/konoka";
-            ref = "v6.5.0";
+            ref = "v7.0.0";
           };
         };
         context7-marketplace = {
@@ -219,6 +219,7 @@ in
         "programming-tasuke@konoka" = true;
         "proofreading-ja@konoka" = true;
         "research@konoka" = true;
+        "rm-to-trash@konoka" = true;
         "web-tasuke@konoka" = true;
         # Context7
         "context7-plugin@context7-marketplace" = true; # ライブラリドキュメント検索

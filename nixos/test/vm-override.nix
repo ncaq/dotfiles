@@ -16,8 +16,8 @@ lib.mkMerge [
     # 多めに設定していても破綻はしませんが、
     # リソース制限をわかりやすくするためにこちらでも記述しておきます。
     virtualisation = {
-      cores = 6;
-      memorySize = 4096;
+      cores = 11; # CPUは奪い合っても問題ないリソースなので12スレッドのうち11スレッド割り当てます。
+      memorySize = 6 * 1024; # 6GB。並列に動かすことを考えて控えめにします。
     };
 
     # NixOSテストフレームワークがrootに`hashedPasswordFile`を自動設定するため、

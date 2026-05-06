@@ -13,6 +13,8 @@ runs:
     - uses: ncaq/nix-composite-action@5ac23c3150c5fdeb2a5f665e288c09bf1d59870a # v1.1.2
       with:
         cachix-auth-token: "${{ inputs.cachix-auth-token }}"
+        # セルフホストランナーのためflake.nixの内容を転写します。
+        # flake.nixの内容と乖離しないように注意してください。
         extra-nix-config: >
           substituters =
           https://cache.nixos.org/

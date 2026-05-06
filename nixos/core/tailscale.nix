@@ -12,11 +12,11 @@
   };
 
   systemd.services.tailscale-online = {
-    description =
-      "Wait for Tailscale to be online"
-      + " - absorbs the delay between tailscaled.service startup and tailnet connection establishment";
-    bindsTo = [ "tailscaled.service" ];
-    wants = [ "network-online.target" ];
+    description = "Wait for Tailscale to be online tailnet connection establishment";
+    wants = [
+      "network-online.target"
+      "tailscaled.service"
+    ];
     after = [
       "network-online.target"
       "tailscaled.service"

@@ -12,7 +12,7 @@ runs:
   steps:
     - uses: ncaq/nix-composite-action@5ac23c3150c5fdeb2a5f665e288c09bf1d59870a # v1.1.2
       with:
-        cachix-auth-token: "${{ inputs.CACHIX_AUTH_TOKEN }}"
+        cachix-auth-token: "${{ inputs.cachix-auth-token }}"
         extra-nix-config: >
           substituters =
           https://cache.nixos.org/

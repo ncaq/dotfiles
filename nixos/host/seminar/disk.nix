@@ -184,7 +184,7 @@ _: {
   swapDevices = [
     {
       device = "/swap/swapfile";
-      size = 32 * 1024;
+      size = 8 * 1024;
     }
   ];
   boot = {

@@ -7,6 +7,6 @@ _: {
     # なのでzramにより設定されるswapサイズを制限します。
     # `memoryPercent`か`memoryMax`のうち小さいほうがサイズになります。
     memoryPercent = 20;
-    memoryMax = 8 * 1024 * 1024 * 1024; # 8GB
+    memoryMax = 6 * 1024 * 1024 * 1024; # 6GB
   };
 }

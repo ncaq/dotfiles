@@ -182,7 +182,7 @@ in
           source = {
             source = "github";
             repo = "ncaq/konoka";
-            ref = "v7.0.0";
+            ref = "v7.0.1";
           };
         };
         context7-marketplace = {

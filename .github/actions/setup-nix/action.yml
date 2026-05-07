@@ -10,7 +10,7 @@ inputs:
 runs:
   using: composite
   steps:
-    - uses: ncaq/nix-composite-action@5ac23c3150c5fdeb2a5f665e288c09bf1d59870a # v1.1.2
+    - uses: ncaq/nix-composite-action@589b73796357eb105bf1b66226d83648fb0640f0 # v1.1.3
       with:
         cachix-auth-token: "${{ inputs.cachix-auth-token }}"
         # セルフホストランナーのためflake.nixの内容を転写します。

@@ -148,7 +148,6 @@ in
               {
                 type = "command";
                 command = ''
-                  #!/usr/bin/env bash
                   echo "以下の情報はfastfetchからのもので、今どのようなマシンで動いているかを示しています。"
                   ${pkgs.fastfetch}/bin/fastfetch
                 '';

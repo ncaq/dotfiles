@@ -33,7 +33,6 @@ in
         (builtins.readFile ./environment/hardware.md)
         (builtins.readFile ./environment/software.md)
         (builtins.readFile ./environment/gpg.md)
-        (builtins.readFile ./user/decision-style.md)
         (builtins.readFile ./user/disclosure-policy.md)
         (builtins.readFile ./user/house.md)
         (builtins.readFile ./user/job.md)

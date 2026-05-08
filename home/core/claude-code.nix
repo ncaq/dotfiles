@@ -142,10 +142,16 @@ in
           {
             matcher = "startup|clear"; # resume時はもう知っているはずなので除外。
             hooks = [
-              # 起動時にfastfetchを実行してどのマシンで動いているかをわからせます。
+              # もうサーバで動いているのにサーバにsshしようとしたり、
+              # 使っているOSに合わないコマンドを実行しようとしたりするのを防ぐために、
+              # 起動時にfastfetchで環境情報を表示します。
               {
                 type = "command";
-                command = "fastfetch";
+                command = ''
+                  #!/usr/bin/env bash
+                  echo "以下の情報はfastfetchからのもので、今どのようなマシンで動いているかを示しています。"
+                  ${pkgs.fastfetch}/bin/fastfetch
+                '';
               }
             ];
           }

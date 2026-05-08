@@ -38,6 +38,7 @@ in
     prompt = {
       chatAssistant = lib.concatStringsSep "\n" (
         readMdFiles ./assistant
+        ++ readMdFiles ./output
         ++ readMdFiles ./environment
         ++ readMdFiles ./user
         ++ [
@@ -49,13 +50,7 @@ in
       # chatAssistantより厳選して少なめにします。
       # プログラミングに直接関係ない情報は省きます。
       codingAgent = lib.concatStringsSep "\n" (
-        [
-          (builtins.readFile ./assistant/language.md)
-          (builtins.readFile ./assistant/form.md)
-          (builtins.readFile ./assistant/markdown.md)
-        ]
-        ++ (readMdFiles ./environment)
-        ++ codingAgentPrompts
+        (readMdFiles ./output) ++ (readMdFiles ./environment) ++ codingAgentPrompts
       );
     };
 

@@ -1,40 +1,7 @@
-{ pkgs, lib, ... }:
-let
-  tmux-trash-window = pkgs.writeShellApplication {
-    name = "tmux-trash-window";
-    runtimeInputs = [ pkgs.tmux ];
-    text = ''
-      if [ "$(tmux display-message -p '#{session_windows}')" -eq 1 ]; then
-        tmux new-window -d
-      fi
-      if ! tmux has-session -t trash 2>/dev/null; then
-        tmux new-session -d -s trash
-      fi
-      tmux move-window -t trash:
-    '';
-  };
-
-  tmux-restore-window = pkgs.writeShellApplication {
-    name = "tmux-restore-window";
-    runtimeInputs = with pkgs; [
-      fzf
-      gawk
-      tmux
-    ];
-    text = ''
-      window=$(tmux list-windows -t trash -F '#{window_index} #{b:pane_current_path}/#{pane_current_command}' 2>/dev/null |
-        fzf-tmux -p --prompt='restore window> ')
-      if [ -n "$window" ]; then
-        idx=$(echo "$window" | awk '{print $1}')
-        tmux move-window -a -s "trash:$idx" -t .
-      fi
-    '';
-  };
-in
+{ pkgs, ... }:
 {
-  # テキストの容量は大したことがないと考えているため、
-  # 履歴は大きめに取り、
-  # セッションの状態も積極的に保存する設定にしています。
+  # テキストの容量は現代では大したことがないと考えているため、
+  # 履歴は大きめに取る設定にしています。
   programs = {
     tmux = {
       enable = true;
@@ -77,11 +44,6 @@ in
         # クリップボードを連携
         set -g set-clipboard on
 
-        # セッションをなるべく維持する
-        set -g detach-on-destroy off
-        set -g remain-on-exit on
-        set-hook -g pane-died 'if -F "#{&&:#{==:#{session_windows},1},#{==:#{window_panes},1}}" "respawn-pane" ""'
-
         # プログラムが設定したタイトルを許可
         set -g set-titles on
         set -g set-titles-string "#{pane_title}"
@@ -114,12 +76,8 @@ in
         # ctrl+alt+o = 新規ウィンドウ(タブ)、同じディレクトリで開始
         bind -n C-M-o new-window -a -c "#{pane_current_path}"
 
-        # ctrl+alt+q = ウィンドウをゴミ箱セッションに退避(復元可能)
-        # セッション最後のウィンドウの場合は先に新しいウィンドウを作成してから退避する
-        bind -n C-M-q run-shell "${lib.getExe tmux-trash-window}"
-
-        # alt+o = ゴミ箱セッションからウィンドウをfzfで選択して復元
-        bind -n M-o run-shell "${lib.getExe tmux-restore-window}"
+        # ctrl+alt+q = ウィンドウを閉じる
+        bind -n C-M-q kill-window
 
         # ウィンドウ移動
         bind -n C-M-n next-window

@@ -30,8 +30,9 @@ in
         (builtins.readFile ./assistant/form.md)
         (builtins.readFile ./assistant/markdown.md)
         (builtins.readFile ./assistant/persona.md)
-        (builtins.readFile ./environment/software.md)
         (builtins.readFile ./environment/hardware.md)
+        (builtins.readFile ./environment/software.md)
+        (builtins.readFile ./environment/gpg.md)
         (builtins.readFile ./user/decision-style.md)
         (builtins.readFile ./user/disclosure-policy.md)
         (builtins.readFile ./user/house.md)
@@ -49,6 +50,7 @@ in
           (builtins.readFile ./assistant/form.md)
           (builtins.readFile ./assistant/markdown.md)
           (builtins.readFile ./environment/software.md)
+          (builtins.readFile ./environment/gpg.md)
         ]
         ++ codingAgentPrompts
       );

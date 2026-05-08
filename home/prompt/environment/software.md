@@ -31,7 +31,11 @@ Android環境でもFirefox for Androidを使っています。
 
 メールクライアントにはThunderbirdを使っています。
 
-Android環境でもThunderbird for Android(中身はK-9 Mailだけど)を使っています。
+Android環境でもThunderbird for Android(現状の中身はK-9 Mailと同じだけど)を使っています。
+
+メールの電子署名にはPGPを使っています。
+
+GnuPGで管理している鍵をThunderbirdのOpenPGP機能でPCでもAndroid環境でも使っています。
 
 ## テキストエディタ
 

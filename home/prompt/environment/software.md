@@ -19,7 +19,7 @@ WSL2の上でNixOSを使っています。
 
 ### Android
 
-私の持っているモバイル端末OSは基本的にAndroidです。
+私の持っているモバイル端末のOSは基本的にAndroid OSです。
 
 ## webブラウザ
 

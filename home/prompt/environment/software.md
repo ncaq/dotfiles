@@ -67,7 +67,7 @@ Windows Terminalをまだ使い続けています。
 NixOS環境では[XMonad](https://xmonad.org/)を使っています。
 設定は、
 [ncaq/.xmonad](https://github.com/ncaq/.xmonad)
-管理されています。
+で管理されています。
 `~/.xmonad`に`git clone`されています。
 
 ## パスワードマネージャ

@@ -5,9 +5,24 @@
   ...
 }:
 let
-  codingAgentPrompts = [
-    (builtins.readFile ./coding-agent/workspace.md)
-  ];
+  # 指定ディレクトリ群の直下にある全ての.mdファイルをreadFileした文字列リストを返す。
+  # 手動で並べると追加時に書き漏れが起きやすいため、
+  # ディレクトリから自動収集する用途で使う。
+  # 結果の順序は雑に処理しているため、
+  # 順序が重要ならば手動で並べてください。
+  readMdFiles =
+    dirs:
+    let
+      readOneDir =
+        dir:
+        let
+          mdFiles = lib.filterAttrs (name: type: type == "regular" && lib.hasSuffix ".md" name) (
+            builtins.readDir dir
+          );
+        in
+        map (name: builtins.readFile (lib.path.append dir name)) (lib.attrNames mdFiles);
+    in
+    lib.concatMap readOneDir dirs;
 in
 {
   options.prompt = {
@@ -25,34 +40,26 @@ in
 
   config = {
     prompt = {
-      chatAssistant = lib.concatStringsSep "\n" [
-        (builtins.readFile ./assistant/language.md)
-        (builtins.readFile ./assistant/form.md)
-        (builtins.readFile ./assistant/markdown.md)
-        (builtins.readFile ./assistant/communication-guideline.md)
-        (builtins.readFile ./assistant/persona.md)
-        (builtins.readFile ./environment/software.md)
-        (builtins.readFile ./environment/hardware.md)
-        (builtins.readFile ./user/decision-style.md)
-        (builtins.readFile ./user/disclosure-policy.md)
-        (builtins.readFile ./user/house.md)
-        (builtins.readFile ./user/job.md)
-        (builtins.readFile ./user/tech-context.md)
-        (builtins.readFile "${inputs.www-ncaq-net}/site/about.md")
-        (builtins.readFile "${inputs.www-ncaq-net}/site/entry/2025-12-28-14-43-14.md") # 現在の自分の決済方法
-      ];
+      chatAssistant = lib.concatStringsSep "\n---\n\n" (
+        readMdFiles [
+          ./assistant
+          ./output
+          ./environment
+          ./user
+        ]
+        ++ [
+          (builtins.readFile "${inputs.www-ncaq-net}/site/about.md")
+          (builtins.readFile "${inputs.www-ncaq-net}/site/entry/2025-12-28-14-43-14.md") # 現在の自分の決済方法
+        ]
+      );
       # codingAgentのcontextは貴重なので、
       # chatAssistantより厳選して少なめにします。
       # プログラミングに直接関係ない情報は省きます。
-      codingAgent = lib.concatStringsSep "\n" (
-        [
-          (builtins.readFile ./assistant/language.md)
-          (builtins.readFile ./assistant/form.md)
-          (builtins.readFile ./assistant/markdown.md)
-          (builtins.readFile ./environment/software.md)
-        ]
-        ++ codingAgentPrompts
-      );
+      codingAgent = lib.concatStringsSep "\n---\n\n" (readMdFiles [
+        ./output
+        ./environment
+        ./coding-agent
+      ]);
     };
 
     # コーディングエージェント用の一時作業ディレクトリを作成します。

@@ -29,14 +29,21 @@ _: {
         {
           type = "custom";
           outputColor = "#FF00FF";
+          format = "Core Hardware";
+        }
+        "host"
+        "board"
+        "tpm"
+        {
+          type = "custom";
+          outputColor = "#FF00FF";
           format = "Computing";
         }
         "cpu"
-        "tpm"
         "gpu"
-        "opencl"
-        "opengl"
         "vulkan"
+        "opengl"
+        "opencl"
         "memory"
         "swap"
         "disk"
@@ -68,13 +75,6 @@ _: {
         "mouse"
         "camera"
         "gamepad"
-        {
-          type = "custom";
-          outputColor = "#FF00FF";
-          format = "Core Hardware";
-        }
-        "host"
-        "board"
         {
           type = "custom";
           outputColor = "#FF00FF";

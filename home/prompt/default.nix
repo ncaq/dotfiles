@@ -5,17 +5,23 @@
   ...
 }:
 let
-  # 指定ディレクトリ直下の全ての.mdファイルをreadFileした文字列リストを返す。
+  # 指定ディレクトリ群の直下にある全ての.mdファイルをreadFileした文字列リストを返す。
   # 手動で並べると追加時に書き漏れが起きやすいため、
   # ディレクトリから自動収集する用途で使う。
+  # 引数の順序がそのまま結果の順序になる。
   readMdFiles =
-    dir:
+    dirs:
     let
-      mdFiles = lib.filterAttrs (name: type: type == "regular" && lib.hasSuffix ".md" name) (
-        builtins.readDir dir
-      );
+      readOneDir =
+        dir:
+        let
+          mdFiles = lib.filterAttrs (name: type: type == "regular" && lib.hasSuffix ".md" name) (
+            builtins.readDir dir
+          );
+        in
+        map (name: builtins.readFile (lib.path.append dir name)) (lib.attrNames mdFiles);
     in
-    map (name: builtins.readFile (lib.path.append dir name)) (lib.attrNames mdFiles);
+    lib.concatMap readOneDir dirs;
 in
 {
   options.prompt = {
@@ -34,10 +40,12 @@ in
   config = {
     prompt = {
       chatAssistant = lib.concatStringsSep "\n---\n" (
-        readMdFiles ./assistant
-        ++ readMdFiles ./output
-        ++ readMdFiles ./environment
-        ++ readMdFiles ./user
+        readMdFiles [
+          ./assistant
+          ./output
+          ./environment
+          ./user
+        ]
         ++ [
           (builtins.readFile "${inputs.www-ncaq-net}/site/about.md")
           (builtins.readFile "${inputs.www-ncaq-net}/site/entry/2025-12-28-14-43-14.md") # 現在の自分の決済方法
@@ -46,9 +54,11 @@ in
       # codingAgentのcontextは貴重なので、
       # chatAssistantより厳選して少なめにします。
       # プログラミングに直接関係ない情報は省きます。
-      codingAgent = lib.concatStringsSep "\n---\n" (
-        (readMdFiles ./output) ++ (readMdFiles ./environment) ++ (readMdFiles ./coding-agent)
-      );
+      codingAgent = lib.concatStringsSep "\n---\n" (readMdFiles [
+        ./output
+        ./environment
+        ./coding-agent
+      ]);
     };
 
     # コーディングエージェント用の一時作業ディレクトリを作成します。

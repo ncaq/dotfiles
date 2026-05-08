@@ -5,9 +5,6 @@
   ...
 }:
 let
-  codingAgentPrompts = [
-    (builtins.readFile ./coding-agent/workspace.md)
-  ];
   # 指定ディレクトリ直下の全ての.mdファイルをreadFileした文字列リストを返す。
   # 手動で並べると追加時に書き漏れが起きやすいため、
   # ディレクトリから自動収集する用途で使う。
@@ -50,7 +47,7 @@ in
       # chatAssistantより厳選して少なめにします。
       # プログラミングに直接関係ない情報は省きます。
       codingAgent = lib.concatStringsSep "\n" (
-        (readMdFiles ./output) ++ (readMdFiles ./environment) ++ codingAgentPrompts
+        (readMdFiles ./output) ++ (readMdFiles ./environment) ++ (readMdFiles ./coding-agent)
       );
     };
 

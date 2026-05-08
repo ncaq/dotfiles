@@ -8,6 +8,17 @@ let
   codingAgentPrompts = [
     (builtins.readFile ./coding-agent/workspace.md)
   ];
+  # 指定ディレクトリ直下の全ての.mdファイルをreadFileした文字列リストを返す。
+  # 手動で並べると追加時に書き漏れが起きやすいため、
+  # ディレクトリから自動収集する用途で使う。
+  readMdFiles =
+    dir:
+    let
+      mdFiles = lib.filterAttrs (name: type: type == "regular" && lib.hasSuffix ".md" name) (
+        builtins.readDir dir
+      );
+    in
+    map (name: builtins.readFile (lib.path.append dir name)) (lib.attrNames mdFiles);
 in
 {
   options.prompt = {
@@ -25,21 +36,15 @@ in
 
   config = {
     prompt = {
-      chatAssistant = lib.concatStringsSep "\n" [
-        (builtins.readFile ./assistant/language.md)
-        (builtins.readFile ./assistant/form.md)
-        (builtins.readFile ./assistant/markdown.md)
-        (builtins.readFile ./assistant/persona.md)
-        (builtins.readFile ./environment/hardware.md)
-        (builtins.readFile ./environment/software.md)
-        (builtins.readFile ./environment/gpg.md)
-        (builtins.readFile ./user/disclosure-policy.md)
-        (builtins.readFile ./user/house.md)
-        (builtins.readFile ./user/job.md)
-        (builtins.readFile ./user/tech-context.md)
-        (builtins.readFile "${inputs.www-ncaq-net}/site/about.md")
-        (builtins.readFile "${inputs.www-ncaq-net}/site/entry/2025-12-28-14-43-14.md") # 現在の自分の決済方法
-      ];
+      chatAssistant = lib.concatStringsSep "\n" (
+        readMdFiles ./assistant
+        ++ readMdFiles ./environment
+        ++ readMdFiles ./user
+        ++ [
+          (builtins.readFile "${inputs.www-ncaq-net}/site/about.md")
+          (builtins.readFile "${inputs.www-ncaq-net}/site/entry/2025-12-28-14-43-14.md") # 現在の自分の決済方法
+        ]
+      );
       # codingAgentのcontextは貴重なので、
       # chatAssistantより厳選して少なめにします。
       # プログラミングに直接関係ない情報は省きます。

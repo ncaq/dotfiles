@@ -58,7 +58,7 @@ GnuPGで管理している鍵をThunderbirdのOpenPGP機能でPCでもAndroid環
 ネイティブNixOS環境ではAlacrittyを使っています。
 
 Windows上のWSL2環境ではWindows Terminalを使っています。
-本当はこちらもAlacrittynに移行したいのですが、
+本当はこちらもAlacrittyに移行したいのですが、
 Claude Code上の日本語変換のウィンドウ表示が崩れてしまうため、
 Windows Terminalをまだ使い続けています。
 

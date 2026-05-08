@@ -33,7 +33,7 @@ in
 
   config = {
     prompt = {
-      chatAssistant = lib.concatStringsSep "\n" (
+      chatAssistant = lib.concatStringsSep "\n---\n" (
         readMdFiles ./assistant
         ++ readMdFiles ./output
         ++ readMdFiles ./environment
@@ -46,7 +46,7 @@ in
       # codingAgentのcontextは貴重なので、
       # chatAssistantより厳選して少なめにします。
       # プログラミングに直接関係ない情報は省きます。
-      codingAgent = lib.concatStringsSep "\n" (
+      codingAgent = lib.concatStringsSep "\n---\n" (
         (readMdFiles ./output) ++ (readMdFiles ./environment) ++ (readMdFiles ./coding-agent)
       );
     };

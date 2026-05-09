@@ -47,4 +47,7 @@ in
     };
     wantedBy = [ "graphical-session.target" ];
   };
+  # upower CLIが接続するD-Busサービスを提供。
+  # 無効だとupowerコマンドがcoredumpする。
+  services.upower.enable = true;
 }

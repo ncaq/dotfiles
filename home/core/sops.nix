@@ -42,6 +42,14 @@ lib.mkMerge [
   {
     # home-manager用sops-nixの設定
     sops.gnupg.home = "${config.home.homeDirectory}/.gnupg";
+    # sops-nix home-managerモジュールは`gnupg.home`が設定されていると、
+    # pinentryのGUIダイアログを前提として`WantedBy=graphical-session-pre.target`をデフォルトにします。
+    # https://github.com/Mic92/sops-nix/pull/346
+    # しかしヘッドレスサーバではこのtargetに到達せず、
+    # サービスが起動しないままになるため`default.target`に強制上書きします。
+    # 副鍵にパスフレーズを設定していないためpinentryは不要です。
+    # またデスクトップ機でもグラフィカルシェル無しで起動する場合に備えてこの上書きは全ホスト適用します。
+    systemd.user.services.sops-nix.Install.WantedBy = lib.mkForce [ "default.target" ];
   }
   (lib.mkIf isTermux {
     # Termux環境では`$XDG_RUNTIME_DIR`が設定されていないため、

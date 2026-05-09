@@ -2,6 +2,7 @@
   pkgs,
   lib,
   config,
+  hostName,
   isWSL,
   osConfig,
   inputs,
@@ -47,7 +48,9 @@ in
         normal = {
           family = "FirgeNerd Console";
         };
-        size = 12;
+        # DPIが固定計算されているため、
+        # ホストにおおよそ見合ったフォントサイズにします。
+        size = if hostName == "creep" then 9.0 else 12.0;
       };
       # Windows環境で起動したときはWSLのシェルを起動するようにします。
       # WSLのalacrittyを起動することは考慮していません。

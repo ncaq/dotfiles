@@ -47,7 +47,12 @@ in
         normal = {
           family = "FirgeNerd Console";
         };
-        size = 12;
+        # DPIが固定計算されているため、
+        # ホストにおおよそ見合ったフォントサイズにします。
+        # 低解像度のホストでは小さめに、
+        # 高解像度のホストでは大きめにします。
+        # home-managerスタンドアロン構成ではosConfigがnullになるため`or`でデフォルト値にフォールバックします。
+        size = if (osConfig.networking.hostName or "") == "creep" then 9 else 12;
       };
       # Windows環境で起動したときはWSLのシェルを起動するようにします。
       # WSLのalacrittyを起動することは考慮していません。

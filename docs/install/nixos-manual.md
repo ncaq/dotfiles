@@ -63,7 +63,6 @@ sudo mkfs.btrfs /dev/mapper/nixos-root
 sudo mount /dev/mapper/nixos-root /mnt
 sudo btrfs subvolume create /mnt/@
 sudo btrfs subvolume create /mnt/@nix-store
-sudo btrfs subvolume create /mnt/@swap
 sudo btrfs subvolume create /mnt/@var-log
 sudo btrfs subvolume create /mnt/@snapshots
 sudo umount /mnt
@@ -77,14 +76,12 @@ sudo mount -o noatime,compress=zstd,subvol=@ /dev/mapper/nixos-root /mnt
 sudo mkdir -p /mnt/efi
 sudo mkdir -p /mnt/boot
 sudo mkdir -p /mnt/nix/store
-sudo mkdir -p /mnt/swap
 sudo mkdir -p /mnt/var/log
 sudo mkdir -p /mnt/.snapshots
 
 sudo mount -o noatime,fmask=0077,dmask=0077 /dev/disk/by-label/nixos-boot /mnt/boot
 sudo mount -o noatime,fmask=0077,dmask=0077 /dev/disk/by-label/your-disk-label-of-efi-system /mnt/efi
 sudo mount -o noatime,compress=zstd,subvol=@nix-store /dev/mapper/nixos-root /mnt/nix/store
-sudo mount -o noatime,subvol=@swap /dev/mapper/nixos-root /mnt/swap
 sudo mount -o noatime,compress=zstd,subvol=@var-log /dev/mapper/nixos-root /mnt/var/log
 sudo mount -o noatime,compress=zstd,subvol=@snapshots /dev/mapper/nixos-root /mnt/.snapshots
 ```

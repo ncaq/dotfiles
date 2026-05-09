@@ -55,12 +55,6 @@
                       "compress=zstd"
                     ];
                   };
-                  "@swap" = {
-                    mountpoint = "/swap";
-                    mountOptions = [
-                      "noatime"
-                    ];
-                  };
                   "@var-log" = {
                     mountpoint = "/var/log";
                     mountOptions = [
@@ -83,10 +77,4 @@
       };
     };
   };
-  swapDevices = [
-    {
-      device = "/swap/swapfile";
-      size = 4 * 1024;
-    }
-  ];
 }

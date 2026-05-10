@@ -1,7 +1,7 @@
 # NixOS Installation (Manual Partitioning)
 
 This guide describes the manual installation process with custom disk partitioning,
-suitable for dual-boot setups where Windows is already installed..
+suitable for dual-boot setups where Windows is already installed.
 
 ## Prerequisites
 

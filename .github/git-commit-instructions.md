@@ -124,7 +124,7 @@ The key words
 - “MUST”
 - “MUST NOT”
 - “REQUIRED”
-- “SHALL
+- “SHALL"
 - “SHALL NOT”,
 - “SHOULD”
 - “SHOULD NOT”

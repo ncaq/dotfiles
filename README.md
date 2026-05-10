@@ -20,8 +20,8 @@ Choose the installation method that fits your environment:
 
 ## NixOS
 
-- [Install using disko for automated](./docs/install/nixos-disko.md)
-- [Install using manual work with exist partitioning](./docs/install/nixos-manual.md)
+- [Install using disko (automated)](./docs/install/nixos-disko.md)
+- [Manual installation with existing partitioning](./docs/install/nixos-manual.md)
 
 ## Non NixOS
 
@@ -53,8 +53,7 @@ nix-fast-build --option eval-cache false --no-link --skip-cached
 # Policy
 
 As a general approach,
-I use prefer home-manager.
-I use NixOS option when necessary or easy.
+I prefer home-manager and only use NixOS options when they are the simpler or only choice.
 
 # Directory Structure
 
@@ -80,7 +79,7 @@ To install packages.
 
 ### [home/prompt/](./home/prompt/)
 
-The prompt for Chat LLM and Coding Agent by direct.
+Prompts directly used by chat LLMs and coding agents.
 
 ## [lib/](./lib/)
 

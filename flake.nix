@@ -219,7 +219,7 @@
                   ];
                 in
                 {
-                  nixosSystem = nixpkgs.lib.nixosSystem {
+                  nixosSystem = lib.nixosSystem {
                     inherit modules specialArgs system;
                   };
                   inherit modules specialArgs system;
@@ -247,7 +247,7 @@
           nixosConfigurations = lib.mapAttrs (_: def: def.nixosSystem) top.config.flake.hostDefs;
 
           testNixosBoot =
-            nixpkgs.lib.mapAttrs
+            lib.mapAttrs
               (
                 name: hostDef:
                 (importPkgsStable hostDef.system).testers.runNixOSTest {
@@ -279,11 +279,7 @@
                   '';
                 }
               )
-              (
-                nixpkgs.lib.filterAttrs (
-                  _: def: !(def.nixosSystem.config.wsl.enable or false)
-                ) top.config.flake.hostDefs
-              );
+              (lib.filterAttrs (_: def: !(def.nixosSystem.config.wsl.enable or false)) top.config.flake.hostDefs);
 
           homeConfigurations =
             let

@@ -6,7 +6,9 @@ let
       if command -v kitty >/dev/null 2>&1; then
         exec kitty "$@"
       else
-        echo "kitty not found in system PATH. Please install kitty via your system package manager." >&2
+        echo \
+          "kitty not found in system PATH. Please install kitty via your system package manager." \
+          >&2
         exit 1
       fi
     '';

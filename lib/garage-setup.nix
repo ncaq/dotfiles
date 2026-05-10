@@ -100,7 +100,8 @@
           ACCESS_KEY=$(echo "$KEY_JSON" | jq -r '.accessKeyId')
           SECRET_KEY=$(echo "$KEY_JSON" | jq -r '.secretAccessKey')
 
-          if [ -z "$ACCESS_KEY" ] || [ "$ACCESS_KEY" = "null" ] || [ -z "$SECRET_KEY" ] || [ "$SECRET_KEY" = "null" ]; then
+          if [ -z "$ACCESS_KEY" ] || [ "$ACCESS_KEY" = "null" ] \
+            || [ -z "$SECRET_KEY" ] || [ "$SECRET_KEY" = "null" ]; then
             echo "Failed to create S3 key for ${name} via Garage admin API" >&2
             exit 1
           fi
@@ -123,9 +124,11 @@
           fi
 
           # Grant read/write permissions.
-          garage_api POST /v2/AllowBucketKey \
-            "{\"bucketId\": \"$BUCKET_ID\", \"accessKeyId\": \"$ACCESS_KEY\", \"permissions\": {\"read\": true, \"write\": true}}" \
-            > /dev/null
+          ALLOW_PAYLOAD=$(jq -nc \
+            --arg bucketId "$BUCKET_ID" \
+            --arg accessKeyId "$ACCESS_KEY" \
+            '{$bucketId, $accessKeyId, permissions: {read: true, write: true}}')
+          garage_api POST /v2/AllowBucketKey "$ALLOW_PAYLOAD" > /dev/null
         '';
       }
     );

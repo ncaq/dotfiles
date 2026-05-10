@@ -20,16 +20,13 @@ Choose the installation method that fits your environment:
 
 ## NixOS
 
-- [NixOS with disko (Automatic)](./docs/install/nixos-disko.md) - Automated installation using disko for disk management
-- [NixOS (Manual Partitioning)](./docs/install/nixos-manual.md) - Manual installation with custom partitioning, suitable for dual-boot
+- [Install using disko (automated)](./docs/install/nixos-disko.md)
+- [Manual installation with existing partitioning](./docs/install/nixos-manual.md)
 
 ## Non NixOS
 
-- [home-manager Standalone](./docs/install/home-manager.md) - Install home-manager only on non-NixOS systems
-
-## Nix-on-Droid
-
-- [Nix-on-Droid](./docs/install/nix-on-droid.md) - Install on Android using Nix-on-Droid
+- [Install using home-manager on non-NixOS system](./docs/install/home-manager.md)
+- [Install using Nix-on-Droid on Android](./docs/install/nix-on-droid.md)
 
 # Rebuild
 
@@ -50,23 +47,13 @@ nix fmt
 ## Static
 
 ```zsh
-nix flake check
+nix-fast-build --option eval-cache false --no-link --skip-cached
 ```
-
-# Supported Platforms
-
-| Platform                | Configuration              | Description                                                             |
-| ----------------------- | -------------------------- | ----------------------------------------------------------------------- |
-| NixOS (native boot)     | `nixosConfigurations`      | Desktop and server machines booting NixOS directly                      |
-| NixOS on WSL2           | `nixosConfigurations`      | NixOS running under Windows Subsystem for Linux 2                       |
-| home-manager standalone | `homeConfigurations`       | Non-NixOS systems using only home-manager                               |
-| Nix-on-Droid            | `nixOnDroidConfigurations` | Android devices via Nix-on-Droid (Termux-based) using only home-manager |
 
 # Policy
 
 As a general approach,
-I'm managing everything possible with home-manager.
-I only use the NixOS configuration part when absolutely necessary.
+I prefer home-manager and only use NixOS options when they are the simpler or only choice.
 
 # Directory Structure
 
@@ -92,7 +79,7 @@ To install packages.
 
 ### [home/prompt/](./home/prompt/)
 
-The prompt for Chat LLM and Coding Agent.
+Prompts directly used by chat LLMs and coding agents.
 
 ## [lib/](./lib/)
 
@@ -106,15 +93,23 @@ NixOS configuration files.
 
 Custom Nix packages.
 
-# Separated dotfiles
+# Related external config repo
 
 - [ncaq/.emacs.d: My Emacs config](https://github.com/ncaq/.emacs.d)
 - [ncaq/.xkeysnail: My xkeysnail config](https://github.com/ncaq/.xkeysnail)
 - [ncaq/.xmonad](https://github.com/ncaq/.xmonad)
 - [ncaq/.zsh.d](https://github.com/ncaq/.zsh.d)
+- [ncaq/firge-nix: firgeフォントをnixで利用するためのリポジトリ](https://github.com/ncaq/firge-nix)
 - [ncaq/git-hooks: My Git global hooks](https://github.com/ncaq/git-hooks)
 - [ncaq/infra.ncaq.net: Infrastructure as Code for ncaq.net](https://github.com/ncaq/infra.ncaq.net)
 - [ncaq/keyhac-config](https://github.com/ncaq/keyhac-config)
 - [ncaq/konoka: AI prompts, agents, and skills as loadable plugins.](https://github.com/ncaq/konoka)
+- [ncaq/kyosei-action: GitHub Action for kyosei code review from konoka marketplace.](https://github.com/ncaq/kyosei-action)
+- [ncaq/nix-composite-action: My Nix setup with cache and etc.](https://github.com/ncaq/nix-composite-action)
+- [ncaq/nix-templates: Flake templates](https://github.com/ncaq/nix-templates)
+- [ncaq/nlod: JLODを改良したMozc/Google日本語入力向けのDvorakローマ字テーブル](https://github.com/ncaq/nlod)
+- [ncaq/pppset: pandoc-page-preset](https://github.com/ncaq/pppset)
+- [ncaq/renovate-config: renovate global config](https://github.com/ncaq/renovate-config)
 - [ncaq/surfingkeys-config: My Surfingkeys config](https://github.com/ncaq/surfingkeys-config)
 - [ncaq/winconf: My Windows configuration files](https://github.com/ncaq/winconf)
+- [ncaq/www.ncaq.net: ncaq website](https://github.com/ncaq/www.ncaq.net)

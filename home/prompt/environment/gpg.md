@@ -26,7 +26,7 @@ sub   ed25519/0xACA66AB679E75544 2026-01-22 [SA] [有効期限: 2031-01-21]
 主鍵はオフラインの隔離されたストレージに保存されています。
 
 詳細な管理方法は、
-[dotfiles/key/README.md at master · ncaq/dotfiles](https://github.com/ncaq/dotfiles/blob/master/key/README.md)
+[dotfiles/key/README.md](https://github.com/ncaq/dotfiles/blob/master/key/README.md)
 に載っています。
 
 ## ソフトウェア使用
@@ -34,4 +34,5 @@ sub   ed25519/0xACA66AB679E75544 2026-01-22 [SA] [有効期限: 2031-01-21]
 YubiKeyなどのハードウェアモジュールはGPGには使っていません。
 
 どうせYubiKey Bioのような指紋認証対応のものはGPGに対応していないので、
-それならば純粋にソフトウェアのGPGを使ってもセキュリティの強度はあまり変わらないと判断しているからです。
+それならば純粋にソフトウェアのGPGを使っても、
+セキュリティの強度はあまり変わらないと判断しているからです。

@@ -48,7 +48,8 @@ NixOSモジュールやhome-managerモジュールの`imports`に渡せるパス
 imports = importDirModules ./. ++ [ ./github-runner ];
 ```
 
-`importDirModules`は`flake.nix`で`specialArgs`/`extraSpecialArgs`経由で全モジュールに渡されています。
+`importDirModules`は`flake.nix`で`specialArgs`/`extraSpecialArgs`経由で、
+全モジュールに渡されています。
 
 # home-manager
 
@@ -117,7 +118,9 @@ nix-fast-build --option eval-cache false --no-link --skip-cached --no-nom
 
 ### LLM向けのシンボリックリンク
 
-Codex向けの`AGENTS.md`とClaude Code向けの`CLAUDE.md`は以下のように`.github/copilot-instructions.md`のシンボリックリンクになっています。
+Codex向けの`AGENTS.md`と、
+Claude Code向けの`CLAUDE.md`は、
+以下のように`.github/copilot-instructions.md`のシンボリックリンクになっています。
 
 ```console
 AGENTS.md -> .github/copilot-instructions.md

@@ -49,6 +49,9 @@ in
           github-runners =
             let
               runnerNumbers = builtins.genList (x: x) runnerNum;
+              args = { inherit pkgs; };
+              extraPkgs = (githubActionsRunnerPackages args).all ++ selfHostRunnerPackages args;
+              jobStartedHook = "${dotfiles-github-runner}/job-started-hook.js";
               mkRunnerDotfilesX64 = number: {
                 name = "dotfiles-x64-${toString number}";
                 value = {
@@ -58,13 +61,10 @@ in
                   user = "github-runner";
                   group = "github-runner";
                   extraLabels = [ "NixOS" ];
-                  extraPackages =
-                    (githubActionsRunnerPackages { inherit pkgs; }).all ++ selfHostRunnerPackages { inherit pkgs; };
+                  extraPackages = extraPkgs;
                   tokenFile = "/etc/runner-registration-token";
                   url = "https://github.com/ncaq/dotfiles";
-                  extraEnvironment = {
-                    ACTIONS_RUNNER_HOOK_JOB_STARTED = "${dotfiles-github-runner}/job-started-hook.js";
-                  };
+                  extraEnvironment.ACTIONS_RUNNER_HOOK_JOB_STARTED = jobStartedHook;
                 };
               };
             in
@@ -109,7 +109,7 @@ in
         # CIジョブがホストのリソースを過剰に消費しないよう制限します。
         # CPUQuotaはコア数×100%で指定する必要があります。
         CPUQuota = "1000%"; # サーバが12スレッドなので、2スレッド引いた分を割り当てます。
-        MemoryHigh = "16G"; # ソフトリミット。これを超えるとファイルキャッシュなどを積極的に解放し始めます。
+        MemoryHigh = "16G"; # ソフトリミット。これを超えるとメモリを積極的に解放します。
         MemoryMax = "32G"; # ハードリミット。これぐらいで十分だろうという推定値。
       };
     };

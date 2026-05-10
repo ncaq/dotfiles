@@ -13,7 +13,6 @@ This guide describes how to install home-manager standalone on non-NixOS systems
 git clone https://github.com/ncaq/dotfiles.git
 cd dotfiles
 nix run '.#home-manager' -- --flake ".#x86_64-linux" -b "hm-bak" init --switch .
-# or nix run '.#home-manager' -- --flake ".#aarch64-linux" -b "hm-bak" init --switch .
 ```
 
 ## Notes

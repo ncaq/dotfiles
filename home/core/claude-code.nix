@@ -82,7 +82,10 @@ let
 
   mkJsRunPermissions =
     pkg:
-    map (sub: if pkg == "npm" then "Bash(npm run ${sub})" else "Bash(${pkg} ${sub})") jsRunSubcommands;
+    let
+      prefix = if pkg == "npm" then "${pkg} run" else pkg;
+    in
+    map (sub: "Bash(${prefix} ${sub})") jsRunSubcommands;
 
   jsRunnerPermissions = lib.concatMap (
     pkg: mkJsDirectPermissions pkg ++ mkJsRunPermissions pkg
@@ -95,8 +98,9 @@ let
   codingAgentWorkDirFullPath =
     let
       uid = if osConfig != null then osConfig.users.users.${config.home.username}.uid else null;
+      base = if uid != null then "/run/user/${toString uid}" else "/tmp";
     in
-    if uid != null then "/run/user/${toString uid}/coding-agent-work/" else "/tmp/coding-agent-work/";
+    "${base}/coding-agent-work/";
 in
 {
   programs.claude-code = {
@@ -481,7 +485,7 @@ in
             externalEditorContext = true; # 外部エディタでプロンプトを編集するとき最後の応答がエディタに表示される。
             remoteControlAtStartup = true; # 起動時にリモートコントロールを有効にする。
           };
-          overrideJson = pkgs.writeText "claude-overrides.json" (builtins.toJSON claudeJsonOverrides);
+          overrideJson = pkgs.writeText "overrides.json" (builtins.toJSON claudeJsonOverrides);
         in
         lib.hm.dag.entryAfter [ "writeBoundary" ] ''
           CLAUDE_JSON="$HOME/.claude.json"
@@ -509,7 +513,8 @@ in
           fi
 
           # 書き込みを行います。
-          echo "$MERGED" | $DRY_RUN_CMD ${pkgs.coreutils}/bin/install -m 644 /dev/stdin "$CLAUDE_JSON"
+          echo "$MERGED" \
+            | $DRY_RUN_CMD ${pkgs.coreutils}/bin/install -m 644 /dev/stdin "$CLAUDE_JSON"
 
           echo "merged $CLAUDE_JSON"
         '';

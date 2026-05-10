@@ -57,7 +57,8 @@ let
       "merge.${builtins.replaceStrings [ "/" ] [ "." ] (builtins.elemAt mergeParsed 1)}"
     else
       "unknown";
+  inherit (config.system.nixos) release;
 in
 {
-  system.nixos.label = "${time}-${config.system.nixos.release}-${shortRev}${dirtySuffix}${branchLabel}-${commitLabel}";
+  system.nixos.label = "${time}-${release}-${shortRev}${dirtySuffix}${branchLabel}-${commitLabel}";
 }

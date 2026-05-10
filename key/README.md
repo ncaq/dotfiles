@@ -56,14 +56,17 @@ gpg --quick-add-key 7DDE3BC405DC58D94BF661D342248C7D0FB73D57 ed25519 sign,auth 5
 副鍵のフィンガープリントをメモしておきます。
 
 ```zsh
-gpg --list-keys --with-subkey-fingerprint --full-timestrings 7DDE3BC405DC58D94BF661D342248C7D0FB73D57
+gpg --list-keys --with-subkey-fingerprint --full-timestrings \
+  7DDE3BC405DC58D94BF661D342248C7D0FB73D57
 ```
 
 副鍵をエクスポート。
 暗号副鍵と署名認証副鍵の両方を含めます。
 
 ```zsh
-gpg --export-secret-subkeys --armor <暗号副鍵のフィンガープリント>! <署名認証副鍵のフィンガープリント>! > subkeys-secret.asc
+gpg --export-secret-subkeys \
+  --armor <暗号副鍵のフィンガープリント>! <署名認証副鍵のフィンガープリント>! > \
+  subkeys-secret.asc
 ```
 
 公開鍵をエクスポート。
@@ -158,7 +161,8 @@ gpg --keyserver keys.openpgp.org --send-keys 7DDE3BC405DC58D94BF661D342248C7D0FB
 dotfilesがマージされたあと、
 
 ```zsh
-nix flake update --commit-lock-file --option commit-lockfile-summary "build(deps): bump \`flake.lock\`"
+nix flake update --commit-lock-file \
+  --option commit-lockfile-summary "build(deps): bump \`flake.lock\`"
 ```
 
 を実行してPRを作って、

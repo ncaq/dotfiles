@@ -91,7 +91,9 @@ in
     lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       if [ -d ${lib.escapeShellArg windowsAppData} ]; then
         $DRY_RUN_CMD mkdir -p "$(dirname ${lib.escapeShellArg windowsAlacrittyConfigFile})"
-        $DRY_RUN_CMD install -m 0644 ${lib.escapeShellArg alacrittyConfigFile} ${lib.escapeShellArg windowsAlacrittyConfigFile}
+        $DRY_RUN_CMD install -m 0644 \
+          ${lib.escapeShellArg alacrittyConfigFile} \
+          ${lib.escapeShellArg windowsAlacrittyConfigFile}
       else
         $DRY_RUN_CMD echo "Windows AppData directory is not mounted: ${windowsAppData}" >&2
       fi

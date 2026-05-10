@@ -23,7 +23,9 @@ in
       # YubiKey Bioの指紋認証のようにセキュリティキー側で認証を行うことを前提にしています。
       control = "sufficient";
       settings = {
-        authfile = pkgs.writeText "u2f-mappings" "ncaq:${lib.concatStringsSep ":" (lib.attrValues u2fKeys)}";
+        authfile = pkgs.writeText "u2f-mappings" (
+          "ncaq:" + lib.concatStringsSep ":" (lib.attrValues u2fKeys)
+        );
         origin = "pam://ncaq.net";
         cue = true; # "Please touch the device." を表示。
       };

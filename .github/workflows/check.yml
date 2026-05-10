@@ -71,7 +71,12 @@ jobs:
       - uses: ./.github/actions/setup-nix
         with:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
-      - run: nix run '.#nix-fast-build' -- --option eval-cache false --no-link --skip-cached --no-nom
+      - run: >-
+          nix run '.#nix-fast-build' --
+          --option eval-cache false
+          --no-link
+          --skip-cached
+          --no-nom
 
   # x64_64のhome-managerと、
   # Nix-on-Droidのビルドを行います。

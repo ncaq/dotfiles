@@ -1,6 +1,6 @@
 # NixOS Installation with disko (Automatic)
 
-This guide describes the automated installation process using disko for disk partitioning and formatting.
+This guide describes the automated installation process using disko.
 
 ## Prerequisites
 
@@ -10,11 +10,12 @@ This guide describes the automated installation process using disko for disk par
 
 ## Installation Steps
 
-```zsh
+```bash
 NEW_HOST=please-input-new-hostname
-nix --extra-experimental-features 'flakes nix-command' run 'nixpkgs#git' -- clone https://github.com/ncaq/dotfiles.git
+export NIX_CONFIG="experimental-features = flakes nix-command"
+nix run 'nixpkgs#git' -- clone https://github.com/ncaq/dotfiles.git
 cd dotfiles
-sudo nix --extra-experimental-features 'flakes nix-command' run '.#disko' -- --mode format,mount --flake ".#${NEW_HOST}"
+sudo -E nix run '.#disko' -- --mode format,mount --flake ".#${NEW_HOST}"
 sudo nixos-install --flake ".#${NEW_HOST}" --root /mnt
 ```
 

@@ -72,7 +72,7 @@ lib.mkMerge [
           # keyboxdのdotlockファイルが残留しsops-nixの復号化を妨げることがあります。
           # importGpgKeysの前にkeyboxdをkillしてpublic-keys.d/を削除し、
           # stale lockのない状態で鍵を再インポートします。
-          activation.cleanupGpgKeyboxd = entryBetween [ "importGpgKeys" ] [ "createGpgHomedir" ] ''
+          activation.cleanGpgKeyboxd = entryBetween [ "importGpgKeys" ] [ "createGpgHomedir" ] ''
             $DRY_RUN_CMD ${pkgs.gnupg}/bin/gpgconf --kill keyboxd 2>/dev/null || true
             $DRY_RUN_CMD ${pkgs.trash-cli}/bin/trash \
               "${config.home.homeDirectory}/.gnupg/public-keys.d/" \

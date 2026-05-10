@@ -10,7 +10,7 @@ This guide describes the automated installation process using disko.
 
 ## Installation Steps
 
-```zsh
+```bash
 NEW_HOST=please-input-new-hostname
 export NIX_CONFIG="experimental-features = flakes nix-command"
 nix run 'nixpkgs#git' -- clone https://github.com/ncaq/dotfiles.git

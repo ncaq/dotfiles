@@ -14,7 +14,7 @@ suitable for dual-boot setups where Windows is already installed..
 
 ### For Windows Dual Boot
 
-1. Shrink the disk partition in Windows to free for NixOS.
+1. Shrink the Windows partition to free at least 100GB for NixOS (500GB+ recommended).
 2. Create install media from <https://nixos.org/>
 3. Boot install media
 4. Configure network and keyboard layout

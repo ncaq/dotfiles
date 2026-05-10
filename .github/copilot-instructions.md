@@ -48,7 +48,8 @@ NixOSモジュールやhome-managerモジュールの`imports`に渡せるパス
 imports = importDirModules ./. ++ [ ./github-runner ];
 ```
 
-`importDirModules`は`flake.nix`で`specialArgs`/`extraSpecialArgs`経由で全モジュールに渡されています。
+`importDirModules`は`flake.nix`で`specialArgs`/`extraSpecialArgs`経由で、
+全モジュールに渡されています。
 
 # home-manager
 

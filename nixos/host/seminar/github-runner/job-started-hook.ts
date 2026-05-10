@@ -56,9 +56,12 @@ async function main(): Promise<void> {
     const event = JSON.parse(content) as GitHubEvent;
     const sender = event.sender?.login;
     const prHeadRepoFullName = event.pull_request?.head?.repo?.full_name;
-    const prBaseRepoFullName = event.pull_request?.base?.repo?.full_name ?? event.repository?.full_name;
+    const prBaseRepoFullName =
+      event.pull_request?.base?.repo?.full_name ?? event.repository?.full_name;
     const isInternalPullRequest =
-      prHeadRepoFullName != null && prBaseRepoFullName != null && prHeadRepoFullName === prBaseRepoFullName;
+      prHeadRepoFullName != null &&
+      prBaseRepoFullName != null &&
+      prHeadRepoFullName === prBaseRepoFullName;
     console.log(
       `PR head.repo.full_name=${prHeadRepoFullName} base.repo.full_name=${prBaseRepoFullName} ` +
         `internal=${String(isInternalPullRequest)} sender=${sender}`,
@@ -69,10 +72,13 @@ async function main(): Promise<void> {
       process.exit(0);
     }
 
-    console.error(
-      `ERROR: External PR is not allowed on self-hosted runner (sender=${sender}, ` +
-        `head.repo.full_name=${prHeadRepoFullName}, base.repo.full_name=${prBaseRepoFullName}). Rejecting job.`,
-    );
+    const errHeader = "Rejecting job. External PR is not allowed on self-hosted runner: ";
+    const errInfo = [
+      `sender=${sender}`,
+      `head.repo.full_name=${prHeadRepoFullName}`,
+      `base.repo.full_name=${prBaseRepoFullName}`,
+    ].join(", ");
+    console.error(errHeader + errInfo);
     process.exit(1);
   }
 

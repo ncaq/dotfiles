@@ -103,7 +103,7 @@ cd dotfiles
 sudo nixos-install --flake ".#${NEW_HOST}" --root /mnt
 ```
 
-reboot.
+Please reboot.
 
 ### `nixos-generate-config`
 

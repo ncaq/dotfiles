@@ -24,13 +24,6 @@ in
   networking = {
     networkmanager = {
       enable = true;
-      # DHCPで配られるDNS(家庭用ルータ等のDoT非対応のもの)をsystemd-resolvedに渡さない。
-      # これがないとper-link DNSとして優先されて、
-      # `DNSOverTLS=true`(strict)で解決失敗します。
-      connectionConfig = {
-        "ipv4.ignore-auto-dns" = true;
-        "ipv6.ignore-auto-dns" = true;
-      };
     };
     nameservers = encryptedDns;
   };

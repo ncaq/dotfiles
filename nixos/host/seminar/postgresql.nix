@@ -161,7 +161,9 @@ in
       [
         {
           assertion = unknownClient == [ ];
-          message = "postgresClient contains names not defined in serviceUser: ${lib.concatStringsSep ", " unknownClient}";
+          message =
+            "postgresClient contains names not defined in serviceUser: "
+            + lib.concatStringsSep ", " unknownClient;
         }
       ];
   };

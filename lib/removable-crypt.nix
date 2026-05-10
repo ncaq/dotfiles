@@ -92,7 +92,8 @@ let
             lib.concatStringsSep "," (device.mountOptions ++ device.btrfsMountOptions)
           }" "/dev/mapper/$mapper_name" "$mount_point"
         else
-          mount -o "${lib.concatStringsSep "," device.mountOptions}" "/dev/mapper/$mapper_name" "$mount_point"
+          mount -o "${lib.concatStringsSep "," device.mountOptions}" \
+            "/dev/mapper/$mapper_name" "$mount_point"
         fi
         mounted=1
 
@@ -135,7 +136,8 @@ let
         if [[ -e "/dev/mapper/$mapper_name" ]]; then
           fs_type=$(blkid -s TYPE -o value "/dev/mapper/$mapper_name" 2>/dev/null || true)
           if [[ "$fs_type" == "btrfs" ]]; then
-            if ! snapper -c "$mapper_name" create --cleanup-algorithm timeline --description "unmount"; then
+            if ! snapper -c "$mapper_name" create \
+                --cleanup-algorithm timeline --description "unmount"; then
               echo "warning: failed to create snapshot for $mapper_name" >&2
               has_error=1
             fi

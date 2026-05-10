@@ -48,8 +48,10 @@ in
           ./user
         ]
         ++ [
+          # 簡単な自己紹介。
           (builtins.readFile "${inputs.www-ncaq-net}/site/about.md")
-          (builtins.readFile "${inputs.www-ncaq-net}/site/entry/2025-12-28-14-43-14.md") # 現在の自分の決済方法
+          # 現在の自分の決済方法。
+          (builtins.readFile "${inputs.www-ncaq-net}/site/entry/2025-12-28-14-43-14.md")
         ]
       );
       # codingAgentのcontextは貴重なので、

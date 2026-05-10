@@ -14,7 +14,8 @@ in
 
       # Nixの自動生成するものではないユーザのzshrcを読み込む。
       initContent = ''
-        if [[ -x "$(command -v ${lib.getExe pkgs.tmux})" ]] && [[ -z "$TMUX" ]] && [[ $- == *i* ]]; then
+        if [[ -x "$(command -v ${lib.getExe pkgs.tmux})" ]] \
+          && [[ -z "$TMUX" ]] && [[ $- == *i* ]]; then
           if ${lib.getExe pkgs.tmux} new -A -s master; then
             # tmuxセッションが正常終了した場合、zshシェルも終了します。
             exit

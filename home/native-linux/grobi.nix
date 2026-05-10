@@ -116,7 +116,8 @@ in
           "DP-4-DEL-41599-810963027-AW2725Q-1JYC174"
         ];
         # Alienware AW2725Qは144Hzが最大ではないけれど4Kの場合144Hzが適切なのでマニュアル設定。
-        configure_command = "${pkgs.xorg.xrandr}/bin/xrandr --output DP-4 --mode 3840x2160 --rate 144 --primary";
+        configure_command =
+          "${pkgs.xorg.xrandr}/bin/xrandr" + " --output DP-4 --mode 3840x2160 --rate 144 --primary";
         execute_after = dpiIs144;
       }
       {

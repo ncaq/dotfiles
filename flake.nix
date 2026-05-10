@@ -134,10 +134,11 @@
 
       flake =
         let
+          inherit (nixpkgs) lib;
           # ディレクトリ内の全.nixファイルをimportするヘルパー関数。
-          importDirModules = import ./lib/import-dir-modules.nix { inherit (nixpkgs) lib; };
+          importDirModules = import ./lib/import-dir-modules.nix { inherit lib; };
           # 許可するライセンス。
-          allowlistedLicenses = with nixpkgs.lib.licenses; [
+          allowlistedLicenses = with lib.licenses; [
             nvidiaCudaRedist # 再配布可能ならまだマシ。
             unfreeRedistributable # 再配布可能ならまだマシ。
           ];
@@ -150,7 +151,7 @@
           ];
           nixpkgsConfig = {
             inherit allowlistedLicenses;
-            allowUnfreePredicate = pkg: builtins.elem (nixpkgs.lib.getName pkg) allowedUnfreePackages;
+            allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) allowedUnfreePackages;
           };
           # 全環境で共通のoverlays。
           overlays = [
@@ -243,7 +244,7 @@
               };
             };
 
-          nixosConfigurations = nixpkgs.lib.mapAttrs (_: def: def.nixosSystem) top.config.flake.hostDefs;
+          nixosConfigurations = lib.mapAttrs (_: def: def.nixosSystem) top.config.flake.hostDefs;
 
           testNixosBoot =
             nixpkgs.lib.mapAttrs
@@ -252,11 +253,13 @@
                 (importPkgsStable hostDef.system).testers.runNixOSTest {
                   name = "test-nixos-boot-${name}";
                   node = {
-                    # runNixOSTestが追加するnixpkgsの読み込み専用設定を無効化します。
-                    # hardware-configuration.nixが存在する時nixpkgs.hostPlatformを設定しているので、
-                    # 読み込み専用にされたnixpkgsオプションへの設定がエラーになります。
-                    # 基本的にモジュール単位のテスト機構であり全体のブートを想定していないゆえの挙動でしょう。
-                    # 自動生成ファイルであるhardware-configuration.nixを編集したくないため、
+                    # `runNixOSTest`が追加する`nixpkgs`の読み込み専用設定を無効化します。
+                    # `hardware-configuration.nix`が存在する時、
+                    # `nixpkgs.hostPlatform`を設定しているので、
+                    # 読み込み専用にされた`nixpkgs`オプションへの設定がエラーになります。
+                    # 基本的にモジュール単位のテスト機構であり、
+                    # 全体のブートを想定していないゆえの挙動でしょう。
+                    # 自動生成ファイルである`hardware-configuration.nix`を編集したくないため、
                     # 上書きを有効にしてしまいます。
                     # ブートのテストの場合ではあまり問題にならないはずです。
                     pkgsReadOnly = false;
@@ -338,28 +341,33 @@
         {
           checks =
             let
+              inherit (nixpkgs) lib;
               # NixOS構成の評価チェック(評価のみ、ビルドしない)
               nixosEvalChecks =
-                nixpkgs.lib.mapAttrs'
+                lib.mapAttrs'
                   (
                     name: nixosConfig:
-                    nixpkgs.lib.nameValuePair "nixos-eval-${name}" (
+                    lib.nameValuePair "nixos-eval-${name}" (
                       builtins.seq nixosConfig.config.system.build.toplevel.drvPath (
                         pkgs.writeText "nixos-eval-${name}" name
                       )
                     )
                   )
                   (
-                    nixpkgs.lib.filterAttrs (
+                    lib.filterAttrs (
                       _: nixosConfig: nixosConfig.pkgs.stdenv.hostPlatform.system == system
                     ) top.config.flake.nixosConfigurations
                   );
               # home-manager構成の評価チェック
-              hmEvalChecks = nixpkgs.lib.optionalAttrs (top.config.flake.homeConfigurations ? ${system}) {
-                "hm-eval" = builtins.seq top.config.flake.homeConfigurations.${system}.activationPackage.drvPath (
-                  pkgs.writeText "hm-eval-${system}" system
-                );
-              };
+              hmEvalChecks =
+                let
+                  hmConfig = top.config.flake.homeConfigurations.${system} or null;
+                in
+                lib.optionalAttrs (hmConfig != null) {
+                  "hm-eval" = builtins.seq hmConfig.activationPackage.drvPath (
+                    pkgs.writeText "hm-eval-${system}" system
+                  );
+                };
             in
             nixosEvalChecks // hmEvalChecks;
 

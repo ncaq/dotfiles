@@ -32,7 +32,9 @@ inputs.nix-on-droid.lib.nixOnDroidConfiguration {
         experimental-features = flakes nix-command
       '';
       environment = {
-        # Android端末はほぼ携帯端末なのでコンフリクトしたファイルを処理するのには手間がかかるので合理的。
+        # Android端末はほぼ携帯端末なので、
+        # コンフリクトしたファイルを処理するのには手間がかかるので、
+        # 自動でリネームするのは合理的。
         etcBackupExtension = ".bak";
         # Tailscale前提のDNS設定。
         etc."resolv.conf".source = ./resolv.conf;

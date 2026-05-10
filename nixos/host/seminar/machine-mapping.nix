@@ -138,7 +138,11 @@ in
             values = map (e: e.value) entries;
             dups = findDuplicates values;
             namesForValue =
-              dupVal: lib.concatMapStringsSep ", " (e: e.name) (lib.filter (e: e.value == dupVal) entries);
+              dupVal:
+              let
+                matched = lib.filter (e: e.value == dupVal) entries;
+              in
+              lib.concatMapStringsSep ", " (e: e.name) matched;
           in
           lib.concatMapStringsSep "; " (dupVal: "${toStr dupVal} (${namesForValue dupVal})") dups;
 
@@ -174,23 +178,28 @@ in
         }) config.serviceUser;
         gidValues = map (e: e.value) gidEntries;
         duplicateGidValues = findDuplicates gidValues;
+
+        cidDups = formatDuplicates toString cidEntries;
+        addrDups = formatDuplicates lib.id addressEntries;
+        uidDups = formatDuplicates toString uidEntries;
+        gidDups = formatDuplicates toString gidEntries;
       in
       [
         {
           assertion = duplicateCidValues == [ ];
-          message = "microvmCid values must be unique, but found duplicates: ${formatDuplicates toString cidEntries}";
+          message = "microvmCid values must be unique, but found duplicates: ${cidDups}";
         }
         {
           assertion = duplicateAddressValues == [ ];
-          message = "machineAddresses must be unique, but found duplicates: ${formatDuplicates lib.id addressEntries}";
+          message = "machineAddresses must be unique, but found duplicates: ${addrDups}";
         }
         {
           assertion = duplicateUidValues == [ ];
-          message = "serviceUser uid values must be unique, but found duplicates: ${formatDuplicates toString uidEntries}";
+          message = "serviceUser uid values must be unique, but found duplicates: ${uidDups}";
         }
         {
           assertion = duplicateGidValues == [ ];
-          message = "serviceUser gid values must be unique, but found duplicates: ${formatDuplicates toString gidEntries}";
+          message = "serviceUser gid values must be unique, but found duplicates: ${gidDups}";
         }
       ];
   };

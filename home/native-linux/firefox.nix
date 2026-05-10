@@ -4,6 +4,54 @@
   config,
   ...
 }:
+let
+  userChrome = ''
+    /* ツリー型タブで十分なため標準の横タブを消去。 */
+    #main-window[tabsintitlebar="true"]:not([extradragspace="true"])
+      #TabsToolbar > .toolbar-items {
+      opacity: 0;
+      pointer-events: none;
+    }
+    #main-window:not([tabsintitlebar="true"]) #TabsToolbar {
+      visibility: collapse !important;
+    }
+    /* サイドバーのボーダーは領域を無駄に食うので消去。どのコンテンツでも幅を弄ったりはしない。 */
+    #sidebar-splitter {
+      display: none !important;
+    }
+    /* 利用しているのがツリー型タブの場合サイドバーの切り換えを除去。他の場合は残す。 */
+    #sidebar-box[sidebarcommand="treestyletab_piro_sakura_ne_jp-sidebar-action"]
+      #sidebar-header {
+      visibility: collapse;
+    }
+  '';
+  profileSettings = {
+    "accessibility.typeaheadfind.manual" = false; # 手動の先行入力検索無効
+    "browser.aboutConfig.showWarning" = false; # about:config警告を表示しない
+    "browser.bookmarks.showMobileBookmarks" = false; # モバイルブックマーク非表示
+    "browser.search.separatePrivateDefault.urlbarResult.enabled" = false; # 検索エンジン分離無効
+    "browser.search.suggest.enabled.private" = true; # プライベートブラウジングで検索候補有効
+    "browser.tabs.closeWindowWithLastTab" = false; # 最後のタブを閉じてもウィンドウを閉じない
+    "browser.uidensity" = 1; # UIをコンパクトモードに設定
+    "browser.urlbar.keepPanelOpenDuringImeComposition" = true; # IME入力中にパネルを開いたまま
+    "browser.urlbar.maxRichResults" = 16; # URLバーの候補表示数
+    "devtools.browsertoolbox.scope" = "everything"; # ブラウザツールボックスのスコープ
+    "devtools.command-button-measure.enabled" = true; # 測定ツールボタン有効
+    "devtools.command-button-rulers.enabled" = true; # ルーラーボタン有効
+    "devtools.command-button-screenshot.enabled" = true; # スクリーンショットボタン有効
+    "devtools.debugger.map-scopes-enabled" = true; # デバッガーのスコープマッピング有効
+    "devtools.debugger.pause-on-caught-exceptions" = false; # キャッチされた例外で一時停止しない
+    "devtools.dom.enabled" = true; # DOMインスペクター有効
+    "devtools.inspector.show_pseudo_elements" = true; # 疑似要素表示
+    "devtools.responsive.touchSimulation.enabled" = true; # タッチシミュレーション有効
+    "devtools.theme" = "dark"; # 開発者ツールのテーマをダークに
+    "extensions.webextensions.restrictedDomains" = ""; # 拡張機能の制限ドメインを空に
+    "permissions.default.desktop-notification" = 2; # デスクトップ通知をデフォルトで拒否
+    "signon.generation.enabled" = false; # パスワード生成機能無効
+    "toolkit.legacyUserProfileCustomizations.stylesheets" = true; # userChrome.css使用を有効
+    "ui.key.menuAccessKeyFocuses" = false; # メニューアクセスキーでのフォーカス移動無効
+  };
+in
 {
   programs.firefox = {
     enable = true;
@@ -12,7 +60,7 @@
       "en-US"
     ];
     policies = {
-      # [policy-templates | Policy Templates for Firefox](https://mozilla.github.io/policy-templates/)
+      # [policy-templates](https://mozilla.github.io/policy-templates/)
       DisplayBookmarksToolbar = "never";
       FirefoxHome = {
         Search = false; # 検索ボックス非表示
@@ -299,7 +347,11 @@
                     ];
                   }
                 ];
-                icon = "${pkgs.kdePackages.breeze-icons}/share/icons/breeze-dark/mimetypes/64/text-x-haskell.svg";
+                icon =
+                  let
+                    base = "${pkgs.kdePackages.breeze-icons}/share/icons/breeze-dark/mimetypes";
+                  in
+                  "${base}/64/text-x-haskell.svg";
                 definedAliases = [
                   "h"
                   "@hackage"
@@ -365,50 +417,8 @@
               };
             };
           };
-          userChrome = ''
-            /* ツリー型タブで十分なため標準の横タブを消去。 */
-            #main-window[tabsintitlebar="true"]:not([extradragspace="true"]) #TabsToolbar > .toolbar-items {
-              opacity: 0;
-              pointer-events: none;
-            }
-            #main-window:not([tabsintitlebar="true"]) #TabsToolbar {
-              visibility: collapse !important;
-            }
-            /* サイドバーのボーダーは領域を無駄に食うので消去。どのコンテンツでも幅を弄ったりはしない。 */
-            #sidebar-splitter {
-              display: none !important;
-            }
-            /* 利用しているのがツリー型タブの場合サイドバーの切り換えを除去。他の場合は残す。 */
-            #sidebar-box[sidebarcommand="treestyletab_piro_sakura_ne_jp-sidebar-action"] #sidebar-header {
-              visibility: collapse;
-            }
-          '';
-          settings = {
-            "accessibility.typeaheadfind.manual" = false; # 手動の先行入力検索無効
-            "browser.aboutConfig.showWarning" = false; # about:config警告を表示しない
-            "browser.bookmarks.showMobileBookmarks" = false; # モバイルブックマーク非表示
-            "browser.search.separatePrivateDefault.urlbarResult.enabled" = false; # プライベート用検索エンジン分離無効
-            "browser.search.suggest.enabled.private" = true; # プライベートブラウジングで検索候補有効
-            "browser.tabs.closeWindowWithLastTab" = false; # 最後のタブを閉じてもウィンドウを閉じない
-            "browser.uidensity" = 1; # UIをコンパクトモードに設定
-            "browser.urlbar.keepPanelOpenDuringImeComposition" = true; # IME入力中にパネルを開いたまま
-            "browser.urlbar.maxRichResults" = 16; # URLバーの候補表示数
-            "devtools.browsertoolbox.scope" = "everything"; # ブラウザツールボックスのスコープ
-            "devtools.command-button-measure.enabled" = true; # 測定ツールボタン有効
-            "devtools.command-button-rulers.enabled" = true; # ルーラーボタン有効
-            "devtools.command-button-screenshot.enabled" = true; # スクリーンショットボタン有効
-            "devtools.debugger.map-scopes-enabled" = true; # デバッガーのスコープマッピング有効
-            "devtools.debugger.pause-on-caught-exceptions" = false; # キャッチされた例外で一時停止しない
-            "devtools.dom.enabled" = true; # DOMインスペクター有効
-            "devtools.inspector.show_pseudo_elements" = true; # 疑似要素表示
-            "devtools.responsive.touchSimulation.enabled" = true; # タッチシミュレーション有効
-            "devtools.theme" = "dark"; # 開発者ツールのテーマをダークに
-            "extensions.webextensions.restrictedDomains" = ""; # 拡張機能の制限ドメインを空に
-            "permissions.default.desktop-notification" = 2; # デスクトップ通知をデフォルトで拒否
-            "signon.generation.enabled" = false; # パスワード生成機能無効
-            "toolkit.legacyUserProfileCustomizations.stylesheets" = true; # userChrome.css使用を有効
-            "ui.key.menuAccessKeyFocuses" = false; # メニューアクセスキーでのフォーカス移動無効
-          };
+          inherit userChrome;
+          settings = profileSettings;
         };
       in
       {
@@ -423,9 +433,11 @@
   };
   # 各種プロファイルの`users.js`はNix管理の読み取り専用ファイルになりますが、
   # アドオン開発のためと考えるとweb-extがエラーを出すので読み取り専用は望ましくありません。
-  # 開発のためのほぼ使い捨てのプロファイルであることを考えると`users.js`はそんなに真面目に管理する必要がないので、
+  # 開発のためのほぼ使い捨てのプロファイルであることを考えると、
+  # `users.js`はそんなに真面目に管理する必要がないので、
   # 雑に読み取り専用になっているのを解除します。
   home.activation.firefoxUserJsWritable = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    $DRY_RUN_CMD unlink ${config.home.homeDirectory}/.mozilla/firefox/google-search-title-qualified/user.js
+    $DRY_RUN_CMD unlink \
+      ${config.home.homeDirectory}/.mozilla/firefox/google-search-title-qualified/user.js
   '';
 }

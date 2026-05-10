@@ -60,7 +60,8 @@ in
               text = ''
                 # BackendStateがRunningかつSelf.OnlineがtrueであればOK
                 status=$(tailscale status --json 2>&1)
-                backend_state=$(echo "$status" | jq -r '.BackendState' 2>/dev/null || echo "unknown")
+                backend_state=$(echo "$status" | jq -r '.BackendState' 2>/dev/null \
+                                  || echo "unknown")
                 online=$(echo "$status" | jq -r '.Self.Online' 2>/dev/null || echo "false")
                 if [[ "$backend_state" == "Running" ]] && [[ "$online" == "true" ]]; then
                   echo "Tailscale OK (connected to tailnet)"
@@ -149,7 +150,8 @@ in
                 pkgs.util-linux
               ];
               text = ''
-                if runuser -u healthcheck -- psql -d healthcheck -c "SELECT 1" > /dev/null 2>&1; then
+                if runuser -u healthcheck -- psql -d healthcheck -c "SELECT 1" \
+                    > /dev/null 2>&1; then
                   echo "PostgreSQL OK"
                   exit 0
                 else
@@ -193,7 +195,8 @@ in
               name = "check-forgejo";
               runtimeInputs = [ pkgs.curl ];
               text = ''
-                if curl -f -s --max-time 3 http://${config.machineAddresses.forgejo.guest}:8080 > /dev/null 2>&1; then
+                forgejo_url=http://${config.machineAddresses.forgejo.guest}:8080
+                if curl -f -s --max-time 3 "$forgejo_url" > /dev/null 2>&1; then
                   echo "Forgejo OK"
                   exit 0
                 else
@@ -286,7 +289,8 @@ in
               name = "check-github-runner-x64";
               runtimeInputs = [ pkgs.iputils ];
               text = ''
-                if ping -c 1 -W 2 ${config.machineAddresses.github-runner-x64.guest} > /dev/null 2>&1; then
+                runner_host=${config.machineAddresses.github-runner-x64.guest}
+                if ping -c 1 -W 2 "$runner_host" > /dev/null 2>&1; then
                   echo "GitHub Runner x64 OK"
                   exit 0
                 else

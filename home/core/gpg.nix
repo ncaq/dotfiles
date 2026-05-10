@@ -6,6 +6,7 @@
   ...
 }:
 let
+  inherit (lib.hm.dag) entryBetween;
   keyConfig = import ../../key;
   # SSH認証に使用するGPGサブキーのkeygrip。
   # `gpg --list-keys --with-keygrip`で[A]能力を持つサブキーのkeygripを確認できます。
@@ -26,11 +27,11 @@ lib.mkMerge [
     # 非gracefulなシャットダウン(WSL終了など)でgpg-agentのsentinel lockが残留し、
     # importGpgKeysでgpg-agentに接続できなくなることがあります。
     # importGpgKeysの前にstaleなロックファイルを削除して回避します。
-    home.activation.cleanupGpgStaleLocks =
-      lib.hm.dag.entryBetween [ "importGpgKeys" ] [ "createGpgHomedir" ]
-        ''
-          $DRY_RUN_CMD ${pkgs.trash-cli}/bin/trash "${config.programs.gpg.homedir}/gnupg_spawn_agent_sentinel.lock" 2>/dev/null || true
-        '';
+    home.activation.cleanGpgStaleLocks = entryBetween [ "importGpgKeys" ] [ "createGpgHomedir" ] ''
+      $DRY_RUN_CMD ${pkgs.trash-cli}/bin/trash \
+        "${config.programs.gpg.homedir}/gnupg_spawn_agent_sentinel.lock" \
+        2>/dev/null || true
+    '';
     home.packages = with pkgs; [ paperkey ];
   }
   (
@@ -71,9 +72,11 @@ lib.mkMerge [
           # keyboxdのdotlockファイルが残留しsops-nixの復号化を妨げることがあります。
           # importGpgKeysの前にkeyboxdをkillしてpublic-keys.d/を削除し、
           # stale lockのない状態で鍵を再インポートします。
-          activation.cleanupGpgKeyboxd = lib.hm.dag.entryBetween [ "importGpgKeys" ] [ "createGpgHomedir" ] ''
+          activation.cleanupGpgKeyboxd = entryBetween [ "importGpgKeys" ] [ "createGpgHomedir" ] ''
             $DRY_RUN_CMD ${pkgs.gnupg}/bin/gpgconf --kill keyboxd 2>/dev/null || true
-            $DRY_RUN_CMD ${pkgs.trash-cli}/bin/trash "${config.home.homeDirectory}/.gnupg/public-keys.d/" 2>/dev/null || true
+            $DRY_RUN_CMD ${pkgs.trash-cli}/bin/trash \
+              "${config.home.homeDirectory}/.gnupg/public-keys.d/" \
+              2>/dev/null || true
           '';
           packages = with pkgs; [
             pinentry-curses

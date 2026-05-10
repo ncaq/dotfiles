@@ -81,7 +81,8 @@ _: {
           };
         };
       };
-      # # diskoはbcacheを直接サポートしていないため、一部は以下のように手動で設定する必要があります。
+      # # diskoはbcacheを直接サポートしていないため、
+      # # 一部は以下のように手動で設定する必要があります。
       # # bcacheデバイスの作成
       # # キャッシュデバイス（SSD）
       # sudo make-bcache --cache --writeback --discard /dev/disk/by-id/nvme-WD_PC_SN740_SDDQNQD-256G-1201_23252F808935
@@ -96,7 +97,8 @@ _: {
       # sudo zsh -c "echo $CACHE_SET_UUID > /sys/block/bcache2/bcache/attach"
       # # パスワードファイル作成
       # sudo nano /tmp/secret.password
-      # # 初期インストール時以外はフォーマットを手動で済ませる。diskoのformatを使うとUUIDが変わってUEFIのブートエントリが壊れる。
+      # # 初期インストール時以外はフォーマットを手動で済ませる。
+      # # diskoのformatを使うとUUIDが変わってUEFIのブートエントリが壊れる。
       # # 初期インストール時は以下のdiskoのformatとmountを使っても良い。
       # install.sh
       # # TPM2登録

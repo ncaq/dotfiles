@@ -2,6 +2,9 @@
   config,
   ...
 }:
+let
+  homeDir = config.home.homeDirectory;
+in
 {
   xdg = {
     enable = true;
@@ -10,8 +13,8 @@
       enable = true;
       createDirectories = true;
 
-      desktop = "${config.home.homeDirectory}/Desktop";
-      download = "${config.home.homeDirectory}/Downloads";
+      desktop = "${homeDir}/Desktop";
+      download = "${homeDir}/Downloads";
 
       # シンボリックリンクで管理するため、自動作成対象から外します。
       pictures = null;
@@ -26,8 +29,6 @@
   home.file = {
     # 共通で`Pictures`はGoogle Driveの`Pictures`フォルダを参照します。
     # Google Driveをどちらで解決するかは別のモジュールに任せます。
-    "Pictures" = {
-      source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/GoogleDrive/Pictures";
-    };
+    "Pictures".source = config.lib.file.mkOutOfStoreSymlink "${homeDir}/GoogleDrive/Pictures";
   };
 }

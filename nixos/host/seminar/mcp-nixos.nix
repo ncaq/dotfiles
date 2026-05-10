@@ -31,7 +31,9 @@ in
         hypervisor = "cloud-hypervisor";
         vsock.cid = config.microvmCid.mcp-nixos;
         vcpu = 1;
-        mem = 768; # NixOS基盤(120MB) + Python(50MB) + mcp-nixos(150MB) = 320MB程度ですが、余裕を持って768MBにしています。
+        # NixOS基盤(120MB) + Python(50MB) + mcp-nixos(150MB) = 320MB程度ですが、
+        # 余裕を持って768MBにしています。
+        mem = 768;
         interfaces = [
           {
             type = "tap";
@@ -78,7 +80,9 @@ in
           serviceConfig = {
             # オリジナルのmcp-nixosはHTTPサーバでは動きませんが、
             # オリジナルでも使っているfastmcpを使うことでHTTPサーバとして動かせるようになります。
-            ExecStart = "${mcp-nixos-env}/bin/fastmcp run ${serverPy}:mcp --transport streamable-http --host 0.0.0.0 --port 8080";
+            ExecStart =
+              "${mcp-nixos-env}/bin/fastmcp run ${serverPy}:mcp"
+              + " --transport streamable-http --host 0.0.0.0 --port 8080";
             DynamicUser = true;
             Restart = "always";
             RestartSec = 5;
@@ -121,7 +125,9 @@ in
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
-        ExecStart = "${pkgs.iproute2}/bin/tc qdisc replace dev vm-mcp-nixos root tbf rate 100mbit burst 10mbit latency 400ms";
+        ExecStart =
+          "${pkgs.iproute2}/bin/tc qdisc replace dev vm-mcp-nixos root tbf"
+          + " rate 100mbit burst 10mbit latency 400ms";
       };
     };
   };

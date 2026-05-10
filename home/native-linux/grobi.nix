@@ -2,7 +2,7 @@
 let
   xrandr = "${pkgs.xorg.xrandr}/bin/xrandr";
   dpiIs144 = [
-    (xrandr + "--dpi 144")
+    (xrandr + " --dpi 144")
     "echo 'Xft.dpi: 144'|${pkgs.xorg.xrdb}/bin/xrdb -merge"
   ];
 in

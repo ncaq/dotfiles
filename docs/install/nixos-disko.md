@@ -1,6 +1,6 @@
 # NixOS Installation with disko (Automatic)
 
-This guide describes the automated installation process using disko for disk partitioning and formatting.
+This guide describes the automated installation process using disko.
 
 ## Prerequisites
 

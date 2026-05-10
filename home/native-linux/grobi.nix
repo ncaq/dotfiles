@@ -1,7 +1,8 @@
 { pkgs, ... }:
 let
+  xrandr = "${pkgs.xorg.xrandr}/bin/xrandr";
   dpiIs144 = [
-    "${pkgs.xorg.xrandr}/bin/xrandr --dpi 144"
+    (xrandr + "--dpi 144")
     "echo 'Xft.dpi: 144'|${pkgs.xorg.xrdb}/bin/xrdb -merge"
   ];
 in
@@ -22,7 +23,7 @@ in
         ];
         # 凸型配置のためマニュアル設定。
         configure_command =
-          "${pkgs.xorg.xrandr}/bin/xrandr"
+          xrandr
           + " --output HDMI-0 --mode 3840x2160 --pos 3840x0"
           + " --output DP-0 --mode 3840x2160 --pos 0x2160"
           + " --output DP-2 --mode 3840x2160 --pos 7680x2160"
@@ -38,7 +39,7 @@ in
           "DP-4-DEL-41599-810963027-AW2725Q-1JYC174"
         ];
         configure_command =
-          "${pkgs.xorg.xrandr}/bin/xrandr"
+          xrandr
           + " --output HDMI-0 --mode 3840x2160 --pos 3840x0"
           + " --output DP-2 --mode 3840x2160 --pos 7680x2160"
           + " --output DP-4 --mode 3840x2160 --pos 3840x2160 --rate 144 --primary";
@@ -68,7 +69,7 @@ in
           "DP-2-GSM-23487-16843009-LG ULTRAGEAR+-"
         ];
         configure_command =
-          "${pkgs.xorg.xrandr}/bin/xrandr"
+          xrandr
           + " --output HDMI-0 --mode 3840x2160 --pos 1920x0"
           + " --output DP-0 --mode 3840x2160 --pos 0x2160"
           + " --output DP-2 --mode 3840x2160 --pos 3840x2160 --primary";
@@ -83,7 +84,7 @@ in
           "DP-4-DEL-41599-810963027-AW2725Q-1JYC174"
         ];
         configure_command =
-          "${pkgs.xorg.xrandr}/bin/xrandr"
+          xrandr
           + " --output HDMI-0 --mode 3840x2160 --pos 3840x0"
           + " --output DP-0 --mode 3840x2160 --pos 0x2160"
           + " --output DP-4 --mode 3840x2160 --pos 3840x2160 --rate 144 --primary";
@@ -116,8 +117,7 @@ in
           "DP-4-DEL-41599-810963027-AW2725Q-1JYC174"
         ];
         # Alienware AW2725Qは144Hzが最大ではないけれど4Kの場合144Hzが適切なのでマニュアル設定。
-        configure_command =
-          "${pkgs.xorg.xrandr}/bin/xrandr" + " --output DP-4 --mode 3840x2160 --rate 144 --primary";
+        configure_command = xrandr + " --output DP-4 --mode 3840x2160 --rate 144 --primary";
         execute_after = dpiIs144;
       }
       {

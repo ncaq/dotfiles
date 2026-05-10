@@ -117,7 +117,9 @@ nix-fast-build --option eval-cache false --no-link --skip-cached --no-nom
 
 ### LLM向けのシンボリックリンク
 
-Codex向けの`AGENTS.md`とClaude Code向けの`CLAUDE.md`は以下のように`.github/copilot-instructions.md`のシンボリックリンクになっています。
+Codex向けの`AGENTS.md`と、
+Claude Code向けの`CLAUDE.md`は、
+以下のように`.github/copilot-instructions.md`のシンボリックリンクになっています。
 
 ```console
 AGENTS.md -> .github/copilot-instructions.md

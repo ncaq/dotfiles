@@ -125,7 +125,7 @@ The key words
 - "MUST NOT"
 - "REQUIRED"
 - "SHALL"
-- "SHALL NOT”"
+- "SHALL NOT"
 - "SHOULD"
 - "SHOULD NOT"
 - "RECOMMENDED"

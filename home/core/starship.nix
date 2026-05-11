@@ -4,7 +4,7 @@ _: {
 
     settings = {
       # 2行で表示する。
-      # 1行目には情報をあるだけたくさん表示する。
+      # 1行目には情報をあるだけたくさん表示する。`$status`は一番右側に表示する。
       # 2行目にはDebian風のシンプルなプロンプトを表示する。
       # 2行目をシンプルにしているのは、他の人やLLMに例示する時に誤解されにくいようにするため。
       format = "$time$all\n$username$hostname$directory$character";

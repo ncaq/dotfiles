@@ -52,7 +52,6 @@
       url = "github:Mic92/niks3";
       inputs = {
         nixpkgs.follows = "nixpkgs";
-        flake-parts.follows = "flake-parts";
         treefmt-nix.follows = "treefmt-nix";
       };
     };

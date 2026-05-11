@@ -9,7 +9,7 @@ _: {
       # 2行目をシンプルにしているのは、他の人やLLMに例示する時に誤解されにくいようにするため。
       format = "$time$all\n$username$hostname$directory$character";
       line_break = {
-        # allの中に含まれてしまっているので、
+        # `$line_break`が`$all`の中に含まれてしまっているので、
         # 自分で改行を制御するために無効化します。
         disabled = true;
       };

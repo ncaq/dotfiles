@@ -146,10 +146,11 @@ ThinkPadですが指紋センサーはありません。
 - Vulkan: 1.4.318 - radv [Mesa 25.2.6]
 - OpenGL: 4.6 (Compatibility Profile) Mesa 25.2.6
 - Memory: 61.89 GiB
-- Swap: 24.00 GiB
-- Disk (/): 367.78 GiB / 929.51 GiB (40%) - btrfs
+- Swap: 72.00 GiB
+- Disk (/): 402.35 GiB / 929.51 GiB (43%) - btrfs
 - Disk (/mnt/noa): 2.61 TiB / 12.73 TiB (20%) - btrfs
 - Output
+- Sound: Dummy Output (100%)
 - Input
 
 ## スマートデバイス

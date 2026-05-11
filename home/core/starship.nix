@@ -4,14 +4,24 @@ _: {
 
     settings = {
       # 2行で表示する。
-      # 1行目には情報をあるだけたくさん表示する。
+      # 1行目には情報をあるだけたくさん表示する。`$status`は一番右側に表示する。
       # 2行目にはDebian風のシンプルなプロンプトを表示する。
       # 2行目をシンプルにしているのは、他の人やLLMに例示する時に誤解されにくいようにするため。
-      format = "$time$status$all$username$hostname$directory$character";
+      format = "$time$all\n$username$hostname$directory$character";
+      line_break = {
+        # `$line_break`が`$all`の中に含まれてしまっているので、
+        # 自分で改行を制御するために無効化します。
+        disabled = true;
+      };
       time = {
         format = "[$time]($style) ";
         time_format = "%Y-%m-%dT%H:%M:%S";
         disabled = false;
+      };
+      status = {
+        disabled = false;
+        map_symbol = true;
+        pipestatus = true;
       };
       username = {
         format = "[$user]($style)@";
@@ -24,9 +34,6 @@ _: {
       directory = {
         truncation_length = 100;
         truncate_to_repo = false;
-      };
-      status = {
-        disabled = false;
       };
     };
   };

@@ -31,9 +31,9 @@ in
         hypervisor = "cloud-hypervisor";
         vsock.cid = config.microvmCid.mcp-nixos;
         vcpu = 1;
-        # NixOS基盤(120MB) + Python(50MB) + mcp-nixos(150MB) = 320MB程度ですが、
-        # 余裕を持って768MBにしています。
-        mem = 768;
+        # 実測ピークが約494MiB(NixOS基盤 + Python + mcp-nixos込み)なので、
+        # 約30%の余裕を持って640MiBにしています。
+        mem = 640;
         interfaces = [
           {
             type = "tap";

@@ -73,11 +73,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1778553054,
-        "narHash": "sha256-KTpOfl+K8thGxJgw8XBV94h2o5tC8PuVnuf6xDBeKtA=",
+        "lastModified": 1778560325,
+        "narHash": "sha256-y1fYmCpBVh7fbHJOAR6/gnbKxql2KodVBKAi5ydC4/s=",
         "owner": "ncaq",
         "repo": ".emacs.d",
-        "rev": "3dca5ce8b7962216f87c8f3ba9d00f4b572cf435",
+        "rev": "139b1c0610a9bc6f138b3e0bc01a22bca640f7e6",
         "type": "github"
       },
       "original": {

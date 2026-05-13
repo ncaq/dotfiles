@@ -100,11 +100,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1778054325,
-        "narHash": "sha256-qp9JqgIBiJdJ0M70/nwsPZqastx2Z7aF/6B83EPYxjw=",
+        "lastModified": 1778689930,
+        "narHash": "sha256-kKf8lzTij70GZz75kfTCbSnK4yGiZzCXLOy7lpCb0AM=",
         "owner": "ncaq",
         "repo": ".xmonad",
-        "rev": "de97b2527101f2b5e87babf413be6d4c4f7f8bbc",
+        "rev": "a3576bd915b0e4020ac4b61d9d48de448726ceba",
         "type": "github"
       },
       "original": {
@@ -223,11 +223,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1778630092,
-        "narHash": "sha256-0/yBmzTih7YpQevWZK52ouCUiYJmOA8BJU/OXkhwklY=",
+        "lastModified": 1778689953,
+        "narHash": "sha256-OkwuJjy4qIAzQnvPVMeXDJVWU7bzUrH4A/6wex5nhvU=",
         "owner": "ncaq",
         "repo": "git-hooks",
-        "rev": "4bcbef41d8bba7fc24d4825eed305039bc78b99d",
+        "rev": "6cd19d8b35dbdc5f06dd80472b60bc894b30ddbe",
         "type": "github"
       },
       "original": {

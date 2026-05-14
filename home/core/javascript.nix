@@ -1,4 +1,9 @@
 { pkgs, ... }:
+let
+  releaseAgeDays = 3;
+  releaseAgeMinutes = releaseAgeDays * 24 * 60;
+  releaseAgeSeconds = releaseAgeMinutes * 60;
+in
 {
   # サプライチェーン攻撃のリスク低減として、
   # 各JavaScriptパッケージマネージャで、
@@ -11,26 +16,26 @@
   # npm CLIの`min-release-age`(単位: 日)。
   # home-managerには`programs.npm`がないため`home.file`で直接生成します。
   home.file.".npmrc".text = ''
-    min-release-age=3
+    min-release-age=${toString releaseAgeDays}
   '';
 
   # pnpmはhome-manager専用モジュールがないため設定ファイルを直接書きます。
   # pnpmは`~/.config/pnpm/config.yaml`を読みます(単位: 分)。
   xdg.configFile."pnpm/config.yaml".text = ''
-    minimumReleaseAge: 4320
+    minimumReleaseAge: ${releaseAgeSeconds}
   '';
 
   # Yarn Berryの`npmMinimalAgeGate`(単位: 分)。
   programs = {
     yarn = {
       enable = true;
-      settings.npmMinimalAgeGate = 4320;
+      settings.npmMinimalAgeGate = releaseAgeMinutes;
     };
 
     # Bunの`minimumReleaseAge`(単位: 秒)。
     bun = {
       enable = true;
-      settings.install.minimumReleaseAge = 259200;
+      settings.install.minimumReleaseAge = releaseAgeSeconds;
     };
   };
 

@@ -21,9 +21,9 @@ in
 
   # pnpmはhome-manager専用モジュールがないため設定ファイルを直接書きます。
   # pnpmは`~/.config/pnpm/config.yaml`を読みます(単位: 分)。
-  xdg.configFile."pnpm/config.yaml".text = ''
-    minimumReleaseAge: ${releaseAgeSeconds}
-  '';
+  xdg.configFile."pnpm/config.yaml".source = (pkgs.formats.yaml { }).generate "pnpm-config.yaml" {
+    minimumReleaseAge = releaseAgeMinutes;
+  };
 
   # Yarn Berryの`npmMinimalAgeGate`(単位: 分)。
   programs = {

@@ -107,10 +107,14 @@ in
 
     # bindMountsのhostPathは起動時に存在している必要があります。
     # `/run`はtmpfsで毎boot消えるため再生成します。
-    # 所有者はrootだけにして、
-    # コンテナ内systemdのroot権限で配下のサービスディレクトリ作成を担います。
+    # コンテナ内のgithub-runnerサービスは`User=github-runner`で起動し、
+    # `WorkingDirectory=/run/github-runner/<name>`へchdirするため、
+    # `github-runner`ユーザーが親ディレクトリをtraverseできる必要があります。
+    # `privateUsers = "identity"`によりホストとコンテナのUIDは一致するため、
+    # ホスト側のディレクトリ所有者を`github-runner`にしておけば、
+    # コンテナ内のサービスも同ユーザーとしてアクセスできます。
     tmpfiles.rules = [
-      "d /run/github-runner 0700 root root -"
+      "d /run/github-runner 0700 github-runner github-runner -"
     ];
 
     services."container@github-runner-x64" = {

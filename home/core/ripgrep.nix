@@ -8,7 +8,7 @@ _: {
         "--line-number" # 行番号を表示します。
         "--type-not=svg" # SVGはXMLなのでテキスト検索してしまいますが膨大な結果が帰って来るので除外。
         "--hidden" # 隠しファイルも検索。デフォルトでhiddenは`.gitignore'を尊重します。
-        "--glob '!.git'" # hiddenを有効にすると`.git'も対象になってしまうので避けます。
+        "--glob=!.git" # hiddenを有効にすると`.git'も対象になってしまうので避けます。
         "--sort=path" # ソート順を安定させます。
       ];
     };

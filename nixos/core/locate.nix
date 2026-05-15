@@ -12,6 +12,7 @@
     prunePaths = lib.mkOptionDefault [
       "/home/${username}/.claude/plugins"
       "/home/${username}/.claude/projects"
+      "/home/${username}/.local/state/cabal/store"
     ];
     pruneNames = lib.mkOptionDefault [
       "$Recycle.Bin"

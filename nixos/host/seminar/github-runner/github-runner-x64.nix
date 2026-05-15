@@ -29,6 +29,17 @@ in
         hostPath = config.sops.secrets."runner-registration-token".path;
         isReadOnly = true;
       };
+      # ホストのnix-daemonがランナーのワークディレクトリ配下に書かれた、
+      # `post-build-hook`を実行できるようにします。
+      # Mic92/niks3-actionなどはhookのshimを、
+      # `${RUNNER_TEMP}/niks3/`(= `/run/github-runner/<name>/_temp/niks3/`)に置き、
+      # nixデーモンはホスト側からその絶対パスを開きます。
+      # コンテナの`/run`tmpfsのままではホストからは見えないため、
+      # 同一パスで両側から到達できるようにbind-mountを張ります。
+      "/run/github-runner" = {
+        hostPath = "/run/github-runner";
+        isReadOnly = false;
+      };
     };
     config =
       { lib, ... }:
@@ -42,7 +53,7 @@ in
         nix.settings = ciNixSettings;
         networking = {
           useHostResolvConf = lib.mkForce false;
-          firewall.trustedInterfaces = [ "eth0" ]; # CIジョブ中に任意のポートでリッスンするため全許可
+          firewall.trustedInterfaces = [ "eth0" ]; # CIジョブ中にリッスンするため全許可
         };
         services = {
           resolved.enable = true;
@@ -93,6 +104,18 @@ in
         { Destination = "${addr.guest}/32"; }
       ];
     };
+
+    # bindMountsのhostPathは起動時に存在している必要があります。
+    # `/run`はtmpfsで毎boot消えるため再生成します。
+    # コンテナ内のgithub-runnerサービスは`User=github-runner`で起動し、
+    # `WorkingDirectory=/run/github-runner/<name>`へchdirするため、
+    # `github-runner`ユーザーが親ディレクトリをtraverseできる必要があります。
+    # `privateUsers = "identity"`によりホストとコンテナのUIDは一致するため、
+    # ホスト側のディレクトリ所有者を`github-runner`にしておけば、
+    # コンテナ内のサービスも同ユーザーとしてアクセスできます。
+    tmpfiles.rules = [
+      "d /run/github-runner 0700 github-runner github-runner -"
+    ];
 
     services."container@github-runner-x64" = {
       # NixOSコンテナモジュールが生成するpostStartは`ip addr add`/`ip route add`を使うため、

@@ -11,7 +11,11 @@ in
   # 悪意あるパッケージがpublishされてから検出・取り下げされるまでの猶予を確保する目的です。
   # 各PMで設定キー名・単位が異なる点に注意。
 
-  # Denoはユーザグローバルの設定ファイルを公式にはサポートしていないので未対応です。
+  # Denoはユーザグローバルの設定ファイルを公式にはサポートしていませんが、
+  # 既に`.npmrc`の設定を読み込むPRがマージされています。
+  # [feat(npmrc): support min-release-age by dsherret](https://github.com/denoland/deno/pull/33983)
+  # それがリリースされれば既存のnpmrcの設定でDenoもカバーできます。
+  # 特にこちら側での対応は不要です。
 
   # npm CLIの`min-release-age`(単位: 日)。
   # home-managerには`programs.npm`がないため`home.file`で直接生成します。

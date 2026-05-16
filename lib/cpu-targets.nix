@@ -48,6 +48,15 @@ rec {
         "--param=l2-cache-size=1024"
       ];
     };
+
+    "AMD Ryzen 5 7600 6-Core Processor" = mkTarget {
+      arch = "znver4";
+      cacheParams = [
+        "--param=l1-cache-size=32"
+        "--param=l1-cache-line-size=64"
+        "--param=l2-cache-size=1024"
+      ];
+    };
   };
 
   cflagsFor =

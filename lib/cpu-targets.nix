@@ -1,0 +1,66 @@
+/**
+  CPUモデルごとの最適化コンパイルフラグレジストリ。
+
+  キーは`/proc/cpuinfo`の`model name`文字列そのままを採用する。
+  ベンダー独自の表記揺れを自分で正規化するよりも、
+  カーネルが返す文字列をそのまま流用するほうが事故が少ない。
+
+  各エントリの`arch`は、
+  `lib.systems.architectures.features`に登録済みの`gcc.arch`名でなければならず、
+  `mkTarget`の`assert`で評価時に検証される。
+  これによりnixpkgs側でarch名が変更/削除された際に静かに壊れることを防ぐ。
+
+  `cacheParams`は`gcc -march=native -E -v - </dev/null 2>&1 | grep cc1`の出力から、
+  該当CPU上で取得した値を写経する。
+  `-march=<arch>`だけではキャッシュ階層ヒントが付与されないため、
+  この情報がモデル固有最適化の主要な価値になる。
+*/
+{ lib }:
+let
+  inherit (lib.systems) architectures;
+
+  mkTarget =
+    {
+      arch,
+      tune ? arch,
+      cacheParams ? [ ],
+      extraFlags ? [ ],
+    }:
+    assert lib.assertMsg (
+      architectures.features ? ${arch}
+    ) "cpu-targets: unknown arch '${arch}' (not in lib.systems.architectures.features)";
+    {
+      inherit
+        arch
+        tune
+        cacheParams
+        extraFlags
+        ;
+    };
+in
+rec {
+  targets = {
+    "AMD Ryzen 9 9950X3D 16-Core Processor" = mkTarget {
+      arch = "znver5";
+      cacheParams = [
+        "--param=l1-cache-size=48"
+        "--param=l1-cache-line-size=64"
+        "--param=l2-cache-size=1024"
+      ];
+    };
+  };
+
+  cflagsFor =
+    name:
+    let
+      t = targets.${name};
+    in
+    [
+      "-march=${t.arch}"
+      "-mtune=${t.tune}"
+      "-O2"
+      "-pipe"
+    ]
+    ++ t.cacheParams
+    ++ t.extraFlags;
+}

@@ -198,7 +198,7 @@ in
           source = {
             source = "github";
             repo = "upstash/context7";
-            ref = "@upstash/context7-tools-ai-sdk@0.2.3";
+            ref = "@upstash/context7-mcp@2.2.5";
           };
         };
       };

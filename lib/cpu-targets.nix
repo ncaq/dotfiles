@@ -83,4 +83,26 @@ rec {
     ]
     ++ t.cacheParams
     ++ t.extraFlags;
+
+  /**
+    rustc向けのCPU最適化フラグ。
+    `cflagsFor`はGCCドライバ専用構文(`-march`/`--param`/`-pipe`)を含み、
+    rustcは受け付けないので、
+    別関数で対応するフラグに変換する。
+    rustcは`-C target-cpu`にgccと同じ`znver5`等を受け付け、
+    指定するとマイクロアーキテクチャ向けのfeatureが暗黙で有効になる。
+    `-O2`相当は`opt-level`で表現できるが、
+    cargoの`release` profileは既定で`opt-level=3`なため、
+    profile設定を尊重してここでは設定しない。
+    キャッシュ階層ヒントに相当する機構はrustcにはない。
+  */
+  rustflagsFor =
+    name:
+    let
+      t = targets.${name};
+    in
+    [
+      "-C"
+      "target-cpu=${t.arch}"
+    ];
 }

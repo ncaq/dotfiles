@@ -69,7 +69,13 @@ let
         NIX_RUSTFLAGS = appendEnv old "NIX_RUSTFLAGS" rustflags;
       };
     });
+
+  # 特別に最適化対象にしたいパッケージ一覧の名前をここに列挙します。
+  packages = [
+    "alacritty"
+    "emacs"
+    "firefox"
+    "thunderbird"
+  ];
 in
-{
-  emacs = optimize prev.emacs;
-}
+prev.lib.genAttrs packages (name: optimize prev.${name})

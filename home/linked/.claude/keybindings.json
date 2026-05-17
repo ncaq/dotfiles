@@ -23,18 +23,12 @@
       }
     },
     {
-      "context": "Settings",
-      "bindings": {
-        "ctrl+t": "select:previous",
-        "ctrl+n": "select:next"
-      }
-    },
-    {
       "context": "Confirmation",
       "bindings": {
         "ctrl+g": "confirm:no",
         "ctrl+t": "confirm:previous",
-        "ctrl+n": "confirm:next"
+        "ctrl+n": "confirm:next",
+        "meta+enter": "confirm:yes"
       }
     },
     {
@@ -46,7 +40,8 @@
     {
       "context": "HistorySearch",
       "bindings": {
-        "ctrl+g": "historySearch:accept"
+        "ctrl+g": "historySearch:accept",
+        "meta+enter": "historySearch:execute"
       }
     },
     {
@@ -64,14 +59,16 @@
     {
       "context": "Footer",
       "bindings": {
-        "ctrl+g": "footer:clearSelection"
+        "ctrl+g": "footer:clearSelection",
+        "meta+enter": "footer:openSelected"
       }
     },
     {
       "context": "MessageSelector",
       "bindings": {
         "ctrl+t": "messageSelector:up",
-        "ctrl+n": "messageSelector:down"
+        "ctrl+n": "messageSelector:down",
+        "meta+enter": "messageSelector:select"
       }
     },
     {
@@ -79,7 +76,8 @@
       "bindings": {
         "ctrl+g": "diff:dismiss",
         "ctrl+t": "diff:previousFile",
-        "ctrl+n": "diff:nextFile"
+        "ctrl+n": "diff:nextFile",
+        "meta+enter": "diff:viewDetails"
       }
     },
     {
@@ -87,7 +85,14 @@
       "bindings": {
         "ctrl+g": "select:cancel",
         "ctrl+t": "select:previous",
-        "ctrl+n": "select:next"
+        "ctrl+n": "select:next",
+        "meta+enter": "select:accept"
+      }
+    },
+    {
+      "context": "Settings",
+      "bindings": {
+        "meta+enter": "settings:close"
       }
     }
   ]

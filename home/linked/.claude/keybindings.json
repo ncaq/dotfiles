@@ -9,7 +9,9 @@
         "ctrl+l": "chat:externalEditor",
         "ctrl+/": "chat:undo",
         "ctrl+t": "history:previous",
-        "ctrl+n": "history:next"
+        "ctrl+n": "history:next",
+        "enter": "chat:newline",
+        "meta+enter": "chat:submit"
       }
     },
     {

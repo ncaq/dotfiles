@@ -26,7 +26,7 @@ in
 
   config = lib.mkIf (config.local.cpuTarget != null) {
     nixpkgs.overlays = [
-      (import ../../pkgs/cpu-optimized-overlay.nix config.local.cpuTarget)
+      (import ../../lib/cpu-optimized-overlay.nix config.local.cpuTarget)
     ];
   };
 }

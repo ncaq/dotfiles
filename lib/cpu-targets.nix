@@ -80,7 +80,6 @@ rec {
       "-march=${t.arch}"
       "-mtune=${t.tune}"
       "-O2" # `-O3`は一部のコードで逆効果になる可能性があるため`-O2`相当で止める。
-      "-pipe"
     ]
     ++ t.cacheParams
     ++ t.extraFlags;

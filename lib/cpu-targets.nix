@@ -86,7 +86,7 @@ rec {
 
   /**
     rustc向けのCPU最適化フラグ。
-    `cflagsFor`はGCCドライバ専用構文(`-march`/`--param`/`-pipe`)を含み、
+    `cflagsFor`はGCCドライバ専用構文(`-march`/`--param`)を含み、
     rustcは受け付けないので、
     別関数で対応するフラグに変換する。
     rustcは`-C target-cpu`にgccと同じ`znver5`等を受け付け、

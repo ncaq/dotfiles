@@ -73,6 +73,7 @@ let
   # 特別に最適化対象にしたいパッケージ一覧の名前をここに列挙します。
   packages = [
     "alacritty"
+    "alacritty-graphics"
     "emacs"
     "emacs-pgtk"
     "firefox"

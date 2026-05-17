@@ -74,6 +74,7 @@ let
   packages = [
     "alacritty"
     "emacs"
+    "emacs-pgtk"
     "firefox"
     "thunderbird"
   ];

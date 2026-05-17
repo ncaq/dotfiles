@@ -9,7 +9,7 @@
 }:
 let
   # NixOS環境では`osConfig.local.cpuTarget`からCPUモデルを取得します。
-  cpuTarget = if osConfig != null then osConfig.local.cpuTarget else null;
+  cpuTarget = osConfig.local.cpuTarget or null;
   # CPUモデルが登録済みならば、
   # CPUモデル向けの最適化overlayを利用します。
   # 非NixOS環境や非登録ホストでは`osConfig`が無いので、

@@ -72,9 +72,11 @@ let
 
   # 特別にCPUモデル固有の最適化対象にしたいパッケージ一覧の名前をここに列挙します。
   # バリアントが複数あるパッケージは、
-  # 基本的なバリアントを全て列挙しています。
-  # 参照しなければビルドされないため列挙されるだけならタダなので。
-  # 利用バリアントを変えた時の最適化漏れを気にしています。
+  # 基本的なバリアントを列挙しています。
+  # 参照しなければビルドされないため、
+  # 列挙されるだけならタダです。
+  # よって本当に使っているかはそこまで気にしていません。
+  # 利用バリアントを変えた時の最適化漏れのカバーを優先しています。
   packages = [
     "alacritty"
     "alacritty-graphics"
@@ -82,6 +84,34 @@ let
     "emacs-gtk"
     "emacs-nox"
     "emacs-pgtk"
+    "ffmpeg"
+    "ffmpeg-full"
+    "ffmpeg-headless"
+    "fftw"
+    "fftwFloat"
+    "fftwLongDouble"
+    "flac"
+    "gmp"
+    "graphicsmagick"
+    "imagemagick"
+    "libaom"
+    "libavif"
+    "libjxl"
+    "libsodium"
+    "libvorbis"
+    "mpfr"
+    "onnxruntime"
+    "openblas"
+    "postgresql"
+    "postgresql_18"
+    "postgresql_18_jit"
+    "postgresql_jit"
+    "stockfish"
+    "svt-av1"
+    "valkey"
+    "x265"
+    "xxHash"
+    "zstd"
   ];
 in
 prev.lib.genAttrs packages (name: optimize prev.${name})

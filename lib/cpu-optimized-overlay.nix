@@ -74,19 +74,11 @@ let
   # `alacritty-graphics`はnixpkgsで`alacritty/package.nix`を、
   # `withGraphics = true`で別途`callPackage`した独立derivationで、
   # `alacritty`へのoverrideは伝播しないため明示的に列挙する必要があります。
-  # firefox/thunderbirdは`firefox = wrapFirefox firefox-unwrapped {}`の構造のため、
-  # 実体である`*-unwrapped`を最適化対象にする必要があります。
-  # ラッパーは`final.firefox-unwrapped`を参照するので、
-  # `*-unwrapped`の差し替えで`firefox`にも反映されます。
   packages = [
     "alacritty"
     "alacritty-graphics"
     "emacs"
     "emacs-pgtk"
-    "firefox"
-    "firefox-unwrapped"
-    "thunderbird"
-    "thunderbird-unwrapped"
   ];
 in
 prev.lib.genAttrs packages (name: optimize prev.${name})

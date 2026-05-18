@@ -110,7 +110,7 @@ let
     "svt-av1"
     "valkey"
     "x265"
-    "xxHash"
+    "xxhash"
     "zstd"
   ];
 in

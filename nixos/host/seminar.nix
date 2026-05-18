@@ -13,6 +13,7 @@
 
     ./seminar
   ];
+  local.cpuTarget = "AMD Ryzen 5 7600 6-Core Processor";
   # GUIをデフォルトでは起動しない。
   systemd.defaultUnit = lib.mkForce "multi-user.target";
 }

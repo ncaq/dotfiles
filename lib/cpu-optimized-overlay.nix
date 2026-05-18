@@ -84,20 +84,12 @@ let
     "emacs-gtk"
     "emacs-nox"
     "emacs-pgtk"
-    "flac"
-    "graphicsmagick"
-    "imagemagick"
-    "libaom"
-    "libavif"
     "postgresql"
     "postgresql_18"
     "postgresql_18_jit"
     "postgresql_jit"
     "stockfish"
-    "svt-av1"
     "valkey"
-    "xxhash"
-    "zstd"
   ];
 in
 prev.lib.genAttrs packages (name: optimize prev.${name})

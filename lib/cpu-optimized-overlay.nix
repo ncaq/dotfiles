@@ -70,14 +70,17 @@ let
       };
     });
 
-  # 特別に最適化対象にしたいパッケージ一覧の名前をここに列挙します。
-  # `alacritty-graphics`はnixpkgsで`alacritty/package.nix`を、
-  # `withGraphics = true`で別途`callPackage`した独立derivationで、
-  # `alacritty`へのoverrideは伝播しないため明示的に列挙する必要があります。
+  # 特別にCPUモデル固有の最適化対象にしたいパッケージ一覧の名前をここに列挙します。
+  # バリアントが複数あるパッケージは、
+  # 基本的なバリアントを全て列挙しています。
+  # 参照しなければビルドされないため列挙されるだけならタダなので。
+  # 利用バリアントを変えた時の最適化漏れを気にしています。
   packages = [
     "alacritty"
     "alacritty-graphics"
     "emacs"
+    "emacs-gtk"
+    "emacs-nox"
     "emacs-pgtk"
   ];
 in

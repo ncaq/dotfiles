@@ -12,8 +12,9 @@ let
   cpuTarget = osConfig.local.cpuTarget or null;
   # CPUモデルが登録済みならば、
   # CPUモデル向けの最適化overlayを利用します。
-  # 非NixOS環境や非登録ホストでは`osConfig`が無いので、
-  # overlayは使いません。
+  # 非NixOS環境ではosConfig自体が無く、
+  # 登録外CPUのホストではcpuTargetがnullになるため、
+  # いずれの場合もoverlayは適用されません。
   extraOverlays = lib.optional (cpuTarget != null) (
     import ../../lib/cpu-optimized-overlay.nix cpuTarget
   );

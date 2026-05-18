@@ -62,25 +62,14 @@ in
     policies = {
       # [policy-templates](https://mozilla.github.io/policy-templates/)
       DisplayBookmarksToolbar = "never";
-      FirefoxHome = {
-        Search = false; # 検索ボックス非表示
-        SponsoredTopSites = false; # スポンサー付きサイト非表示
-      };
       Homepage = {
-        URL = "chrome://browser/content/blanktab.html";
-        Locked = false;
         StartPage = "previous-session";
       };
       NewTabPage = {
         Enabled = false;
         Locked = false;
       };
-      PDFjs = {
-        Enabled = true;
-        DefaultZoomValue = "page-fit";
-      };
       RequestedLocales = [ "ja" ]; # 言語設定を日本語に
-      TranslateEnabled = false; # 翻訳機能を無効化
       ExtensionSettings =
         let
           normalInstall =

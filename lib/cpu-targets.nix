@@ -107,7 +107,7 @@ rec {
     ];
 
   /**
-    arch名からLinuxカーネル向けのCPUターゲットKconfigシンボル名を得る。
+    CPUモデル名からLinuxカーネル向けのCPUターゲットKconfigシンボル名を得る。
     `arch/x86/Kconfig.cpu`の`MZEN`系オプションに対応する。
     XanModカーネルは`graysky2/kernel_compiler_patch`相当のパッチを統合済みで、
     `MZEN`〜`MZEN5`を選択可能。

@@ -7,7 +7,7 @@ _: {
     # amd-pstateが有効になっている場合は、
     # governorはEPP(Energy Performance Preference)ヒントとして利用されます。
     # CPUに自律的に決めるヒントを与えているだけなので、
-    # それで性能が性能固定されると言うわけではありません。
+    # それで性能が固定されるというわけではありません。
     # デフォルトで`powersave`ですが念の為に明示的に設定します。
     cpuFreqGovernor = "powersave";
     powertop = {

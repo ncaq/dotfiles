@@ -23,9 +23,11 @@ _: {
         CPU_SCALING_GOVERNOR_ON_BAT = "powersave";
 
         # EPPはデフォルトでは`balance_performance`/`balance_power`になります。
+        # AC接続時は性能を重視したいので、
+        # デフォルト値の`balance_performance`を念の為明示的に設定します。
+        CPU_ENERGY_PERF_POLICY_ON_AC = "balance_performance";
         # バッテリー時は電力を更に重視したいので、
         # `balance_power`から`power`に変更します。
-        CPU_ENERGY_PERF_POLICY_ON_AC = "balance_performance";
         CPU_ENERGY_PERF_POLICY_ON_BAT = "power";
       };
     };

@@ -54,7 +54,7 @@
 cpuName: _final: prev:
 let
   cpuTargets =
-    assert prev.assertMsg (cpuName != null) "cpuName must be provided to cpu-optimized-kernel-overlay";
+    assert prev.lib.assertMsg (cpuName != null) "cpuName must be provided";
     import ./cpu-targets.nix { inherit (prev) lib; };
   cflags = cpuTargets.cflagsFor cpuName;
   rustflags = cpuTargets.rustflagsFor cpuName;

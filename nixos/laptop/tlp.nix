@@ -1,6 +1,10 @@
 # ラップトップの電源管理ツールのtlpの設定をします。
 # [NixOS/nixos-hardware](https://github.com/NixOS/nixos-hardware)
-# でラップトップたちはtlpをデフォルトで有効にされています。
+# においてラップトップのプロファイルは、
+# <https://github.com/NixOS/nixos-hardware/blob/8792fab9d4a6454a9201675f01326f827ce35ead/common/pc/laptop/default.nix>
+# を参照しています。
+# この中でtlpが有効になるので、
+# 基本的にラップトップPCはnixos-hardwareの設定をしていれば自動的にtlpの設定が有効になっています。
 # しかしデフォルト設定がどれを選択しているのかイマイチわかりにくいので、
 # 念の為ユーザレベルでも設定しています。
 _: {

@@ -29,7 +29,9 @@
 */
 cpuName: _final: prev:
 let
-  cpuTargets = import ./cpu-targets.nix { inherit (prev) lib; };
+  cpuTargets =
+    assert prev.assertMsg (cpuName != null) "cpuName must be provided to cpu-optimized-kernel-overlay";
+    import ./cpu-targets.nix { inherit (prev) lib; };
   kernelOption = cpuTargets.kernelOptionFor cpuName;
   optimizedKernel = prev.linuxKernel.kernels.linux_xanmod.override (oldArgs: {
     kernelPatches = (oldArgs.kernelPatches or [ ]) ++ [

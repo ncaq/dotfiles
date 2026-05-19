@@ -16,7 +16,7 @@ _: {
 
         # ガバナーも明示。
         # amd-pstateのactive modeでは`powersave`一択。
-        # `peformance`は無意味に発熱します。
+        # `performance`は無意味に発熱します。
         # 負荷が高いときはCPUが自律的に周波数を上げるので、
         # 性能が犠牲になることはありません。
         CPU_SCALING_GOVERNOR_ON_AC = "powersave";

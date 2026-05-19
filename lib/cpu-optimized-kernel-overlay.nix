@@ -68,9 +68,7 @@ let
     name: optimize prev.linuxKernel.kernels.${name}
   );
 
-  optimizedPackages = prev.lib.mapAttrs (
-    _: kernel: prev.linuxKernel.packagesFor kernel
-  ) optimizedKernels;
+  optimizedPackages = prev.lib.mapAttrs (_: prev.linuxKernel.packagesFor) optimizedKernels;
 in
 {
   linuxKernel = prev.linuxKernel // {

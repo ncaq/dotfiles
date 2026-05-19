@@ -5,6 +5,7 @@
 
     ../native-linux
 
+    ../client
     ../laptop
 
     ./creep

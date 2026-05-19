@@ -10,6 +10,7 @@
 
     ../native-linux
 
+    ../client
     ../desktop
 
     ./bullet

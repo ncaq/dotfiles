@@ -35,15 +35,23 @@ linuxKernel.kernels.linux_xanmod.override (oldArgs: {
         # プリエンプトされたRCUリーダの優先度ブースト。
         # リアルタイムカーネル向け機能で、非RTサーバには不要。
         # mainlineデフォルトは`PREEMPT_RT=y`の時のみ`y`、それ以外は`n`。
-        # `RCU_BOOST_DELAY`はxanmodで`0`に設定されているが、
-        # `RCU_BOOST=n`に依存するKconfigなので自動的に無効化される。
         RCU_BOOST = lib.mkForce no;
-        # `RCU_DOUBLE_CHECK_CB_TIME`: コールバック時間チェック追加。
-        # mainlineデフォルトは`n`。
-        RCU_DOUBLE_CHECK_CB_TIME = lib.mkForce no;
+        # `RCU_BOOST_DELAY`はxanmodが`"0"`(即時ブースト)に設定しているが、
+        # `RCU_BOOST=n`に依存するKconfigなので無効化される。
+        # ただしxanmodの設定が`optional=false`(必須)のままだと、
+        # nixpkgsの`generate-config.pl`が依存切れによるunused optionをエラー扱いするため、
+        # `option`でoptional化(`?`付き)してwarning扱いに留める。
+        # 値そのものはxanmod元の`"0"`をそのまま使う。
+        # 依存切れで反映されないので何でも良い。
+        RCU_BOOST_DELAY = lib.mkForce (option (freeform "0"));
         # `RCU_EXP_KTHREAD`: expedited grace periodをリアルタイムkthreadで実行。
         # `NR_CPUS=8192`の環境(nixpkgsデフォルト)ではmainlineは`n`。
-        RCU_EXP_KTHREAD = lib.mkForce no;
+        # `depends on RCU_BOOST && RCU_EXPERT`のため`RCU_BOOST=n`下では同様にoptional化が必要。
+        RCU_EXP_KTHREAD = lib.mkForce (option no);
+        # `RCU_DOUBLE_CHECK_CB_TIME`: コールバック時間チェック追加。
+        # `depends on RCU_EXPERT`のみで`RCU_EXPERT=y`は満たされるためoptional化不要。
+        # mainlineデフォルトは`n`。
+        RCU_DOUBLE_CHECK_CB_TIME = lib.mkForce no;
       };
     }
   ];

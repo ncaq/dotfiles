@@ -105,4 +105,29 @@ rec {
       "-C"
       "target-cpu=${t.arch}"
     ];
+
+  /**
+    arch名からLinuxカーネル向けのCPUターゲットKconfigシンボル名を得る。
+    `arch/x86/Kconfig.cpu`の`MZEN`系オプションに対応する。
+    XanModカーネルは`graysky2/kernel_compiler_patch`相当のパッチを統合済みで、
+    `MZEN`〜`MZEN5`を選択可能。
+    Kconfigによる選択は`-march=znver*`の付与に加えて、
+    `X86_L1_CACHE_SHIFT`等のアーキテクチャ依存定数や、
+    Cソース内の`#ifdef CONFIG_*`分岐にも影響する。
+    `KCFLAGS`経由のフラグ注入では得られない構造的最適化が掛かるため、
+    こちらの方式を使う。
+  */
+  kernelOptionFor =
+    name:
+    let
+      t = targets.${name};
+      archToKernel = {
+        znver1 = "MZEN";
+        znver2 = "MZEN2";
+        znver3 = "MZEN3";
+        znver4 = "MZEN4";
+        znver5 = "MZEN5";
+      };
+    in
+    archToKernel.${t.arch} or (throw "cpu-targets: no kernel CPU for arch '${t.arch}'");
 }

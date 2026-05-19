@@ -3,13 +3,6 @@ let
   tailscale = config.services.tailscale.package;
 in
 {
-  # Exit Nodeとして動作するための追加設定。
-  # 基本的なTailscale有効化は nixos/core/tailscale.nix で行っています。
-  services.tailscale = {
-    openFirewall = true;
-    useRoutingFeatures = "both";
-  };
-
   # Tailscale Serveの設定。
   # Serveはtailnet内のみに公開する。
   # Caddy :8081がパス毎にtailnet専用サービスをルーティングする。

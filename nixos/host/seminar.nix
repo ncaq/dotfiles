@@ -11,6 +11,8 @@
 
     ../native-linux
 
+    ../server
+
     ./seminar
   ];
   local.cpuTarget = "AMD Ryzen 5 7600 6-Core Processor";

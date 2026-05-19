@@ -30,6 +30,11 @@ _: {
         # EPPはデフォルトでは`balance_performance`/`balance_power`になります。
         # AC接続時は性能を重視したいので、
         # デフォルト値の`balance_performance`を念の為明示的に設定します。
+        # `performance`にすることはあまり意味がありません。
+        # amd-pstateのactive modeでは、
+        # CPUが自律的に周波数を上げるので、
+        # アイドル時にも無意味に発熱することになり、
+        # 皮肉なことに性能が下がってしまうことがあります。
         CPU_ENERGY_PERF_POLICY_ON_AC = "balance_performance";
         # バッテリー時は電力を更に重視したいので、
         # `balance_power`から`power`に変更します。

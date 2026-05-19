@@ -10,7 +10,7 @@
     "build": "tsc"
   },
   "devDependencies": {
-    "@types/node": "22.19.18",
+    "@types/node": "22.19.19",
     "typescript": "6.0.3"
   },
   "engines": {

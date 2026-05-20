@@ -100,11 +100,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1779156449,
-        "narHash": "sha256-hhvog3glt5xnXb5L18S6lpvgLfYktVt8XGd5Ml7yVXA=",
+        "lastModified": 1779261774,
+        "narHash": "sha256-Ye0ZOtwOUQyIH6csfYTS9ntEZ25s+w6ZL25GC1TdRe4=",
         "owner": "ncaq",
         "repo": ".xmonad",
-        "rev": "792fc2fb21eed9832f9e35738efa4777e69f8438",
+        "rev": "bf5db9c3db842043b58565dabd7f5d8d6a6a94d8",
         "type": "github"
       },
       "original": {

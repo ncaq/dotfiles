@@ -21,9 +21,6 @@ in
 
   config = lib.mkIf cfg.enable {
     home.packages = [ pkgs.trayscale ];
-    xdg.autostart = {
-      enable = true;
-      entries = [ trayscale-autostart-desktop ];
-    };
+    xdg.autostart.entries = [ trayscale-autostart-desktop ];
   };
 }

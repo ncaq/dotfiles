@@ -8,6 +8,10 @@ in
 {
   xdg = {
     enable = true;
+    autostart = {
+      # ここでまとめてenableにします。
+      enable = true;
+    };
     userDirs = {
       # xdgディレクトリを日本語名称にせずにマジョリティな名称にするように明示的に設定。
       enable = true;

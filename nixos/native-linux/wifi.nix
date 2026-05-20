@@ -40,7 +40,7 @@ let
   # nm-file-secret-agentにpsk値を渡すエントリを生成するヘルパー。
   mkSecretEntry = id: {
     matchId = id;
-    matchType = "wifi";
+    matchType = "802-11-wireless"; # 短縮名(`wifi`)ではなく正式名の`802-11-wireless`である。
     matchSetting = "802-11-wireless-security";
     key = "psk";
     file = config.sops.secrets."wifi/${id}".path;

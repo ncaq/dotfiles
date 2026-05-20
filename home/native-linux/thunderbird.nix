@@ -1,4 +1,5 @@
-_: {
+{ pkgs, ... }:
+{
   programs.thunderbird = {
     enable = true;
     profiles.default = {
@@ -19,4 +20,6 @@ _: {
       };
     };
   };
+  home.packages = [ pkgs.birdtray ];
+  xdg.autostart.entries = [ "${pkgs.birdtray}/share/applications/com.ulduzsoft.Birdtray.desktop" ];
 }

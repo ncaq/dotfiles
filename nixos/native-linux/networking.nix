@@ -28,6 +28,12 @@ in
     nameservers = encryptedDns;
   };
 
+  programs = {
+    nm-applet = {
+      enable = true;
+    };
+  };
+
   services.resolved = {
     enable = true;
     dnssec = "true";

@@ -38,59 +38,7 @@
         "color": "white"
       },
       {
-        "id": "sep-context-tokens",
-        "type": "separator",
-        "character": " | Tok "
-      },
-      {
-        "id": "tokens-total",
-        "type": "tokens-total",
-        "color": "brightBlue",
-        "rawValue": true
-      },
-      {
-        "id": "sep-tokens-speed",
-        "type": "separator",
-        "character": " Spd "
-      },
-      {
-        "id": "total-speed",
-        "type": "total-speed",
-        "color": "brightMagenta",
-        "rawValue": true
-      },
-      {
-        "id": "sep-speed-git",
-        "type": "separator",
-        "character": " | "
-      },
-      {
-        "id": "git-branch",
-        "type": "git-branch",
-        "color": "magenta"
-      },
-      {
-        "id": "sep-git-branch-changes",
-        "type": "separator",
-        "character": " "
-      },
-      {
-        "id": "git-changes",
-        "type": "git-changes",
-        "color": "yellow"
-      },
-      {
-        "id": "sep-git-changes-worktree",
-        "type": "separator",
-        "character": " "
-      },
-      {
-        "id": "git-worktree",
-        "type": "git-worktree",
-        "color": "magenta"
-      },
-      {
-        "id": "sep-git-time",
+        "id": "sep-context-time",
         "type": "separator",
         "character": " | "
       },

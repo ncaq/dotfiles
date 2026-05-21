@@ -8,8 +8,7 @@ let
   pskEnvName = id: "WIFI_${lib.toUpper (builtins.replaceStrings [ "-" ] [ "_" ] id)}_PSK";
 
   # 各WiFiプロファイル共通の構造を生成するヘルパー。
-  # `id`と`ssid`と`key-mgmt`を受け取り、
-  # `ensureProfiles`に渡せるattrsetを返す。
+  # 各種引数から`ensureProfiles`に渡せるattrsetを返す。
   # interface-nameは敢えて指定せず、
   # どのWiFiインターフェースでも使えるようにする。
   mkWifi =

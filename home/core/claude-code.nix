@@ -191,7 +191,7 @@ in
           source = {
             source = "github";
             repo = "ncaq/konoka";
-            ref = "v7.1.2";
+            ref = "v8.0.0";
           };
         };
         context7-marketplace = {
@@ -219,8 +219,8 @@ in
         "swift-lsp@claude-plugins-official" = true;
         "typescript-lsp@claude-plugins-official" = true;
         # konoka
-        "bump-cabal-index-state@konoka" = true;
         "commit@konoka" = true;
+        "haskell-tasuke@konoka" = true;
         "kyosei@konoka" = true;
         "log-analyzer@konoka" = true;
         "nix-tasuke@konoka" = true;

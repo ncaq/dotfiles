@@ -1,8 +1,15 @@
-{ config, ... }:
+{ lib, config, ... }:
 let
+  # WiFiのpsk値を渡す環境変数名を生成する。
+  # systemdの`EnvironmentFile`経由で、
+  # NetworkManager-ensure-profilesに渡され、
+  # envsubstでkeyfileに展開される。
+  # 環境変数名にはハイフンを使えないためアンダースコアに変換し大文字化する。
+  pskEnvName = id: "WIFI_${lib.toUpper (builtins.replaceStrings [ "-" ] [ "_" ] id)}_PSK";
+
   # 各WiFiプロファイル共通の構造を生成するヘルパー。
-  # idとssid, key-mgmt, secretのsopsキーを受け取り、
-  # ensureProfilesに渡せるattrsetを返す。
+  # `id`と`ssid`と`key-mgmt`を受け取り、
+  # `ensureProfiles`に渡せるattrsetを返す。
   # interface-nameは敢えて指定せず、
   # どのWiFiインターフェースでも使えるようにする。
   mkWifi =
@@ -23,10 +30,13 @@ let
       };
       wifi-security = {
         key-mgmt = keyMgmt;
-        # psk値はnm-file-secret-agent経由でランタイムに注入する。
-        # `psk-flags=1`はagent-ownedを意味しNMが秘密値をsecret agentに問い合わせる。
-        psk = "";
-        psk-flags = "1";
+        # psk値は`environmentFiles`経由でenvsubstがkeyfileに展開する。
+        # `psk-flags`は指定せず(=`0`, system-owned)、
+        # NetworkManager本体がkeyfileのpskを直接管理する。
+        # secret agentを介さないため手動接続でもパスワード入力を求められない。
+        # keyfileは`/run/NetworkManager/system-connections/`(tmpfs, root専用0600)に生成され、
+        # Nixストアにpsk平文が残ることはない。
+        psk = "\${${pskEnvName id}}";
       };
       ipv4 = {
         method = "auto";
@@ -36,15 +46,6 @@ let
         method = "auto";
       };
     };
-
-  # nm-file-secret-agentにpsk値を渡すエントリを生成するヘルパー。
-  mkSecretEntry = id: {
-    matchId = id;
-    matchType = "802-11-wireless"; # 短縮名(`wifi`)ではなく正式名の`802-11-wireless`である。
-    matchSetting = "802-11-wireless-security";
-    key = "psk";
-    file = config.sops.secrets."wifi/${id}".path;
-  };
 
   wifiNetworks = [
     {
@@ -81,17 +82,29 @@ in
         value = mkWifi w;
       }) wifiNetworks
     );
-
-    secrets.entries = map (w: mkSecretEntry w.id) wifiNetworks;
+    # 各WiFiのpsk値を環境変数として渡すenvファイル。
+    # `sops.templates`がplaceholderを実値に展開した上でroot専用ファイルとして配置する。
+    # NetworkManagerの通常の手動セットアップの場合、
+    # `/etc/NetworkManager/system-connections/`に、
+    # パスワードを含めた平文ファイルが生成されるので、
+    # セキュリティに大した差はない。
+    # 永続領域に置かれないだけ少しだけ安全かもしれない。
+    environmentFiles = [ config.sops.templates."wifi-env".path ];
   };
 
-  sops.secrets = builtins.listToAttrs (
-    map (w: {
-      name = "wifi/${w.id}";
-      value = {
-        sopsFile = ../../secrets/wifi.yaml;
-        key = w.id;
-      };
-    }) wifiNetworks
-  );
+  sops = {
+    # `KEY=value`形式のenvファイルを生成し`ensureProfiles.environmentFiles`に渡す。
+    templates."wifi-env".content = lib.concatMapStringsSep "\n" (
+      w: "${pskEnvName w.id}=${config.sops.placeholder."wifi/${w.id}"}"
+    ) wifiNetworks;
+    secrets = builtins.listToAttrs (
+      map (w: {
+        name = "wifi/${w.id}";
+        value = {
+          sopsFile = ../../secrets/wifi.yaml;
+          key = w.id;
+        };
+      }) wifiNetworks
+    );
+  };
 }

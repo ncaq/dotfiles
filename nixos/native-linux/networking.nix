@@ -24,6 +24,10 @@ in
   networking = {
     networkmanager = {
       enable = true;
+      # NMが「Wired connection 1」のような一時プロファイル(nm-generated=true)を、
+      # 明示プロファイルのない管理対象NICに自動生成するのを抑止する。
+      # 宣言的に書いたプロファイル以外がランタイムに出現するのを防ぐ。
+      settings.main.no-auto-default = "*";
     };
     nameservers = encryptedDns;
   };

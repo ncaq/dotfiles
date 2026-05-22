@@ -11,7 +11,7 @@ _: {
         # interface-nameは敢えて指定しません。
         # 複雑な設定を持つものだけ個別設定します。
       };
-      ivp4 = {
+      ipv4 = {
         method = "auto";
       };
       ipv6 = {

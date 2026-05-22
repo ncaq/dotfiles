@@ -106,4 +106,17 @@ in
       }) wifiNetworks
     );
   };
+
+  # `NetworkManager-ensure-profiles.service`は、
+  # `environmentFiles`に指定したsopsテンプレート(`/run/secrets/rendered/wifi-env`)を、
+  # 必須の`EnvironmentFile`として読み込む。
+  # このファイルを展開するのは`sops-install-secrets.service`だが、
+  # nixpkgs本体の定義には両者の順序依存がなく、
+  # tmpfs上のファイルは毎ブート再生成が必要なため、
+  # 展開前に`ensure-profiles`が走ると`Failed to load environment files`で失敗することがある。
+  # 明示的に`sops-install-secrets.service`の後に走るよう順序付けする。
+  systemd.services.NetworkManager-ensure-profiles = {
+    after = [ "sops-install-secrets.service" ];
+    wants = [ "sops-install-secrets.service" ];
+  };
 }

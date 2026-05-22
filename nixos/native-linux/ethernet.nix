@@ -1,5 +1,4 @@
-{ ... }:
-{
+_: {
   networking.networkmanager.ensureProfiles.profiles = {
     # NetworkManagerのプロファイルの自動生成を無効化して宣言的管理に寄せているため、
     # ベーシックなEthernetプロファイルも明示的に宣言する必要があります。

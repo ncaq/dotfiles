@@ -160,6 +160,9 @@ in
       }
     ];
   };
+  # `services.grobi`に設定する値や、
+  # 現在適用されている設定を、
+  # 簡単に確認できるようにするためPATHに実行バイナリを追加します。
   home.packages = [
     config.services.grobi.package
   ];

@@ -53,7 +53,7 @@ in
           "DP-2-GSM-23487-16843009-LG ULTRAGEAR+-"
           "DP-4-DEL-41599-810963027-AW2725Q-1JYC174"
         ];
-        configure_column = [
+        configure_row = [
           "DP-0-ACR-1680-2450570038-Acer VG270K-"
           "DP-2-GSM-23487-16843009-LG ULTRAGEAR+-"
           "DP-4-DEL-41599-810963027-AW2725Q-1JYC174"
@@ -128,7 +128,7 @@ in
           "HDMI-1"
           "eDP-1"
         ];
-        configure_row = [
+        configure_column = [
           "HDMI-1"
           "eDP-1"
         ];

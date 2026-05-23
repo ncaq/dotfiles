@@ -29,7 +29,7 @@ let
         # tailscale pingでレイテンシを取得
         # 出力例: pong from seminar (100.82.4.93) via 192.168.10.88:41641 in 4ms
         ping_output=$(tailscale ping -c 1 seminar 2>&1) || true
-        latency=$(echo "$ping_output" | grep -oP 'in \K[0-9]+(?=ms)' || echo "999")
+        latency=$(echo "$ping_output" | grep -oP 'in \K[0-9]+(?=m?s)')
 
         # レイテンシが10ms以下ならローカルネットワーク
         if [ "$latency" -le 10 ]; then

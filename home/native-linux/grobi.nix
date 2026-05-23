@@ -151,6 +151,7 @@ in
           "HDMI-1"
           "eDP-1"
         ];
+        primary = "eDP-1";
         execute_after = inhibitIdle;
       }
       {

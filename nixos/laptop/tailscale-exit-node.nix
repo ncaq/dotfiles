@@ -8,7 +8,8 @@ let
   cfg = config.custom.tailscale-exit-node;
   # tailscale pingのレイテンシでローカルネットワークにいるかを判定し、
   # exit nodeの設定を切り替えるスクリプト。
-  # ローカルネットワークなら数ms、外部なら数10ms以上になります。
+  # ローカルネットワークなら`0s`か数ms、
+  # 外部なら数10ms以上になります。
   tailscaleExitNodeScript = lib.getExe (
     pkgs.writeShellApplication {
       name = "tailscale-exit-node";

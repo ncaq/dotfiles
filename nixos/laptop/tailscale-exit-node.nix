@@ -30,14 +30,18 @@ let
         # tailscale pingでレイテンシを取得
         # 出力例: pong from seminar (100.82.4.93) via 192.168.10.88:41641 in 4ms
         ping_output=$(tailscale ping -c 1 seminar 2>&1) || true
-        latency=$(echo "$ping_output" | grep -oP 'in \K[0-9]+(?=m?s)')
+        # 単位込みの値を抽出
+        latency=$(echo "$ping_output" | grep -oP 'in \K[0-9]+m?s')
+        # 正規表現に当てはまらない場合は非常に大きな値を設定して外部とみなす
+        latency_ms=$(echo "$latency" | grep -oP '[0-9]+(?=ms)' || echo "99999")
 
         # レイテンシが10ms以下ならローカルネットワーク
-        if [ "$latency" -le 10 ]; then
-          echo "seminar latency is ''${latency}ms (local network), disabling exit node"
+        # `0s`は特別扱いします
+        if [ "$latency" = "0s" ] || [ "$latency_ms" -le 10 ]; then
+          echo "seminar latency is ''${latency} (local network), disabling exit node"
           tailscale set --exit-node=
         else
-          echo "seminar latency is ''${latency}ms (external network), enabling exit node"
+          echo "seminar latency is ''${latency} (external network), enabling exit node"
           tailscale set --exit-node=seminar
         fi
       '';

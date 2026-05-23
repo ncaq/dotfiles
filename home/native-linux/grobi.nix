@@ -3,6 +3,7 @@ let
   xrandr = "${pkgs.xorg.xrandr}/bin/xrandr";
   xset = "${pkgs.xorg.xset}/bin/xset";
   systemctl = "${pkgs.systemd}/bin/systemctl";
+  # xrandrとxftの範囲でDPIを設定します。
   dpiIs144 = [
     (xrandr + " --dpi 144")
     "echo 'Xft.dpi: 144'|${pkgs.xorg.xrdb}/bin/xrdb -merge"

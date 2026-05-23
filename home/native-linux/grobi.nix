@@ -121,7 +121,20 @@ in
         execute_after = dpiIs144;
       }
       {
-        # 主にラップトップ向けのfallback設定。
+        # ラップトップPCと外部ディスプレイ(テレビ想定)をHDMIで接続したときの設定。
+        name = "laptop-docking-tv";
+        atomic = true;
+        outputs_connected = [
+          "HDMI-1"
+          "eDP-1"
+        ];
+        configure_row = [
+          "HDMI-1"
+          "eDP-1"
+        ];
+      }
+      {
+        # ラップトップ向けのfallback設定。
         name = "eDP-1";
         configure_single = "eDP-1";
       }

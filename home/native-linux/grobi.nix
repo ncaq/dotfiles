@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 let
   xrandr = "${pkgs.xorg.xrandr}/bin/xrandr";
   dpiIs144 = [
@@ -127,4 +127,7 @@ in
       }
     ];
   };
+  home.packages = [
+    config.services.grobi.package
+  ];
 }

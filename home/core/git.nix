@@ -29,7 +29,6 @@ in
           quotePath = false;
           symlinks = true;
         };
-        commit.verbose = true;
         diff.algorithm = "histogram";
         fetch.prune = true;
         init.defaultBranch = "master";

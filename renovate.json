@@ -4,6 +4,6 @@
   "ignorePresets": [":maintainLockFilesWeekly", ":maintainLockFilesMonthly"],
   "lockFileMaintenance": {
     "enabled": true,
-    "schedule": ["at any time"]
+    "schedule": ["before 7am"]
   }
 }

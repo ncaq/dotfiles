@@ -8,13 +8,14 @@
 }:
 let
   # Claude Codeのパッケージをsopsシークレットから環境変数を注入するラッパーで包む。
-  # api.githubcopilot.comがOAuth Dynamic Client Registrationをサポートしないのと、
+  # `api.githubcopilot.com`がOAuth Dynamic Client Registrationをサポートしないのと、
   # それを正しくClaude Codeが処理しないため、
-  # PATをBearer tokenとしてHTTPヘッダーで渡す必要がある。
+  # PATをBearer tokenとしてHTTPヘッダーで渡す必要があります。
   # 全シェルにトークンを展開するのはあまりやりたくないため、
   # コマンドだけに注入する方法を取ります。
-  # symlinkJoin+wrapProgramではなくwriteShellApplicationを使うことで、
-  # home-managerの--mcp-configラッピングと合わせて二重wrappingを避けます。
+  # `symlinkJoin`+`wrapProgram`ではなく`writeShellApplication`を使うことで、
+  # home-managerの`--mcp-config`ラッピングと合わせた二重wrappingを避けて、
+  # プロセスの名前を`claude`に保ちます。
   claude-code-wrapped = pkgs.writeShellApplication {
     name = "claude";
     text = ''
@@ -93,8 +94,10 @@ let
 
   # コーディングエージェントの作業ディレクトリ。
   # konokaプラグインは`${XDG_RUNTIME_DIR:-/tmp}/coding-agent-work/`を使用します。
-  # NixOS環境ではosConfigからUIDを取得して`/run/user/<uid>/coding-agent-work/`を構築します。
-  # 非NixOS環境(Termux等)ではXDG_RUNTIME_DIRが設定されない場合があるため`/tmp`にフォールバックします。
+  # NixOS環境では`osConfig`からUIDを取得して、
+  # `/run/user/<uid>/coding-agent-work/`を構築します。
+  # 非NixOS環境(Termux等)では`XDG_RUNTIME_DIR`が設定されない場合があるため、
+  # `/tmp`にフォールバックします。
   codingAgentWorkDirFullPath =
     let
       uid = if osConfig != null then osConfig.users.users.${config.home.username}.uid else null;
@@ -152,7 +155,13 @@ in
               {
                 type = "command";
                 command = ''
-                  echo "以下の情報はfastfetchからのもので、今どのようなマシンで動いているかを示しています。"
+                  cat <<'EOS'
+                  以下の情報はfastfetchの実行結果です。
+                  今どのようなマシンで動いているか、
+                  そのマシンが起動時にどのような状態にあるかを示しています。
+                  特に一行目のユーザ名の`@`の右に書いてあるhostnameと、
+                  OSの情報を覚えてください。
+                  EOS
                   ${pkgs.fastfetch}/bin/fastfetch
                 '';
               }
@@ -168,6 +177,7 @@ in
         type = "command";
         command = lib.getExe ccstatusline;
       };
+      inputNeededNotifEnabled = true; # 入力待ちのときに通知を出す。
       sandbox = {
         # sandboxは通常無効にします。
         # sandboxであることが由来のトラブルが多すぎるためです。
@@ -176,11 +186,9 @@ in
         # sandboxを有効にしたいときはsandbox任せで自動承認させたいと思う時が多いからです。
         allowUnsandboxedCommands = false;
       };
-      # インストール時にclaude-plugins-officialは登録されますが、
-      # ファイルが消えると再登録されないため宣言的に追加もしておきます。
-      # またインストール時にclaude-plugins-officialを名乗っているのはclaude-codeのサブディレクトリであることもあるので、
-      # 安定性のために明示的に指定します。
       extraKnownMarketplaces = {
+        # インストール時にclaude-plugins-officialは登録されますが、
+        # ファイルが消えると再登録されないため宣言的に追加もしておきます。
         claude-plugins-official = {
           source = {
             source = "github";
@@ -237,8 +245,18 @@ in
       permissions = {
         defaultMode = "auto";
         additionalDirectories = [
+          # コーディングエージェント向けに用意した作業ディレクトリは当然読み書きを許可します。
           codingAgentWorkDirFullPath
+          # nixのビルド結果の`result`はシンボリックリンクで`/nix/store/`を見ているので、
+          # ビルド結果を参照する時いちいち許可を求められないようにします。
+          # トラブル時にプログラムのソースコードを探る時もここから読むので、
+          # 調査時にも許可を求められないようにします。
+          # ファイルシステムレベルで読み取り専用なので壊される心配はありません。
           "/nix/store/"
+          # dotfilesにグローバルの設定の殆どを置いているので、
+          # 現在の設定を確認しやすいように読み取りを許可します。
+          # 書き込みも許可してしまいますが、
+          # 適切に拒否するのが面倒なのでそのままにしています。
           "~/dotfiles/"
         ];
         allow = jsRunnerPermissions ++ [
@@ -482,8 +500,12 @@ in
       mergeClaudeJson =
         let
           claudeJsonOverrides = {
-            externalEditorContext = true; # 外部エディタでプロンプトを編集するとき最後の応答がエディタに表示される。
-            remoteControlAtStartup = true; # 起動時にリモートコントロールを有効にする。
+            # Chromeを使っていないので無効にします。
+            claudeInChromeDefaultEnabled = false;
+            # 外部エディタでプロンプトを編集するとき最後の応答がエディタに表示される。
+            externalEditorContext = true;
+            # 起動時にリモートコントロールを有効にする。
+            remoteControlAtStartup = true;
           };
           overrideJson = pkgs.writeText "overrides.json" (builtins.toJSON claudeJsonOverrides);
         in

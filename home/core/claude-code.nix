@@ -155,7 +155,7 @@ in
               {
                 type = "command";
                 command = ''
-                  cat <<EOS
+                  cat <<'EOS'
                   以下の情報はfastfetchの実行結果です。
                   今どのようなマシンで動いているか、
                   そのマシンが起動時にどのような状態にあるかを示しています。

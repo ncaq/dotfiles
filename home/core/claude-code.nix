@@ -497,6 +497,8 @@ in
       mergeClaudeJson =
         let
           claudeJsonOverrides = {
+            # Chromeを使っていないので無効にします。
+            claudeInChromeDefaultEnabled = false;
             # 外部エディタでプロンプトを編集するとき最後の応答がエディタに表示される。
             externalEditorContext = true;
             # 起動時にリモートコントロールを有効にする。

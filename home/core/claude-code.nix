@@ -155,7 +155,13 @@ in
               {
                 type = "command";
                 command = ''
-                  echo "以下の情報はfastfetchからのもので、今どのようなマシンで動いているかを示しています。"
+                  cat <<EOS
+                  以下の情報はfastfetchの実行結果です。
+                  今どのようなマシンで動いているか、
+                  そのマシンが起動時にどのような状態にあるかを示しています。
+                  特に一行目のユーザ名の`@`の右に書いてあるhostnameと、
+                  OSの情報を覚えてください。
+                  EOS
                   ${pkgs.fastfetch}/bin/fastfetch
                 '';
               }

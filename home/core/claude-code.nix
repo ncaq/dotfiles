@@ -177,6 +177,7 @@ in
         type = "command";
         command = lib.getExe ccstatusline;
       };
+      inputNeededNotifEnabled = true; # 入力待ちのときに通知を出す。
       sandbox = {
         # sandboxは通常無効にします。
         # sandboxであることが由来のトラブルが多すぎるためです。

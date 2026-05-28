@@ -134,95 +134,41 @@
       flake =
         let
           inherit (nixpkgs) lib;
-          # ディレクトリ内の全.nixファイルをimportするヘルパー関数。
+          # ディレクトリ内の全`.nix`ファイルをimportするヘルパー関数。
           importDirModules = import ./lib/import-dir-modules.nix { inherit lib; };
-          # 許可するライセンス。
-          allowlistedLicenses = with lib.licenses; [
-            nvidiaCudaRedist # 再配布可能ならまだマシ。
-            unfreeRedistributable # 再配布可能ならまだマシ。
-          ];
-          # 明示的に許可するunfreeパッケージのリスト。
-          allowedUnfreePackages = [
-            "claude-code" # 一番使いやすいLLMエージェントのため仕方がない。
-            "discord" # ネイティブ版の方が音声などが安定しているため仕方がない。
-            "slack" # ネイティブ版の方が通知などが安定しているため仕方がない。
-            "zoom" # ネイティブ版の方が動画などが安定しているため仕方がない。
-          ];
-          nixpkgsConfig = {
-            inherit allowlistedLicenses;
-            allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) allowedUnfreePackages;
-          };
+          # nixpkgsの共通設定。
+          nixpkgsConfig = import ./lib/nixpkgs-config.nix { inherit lib; };
           # 全環境で共通のoverlays。
           overlays = [
             inputs.firge-nix.overlays.default
           ];
           # system固有のpkgsを生成する関数。
-          importPkgsStable = importPkgsFor nixpkgs;
-          importPkgsUnstable = importPkgsFor nixpkgs-unstable;
           importPkgsFor =
             pkgset: system:
             import pkgset {
               inherit system overlays;
               config = nixpkgsConfig;
             };
+          # systemを受け取り安定版のpkgsを生成する。
+          importPkgsStable = importPkgsFor nixpkgs;
+          # systemを受け取り不安定版のpkgsを生成する。
+          importPkgsUnstable = importPkgsFor nixpkgs-unstable;
         in
         {
           hostDefs =
             let
-              mkNixosSystem =
-                {
-                  hostName,
-                  system,
-                }:
-                let
-                  specialArgs = {
-                    inherit
-                      importDirModules
-                      inputs
-
-                      hostName
-                      ;
-                    username = "ncaq";
-                  };
-                  modules = [
-                    (_: {
-                      nixpkgs = {
-                        config = nixpkgsConfig;
-                        inherit overlays;
-                      };
-                    })
-                    inputs.disko.nixosModules.default
-                    inputs.sops-nix.nixosModules.sops
-                    ./nixos/configuration.nix
-                    ./nixos/host/${hostName}.nix
-                    home-manager.nixosModules.home-manager
-                    (
-                      { config, ... }:
-                      {
-                        home-manager = {
-                          backupFileExtension = "hm-bak";
-                          useGlobalPkgs = true;
-                          useUserPackages = true;
-                          extraSpecialArgs = specialArgs // {
-                            pkgs-unstable = importPkgsUnstable system;
-                            isTermux = false;
-                            isWSL = config.wsl.enable or false;
-                          };
-                          sharedModules = [
-                            inputs.sops-nix.homeManagerModules.sops
-                          ];
-                          users.ncaq = import ./home;
-                        };
-                      }
-                    )
-                  ];
-                in
-                {
-                  nixosSystem = lib.nixosSystem {
-                    inherit modules specialArgs system;
-                  };
-                  inherit modules specialArgs system;
+              mkNixosSystem = import ./lib/mk-nixos-system.nix {
+                inherit
+                  lib
+                  importPkgsUnstable
+                  importDirModules
+                  inputs
+                  ;
+                nixpkgs = {
+                  config = nixpkgsConfig;
+                  inherit overlays;
                 };
+              };
             in
             {
               "SSD0086" = mkNixosSystem {
@@ -245,69 +191,23 @@
 
           nixosConfigurations = lib.mapAttrs (_: def: def.nixosSystem) top.config.flake.hostDefs;
 
-          testNixosBoot =
-            lib.mapAttrs
-              (
-                name: hostDef:
-                (importPkgsStable hostDef.system).testers.runNixOSTest {
-                  name = "test-nixos-boot-${name}";
-                  node = {
-                    # `runNixOSTest`が追加する`nixpkgs`の読み込み専用設定を無効化します。
-                    # `hardware-configuration.nix`が存在する時、
-                    # `nixpkgs.hostPlatform`を設定しているので、
-                    # 読み込み専用にされた`nixpkgs`オプションへの設定がエラーになります。
-                    # 基本的にモジュール単位のテスト機構であり、
-                    # 全体のブートを想定していないゆえの挙動でしょう。
-                    # 自動生成ファイルである`hardware-configuration.nix`を編集したくないため、
-                    # 上書きを有効にしてしまいます。
-                    # ブートのテストの場合ではあまり問題にならないはずです。
-                    pkgsReadOnly = false;
-                    inherit (hostDef) specialArgs;
-                  };
-                  nodes.machine = {
-                    imports = hostDef.modules ++ [
-                      ./nixos/test/vm-override.nix
-                    ];
-                  };
-                  # テスト環境はネットワークに繋がっていないため、
-                  # ネットワーク依存のユニットは失敗します。
-                  # よって全体成功を期待することはできません。
-                  # multi-user.targetに到達すればひとまず成功とみなしています。
-                  testScript = ''
-                    machine.wait_for_unit("multi-user.target")
-                  '';
-                }
-              )
-              (lib.filterAttrs (_: def: !(def.nixosSystem.config.wsl.enable or false)) top.config.flake.hostDefs);
+          testNixosBoot = import ./lib/test-nixos-boot.nix {
+            inherit top lib importPkgsStable;
+          };
 
           homeConfigurations =
             let
-              mkLinuxHome =
-                {
-                  system,
-                  username,
-                }:
-                home-manager.lib.homeManagerConfiguration {
-                  pkgs = importPkgsStable system;
-                  extraSpecialArgs = {
-                    inherit
-                      importDirModules
-                      inputs
-
-                      username
-                      ;
-                    pkgs-unstable = importPkgsUnstable system;
-                    isTermux = false;
-                    isWSL = false;
-                  };
-                  modules = [
-                    inputs.sops-nix.homeManagerModules.sops
-                    ./home
-                  ];
-                };
+              mkLinuxHomeManager = import ./lib/mk-linux-home-manager.nix {
+                inherit
+                  importPkgsStable
+                  importPkgsUnstable
+                  importDirModules
+                  inputs
+                  ;
+              };
             in
             {
-              "x86_64-linux" = mkLinuxHome {
+              "x86_64-linux" = mkLinuxHomeManager {
                 system = "x86_64-linux";
                 username = "ncaq";
               };
@@ -334,6 +234,28 @@
           ...
         }:
         {
+          treefmt.config = {
+            projectRootFile = "flake.nix";
+            programs = {
+              actionlint.enable = true;
+              deadnix.enable = true;
+              nixfmt.enable = true;
+              prettier.enable = true;
+              shellcheck.enable = true;
+              shfmt.enable = true;
+              statix.enable = true;
+              typos.enable = true;
+              zizmor.enable = true;
+            };
+            settings.formatter = {
+              editorconfig-checker = {
+                command = pkgs.editorconfig-checker;
+                includes = [ "*" ];
+              };
+              zizmor.options = [ "--pedantic" ];
+            };
+          };
+
           checks =
             let
               inherit (nixpkgs) lib;
@@ -366,27 +288,6 @@
             in
             nixosEvalChecks // hmEvalChecks;
 
-          treefmt.config = {
-            projectRootFile = "flake.nix";
-            programs = {
-              actionlint.enable = true;
-              deadnix.enable = true;
-              nixfmt.enable = true;
-              prettier.enable = true;
-              shellcheck.enable = true;
-              shfmt.enable = true;
-              statix.enable = true;
-              typos.enable = true;
-              zizmor.enable = true;
-            };
-            settings.formatter = {
-              editorconfig-checker = {
-                command = pkgs.editorconfig-checker;
-                includes = [ "*" ];
-              };
-              zizmor.options = [ "--pedantic" ];
-            };
-          };
           packages = {
             # flake.lockの管理バージョンをre-exportすることで安定した利用を促進。
             inherit (pkgs)
@@ -395,11 +296,11 @@
               git
               home-manager
               nix-fast-build
-              qemu-user
               ;
             # PRコメントにnvd diffを投稿するスクリプト。
             nvd-pr-diff = pkgs.callPackage ./pkgs/nvd-pr-diff { };
           };
+
           devShells.default = pkgs.mkShell {
             buildInputs = with pkgs; [
               # treefmtで指定したプログラムの単体版。

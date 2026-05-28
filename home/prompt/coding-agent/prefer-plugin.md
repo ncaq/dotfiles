@@ -28,7 +28,7 @@ amendなどの高度なオプションを使うのを求められた時は、
 [log-analyzer:log-analyzer](https://github.com/ncaq/konoka/blob/master/plugins/log-analyzer/agents/log-analyzer.md)
 エージェントを基本的に利用してください。
 
-長大なファイルでも高速に結果が帰って来ることが期待できます。
+長大なファイルでも高速に結果が返って来ることが期待できます。
 
 ## pr
 

@@ -1,4 +1,4 @@
-{ lib, ... }:
+{ lib }:
 let
   # 許可するライセンス。
   allowlistedLicenses = with lib.licenses; [

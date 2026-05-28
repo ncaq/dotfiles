@@ -134,114 +134,58 @@
       flake =
         let
           inherit (nixpkgs) lib;
-          # ディレクトリ内の全.nixファイルをimportするヘルパー関数。
+          # ディレクトリ内の全`.nix`ファイルをimportするヘルパー関数。
           importDirModules = import ./lib/import-dir-modules.nix { inherit lib; };
-          # 許可するライセンス。
-          allowlistedLicenses = with lib.licenses; [
-            nvidiaCudaRedist # 再配布可能ならまだマシ。
-            unfreeRedistributable # 再配布可能ならまだマシ。
-          ];
-          # 明示的に許可するunfreeパッケージのリスト。
-          allowedUnfreePackages = [
-            "claude-code" # 一番使いやすいLLMエージェントのため仕方がない。
-            "discord" # ネイティブ版の方が音声などが安定しているため仕方がない。
-            "slack" # ネイティブ版の方が通知などが安定しているため仕方がない。
-            "zoom" # ネイティブ版の方が動画などが安定しているため仕方がない。
-          ];
-          nixpkgsConfig = {
-            inherit allowlistedLicenses;
-            allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) allowedUnfreePackages;
-          };
+          # nixpkgsの共通設定。
+          nixpkgsConfig = import ./lib/nixpkgs-config.nix { inherit lib; };
           # 全環境で共通のoverlays。
           overlays = [
             inputs.firge-nix.overlays.default
           ];
           # system固有のpkgsを生成する関数。
-          importPkgsStable = importPkgsFor nixpkgs;
-          importPkgsUnstable = importPkgsFor nixpkgs-unstable;
           importPkgsFor =
             pkgset: system:
             import pkgset {
               inherit system overlays;
               config = nixpkgsConfig;
             };
+          # systemを受け取り安定版のpkgsを生成する。
+          importPkgsStable = importPkgsFor nixpkgs;
+          # systemを受け取り不安定版のpkgsを生成する。
+          importPkgsUnstable = importPkgsFor nixpkgs-unstable;
+          # NixOSシステムを生成する関数。
+          mkNixosSystem = import ./lib/mk-nixos-system.nix {
+            inherit
+              lib
+              importPkgsUnstable
+              importDirModules
+              inputs
+              ;
+            nixpkgs = {
+              config = nixpkgsConfig;
+              inherit overlays;
+            };
+          };
         in
         {
-          hostDefs =
-            let
-              mkNixosSystem =
-                {
-                  hostName,
-                  system,
-                }:
-                let
-                  specialArgs = {
-                    inherit
-                      importDirModules
-                      inputs
-
-                      hostName
-                      ;
-                    username = "ncaq";
-                  };
-                  modules = [
-                    (_: {
-                      nixpkgs = {
-                        config = nixpkgsConfig;
-                        inherit overlays;
-                      };
-                    })
-                    inputs.disko.nixosModules.default
-                    inputs.sops-nix.nixosModules.sops
-                    ./nixos/configuration.nix
-                    ./nixos/host/${hostName}.nix
-                    home-manager.nixosModules.home-manager
-                    (
-                      { config, ... }:
-                      {
-                        home-manager = {
-                          backupFileExtension = "hm-bak";
-                          useGlobalPkgs = true;
-                          useUserPackages = true;
-                          extraSpecialArgs = specialArgs // {
-                            pkgs-unstable = importPkgsUnstable system;
-                            isTermux = false;
-                            isWSL = config.wsl.enable or false;
-                          };
-                          sharedModules = [
-                            inputs.sops-nix.homeManagerModules.sops
-                          ];
-                          users.ncaq = import ./home;
-                        };
-                      }
-                    )
-                  ];
-                in
-                {
-                  nixosSystem = lib.nixosSystem {
-                    inherit modules specialArgs system;
-                  };
-                  inherit modules specialArgs system;
-                };
-            in
-            {
-              "SSD0086" = mkNixosSystem {
-                system = "x86_64-linux";
-                hostName = "SSD0086";
-              };
-              "bullet" = mkNixosSystem {
-                system = "x86_64-linux";
-                hostName = "bullet";
-              };
-              "creep" = mkNixosSystem {
-                system = "x86_64-linux";
-                hostName = "creep";
-              };
-              "seminar" = mkNixosSystem {
-                system = "x86_64-linux";
-                hostName = "seminar";
-              };
+          hostDefs = {
+            "SSD0086" = mkNixosSystem {
+              system = "x86_64-linux";
+              hostName = "SSD0086";
             };
+            "bullet" = mkNixosSystem {
+              system = "x86_64-linux";
+              hostName = "bullet";
+            };
+            "creep" = mkNixosSystem {
+              system = "x86_64-linux";
+              hostName = "creep";
+            };
+            "seminar" = mkNixosSystem {
+              system = "x86_64-linux";
+              hostName = "seminar";
+            };
+          };
 
           nixosConfigurations = lib.mapAttrs (_: def: def.nixosSystem) top.config.flake.hostDefs;
 

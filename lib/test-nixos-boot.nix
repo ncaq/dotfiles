@@ -24,7 +24,7 @@ lib.mapAttrs
       };
       nodes.machine = {
         imports = hostDef.modules ++ [
-          ./nixos/test/vm-override.nix
+          ../nixos/test/vm-override.nix
         ];
       };
       # テスト環境はネットワークに繋がっていないため、

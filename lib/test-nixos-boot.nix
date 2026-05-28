@@ -1,4 +1,9 @@
-{ lib, importPkgsStable, ... }:
+{
+  top,
+  lib,
+  importPkgsStable,
+  ...
+}:
 lib.mapAttrs
   (
     name: hostDef:

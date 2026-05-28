@@ -12,7 +12,8 @@
 
 `$XDG_RUNTIME_DIR`が設定されていない環境では`/tmp/coding-agent-work/`にフォールバックします。
 
-`claude/settings.json`の`permissions.additionalDirectories`に実際に使える作業ディレクトリが指定されています。
+`claude/settings.json`の`permissions.additionalDirectories`に、
+実際に使える作業ディレクトリが指定されています。
 
 - 一時ファイルの出力先として使えます
 - 承認なしでファイルの作成・編集・削除が可能です

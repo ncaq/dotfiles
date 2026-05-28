@@ -334,6 +334,28 @@
           ...
         }:
         {
+          treefmt.config = {
+            projectRootFile = "flake.nix";
+            programs = {
+              actionlint.enable = true;
+              deadnix.enable = true;
+              nixfmt.enable = true;
+              prettier.enable = true;
+              shellcheck.enable = true;
+              shfmt.enable = true;
+              statix.enable = true;
+              typos.enable = true;
+              zizmor.enable = true;
+            };
+            settings.formatter = {
+              editorconfig-checker = {
+                command = pkgs.editorconfig-checker;
+                includes = [ "*" ];
+              };
+              zizmor.options = [ "--pedantic" ];
+            };
+          };
+
           checks =
             let
               inherit (nixpkgs) lib;
@@ -366,27 +388,6 @@
             in
             nixosEvalChecks // hmEvalChecks;
 
-          treefmt.config = {
-            projectRootFile = "flake.nix";
-            programs = {
-              actionlint.enable = true;
-              deadnix.enable = true;
-              nixfmt.enable = true;
-              prettier.enable = true;
-              shellcheck.enable = true;
-              shfmt.enable = true;
-              statix.enable = true;
-              typos.enable = true;
-              zizmor.enable = true;
-            };
-            settings.formatter = {
-              editorconfig-checker = {
-                command = pkgs.editorconfig-checker;
-                includes = [ "*" ];
-              };
-              zizmor.options = [ "--pedantic" ];
-            };
-          };
           packages = {
             # flake.lockの管理バージョンをre-exportすることで安定した利用を促進。
             inherit (pkgs)
@@ -400,6 +401,7 @@
             # PRコメントにnvd diffを投稿するスクリプト。
             nvd-pr-diff = pkgs.callPackage ./pkgs/nvd-pr-diff { };
           };
+
           devShells.default = pkgs.mkShell {
             buildInputs = with pkgs; [
               # treefmtで指定したプログラムの単体版。

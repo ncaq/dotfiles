@@ -195,32 +195,17 @@
 
           homeConfigurations =
             let
-              mkLinuxHome =
-                {
-                  system,
-                  username,
-                }:
-                home-manager.lib.homeManagerConfiguration {
-                  pkgs = importPkgsStable system;
-                  extraSpecialArgs = {
-                    inherit
-                      importDirModules
-                      inputs
-
-                      username
-                      ;
-                    pkgs-unstable = importPkgsUnstable system;
-                    isTermux = false;
-                    isWSL = false;
-                  };
-                  modules = [
-                    inputs.sops-nix.homeManagerModules.sops
-                    ./home
-                  ];
-                };
+              mkLinuxHomeManager = import ./lib/mk-linux-home-manager.nix {
+                inherit
+                  importPkgsStable
+                  importPkgsUnstable
+                  importDirModules
+                  inputs
+                  ;
+              };
             in
             {
-              "x86_64-linux" = mkLinuxHome {
+              "x86_64-linux" = mkLinuxHomeManager {
                 system = "x86_64-linux";
                 username = "ncaq";
               };

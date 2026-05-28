@@ -191,7 +191,7 @@
 
           nixosConfigurations = lib.mapAttrs (_: def: def.nixosSystem) top.config.flake.hostDefs;
 
-          testNixosBoot = import lib/test-nixos-boot.nix {
+          testNixosBoot = import ./lib/test-nixos-boot.nix {
             inherit top lib importPkgsStable;
           };
 

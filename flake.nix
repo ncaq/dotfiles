@@ -149,10 +149,19 @@
               inherit system overlays;
               config = nixpkgsConfig;
             };
+          # systemごとにpkgsをメモ化するヘルパー。
+          # 複数ホストやcheck/test-nixos-bootから同じ`system`で繰り返し呼ばれても、
+          # 同じpkgs実体を返すようにして、評価時のメモリ消費を削減する。
+          memoizePkgsPerSystem =
+            f:
+            let
+              memo = lib.genAttrs top.config.systems f;
+            in
+            system: memo.${system};
           # systemを受け取り安定版のpkgsを生成する。
-          importPkgsStable = importPkgsFor nixpkgs;
+          importPkgsStable = memoizePkgsPerSystem (importPkgsFor nixpkgs);
           # systemを受け取り不安定版のpkgsを生成する。
-          importPkgsUnstable = importPkgsFor nixpkgs-unstable;
+          importPkgsUnstable = memoizePkgsPerSystem (importPkgsFor nixpkgs-unstable);
         in
         {
           hostDefs =

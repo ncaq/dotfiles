@@ -396,7 +396,6 @@
               git
               home-manager
               nix-fast-build
-              qemu-user
               ;
             # PRコメントにnvd diffを投稿するスクリプト。
             nvd-pr-diff = pkgs.callPackage ./pkgs/nvd-pr-diff { };

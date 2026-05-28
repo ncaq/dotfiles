@@ -23,6 +23,6 @@ inputs.home-manager.lib.homeManagerConfiguration {
   };
   modules = [
     inputs.sops-nix.homeManagerModules.sops
-    ./home
+    ../home
   ];
 }

@@ -153,39 +153,41 @@
           importPkgsStable = importPkgsFor nixpkgs;
           # systemを受け取り不安定版のpkgsを生成する。
           importPkgsUnstable = importPkgsFor nixpkgs-unstable;
-          # NixOSシステムを生成する関数。
-          mkNixosSystem = import ./lib/mk-nixos-system.nix {
-            inherit
-              lib
-              importPkgsUnstable
-              importDirModules
-              inputs
-              ;
-            nixpkgs = {
-              config = nixpkgsConfig;
-              inherit overlays;
-            };
-          };
         in
         {
-          hostDefs = {
-            "SSD0086" = mkNixosSystem {
-              system = "x86_64-linux";
-              hostName = "SSD0086";
+          hostDefs =
+            let
+              mkNixosSystem = import ./lib/mk-nixos-system.nix {
+                inherit
+                  lib
+                  importPkgsUnstable
+                  importDirModules
+                  inputs
+                  ;
+                nixpkgs = {
+                  config = nixpkgsConfig;
+                  inherit overlays;
+                };
+              };
+            in
+            {
+              "SSD0086" = mkNixosSystem {
+                system = "x86_64-linux";
+                hostName = "SSD0086";
+              };
+              "bullet" = mkNixosSystem {
+                system = "x86_64-linux";
+                hostName = "bullet";
+              };
+              "creep" = mkNixosSystem {
+                system = "x86_64-linux";
+                hostName = "creep";
+              };
+              "seminar" = mkNixosSystem {
+                system = "x86_64-linux";
+                hostName = "seminar";
+              };
             };
-            "bullet" = mkNixosSystem {
-              system = "x86_64-linux";
-              hostName = "bullet";
-            };
-            "creep" = mkNixosSystem {
-              system = "x86_64-linux";
-              hostName = "creep";
-            };
-            "seminar" = mkNixosSystem {
-              system = "x86_64-linux";
-              hostName = "seminar";
-            };
-          };
 
           nixosConfigurations = lib.mapAttrs (_: def: def.nixosSystem) top.config.flake.hostDefs;
 

@@ -20,9 +20,9 @@ let
     username = "ncaq";
   };
   modules = [
-    (_: {
+    {
       inherit nixpkgs;
-    })
+    }
     inputs.disko.nixosModules.default
     inputs.sops-nix.nixosModules.sops
     ../nixos/configuration.nix

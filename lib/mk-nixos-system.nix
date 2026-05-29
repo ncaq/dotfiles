@@ -1,6 +1,6 @@
 {
-  nixpkgs,
   lib,
+  importPkgsStable,
   importPkgsUnstable,
   importDirModules,
   inputs,
@@ -20,9 +20,11 @@ let
     username = "ncaq";
   };
   modules = [
-    {
-      inherit nixpkgs;
-    }
+    # 共有のpkgsインスタンスをNixOSに渡し、
+    # ホストごとにnixpkgs全体を再評価することによるメモリ重複を防ぐ。
+    # `nixpkgs.overlays`は`appendOverlays`で後から追加されるため、
+    # CPU最適化overlayなどホスト固有のoverlayは引き続き有効。
+    { nixpkgs.pkgs = importPkgsStable system; }
     inputs.disko.nixosModules.default
     inputs.sops-nix.nixosModules.sops
     ../nixos/configuration.nix

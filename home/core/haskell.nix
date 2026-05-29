@@ -34,13 +34,9 @@ in
   home = {
     packages =
       (with pkgs; [
-        alex
         cabal-install
-        cabal2nix
         fourmolu
         ghc
-        happy
-        haskell-ci
         haskell-language-server
         hlint
         hpack

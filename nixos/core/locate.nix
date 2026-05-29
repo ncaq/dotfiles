@@ -12,6 +12,7 @@
     prunePaths = lib.mkOptionDefault [
       "/home/${username}/.claude/plugins"
       "/home/${username}/.claude/projects"
+      "/home/${username}/.local/share/direnv"
       "/home/${username}/.local/state/cabal/store"
     ];
     pruneNames = lib.mkOptionDefault [
@@ -20,6 +21,7 @@
       ".Trash-1000"
       ".cabal"
       ".cargo"
+      ".direnv"
       ".dub"
       ".gem"
       ".ghcup"

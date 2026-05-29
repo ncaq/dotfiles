@@ -169,14 +169,11 @@
               mkNixosSystem = import ./lib/mk-nixos-system.nix {
                 inherit
                   lib
+                  importPkgsStable
                   importPkgsUnstable
                   importDirModules
                   inputs
                   ;
-                nixpkgs = {
-                  config = nixpkgsConfig;
-                  inherit overlays;
-                };
               };
             in
             {

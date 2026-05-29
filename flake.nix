@@ -120,118 +120,123 @@
       home-manager,
       ...
     }:
-    flake-parts.lib.mkFlake { inherit inputs; } (top: {
-      imports = [
-        home-manager.flakeModules.home-manager
-        treefmt-nix.flakeModule
-      ];
+    let
+      inherit (nixpkgs) lib;
 
       systems = [
         "aarch64-linux"
         "x86_64-linux"
       ];
 
-      flake =
-        let
-          inherit (nixpkgs) lib;
-          # ディレクトリ内の全`.nix`ファイルをimportするヘルパー関数。
-          importDirModules = import ./lib/import-dir-modules.nix { inherit lib; };
-          # nixpkgsの共通設定。
-          nixpkgsConfig = import ./lib/nixpkgs-config.nix { inherit lib; };
-          # 全環境で共通のoverlays。
-          overlays = [
-            inputs.firge-nix.overlays.default
-          ];
-          # system固有のpkgsを生成する関数。
-          importPkgsFor =
-            pkgset: system:
-            import pkgset {
-              inherit system overlays;
-              config = nixpkgsConfig;
-            };
-          # systemごとにpkgsをメモ化するヘルパー。
-          # 複数ホストやcheck/test-nixos-bootから同じ`system`で繰り返し呼ばれても、
-          # 同じpkgs実体を返すようにして、評価時のメモリ消費を削減する。
-          memoizePkgsPerSystem =
-            f:
-            let
-              memo = lib.genAttrs top.config.systems f;
-            in
-            system: memo.${system};
-          # systemを受け取り安定版のpkgsを生成する。
-          importPkgsStable = memoizePkgsPerSystem (importPkgsFor nixpkgs);
-          # systemを受け取り不安定版のpkgsを生成する。
-          importPkgsUnstable = memoizePkgsPerSystem (importPkgsFor nixpkgs-unstable);
-        in
-        {
-          hostDefs =
-            let
-              mkNixosSystem = import ./lib/mk-nixos-system.nix {
-                inherit
-                  lib
-                  importPkgsStable
-                  importPkgsUnstable
-                  importDirModules
-                  inputs
-                  ;
-              };
-            in
-            {
-              "SSD0086" = mkNixosSystem {
-                system = "x86_64-linux";
-                hostName = "SSD0086";
-              };
-              "bullet" = mkNixosSystem {
-                system = "x86_64-linux";
-                hostName = "bullet";
-              };
-              "creep" = mkNixosSystem {
-                system = "x86_64-linux";
-                hostName = "creep";
-              };
-              "seminar" = mkNixosSystem {
-                system = "x86_64-linux";
-                hostName = "seminar";
-              };
-            };
-
-          nixosConfigurations = lib.mapAttrs (_: def: def.nixosSystem) top.config.flake.hostDefs;
-
-          testNixosBoot = import ./lib/test-nixos-boot.nix {
-            inherit top lib importPkgsStable;
-          };
-
-          homeConfigurations =
-            let
-              mkLinuxHomeManager = import ./lib/mk-linux-home-manager.nix {
-                inherit
-                  importPkgsStable
-                  importPkgsUnstable
-                  importDirModules
-                  inputs
-                  ;
-              };
-            in
-            {
-              "x86_64-linux" = mkLinuxHomeManager {
-                system = "x86_64-linux";
-                username = "ncaq";
-              };
-            };
-
-          nixOnDroidConfigurations = {
-            default = import ./nix-on-droid {
-              inherit
-                importDirModules
-                inputs
-                nixpkgsConfig
-                overlays
-                ;
-              system = "aarch64-linux";
-              username = "ncaq";
-            };
-          };
+      # ディレクトリ内の全`.nix`ファイルをimportするヘルパー関数。
+      importDirModules = import ./lib/import-dir-modules.nix { inherit lib; };
+      # nixpkgsの共通設定。
+      nixpkgsConfig = import ./lib/nixpkgs-config.nix { inherit lib; };
+      # 全環境で共通のoverlays。
+      overlays = [
+        inputs.firge-nix.overlays.default
+      ];
+      # system固有のpkgsを生成する関数。
+      importPkgsFor =
+        pkgset: system:
+        import pkgset {
+          inherit system overlays;
+          config = nixpkgsConfig;
         };
+      # systemごとにpkgsをメモ化するヘルパー。
+      # 複数ホストやcheck/test-nixos-bootから同じ`system`で繰り返し呼ばれても、
+      # 同じpkgs実体を返すようにして、評価時のメモリ消費を削減する。
+      memoizePkgsPerSystem =
+        f:
+        let
+          memo = lib.genAttrs systems f;
+        in
+        system: memo.${system};
+      # systemを受け取り安定版のpkgsを生成する。
+      importPkgsStable = memoizePkgsPerSystem (importPkgsFor nixpkgs);
+      # systemを受け取り不安定版のpkgsを生成する。
+      importPkgsUnstable = memoizePkgsPerSystem (importPkgsFor nixpkgs-unstable);
+
+      mkNixosSystem = import ./lib/mk-nixos-system.nix {
+        inherit
+          lib
+          importPkgsStable
+          importPkgsUnstable
+          importDirModules
+          inputs
+          ;
+      };
+
+      hostDefs = {
+        "SSD0086" = mkNixosSystem {
+          system = "x86_64-linux";
+          hostName = "SSD0086";
+        };
+        "bullet" = mkNixosSystem {
+          system = "x86_64-linux";
+          hostName = "bullet";
+        };
+        "creep" = mkNixosSystem {
+          system = "x86_64-linux";
+          hostName = "creep";
+        };
+        "seminar" = mkNixosSystem {
+          system = "x86_64-linux";
+          hostName = "seminar";
+        };
+      };
+
+      nixosConfigurations = lib.mapAttrs (_: def: def.nixosSystem) hostDefs;
+
+      testNixosBoot = import ./lib/test-nixos-boot.nix {
+        inherit lib importPkgsStable hostDefs;
+      };
+
+      mkLinuxHomeManager = import ./lib/mk-linux-home-manager.nix {
+        inherit
+          importPkgsStable
+          importPkgsUnstable
+          importDirModules
+          inputs
+          ;
+      };
+
+      homeConfigurations = {
+        "x86_64-linux" = mkLinuxHomeManager {
+          system = "x86_64-linux";
+          username = "ncaq";
+        };
+      };
+
+      nixOnDroidConfigurations = {
+        default = import ./nix-on-droid {
+          inherit
+            importDirModules
+            inputs
+            nixpkgsConfig
+            overlays
+            ;
+          system = "aarch64-linux";
+          username = "ncaq";
+        };
+      };
+    in
+    flake-parts.lib.mkFlake { inherit inputs; } {
+      imports = [
+        home-manager.flakeModules.home-manager
+        treefmt-nix.flakeModule
+      ];
+
+      inherit systems;
+
+      flake = {
+        inherit
+          nixosConfigurations
+          testNixosBoot
+          homeConfigurations
+          nixOnDroidConfigurations
+          ;
+      };
 
       perSystem =
         {
@@ -264,7 +269,6 @@
 
           checks =
             let
-              inherit (nixpkgs) lib;
               # NixOS構成の評価チェック(評価のみ、ビルドしない)
               nixosEvalChecks =
                 lib.mapAttrs'
@@ -279,12 +283,12 @@
                   (
                     lib.filterAttrs (
                       _: nixosConfig: nixosConfig.pkgs.stdenv.hostPlatform.system == system
-                    ) top.config.flake.nixosConfigurations
+                    ) nixosConfigurations
                   );
               # home-manager構成の評価チェック
               hmEvalChecks =
                 let
-                  hmConfig = top.config.flake.homeConfigurations.${system} or null;
+                  hmConfig = homeConfigurations.${system} or null;
                 in
                 lib.optionalAttrs (hmConfig != null) {
                   "hm-eval" = builtins.seq hmConfig.activationPackage.drvPath (
@@ -329,7 +333,7 @@
             ];
           };
         };
-    });
+    };
 
   nixConfig = {
     extra-substituters = [

@@ -3,8 +3,6 @@
 let
   # `nix-fast-build`をカスタマイズします。
   # 設定ファイル機能がないので引数を上書きするラッパーを作ることでカスタマイズしています。
-  # `--option eval-cache false`は、
-  # SQLiteキャッシュの競合のエラー表示を回避するために評価キャッシュを無効化するものです。
   # `--no-link`は、
   # チェックするだけで`result`リンクが作成されるのを回避するものです。
   # `--skip-cached`は、
@@ -13,7 +11,6 @@ let
     name = "nix-fast-build";
     text = ''
       exec ${pkgs.lib.getExe pkgs.nix-fast-build} \
-        --option eval-cache false \
         --no-link \
         --skip-cached \
         "$@"

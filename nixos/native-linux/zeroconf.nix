@@ -21,7 +21,6 @@ _: {
     # Fedora(`-Ddefault-mdns=no`ビルド)が同等の対処をしており、
     # avahi-daemonを主のmDNS実装とする運用が業界標準。
     resolved.extraConfig = "MulticastDNS=no";
-    gvfs.enable = true;
   };
 
   # nscdのsystemd再起動制限を緩和。

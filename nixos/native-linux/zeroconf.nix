@@ -13,6 +13,14 @@ _: {
         workstation = true;
       };
     };
+    # systemd-resolvedのmDNSレスポンダを無効化してavahiにmDNSを一本化する。
+    # 両者が同じホスト名を広告するとavahiがself-conflictを起こし、
+    # `Host name conflict, retrying with hostname-N`で名前末尾の数字が増え続ける。
+    # Debian trixieの、
+    # [TC decision on avahi vs systemd-resolved - #1091864](https://lists.debian.org/debian-ctte/2025/02/msg00019.html)や、
+    # Fedora(`-Ddefault-mdns=no`ビルド)が同等の対処をしており、
+    # avahi-daemonを主のmDNS実装とする運用が業界標準。
+    resolved.extraConfig = "MulticastDNS=no";
     gvfs.enable = true;
   };
 

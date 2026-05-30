@@ -1,13 +1,21 @@
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
 {
   programs.ssh = {
     enable = true;
     package = pkgs.openssh; # システムのがない場合に備えて一貫してインストール指定。
     enableDefaultConfig = false;
     matchBlocks = {
-      "seminar" = {
-        user = "ncaq";
-      };
+      ${
+        lib.concatStringsSep " " [
+          "bullet"
+          "creep"
+          "seminar"
+          "ssd0086-wsl"
+        ]
+      } =
+        {
+          user = "ncaq";
+        };
       "ssh.forgejo.ncaq.net" = {
         port = 2222;
         user = "forgejo";

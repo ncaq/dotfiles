@@ -1,23 +1,8 @@
 {
-  pkgs,
   config,
   ...
 }:
 let
-  # workaround script that adds --protocol http2 flag to tunnel command.
-  cloudflaredWrapper = pkgs.writeShellApplication {
-    name = "cloudflared";
-    text = ''
-      # Check if this is a tunnel command
-      if [[ "''${1:-}" == "tunnel" ]]; then
-        # Insert --protocol http2 before other tunnel arguments
-        exec ${pkgs.cloudflared}/bin/cloudflared "$@" --protocol http2
-      else
-        # For non-tunnel commands, pass through as-is
-        exec ${pkgs.cloudflared}/bin/cloudflared "$@"
-      fi
-    '';
-  };
   forgejoAddr = config.machineAddresses.forgejo.guest;
   mcpNixosAddr = config.machineAddresses.mcp-nixos.guest;
   garageAddr = config.machineAddresses.garage.guest;
@@ -36,7 +21,6 @@ in
   # tunnel credentials JSON to tunnel_credentials key in the sops file.
   services.cloudflared = {
     enable = true;
-    package = cloudflaredWrapper;
     certificateFile = config.sops.secrets."cloudflare-cert".path;
     tunnels.seminar = {
       default = "http_status:404";
@@ -49,38 +33,40 @@ in
       };
     };
   };
-  # Cloudflare認証情報を管理。
-  sops.secrets = {
-    "cloudflare-cert" = {
-      sopsFile = ../../../secrets/seminar/cloudflare.yaml;
-      key = "cert_pem";
+  sops = {
+    # security.acmeのDNS-01チャレンジ用環境変数ファイル。
+    # lego(ACMEクライアント)がCloudflare DNS APIでTXTレコードを操作する。
+    templates."cloudflare-dns-env" = {
+      content = ''
+        CF_DNS_API_TOKEN=${config.sops.placeholder."cloudflare-dns-api-token"}
+      '';
       owner = "root";
       group = "root";
       mode = "0400";
     };
-    "cloudflare-tunnel-credentials" = {
-      sopsFile = ../../../secrets/seminar/cloudflare.yaml;
-      key = "tunnel_credentials";
-      owner = "root";
-      group = "root";
-      mode = "0400";
+    # Cloudflare認証情報を管理。
+    secrets = {
+      "cloudflare-cert" = {
+        sopsFile = ../../../secrets/seminar/cloudflare.yaml;
+        key = "cert_pem";
+        owner = "root";
+        group = "root";
+        mode = "0400";
+      };
+      "cloudflare-tunnel-credentials" = {
+        sopsFile = ../../../secrets/seminar/cloudflare.yaml;
+        key = "tunnel_credentials";
+        owner = "root";
+        group = "root";
+        mode = "0400";
+      };
+      "cloudflare-dns-api-token" = {
+        sopsFile = ../../../secrets/seminar/cloudflare.yaml;
+        key = "dns_api_token";
+        owner = "root";
+        group = "root";
+        mode = "0400";
+      };
     };
-    "cloudflare-dns-api-token" = {
-      sopsFile = ../../../secrets/seminar/cloudflare.yaml;
-      key = "dns_api_token";
-      owner = "root";
-      group = "root";
-      mode = "0400";
-    };
-  };
-  # security.acmeのDNS-01チャレンジ用環境変数ファイル。
-  # lego(ACMEクライアント)がCloudflare DNS APIでTXTレコードを操作する。
-  sops.templates."cloudflare-dns-env" = {
-    content = ''
-      CF_DNS_API_TOKEN=${config.sops.placeholder."cloudflare-dns-api-token"}
-    '';
-    owner = "root";
-    group = "root";
-    mode = "0400";
   };
 }

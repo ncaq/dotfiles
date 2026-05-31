@@ -73,6 +73,6 @@ in
   # `user@$UID.service`の起動完了を待つことで競合状態を防ぎます。
   systemd.services."home-manager-${username}" = {
     after = [ "user@${toString uid}.service" ];
-    wants = [ "user@${toString uid}.service" ]; # 失敗していてもできる限り起動をしてほしいので弱い依存。
+    wants = [ "user@${toString uid}.service" ]; # 失敗してもなるべく起動してほしいので弱い依存。
   };
 }

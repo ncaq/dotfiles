@@ -1,23 +1,8 @@
 {
-  pkgs,
   config,
   ...
 }:
 let
-  # workaround script that adds --protocol http2 flag to tunnel command.
-  cloudflaredWrapper = pkgs.writeShellApplication {
-    name = "cloudflared";
-    text = ''
-      # Check if this is a tunnel command
-      if [[ "''${1:-}" == "tunnel" ]]; then
-        # Insert --protocol http2 before other tunnel arguments
-        exec ${pkgs.cloudflared}/bin/cloudflared "$@" --protocol http2
-      else
-        # For non-tunnel commands, pass through as-is
-        exec ${pkgs.cloudflared}/bin/cloudflared "$@"
-      fi
-    '';
-  };
   forgejoAddr = config.machineAddresses.forgejo.guest;
   mcpNixosAddr = config.machineAddresses.mcp-nixos.guest;
   garageAddr = config.machineAddresses.garage.guest;
@@ -36,7 +21,6 @@ in
   # tunnel credentials JSON to tunnel_credentials key in the sops file.
   services.cloudflared = {
     enable = true;
-    package = cloudflaredWrapper;
     certificateFile = config.sops.secrets."cloudflare-cert".path;
     tunnels.seminar = {
       default = "http_status:404";

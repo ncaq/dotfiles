@@ -1,4 +1,13 @@
-{ pkgs, username, ... }:
+{
+  pkgs,
+  username,
+  ...
+}:
+let
+  # 通常のユーザのUID。
+  # ほとんどのLinuxディストリビューションで、最初の通常ユーザはUID 1000から始まります。
+  uid = 1000;
+in
 {
   users = {
     # ユーザを宣言的に管理してインストールごとに情報を上書きします。
@@ -7,7 +16,7 @@
       # 通常利用するユーザです。
       ${username} = {
         isNormalUser = true;
-        uid = 1000;
+        inherit uid;
         extraGroups = [
           "input"
           "networkmanager"
@@ -18,9 +27,9 @@
         shell = pkgs.zsh;
         # `home-manager-${username}.service`はboot時に`multi-user.target`の段階で実行されます。
         # 内部で`gpg --edit-key`などgpg-agentに依存する処理を行います。
-        # gpg-agentは`/run/user/1000/`配下にソケットを作成するため、
-        # `user@1000.service`が起動していないとIPC接続に失敗します。
-        # lingerを有効にしてログインしなくてもboot時から`user@1000.service`を起動させ、
+        # gpg-agentは`/run/user/$UID/`配下にソケットを作成するため、
+        # `user@$UID.service`が起動していないとIPC接続に失敗します。
+        # lingerを有効にしてログインしなくてもboot時から`user@$UID.service`を起動させ、
         # `After=user@.service`で順序を明示することでこの問題を回避します。
         linger = true;
         # `hashedPassword`をリポジトリにコミットしている理由:
@@ -59,11 +68,11 @@
       };
     };
   };
-  # lingerだけでは`user@1000.service`と`home-manager-${username}.service`が並列起動するため、
+  # lingerだけでは`user@$UID.service`と`home-manager-${username}.service`が並列起動するため、
   # gpg-agentソケットの準備が間に合わずIPC接続に失敗することがあります。
-  # `user@1000.service`の起動完了を待つことで競合状態を防ぎます。
+  # `user@$UID.service`の起動完了を待つことで競合状態を防ぎます。
   systemd.services."home-manager-${username}" = {
-    after = [ "user@1000.service" ];
-    wants = [ "user@1000.service" ]; # 失敗していてもできる限り起動をしてほしいので弱い依存。
+    after = [ "user@${toString uid}.service" ];
+    wants = [ "user@${toString uid}.service" ]; # 失敗していてもできる限り起動をしてほしいので弱い依存。
   };
 }

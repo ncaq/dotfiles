@@ -33,6 +33,14 @@ in
       };
     };
   };
+  # Cloudflare TunnelがQUICを使うときのライブラリである、
+  # quic-goの推奨ガイドラインに従って、
+  # UDPバッファサイズを増大させます。
+  # [UDP Buffer Sizes](https://github.com/quic-go/quic-go/wiki/UDP-Buffer-Sizes)
+  boot.kernel.sysctl = {
+    "net.core.rmem_max" = 7500000;
+    "net.core.wmem_max" = 7500000;
+  };
   sops = {
     # security.acmeのDNS-01チャレンジ用環境変数ファイル。
     # lego(ACMEクライアント)がCloudflare DNS APIでTXTレコードを操作する。

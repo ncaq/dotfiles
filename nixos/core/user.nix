@@ -16,6 +16,13 @@
           "wheel"
         ];
         shell = pkgs.zsh;
+        # `home-manager-${username}.service`はboot時に`multi-user.target`の段階で実行されます。
+        # 内部で`gpg --edit-key`などgpg-agentに依存する処理を行います。
+        # gpg-agentは`/run/user/1000/`配下にソケットを作成するため、
+        # `user@1000.service`が起動していないとIPC接続に失敗します。
+        # lingerを有効にしてログインしなくてもboot時から`user@1000.service`を起動させ、
+        # `After=user@.service`で順序を明示することでこの問題を回避します。
+        linger = true;
         # `hashedPassword`をリポジトリにコミットしている理由:
         # yescrypt($y$)はメモリハード関数であり、
         # 高性能GPUでも数千hash/sec程度の速度しか出ません。
@@ -51,5 +58,12 @@
         hashedPassword = "$y$j9T$Pe0nKS1opi71jOuppQo0p/$zB9VQoagiIHgvnGNBgyxmBk7Ib6xyMDsfwW451pZoaC";
       };
     };
+  };
+  # lingerだけでは`user@1000.service`と`home-manager-${username}.service`が並列起動するため、
+  # gpg-agentソケットの準備が間に合わずIPC接続に失敗することがあります。
+  # `user@1000.service`の起動完了を待つことで競合状態を防ぎます。
+  systemd.services."home-manager-${username}" = {
+    after = [ "user@1000.service" ];
+    wants = [ "user@1000.service" ]; # 失敗していてもできる限り起動をしてほしいので弱い依存。
   };
 }

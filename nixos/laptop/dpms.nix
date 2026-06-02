@@ -13,7 +13,7 @@ in
           runtimeInputs = with pkgs; [
             gnugrep
             upower
-            xorg.xset
+            xset
           ];
           text = ''
             # 頻繁なxset呼び出しを避けるため、状態が変わったときのみDPMSを更新する。

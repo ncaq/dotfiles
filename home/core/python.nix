@@ -39,7 +39,6 @@ in
     black
     isort
     pipenv
-    pipx
     pyright
     python3
     python3Packages.pip

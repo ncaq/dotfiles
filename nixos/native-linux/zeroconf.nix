@@ -20,7 +20,7 @@ _: {
     # [TC decision on avahi vs systemd-resolved - #1091864](https://lists.debian.org/debian-ctte/2025/02/msg00019.html)や、
     # Fedora(`-Ddefault-mdns=no`ビルド)が同等の対処をしており、
     # avahi-daemonを主のmDNS実装とする運用が業界標準。
-    resolved.extraConfig = "MulticastDNS=no";
+    resolved.settings.Resolve.MulticastDNS = "no";
   };
 
   # nscdのsystemd再起動制限を緩和。

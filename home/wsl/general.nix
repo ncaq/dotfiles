@@ -4,6 +4,6 @@
 # そもそもWSLじゃない環境ではインストールしないようにする。
 {
   home.packages = with pkgs; [
-    wslu
+    wsl-open
   ];
 }

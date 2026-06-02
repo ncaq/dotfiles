@@ -40,13 +40,17 @@ in
 
   services.resolved = {
     enable = true;
-    dnssec = "true";
-    # Tailscaleが有効な環境ではDNSクエリはTailscaleの内部DNSサーバに流れます。
-    # Tailscale側は同じくCloudflareかGoogleのDNSを使うように設定しています。
-    # その時にDNS over HTTPSが利用されます。
-    # しかし念の為Tailscaleが外れた時も比較的安全にDNSが解決できるように、
-    # 本体の設定でもDNS over TLSを利用するようにします。
-    dnsovertls = "true";
-    fallbackDns = encryptedDns;
+    settings = {
+      Resolve = {
+        DNSSEC = "true";
+        # Tailscaleが有効な環境ではDNSクエリはTailscaleの内部DNSサーバに流れます。
+        # Tailscale側は同じくCloudflareかGoogleのDNSを使うように設定しています。
+        # その時にDNS over HTTPSが利用されます。
+        # しかし念の為Tailscaleが外れた時も比較的安全にDNSが解決できるように、
+        # 本体の設定でもDNS over TLSを利用するようにします。
+        DNSOverTLS = "true";
+        FallbackDNS = encryptedDns;
+      };
+    };
   };
 }

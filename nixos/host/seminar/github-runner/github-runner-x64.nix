@@ -10,7 +10,7 @@ let
     githubActionsRunnerPackages
     selfHostRunnerPackages
     runnerNum
-    dotfiles-github-runner
+    jobStartedHook
     users
     ciNixSettings
     ;
@@ -62,7 +62,6 @@ in
               runnerNumbers = builtins.genList (x: x) runnerNum;
               args = { inherit pkgs; };
               extraPkgs = (githubActionsRunnerPackages args).all ++ selfHostRunnerPackages args;
-              jobStartedHook = "${dotfiles-github-runner}/job-started-hook.js";
               mkRunnerDotfilesX64 = number: {
                 name = "dotfiles-x64-${toString number}";
                 value = {

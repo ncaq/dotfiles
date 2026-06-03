@@ -13,13 +13,6 @@
 }:
 let
   addr = config.machineAddresses.mcp-nixos;
-  # Pythonの依存関係とパッケージ自体をまとめて環境にします。
-  # mcp-nixosコマンドを直接実行するわけではないので依存パッケージの別途指定が必要です。
-  mcp-nixos-env = pkgs.python3.withPackages (
-    _: pkgs.mcp-nixos.propagatedBuildInputs ++ [ pkgs.mcp-nixos ]
-  );
-  # HTTPで提供するためにmcp-nixosをコマンドラインで動かすのではなくPythonモジュールを呼び出します。
-  serverPy = "${pkgs.mcp-nixos}/${pkgs.python3.sitePackages}/mcp_nixos/server.py";
 in
 {
   # 仮に脆弱性があった場合の被害を最小限に抑えるため仮想マシンで動かします。
@@ -78,11 +71,15 @@ in
           after = [ "network.target" ];
           wantedBy = [ "multi-user.target" ];
           serviceConfig = {
-            # オリジナルのmcp-nixosはHTTPサーバでは動きませんが、
-            # オリジナルでも使っているfastmcpを使うことでHTTPサーバとして動かせるようになります。
-            ExecStart =
-              "${mcp-nixos-env}/bin/fastmcp run ${serverPy}:mcp"
-              + " --transport streamable-http --host 0.0.0.0 --port 8080";
+            # mcp-nixosはHTTPトランスポートをネイティブにサポートしているので、
+            # 環境変数で設定して直接起動します。
+            # パスは未指定だとデフォルトの`/mcp`になり、Cloudflare Tunnelの転送先と一致します。
+            Environment = [
+              "MCP_NIXOS_TRANSPORT=http"
+              "MCP_NIXOS_HOST=0.0.0.0"
+              "MCP_NIXOS_PORT=8080"
+            ];
+            ExecStart = "${pkgs.mcp-nixos}/bin/mcp-nixos";
             DynamicUser = true;
             Restart = "always";
             RestartSec = 5;

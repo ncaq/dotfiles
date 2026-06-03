@@ -1,12 +1,12 @@
 { pkgs, config, ... }:
 let
-  xrandr = "${pkgs.xorg.xrandr}/bin/xrandr";
-  xset = "${pkgs.xorg.xset}/bin/xset";
+  xrandr = "${pkgs.xrandr}/bin/xrandr";
+  xset = "${pkgs.xset}/bin/xset";
   systemctl = "${pkgs.systemd}/bin/systemctl";
   # xrandrとxftの範囲でDPIを設定します。
   dpiIs144 = [
     (xrandr + " --dpi 144")
-    "echo 'Xft.dpi: 144'|${pkgs.xorg.xrdb}/bin/xrdb -merge"
+    "echo 'Xft.dpi: 144'|${pkgs.xrdb}/bin/xrdb -merge"
   ];
   # ラップトップPCの外部ディスプレイへの接続中は動画視聴などを想定し、
   # 画面の自動消灯とスクリーンセーバを無効化します。

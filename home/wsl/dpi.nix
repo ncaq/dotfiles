@@ -11,7 +11,7 @@
           name = "wsl-set-xorg-dpi-wait-start-server";
           runtimeInputs = with pkgs; [
             coreutils
-            xorg.xset
+            xset
           ];
           text = ''
             for _ in $(seq 10); do
@@ -29,8 +29,8 @@
         pkgs.writeShellApplication {
           name = "wsl-set-xorg-dpi";
           runtimeInputs = with pkgs; [
-            xorg.xrandr
-            xorg.xrdb
+            xrandr
+            xrdb
           ];
           text = ''
             DPI="''${WSL_DPI:-144}"

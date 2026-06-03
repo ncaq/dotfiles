@@ -15,9 +15,9 @@
       inkscape
       libreoffice
       nautilus
+      pear-desktop
       rhythmbox
       vlc
-      youtube-music
     ]
     ++ lib.optionals stdenv.hostPlatform.isx86_64 [
       discord

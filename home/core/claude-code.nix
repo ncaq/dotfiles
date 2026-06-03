@@ -111,7 +111,7 @@ in
     package = claude-code-wrapped;
 
     # `CLAUDE.md`と同等です。
-    memory.text = config.prompt.codingAgent;
+    context = config.prompt.codingAgent;
 
     mcpServers = {
       github = {

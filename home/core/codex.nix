@@ -4,7 +4,7 @@
     codex = {
       enable = true;
       package = pkgs-unstable.codex;
-      custom-instructions = config.prompt.codingAgent;
+      context = config.prompt.codingAgent;
     };
   };
 }

@@ -36,12 +36,6 @@ in
 
   # グローバルにインストールするPython関連ツール。
   home.packages = with pkgs; [
-    black
-    isort
-    pipenv
-    pipx
-    pyright
     python3
-    python3Packages.pip
   ];
 }

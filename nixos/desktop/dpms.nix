@@ -9,7 +9,7 @@
       ExecStart = lib.getExe (
         pkgs.writeShellApplication {
           name = "dpms-oled";
-          runtimeInputs = with pkgs; [ xorg.xset ];
+          runtimeInputs = with pkgs; [ xset ];
           text = ''
             # スクリーンセーバーの方は無効化
             xset s off

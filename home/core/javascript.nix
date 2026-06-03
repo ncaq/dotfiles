@@ -45,7 +45,6 @@ in
 
   # グローバルにインストールするJavaScript関連ツール。
   home.packages = with pkgs; [
-    corepack
     nodejs
     npm-check-updates
     prettier

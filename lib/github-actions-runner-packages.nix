@@ -51,7 +51,9 @@ let
     lerna
     yarn
 
-    pipx
+    # ビルドが壊れているため除外。
+    # 使うことも少ない。
+    # pipx
 
     vcpkg
 

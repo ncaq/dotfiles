@@ -2,6 +2,6 @@
 {
   home.packages = with pkgs; [
     flac
-    opusTools
+    opus-tools
   ];
 }

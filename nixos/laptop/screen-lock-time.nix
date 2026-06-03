@@ -10,7 +10,7 @@
       description = "Set X screensaver timeout";
       serviceConfig = {
         Type = "oneshot";
-        ExecStart = "${pkgs.xorg.xset}/bin/xset s 1800 1800";
+        ExecStart = "${pkgs.xset}/bin/xset s 1800 1800";
         Restart = "on-failure";
         RestartSec = "5s";
       };

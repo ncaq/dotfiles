@@ -6,6 +6,7 @@
 }:
 let
   zshDotDir = config.programs.zsh.dotDir;
+  zshUserDotDir = "${zshDotDir}/.zsh.d";
 in
 {
   programs = {
@@ -16,6 +17,9 @@ in
       initContent = ''
         if [[ -x "$(command -v ${lib.getExe pkgs.tmux})" ]] \
           && [[ -z "$TMUX" ]] && [[ $- == *i* ]]; then
+          # tmuxがインストールされていて、
+          # 現在tmuxセッション内でなく、
+          # かつ対話型シェルの場合にtmuxセッションを開始します。
           if ${lib.getExe pkgs.tmux} new -A -s master; then
             # tmuxセッションが正常終了した場合、zshシェルも終了します。
             exit
@@ -24,8 +28,9 @@ in
             echo "Warning: tmux failed to start. Falling back to normal shell." >&2
           fi
         fi
-        if [ -f "${zshDotDir}/.zshrc" ]; then
-          source "${zshDotDir}/.zshrc"
+        # tmuxセッションの中に既にいる場合はユーザの設定を読み込みます。
+        if [ -f "${zshUserDotDir}/.zshrc" ]; then
+          source "${zshUserDotDir}/.zshrc"
         fi
       '';
     };
@@ -37,8 +42,8 @@ in
     shell.enableZshIntegration = true;
 
     activation.cloneZshConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      if [ ! -d "${zshDotDir}" ]; then
-        $DRY_RUN_CMD ${pkgs.git}/bin/git clone https://github.com/ncaq/.zsh.d.git "${zshDotDir}"
+      if [ ! -d "${zshUserDotDir}" ]; then
+        $DRY_RUN_CMD ${pkgs.git}/bin/git clone https://github.com/ncaq/.zsh.d.git "${zshUserDotDir}"
       fi
     '';
   };

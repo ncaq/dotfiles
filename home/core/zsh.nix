@@ -5,7 +5,7 @@
   ...
 }:
 let
-  zshDotDir = "${config.home.homeDirectory}/.zsh.d";
+  zshDotDir = config.programs.zsh.dotDir;
 in
 {
   programs = {

@@ -1,5 +1,6 @@
 {
   pkgs,
+  lib,
   config,
   inputs,
   ...
@@ -37,6 +38,20 @@ let
       runHook postInstall
     '';
   };
+  # ジョブ開始フックを実行する`.sh`ラッパー。
+  # `ACTIONS_RUNNER_HOOK_JOB_STARTED`に`.js`を直接指定すると、
+  # github-runner 2.334.0では`.js`フックのセットアップが、
+  # .NET由来のパスエラー("Second path fragment must not be a drive or UNC name")で失敗します。
+  # GitHubが公式にサポートするフック形式は`.sh`と`.ps1`のみなので、
+  # nixpkgsのnodeでjsを実行する`.sh`ラッパー経由で呼び出します。
+  # これによりランナー内蔵nodeのパス解決にも依存しなくなります。
+  jobStartedHook = lib.getExe (
+    pkgs.writeShellApplication {
+      name = "job-started-hook.sh";
+      runtimeInputs = with pkgs; [ nodejs ];
+      text = ''exec node ${dotfiles-github-runner}/job-started-hook.js "$@"'';
+    }
+  );
   # GitHub Actionsランナーはホストのnixデーモンと通信するため、
   # 統一されたユーザ値を使います。
   user = config.serviceUser.github-runner;
@@ -75,7 +90,7 @@ in
       githubActionsRunnerPackages
       selfHostRunnerPackages
       runnerNum
-      dotfiles-github-runner
+      jobStartedHook
       users
       ciNixSettings
       ;

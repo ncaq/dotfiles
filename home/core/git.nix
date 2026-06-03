@@ -14,6 +14,7 @@ in
       enable = true;
       lfs.enable = true;
       signing = {
+        format = "openpgp";
         key = identityKey;
         signByDefault = true;
       };

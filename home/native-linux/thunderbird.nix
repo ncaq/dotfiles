@@ -20,6 +20,6 @@
       };
     };
   };
-  home.packages = [ pkgs.birdtray ];
   xdg.autostart.entries = [ "${pkgs.birdtray}/share/applications/com.ulduzsoft.Birdtray.desktop" ];
+  home.packages = [ pkgs.birdtray ];
 }

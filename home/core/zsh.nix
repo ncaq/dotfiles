@@ -28,7 +28,7 @@ in
             echo "Warning: tmux failed to start. Falling back to normal shell." >&2
           fi
         fi
-        # tmuxセッションの中に既にいる場合はユーザの設定を読み込みます。
+        # tmuxを起動しなかった場合、もしくはtmuxから戻ってきた場合に読み込みます。
         if [ -f "${zshUserDotDir}/.zshrc" ]; then
           source "${zshUserDotDir}/.zshrc"
         fi

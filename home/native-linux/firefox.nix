@@ -427,6 +427,6 @@ in
   # 雑に読み取り専用になっているのを解除します。
   home.activation.firefoxUserJsWritable = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     $DRY_RUN_CMD unlink \
-      ${config.home.homeDirectory}/.mozilla/firefox/google-search-title-qualified/user.js
+      ${config.programs.firefox.configPath}/google-search-title-qualified/user.js
   '';
 }

@@ -1,6 +1,6 @@
 { ... }:
 {
-  system.stateVersion = "25.05";
+  system.stateVersion = "26.05";
 
   i18n.defaultLocale = "ja_JP.UTF-8";
   time.timeZone = "Asia/Tokyo";

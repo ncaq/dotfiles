@@ -1,21 +1,5 @@
 {
   "nodes": {
-    "alacritty-theme": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1777677514,
-        "narHash": "sha256-F8ye16jhfldsyxcOqxVS0PNecVcQcAPnEahDKS4PGwE=",
-        "owner": "alacritty",
-        "repo": "alacritty-theme",
-        "rev": "2749b407b597790e6f08b218c2bc2acdf66210a0",
-        "type": "github"
-      },
-      "original": {
-        "owner": "alacritty",
-        "repo": "alacritty-theme",
-        "type": "github"
-      }
-    },
     "claude-desktop": {
       "inputs": {
         "flake-utils": [
@@ -546,7 +530,6 @@
     },
     "root": {
       "inputs": {
-        "alacritty-theme": "alacritty-theme",
         "claude-desktop": "claude-desktop",
         "disko": "disko",
         "dot-emacs": "dot-emacs",

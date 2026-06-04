@@ -12,7 +12,7 @@
 以下のコマンドでほぼ同じ最新の情報を取得できます。
 
 ```console
-nix run "$HOME/dotfiles#fastfetch" -- --config "$HOME/dotfiles/home/prompt/environment/fastfetch-hardware.json"
+nix run "$HOME/dotfiles#fastfetch" -- --config "$HOME/dotfiles/home/prompt/environment/fastfetch-hardware.json"|perl -pe 's/^/- /'
 ```
 
 fastfetchはメモリなどの容量をGiB単位で表示します。

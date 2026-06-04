@@ -45,6 +45,7 @@ in
 
   # グローバルにインストールするJavaScript関連ツール。
   home.packages = with pkgs; [
+    deno
     nodejs
     npm-check-updates
     prettier

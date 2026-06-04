@@ -2,7 +2,6 @@
 {
   home.packages = with pkgs; [
     openssl
-    plantuml
     renovate
     sqlite
     strace

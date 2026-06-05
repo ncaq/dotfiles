@@ -48,7 +48,7 @@ in
       { lib, ... }:
       {
         imports = [ inputs.niks3.nixosModules.niks3 ];
-        system.stateVersion = "25.11";
+        system.stateVersion = "26.05";
         networking = {
           useHostResolvConf = lib.mkForce false;
           firewall.allowedTCPPorts = [ 5751 ];

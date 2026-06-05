@@ -45,7 +45,7 @@ in
     config =
       { config, lib, ... }:
       {
-        system.stateVersion = "25.05";
+        system.stateVersion = "26.05";
         networking = {
           useHostResolvConf = lib.mkForce false;
           firewall.allowedTCPPorts = [

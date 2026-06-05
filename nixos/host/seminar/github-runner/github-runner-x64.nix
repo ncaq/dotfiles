@@ -44,7 +44,7 @@ in
     config =
       { lib, ... }:
       {
-        system.stateVersion = "25.05";
+        system.stateVersion = "26.05";
         # NixデーモンにCI用の設定を渡します。
         # `trusted-users`などが含まれます。
         # コンテナはホストのnixデーモンソケットを共有するので、

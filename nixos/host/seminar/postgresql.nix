@@ -47,7 +47,7 @@ in
       config =
         { lib, ... }:
         {
-          system.stateVersion = "25.05";
+          system.stateVersion = "26.05";
           # データベースがホスト側で`ja_JP.UTF-8`で初期化されているため、
           # コンテナ内でも同じロケールが必要。
           i18n.defaultLocale = "ja_JP.UTF-8";

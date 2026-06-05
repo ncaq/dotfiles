@@ -19,7 +19,7 @@ in
   microvm.vms.mcp-nixos = {
     inherit pkgs;
     config = {
-      system.stateVersion = "25.11";
+      system.stateVersion = "26.05";
       microvm = {
         hypervisor = "cloud-hypervisor";
         vsock.cid = config.microvmCid.mcp-nixos;

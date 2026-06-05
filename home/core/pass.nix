@@ -1,7 +1,12 @@
 {
+  lib,
   config,
   ...
 }:
+let
+  inherit (config.services.pass-secret-service) storePath;
+  storeRel = lib.removePrefix "${config.home.homeDirectory}/" storePath;
+in
 {
   # GPGによる暗号化を行うpassを使用します。
   # あくまでメインのパスワードマネージャはKeePassXCです。
@@ -15,11 +20,15 @@
     settings = {
       # XDGデータディレクトリ以下にストアを置くため明示的に指定します。
       PASSWORD_STORE_DIR = "${config.xdg.dataHome}/password-store";
-      # `pass init`による`.gpg-id`の生成の代わりに、
       # 暗号化先のGPG鍵を宣言的に指定します。
-      # passは`PASSWORD_STORE_KEY`があれば`.gpg-id`より優先して使います。
       PASSWORD_STORE_KEY = "42248C7D0FB73D57";
     };
   };
   services.pass-secret-service.enable = true;
+
+  # `pass init`の代わりに宣言的に`.gpg-id`を配置してストアを初期化します。
+  # `pass-secret-service`が内部で使うプログラムは`PASSWORD_STORE_KEY`を読まず、
+  # 起動時に`.gpg-id`の存在を必須とするため実ファイルの配置が避けられません。
+  home.file."${storeRel}/.gpg-id".text =
+    "${config.programs.password-store.settings.PASSWORD_STORE_KEY}\n";
 }

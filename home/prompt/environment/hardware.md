@@ -86,11 +86,11 @@ ThinkPadですが指紋センサーはありません。
 
 - ncaq@creep
 - Core Software
-- OS: NixOS 25.11 (Xantusia) x86_64
-- Kernel: Linux 6.12.85
+- OS: NixOS 26.05 (Yarara) x86_64
+- Kernel: Linux 6.18.34-xanmod1
 - BIOS (UEFI): R2FET63W (1.43 ) (1.43)
 - Bootmgr: Linux Boot Manager - systemd-bootx64.efi
-- Init System: systemd 258.7
+- Init System: systemd 260.1
 - LM: lightdm-autologin 1.32.0 (X11)
 - Shell: zsh 5.9
 - WM: hm-xsession (X11)
@@ -103,17 +103,18 @@ ThinkPadですが指紋センサーはありません。
 - Computing
 - CPU: AMD Ryzen 5 PRO 7540U (12) @ 4.98 GHz
 - GPU: AMD Radeon 740M Graphics [Integrated]
-- Vulkan: 1.4.318 - radv [Mesa 25.2.6]
-- OpenGL: 4.6 (Compatibility Profile) Mesa 25.2.6
+- Vulkan: 1.4.348 - radv [Mesa 26.1.1]
+- OpenGL: 4.6 (Compatibility Profile) Mesa 26.1.1
 - Memory: 27.11 GiB
-- Swap: 8.00 GiB
-- Disk (/): 170.73 GiB / 691.91 GiB (25%) - btrfs
+- Swap: 4.07 GiB
+- Disk (/): 189.07 GiB / 691.91 GiB (27%) - btrfs
 - Output
-- Display (AUOD49C): 1920x1200 in 16", 60 Hz [Built-in]
-- Brightness (AUOD49C): 100% [Built-in]
+- Display (LEN41B5): 1920x1200 in 16", 60 Hz [Built-in]
+- Brightness (LEN41B5): 100% [Built-in]
 - Sound: Ryzen HD Audio Controller Speaker (40%)
 - Input
-- Keyboard: AT Translated Set 2 keyboard
+- Keyboard 1: AT Translated Set 2 keyboard
+- Keyboard 2: Logitech MX Ergo
 - Mouse 1: py-evdev-uinput
 - Mouse 2: ELAN0688:00 04F3:320B Touchpad
 - Mouse 3: Logitech MX Ergo

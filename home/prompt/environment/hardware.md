@@ -131,11 +131,11 @@ ThinkPadですが指紋センサーはありません。
 
 - ncaq@seminar
 - Core Software
-- OS: NixOS 25.11 (Xantusia) x86_64
-- Kernel: Linux 6.12.85
+- OS: NixOS 26.05 (Yarara) x86_64
+- Kernel: Linux 6.18.34-xanmod1
 - BIOS (UEFI): 3.30 (5.35)
 - Bootmgr: UEFI OS - BOOTX64.EFI
-- Init System: systemd 258.7
+- Init System: systemd 260.1
 - LM: sshd 10.3p1 (TTY)
 - Shell: zsh 5.9
 - Terminal: tmux 3.6a
@@ -147,12 +147,12 @@ ThinkPadですが指紋センサーはありません。
 - Computing
 - CPU: AMD Ryzen 5 7600 (12) @ 5.17 GHz
 - GPU: AMD Raphael [Integrated]
-- Vulkan: 1.4.318 - radv [Mesa 25.2.6]
-- OpenGL: 4.6 (Compatibility Profile) Mesa 25.2.6
+- Vulkan: 1.4.348 - radv [Mesa 26.1.1]
+- OpenGL: 4.6 (Compatibility Profile) Mesa 26.1.1
 - Memory: 61.89 GiB
 - Swap: 72.00 GiB
-- Disk (/): 402.35 GiB / 929.51 GiB (43%) - btrfs
-- Disk (/mnt/noa): 2.61 TiB / 12.73 TiB (20%) - btrfs
+- Disk (/): 461.66 GiB / 929.51 GiB (50%) - btrfs
+- Disk (/mnt/noa): 2.69 TiB / 12.73 TiB (21%) - btrfs
 - Output
 - Sound: Dummy Output (100%)
 - Input

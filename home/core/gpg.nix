@@ -29,7 +29,15 @@ lib.mkMerge [
         "${config.programs.gpg.homedir}/gnupg_spawn_agent_sentinel.lock" \
         2>/dev/null || true
     '';
-    home.packages = with pkgs; [ paperkey ];
+    home.packages = with pkgs; [
+      # 最終復旧手段として印刷するためのパッケージ。
+      paperkey
+      # GUIがない環境でも使える幅広いpinentryです。
+      pinentry-curses
+      # `pinentry-gnome3`はモーダルでウィンドウを固定するのでパスワードマネージャが使いづらいため、
+      # こちらを優先して使っていきます。
+      pinentry-qt
+    ];
   }
   (
     if !isTermux then
@@ -38,12 +46,9 @@ lib.mkMerge [
         services.gpg-agent = {
           enable = true;
           enableSshSupport = true;
-          pinentry.package = pkgs.pinentry-qt; # pinentry-gnome3はモーダルでパスワードマネージャが使いづらい。
+          pinentry.package = pkgs.pinentry-qt;
           sshKeys = [ keyConfig.sshKeygrip ];
         };
-        home.packages = with pkgs; [
-          pinentry-qt
-        ];
       }
     else
       {
@@ -75,9 +80,6 @@ lib.mkMerge [
               "${config.home.homeDirectory}/.gnupg/public-keys.d/" \
               2>/dev/null || true
           '';
-          packages = with pkgs; [
-            pinentry-curses
-          ];
         };
       }
   )

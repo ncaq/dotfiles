@@ -32,10 +32,9 @@ lib.mkMerge [
     home.packages = with pkgs; [
       # 最終復旧手段として印刷するためのパッケージ。
       paperkey
-      # GUIがない環境でも使える幅広いpinentryです。
-      pinentry-curses
       # `pinentry-gnome3`はモーダルでウィンドウを固定するのでパスワードマネージャが使いづらいため、
       # こちらを優先して使っていきます。
+      # `pinentry-curses`は`pinentry-qt`パッケージに含まれています。
       pinentry-qt
     ];
   }

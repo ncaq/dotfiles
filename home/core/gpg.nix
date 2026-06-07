@@ -8,9 +8,6 @@
 let
   inherit (lib.hm.dag) entryBetween;
   keyConfig = import ../../key;
-  # SSH認証に使用するGPGサブキーのkeygrip。
-  # `gpg --list-keys --with-keygrip`で[A]能力を持つサブキーのkeygripを確認できます。
-  sshKeygrip = "29C212A380A9E2977752FA41C35A2F9BF6CA24E2"; # 認証サブキー 0xACA66AB679E75544
 in
 lib.mkMerge [
   {
@@ -32,7 +29,14 @@ lib.mkMerge [
         "${config.programs.gpg.homedir}/gnupg_spawn_agent_sentinel.lock" \
         2>/dev/null || true
     '';
-    home.packages = with pkgs; [ paperkey ];
+    home.packages = with pkgs; [
+      # 最終復旧手段として印刷するためのパッケージ。
+      paperkey
+      # `pinentry-gnome3`はモーダルでウィンドウを固定するのでパスワードマネージャが使いづらいため、
+      # こちらを優先して使っていきます。
+      # `pinentry-curses`は`pinentry-qt`パッケージに含まれています。
+      pinentry-qt
+    ];
   }
   (
     if !isTermux then
@@ -41,12 +45,9 @@ lib.mkMerge [
         services.gpg-agent = {
           enable = true;
           enableSshSupport = true;
-          pinentry.package = pkgs.pinentry-qt; # pinentry-gnome3はモーダルでパスワードマネージャが使いづらい。
-          sshKeys = [ sshKeygrip ];
+          pinentry.package = pkgs.pinentry-qt;
+          sshKeys = [ keyConfig.sshKeygrip ];
         };
-        home.packages = with pkgs; [
-          pinentry-qt
-        ];
       }
     else
       {
@@ -65,7 +66,7 @@ lib.mkMerge [
             '';
             ".gnupg/sshcontrol".text = ''
               # SSH認証に使用するGPGサブキーのkeygrip
-              ${sshKeygrip}
+              ${keyConfig.sshKeygrip}
             '';
           };
           # Termux環境ではsystemdによるGPGデーモンのライフサイクル管理がないため、
@@ -78,9 +79,6 @@ lib.mkMerge [
               "${config.home.homeDirectory}/.gnupg/public-keys.d/" \
               2>/dev/null || true
           '';
-          packages = with pkgs; [
-            pinentry-curses
-          ];
         };
       }
   )

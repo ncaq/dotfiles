@@ -14,9 +14,10 @@ let
     pkgs.writeShellApplication {
       name = "tailscale-exit-node";
       runtimeInputs = with pkgs; [
+        bash
         config.services.tailscale.package
+        coreutils
         gnugrep
-        systemd
       ];
       text = ''
         # upイベント以外は無視
@@ -24,8 +25,11 @@ let
           exit 0
         fi
 
-        # tailscale-online.serviceでTailscaleの準備完了を待つ
-        systemctl start tailscale-online.service
+        # tailscaledの準備完了を最大30秒待つ。
+        # systemdのserviceを介して待つとdispatcherからの同期起動で依存が循環するため、
+        # scriptローカルで待つ。
+        timeout 30 bash -c \
+          'until tailscale status --peers=false >/dev/null 2>&1; do sleep 1; done' || true
 
         # tailscale pingでレイテンシを取得
         # 出力例: pong from seminar (100.82.4.93) via 192.168.10.88:41641 in 4ms

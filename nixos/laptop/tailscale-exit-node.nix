@@ -31,7 +31,10 @@ let
         # 出力例: pong from seminar (100.82.4.93) via 192.168.10.88:41641 in 4ms
         ping_output=$(tailscale ping -c 1 seminar 2>&1) || true
         # 単位込みの値を抽出
-        latency=$(echo "$ping_output" | grep -oP 'in \K[0-9]+m?s')
+        # マッチしない場合(ping失敗など)は空文字列のままにする。
+        # `set -o pipefail`と`errexit`があるため、
+        # `grep`の非ゼロ終了でスクリプトが落ちないよう`|| true`で守る。
+        latency=$(echo "$ping_output" | grep -oP 'in \K[0-9]+m?s' || true)
         # 正規表現に当てはまらない場合は非常に大きな値を設定して外部とみなす
         latency_ms=$(echo "$latency" | grep -oP '[0-9]+(?=ms)' || echo "99999")
 

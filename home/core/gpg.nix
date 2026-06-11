@@ -48,6 +48,15 @@ lib.mkMerge [
           pinentry.package = pkgs.pinentry-qt;
           sshKeys = [ keyConfig.sshKeygrip ];
         };
+        # gpg-agentのssh-agentエミュレーションソケットをsystemdユーザーセッション全体に伝える。
+        # gpg-agentのSSH_AUTH_SOCK設定はインタラクティブなシェル初期化でしか行われないため、
+        # GUIアプリやsystemdサービス(`emacs.service`など)には届かない。
+        # その結果magitのssh経由のpullなどが失敗していた。
+        # `environment.d`経由で設定すればsystemdユーザーマネージャ配下の全プロセスに伝播する。
+        # `$XDG_RUNTIME_DIR`は`environment.d`が展開するのでUIDのハードコードは不要。
+        # デフォルトのgpg homedirを使う限りソケットパスは、
+        # `$XDG_RUNTIME_DIR/gnupg/S.gpg-agent.ssh`で固定。
+        systemd.user.sessionVariables.SSH_AUTH_SOCK = "$XDG_RUNTIME_DIR/gnupg/S.gpg-agent.ssh";
       }
     else
       {

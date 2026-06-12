@@ -130,7 +130,8 @@ in
       serviceConfig = {
         # CIジョブがホストのリソースを過剰に消費しないよう制限します。
         # CPUQuotaはコア数×100%で指定する必要があります。
-        CPUQuota = "1000%"; # サーバが12スレッドなので、2スレッド引いた分を割り当てます。
+        # 割り当て可能スレッド数分を割り当てます。
+        CPUQuota = "${toString (config.local.cpuBudgetThreads * 100)}%";
         MemoryHigh = "16G"; # ソフトリミット。これを超えるとメモリを積極的に解放します。
         MemoryMax = "32G"; # ハードリミット。これぐらいで十分だろうという推定値。
       };

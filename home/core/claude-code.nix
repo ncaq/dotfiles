@@ -135,10 +135,11 @@ in
       # 応答に使う自然言語です。
       language = "japanese";
       # 頻繁に最適な値が変わるので設定するその時に最適なものを選びます。
-      model = "fable";
+      model = "opus[1m]";
       fallbackModel = [
-        "opus[1m]"
+        "opus"
         "sonnet[1m]"
+        "sonnet"
       ];
       # メッセージにCo-Authored-Byフッターを付与しません。
       # 私はAIエージェントはテキストエディタの延長線上だと考えているため、

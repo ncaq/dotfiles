@@ -137,7 +137,9 @@ in
       # 頻繁に最適な値が変わるので設定するその時に最適なものを選びます。
       model = "opus[1m]";
       fallbackModel = [
+        "opus"
         "sonnet[1m]"
+        "sonnet"
       ];
       # メッセージにCo-Authored-Byフッターを付与しません。
       # 私はAIエージェントはテキストエディタの延長線上だと考えているため、

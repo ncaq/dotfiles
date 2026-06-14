@@ -19,7 +19,7 @@
   serviceConfig = {
     Type = "oneshot";
     RemainAfterExit = true;
-    RuntimeDirectory = name;
+    RuntimeDirectory = "garage-setup/${name}";
     RuntimeDirectoryMode = "0700";
     # Hardening
     CapabilityBoundingSet = [
@@ -109,10 +109,12 @@
           # Write keys to runtime directory for ${name} container.
           (
             umask 0377
-            echo -n "$ACCESS_KEY" > /run/${name}/s3-access-key
-            echo -n "$SECRET_KEY" > /run/${name}/s3-secret-key
+            echo -n "$ACCESS_KEY" > /run/garage-setup/${name}/s3-access-key
+            echo -n "$SECRET_KEY" > /run/garage-setup/${name}/s3-secret-key
           )
-          chown ${name}:${name} /run/${name}/s3-access-key /run/${name}/s3-secret-key
+          chown ${name}:${name} \
+            /run/garage-setup/${name}/s3-access-key \
+            /run/garage-setup/${name}/s3-secret-key
 
           # Get existing bucket or create a new one.
           if BUCKET_JSON=$(garage_api GET "/v2/GetBucketInfo?globalAlias=${name}" 2>/dev/null); then

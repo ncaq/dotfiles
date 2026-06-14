@@ -27,19 +27,19 @@ in
         hostPath = "/run/postgresql";
         isReadOnly = true;
       };
-      "/etc/niks3-private/s3-access-key" = {
-        hostPath = "/run/niks3-private/s3-access-key";
+      "/run/garage-setup/niks3-private/s3-access-key" = {
+        hostPath = "/run/garage-setup/niks3-private/s3-access-key";
         isReadOnly = true;
       };
-      "/etc/niks3-private/s3-secret-key" = {
-        hostPath = "/run/niks3-private/s3-secret-key";
+      "/run/garage-setup/niks3-private/s3-secret-key" = {
+        hostPath = "/run/garage-setup/niks3-private/s3-secret-key";
         isReadOnly = true;
       };
-      "/etc/niks3-private/api-token" = {
+      "/run/niks3-private/api-token" = {
         hostPath = config.sops.secrets."niks3-private-api-token".path;
         isReadOnly = true;
       };
-      "/etc/niks3-private/sign-key" = {
+      "/run/niks3-private/sign-key" = {
         hostPath = config.sops.secrets."niks3-private-sign-key".path;
         isReadOnly = true;
       };
@@ -85,11 +85,11 @@ in
               bucket = "niks3-private";
               region = "garage";
               useSSL = true;
-              accessKeyFile = "/etc/niks3-private/s3-access-key";
-              secretKeyFile = "/etc/niks3-private/s3-secret-key";
+              accessKeyFile = "/run/garage-setup/niks3-private/s3-access-key";
+              secretKeyFile = "/run/garage-setup/niks3-private/s3-secret-key";
             };
-            apiTokenFile = "/etc/niks3-private/api-token";
-            signKeyFiles = [ "/etc/niks3-private/sign-key" ];
+            apiTokenFile = "/run/niks3-private/api-token";
+            signKeyFiles = [ "/run/niks3-private/sign-key" ];
             # Tailscale Serve経由でHTTPSアクセスされるURL。
             cacheUrl = "https://seminar.border-saurolophus.ts.net:8443/niks3/private/";
             # readはTailscaleネットワーク認証、writeはAPIトークン認証。

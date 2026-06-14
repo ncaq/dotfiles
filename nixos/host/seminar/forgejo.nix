@@ -18,7 +18,7 @@ let
   };
   garageAddr = config.machineAddresses.garage.guest;
   # LFSオブジェクトをgarage(S3互換)に保存するためのバケットとキーをidempotentに作成します。
-  # name = "forgejo" なので/run/forgejoにキーが書き出され、forgejoユーザーが所有します。
+  # name = "forgejo" なので/run/garage-setup/forgejoにキーが書き出され、forgejoユーザーが所有します。
   garageSetup = import ../../../lib/garage-setup.nix {
     inherit pkgs config;
     name = "forgejo";
@@ -41,13 +41,12 @@ in
     ];
     bindMounts = {
       # garage-setupが出力したS3キーをマウントします。
-      # Forgejo自身がRuntimeDirectoryに使う/run/forgejo配下はセットアップと衝突するため避けます。
-      "/run/forgejo-secrets/s3-access-key" = {
-        hostPath = "/run/forgejo/s3-access-key";
+      "/run/garage-setup/forgejo/s3-access-key" = {
+        hostPath = "/run/garage-setup/forgejo/s3-access-key";
         isReadOnly = true;
       };
-      "/run/forgejo-secrets/s3-secret-key" = {
-        hostPath = "/run/forgejo/s3-secret-key";
+      "/run/garage-setup/forgejo/s3-secret-key" = {
+        hostPath = "/run/garage-setup/forgejo/s3-secret-key";
         isReadOnly = true;
       };
       "/run/postgresql" = {
@@ -128,8 +127,8 @@ in
             # S3キーはgarage-setupが起動ごとに生成するため、
             # LoadCredential経由でファイルから読み込みます。
             secrets.lfs = {
-              MINIO_ACCESS_KEY_ID = "/run/forgejo-secrets/s3-access-key";
-              MINIO_SECRET_ACCESS_KEY = "/run/forgejo-secrets/s3-secret-key";
+              MINIO_ACCESS_KEY_ID = "/run/garage-setup/forgejo/s3-access-key";
+              MINIO_SECRET_ACCESS_KEY = "/run/garage-setup/forgejo/s3-secret-key";
             };
           };
         };

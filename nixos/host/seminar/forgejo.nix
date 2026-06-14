@@ -149,15 +149,15 @@ in
     services = {
       "container@forgejo" = {
         requires = [
-          "forgejo-garage-setup.service"
+          "garage-setup-forgejo.service"
           "postgresql-ready.service"
         ];
         after = [
-          "forgejo-garage-setup.service"
+          "garage-setup-forgejo.service"
           "postgresql-ready.service"
         ];
       };
-      "forgejo-garage-setup" = garageSetup;
+      "garage-setup-forgejo" = garageSetup;
     };
     tmpfiles.rules = [
       "d /var/lib/forgejo 0750 forgejo forgejo -"

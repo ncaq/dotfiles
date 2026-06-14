@@ -27,19 +27,19 @@ in
         hostPath = "/run/postgresql";
         isReadOnly = true;
       };
-      "/etc/niks3-public/s3-access-key" = {
-        hostPath = "/run/niks3-public/s3-access-key";
+      "/run/garage-setup/niks3-public/s3-access-key" = {
+        hostPath = "/run/garage-setup/niks3-public/s3-access-key";
         isReadOnly = true;
       };
-      "/etc/niks3-public/s3-secret-key" = {
-        hostPath = "/run/niks3-public/s3-secret-key";
+      "/run/garage-setup/niks3-public/s3-secret-key" = {
+        hostPath = "/run/garage-setup/niks3-public/s3-secret-key";
         isReadOnly = true;
       };
-      "/etc/niks3-public/api-token" = {
+      "/run/niks3-public/api-token" = {
         hostPath = config.sops.secrets."niks3-public-api-token".path;
         isReadOnly = true;
       };
-      "/etc/niks3-public/sign-key" = {
+      "/run/niks3-public/sign-key" = {
         hostPath = config.sops.secrets."niks3-public-sign-key".path;
         isReadOnly = true;
       };
@@ -85,11 +85,11 @@ in
               bucket = "niks3-public";
               region = "garage";
               useSSL = true;
-              accessKeyFile = "/etc/niks3-public/s3-access-key";
-              secretKeyFile = "/etc/niks3-public/s3-secret-key";
+              accessKeyFile = "/run/garage-setup/niks3-public/s3-access-key";
+              secretKeyFile = "/run/garage-setup/niks3-public/s3-secret-key";
             };
-            apiTokenFile = "/etc/niks3-public/api-token";
-            signKeyFiles = [ "/etc/niks3-public/sign-key" ];
+            apiTokenFile = "/run/niks3-public/api-token";
+            signKeyFiles = [ "/run/niks3-public/sign-key" ];
             cacheUrl = "https://niks3-public.ncaq.net";
             # publicバケットですがGarage S3 APIが匿名読み取りを未サポートのため、
             # niks3のread proxy経由で配信しています。

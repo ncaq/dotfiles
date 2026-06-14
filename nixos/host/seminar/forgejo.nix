@@ -42,8 +42,12 @@ in
     bindMounts = {
       # garage-setupが出力したS3キーをマウントします。
       # Forgejo自身がRuntimeDirectoryに使う/run/forgejo配下はセットアップと衝突するため避けます。
-      "/run/forgejo-secrets" = {
-        hostPath = "/run/forgejo";
+      "/run/forgejo-secrets/s3-access-key" = {
+        hostPath = "/run/forgejo/s3-access-key";
+        isReadOnly = true;
+      };
+      "/run/forgejo-secrets/s3-secret-key" = {
+        hostPath = "/run/forgejo/s3-secret-key";
         isReadOnly = true;
       };
       "/run/postgresql" = {

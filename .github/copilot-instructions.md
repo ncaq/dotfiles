@@ -203,7 +203,7 @@ Claude Codeの設定は2箇所で管理されています。
 ## `home/core/claude-code.nix`
 
 home-managerの`programs.claude-code`モジュールで全ホスト共通の設定を宣言的に管理します。
-MCPサーバ、プラグイン、権限、フックなどの主要な設定はここで管理します。
+プラグイン、権限、フックなどの主要な設定はここで管理します。
 
 ビルド時にユーザの`~/.claude/settings.json`として展開されます。
 

@@ -7,45 +7,7 @@
   ...
 }:
 let
-  # Claude Codeのパッケージをsopsシークレットから環境変数を注入するラッパーで包む。
-  # `api.githubcopilot.com`がOAuth Dynamic Client Registrationをサポートしないのと、
-  # それを正しくClaude Codeが処理しないため、
-  # PATをBearer tokenとしてHTTPヘッダーで渡す必要があります。
-  # 全シェルにトークンを展開するのはあまりやりたくないため、
-  # コマンドだけに注入する方法を取ります。
-  # `symlinkJoin`+`wrapProgram`ではなく`writeShellApplication`を使うことで、
-  # home-managerの`--mcp-config`ラッピングと合わせた二重wrappingを避けて、
-  # プロセスの名前を`claude`に保ちます。
-  claude-code-wrapped = pkgs.writeShellApplication {
-    name = "claude";
-    text = ''
-      if [[ -r ${config.sops.secrets."github-mcp-server/pat".path} ]]; then
-        GITHUB_PERSONAL_ACCESS_TOKEN="$(< ${config.sops.secrets."github-mcp-server/pat".path})"
-        export GITHUB_PERSONAL_ACCESS_TOKEN
-      fi
-      exec ${lib.getExe pkgs-unstable.claude-code} "$@"
-    '';
-  };
-
   ccstatusline = pkgs.callPackage ../../pkgs/ccstatusline.nix { };
-
-  backlog-mcp-server = pkgs.callPackage ../../pkgs/backlog-mcp-server.nix { };
-  # Backlog MCP Serverの認証情報をsops-nixで管理されたシークレットから読み込むラッパー
-  backlog-mcp-server-wrapper = pkgs.writeShellApplication {
-    name = "backlog-mcp-server-wrapper";
-    runtimeInputs = [ backlog-mcp-server ];
-    text = ''
-      if [[ -r ${config.sops.secrets."backlog-mcp-server/domain".path} ]]; then
-        BACKLOG_DOMAIN="$(< ${config.sops.secrets."backlog-mcp-server/domain".path})"
-        export BACKLOG_DOMAIN
-      fi
-      if [[ -r ${config.sops.secrets."backlog-mcp-server/api-key".path} ]]; then
-        BACKLOG_API_KEY="$(< ${config.sops.secrets."backlog-mcp-server/api-key".path})"
-        export BACKLOG_API_KEY
-      fi
-      exec backlog-mcp-server "$@"
-    '';
-  };
 
   # npm, yarn, pnpm, bunで共通のサブコマンドを許可するためのヘルパー
   jsPackageManagers = [
@@ -108,28 +70,13 @@ in
 {
   programs.claude-code = {
     enable = true;
-    package = claude-code-wrapped;
+    package = pkgs-unstable.claude-code;
 
     # `CLAUDE.md`と同等です。
     context = config.prompt.codingAgent;
 
-    mcpServers = {
-      github = {
-        type = "http";
-        url = "https://api.githubcopilot.com/mcp/";
-        headers = {
-          Authorization = "Bearer \${GITHUB_PERSONAL_ACCESS_TOKEN}";
-        };
-      };
-      deepwiki = {
-        type = "http";
-        url = "https://mcp.deepwiki.com/mcp";
-      };
-      backlog = {
-        type = "stdio";
-        command = lib.getExe backlog-mcp-server-wrapper;
-      };
-    };
+    # `mcp.nix`と連携します。
+    enableMcpIntegration = true;
 
     settings = {
       # 応答に使う自然言語です。
@@ -577,32 +524,5 @@ in
           })
         ]
       );
-  };
-
-  sops.secrets = {
-    # GitHub MCP Server用のPersonal Access Tokenをsops-nixで管理します。
-    # シークレットファイルは `sops secrets/github-mcp-server.yaml` で編集してください。
-    # 形式:
-    # pat: ghp_xxxxxxxxxxxxxxxxxxxxx
-    "github-mcp-server/pat" = {
-      sopsFile = ../../secrets/github-mcp-server.yaml;
-      key = "pat";
-      mode = "0400";
-    };
-    # Backlog MCP Server用の認証情報をsops-nixで管理します。
-    # シークレットファイルは `sops secrets/backlog-mcp-server.yaml` で編集してください。
-    # 形式:
-    # domain: your-space.backlog.com
-    # api-key: your-api-key
-    "backlog-mcp-server/domain" = {
-      sopsFile = ../../secrets/backlog-mcp-server.yaml;
-      key = "domain";
-      mode = "0400";
-    };
-    "backlog-mcp-server/api-key" = {
-      sopsFile = ../../secrets/backlog-mcp-server.yaml;
-      key = "api-key";
-      mode = "0400";
-    };
   };
 }

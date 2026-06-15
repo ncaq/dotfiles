@@ -5,6 +5,7 @@
       enable = true;
       package = pkgs-unstable.codex;
       context = config.prompt.codingAgent;
+      enableMcpIntegration = true;
     };
   };
 }

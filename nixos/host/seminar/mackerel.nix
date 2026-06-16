@@ -172,13 +172,16 @@ in
               name = "check-garage";
               runtimeInputs = [ pkgs.curl ];
               text = ''
+                # S3 APIのルートGETはデータ層の過負荷に巻き込まれて遅延しやすいので、
+                # admin APIの軽量なlivenessエンドポイント/healthを使います。
+                # /healthは認証不要で、quorumを満たせば200、不足すれば503を返します。
                 http_code=$(curl -s --max-time 3 -o /dev/null -w "%{http_code}" \
-                  http://${config.machineAddresses.garage.guest}:3900 || true)
-                if [[ "$http_code" =~ ^[24][0-9][0-9]$ ]]; then
-                  echo "Garage OK (HTTP $http_code)"
+                  http://${config.machineAddresses.garage.guest}:3903/health || true)
+                if [[ "$http_code" == "200" ]]; then
+                  echo "Garage OK (health HTTP $http_code)"
                   exit 0
                 else
-                  echo "Garage CRITICAL: HTTP $http_code"
+                  echo "Garage CRITICAL: health HTTP $http_code"
                   exit 2
                 fi
               '';

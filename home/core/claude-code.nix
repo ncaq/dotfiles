@@ -9,51 +9,6 @@
 let
   ccstatusline = pkgs.callPackage ../../pkgs/ccstatusline.nix { };
 
-  # npm, yarn, pnpm, bunで共通のサブコマンドを許可するためのヘルパー
-  jsPackageManagers = [
-    "npm"
-    "yarn"
-    "pnpm"
-    "bun"
-  ];
-
-  # 直接実行するサブコマンド (install等)
-  jsDirectSubcommands = [
-    "ci:*"
-    "info:*"
-    "install:*"
-    "ls:*"
-    "view:*"
-  ];
-
-  # npm run経由で実行するサブコマンド (npmは `npm run <cmd>` 形式、他は `<pkg> <cmd>` 形式)
-  jsRunSubcommands = [
-    "build:*"
-    "dev:*"
-    "fix:*"
-    "lint:*"
-    "lint:eslint"
-    "lint:prettier"
-    "lint:tsc"
-    "npm:*"
-    "prettier:*"
-    "preview:*"
-    "test:*"
-  ];
-
-  mkJsDirectPermissions = pkg: map (sub: "Bash(${pkg} ${sub})") jsDirectSubcommands;
-
-  mkJsRunPermissions =
-    pkg:
-    let
-      prefix = if pkg == "npm" then "${pkg} run" else pkg;
-    in
-    map (sub: "Bash(${prefix} ${sub})") jsRunSubcommands;
-
-  jsRunnerPermissions = lib.concatMap (
-    pkg: mkJsDirectPermissions pkg ++ mkJsRunPermissions pkg
-  ) jsPackageManagers;
-
   # コーディングエージェントの作業ディレクトリ。
   # konokaプラグインは`${XDG_RUNTIME_DIR:-/tmp}/coding-agent-work/`を使用します。
   # NixOS環境では`osConfig`からUIDを取得して、
@@ -154,29 +109,14 @@ in
             ref = "v8.5.0";
           };
         };
-        context7-marketplace = {
-          source = {
-            source = "github";
-            repo = "upstash/context7";
-            ref = "@upstash/context7-mcp@2.2.5";
-          };
-        };
       };
       # pluginを記述しておくことで起動時にインストールされていない場合自動でインストールされます。
       enabledPlugins = {
-        # claude-plugins-official
-        "plugin-dev@claude-plugins-official" = true;
         ## lsp plugin
         "clangd-lsp@claude-plugins-official" = true;
-        "csharp-lsp@claude-plugins-official" = true;
         "gopls-lsp@claude-plugins-official" = true;
-        "jdtls-lsp@claude-plugins-official" = true;
-        "kotlin-lsp@claude-plugins-official" = true;
-        "lua-lsp@claude-plugins-official" = true;
         "pyright-lsp@claude-plugins-official" = true;
-        "ruby-lsp@claude-plugins-official" = true;
         "rust-analyzer-lsp@claude-plugins-official" = true;
-        "swift-lsp@claude-plugins-official" = true;
         "typescript-lsp@claude-plugins-official" = true;
         # konoka
         "commit@konoka" = true;
@@ -190,8 +130,6 @@ in
         "research@konoka" = true;
         "rm-to-trash@konoka" = true;
         "web-tasuke@konoka" = true;
-        # Context7
-        "context7-plugin@context7-marketplace" = true; # ライブラリドキュメント検索
       };
       skipAutoPermissionPrompt = true; # auto modeをdefaultModeにしているので許可を求めない。
       permissions = {
@@ -211,7 +149,7 @@ in
           # 適切に拒否するのが面倒なのでそのままにしています。
           "~/dotfiles/"
         ];
-        allow = jsRunnerPermissions ++ [
+        allow = [
           "Bash($EDITOR:*)"
           "Bash(* --help *)"
           "Bash(* --version)"
@@ -380,6 +318,7 @@ in
           "mcp__plugin_claude-code-home-manager_backlog__get_wiki"
           "mcp__plugin_claude-code-home-manager_backlog__get_wiki_pages"
           "mcp__plugin_claude-code-home-manager_backlog__get_wikis_count"
+          "mcp__plugin_claude-code-home-manager_context7"
           "mcp__plugin_claude-code-home-manager_deepwiki"
           "mcp__plugin_claude-code-home-manager_github__get_commit"
           "mcp__plugin_claude-code-home-manager_github__get_file_contents"
@@ -404,7 +343,6 @@ in
           "mcp__plugin_claude-code-home-manager_github__search_pull_requests"
           "mcp__plugin_claude-code-home-manager_github__search_repositories"
           "mcp__plugin_claude-code-home-manager_github__search_users"
-          "mcp__plugin_context7-plugin_context7"
           "mcp__plugin_nix-tasuke_nixos"
         ];
         ask = [

@@ -113,7 +113,7 @@ in
           source = {
             source = "github";
             repo = "upstash/context7";
-            ref = "@upstash/context7-mcp@2.2.5";
+            ref = "@upstash/context7-mcp@3.2.1";
           };
         };
       };

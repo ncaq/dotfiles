@@ -138,7 +138,7 @@ in
         "rm-to-trash@konoka" = true;
         "web-tasuke@konoka" = true;
         # Context7
-        "context7-plugin@context7-marketplace" = true; # ライブラリドキュメント検索
+        "context7@context7-marketplace" = true; # ライブラリドキュメント検索
       };
       skipAutoPermissionPrompt = true; # auto modeをdefaultModeにしているので許可を求めない。
       permissions = {
@@ -351,7 +351,7 @@ in
           "mcp__plugin_claude-code-home-manager_github__search_pull_requests"
           "mcp__plugin_claude-code-home-manager_github__search_repositories"
           "mcp__plugin_claude-code-home-manager_github__search_users"
-          "mcp__plugin_context7-plugin_context7"
+          "mcp__plugin_context7_context7"
           "mcp__plugin_nix-tasuke_nixos"
         ];
         ask = [

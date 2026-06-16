@@ -164,8 +164,6 @@ in
       };
       # pluginを記述しておくことで起動時にインストールされていない場合自動でインストールされます。
       enabledPlugins = {
-        # claude-plugins-official
-        "plugin-dev@claude-plugins-official" = true;
         ## lsp plugin
         "clangd-lsp@claude-plugins-official" = true;
         "csharp-lsp@claude-plugins-official" = true;

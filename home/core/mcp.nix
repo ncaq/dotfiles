@@ -18,6 +18,9 @@ in
           BACKLOG_DOMAIN.file = config.sops.secrets."backlog-mcp-server/domain".path;
         };
       };
+      context7 = {
+        command = lib.getExe pkgs.context7-mcp;
+      };
       deepwiki = {
         url = "https://mcp.deepwiki.com/mcp";
       };

@@ -109,13 +109,6 @@ in
             ref = "v8.5.0";
           };
         };
-        context7-marketplace = {
-          source = {
-            source = "github";
-            repo = "upstash/context7";
-            ref = "@upstash/context7-mcp@3.2.1";
-          };
-        };
       };
       # pluginを記述しておくことで起動時にインストールされていない場合自動でインストールされます。
       enabledPlugins = {
@@ -137,8 +130,6 @@ in
         "research@konoka" = true;
         "rm-to-trash@konoka" = true;
         "web-tasuke@konoka" = true;
-        # Context7
-        "context7@context7-marketplace" = true; # ライブラリドキュメント検索
       };
       skipAutoPermissionPrompt = true; # auto modeをdefaultModeにしているので許可を求めない。
       permissions = {
@@ -327,6 +318,7 @@ in
           "mcp__plugin_claude-code-home-manager_backlog__get_wiki"
           "mcp__plugin_claude-code-home-manager_backlog__get_wiki_pages"
           "mcp__plugin_claude-code-home-manager_backlog__get_wikis_count"
+          "mcp__plugin_claude-code-home-manager_context7"
           "mcp__plugin_claude-code-home-manager_deepwiki"
           "mcp__plugin_claude-code-home-manager_github__get_commit"
           "mcp__plugin_claude-code-home-manager_github__get_file_contents"
@@ -351,7 +343,6 @@ in
           "mcp__plugin_claude-code-home-manager_github__search_pull_requests"
           "mcp__plugin_claude-code-home-manager_github__search_repositories"
           "mcp__plugin_claude-code-home-manager_github__search_users"
-          "mcp__plugin_context7_context7"
           "mcp__plugin_nix-tasuke_nixos"
         ];
         ask = [

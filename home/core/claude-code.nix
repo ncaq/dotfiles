@@ -9,51 +9,6 @@
 let
   ccstatusline = pkgs.callPackage ../../pkgs/ccstatusline.nix { };
 
-  # npm, yarn, pnpm, bunで共通のサブコマンドを許可するためのヘルパー
-  jsPackageManagers = [
-    "npm"
-    "yarn"
-    "pnpm"
-    "bun"
-  ];
-
-  # 直接実行するサブコマンド (install等)
-  jsDirectSubcommands = [
-    "ci:*"
-    "info:*"
-    "install:*"
-    "ls:*"
-    "view:*"
-  ];
-
-  # npm run経由で実行するサブコマンド (npmは `npm run <cmd>` 形式、他は `<pkg> <cmd>` 形式)
-  jsRunSubcommands = [
-    "build:*"
-    "dev:*"
-    "fix:*"
-    "lint:*"
-    "lint:eslint"
-    "lint:prettier"
-    "lint:tsc"
-    "npm:*"
-    "prettier:*"
-    "preview:*"
-    "test:*"
-  ];
-
-  mkJsDirectPermissions = pkg: map (sub: "Bash(${pkg} ${sub})") jsDirectSubcommands;
-
-  mkJsRunPermissions =
-    pkg:
-    let
-      prefix = if pkg == "npm" then "${pkg} run" else pkg;
-    in
-    map (sub: "Bash(${prefix} ${sub})") jsRunSubcommands;
-
-  jsRunnerPermissions = lib.concatMap (
-    pkg: mkJsDirectPermissions pkg ++ mkJsRunPermissions pkg
-  ) jsPackageManagers;
-
   # コーディングエージェントの作業ディレクトリ。
   # konokaプラグインは`${XDG_RUNTIME_DIR:-/tmp}/coding-agent-work/`を使用します。
   # NixOS環境では`osConfig`からUIDを取得して、
@@ -209,7 +164,7 @@ in
           # 適切に拒否するのが面倒なのでそのままにしています。
           "~/dotfiles/"
         ];
-        allow = jsRunnerPermissions ++ [
+        allow = [
           "Bash($EDITOR:*)"
           "Bash(* --help *)"
           "Bash(* --version)"

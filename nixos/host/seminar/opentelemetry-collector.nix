@@ -32,6 +32,14 @@ in
         }
       ];
       processors = {
+        # 公式ベストプラクティスに従いmemory_limiterをパイプライン先頭に置き、
+        # collectorのメモリ上限を確定させてホスト全体のOOMを防ぎます。
+        # 通常時のメモリは小さいので、転送失敗時の上限を抑えるのが主目的です。
+        memory_limiter = {
+          check_interval = "1s";
+          limit_mib = 256;
+          spike_limit_mib = 64;
+        };
         # Mackerelのラベル付きメトリクスは課金対象なので、
         # ボトルネック調査に有用なメトリクスファミリーのみ残します。
         # filterのconditionはtrueになったメトリクスを破棄するので、
@@ -56,6 +64,7 @@ in
       service.pipelines.metrics = {
         receivers = [ "prometheus" ];
         processors = [
+          "memory_limiter"
           "filter/garage"
           "batch"
         ];
@@ -64,11 +73,17 @@ in
     };
   };
 
-  # `EnvironmentFile`はsystemdがroot権限で読み込んでからプロセスに渡すため、
-  # `DynamicUser`で動くcollectorでも`0400 root`のままアクセスできます。
-  systemd.services.opentelemetry-collector.serviceConfig.EnvironmentFile = [
-    config.sops.templates."otelcol-env".path
-  ];
+  systemd.services.opentelemetry-collector.serviceConfig = {
+    # collector内部のmemory_limiterに加えて、
+    # cgroupレベルでもメモリ上限を設けて二重に保護します。
+    # memory_limiterのlimit_mib(256MiB)より上に設定して、
+    # 通常はcollector側で先に制御が効くようにします。
+    MemoryHigh = "384M";
+    MemoryMax = "512M";
+    # `EnvironmentFile`はsystemdがroot権限で読み込んでからプロセスに渡すため、
+    # `DynamicUser`で動くcollectorでも`0400 root`のままアクセスできます。
+    EnvironmentFile = [ config.sops.templates."otelcol-env".path ];
+  };
 
   # `GARAGE_METRICS_TOKEN`: Garageの`/metrics`アクセス用Bearerトークン(garage.nixで定義)。
   # `MACKEREL_APIKEY`: MackerelのAPIキー(mackerel.nixで定義)。

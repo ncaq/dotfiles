@@ -25,6 +25,22 @@ in
       diagnostic = true;
       # ファイルシステムをデバイス名(dm-1等)ではなくマウントポイント名で表示
       filesystems.use_mountpoint = true;
+      # disk I/Oメトリクスを物理ディスク単位だけに絞ってノイズを削減する。
+      # この正規表現はデバイス名に部分一致したものを収集対象から除外する。
+      # 残したいのは物理ディスク全体(nvme0n1, nvme1n1, sda, sdb, sdc)のI/Oだけ。
+      # 除外対象は以下の通り。
+      # - loop: 中身が空のループバックデバイス。
+      # - zram: 圧縮スワップ。物理ディスクアクセスではない。
+      # - bcache: HDDをbcache仮想デバイス越しに見たもの。
+      #   複数HDDが同一SSDキャッシュを共有しており、
+      #   1本のHDDへのI/Oが sd[a-z] -> bcacheN -> bcacheNp1 -> dm-N と多重計上されて増幅する。
+      #   物理実体である sd[a-z] だけ残せば各HDDの真のI/Oが分かる。
+      # - nvme[0-9]+n[0-9]+p[0-9]+: nvmeのパーティション。親デバイス全体だけ見れば足りる。
+      #   use_mountpoint=trueだと、
+      #   パーティションがマウントポイント名(/var/tmp等)で表示され紛らわしいので除外する。
+      # - sd[a-z][0-9]+: SCSI/SATAディスクのパーティション(現状は無いが将来用)。
+      # なおdm-*はmackerel-agentが標準で除外するため明示不要。
+      disks.ignore = "loop|zram|bcache|nvme[0-9]+n[0-9]+p[0-9]+|sd[a-z][0-9]+";
       # ヘルスチェックプラグイン
       plugin.checks = {
         ssh = {

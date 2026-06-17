@@ -46,7 +46,9 @@ in
         };
         batch = { };
       };
-      exporters."otlp/mackerel" = {
+      # `otlp` exporterはv0.144.0で`otlp_grpc`にリネームされ、
+      # `otlp`はdeprecatedエイリアスになったため`otlp_grpc`を使います。
+      exporters."otlp_grpc/mackerel" = {
         # TLSはデフォルトで有効(Mackerelが要求)なので明示設定は不要です。
         endpoint = "otlp.mackerelio.com:4317";
         headers."Mackerel-Api-Key" = "\${env:MACKEREL_APIKEY}";
@@ -57,7 +59,7 @@ in
           "filter/garage"
           "batch"
         ];
-        exporters = [ "otlp/mackerel" ];
+        exporters = [ "otlp_grpc/mackerel" ];
       };
     };
   };

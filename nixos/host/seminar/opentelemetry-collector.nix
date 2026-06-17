@@ -1,0 +1,79 @@
+{ config, ... }:
+let
+  garageAddr = config.machineAddresses.garage.guest;
+in
+{
+  # PrometheusメトリクスをOpenTelemetry Collectorでスクレイプし、
+  # OTLPでMackerelに転送します。
+  #
+  # 専用のPrometheus + Grafanaスタックは立てず、
+  # 既にホストで動いているMackerelに一本化します。
+  # `mackerel-plugin-prometheus-exporter`ではなくOTel Collectorを使うのは、
+  # プラグイン方式だとヒストグラムのバケットが平坦化されてレイテンシの
+  # パーセンタイルが失われるためです。
+  services.opentelemetry-collector = {
+    enable = true;
+    settings = {
+      receivers.prometheus.config.scrape_configs = [
+        {
+          job_name = "garage";
+          # Mackerelのメトリクス粒度は1分なので、それに合わせて1分間隔にします。
+          scrape_interval = "60s";
+          scheme = "http";
+          metrics_path = "/metrics";
+          # `GARAGE_METRICS_TOKEN`はGarageコンテナと同じsopsシークレットを、
+          # `EnvironmentFile`経由で渡し、
+          # collectorの環境変数展開で参照します。
+          authorization = {
+            type = "Bearer";
+            credentials = "\${env:GARAGE_METRICS_TOKEN}";
+          };
+          static_configs = [ { targets = [ "${garageAddr}:3903" ]; } ];
+        }
+      ];
+      processors = {
+        # Mackerelのラベル付きメトリクスは課金対象なので、
+        # ボトルネック調査に有用なメトリクスファミリーのみ残します。
+        # filterのconditionはtrueになったメトリクスを破棄するので、
+        # 対象プレフィックスにマッチしないものを破棄します。
+        # プレフィックス一致なので、
+        # prometheus receiverによる名前正規化(_total付与等)が起きても取りこぼしません。
+        "filter/garage" = {
+          error_mode = "ignore";
+          metrics.metric = [
+            ''not IsMatch(name, "^(api_s3_|block_|rpc_|table_|cluster_)")''
+          ];
+        };
+        batch = { };
+      };
+      exporters."otlp/mackerel" = {
+        # TLSはデフォルトで有効(Mackerelが要求)なので明示設定は不要です。
+        endpoint = "otlp.mackerelio.com:4317";
+        headers."Mackerel-Api-Key" = "\${env:MACKEREL_APIKEY}";
+      };
+      service.pipelines.metrics = {
+        receivers = [ "prometheus" ];
+        processors = [
+          "filter/garage"
+          "batch"
+        ];
+        exporters = [ "otlp/mackerel" ];
+      };
+    };
+  };
+
+  # `EnvironmentFile`はsystemdがroot権限で読み込んでからプロセスに渡すため、
+  # `DynamicUser`で動くcollectorでも`0400 root`のままアクセスできます。
+  systemd.services.opentelemetry-collector.serviceConfig.EnvironmentFile = [
+    config.sops.templates."otelcol-env".path
+  ];
+
+  # `GARAGE_METRICS_TOKEN`: Garageの`/metrics`アクセス用Bearerトークン(garage.nixで定義)。
+  # `MACKEREL_APIKEY`: MackerelのAPIキー(mackerel.nixで定義)。
+  # どちらも既存のsopsシークレットのプレースホルダを参照するだけで、
+  # 新規シークレットの作成は不要です。
+  sops.templates."otelcol-env".content = ''
+    GARAGE_METRICS_TOKEN=${config.sops.placeholder."garage-metrics-token"}
+    MACKEREL_APIKEY=${config.sops.placeholder."mackerel-api-key"}
+  '';
+}

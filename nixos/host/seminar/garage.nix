@@ -13,6 +13,7 @@ let
     isSystemUser = true;
   };
   garageWithEnv = pkgs.writeShellApplication {
+    name = "garage-with-env";
     runtimeInputs = [ ];
     text = ''
       set -a

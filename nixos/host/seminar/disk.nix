@@ -125,6 +125,16 @@ _: {
                     "noatime"
                     "compress=zstd"
                   ];
+                  subvolumes = {
+                    # snapperスナップショットの転送先。
+                    # 独立したサブボリュームにすることで、
+                    # noa config(SUBVOLUME = /mnt/noa)のタイムラインスナップショットに含まれず、
+                    # バックアップの二重保存を避けられる。
+                    # `mountpoint`は指定しない。
+                    # トップレベルがマウントされている`/mnt/noa/snapshot-backup`として参照でき、
+                    # 別途マウントユニットを生成するとブート時のマウント失敗でemergencyに落ちるため。
+                    "snapshot-backup" = { };
+                  };
                   extraArgs = [
                     "-d raid1"
                     "/dev/mapper/noa0"

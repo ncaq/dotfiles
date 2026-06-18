@@ -1,4 +1,19 @@
 { pkgs, ... }:
+let
+  # snapper.nixの`lowPriority`と同じ意図で、btrfs send/receiveの転送を低優先度にする。
+  # snapper-backup.serviceは`systemd.units`の生テキストで定義しているため、
+  # `serviceConfig`では上書きできない。
+  # 代わりに`[Service]`セクションを追記する。
+  # 同一ファイル内の重複セクションはsystemdがマージする。
+  lowPriority = ''
+
+    [Service]
+    Nice=19
+    CPUSchedulingPolicy=idle
+    IOSchedulingClass=idle
+    IOWeight=10
+  '';
+in
 {
   # snapperが取得済みのrootスナップショットを、
   # snbk(snapper-backup)でnoa(HDD RAID1)へbtrfs send/receive増分転送する。
@@ -19,7 +34,7 @@
   # `automatic: true`のbackup-configを転送しつつリテンションに基づく削除も行う。
   systemd.units = {
     "snapper-backup.service".text =
-      builtins.readFile "${pkgs.snapper}/lib/systemd/system/snapper-backup.service";
+      builtins.readFile "${pkgs.snapper}/lib/systemd/system/snapper-backup.service" + lowPriority;
     "snapper-backup.timer" = {
       text = builtins.readFile "${pkgs.snapper}/lib/systemd/system/snapper-backup.timer";
       wantedBy = [ "timers.target" ];

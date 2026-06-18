@@ -29,22 +29,23 @@ in
     target-path = "/mnt/noa/snapshot-backup/seminar/root";
   };
 
-  # snapper同梱のbackup unitをそのまま流用する。
-  # serviceは`snbk --verbose --automatic transfer-and-delete`を実行し、
-  # `automatic: true`のbackup-configを転送しつつリテンションに基づく削除も行う。
-  systemd.units = {
-    "snapper-backup.service".text =
-      builtins.readFile "${pkgs.snapper}/lib/systemd/system/snapper-backup.service" + lowPriority;
-    "snapper-backup.timer" = {
-      text = builtins.readFile "${pkgs.snapper}/lib/systemd/system/snapper-backup.timer";
-      wantedBy = [ "timers.target" ];
+  systemd = {
+    # snapper同梱のbackup unitをそのまま流用する。
+    # serviceは`snbk --verbose --automatic transfer-and-delete`を実行し、
+    # `automatic: true`のbackup-configを転送しつつリテンションに基づく削除も行う。
+    units = {
+      "snapper-backup.service".text =
+        builtins.readFile "${pkgs.snapper}/lib/systemd/system/snapper-backup.service" + lowPriority;
+      "snapper-backup.timer" = {
+        text = builtins.readFile "${pkgs.snapper}/lib/systemd/system/snapper-backup.timer";
+        wantedBy = [ "timers.target" ];
+      };
     };
+    # target-path配下のディレクトリを用意する。
+    # サブボリューム自体はdiskoで管理している。
+    tmpfiles.rules = [
+      "d /mnt/noa/snapshot-backup/seminar 0700 root root -"
+      "d /mnt/noa/snapshot-backup/seminar/root 0700 root root -"
+    ];
   };
-
-  # target-path配下のディレクトリを用意する。
-  # サブボリューム自体はdiskoで管理している。
-  systemd.tmpfiles.rules = [
-    "d /mnt/noa/snapshot-backup/seminar 0700 root root -"
-    "d /mnt/noa/snapshot-backup/seminar/root 0700 root root -"
-  ];
 }

@@ -13,7 +13,6 @@ let
     isSystemUser = true;
   };
   garageWithEnv = pkgs.writeShellApplication {
-    name = "garage-runner";
     runtimeInputs = [ ];
     text = ''
       set -a
@@ -120,72 +119,59 @@ in
     tmpfiles.rules = [
       "d /var/lib/garage      0750 garage garage -"
       "d /var/lib/garage/meta 0750 garage garage -"
-    ];
-    # /mnt/noa is owned by ncaq, so systemd-tmpfiles refuses to create
-    # subdirectories owned by garage due to "unsafe path transition" detection.
-    # Use ExecStartPre instead.
-    services."container@garage".serviceConfig.ExecStartPre = [
-      "+${
-        lib.getExe (
-          pkgs.writeShellApplication {
-            name = "garage-create-data-dir";
-            runtimeInputs = with pkgs; [ coreutils ];
-            text = ''
-              install -d -m 0750 -o garage -g garage /mnt/noa/garage
-              install -d -m 0750 -o garage -g garage /mnt/noa/garage/data
-            '';
-          }
-        )
-      }"
+      "d /mnt/noa/garage      0750 garage garage -"
+      "d /mnt/noa/garage/data 0750 garage garage -"
     ];
   };
 
   environment.systemPackages = [ garageWrapper ];
 
-  sops.templates."garage-env" = {
-    content = ''
-      GARAGE_RPC_SECRET="${config.sops.placeholder."garage-rpc-secret"}"
-      GARAGE_ADMIN_TOKEN="${config.sops.placeholder."garage-admin-token"}"
-      GARAGE_METRICS_TOKEN="${config.sops.placeholder."garage-metrics-token"}"
-    '';
-    owner = "garage";
-    group = "garage";
-    mode = "0400";
-  };
-  # Managed by sops-nix.
-  # To create (first time only):
-  # ```
-  # rpc_secret=$(openssl rand -hex 32)
-  # admin_token=$(openssl rand -base64 32)
-  # metrics_token=$(openssl rand -base64 32)
-  # ```
-  # Then `sops secrets/seminar/garage.yaml` and set:
-  # ```
-  # rpc_secret: <hex>
-  # admin_token: <base64>
-  # metrics_token: <base64>
-  # ```
-  sops.secrets = {
-    "garage-rpc-secret" = {
-      sopsFile = ../../../secrets/seminar/garage.yaml;
-      key = "rpc_secret";
+  sops = {
+    templates."garage-env" = {
+      content = ''
+        GARAGE_RPC_SECRET="${config.sops.placeholder."garage-rpc-secret"}"
+        GARAGE_ADMIN_TOKEN="${config.sops.placeholder."garage-admin-token"}"
+        GARAGE_METRICS_TOKEN="${config.sops.placeholder."garage-metrics-token"}"
+      '';
       owner = "garage";
       group = "garage";
       mode = "0400";
     };
-    "garage-admin-token" = {
-      sopsFile = ../../../secrets/seminar/garage.yaml;
-      key = "admin_token";
-      owner = "garage";
-      group = "garage";
-      mode = "0400";
-    };
-    "garage-metrics-token" = {
-      sopsFile = ../../../secrets/seminar/garage.yaml;
-      key = "metrics_token";
-      owner = "garage";
-      group = "garage";
-      mode = "0400";
+    # Managed by sops-nix.
+    # To create (first time only):
+    # ```
+    # rpc_secret=$(openssl rand -hex 32)
+    # admin_token=$(openssl rand -base64 32)
+    # metrics_token=$(openssl rand -base64 32)
+    # ```
+    # Then `sops secrets/seminar/garage.yaml` and set:
+    # ```
+    # rpc_secret: <hex>
+    # admin_token: <base64>
+    # metrics_token: <base64>
+    # ```
+    secrets = {
+      "garage-rpc-secret" = {
+        sopsFile = ../../../secrets/seminar/garage.yaml;
+        key = "rpc_secret";
+        owner = "garage";
+        group = "garage";
+        mode = "0400";
+      };
+      "garage-admin-token" = {
+        sopsFile = ../../../secrets/seminar/garage.yaml;
+        key = "admin_token";
+        owner = "garage";
+        group = "garage";
+        mode = "0400";
+      };
+      "garage-metrics-token" = {
+        sopsFile = ../../../secrets/seminar/garage.yaml;
+        key = "metrics_token";
+        owner = "garage";
+        group = "garage";
+        mode = "0400";
+      };
     };
   };
 

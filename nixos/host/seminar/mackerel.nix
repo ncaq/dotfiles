@@ -21,8 +21,6 @@ in
     runAsRoot = true;
     apiKeyFile = config.sops.templates."mackerel-api-key.conf".path;
     settings = {
-      # エージェント自身のメモリ使用量も収集
-      diagnostic = true;
       # disk I/Oメトリクスを物理ディスク単位だけに絞ってノイズを削減する。
       # この正規表現はデバイス名に部分一致したものを収集対象から除外する。
       # 残したいのは物理ディスク全体(nvme0n1, nvme1n1, sda, sdb, sdc)のI/Oだけ。

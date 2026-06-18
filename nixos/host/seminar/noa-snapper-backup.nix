@@ -43,9 +43,10 @@ in
     };
     # target-path配下のディレクトリを用意する。
     # サブボリューム自体はdiskoで管理している。
+    # 権限は元の`.snapshots`の典型的形式に合わせています。
     tmpfiles.rules = [
-      "d /mnt/noa/snapshot-backup/seminar 0700 root root -"
-      "d /mnt/noa/snapshot-backup/seminar/root 0700 root root -"
+      "d /mnt/noa/snapshot-backup/seminar 0755 root root -"
+      "d /mnt/noa/snapshot-backup/seminar/root 0755 root root -"
     ];
   };
 }

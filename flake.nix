@@ -129,6 +129,7 @@
       # 全環境で共通のoverlays。
       overlays = [
         inputs.firge-nix.overlays.default
+        (import ./lib/snapper-btrfs-bin-overlay.nix)
       ];
       # system固有のpkgsを生成する関数。
       importPkgsFor =

@@ -25,6 +25,13 @@ in
 
         TIMELINE_CREATE = true;
         TIMELINE_CLEANUP = true;
+
+        # 空き容量がこの割合を下回ると、timeline cleanupが世代数の制限とは別に、
+        # 古いスナップショットから追加で削除して空き容量を確保する。
+        # 過去にスナップショットがシステムディスクを圧迫したので明示的に引き上げる。
+        # FREE_LIMITはstatvfsベースで動作しquota(qgroup)を必要としない。
+        # 世代数自体は絞らない。容量に余裕がある限り履歴は多く残して構わない方針。
+        FREE_LIMIT = "0.4";
       };
     };
   };

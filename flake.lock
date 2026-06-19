@@ -266,11 +266,11 @@
         "spectrum": "spectrum"
       },
       "locked": {
-        "lastModified": 1781389237,
-        "narHash": "sha256-Ne1/E5XNUq0gleaQz0vW5R4xf/0h/uEZ+bOW1aNjeQk=",
+        "lastModified": 1781738058,
+        "narHash": "sha256-wgKY6pbZbFpBXae+8bjvJtW1Z9qekZergGly44n2qZw=",
         "owner": "microvm-nix",
         "repo": "microvm.nix",
-        "rev": "6ad601df0a07d9855c5e8f9b81135ecaf7c287eb",
+        "rev": "225b35c204e29efb5bbe9b55b1a38b07b3fca2af",
         "type": "github"
       },
       "original": {
@@ -641,11 +641,11 @@
     "www-ncaq-net": {
       "flake": false,
       "locked": {
-        "lastModified": 1781651473,
-        "narHash": "sha256-xF+ZnibPOn+7G9aUmGlbKS5KQb6Xf7+UUogSvu/VGfQ=",
+        "lastModified": 1781742344,
+        "narHash": "sha256-uHZEFdgvPvaiMUbzch4CO5z4uOOB+udkG4JrhQNRe90=",
         "owner": "ncaq",
         "repo": "www.ncaq.net",
-        "rev": "cc25370a88abb122d229f5cb6a22c87947b4ccee",
+        "rev": "92b5c1c091e90e24bdd17570c0baa6b7fed00580",
         "type": "github"
       },
       "original": {

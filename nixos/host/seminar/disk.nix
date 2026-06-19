@@ -85,13 +85,14 @@ _: {
       # # 一部は以下のように手動で設定する必要があります。
       # # bcacheデバイスの作成
       # # キャッシュデバイス（SSD）
-      # sudo make-bcache --cache --writeback --discard /dev/disk/by-id/nvme-WD_PC_SN740_SDDQNQD-256G-1201_23252F808935
+      # CACHE_DEVICE=/dev/disk/by-id/nvme-WD_BLACK_SN770_1TB_242810800421
+      # sudo make-bcache --cache --writeback --discard $CACHE_DEVICE
       # # バッキングデバイス（HDD）
       # sudo make-bcache --bdev --writeback --discard /dev/disk/by-id/ata-WDC_WD121PURZ-85GUCY0_2AGN938Y
       # sudo make-bcache --bdev --writeback --discard /dev/disk/by-id/ata-WDC_WD80EAAZ-00BXBB0_WD-RD2PKLEH
       # sudo make-bcache --bdev --writeback --discard /dev/disk/by-id/ata-WDC_WD80EAZZ-00BKLB0_WD-CA2HPAUK
       # # キャッシュセットに接続
-      # CACHE_SET_UUID=$(sudo bcache-super-show /dev/disk/by-id/nvme-WD_PC_SN740_SDDQNQD-256G-1201_23252F808935|grep 'cset.uuid'|awk '{print $2}')
+      # CACHE_SET_UUID=$(sudo bcache-super-show $CACHE_DEVICE|grep 'cset.uuid'|awk '{print $2}')
       # sudo zsh -c "echo $CACHE_SET_UUID > /sys/block/bcache0/bcache/attach"
       # sudo zsh -c "echo $CACHE_SET_UUID > /sys/block/bcache1/bcache/attach"
       # sudo zsh -c "echo $CACHE_SET_UUID > /sys/block/bcache2/bcache/attach"

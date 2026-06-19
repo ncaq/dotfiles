@@ -93,9 +93,7 @@ _: {
       # sudo make-bcache --bdev --writeback --discard /dev/disk/by-id/ata-WDC_WD80EAZZ-00BKLB0_WD-CA2HPAUK
       # # キャッシュセットに接続
       # CACHE_SET_UUID=$(sudo bcache-super-show $CACHE_DEVICE|grep 'cset.uuid'|awk '{print $2}')
-      # sudo zsh -c "echo $CACHE_SET_UUID > /sys/block/bcache0/bcache/attach"
-      # sudo zsh -c "echo $CACHE_SET_UUID > /sys/block/bcache1/bcache/attach"
-      # sudo zsh -c "echo $CACHE_SET_UUID > /sys/block/bcache2/bcache/attach"
+      # for i in 0 1 2; do sudo zsh -c "echo $CACHE_SET_UUID > /sys/block/bcache$i/bcache/attach"; done
       # # パスワードファイル作成
       # sudo nano /tmp/secret.password
       # # 初期インストール時以外はフォーマットを手動で済ませる。

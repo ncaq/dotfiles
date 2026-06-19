@@ -84,10 +84,10 @@ _: {
       # # diskoはbcacheを直接サポートしていないため、
       # # 一部は以下のように手動で設定する必要があります。
       # # bcacheデバイスの作成
-      # # キャッシュデバイス（SSD）
+      # # キャッシュデバイス(SSD)
       # CACHE_DEVICE=/dev/disk/by-id/nvme-WD_BLACK_SN770_1TB_242810800421
       # sudo make-bcache --cache --writeback --discard $CACHE_DEVICE
-      # # バッキングデバイス（HDD）
+      # # バッキングデバイス(HDD)
       # sudo make-bcache --bdev --writeback --discard /dev/disk/by-id/ata-WDC_WD121PURZ-85GUCY0_2AGN938Y
       # sudo make-bcache --bdev --writeback --discard /dev/disk/by-id/ata-WDC_WD80EAAZ-00BXBB0_WD-RD2PKLEH
       # sudo make-bcache --bdev --writeback --discard /dev/disk/by-id/ata-WDC_WD80EAZZ-00BKLB0_WD-CA2HPAUK

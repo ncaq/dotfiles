@@ -52,7 +52,7 @@
     };
 
     niks3 = {
-      url = "github:Mic92/niks3";
+      url = "github:ncaq/niks3/dup-multipart";
       inputs = {
         nixpkgs.follows = "nixpkgs";
         treefmt-nix.follows = "treefmt-nix";

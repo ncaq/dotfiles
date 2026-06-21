@@ -17,6 +17,15 @@
       systemd = {
         enable = true;
       };
+      luks.devices = {
+        "nixos-root" = {
+          device = "/dev/disk/by-partlabel/disk-main-luks";
+          allowDiscards = true;
+          crypttabExtraOpts = [
+            "tpm2-device=auto"
+          ];
+        };
+      };
     };
   };
 }

@@ -3,7 +3,8 @@ _: {
     disk = {
       main = {
         type = "disk";
-        device = "/dev/disk/by-id/nvme-Samsung_SSD_970_EVO_Plus_1TB_S4EWNF0M300603J";
+        # 最終的にM.2スロットに挿した状態のIDを記載する。
+        device = "/dev/disk/by-id/nvme-WD_BLACK_SN850X_HS_2000GB_xxxxx";
         content = {
           type = "gpt";
           partitions = {

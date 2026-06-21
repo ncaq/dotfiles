@@ -52,5 +52,6 @@ in
     typescript
     typescript-language-server
     vscode-langservers-extracted
+    yarn-berry
   ];
 }

@@ -56,7 +56,7 @@ in
         # 初回nixos-install時にsops-nixのsystemdサービスが未起動で、
         # シークレットが展開されないブートストラップ問題があり、
         # 運用の複雑さに対してセキュリティ上のゲインが小さいためハッシュ値をコミットしています。
-        hashedPassword = "$y$j9T$wU3N0Q3P9fHGrMso8Z22k/$FQ8NgFVzUgo5c1RYWp/BAuRBioPUj7CAiwBm/paRf1B";
+        hashedPassword = "$y$j9T$tE1NrBnAam.0Pht2Fom/T.$KTVpj704fIlSgbtVRnTi0P/1NvBPZErkMpX0q5EE5rA";
       };
       root = {
         # rootユーザのパスワードを使うことは滅多にありません。
@@ -64,7 +64,7 @@ in
         # レスキューモードを使う場合でもカーネルパラメータに`init=/bin/sh`を指定すれば、
         # ディスクさえ復号化できればパスワード入力はスキップできます。
         # しかし念の為にログインできる余地を残しておきます。
-        hashedPassword = "$y$j9T$Pe0nKS1opi71jOuppQo0p/$zB9VQoagiIHgvnGNBgyxmBk7Ib6xyMDsfwW451pZoaC";
+        hashedPassword = "$y$j9T$E0S7CZxsl2bETtYr4vx9S1$nP5zPj7fOeJukGHeuoZTvWyi2ifwXSAnp9Glbqsq725";
       };
     };
   };

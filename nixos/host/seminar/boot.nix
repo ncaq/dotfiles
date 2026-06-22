@@ -18,8 +18,8 @@
         enable = true;
       };
       luks.devices = {
-        "nixos-root" = {
-          device = "/dev/disk/by-partlabel/disk-main-luks";
+        nixos-root = {
+          device = "/dev/disk/by-partlabel/disk-main-nixos-root";
           allowDiscards = true;
           crypttabExtraOpts = [
             "tpm2-device=auto"

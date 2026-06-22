@@ -33,7 +33,6 @@
           '';
         }
       );
-      TimeoutStartSec = "10min";
     };
   };
 }

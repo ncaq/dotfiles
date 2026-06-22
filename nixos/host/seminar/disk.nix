@@ -3,8 +3,7 @@ _: {
     disk = {
       main = {
         type = "disk";
-        # 最終的にM.2スロットに挿した状態のIDを記載する。
-        device = "/dev/disk/by-id/nvme-WD_BLACK_SN850X_HS_2000GB_xxxxx";
+        device = "/dev/disk/by-id/nvme-WD_BLACK_SN850X_HS_2000GB_25393V801805";
         content = {
           type = "gpt";
           partitions = {

@@ -73,16 +73,20 @@ in
     };
   };
 
-  systemd.services.opentelemetry-collector.serviceConfig = {
-    # collector内部のmemory_limiterに加えて、
-    # cgroupレベルでもメモリ上限を設けて二重に保護します。
-    # memory_limiterのlimit_mib(256MiB)より上に設定して、
-    # 通常はcollector側で先に制御が効くようにします。
-    MemoryHigh = "384M";
-    MemoryMax = "512M";
-    # `EnvironmentFile`はsystemdがroot権限で読み込んでからプロセスに渡すため、
-    # `DynamicUser`で動くcollectorでも`0400 root`のままアクセスできます。
-    EnvironmentFile = [ config.sops.templates."otelcol-env".path ];
+  systemd.services.opentelemetry-collector = {
+    serviceConfig = {
+      # collector内部のmemory_limiterに加えて、
+      # cgroupレベルでもメモリ上限を設けて二重に保護します。
+      # memory_limiterのlimit_mib(256MiB)より上に設定して、
+      # 通常はcollector側で先に制御が効くようにします。
+      MemoryHigh = "384M";
+      MemoryMax = "512M";
+      # `EnvironmentFile`はsystemdがroot権限で読み込んでからプロセスに渡すため、
+      # `DynamicUser`で動くcollectorでも`0400 root`のままアクセスできます。
+      EnvironmentFile = [ config.sops.templates."otelcol-env".path ];
+    };
+    after = [ "sops-install-secrets.service" ];
+    requires = [ "sops-install-secrets.service" ];
   };
 
   # `GARAGE_METRICS_TOKEN`: Garageの`/metrics`アクセス用Bearerトークン(garage.nixで定義)。

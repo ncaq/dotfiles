@@ -28,8 +28,4 @@ fi
 CACHIX_AUTH_TOKEN=$(sops decrypt --extract '["CACHIX_AUTH_TOKEN"]' "$secrets_file")
 export CACHIX_AUTH_TOKEN
 
-if [ "$#" -gt 0 ]; then
-  exec cachix push "$cache_name" "$@"
-else
-  exec cachix push "$cache_name"
-fi
+exec cachix push "$cache_name" "$@"

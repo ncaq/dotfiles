@@ -16,7 +16,9 @@ let
   # コミットリビジョン。
   # `install.sh`が最後のコミット情報ファイルをstagingするため必ずdirtyになります。
   # "-dirty"サフィックスは自前の注入によるものなので除去します。
-  shortRev = lib.strings.removeSuffix "-dirty" inputs.self.dirtyShortRev or inputs.self.shortRev;
+  shortRev =
+    lib.strings.removeSuffix "-dirty"
+      inputs.self.dirtyShortRev or inputs.self.shortRev or "nothing-rev";
   # `install.sh`が最新コミットの情報を`last-commit.json`に保存してstagingします。
   lastCommitFile = "${inputs.self}/last-commit.json";
   lastCommit =

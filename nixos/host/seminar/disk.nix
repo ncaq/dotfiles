@@ -3,7 +3,7 @@ _: {
     disk = {
       main = {
         type = "disk";
-        device = "/dev/disk/by-id/nvme-Samsung_SSD_970_EVO_Plus_1TB_S4EWNF0M300603J";
+        device = "/dev/disk/by-id/nvme-WD_BLACK_SN850X_HS_2000GB_25393V801805";
         content = {
           type = "gpt";
           partitions = {
@@ -39,41 +39,48 @@ _: {
               size = "100%";
               type = "8300";
               content = {
-                type = "btrfs";
-                subvolumes = {
-                  "@" = {
-                    mountpoint = "/";
-                    mountOptions = [
-                      "noatime"
-                      "compress=zstd"
-                    ];
-                  };
-                  "@nix-store" = {
-                    mountpoint = "/nix/store";
-                    mountOptions = [
-                      "noatime"
-                      "compress=zstd"
-                    ];
-                  };
-                  "@swap" = {
-                    mountpoint = "/swap";
-                    mountOptions = [
-                      "noatime"
-                    ];
-                  };
-                  "@var-log" = {
-                    mountpoint = "/var/log";
-                    mountOptions = [
-                      "noatime"
-                      "compress=zstd"
-                    ];
-                  };
-                  "@snapshots" = {
-                    mountpoint = "/.snapshots";
-                    mountOptions = [
-                      "noatime"
-                      "compress=zstd"
-                    ];
+                type = "luks";
+                name = "nixos-root";
+                settings.allowDiscards = true;
+                # フォーマット時のみ使う一時パスワードファイル。
+                passwordFile = "/tmp/secret.password";
+                content = {
+                  type = "btrfs";
+                  subvolumes = {
+                    "@" = {
+                      mountpoint = "/";
+                      mountOptions = [
+                        "noatime"
+                        "compress=zstd"
+                      ];
+                    };
+                    "@nix-store" = {
+                      mountpoint = "/nix/store";
+                      mountOptions = [
+                        "noatime"
+                        "compress=zstd"
+                      ];
+                    };
+                    "@swap" = {
+                      mountpoint = "/swap";
+                      mountOptions = [
+                        "noatime"
+                      ];
+                    };
+                    "@var-log" = {
+                      mountpoint = "/var/log";
+                      mountOptions = [
+                        "noatime"
+                        "compress=zstd"
+                      ];
+                    };
+                    "@snapshots" = {
+                      mountpoint = "/.snapshots";
+                      mountOptions = [
+                        "noatime"
+                        "compress=zstd"
+                      ];
+                    };
                   };
                 };
               };

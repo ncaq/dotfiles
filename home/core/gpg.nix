@@ -21,22 +21,31 @@ lib.mkMerge [
         }
       ];
     };
-    # 非gracefulなシャットダウン(WSL終了など)でgpg-agentのsentinel lockが残留し、
-    # importGpgKeysでgpg-agentに接続できなくなることがあります。
-    # importGpgKeysの前にstaleなロックファイルを削除して回避します。
-    home.activation.cleanGpgStaleLocks = entryBetween [ "importGpgKeys" ] [ "createGpgHomedir" ] ''
-      $DRY_RUN_CMD ${pkgs.trash-cli}/bin/trash \
-        "${config.programs.gpg.homedir}/gnupg_spawn_agent_sentinel.lock" \
-        2>/dev/null || true
-    '';
-    home.packages = with pkgs; [
-      # 最終復旧手段として印刷するためのパッケージ。
-      paperkey
-      # `pinentry-gnome3`はモーダルでウィンドウを固定するのでパスワードマネージャが使いづらいため、
-      # こちらを優先して使っていきます。
-      # `pinentry-curses`は`pinentry-qt`パッケージに含まれています。
-      pinentry-qt
-    ];
+    home = {
+      # `use-keyboxd`を有効化しないために空の`common.conf`を配置します。
+      # 有効化するとkeyboxdデーモンが`pubring.db`のロックを抱え続けるため、
+      # root権限で動く`sops-install-secrets`がユーザのGPG keyringを参照する際に、
+      # ロック競合で復号化に失敗します。
+      # `gpg.conf`を弄っても効かない(keyboxd設定は`common.conf`を見る)ため、
+      # `programs.gpg.settings`ではなく直接ファイルを配置しています。
+      file.".gnupg/common.conf".text = "";
+      # 非gracefulなシャットダウン(WSL終了など)でgpg-agentのsentinel lockが残留し、
+      # importGpgKeysでgpg-agentに接続できなくなることがあります。
+      # importGpgKeysの前にstaleなロックファイルを削除して回避します。
+      activation.cleanGpgStaleLocks = entryBetween [ "importGpgKeys" ] [ "createGpgHomedir" ] ''
+        $DRY_RUN_CMD ${pkgs.trash-cli}/bin/trash \
+          "${config.programs.gpg.homedir}/gnupg_spawn_agent_sentinel.lock" \
+          2>/dev/null || true
+      '';
+      packages = with pkgs; [
+        # 最終復旧手段として印刷するためのパッケージ。
+        paperkey
+        # `pinentry-gnome3`はモーダルでウィンドウを固定するのでパスワードマネージャが使いづらいため、
+        # こちらを優先して使っていきます。
+        # `pinentry-curses`は`pinentry-qt`パッケージに含まれています。
+        pinentry-qt
+      ];
+    };
   }
   (
     if !isTermux then

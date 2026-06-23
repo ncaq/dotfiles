@@ -6,7 +6,6 @@
   makeWrapper,
   shellcheck,
   cachix,
-  coreutils,
   sops,
 }:
 runCommand "cachix-push-ncaq"
@@ -24,7 +23,6 @@ runCommand "cachix-push-ncaq"
       --prefix PATH : ${
         lib.makeBinPath [
           cachix
-          coreutils
           sops
         ]
       }

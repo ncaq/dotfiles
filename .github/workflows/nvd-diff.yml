@@ -29,8 +29,6 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - uses: ./.github/actions/setup-nix
-        with:
-          cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - name: Run nvd-pr-diff
         env:
           BASE_REF: ${{ github.event.pull_request.base.ref }}

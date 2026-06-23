@@ -1,18 +1,11 @@
 name: Setup Nix
 description: Reusable action for nix config
 
-inputs:
-  cachix-auth-token:
-    description: Cachix authentication token
-    required: false
-    default: ""
-
 runs:
   using: composite
   steps:
-    - uses: ncaq/nix-composite-action@76930b11f37310bc68c66492a09045c4f0432226 # v1.3.1
+    - uses: ncaq/nix-composite-action@9b26867355388b589de67c08de87e8786e2e8094 # v3.0.0
       with:
-        cachix-auth-token: "${{ inputs.cachix-auth-token }}"
         # セルフホストランナーのためflake.nixの内容を転写します。
         # flake.nixの内容と乖離しないように注意してください。
         extra-nix-config: >

@@ -46,10 +46,13 @@ let
         "$@"
     '';
   };
+  # `secrets/cachix.yaml`から認証トークンを復号して`cachix push ncaq`するラッパー。
+  cachix-push-ncaq = pkgs.callPackage ../../pkgs/cachix-push-ncaq { };
 in
 {
   home.packages = with pkgs; [
     cachix
+    cachix-push-ncaq
     nil
     nix-diff
     nix-fast-build-wrapper

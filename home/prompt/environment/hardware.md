@@ -86,17 +86,19 @@ fastfetchの機能でGB単位系で表示させようとすると管理領域な
 [ThinkPad P16s Gen 2](https://www.lenovo.com/jp/ja/p/laptops/thinkpad/thinkpad-p-series/thinkpad-p16s-gen-2-16-inch-amd-mobile-workstation/len101t0075)
 です。
 
-ThinkPadですが指紋センサーはありません。
+ThinkPadですが組み込みの指紋センサーはありません。
+代わりにYubiKey Bioを差し込んで、
+FIDO認証としてディスクの復号化やパスキーなどに使っています。
 
 - ncaq@creep
 - Core Software
 - OS: NixOS 26.05 (Yarara) x86_64
-- Kernel: Linux 6.18.34-xanmod1
+- Kernel: Linux 6.18.35-xanmod1
 - BIOS (UEFI): R2FET63W (1.43 ) (1.43)
 - Bootmgr: Linux Boot Manager - systemd-bootx64.efi
-- Init System: systemd 260.1
+- Init System: systemd 260.2
 - LM: lightdm-autologin 1.32.0 (X11)
-- Shell: zsh 5.9
+- Shell: zsh 5.9.1
 - WM: hm-xsession (X11)
 - Terminal: tmux 3.6a
 - Locale: ja_JP.UTF-8
@@ -107,15 +109,14 @@ ThinkPadですが指紋センサーはありません。
 - Computing
 - CPU: AMD Ryzen 5 PRO 7540U (12) @ 4.98 GHz
 - GPU: AMD Radeon 740M Graphics [Integrated]
-- Vulkan: 1.4.348 - radv [Mesa 26.1.1]
-- OpenGL: 4.6 (Compatibility Profile) Mesa 26.1.1
+- Vulkan: 1.4.348 - radv [Mesa 26.1.2]
+- OpenGL: 4.6 (Compatibility Profile) Mesa 26.1.2
 - Memory: 27.11 GiB
 - Swap: 4.07 GiB
-- Disk (/): 189.07 GiB / 691.91 GiB (27%) - btrfs
+- Disk (/): 202.90 GiB / 691.91 GiB (29%) - btrfs
 - Output
 - Display (LEN41B5): 1920x1200 in 16", 60 Hz [Built-in]
 - Brightness (LEN41B5): 100% [Built-in]
-- Sound: Ryzen HD Audio Controller Speaker (40%)
 - Input
 - Keyboard 1: AT Translated Set 2 keyboard
 - Keyboard 2: Logitech MX Ergo

@@ -145,7 +145,7 @@ in
   # API_TOKEN=$(openssl rand -base64 36)
   # nix key generate-secret --key-name niks3-public.ncaq.net-1 > /tmp/niks3-sign-key
   # ```
-  # Then `sops secrets/seminar/niks3-public.yaml` and set:
+  # Then `sops secrets/niks3-public.yaml` and set:
   # ```
   # api_token: <base64>
   # sign_key: niks3-public.ncaq.net-1:<base64>
@@ -154,14 +154,14 @@ in
   # to nix.conf as `trusted-public-keys` on clients.
   sops.secrets = {
     "niks3-public-api-token" = {
-      sopsFile = ../../../secrets/seminar/niks3-public.yaml;
+      sopsFile = ../../../secrets/niks3-public.yaml;
       key = "api_token";
       owner = "niks3-public";
       group = "niks3-public";
       mode = "0400";
     };
     "niks3-public-sign-key" = {
-      sopsFile = ../../../secrets/seminar/niks3-public.yaml;
+      sopsFile = ../../../secrets/niks3-public.yaml;
       key = "sign_key";
       owner = "niks3-public";
       group = "niks3-public";

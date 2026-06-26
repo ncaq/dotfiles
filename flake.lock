@@ -289,11 +289,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1781868640,
-        "narHash": "sha256-JRZA5vadKkne7xuNYBkEybOkA3kEUG/CbFj78o+sSkQ=",
+        "lastModified": 1782455057,
+        "narHash": "sha256-xP+UY0zK38ymymm4Og/ubCAD/erp+zkrFVkXMuIp3xU=",
         "owner": "ncaq",
         "repo": "niks3",
-        "rev": "96b5bb7238d4b7db716c25c20ade073390b176ba",
+        "rev": "cedd82cb45640616cda461f7da4cac0617cf86d0",
         "type": "github"
       },
       "original": {

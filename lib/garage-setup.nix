@@ -90,8 +90,8 @@
             exit 1
           fi
 
-          # Calculate expiration date (1 year from now) in RFC 3339 format.
-          EXPIRATION=$(date -u -d '+365 days' '+%Y-%m-%dT%H:%M:%SZ')
+          # Calculate expiration date (3 months from now) in RFC 3339 format.
+          EXPIRATION=$(date -u -d '+90 days' '+%Y-%m-%dT%H:%M:%SZ')
 
           # Create a new ephemeral key via admin API.
           KEY_JSON=$(garage_api POST /v2/CreateKey \

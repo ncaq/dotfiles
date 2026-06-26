@@ -132,17 +132,20 @@
             '{$bucketId, $accessKeyId, permissions: {read: true, write: true}}')
           garage_api POST /v2/AllowBucketKey "$ALLOW_PAYLOAD" > /dev/null
 
-          # 未完了マルチパートアップロードを1日後に自動abortするlifecycleルールを設定する。
+          # 未完了マルチパートアップロードを2日後に自動abortするlifecycleルールを設定する。
           # 未完了マルチパートが溜まり続けるとメタデータDB(LMDB)が肥大化する。
-          # Garage組み込みのlifecycle worker(既定でUTC 0時に100件ずつバッチ実行)に日々掃除させ、
-          # 負荷を平準化する。
+          # Garage組み込みのlifecycle workerに、
+          # 日々掃除させ負荷を平準化する。
+          # (UTC 0時に100件ずつバッチ実行、batch sizeと頻度はソースに固定されている)
+          # アプリケーション側のGCと喧嘩しにくいように、
+          # 期限は長めの2日後に設定する。
           LIFECYCLE_PAYLOAD=$(jq -nc \
             '{lifecycleRules: [
                {
                  ID: "abort-incomplete-multipart-upload",
                  Status: "Enabled",
                  Filter: { Prefix: "" },
-                 AbortIncompleteMultipartUpload: { DaysAfterInitiation: 1 }
+                 AbortIncompleteMultipartUpload: { DaysAfterInitiation: 2 }
                }
              ]}')
           garage_api POST "/v2/UpdateBucket?id=$BUCKET_ID" "$LIFECYCLE_PAYLOAD" > /dev/null

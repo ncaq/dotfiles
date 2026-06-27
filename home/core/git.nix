@@ -46,6 +46,10 @@ in
         push.default = "current";
         rerere.enabled = true;
         github.user = "ncaq";
+        credential."https://forgejo.ncaq.net" = {
+          helper = "!${pkgs.pass-git-helper}/bin/pass-git-helper $@";
+          useHttpPath = false;
+        };
       };
       ignores = [
         "**/.claude/scheduled_tasks.lock"
@@ -59,5 +63,13 @@ in
 
     gh.enable = true;
   };
-  home.packages = with pkgs; [ zizmor ];
+  xdg.configFile."pass-git-helper/git-pass-mapping.ini".text = ''
+    [forgejo.ncaq.net*]
+    target=forgejo.ncaq.net/ncaq
+    username=ncaq
+  '';
+  home.packages = with pkgs; [
+    pass-git-helper
+    zizmor
+  ];
 }

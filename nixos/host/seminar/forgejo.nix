@@ -107,7 +107,6 @@ in
               };
               service = {
                 DISABLE_REGISTRATION = true;
-                REQUIRE_SIGNIN_VIEW = true;
               };
               repository = {
                 DEFAULT_BRANCH = "master";

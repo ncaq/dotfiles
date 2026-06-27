@@ -63,13 +63,5 @@ in
 
     gh.enable = true;
   };
-  xdg.configFile."pass-git-helper/git-pass-mapping.ini".text = ''
-    [forgejo.ncaq.net*]
-    target=forgejo.ncaq.net/ncaq
-    username=ncaq
-  '';
-  home.packages = with pkgs; [
-    pass-git-helper
-    zizmor
-  ];
+  home.packages = with pkgs; [ zizmor ];
 }

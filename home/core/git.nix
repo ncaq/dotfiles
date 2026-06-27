@@ -49,6 +49,7 @@ in
         credential."https://forgejo.ncaq.net" = {
           helper = "!${pkgs.pass-git-helper}/bin/pass-git-helper $@";
           useHttpPath = false;
+          username = "ncaq";
         };
       };
       ignores = [

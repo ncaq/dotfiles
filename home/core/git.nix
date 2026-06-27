@@ -46,6 +46,11 @@ in
         push.default = "current";
         rerere.enabled = true;
         github.user = "ncaq";
+        credential."https://forgejo.ncaq.net" = {
+          helper = "!${pkgs.pass-git-helper}/bin/pass-git-helper $@";
+          useHttpPath = false;
+          username = "ncaq";
+        };
       };
       ignores = [
         "**/.claude/scheduled_tasks.lock"

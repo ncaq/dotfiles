@@ -4,7 +4,7 @@ description: Reusable action for nix config
 runs:
   using: composite
   steps:
-    - uses: ncaq/nix-composite-action@87f6ca5941aa5e43013ce99c6c8a3aaaa8bebdaa # v3.0.1
+    - uses: ncaq/nix-composite-action@b1d430ba6622e294023e8c8bb7ac9c0f5942a1b8 # v3.0.2
       with:
         # セルフホストランナーのためflake.nixの内容を転写します。
         # flake.nixの内容と乖離しないように注意してください。

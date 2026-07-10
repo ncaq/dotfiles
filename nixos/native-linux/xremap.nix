@@ -113,64 +113,6 @@ in
         ];
         keymap = [
           (keymapEntry {
-            name = "改行と投稿を統一する";
-            application = "/LM Studio|claude|discord/";
-            remap = {
-              "C-m" = [
-                "Shift-enter"
-                { set_mark = false; }
-              ];
-              "enter" = [
-                "enter"
-                { set_mark = false; }
-              ];
-            };
-          })
-          (keymapEntry {
-            name = "改行と投稿を統一する";
-            application = "/Slack/";
-            remap = {
-              "C-m" = [
-                "enter"
-                { set_mark = false; }
-              ];
-              "enter" = [
-                "C-enter"
-                { set_mark = false; }
-              ];
-            };
-          })
-          (keymapEntry {
-            name = "Slack and Discord";
-            application = "/Slack|discord/";
-            # チャンネルスイッチのキーバインドを使いやすくします。
-            remap = {
-              # 下に移動。
-              "M-j" = "M-Shift-down";
-              # 上に移動。
-              "M-k" = "M-Shift-up";
-              # 下の未読に移動。
-              "M-n" = "M-down";
-              # 上の未読に移動。
-              "M-t" = "M-up";
-            };
-          })
-          (keymapEntry {
-            name = "`C-,`, `C-.`のショートカットを無効化する";
-            application = "/LM Studio|Slack|claude|discord/";
-            remap = {
-              "C-comma" = "muhenkan";
-              "C-dot" = "henkan";
-            };
-          })
-          (keymapEntry {
-            name = "新規チャットのショートカット";
-            application = "/claude/";
-            remap = {
-              "C-o" = "C-k";
-            };
-          })
-          (keymapEntry {
             name = "Web textarea like Application";
             application =
               let
@@ -292,6 +234,64 @@ in
               "C-Shift-space" = {
                 set_mark = true;
               };
+            };
+          })
+          (keymapEntry {
+            name = "`C-,`, `C-.`のショートカットを無効化する";
+            application = "/LM Studio|Slack|claude|discord/";
+            remap = {
+              "C-comma" = "muhenkan";
+              "C-dot" = "henkan";
+            };
+          })
+          (keymapEntry {
+            name = "改行と投稿を統一する";
+            application = "/LM Studio|claude|discord/";
+            remap = {
+              "C-m" = [
+                "Shift-enter"
+                { set_mark = false; }
+              ];
+              "enter" = [
+                "enter"
+                { set_mark = false; }
+              ];
+            };
+          })
+          (keymapEntry {
+            name = "改行と投稿を統一する";
+            application = "/Slack/";
+            remap = {
+              "C-m" = [
+                "enter"
+                { set_mark = false; }
+              ];
+              "enter" = [
+                "C-enter"
+                { set_mark = false; }
+              ];
+            };
+          })
+          (keymapEntry {
+            name = "Slack and Discord";
+            application = "/Slack|discord/";
+            # チャンネルスイッチのキーバインドを使いやすくします。
+            remap = {
+              # 下に移動。
+              "M-j" = "M-Shift-down";
+              # 上に移動。
+              "M-k" = "M-Shift-up";
+              # 下の未読に移動。
+              "M-n" = "M-down";
+              # 上の未読に移動。
+              "M-t" = "M-up";
+            };
+          })
+          (keymapEntry {
+            name = "新規チャットのショートカット";
+            application = "/claude/";
+            remap = {
+              "C-o" = "C-k";
             };
           })
         ];

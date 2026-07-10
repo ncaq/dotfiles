@@ -62,7 +62,7 @@
     xremap-flake = {
       url = "github:xremap/nix-flake";
       inputs = {
-        nixpkgs.follows = "nixpkgs";
+        nixpkgs.follows = "nixpkgs-unstable"; # オリジナルで最新のRustのためにunstableを使っている。
         flake-parts.follows = "flake-parts";
       };
     };

@@ -99,6 +99,7 @@ in
   services = {
     xremap = {
       enable = true;
+      withX11 = true;
       serviceMode = "user"; # アプリケーションごとに挙動を変えたいのでuserモードを使用。
       userName = username;
       watch = true;
@@ -298,7 +299,4 @@ in
       };
     };
   };
-
-  # X11向けの設定。
-  services.xremap.withX11 = true;
 }

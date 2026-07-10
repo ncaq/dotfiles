@@ -273,7 +273,7 @@ in
             };
           })
           (keymapEntry {
-            name = "Slack and Discord";
+            name = "チャンネルの切り替え";
             application = "/Slack|discord/";
             # チャンネルスイッチのキーバインドを使いやすくします。
             remap = {

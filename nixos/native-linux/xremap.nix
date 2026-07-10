@@ -1,6 +1,5 @@
 {
   lib,
-  pkgs,
   username,
   inputs,
   ...
@@ -302,11 +301,4 @@ in
 
   # X11向けの設定。
   services.xremap.withX11 = true;
-  systemd.user.services.set-xhost = {
-    description = "rootのサービスがユーザーのXセッションにアクセスできるようにする";
-    wantedBy = [ "default.target" ];
-    path = with pkgs; [ xhost ];
-    environment.DISPLAY = ":0.0"; # 番号はハードコードなのでもしブレたらその都度変更します。
-    script = "xhost +SI:localuser:root";
-  };
 }

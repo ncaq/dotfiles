@@ -59,6 +59,14 @@
       };
     };
 
+    xremap-flake = {
+      url = "github:xremap/nix-flake";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-parts.follows = "flake-parts";
+      };
+    };
+
     git-hooks = {
       url = "github:ncaq/git-hooks";
       inputs = {

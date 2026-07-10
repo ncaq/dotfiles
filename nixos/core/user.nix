@@ -18,10 +18,8 @@ in
         isNormalUser = true;
         inherit uid;
         extraGroups = [
-          "input"
           "networkmanager"
           "pipewire"
-          "uinput"
           "wheel"
         ];
         shell = pkgs.zsh;

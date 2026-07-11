@@ -10,7 +10,7 @@
       limine = {
         enable = true;
         # ディスク容量を埋め尽くさないように上限を定めます。
-        maxGenerations = 50;
+        maxGenerations = 40;
         style = {
           interface = {
             # ブート時はGPUを効率的に使えないことが多いため解像度を下げて負荷を減らします。

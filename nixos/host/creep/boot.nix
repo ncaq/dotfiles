@@ -10,7 +10,7 @@
         enable = true;
         consoleMode = "auto";
         xbootldrMountPoint = "/boot";
-        configurationLimit = 50;
+        configurationLimit = 40;
       };
     };
     initrd = {

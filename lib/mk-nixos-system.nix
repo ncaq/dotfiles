@@ -18,6 +18,7 @@ let
       hostName
       ;
     username = "ncaq";
+    pkgs-unstable = importPkgsUnstable system;
   };
   modules = [
     # 共有のpkgsインスタンスをNixOSに渡し、
@@ -38,7 +39,6 @@ let
           useGlobalPkgs = true;
           useUserPackages = true;
           extraSpecialArgs = specialArgs // {
-            pkgs-unstable = importPkgsUnstable system;
             isTermux = false;
             isWSL = config.wsl.enable or false;
           };

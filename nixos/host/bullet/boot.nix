@@ -1,3 +1,4 @@
+{ lib, pkgs, ... }:
 {
   boot = {
     loader = {
@@ -43,4 +44,43 @@
       };
     };
   };
+
+  # Limineの`remember_last_entry`はエントリのパス名をEFI変数`LimineLastBootedEntry`に保存します。
+  # 例: `NixOS default profile/Generation 769`
+  # NixOSの世代エントリは名前に世代番号を含むため、
+  # 記憶されたままだとrebuild後も古い世代が延々と選択され続けてしまいます。
+  # そこでNixOS起動時に記憶を消して、
+  # 次回起動は`default_entry`(常に最新世代)に戻します。
+  # Windowsのエントリ名は不変なので、
+  # Windows起動時の記憶はそのまま機能します。
+  # Windows Updateの複数回再起動でもWindowsが選択され続けます。
+  systemd.services.limine-forget-last-entry =
+    let
+      bulletLimineLastBootedEntryPath = "/sys/firmware/efi/efivars/LimineLastBootedEntry-513ee0d0-6e43-cb05-b272-f146a2fcb88a";
+    in
+    {
+      description = "Forget Limine last booted entry so the newest NixOS generation boots next";
+      wantedBy = [ "multi-user.target" ];
+      unitConfig = {
+        ConditionPathExists = bulletLimineLastBootedEntryPath;
+      };
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = lib.getExe (
+          pkgs.writeShellApplication {
+            name = "limine-forget-last-entry";
+            runtimeInputs = with pkgs; [
+              coreutils
+              e2fsprogs
+            ];
+            text = ''
+              var=${bulletLimineLastBootedEntryPath}
+              # efivarfsは変数をimmutable属性付きで公開するため、削除前に解除します。
+              chattr -i "$var"
+              rm "$var"
+            '';
+          }
+        );
+      };
+    };
 }

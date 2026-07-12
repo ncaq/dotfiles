@@ -22,7 +22,7 @@
           # `/var/lib/sbctl`の鍵でlimineバイナリをsbctl署名します。
           enable = true;
           # 自動での鍵作成と署名を有効化して、
-          # 確認は手動で`sudo bootctl`で行います。
+          # 確認は手動で`sudo bootctl`や`sudo sbctl status`で行います。
           autoGenerateKeys = true;
           # デフォルトでMicrosoftやファームウェアの鍵は含まれるため設定は基本的に不要です。
           autoEnrollKeys = {

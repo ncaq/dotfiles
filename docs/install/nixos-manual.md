@@ -22,9 +22,8 @@ suitable for dual-boot setups where Windows is already installed.
 
 ## Disk Partitioning
 
-Create XBOOTLDR partition for `/boot` (1GB) and root partition.
-Following Boot Loader Specification,
-ESP will be mounted at `/efi` and XBOOTLDR at `/boot`.
+Create EFI partition for `/efi` (1GB) and root partition.
+ESP will be mounted at `/efi`.
 
 Use `lsblk` or `ls /dev/disk/by-id/` to identify your target disk.
 
@@ -32,14 +31,14 @@ Use `lsblk` or `ls /dev/disk/by-id/` to identify your target disk.
 sudo fdisk /dev/disk/by-id/your-disk
 ```
 
-Create a new partition for the boot loader (XBOOTLDR).
-XBOOTLDR type is `Linux extended boot` (`BC13C2FF-59E6-4262-A352-B275FD6F7172`).
+Create a new partition for the EFI Partition.
+EFI Partition type is `EFI System` (`C12A7328-F81F-11D2-BA4B-00A0C93EC93B`).
 
 ```text
 n
 +1G
 t
-142
+1
 ```
 
 Create the root partition:
@@ -57,7 +56,7 @@ w
 ## File System Creation
 
 ```bash
-sudo mkfs.vfat -F32 -n nixos-boot /dev/disk/by-id/your-disk-boot
+sudo mkfs.vfat -F32 -n nixos-esp /dev/disk/by-id/your-disk-nixos-esp
 sudo e2label /dev/disk/by-id/your-disk-root-for-crypt nixos-root-crypt
 sudo cryptsetup luksFormat /dev/disk/by-id/nixos-root-crypt
 sudo cryptsetup open /dev/disk/by-id/nixos-root-crypt nixos-root
@@ -76,13 +75,11 @@ sudo umount /mnt
 sudo mount -o noatime,compress=zstd,subvol=@ /dev/mapper/nixos-root /mnt
 
 sudo mkdir -p /mnt/efi
-sudo mkdir -p /mnt/boot
 sudo mkdir -p /mnt/nix/store
 sudo mkdir -p /mnt/var/log
 sudo mkdir -p /mnt/.snapshots
 
-sudo mount -o noatime,fmask=0077,dmask=0077 /dev/disk/by-label/nixos-boot /mnt/boot
-sudo mount -o noatime,fmask=0077,dmask=0077 /dev/disk/by-label/your-disk-efi /mnt/efi
+sudo mount -o noatime,fmask=0077,dmask=0077 /dev/disk/by-label/nixos-esp /mnt/efi
 sudo mount -o noatime,compress=zstd,subvol=@nix-store /dev/mapper/nixos-root /mnt/nix/store
 sudo mount -o noatime,compress=zstd,subvol=@var-log /dev/mapper/nixos-root /mnt/var/log
 sudo mount -o noatime,compress=zstd,subvol=@snapshots /dev/mapper/nixos-root /mnt/.snapshots

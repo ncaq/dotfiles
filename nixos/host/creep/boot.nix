@@ -1,22 +1,28 @@
 {
   boot = {
     loader = {
-      efi = {
-        canTouchEfiVariables = true;
-        efiSysMountPoint = "/efi";
-      };
-      timeout = 1;
-      systemd-boot = {
-        enable = true;
-        consoleMode = "auto";
-        xbootldrMountPoint = "/boot";
-        configurationLimit = 40;
+      limine = {
+        secureBoot = {
+          autoEnrollKeys = {
+            # ThinkPad P16s Gen 2 AMDのファームウェアは、
+            # `dbDefault`などのEFI変数を公開していないため、
+            # デフォルトの`--firmware-builtin`は失敗します。
+            # Microsoftの鍵だけをvendor鍵として登録します。
+            extraArgs = [ "--microsoft" ];
+          };
+        };
+        # プリインストールされているWindowsのブートマネージャにチェインロードします。
+        # Windowsのブートマネージャは最初からESPとして使われていたパーティションにあります。
+        # vfatのボリュームシリアルはGUID形式ではないため、
+        # GPTパーティションGUID(PARTUUID)で指定します。
+        extraEntries = ''
+          /Windows
+              protocol: efi_chainload
+              path: guid(9fc93af9-07db-45df-a334-97e57e820daf):/EFI/Microsoft/Boot/bootmgfw.efi
+        '';
       };
     };
     initrd = {
-      systemd = {
-        enable = true;
-      };
       luks.devices = {
         nixos-root = {
           device = "/dev/disk/by-label/nixos-root-crypt";

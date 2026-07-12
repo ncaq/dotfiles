@@ -1,11 +1,7 @@
-{
+{ lib, ... }: {
   boot = {
     loader = {
-      efi = {
-        canTouchEfiVariables = true;
-        efiSysMountPoint = "/efi";
-      };
-      timeout = 1;
+      limine.enable = lib.mkForce false; # seminarのlimine対応は後でやります。
       systemd-boot = {
         enable = true;
         consoleMode = "auto";
@@ -14,9 +10,6 @@
       };
     };
     initrd = {
-      systemd = {
-        enable = true;
-      };
       luks.devices = {
         nixos-root = {
           device = "/dev/disk/by-partlabel/disk-main-nixos-root";

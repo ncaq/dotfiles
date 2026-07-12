@@ -41,9 +41,9 @@ fastfetchの機能でGB単位系で表示させようとすると管理領域な
 - ncaq@bullet
 - Core Software
 - OS: NixOS 26.05 (Yarara) x86_64
-- Kernel: Linux 6.18.35-xanmod1
-- BIOS (UEFI): 1.A65 (5.35)
-- Bootmgr: NixOS-efi - grubx64.efi
+- Kernel: Linux 6.18.38-xanmod1
+- BIOS (UEFI): 1.A92 (5.41)
+- Bootmgr: Limine - BOOTX64.EFI
 - Init System: systemd 260.2
 - LM: lightdm-autologin 1.32.0 (X11)
 - Shell: zsh 5.9.1
@@ -60,9 +60,9 @@ fastfetchの機能でGB単位系で表示させようとすると管理領域な
 - Vulkan: 1.4.329 - NVIDIA [595.71.05]
 - OpenGL: 4.6.0 NVIDIA 595.71.05
 - OpenCL: 3.0 CUDA 13.2.82
-- Memory: 93.85 GiB
+- Memory: 93.71 GiB
 - Swap: 8.00 GiB
-- Disk (/): 474.61 GiB / 1.82 TiB (26%) - btrfs
+- Disk (/): 452.59 GiB / 1.82 TiB (24%) - btrfs
 - Output
 - Display (AW2725Q): 3840x2160 @ 1.5x in 27", 144 Hz [External] \*
 - Display (LG HDR 4K): 3840x2160 @ 1.5x in 27", 60 Hz [External]
@@ -74,8 +74,8 @@ fastfetchの機能でGB単位系で表示させようとすると管理領域な
 - Keyboard 2: Topre REALFORCE 87 US Keyboard
 - Keyboard 3: Yubico YubiKey OTP+FIDO+CCID
 - Keyboard 4: Logitech MX Ergo
-- Mouse 1: Logitech MX Ergo
-- Mouse 2: py-evdev-uinput
+- Mouse 1: xremap
+- Mouse 2: Logitech MX Ergo
 - Camera: HD Pro Webcam C920 - sRGB (640x480 px)
 
 ### ラップトップ

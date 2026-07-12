@@ -8,6 +8,7 @@
     exfatprogs
     gnome.gvfs
     gocryptfs
+    gptfdisk
     ntfs3g
     parted
     samba

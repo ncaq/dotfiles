@@ -3,16 +3,7 @@ _: {
   # よってプリインストールされているWindowsのパーティションを残す必要があるためdiskoは使えない。
   fileSystems = {
     "/efi" = {
-      device = "/dev/disk/by-label/SYSTEM";
-      fsType = "vfat";
-      options = [
-        "noatime"
-        "fmask=0077"
-        "dmask=0077"
-      ];
-    };
-    "/boot" = {
-      device = "/dev/disk/by-label/nixos-boot";
+      device = "/dev/disk/by-label/nixos-esp";
       fsType = "vfat";
       options = [
         "noatime"

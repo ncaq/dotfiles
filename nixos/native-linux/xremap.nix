@@ -99,6 +99,10 @@ in
   services = {
     xremap = {
       enable = true;
+      # `with*`系featureはxremap本体の制約で同時に1つまでしか有効化できない。
+      # gamescopeはwlr-foreign-toplevel-managementを実装していないため、
+      # `withWlroots`を有効化してもgamescope内のアプリケーション判別はできない。
+      # modmap(CapsLock→Ctrl)はevdevレベルで動くのでfeatureに関係なく全環境で効く。
       withX11 = true;
       serviceMode = "user"; # アプリケーションごとに挙動を変えたいのでuserモードを使用。
       userName = username;

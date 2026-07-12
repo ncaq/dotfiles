@@ -17,9 +17,9 @@
       # Protonプレフィックスへwinetricksを適用するトラブルシューティングツール。
       protontricks.enable = true;
     };
+    gamemode.enable = true;
     # `gamescopeSession`が有効化するが、
     # 単体ゲームのネスト起動にも使うので明示。
-    gamemode.enable = true;
     gamescope.enable = true;
   };
   # LightDMはWaylandセッションを起動できず、

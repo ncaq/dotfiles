@@ -27,7 +27,7 @@
           autoEnrollKeys = {
             enable = true;
             # デフォルトでMicrosoftやファームウェアの鍵が含まれるため、
-            # `extraArgs`の設定は基本的に不要です。
+            # ファームウェア特有の事情がない限り`extraArgs`の設定は基本的に不要です。
           };
         };
         # Nixが直接対応していない設定を直接書き込みます。

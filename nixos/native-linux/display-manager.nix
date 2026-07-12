@@ -6,7 +6,6 @@ in
   services = {
     xserver = {
       displayManager = {
-        lightdm.enable = true;
         session = [
           {
             manage = "desktop";
@@ -24,6 +23,7 @@ in
     };
     displayManager = {
       enable = true;
+      sddm.enable = true;
       defaultSession = home-manager-session-name;
       autoLogin = {
         enable = true;

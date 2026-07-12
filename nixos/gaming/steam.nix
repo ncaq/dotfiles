@@ -23,6 +23,11 @@
     gamescope.enable = true;
   };
 
+  # gamemodedはCPUガバナー変更などの特権操作をpkexecで行う。
+  # gamemodeが同梱するpolkitルールは`gamemode`グループのユーザにだけ認証なしで許可するので、
+  # ユーザをグループに追加する。
+  users.users.${username}.extraGroups = [ "gamemode" ];
+
   # LightDMはWaylandセッションを起動できず、
   # X11上のネスト起動ではHDRなどを通せないため、
   # 埋め込み(DRM)モードのgamescopeセッションをsystemdサービスとして定義する。

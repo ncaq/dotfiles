@@ -24,9 +24,10 @@
           # 自動での鍵作成と署名を有効化して、
           # 確認は手動で`sudo bootctl`や`sudo sbctl status`で行います。
           autoGenerateKeys = true;
-          # デフォルトでMicrosoftやファームウェアの鍵は含まれるため設定は基本的に不要です。
           autoEnrollKeys = {
             enable = true;
+            # デフォルトでMicrosoftやファームウェアの鍵が含まれるため、
+            # `extraArgs`の設定は基本的に不要です。
           };
         };
         # Nixが直接対応していない設定を直接書き込みます。

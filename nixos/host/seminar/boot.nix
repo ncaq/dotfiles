@@ -1,12 +1,14 @@
-{ lib, ... }: {
+{
   boot = {
     loader = {
-      limine.enable = lib.mkForce false; # seminarのlimine対応は後でやります。
-      systemd-boot = {
-        enable = true;
-        consoleMode = "auto";
-        xbootldrMountPoint = "/boot";
-        configurationLimit = 40;
+      limine = {
+        secureBoot = {
+          autoEnrollKeys = {
+            # seminarはデュアルブートしていないので、
+            # Microsoftの鍵を登録する必要はありません。
+            extraArgs = [ "--firmware-builtin" ];
+          };
+        };
       };
     };
     initrd = {

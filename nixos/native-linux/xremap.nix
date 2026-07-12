@@ -99,6 +99,7 @@ in
   services = {
     xremap = {
       enable = true;
+      withWlroots = true;
       withX11 = true;
       serviceMode = "user"; # アプリケーションごとに挙動を変えたいのでuserモードを使用。
       userName = username;

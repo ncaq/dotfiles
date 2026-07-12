@@ -82,9 +82,11 @@
     });
   '';
 
-  # gamescopeセッションを起動する短縮コマンド。
-  environment.systemPackages = [
-    (pkgs.writeShellScriptBin "steamos" ''
+  environment.systemPackages = with pkgs; [
+    # Steam外部も含めたアプリをSteamのProtonを使って管理・起動するためのツール。
+    lutris
+    # gamescopeセッションを起動する短縮コマンド。
+    (writeShellScriptBin "steamos" ''
       exec systemctl start steam-gamescope.service
     '')
   ];

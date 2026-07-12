@@ -32,7 +32,7 @@ sudo fdisk /dev/disk/by-id/your-disk
 ```
 
 Create a new partition for the EFI Partition.
-EFI Partition type is `EFI System` (`C12A7328-F81F-11D2-BA4B-00A0C93EC93B`)
+EFI Partition type is `EFI System` (`C12A7328-F81F-11D2-BA4B-00A0C93EC93B`).
 
 ```text
 n

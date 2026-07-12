@@ -11,6 +11,15 @@
             extraArgs = [ "--microsoft" ];
           };
         };
+        # プリインストールされているWindowsのブートマネージャにチェインロードします。
+        # Windowsのブートマネージャは最初からESPとして使われていたパーティションにあります。
+        # vfatのボリュームシリアルはGUID形式ではないため、
+        # GPTパーティションGUID(PARTUUID)で指定します。
+        extraEntries = ''
+          /Windows
+              protocol: efi_chainload
+              path: guid(9fc93af9-07db-45df-a334-97e57e820daf):/EFI/Microsoft/Boot/bootmgfw.efi
+        '';
       };
     };
     initrd = {

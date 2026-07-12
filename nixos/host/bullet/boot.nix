@@ -22,10 +22,6 @@
           # `/var/lib/sbctl`の鍵でlimineバイナリをsbctl署名します。
           enable = true;
         };
-        # チェックサム不一致を起動時の致命的エラーにします。
-        # enrollConfigのデフォルトはこの値に追従するため、
-        # limine.conf自体のハッシュ検証も同時に有効になります。
-        panicOnChecksumMismatch = true;
         # Nixが直接対応していない設定を直接書き込みます。
         extraConfig = ''
           # 最後に起動したエントリを記憶して次回起動時に自動選択します。

@@ -68,13 +68,13 @@
   # Windows Updateの複数回再起動でもWindowsが選択され続けます。
   systemd.services.limine-forget-last-entry =
     let
-      bulletLimineLastBootedEntryPath = "/sys/firmware/efi/efivars/LimineLastBootedEntry-513ee0d0-6e43-cb05-b272-f146a2fcb88a";
+      limineLastBootedEntryPath = "/sys/firmware/efi/efivars/LimineLastBootedEntry-513ee0d0-6e43-cb05-b272-f146a2fcb88a";
     in
     {
       description = "Forget Limine last booted entry so the newest NixOS generation boots next";
       wantedBy = [ "multi-user.target" ];
       unitConfig = {
-        ConditionPathExists = bulletLimineLastBootedEntryPath;
+        ConditionPathExists = limineLastBootedEntryPath;
       };
       serviceConfig = {
         Type = "oneshot";
@@ -86,7 +86,7 @@
               e2fsprogs
             ];
             text = ''
-              var=${bulletLimineLastBootedEntryPath}
+              var=${limineLastBootedEntryPath}
               # efivarfsは変数をimmutable属性付きで公開するため、削除前に解除します。
               chattr -i "$var"
               rm "$var"

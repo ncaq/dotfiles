@@ -16,17 +16,10 @@ let
       cachix
       inputs.niks3.packages.${pkgs.stdenv.hostPlatform.system}.niks3
     ];
-  # GitHub Actionsランナーの並列数。
-  # 上位レベルでリソースを制限しているため、
-  # 複数立ち上げてもサーバの全体のリソース量が破綻する心配はあまりありません。
-  # あまりCPUを使い切れなくても、
-  # Nixが動く時は大抵はキャッシュダウンロードのIO待ちなので、
-  # 並列動作したほうが効率的です。
-  runnerNum = 5;
   # runnerが使うTypeScriptコードをビルドしてGitHub Actionsで利用できるようにします。
   # 吐き出されるコードはピュアなJavaScriptなのでアーキテクチャ非依存です。
-  dotfiles-github-runner = pkgs.buildNpmPackage {
-    pname = "dotfiles-github-runner";
+  github-runner = pkgs.buildNpmPackage {
+    pname = "github-runner";
     version = "0.0.0";
     src = ./.;
     npmDeps = pkgs.importNpmLock { npmRoot = ./.; };
@@ -49,7 +42,7 @@ let
     pkgs.writeShellApplication {
       name = "job-started-hook.sh";
       runtimeInputs = with pkgs; [ nodejs ];
-      text = ''exec node ${dotfiles-github-runner}/job-started-hook.js "$@"'';
+      text = ''exec node ${github-runner}/job-started-hook.js "$@"'';
     }
   );
   # GitHub Actionsランナーはホストのnixデーモンと通信するため、
@@ -89,7 +82,6 @@ in
     inherit
       githubActionsRunnerPackages
       selfHostRunnerPackages
-      runnerNum
       jobStartedHook
       users
       ciNixSettings

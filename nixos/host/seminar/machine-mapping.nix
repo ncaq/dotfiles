@@ -39,9 +39,13 @@ in
           host = "192.168.100.30";
           guest = "192.168.100.31";
         };
-        github-runner-x64 = {
+        github-runner-dotfiles-x64 = {
           host = "192.168.100.40";
           guest = "192.168.100.41";
+        };
+        github-runner-cdn-ncaq-net-x64 = {
+          host = "192.168.100.50";
+          guest = "192.168.100.51";
         };
         garage = {
           host = "192.168.100.60";

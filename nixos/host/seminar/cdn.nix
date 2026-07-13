@@ -27,7 +27,8 @@ in
       redir /uBlockOrigin.txt https://raw.githubusercontent.com/ncaq/uBlacklistRule/master/uBlockOrigin.txt permanent
       # ファイルをそのまま配信。
       root * ${cdnRoot}
-      file_server
+      # browseによりディレクトリアクセス時はファイル一覧ページを表示します。
+      file_server browse
     '';
   };
 

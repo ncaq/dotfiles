@@ -296,18 +296,40 @@ in
             max_check_attempts
             ;
         };
-        github-runner-x64 = {
+        github-runner-dotfiles-x64 = {
           command = lib.getExe (
             pkgs.writeShellApplication {
-              name = "check-github-runner-x64";
+              name = "check-github-runner-dotfiles-x64";
               runtimeInputs = [ pkgs.iputils ];
               text = ''
-                runner_host=${config.machineAddresses.github-runner-x64.guest}
+                runner_host=${config.machineAddresses.github-runner-dotfiles-x64.guest}
                 if ping -c 1 -W 2 "$runner_host" > /dev/null 2>&1; then
-                  echo "GitHub Runner x64 OK"
+                  echo "GitHub Runner x64 dotfiles OK"
                   exit 0
                 else
-                  echo "GitHub Runner x64 CRITICAL: ping failed"
+                  echo "GitHub Runner x64 dotfiles CRITICAL: ping failed"
+                  exit 2
+                fi
+              '';
+            }
+          );
+          inherit
+            check_interval
+            max_check_attempts
+            ;
+        };
+        github-runner-cdn-ncaq-net-x64 = {
+          command = lib.getExe (
+            pkgs.writeShellApplication {
+              name = "check-github-runner-cdn-ncaq-net-x64";
+              runtimeInputs = [ pkgs.iputils ];
+              text = ''
+                runner_host=${config.machineAddresses.github-runner-cdn-ncaq-net-x64.guest}
+                if ping -c 1 -W 2 "$runner_host" > /dev/null 2>&1; then
+                  echo "GitHub Runner x64 cdn.ncaq.net OK"
+                  exit 0
+                else
+                  echo "GitHub Runner x64 cdn.ncaq.net CRITICAL: ping failed"
                   exit 2
                 fi
               '';

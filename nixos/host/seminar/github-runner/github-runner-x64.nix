@@ -35,6 +35,9 @@ let
           isReadOnly = false;
         };
       };
+      # github-runnersモジュールは`ProtectSystem=strict`でサービスを強化するため、
+      # bind mountがrwでも`ReadWritePaths`に含まれないパスへは書き込めません。
+      extraRunnerOptions.serviceOverrides.ReadWritePaths = [ "/mnt/noa/cdn.ncaq.net" ];
     };
   };
   # コンテナ名からmachineAddressesのエントリを引きます。
@@ -56,6 +59,8 @@ let
       url,
       # 追加のbind-mounts。
       extraBindMounts ? { },
+      # 各ランナー定義にマージする追加オプション。
+      extraRunnerOptions ? { },
     }:
     let
       addr = addrOf name;
@@ -67,7 +72,7 @@ let
       privateUsers = "identity";
       hostAddress = addr.host;
       localAddress = addr.guest;
-      bindMounts = extraBindMounts // {
+      bindMounts = {
         "/etc/runner-registration-token" = {
           hostPath = config.sops.secrets."runner-registration-token".path;
           isReadOnly = true;
@@ -83,7 +88,8 @@ let
           hostPath = "/run/github-runner";
           isReadOnly = false;
         };
-      };
+      }
+      // extraBindMounts;
       config =
         { lib, ... }:
         {
@@ -118,7 +124,8 @@ let
                     tokenFile = "/etc/runner-registration-token";
                     inherit url;
                     extraEnvironment.ACTIONS_RUNNER_HOOK_JOB_STARTED = jobStartedHook;
-                  };
+                  }
+                  // extraRunnerOptions;
                 };
               in
               builtins.listToAttrs (map mkRunner runnerNumbers);

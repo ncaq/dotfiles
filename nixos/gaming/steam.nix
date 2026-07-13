@@ -76,6 +76,14 @@
       StandardError = "journal";
       # PAM経由でlogindセッションを登録する。
       PAMName = "login";
+      # systemd v254以降のpam_systemdはローカルセッションへ、
+      # ambient capabilityとして`CAP_WAKE_ALARM`をデフォルトで付与する。
+      # それがsteam(buildFHSEnvのbwrap)まで伝播すると、
+      # bwrapが`Unexpected capabilities but not setuid`エラーで即死してSteamが起動しない。
+      # https://github.com/containers/bubblewrap/issues/380
+      # bounding setから除外しておけば、
+      # PAMセッション開始後にsystemdがambient setを再適用する際に確実に落とされる。
+      CapabilityBoundingSet = "~CAP_WAKE_ALARM";
     };
   };
 

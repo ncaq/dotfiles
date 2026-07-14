@@ -25,7 +25,7 @@ let
         systemd
       ];
       text = ''
-        ${lib.getExe' pkgs.systemd "bootctl"} set-oneshot ${lib.escapeShellArg entryName}
+        bootctl set-oneshot ${lib.escapeShellArg entryName}
         systemctl reboot
       '';
     };

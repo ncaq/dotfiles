@@ -67,6 +67,15 @@
       };
     };
 
+    comfyui-nix = {
+      url = "github:utensils/comfyui-nix";
+      inputs = {
+        # 依存関係が繊細であり、
+        # nixpkgsをfollowするとstableでもunstableでもビルドに失敗する。
+        flake-parts.follows = "flake-parts";
+      };
+    };
+
     git-hooks = {
       url = "github:ncaq/git-hooks";
       inputs = {
@@ -136,8 +145,9 @@
       nixpkgsConfig = import ./lib/nixpkgs-config.nix { inherit lib; };
       # 全環境で共通のoverlays。
       overlays = [
-        inputs.firge-nix.overlays.default
         (import ./lib/snapper-btrfs-bin-overlay.nix)
+        inputs.comfyui-nix.overlays.default
+        inputs.firge-nix.overlays.default
       ];
       # system固有のpkgsを生成する関数。
       importPkgsFor =

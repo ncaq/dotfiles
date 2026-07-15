@@ -37,4 +37,22 @@ in
     "net.core.rmem_max" = 7500000;
     "net.core.wmem_max" = 7500000;
   };
+  sops = {
+    secrets = {
+      "cloudflare-cert" = {
+        sopsFile = ../../secrets/cloudflare.yaml;
+        key = "cert_pem";
+        owner = "root";
+        group = "root";
+        mode = "0400";
+      };
+      "cloudflare-tunnel-credentials" = {
+        sopsFile = ../../secrets/cloudflare.yaml;
+        key = "tunnel_credentials";
+        owner = "root";
+        group = "root";
+        mode = "0400";
+      };
+    };
+  };
 }

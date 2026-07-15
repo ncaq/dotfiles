@@ -151,7 +151,7 @@ in
   # `https://comfy-ui.localhost.ncaq.net`でComfyUIにアクセスできるようにするリバースプロキシ。
   # DNSはCloudflare側でループバックアドレスを返すため、
   # アクセスは自マシンのループバック内で完結する。
-  # 証明書はcloudflare.nixでDNS-01により取得したLet's Encrypt証明書を使う。
+  # 証明書はacmeとDNS-01により取得したLet's Encrypt証明書を使う。
   # ローカルホストにのみbindして外部公開はしない。
   services.caddy = {
     enable = true;

@@ -30,6 +30,16 @@ let
   ];
 in
 {
+  # コンテナ内と同じIDでホスト側にもユーザとグループを作る。
+  # bind mountした`/var/lib/comfyui`の所有者をホストからも名前で扱えるようにするため。
+  users = {
+    users.comfyui = {
+      uid = comfyuiUid;
+      group = "comfyui";
+      isSystemUser = true;
+    };
+    groups.comfyui.gid = comfyuiGid;
+  };
   # 外部から取得したモデルやカスタムノードを実行するサービスなので、
   # NixOS Containersに包んで隔離してリスクを減らす。
   containers.comfyui = {

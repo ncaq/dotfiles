@@ -144,8 +144,9 @@
       nixpkgsConfig = import ./lib/nixpkgs-config.nix { inherit lib; };
       # 全環境で共通のoverlays。
       overlays = [
-        inputs.firge-nix.overlays.default
         (import ./lib/snapper-btrfs-bin-overlay.nix)
+        inputs.comfyui-nix.overlays.default
+        inputs.firge-nix.overlays.default
       ];
       # system固有のpkgsを生成する関数。
       importPkgsFor =

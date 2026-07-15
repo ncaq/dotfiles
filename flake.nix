@@ -70,7 +70,8 @@
     comfyui-nix = {
       url = "github:utensils/comfyui-nix";
       inputs = {
-        nixpkgs.follows = "nixpkgs";
+        # 依存関係が繊細であり、
+        # nixpkgsをfollowするとstableでもunstableでもビルドに失敗する。
         flake-parts.follows = "flake-parts";
       };
     };

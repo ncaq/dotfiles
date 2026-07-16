@@ -123,7 +123,9 @@ in
         requires = [ "container@comfyui.service" ];
         after = [ "container@comfyui.service" ];
         serviceConfig = {
-          ExecStart = "${lib.getExe' pkgs.systemd "systemd-socket-proxyd"} ${localAddress}:${toString port}";
+          # systemd-socket-proxydは`bin/`ではなく`lib/systemd/`に配置されるため、
+          # `lib.getExe'`は使えない。
+          ExecStart = "${pkgs.systemd}/lib/systemd/systemd-socket-proxyd ${localAddress}:${toString port}";
           DynamicUser = true;
           PrivateTmp = true;
         };

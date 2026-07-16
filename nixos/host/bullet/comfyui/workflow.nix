@@ -158,7 +158,7 @@ let
         widgets = [
           width
           height
-          1
+          1 # batch_size
         ];
       })
       (mkNode {
@@ -181,11 +181,11 @@ let
         ];
         outputs = [ (mkOutput "LATENT" "LATENT" [ 7 ]) ];
         widgets = seedWidgets ++ [
-          28
-          5.5
+          28 # steps
+          5.5 # cfg
           samplerName
           schedulerName
-          1
+          1 # denoise
         ];
       })
     ];
@@ -404,8 +404,8 @@ let
             inputs = [ (mkInput "image" "IMAGE" 11) ];
             outputs = [ (mkOutput "IMAGE" "IMAGE" [ 12 ]) ];
             widgets = [
-              "lanczos"
-              0.375
+              "lanczos" # upscale_method
+              0.375 # scale_by
             ];
           })
           (mkNode {
@@ -447,11 +447,11 @@ let
             ];
             outputs = [ (mkOutput "LATENT" "LATENT" [ 18 ]) ];
             widgets = seedWidgets ++ [
-              20
-              5.5
+              20 # steps
+              5.5 # cfg
               samplerName
               schedulerName
-              0.45
+              0.45 # denoise
             ];
           })
           (mkNode {
@@ -519,42 +519,37 @@ let
               (mkOutput "detailer_pipe" "DETAILER_PIPE" [ ])
               (mkOutput "cnet_images" "IMAGE" [ ])
             ];
-            # 並び: guide_size, guide_size_for, max_size, seed(+挙動),
-            # steps, cfg, sampler_name, scheduler, denoise, feather,
-            # noise_mask, force_inpaint, bbox系, sam系, drop_size,
-            # wildcard, cycle, optionalのinpaint_model,
-            # noise_mask_feather, tiled_encode, tiled_decode
             widgets = [
-              512
-              true
-              1024
+              512 # guide_size
+              true # guide_size_for(bbox)
+              1024 # max_size
             ]
             ++ seedWidgets
             ++ [
-              20
-              5.5
+              20 # steps
+              5.5 # cfg
               samplerName
               schedulerName
-              0.5
-              5
-              true
-              true
-              0.5
-              10
-              3.0
-              "center-1"
-              0
-              0.93
-              0
-              0.7
-              "False"
-              10
-              ""
-              1
-              false
-              20
-              false
-              false
+              0.5 # denoise
+              5 # feather
+              true # noise_mask
+              true # force_inpaint
+              0.5 # bbox_threshold
+              10 # bbox_dilation
+              3.0 # bbox_crop_factor
+              "center-1" # sam_detection_hint
+              0 # sam_dilation
+              0.93 # sam_threshold
+              0 # sam_bbox_expansion
+              0.7 # sam_mask_hint_threshold
+              "False" # sam_mask_hint_use_negative
+              10 # drop_size
+              "" # wildcard
+              1 # cycle
+              false # inpaint_model
+              20 # noise_mask_feather
+              false # tiled_encode
+              false # tiled_decode
             ];
           })
           (mkNode {

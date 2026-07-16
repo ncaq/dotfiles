@@ -22,13 +22,13 @@ let
   fetchHuggingface =
     {
       owner,
-      model,
+      repo,
       rev,
       file,
       hash,
     }:
     pkgs.fetchurl {
-      url = "https://huggingface.co/${owner}/${model}/resolve/${rev}/${file}";
+      url = "https://huggingface.co/${owner}/${repo}/resolve/${rev}/${file}";
       inherit hash;
     };
   # 属性名は`models/`配下のディレクトリ名、
@@ -39,7 +39,7 @@ let
       # CivitAIオリジナルの非公式ミラーなので消失リスクがある。
       "waiIllustriousSDXL_v170.safetensors" = fetchHuggingface {
         owner = "LyliaEngine";
-        model = "waiIllustriousSDXL_v170";
+        repo = "waiIllustriousSDXL_v170";
         rev = "5ef4e2da7173a160ad04aebcaa2fdcd6d20ed792";
         file = "waiIllustriousSDXL_v170.safetensors";
         hash = "sha256-8Rawx4/0QUZ7DNyPGTbh7RjqMemZfHsTKxuNtTPwvQQ=";
@@ -48,7 +48,7 @@ let
       # 画質とタグ網羅性に強い。非商用ライセンス。
       "NoobAI-XL-v1.1.safetensors" = fetchHuggingface {
         owner = "Laxhar";
-        model = "noobai-XL-1.1";
+        repo = "noobai-XL-1.1";
         rev = "814a274af2b8097c0828819d561ec74c7d0c6cea";
         file = "NoobAI-XL-v1.1.safetensors";
         hash = "sha256-ZoHo5LE0yB8WUzrO2w1AbX5eNm4WJLQQUXjGTQCwXVE=";
@@ -56,7 +56,7 @@ let
       # SDXLをアニメ画像で再学習したモデル。タグ設計が分かりやすい。
       "animagine-xl-4.0.safetensors" = fetchHuggingface {
         owner = "cagliostrolab";
-        model = "animagine-xl-4.0";
+        repo = "animagine-xl-4.0";
         rev = "2b7c1b397761bf5bd3cc42e5b39ec99314a75a96";
         file = "animagine-xl-4.0.safetensors";
         hash = "sha256-HVtD/3W2q1mFAtTHedL7+j3OylHGDDtglkCmB3IzORY=";
@@ -64,7 +64,7 @@ let
       # Illustrious系の公式ベースモデル。素の状態やマージ元として。
       "Illustrious-XL-v2.0.safetensors" = fetchHuggingface {
         owner = "OnomaAIResearch";
-        model = "Illustrious-XL-v2.0";
+        repo = "Illustrious-XL-v2.0";
         rev = "69459c1fe6f46db41ab31e6114f05acc0e06bcaa";
         file = "Illustrious-XL-v2.0.safetensors";
         hash = "sha256-wqGj6qE9TBB9x+AMP+gwyrQnqgJjYnQOoJR0WzQiozE=";
@@ -75,7 +75,7 @@ let
       # openpose/lineart/tileなど複数のコントロールをこれ1つで扱える。
       "controlnet-union-sdxl-promax.safetensors" = fetchHuggingface {
         owner = "xinsir";
-        model = "controlnet-union-sdxl-1.0";
+        repo = "controlnet-union-sdxl-1.0";
         rev = "801a4a3fa3d4c936f4feea95b98607bc6726f80c";
         file = "diffusion_pytorch_model_promax.safetensors";
         hash = "sha256-n64uUMtDG/y+BYIrWewiKN9UXvJ/cR3qiUnp9O2ffNw=";
@@ -86,7 +86,7 @@ let
       # FaceDetailerでの顔検出に使うYOLOモデル。
       "face_yolov8m.pt" = fetchHuggingface {
         owner = "Bingsu";
-        model = "adetailer";
+        repo = "adetailer";
         rev = "53cc19de382014514d9d4038601d261a7faa9b7b";
         file = "face_yolov8m.pt";
         hash = "sha256-cXkjwZs/S79SULco8fprLLcqM67R0jbqnK8OIa2UPl8=";
@@ -96,7 +96,7 @@ let
       # アニメ絵向けの定番アップスケーラ。
       "4x-AnimeSharp.safetensors" = fetchHuggingface {
         owner = "Kim2091";
-        model = "AnimeSharp";
+        repo = "AnimeSharp";
         rev = "7696d95ced82b0c1f2a41f6ac73336133f0a90e1";
         file = "4x-AnimeSharp.safetensors";
         hash = "sha256-f8YAVNKRV5rKxPtTfv2RyAYRy9KB74uQ9DQEjMExOzk=";

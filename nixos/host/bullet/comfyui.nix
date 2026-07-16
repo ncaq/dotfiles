@@ -94,6 +94,11 @@ in
           dataDir = "/var/lib/comfyui";
           # コンテナ内のfirewallを開ける。到達できるのはvethを持つホストのみ。
           openFirewall = true;
+          # xformers 0.0.30のflash-attentionカーネルはBlackwell(sm_120)のカーネルイメージを含まず、
+          # Qwen系モデルのサンプリング開始時に、
+          # `CUDA error: no kernel image is available for execution on the device`
+          # でクラッシュするためPyTorch組み込みのSDPAを使う。
+          extraArgs = [ "--use-pytorch-cross-attention" ];
         };
       };
   };

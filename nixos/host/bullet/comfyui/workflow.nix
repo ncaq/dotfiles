@@ -292,7 +292,7 @@ let
           ];
           order = 6;
           inputs = [ (mkInput "images" "IMAGE" 9) ];
-          widgets = [ "ComfyUI" ];
+          widgets = [ "anime-basic" ];
         })
       ];
       links = promptLinks ++ [
@@ -570,7 +570,7 @@ let
             ];
             order = 14;
             inputs = [ (mkInput "images" "IMAGE" 27) ];
-            widgets = [ "ComfyUI" ];
+            widgets = [ "anime-hires-face" ];
           })
         ];
       links = promptLinks ++ [

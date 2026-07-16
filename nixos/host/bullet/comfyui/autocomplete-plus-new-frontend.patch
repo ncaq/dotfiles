@@ -1,0 +1,104 @@
+diff --git a/web/js/autocomplete.js b/web/js/autocomplete.js
+index f87f680..7484535 100644
+--- a/web/js/autocomplete.js
++++ b/web/js/autocomplete.js
+@@ -385,7 +385,8 @@ function insertTagToTextArea(inputElement, tagDataToInsert) {
+ // --- Autocomplete UI Class ---
+ 
+ class AutocompleteUI {
+-    constructor() {
++    constructor(onAfterInsert) {
++        this.onAfterInsert = onAfterInsert;
+         this.root = document.createElement('div'); // Use table instead of div
+         this.root.id = 'autocomplete-plus-root';
+ 
+@@ -724,6 +725,10 @@ class AutocompleteUI {
+         insertTagToTextArea(this.target, selectedTag);
+ 
+         this.hide();
++
++        // Cancel any pending debounce timer so the just-inserted tag doesn't
++        // re-trigger autocomplete display (e.g. when autoInsertComma is disabled).
++        this.onAfterInsert?.();
+     }
+ 
+     /**
+@@ -885,21 +890,21 @@ class AutocompleteUI {
+         const body = document.body;
+         if (!body) return 0;
+ 
+-        const tempNode = document.createElement(nodeName);
++        // Use a div rather than the original nodeName (which may be "TEXTAREA") so that
++        // MutationObservers watching for textarea additions (e.g. syntax-highlighting
++        // extensions) are not triggered by this transient measurement node.
++        // Line-height under "normal" is a font metric and is identical across element types.
++        const tempNode = document.createElement('div');
+         tempNode.innerHTML = "&nbsp;";
+         Object.assign(tempNode.style, {
+             fontSize: computedStyle.fontSize,
+             fontFamily: computedStyle.fontFamily,
+             padding: "0",
+             position: "absolute",
++            visibility: "hidden",
+         });
+         body.appendChild(tempNode);
+ 
+-        // Make sure textarea has only 1 row
+-        if (tempNode instanceof HTMLTextAreaElement) {
+-            tempNode.rows = 1;
+-        }
+-
+         // Assume the height of the element is the line-height
+         const height = tempNode.offsetHeight;
+         body.removeChild(tempNode);
+@@ -939,9 +944,14 @@ class AutocompleteUI {
+ // --- Autocomplete Event Handling Class ---
+ export class AutocompleteEventHandler {
+     constructor() {
+-        this.autocompleteUI = new AutocompleteUI();
+-        this.keyDownWithModifier = new Map(); // Keep track of keydown events with modifiers
+         this._debounceTimer = null; // Timer ID for debounced search
++        this.autocompleteUI = new AutocompleteUI(() => {
++            // Cancel pending debounce when autocomplete inserts a tag itself,
++            // so the just-inserted text doesn't immediately re-trigger suggestions.
++            clearTimeout(this._debounceTimer);
++            this._debounceTimer = null;
++        });
++        this.keyDownWithModifier = new Map(); // Keep track of keydown events with modifiers
+     }
+ 
+     /**
+@@ -963,9 +973,9 @@ export class AutocompleteEventHandler {
+     }
+ 
+     /**
+-     * 
+-     * @param {InputEvent} event 
+-     * @returns 
++     *
++     * @param {InputEvent} event
++     * @returns
+      */
+     handleInput(event) {
+         if (!settingValues.enabled) return;
+@@ -975,6 +985,10 @@ export class AutocompleteEventHandler {
+         if (partialTag.length <= 0) {
+             clearTimeout(this._debounceTimer); // Cancel pending debounced search
+             this.autocompleteUI.hide();
++        } else {
++            // Also trigger from input events so suggestions appear even when keyup
++            // is intercepted by the host application (e.g. recent ComfyUI frontend).
++            this._triggerUpdateDisplay(event.target);
+         }
+     }
+ 
+@@ -1023,6 +1037,9 @@ export class AutocompleteEventHandler {
+                         insertTagToTextArea(event.target, this.autocompleteUI.getSelectedTagData());
+                     }
+                     this.autocompleteUI.hide();
++                    // Cancel any debounce started by the input event that insertTagToTextArea fired.
++                    clearTimeout(this._debounceTimer);
++                    this._debounceTimer = null;
+                     break;
+                 case 'F1':
+                     event.preventDefault();

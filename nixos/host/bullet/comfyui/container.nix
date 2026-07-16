@@ -1,6 +1,6 @@
+# ComfyUI本体を隔離して動かすNixOS Containersの定義。
 {
   lib,
-  pkgs,
   inputs,
   ...
 }:
@@ -28,6 +28,7 @@ let
     "/dev/nvidia0"
     "/dev/nvidiactl"
   ];
+  dataDir = "/var/lib/comfyui";
 in
 {
   # コンテナ内と同じIDでホスト側にもユーザとグループを作る。
@@ -67,8 +68,8 @@ in
           isReadOnly = true;
         };
         # モデルやカスタムノードなどのデータはホスト側に永続化する。
-        "/var/lib/comfyui" = {
-          hostPath = "/var/lib/comfyui";
+        ${dataDir} = {
+          hostPath = dataDir;
           isReadOnly = false;
         };
       };
@@ -91,7 +92,7 @@ in
           # ホストからvethを通してアクセスするので全インターフェースでlistenする。
           # privateNetworkなのでLANには露出しない。
           listenAddress = "0.0.0.0";
-          dataDir = "/var/lib/comfyui";
+          inherit dataDir;
           # コンテナ内のfirewallを開ける。到達できるのはvethを持つホストのみ。
           openFirewall = true;
           # xformers 0.0.30のflash-attentionカーネルはBlackwell(sm_120)のカーネルイメージを含まず、
@@ -115,62 +116,6 @@ in
     # NetworkManagerがコンテナのvethを管理しようとして競合するのを防ぐ。
     networkmanager.unmanaged = [ "interface-name:ve-*" ];
   };
-  # GPUを触るサービスを常時起動させたくないので、
-  # ソケットアクティベーションによるオンデマンド起動にする。
-  # `comfyui-proxy.socket`がホスト側でlistenし、
-  # 初回アクセス時にsystemd-socket-proxyd経由でコンテナごと起動する。
-  # アイドル時の自動停止は誤爆が怖いので設定しない。
-  # 停止したい時は手動で`systemctl stop container@comfyui.service`する。
-  systemd = {
-    services = {
-      comfyui-proxy = {
-        description = "systemd-socket-proxyd for on-demand ComfyUI activation";
-        requires = [ "container@comfyui.service" ];
-        after = [ "container@comfyui.service" ];
-        serviceConfig = {
-          # systemd-socket-proxydは`bin/`ではなく`lib/systemd/`に配置されるため、
-          # `lib.getExe'`は使えない。
-          ExecStart = "${pkgs.systemd}/lib/systemd/systemd-socket-proxyd ${localAddress}:${toString port}";
-          DynamicUser = true;
-          PrivateTmp = true;
-        };
-      };
-      "container@comfyui" = {
-        # コンテナが起動してもComfyUIがlistenするまでは時間がかかり、
-        # その前にproxydが接続すると初回リクエストが失敗してしまう。
-        # HTTP疎通を確認してから起動完了扱いにする。
-        postStart = ''
-          until ${lib.getExe pkgs.curl} --fail --silent --output /dev/null "http://${localAddress}:${toString port}/"; do
-            ${pkgs.coreutils}/bin/sleep 1
-          done
-        '';
-      };
-    };
-    sockets.comfyui-proxy = {
-      description = "Socket for on-demand ComfyUI activation";
-      listenStreams = [
-        "127.0.0.1:${toString port}"
-        "[::1]:${toString port}"
-      ];
-      wantedBy = [ "sockets.target" ];
-    };
-  };
-  # `https://comfy-ui.localhost.ncaq.net`でComfyUIにアクセスできるようにするリバースプロキシ。
-  # DNSはCloudflare側でループバックアドレスを返すため、
-  # アクセスは自マシンのループバック内で完結する。
-  # 証明書はacmeとDNS-01により取得したLet's Encrypt証明書を使う。
-  # ローカルホストにのみbindして外部公開はしない。
-  services.caddy = {
-    enable = true;
-    virtualHosts."comfy-ui.localhost.ncaq.net" = {
-      useACMEHost = "comfy-ui.localhost.ncaq.net";
-      extraConfig = ''
-        # `bind localhost`だとCaddyは127.0.0.1にしかbindしない一方、
-        # DNSはAAAAレコードの::1を返すため接続できなくなる。
-        # 両方のループバックアドレスに明示的にbindする。
-        bind 127.0.0.1 ::1
-        reverse_proxy http://localhost:${toString port}
-      '';
-    };
-  };
+  # bind mountするデータディレクトリをホスト側で用意する。
+  systemd.tmpfiles.rules = [ "d ${dataDir} 0750 comfyui comfyui - -" ];
 }

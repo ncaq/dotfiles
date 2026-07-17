@@ -77,8 +77,10 @@ in
     # その結果magit経由のpushなどが失敗していました。
     # ここで設定すればsystemdユーザーマネージャ配下の全プロセスに伝播します。
     sessionVariables = {
-      PASSWORD_STORE_DIR = PASSWORD_STORE_DIR;
-      PASSWORD_STORE_KEY = PASSWORD_STORE_KEY;
+      inherit
+        PASSWORD_STORE_DIR
+        PASSWORD_STORE_KEY
+        ;
     };
     # boot時にsops-nixのシークレット展開が完了してからトークンを同期します。
     # boot時のactivationはシステムサービス経由で実行されるため、

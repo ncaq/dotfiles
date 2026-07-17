@@ -222,11 +222,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1784266090,
-        "narHash": "sha256-zuOdHPDF1s9xtMMCgDYR3df6m3+U1alGX4GTKV+RKGA=",
+        "lastModified": 1784273049,
+        "narHash": "sha256-QkcHouCbyUpLIE1Fe7dFRgowrB2FQJW1Do62bG5BG+I=",
         "owner": "ncaq",
         "repo": "git-hooks",
-        "rev": "3be2c084cc75ca533f3c868af42d8eee8303d300",
+        "rev": "a94ab367eba3caaf6b60908f6564a090c17ae1c4",
         "type": "github"
       },
       "original": {

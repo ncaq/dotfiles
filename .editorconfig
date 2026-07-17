@@ -46,14 +46,27 @@ indent_size = 2
 [*.{cs,csx,java,kt,kts,php,py,pyi,rs}]
 indent_size = 4
 
-# 標準インデントがタブの言語。
-[{*.go,*.make,*.mk,Makefile}]
+# Goのエコシステムは標準インデントがタブ。
+[{*.go,go.mod,go.work}]
 indent_style = tab
 indent_size = unset
 
-# 変則的に2インデントや3インデントが混ざり合ったりして、
-# インデントが倍数になるとは限らない言語。
-[*.{chs,el,hs,hsc,hsig,lhs,lhsig}]
+# Gitの設定ファイルは標準インデントがタブ。
+[{.gitconfig,.gitmodules,.lfsconfig}]
+indent_style = tab
+indent_size = unset
+
+# Make系の設定ファイルは標準インデントがタブ。
+[{*.make,*.mk,GNUmakefile,Makefile,Makefile.am}]
+indent_style = tab
+indent_size = unset
+
+# Haskellは文法の都合で3文字インデントが必要な場合があるので未設定。
+[*.{chs,hs,hsc,hsig,lhs,lhsig}]
+indent_size = unset
+
+# Emacs Lispは文法の都合で3文字インデントが必要な場合があるので未設定。
+[*.el]
 indent_size = unset
 
 [*.md]

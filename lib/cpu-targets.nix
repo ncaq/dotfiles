@@ -50,7 +50,7 @@ let
 in
 rec {
   targets = {
-    # 2025-12-03
+    # 2025-03-12
     "AMD Ryzen 9 9950X3D 16-Core Processor" = mkTarget {
       arch = "znver5";
       threads = 32;

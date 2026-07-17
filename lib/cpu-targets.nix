@@ -1,6 +1,8 @@
 /**
   CPUモデルごとの最適化コンパイルフラグレジストリ。
 
+  各CPUは基本的に発売日の新しい順に登録する。
+
   キーは`/proc/cpuinfo`の`model name`文字列そのままを採用する。
   ベンダー独自の表記揺れを自分で正規化するよりも、
   カーネルが返す文字列をそのまま流用するほうが事故が少ない。
@@ -47,6 +49,7 @@ let
 in
 rec {
   targets = {
+    # 2025-12-03
     "AMD Ryzen 9 9950X3D 16-Core Processor" = mkTarget {
       arch = "znver5";
       threads = 32;
@@ -57,6 +60,7 @@ rec {
       ];
     };
 
+    # 2023-03-05
     "AMD Ryzen 5 PRO 7540U w/ Radeon 740M Graphics" = mkTarget {
       arch = "znver4";
       threads = 12;
@@ -67,6 +71,7 @@ rec {
       ];
     };
 
+    # 2023-01-14
     "AMD Ryzen 5 7600 6-Core Processor" = mkTarget {
       arch = "znver4";
       threads = 12;

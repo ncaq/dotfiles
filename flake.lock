@@ -23,27 +23,6 @@
         "type": "github"
       }
     },
-    "comfyui-nix": {
-      "inputs": {
-        "flake-parts": [
-          "flake-parts"
-        ],
-        "nixpkgs": "nixpkgs"
-      },
-      "locked": {
-        "lastModified": 1781842085,
-        "narHash": "sha256-uGt5HQ+hm0EeIjWoJUq7HefgkSc1h7kf1vFKvOl0tcs=",
-        "owner": "utensils",
-        "repo": "comfyui-nix",
-        "rev": "308a863c136ffc35fce293a81eac5d229b31d56d",
-        "type": "github"
-      },
-      "original": {
-        "owner": "utensils",
-        "repo": "comfyui-nix",
-        "type": "github"
-      }
-    },
     "crane": {
       "locked": {
         "lastModified": 1766774972,
@@ -433,16 +412,16 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1766902085,
-        "narHash": "sha256-coBu0ONtFzlwwVBzmjacUQwj3G+lybcZ1oeNSQkgC0M=",
+        "lastModified": 1784160687,
+        "narHash": "sha256-iYL/bixrb6FlHFu/gIuBYzq6c6lM5AAXsXNSWXtIgQc=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "c0b0e0fddf73fd517c3471e546c0df87a42d53f4",
+        "rev": "4382ed2b7a6839d4280a9b386db49cbc5907414d",
         "type": "github"
       },
       "original": {
         "owner": "NixOS",
-        "ref": "nixos-unstable",
+        "ref": "nixos-26.05",
         "repo": "nixpkgs",
         "type": "github"
       }
@@ -512,16 +491,16 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1784160687,
-        "narHash": "sha256-iYL/bixrb6FlHFu/gIuBYzq6c6lM5AAXsXNSWXtIgQc=",
+        "lastModified": 1766902085,
+        "narHash": "sha256-coBu0ONtFzlwwVBzmjacUQwj3G+lybcZ1oeNSQkgC0M=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "4382ed2b7a6839d4280a9b386db49cbc5907414d",
+        "rev": "c0b0e0fddf73fd517c3471e546c0df87a42d53f4",
         "type": "github"
       },
       "original": {
         "owner": "NixOS",
-        "ref": "nixos-26.05",
+        "ref": "nixos-unstable",
         "repo": "nixpkgs",
         "type": "github"
       }
@@ -583,7 +562,6 @@
     "root": {
       "inputs": {
         "claude-desktop": "claude-desktop",
-        "comfyui-nix": "comfyui-nix",
         "disko": "disko",
         "dot-emacs": "dot-emacs",
         "dot-xmonad": "dot-xmonad",
@@ -597,10 +575,11 @@
         "nix-on-droid": "nix-on-droid",
         "nixos-hardware": "nixos-hardware",
         "nixos-wsl": "nixos-wsl",
-        "nixpkgs": "nixpkgs_2",
+        "nixpkgs": "nixpkgs",
         "nixpkgs-unstable": "nixpkgs-unstable",
         "sops-nix": "sops-nix",
         "treefmt-nix": "treefmt-nix",
+        "utensils-comfyui-nix": "utensils-comfyui-nix",
         "www-ncaq-net": "www-ncaq-net",
         "xremap-flake": "xremap-flake"
       }
@@ -689,6 +668,27 @@
       "original": {
         "owner": "numtide",
         "repo": "treefmt-nix",
+        "type": "github"
+      }
+    },
+    "utensils-comfyui-nix": {
+      "inputs": {
+        "flake-parts": [
+          "flake-parts"
+        ],
+        "nixpkgs": "nixpkgs_2"
+      },
+      "locked": {
+        "lastModified": 1781842085,
+        "narHash": "sha256-uGt5HQ+hm0EeIjWoJUq7HefgkSc1h7kf1vFKvOl0tcs=",
+        "owner": "utensils",
+        "repo": "comfyui-nix",
+        "rev": "308a863c136ffc35fce293a81eac5d229b31d56d",
+        "type": "github"
+      },
+      "original": {
+        "owner": "utensils",
+        "repo": "comfyui-nix",
         "type": "github"
       }
     },

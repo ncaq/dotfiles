@@ -61,7 +61,7 @@ rec {
       ];
     };
 
-    # 2023-03-05
+    # 2023-05-03
     "AMD Ryzen 5 PRO 7540U w/ Radeon 740M Graphics" = mkTarget {
       arch = "znver4";
       threads = 12;

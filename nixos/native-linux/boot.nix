@@ -16,6 +16,9 @@
             # ブート時はGPUを効率的に使えないことが多いため解像度を下げて負荷を減らします。
             resolution = "1920x1080";
           };
+          # 画像は`resolution`と同じ1920x1080なので、
+          # デフォルトのwallpaperStyle(stretched)でも歪みません。
+          wallpapers = [ ../../wallpaper/hare-sitting-at-the-pc-and-looking-back.png ];
         };
         # セキュアブート設定。
         secureBoot = {

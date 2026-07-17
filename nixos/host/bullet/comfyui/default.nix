@@ -1,4 +1,4 @@
 { importDirModules, ... }:
 {
-  imports = importDirModules ./. ++ [ ./workflow ];
+  imports = importDirModules ./.;
 }

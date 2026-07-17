@@ -27,10 +27,11 @@ ASCIIに対応する全角形(Fullwidth Forms)は使用禁止。
 ディレクトリパスを受け取り、
 モジュールパスのリストを返します。
 
-指定ディレクトリ内の`.nix`ファイルを自動的に収集し、
+指定ディレクトリ内の`.nix`ファイルと`default.nix`を持つサブディレクトリを自動的に収集し、
 NixOSモジュールやhome-managerモジュールの`imports`に渡せるパスのリストを返します。
 `default.nix`は呼び出し元自身の再帰importを防ぐため除外されます。
-サブディレクトリは走査しません(1階層のみ)。
+`default.nix`を持たないサブディレクトリはモジュールではないので無視されます。
+サブディレクトリの中身は走査しません(そのサブディレクトリの`default.nix`が自身で管理します)。
 
 各ディレクトリの`default.nix`で以下のように使用します:
 
@@ -39,14 +40,10 @@ NixOSモジュールやhome-managerモジュールの`imports`に渡せるパス
 { imports = importDirModules ./.; }
 ```
 
-これにより新しい`.nix`ファイルを追加するだけで自動的にimportされ、
+これにより新しい`.nix`ファイルやモジュールディレクトリを追加するだけで自動的にimportされ、
 `default.nix`の`imports`リストを手動で更新する必要がありません。
-
-サブディレクトリのモジュールが必要な場合は手動で追加します:
-
-```nix
-imports = importDirModules ./. ++ [ ./github-runner ];
-```
+一貫性のため`default.nix`はなるべくこの形だけにして、
+モジュールが他のモジュールを明示的にimportするのは避けます。
 
 `importDirModules`は`flake.nix`で`specialArgs`/`extraSpecialArgs`経由で、
 全モジュールに渡されています。

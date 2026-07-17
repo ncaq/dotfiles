@@ -1,4 +1,4 @@
 { importDirModules, ... }:
 {
-  imports = importDirModules ./. ++ [ ./comfyui ];
+  imports = importDirModules ./.;
 }

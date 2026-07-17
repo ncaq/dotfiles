@@ -9,13 +9,13 @@
 # FaceDetailerの`widgets_values`の並びは、
 # ComfyUI-Impact-Pack 8.28の定義に合わせている。
 {
-  workflowLib,
+  lib,
   width,
   height,
   filenamePrefix,
 }:
 let
-  inherit (workflowLib)
+  inherit (import ./builder.nix { inherit lib; })
     mkNode
     mkInput
     mkOutput

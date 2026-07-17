@@ -67,13 +67,21 @@
       };
     };
 
-    comfyui-nix = {
+    # 依存関係が繊細であり、
+    # nixpkgsをfollowするとstableでもunstableでもビルドに失敗します。
+    # 例えば、
+    # torch wheelのCUDAランタイム依存やwebsocketsのバージョン制約が、
+    # 上流がpinしたnixpkgsリビジョンに強く紐付いているため。
+    # 上流のREADMEもfollowsなしを標準構成としており、
+    # 上流に自動追随するためには自前のpinも避けたいので、
+    # nixpkgsノードの重複は意図的に許容します。
+    # flake.lockのノード名はrootからのDFS(兄弟はアルファベット順)で決まるため、
+    # input名を`nixpkgs`より後ろに来る名前にすることで、
+    # root直下のnixpkgsがプレーンな`nixpkgs`ノード名を保ち、
+    # `nixpkgs_2`はこちら側の推移的nixpkgsに割り当てられます。
+    utensils-comfyui-nix = {
       url = "github:utensils/comfyui-nix";
-      inputs = {
-        # 依存関係が繊細であり、
-        # nixpkgsをfollowするとstableでもunstableでもビルドに失敗する。
-        flake-parts.follows = "flake-parts";
-      };
+      inputs.flake-parts.follows = "flake-parts";
     };
 
     git-hooks = {
@@ -146,7 +154,7 @@
       # 全環境で共通のoverlays。
       overlays = [
         (import ./lib/snapper-btrfs-bin-overlay.nix)
-        inputs.comfyui-nix.overlays.default
+        inputs.utensils-comfyui-nix.overlays.default
         inputs.firge-nix.overlays.default
       ];
       # system固有のpkgsを生成する関数。

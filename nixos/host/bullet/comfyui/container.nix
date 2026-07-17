@@ -76,7 +76,7 @@ in
     config =
       { lib, ... }:
       {
-        imports = [ inputs.comfyui-nix.nixosModules.default ];
+        imports = [ inputs.utensils-comfyui-nix.nixosModules.default ];
         system.stateVersion = "26.05";
         networking.useHostResolvConf = lib.mkForce false;
         services.resolved.enable = true;

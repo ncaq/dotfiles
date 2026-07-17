@@ -25,7 +25,7 @@
         "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
       ];
       cores = 0; # `make -j$NIX_BUILD_CORES`のようにコンパイルの並列度に使われます。0だと全コア。
-      max-jobs = "auto"; # Nixが同時に実行するビルド(derivation)の数。
+      max-jobs = 3; # Nixが同時に実行するビルド(derivation)の数。
       accept-flake-config = true;
       trusted-users = [
         "root"

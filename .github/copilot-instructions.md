@@ -154,6 +154,33 @@ nix-fast-buildコマンドで統合チェックを実行できます。
 nix-fast-build --option eval-cache false --no-link --skip-cached --no-nom
 ```
 
+## 設定の適用は`./install.sh`を使う
+
+設定をシステムに適用する時は、
+`nixos-rebuild`や`home-manager`を直接実行せずに、
+リポジトリルートの`./install.sh`を実行してください。
+
+```console
+./install.sh
+```
+
+このスクリプトは実行環境を自動判別して適切な適用コマンドを呼び分けます。
+
+- NixOS: `sudo nixos-rebuild switch --flake ".#$(hostname)"`
+- Termux(nix-on-droid): `nix-on-droid switch --flake .`
+- その他のLinux: アーキテクチャに応じた`home-manager switch`
+
+単なるラッパーではなく、
+NixOSでは適用前に最新コミットの情報を`last-commit.json`として一時的にstagingします。
+この情報は`nixos/core/label.nix`がブートエントリのラベル生成に使うため、
+`nixos-rebuild`を直接実行するとブートエントリからコミット情報が欠落します。
+
+実行にあたって知っておくべきこと:
+
+- NixOSではsudoを使いますがユーザ側によって解決されるので気にしなくても良いです
+- 実行中は`last-commit.json`のstagingにより一時的にgitがdirty状態に見えますが、
+  終了時に自動でクリーンアップされます
+
 # リポジトリ構成
 
 ## ルートディレクトリ

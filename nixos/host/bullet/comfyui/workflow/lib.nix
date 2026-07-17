@@ -10,9 +10,9 @@ let
   # Illustrious系モデルの定番サンプリング設定。
   samplerName = "euler_ancestral";
   schedulerName = "normal";
-  # SDXLのポートレートバケット解像度。
-  width = 832;
-  height = 1216;
+  # SDXLのポートレートバケット解像度をデフォルトにする。
+  defaultWidth = 832;
+  defaultHeight = 1216;
   # seedウィジェットは値の直後に実行後の挙動(randomizeなど)が並ぶ。
   seedWidgets = [
     0
@@ -69,6 +69,8 @@ let
   # 追加のリンクIDを引数で受け取る。
   promptNodes =
     {
+      width ? defaultWidth,
+      height ? defaultHeight,
       extraModelLinks ? [ ],
       extraClipLinks ? [ ],
       extraVaeLinks ? [ ],

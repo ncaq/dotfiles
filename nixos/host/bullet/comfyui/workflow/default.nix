@@ -23,6 +23,7 @@ let
   excludeFiles = [
     "default.nix"
     "lib.nix"
+    "standard.nix"
   ];
   # 属性名がワークフロー名(ファイル名)になり、
   # 値はそのままJSONへ変換できるNixの値。

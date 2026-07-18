@@ -20,6 +20,11 @@ in
     btop = {
       enable = true;
       package = btop-usable;
+      settings = {
+        # btrfsのサブボリュームはルートと同じデバイスなので、
+        # I/Oも空き容量も同じ内容が重複表示されるだけになるため除外する。
+        disks_filter = "exclude=/.snapshots /var/log /nix/store /swap";
+      };
     };
   };
 }

@@ -290,15 +290,24 @@
 
           checks =
             let
-              # NixOS構成の評価チェック(評価のみ、ビルドしない)
+              # NixOS構成の評価チェック(評価のみ、ビルドしない)。
+              # env属性の中の`builtins.seq`がinstantiation時にのみ完全評価を強制する。
+              # この形には2つの理由がある。
+              # チェック対象の値自体を`builtins.seq`や`writeText`のtextで強制すると、
+              # `nix flake show`のような属性値に触れるだけのコマンドでも、
+              # 全ホストの完全評価が走り数GBのメモリを消費してしまう。
+              # (`writeText`は関数適用の時点でtextを強制評価する。)
+              # かといって`drvPath`の文字列をそのままenv属性に含めると、
+              # 文字列コンテキスト経由でtoplevelへのビルド依存が発生してしまい、
+              # チェックのビルドがシステム全体の実ビルドになってしまう。
               nixosEvalChecks =
                 lib.mapAttrs'
                   (
                     name: nixosConfig:
                     lib.nameValuePair "nixos-eval-${name}" (
-                      builtins.seq nixosConfig.config.system.build.toplevel.drvPath (
-                        pkgs.writeText "nixos-eval-${name}" name
-                      )
+                      pkgs.runCommand "nixos-eval-${name}" {
+                        evaluated = builtins.seq nixosConfig.config.system.build.toplevel.drvPath name;
+                      } ''echo "$evaluated" > "$out"''
                     )
                   )
                   (
@@ -312,9 +321,9 @@
                   hmConfig = homeConfigurations.${system} or null;
                 in
                 lib.optionalAttrs (hmConfig != null) {
-                  "hm-eval" = builtins.seq hmConfig.activationPackage.drvPath (
-                    pkgs.writeText "hm-eval-${system}" system
-                  );
+                  "hm-eval" = pkgs.runCommand "hm-eval-${system}" {
+                    evaluated = builtins.seq hmConfig.activationPackage.drvPath system;
+                  } ''echo "$evaluated" > "$out"'';
                 };
             in
             nixosEvalChecks // hmEvalChecks;

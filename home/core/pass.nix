@@ -7,7 +7,10 @@
 let
   inherit (config.services.pass-secret-service) storePath;
   storeRel = lib.removePrefix "${config.home.homeDirectory}/" storePath;
-  inherit (config.programs.password-store.settings) PASSWORD_STORE_KEY;
+  inherit (config.programs.password-store.settings)
+    PASSWORD_STORE_DIR
+    PASSWORD_STORE_KEY
+    ;
 
   # sopsで復号化したトークンをpassのエントリとして再暗号化して配置します。
   # 内容が変化した時のみ書き換えて実行の度に差分が出るのを避けます。
@@ -68,22 +71,34 @@ in
     mode = "0400";
   };
 
-  # boot時にsops-nixのシークレット展開が完了してからトークンを同期します。
-  # boot時のactivationはシステムサービス経由で実行されるため、
-  # ユーザのsystemdデーモンと同期できず、
-  # activationスクリプトではシークレットの存在を保証できません。
-  systemd.user.services.forgejo-token-to-pass = {
-    Unit = {
-      Description = "Sync Forgejo token from sops-nix secrets into pass";
-      After = [ "sops-nix.service" ];
-      Wants = [ "sops-nix.service" ];
+  systemd.user = {
+    # `programs.password-store`による変数設定は、
+    # GUIアプリやsystemdサービス(`emacs.service`など)には届かない。
+    # その結果magit経由のpushなどが失敗していました。
+    # ここで設定すればsystemdユーザーマネージャ配下の全プロセスに伝播します。
+    sessionVariables = {
+      inherit
+        PASSWORD_STORE_DIR
+        PASSWORD_STORE_KEY
+        ;
     };
-    Service = {
-      Type = "oneshot";
-      ExecStart = lib.getExe syncForgejoTokenToPass;
-    };
-    Install = {
-      WantedBy = [ "default.target" ];
+    # boot時にsops-nixのシークレット展開が完了してからトークンを同期します。
+    # boot時のactivationはシステムサービス経由で実行されるため、
+    # ユーザのsystemdデーモンと同期できず、
+    # activationスクリプトではシークレットの存在を保証できません。
+    services.forgejo-token-to-pass = {
+      Unit = {
+        Description = "Sync Forgejo token from sops-nix secrets into pass";
+        After = [ "sops-nix.service" ];
+        Wants = [ "sops-nix.service" ];
+      };
+      Service = {
+        Type = "oneshot";
+        ExecStart = lib.getExe syncForgejoTokenToPass;
+      };
+      Install = {
+        WantedBy = [ "default.target" ];
+      };
     };
   };
 

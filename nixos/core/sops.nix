@@ -6,8 +6,8 @@
     # gnupgの設定を明示的に指定します。
     # 秘密鍵はgpg-vaultユーザに隔離されているため(gpg-vault.nix)、
     # そちらのGNUPGHOMEを参照します。
-    # sops-install-secretsはrootで動くので、
-    # vault agentのソケット経由またはファイル直接読み取りで復号できます。
+    # 復号はvault agentにソケット経由で委譲されるため、
+    # gpg-vault.nix側で`gpg-vault-agent.service`への順序依存を設定しています。
     gnupg = {
       home = "/var/lib/gpg-vault/.gnupg";
       sshKeyPaths = [ ];

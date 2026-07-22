@@ -99,12 +99,6 @@ lib.mkMerge [
         }
       ];
 
-      # systemd.target(5)により、
-      # ターゲットが`Wants=`で引き込んだユニットの両方が`DefaultDependencies=yes`の場合、
-      # 暗黙的に`After=`が追加される。
-      # `DefaultDependencies=false`を設定することで、
-      # `multi-user.target`が暗黙的に`After=cifs-mount.target`を追加するのを防ぎ、
-      # ブートをブロックしない。
       services = {
         # seminarのSMBポートへの実到達性を確認するサービス。
         # `tailscale-online.service`はtailnetへの接続までしか保証せず、
@@ -164,6 +158,12 @@ lib.mkMerge [
       targets.cifs-mount = {
         description = "CIFS Network Mounts";
         wantedBy = [ "multi-user.target" ];
+        # systemd.target(5)により、
+        # ターゲットが`Wants=`で引き込んだユニットの両方が`DefaultDependencies=yes`の場合、
+        # 暗黙的に`After=`が追加される。
+        # `DefaultDependencies=false`を設定することで、
+        # `multi-user.target`が暗黙的に`After=cifs-mount.target`を追加するのを防ぎ、
+        # ブートをブロックしない。
         unitConfig.DefaultDependencies = false;
       };
 

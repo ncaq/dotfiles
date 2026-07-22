@@ -130,6 +130,14 @@ lib.mkMerge [
         # 到達性が回復するまで待ってから再マウントする。
         mnt-chihiro-retry = {
           description = "Retry mounting /mnt/chihiro after failure";
+          unitConfig = {
+            # mount側のStartLimitだけに停止保証を頼らない。
+            # mountがstart-limit-hitで拒否された場合にOnFailureが再発火するかは、
+            # systemdのバージョンで挙動が異なるため(systemd/systemd#33710)、
+            # 再発火する環境でもこのサービス自身の起動制限でループを確実に打ち切る。
+            StartLimitIntervalSec = 600;
+            StartLimitBurst = 5;
+          };
           serviceConfig = {
             Type = "oneshot";
             TimeoutStartSec = 600;

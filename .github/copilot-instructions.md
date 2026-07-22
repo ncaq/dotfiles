@@ -98,9 +98,11 @@ nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
 
 unstableも有効にしている理由はいくつかあります。
 
-Claude CodeやCodex CLIのようにあまりにも更新が早く、
-サーバも最新バージョンを要求してくるので、
-最新版に近いバージョンを使わないことに多大な不便が生じるパッケージをインストールしたいです。
+Claude Codeなどのコーディングエージェントはあまりにも更新が早く、
+サーバも最新バージョンのクライアントを要求してくることがあります。
+
+そのような最新版に近いバージョンを使わないことで多大な不便が生じるパッケージは、
+例外的にunstableからインストールしたいです。
 
 もう一つはstableにまだ入っていなかったり、
 stableのバージョンが自分の求める機能を提供していないパッケージを使う場合です。
@@ -184,7 +186,7 @@ NixOSでは適用前に最新コミットの情報を`last-commit.json`として
 
 ### LLM向けのシンボリックリンク
 
-Codex向けの`AGENTS.md`と、
+様々なコーディングエージェント向けの`AGENTS.md`と、
 Claude Code向けの`CLAUDE.md`は、
 以下のように`.github/copilot-instructions.md`のシンボリックリンクになっています。
 

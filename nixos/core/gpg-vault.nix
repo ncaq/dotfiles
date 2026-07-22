@@ -29,6 +29,42 @@ let
   vaultHome = "/var/lib/gpg-vault";
   gnupgHome = "${vaultHome}/.gnupg";
   socketDir = "/run/gpg-vault";
+
+  # `trusted-key`で主鍵をultimate信頼として宣言します。
+  # これによりpreStartでの`--import-ownertrust`によるgpg起動が不要になります。
+  gpgConf = pkgs.writeText "gpg-vault-gpg.conf" ''
+    trusted-key ${keyConfig.fingerprint}
+  '';
+
+  # パスフレーズなし運用なのでpinentryが実際に呼ばれることはありませんが、
+  # 設定として有効なパスは必要です。
+  # allow-loopback-pinentryは鍵更新時にncaq側から、
+  # `--pinentry-mode loopback`でパスフレーズ操作をするために必要です。
+  # pinentryはユーザ境界を跨いでncaqの端末を開けないためloopbackを使います。
+  gpgAgentConf = pkgs.writeText "gpg-vault-gpg-agent.conf" ''
+    enable-ssh-support
+    allow-loopback-pinentry
+    pinentry-program ${pkgs.pinentry-curses}/bin/pinentry-curses
+  '';
+
+  # SSH認証に使用するGPGサブキーのkeygrip。
+  sshcontrolFile = pkgs.writeText "gpg-vault-sshcontrol" ''
+    ${keyConfig.sshKeygrip}
+  '';
+
+  # gpg-vaultはシステムユーザで/run/user/<uid>を持たないため、
+  # 何もしないとソケットはGNUPGHOME直下に作られ、
+  # mode 700のディレクトリ内なので通常ユーザから届かなくなります。
+  # Assuanソケットリダイレクトで共有ディレクトリにソケットを作らせます。
+  # gpg-agentはリダイレクトファイル自体は終了時に削除しない
+  # (削除するのはリダイレクト先の実ソケットだけ)ことを検証済みなので、
+  # storeへのsymlinkとして配置してもサービス再起動を跨いで機能します。
+  socketRedirect =
+    socketName:
+    pkgs.writeText "gpg-vault-redirect-${socketName}" ''
+      %Assuan%
+      socket=${socketDir}/${socketName}
+    '';
 in
 {
   users = {
@@ -45,49 +81,47 @@ in
     groups.gpg-vault = { };
   };
 
+  # GNUPGHOMEの静的な内容は宣言的に配置します。
+  # ディレクトリと空のcommon.confを実体として作り、
+  # 内容を持つ設定ファイルはstoreへのsymlinkにします。
+  # common.confを空にするのはkeyboxdを有効化しないためで、
+  # 理由はhome/core/gpg.nixのncaq側common.confと同じです。
+  systemd.tmpfiles.settings."50-gpg-vault" =
+    let
+      vaultDir = {
+        user = "gpg-vault";
+        group = "gpg-vault";
+        mode = "0700";
+      };
+    in
+    {
+      ${vaultHome}.d = vaultDir;
+      ${gnupgHome}.d = vaultDir;
+      "${gnupgHome}/private-keys-v1.d".d = vaultDir;
+      "${gnupgHome}/common.conf".f = {
+        user = "gpg-vault";
+        group = "gpg-vault";
+        mode = "0600";
+      };
+      "${gnupgHome}/gpg.conf"."L+".argument = "${gpgConf}";
+      "${gnupgHome}/gpg-agent.conf"."L+".argument = "${gpgAgentConf}";
+      "${gnupgHome}/sshcontrol"."L+".argument = "${sshcontrolFile}";
+      "${gnupgHome}/S.gpg-agent"."L+".argument = "${socketRedirect "S.gpg-agent"}";
+      "${gnupgHome}/S.gpg-agent.ssh"."L+".argument = "${socketRedirect "S.gpg-agent.ssh"}";
+    };
+
   systemd.services = {
     gpg-vault-agent = {
       description = "gpg-agent holding secret keys isolated from normal users";
       wantedBy = [ "multi-user.target" ];
-      # GNUPGHOMEを毎回起動時に整備します。
-      # 全て冪等な操作です。
+      # rootで動くsops-install-secretsがこのGNUPGHOMEで復号する際に、
+      # 鍵IDを解決できるよう公開鍵をvault側のpubringにも取り込みます。
+      # importは冪等ですが手続き的な処理なので、
+      # ここだけpreStartに残しています。
       # ExecStartPreは`User=`で指定したgpg-vaultユーザで実行されます。
       preStart = ''
         umask 077
-        mkdir -p "${gnupgHome}/private-keys-v1.d"
-
-        # keyboxdを有効化しないための空のcommon.conf。
-        # 理由はhome/core/gpg.nixのncaq側common.confと同じです。
-        : > "${gnupgHome}/common.conf"
-
-        # パスフレーズなし運用なのでpinentryが実際に呼ばれることはありませんが、
-        # 設定として有効なパスは必要です。
-        # allow-loopback-pinentryは鍵更新時にncaq側から、
-        # `--pinentry-mode loopback`でパスフレーズ操作をするために必要です。
-        # pinentryはユーザ境界を跨いでncaqの端末を開けないためloopbackを使います。
-        {
-          echo "enable-ssh-support"
-          echo "allow-loopback-pinentry"
-          echo "pinentry-program ${pkgs.pinentry-curses}/bin/pinentry-curses"
-        } > "${gnupgHome}/gpg-agent.conf"
-
-        # SSH認証に使用するGPGサブキーのkeygrip。
-        echo "${keyConfig.sshKeygrip}" > "${gnupgHome}/sshcontrol"
-
-        # gpg-vaultはシステムユーザで/run/user/<uid>を持たないため、
-        # 何もしないとソケットはGNUPGHOME直下に作られ、
-        # mode 700のディレクトリ内なので通常ユーザから届かなくなります。
-        # Assuanソケットリダイレクトで共有ディレクトリにソケットを作らせます。
-        printf '%%Assuan%%\nsocket=%s\n' "${socketDir}/S.gpg-agent" \
-          > "${gnupgHome}/S.gpg-agent"
-        printf '%%Assuan%%\nsocket=%s\n' "${socketDir}/S.gpg-agent.ssh" \
-          > "${gnupgHome}/S.gpg-agent.ssh"
-
-        # rootで動くsops-install-secretsがこのGNUPGHOMEで復号する際に、
-        # 鍵IDを解決できるよう公開鍵をvault側のpubringにも取り込みます。
         ${pkgs.gnupg}/bin/gpg --batch --no-autostart --quiet --import ${keyConfig.publicKeyFile}
-        echo "${keyConfig.fingerprint}:6:" | \
-          ${pkgs.gnupg}/bin/gpg --batch --no-autostart --quiet --import-ownertrust
       '';
       serviceConfig = {
         User = "gpg-vault";

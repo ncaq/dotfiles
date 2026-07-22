@@ -141,8 +141,10 @@ in
         # forkingなら起動完了時点でソケットが利用可能です。
         Type = "forking";
         ExecStart = "${pkgs.gnupg}/bin/gpg-agent --daemon";
-        # ソケットのパーミッションはumaskに依存するため、
-        # グループ書き込み(=接続)可能に揃えます。
+        # gpg-agentはumaskに関係なくソケットを0700で生成することを検証済みなので、
+        # このchmodによるグループ書き込み(=接続)許可は必須です。
+        # ExecStartPostの完了までunitはstartedにならないため、
+        # After=で順序付けされた依存サービスが0700の窓に当たることはありません。
         ExecStartPost = "${pkgs.coreutils}/bin/chmod 0660 ${socketDir}/S.gpg-agent ${socketDir}/S.gpg-agent.ssh";
         Restart = "on-failure";
         Environment = [ "GNUPGHOME=${gnupgHome}" ];

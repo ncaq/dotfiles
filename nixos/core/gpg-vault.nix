@@ -106,12 +106,23 @@ in
         RuntimeDirectoryMode = "0750";
         StateDirectory = "gpg-vault";
         StateDirectoryMode = "0700";
-        # 軽いハードニング。
-        # 秘密鍵を扱うプロセスなので不要な場所を見せません。
+        # ハードニング。
+        # 秘密鍵を扱うプロセスなので、
+        # 不要な場所を見せず不要な特権と通信経路を断ちます。
+        CapabilityBoundingSet = [ ];
+        LockPersonality = true;
         NoNewPrivileges = true;
+        PrivateDevices = true;
         PrivateTmp = true;
+        ProtectControlGroups = true;
         ProtectHome = true;
+        ProtectKernelModules = true;
+        ProtectKernelTunables = true;
         ProtectSystem = "strict";
+        # gpg-agentのソケットはUNIXドメインのみでネットワーク通信は不要です。
+        RestrictAddressFamilies = [ "AF_UNIX" ];
+        RestrictNamespaces = true;
+        SystemCallFilter = [ "@system-service" ];
       };
     };
 

@@ -36,15 +36,17 @@ let
     trusted-key ${keyConfig.fingerprint}
   '';
 
-  # パスフレーズなし運用なのでpinentryが実際に呼ばれることはありませんが、
-  # 設定として有効なパスは必要です。
-  # allow-loopback-pinentryは鍵更新時にncaq側から、
-  # `--pinentry-mode loopback`でパスフレーズ操作をするために必要です。
-  # pinentryはユーザ境界を跨いでncaqの端末を開けないためloopbackを使います。
   gpgAgentConf = pkgs.writeText "gpg-vault-gpg-agent.conf" ''
     enable-ssh-support
+    # 鍵更新時にncaq側から`--pinentry-mode loopback`でパスフレーズ操作をするために必要です。
+    # pinentryはユーザ境界を跨いでncaqの端末を開けないためloopbackを使います。
     allow-loopback-pinentry
+    # パスフレーズなし運用なのでpinentryが実際に呼ばれることはありませんが、
+    # 設定として有効なパスは必要です。
     pinentry-program ${pkgs.pinentry-curses}/bin/pinentry-curses
+    # スマートカードは使わない運用なので、
+    # 鍵操作時にscdaemonがカード探索のためにspawnされるのを止めます。
+    disable-scdaemon
   '';
 
   # SSH認証に使用するGPGサブキーのkeygrip。
@@ -114,6 +116,15 @@ in
     gpg-vault-agent = {
       description = "gpg-agent holding secret keys isolated from normal users";
       wantedBy = [ "multi-user.target" ];
+      # agentが読む設定はtmpfilesで配置されていてunit定義に含まれないため、
+      # 内容が変わってもそのままではサービスが再起動されません。
+      # 設定変更時に確実に再起動させます。
+      restartTriggers = [
+        gpgAgentConf
+        sshcontrolFile
+        (socketRedirect "S.gpg-agent")
+        (socketRedirect "S.gpg-agent.ssh")
+      ];
       # rootで動くsops-install-secretsがこのGNUPGHOMEで復号する際に、
       # 鍵IDを解決できるよう公開鍵をvault側のpubringにも取り込みます。
       # importは冪等ですが手続き的な処理なので、

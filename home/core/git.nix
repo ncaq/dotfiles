@@ -56,7 +56,6 @@ in
         "**/.claude/scheduled_tasks.lock"
         "**/.claude/settings.local.json"
         ".DS_Store"
-        ".codex"
         "Thumbs.db"
       ];
     };

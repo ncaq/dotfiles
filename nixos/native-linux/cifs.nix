@@ -105,7 +105,10 @@ lib.mkMerge [
         # seminar自体が起動していて到達可能かは別問題のため独立したサービスにしている。
         seminar-online = {
           description = "Wait for seminar SMB port to be reachable";
-          wants = [ "tailscale-online.service" ];
+          wants = [
+            "network-online.target"
+            "tailscale-online.service"
+          ];
           after = [
             "network-online.target"
             "tailscale-online.service"

@@ -1,4 +1,7 @@
 {
+  # 公開鍵のフィンガープリント。
+  fingerprint = "7DDE3BC405DC58D94BF661D342248C7D0FB73D57";
+
   # 署名と認証機能のある鍵のフィンガープリント。
   identityKey = "ACA66AB679E75544";
 

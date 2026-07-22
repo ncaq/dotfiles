@@ -8,6 +8,22 @@
 }:
 let
   userConfig = config.users.users.${username};
+  # seminarのSMBポートへ実際にTCP接続できるまで待つスクリプト。
+  # `network-online.target`や`tailscale-online.service`はどちらも
+  # 「seminarに到達できる」ことまでは保証しないため、
+  # マウント前に実到達性を確認する必要がある。
+  waitForSeminar = pkgs.writeShellApplication {
+    name = "wait-for-seminar";
+    runtimeInputs = with pkgs; [
+      bash
+      coreutils
+    ];
+    text = ''
+      until timeout 5 bash -c ': < /dev/tcp/seminar/445'; do
+        sleep 2
+      done
+    '';
+  };
 in
 lib.mkMerge [
   (lib.mkIf (hostName != "seminar") {
@@ -24,14 +40,25 @@ lib.mkMerge [
         {
           requires = [ "network-online.target" ];
           wants = [
+            "seminar-online.service"
             "sops-install-secrets.service"
             "tailscale-online.service"
           ];
           after = [
             "network-online.target"
+            "seminar-online.service"
             "sops-install-secrets.service"
             "tailscale-online.service"
           ];
+          unitConfig = {
+            # マウント失敗時はリトライ用サービスに委ねる。
+            # mountユニット自体はRestart=を持てないため、
+            # 到達性を待ってから再マウントする別サービスで補う。
+            OnFailure = [ "mnt-chihiro-retry.service" ];
+            # リトライが恒久的な失敗(認証エラーなど)で無限ループしないよう起動回数を制限する。
+            StartLimitIntervalSec = 600;
+            StartLimitBurst = 5;
+          };
           # `cifs-mount.target`に向けてwantedByする。
           # `cifs-mount.target`は`DefaultDependencies=false`のため、
           # `multi-user.target`からの暗黙的な順序依存が追加されず、ブートをブロックしない。
@@ -78,6 +105,54 @@ lib.mkMerge [
       # `DefaultDependencies=false`を設定することで、
       # `multi-user.target`が暗黙的に`After=cifs-mount.target`を追加するのを防ぎ、
       # ブートをブロックしない。
+      services = {
+        # seminarのSMBポートへの実到達性を確認するサービス。
+        # `tailscale-online.service`はtailnetへの接続までしか保証せず、
+        # seminar自体が起動していて到達可能かは別問題のため独立したサービスにしている。
+        seminar-online = {
+          description = "Wait for seminar SMB port to be reachable";
+          wants = [ "tailscale-online.service" ];
+          after = [
+            "network-online.target"
+            "tailscale-online.service"
+          ];
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+            # seminarがダウンしている場合に永久に待たないよう上限を設ける。
+            # 失敗してもマウント側はwantsなので試行自体は行われ、nofailで害はない。
+            TimeoutStartSec = 300;
+            ExecStart = lib.getExe waitForSeminar;
+          };
+        };
+
+        # マウント失敗時にOnFailureから起動されるリトライサービス。
+        # 到達性が回復するまで待ってから再マウントする。
+        mnt-chihiro-retry = {
+          description = "Retry mounting /mnt/chihiro after failure";
+          serviceConfig = {
+            Type = "oneshot";
+            TimeoutStartSec = 600;
+            ExecStart = lib.getExe (
+              pkgs.writeShellApplication {
+                name = "retry-mnt-chihiro";
+                runtimeInputs = with pkgs; [
+                  coreutils
+                  systemd
+                  waitForSeminar
+                ];
+                # 失敗直後の即時再試行は同じ理由で失敗しやすいので少し置く。
+                text = ''
+                  sleep 10
+                  wait-for-seminar
+                  systemctl restart mnt-chihiro.mount
+                '';
+              }
+            );
+          };
+        };
+      };
+
       targets.cifs-mount = {
         description = "CIFS Network Mounts";
         wantedBy = [ "multi-user.target" ];

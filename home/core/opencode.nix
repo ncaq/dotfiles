@@ -1,6 +1,7 @@
 {
   pkgs-unstable,
   config,
+  codingAgentWorkDirFullPath,
   konoka,
   ...
 }:
@@ -30,6 +31,12 @@
       autoupdate = false;
       model = "github-copilot/gpt-5.6-terra";
       small_model = "github-copilot/gpt-5-mini";
+      permission.external_directory = {
+        # Claude Codeと同じ追加ディレクトリを許可します。
+        "${codingAgentWorkDirFullPath}**" = "allow";
+        "/nix/store/**" = "allow";
+        "~/dotfiles/**" = "allow";
+      };
     };
   };
 }

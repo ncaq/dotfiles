@@ -28,7 +28,8 @@
     settings = {
       # パッケージはNixで管理しているため自己アップデートは無効にします。
       autoupdate = false;
-      # デフォルトモデルは現在あえて宣言しません。
+      model = "github-copilot/gpt-5.6-terra";
+      small_model = "github-copilot/gpt-5-mini";
     };
   };
 }

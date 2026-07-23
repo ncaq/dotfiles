@@ -3,11 +3,17 @@
   pkgs-unstable,
   config,
   lib,
+  inputs,
   osConfig ? null,
   ...
 }:
 let
   ccstatusline = pkgs.callPackage ../../pkgs/ccstatusline.nix { };
+
+  # flake input経由でkonokaプラグインを取得します。
+  # ユーザレベルのプラグインはClaude Codeのmarketplace経由ではなく、
+  # ビルド済みプラグインを直接読み込みます。
+  konokaPlugins = inputs.konoka.packages.${pkgs.stdenv.hostPlatform.system};
 
   # コーディングエージェントの作業ディレクトリ。
   # konokaプラグインは`${XDG_RUNTIME_DIR:-/tmp}/coding-agent-work/`を使用します。
@@ -32,6 +38,21 @@ in
 
     # `mcp.nix`と連携します。
     enableMcpIntegration = true;
+
+    # ビルド済みのプラグインパッケージを直接リンクします。
+    plugins = with konokaPlugins; [
+      commit
+      haskell-tasuke
+      kyosei
+      log-analyzer
+      nix-tasuke
+      pr
+      programming-tasuke
+      proofreading-ja
+      research
+      rm-to-trash
+      web-tasuke
+    ];
 
     settings = {
       # 応答に使う自然言語です。
@@ -110,13 +131,6 @@ in
             repo = "anthropics/claude-plugins-official";
           };
         };
-        konoka = {
-          source = {
-            source = "github";
-            repo = "ncaq/konoka";
-            ref = "v8.6.4";
-          };
-        };
       };
       # pluginを記述しておくことで起動時にインストールされていない場合自動でインストールされます。
       enabledPlugins = {
@@ -126,18 +140,6 @@ in
         "pyright-lsp@claude-plugins-official" = true;
         "rust-analyzer-lsp@claude-plugins-official" = true;
         "typescript-lsp@claude-plugins-official" = true;
-        # konoka
-        "commit@konoka" = true;
-        "haskell-tasuke@konoka" = true;
-        "kyosei@konoka" = true;
-        "log-analyzer@konoka" = true;
-        "nix-tasuke@konoka" = true;
-        "pr@konoka" = true;
-        "programming-tasuke@konoka" = true;
-        "proofreading-ja@konoka" = true;
-        "research@konoka" = true;
-        "rm-to-trash@konoka" = true;
-        "web-tasuke@konoka" = true;
       };
       skipAutoPermissionPrompt = true; # auto modeをdefaultModeにしているので許可を求めない。
       permissions = {

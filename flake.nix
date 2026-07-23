@@ -116,6 +116,15 @@
       };
     };
 
+    konoka = {
+      url = "github:ncaq/konoka";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-parts.follows = "flake-parts";
+        treefmt-nix.follows = "treefmt-nix";
+      };
+    };
+
     claude-desktop = {
       url = "github:k3d3/claude-desktop-linux-flake";
       inputs = {

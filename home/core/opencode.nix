@@ -39,5 +39,22 @@
         "~/dotfiles/**" = "allow";
       };
     };
+    # `home/linked/.claude/keybindings.json`と共通の操作へ寄せます。
+    tui.keybinds = {
+      editor_open = "ctrl+l";
+      messages_undo = "ctrl+/";
+      session_interrupt = "ctrl+g";
+      input_submit = "meta+return";
+      input_newline = "return";
+      history_previous = "up,ctrl+t";
+      history_next = "down,ctrl+n";
+      "dialog.select.prev" = "up,ctrl+t";
+      "dialog.select.next" = "down,ctrl+n";
+      "dialog.select.submit" = "meta+return";
+      "prompt.autocomplete.prev" = "up,ctrl+t";
+      "prompt.autocomplete.next" = "down,ctrl+n";
+      "prompt.autocomplete.hide" = "ctrl+g";
+      "prompt.autocomplete.select" = "meta+return";
+    };
   };
 }

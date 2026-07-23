@@ -1,8 +1,9 @@
 {
+  lib,
   pkgs,
   pkgs-unstable,
   config,
-  lib,
+  konoka,
   osConfig ? null,
   ...
 }:
@@ -32,6 +33,9 @@ in
 
     # `mcp.nix`と連携します。
     enableMcpIntegration = true;
+
+    # ビルド済みのプラグインパッケージを直接リンクします。
+    plugins = map (n: konoka.plugins.${n}) konoka.allPluginNames;
 
     settings = {
       # 応答に使う自然言語です。
@@ -110,13 +114,6 @@ in
             repo = "anthropics/claude-plugins-official";
           };
         };
-        konoka = {
-          source = {
-            source = "github";
-            repo = "ncaq/konoka";
-            ref = "v8.6.4";
-          };
-        };
       };
       # pluginを記述しておくことで起動時にインストールされていない場合自動でインストールされます。
       enabledPlugins = {
@@ -126,18 +123,6 @@ in
         "pyright-lsp@claude-plugins-official" = true;
         "rust-analyzer-lsp@claude-plugins-official" = true;
         "typescript-lsp@claude-plugins-official" = true;
-        # konoka
-        "commit@konoka" = true;
-        "haskell-tasuke@konoka" = true;
-        "kyosei@konoka" = true;
-        "log-analyzer@konoka" = true;
-        "nix-tasuke@konoka" = true;
-        "pr@konoka" = true;
-        "programming-tasuke@konoka" = true;
-        "proofreading-ja@konoka" = true;
-        "research@konoka" = true;
-        "rm-to-trash@konoka" = true;
-        "web-tasuke@konoka" = true;
       };
       skipAutoPermissionPrompt = true; # auto modeをdefaultModeにしているので許可を求めない。
       permissions = {

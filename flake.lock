@@ -273,6 +273,32 @@
         "type": "github"
       }
     },
+    "konoka": {
+      "inputs": {
+        "flake-parts": [
+          "flake-parts"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "treefmt-nix": [
+          "treefmt-nix"
+        ]
+      },
+      "locked": {
+        "lastModified": 1784772874,
+        "narHash": "sha256-UlgVhk2UJKh101EzJFhWRQoOz/n2wodpLUAKk0PGRME=",
+        "owner": "ncaq",
+        "repo": "konoka",
+        "rev": "d742d1f5b4871a1c75702fd0131b2979bcb78016",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ncaq",
+        "repo": "konoka",
+        "type": "github"
+      }
+    },
     "microvm": {
       "inputs": {
         "nixpkgs": [
@@ -570,6 +596,7 @@
         "flake-utils": "flake-utils",
         "git-hooks": "git-hooks",
         "home-manager": "home-manager",
+        "konoka": "konoka",
         "microvm": "microvm",
         "niks3": "niks3",
         "nix-on-droid": "nix-on-droid",

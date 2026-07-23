@@ -48,13 +48,13 @@
       input_newline = "return";
       history_previous = "up,ctrl+t";
       history_next = "down,ctrl+n";
-      dialog.select.prev = "up,ctrl+t";
-      dialog.select.next = "down,ctrl+n";
-      dialog.select.submit = "meta+return";
-      prompt.autocomplete.prev = "up,ctrl+t";
-      prompt.autocomplete.next = "down,ctrl+n";
-      prompt.autocomplete.hide = "ctrl+g";
-      prompt.autocomplete.select = "meta+return";
+      "dialog.select.prev" = "up,ctrl+t";
+      "dialog.select.next" = "down,ctrl+n";
+      "dialog.select.submit" = "meta+return";
+      "prompt.autocomplete.prev" = "up,ctrl+t";
+      "prompt.autocomplete.next" = "down,ctrl+n";
+      "prompt.autocomplete.hide" = "ctrl+g";
+      "prompt.autocomplete.select" = "meta+return";
     };
   };
 }

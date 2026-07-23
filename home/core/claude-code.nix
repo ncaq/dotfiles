@@ -1,19 +1,14 @@
 {
+  lib,
   pkgs,
   pkgs-unstable,
   config,
-  lib,
-  inputs,
+  konoka,
   osConfig ? null,
   ...
 }:
 let
   ccstatusline = pkgs.callPackage ../../pkgs/ccstatusline.nix { };
-
-  # flake input経由でkonokaプラグインを取得します。
-  # ユーザレベルのプラグインはClaude Codeのmarketplace経由ではなく、
-  # ビルド済みプラグインを直接読み込みます。
-  konokaPlugins = inputs.konoka.packages.${pkgs.stdenv.hostPlatform.system};
 
   # コーディングエージェントの作業ディレクトリ。
   # konokaプラグインは`${XDG_RUNTIME_DIR:-/tmp}/coding-agent-work/`を使用します。
@@ -40,19 +35,7 @@ in
     enableMcpIntegration = true;
 
     # ビルド済みのプラグインパッケージを直接リンクします。
-    plugins = with konokaPlugins; [
-      commit
-      haskell-tasuke
-      kyosei
-      log-analyzer
-      nix-tasuke
-      pr
-      programming-tasuke
-      proofreading-ja
-      research
-      rm-to-trash
-      web-tasuke
-    ];
+    plugins = map (n: konoka.plugins.${n}) konoka.allPluginNames;
 
     settings = {
       # 応答に使う自然言語です。

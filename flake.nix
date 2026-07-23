@@ -24,7 +24,13 @@
     };
 
     nix-on-droid = {
-      url = "github:nix-community/nix-on-droid/release-24.05";
+      # 本来は公式の`github:nix-community/nix-on-droid`の最新版リリースを使いたい。
+      # しかしNix-on-Droidが同梱するproot-termuxは`glibc 2.42`の`TCGETS2` ioctlに未対応で、
+      # `26.05`の`glibc 2.42`ではインストールが`Permission denied`の権限エラーになる。
+      # proot-termuxを修正する[PR](https://github.com/nix-community/nix-on-droid/pull/529)が、
+      # まだ未マージなので暫定でそのブランチ(masterベース)を直接参照する。
+      # 問題がなくなったら正式リリースに戻す。
+      url = "github:newAM/nix-on-droid/update-proot";
       inputs = {
         nixpkgs.follows = "nixpkgs";
         home-manager.follows = "home-manager";

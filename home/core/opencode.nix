@@ -31,6 +31,7 @@
       autoupdate = false;
       model = "github-copilot/gpt-5.6-terra";
       small_model = "github-copilot/gpt-5-mini";
+      lsp = true;
       permission.external_directory = {
         # Claude Codeと同じ追加ディレクトリを許可します。
         "${codingAgentWorkDirFullPath}**" = "allow";

@@ -3,25 +3,12 @@
   pkgs,
   pkgs-unstable,
   config,
+  codingAgentWorkDirFullPath,
   konoka,
-  osConfig ? null,
   ...
 }:
 let
   ccstatusline = pkgs.callPackage ../../pkgs/ccstatusline.nix { };
-
-  # コーディングエージェントの作業ディレクトリ。
-  # konokaプラグインは`${XDG_RUNTIME_DIR:-/tmp}/coding-agent-work/`を使用します。
-  # NixOS環境では`osConfig`からUIDを取得して、
-  # `/run/user/<uid>/coding-agent-work/`を構築します。
-  # 非NixOS環境(Termux等)では`XDG_RUNTIME_DIR`が設定されない場合があるため、
-  # `/tmp`にフォールバックします。
-  codingAgentWorkDirFullPath =
-    let
-      uid = if osConfig != null then osConfig.users.users.${config.home.username}.uid else null;
-      base = if uid != null then "/run/user/${toString uid}" else "/tmp";
-    in
-    "${base}/coding-agent-work/";
 in
 {
   programs.claude-code = {

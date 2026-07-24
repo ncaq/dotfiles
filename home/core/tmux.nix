@@ -85,17 +85,27 @@
         bind -n C-M-s swap-window -t +1 \; select-window -t +1
         bind -n C-M-h swap-window -t -1 \; select-window -t -1
 
+        # スクロールキーはalternate screen上のフルスクリーンTUI(Claude CodeやOpenCodeなど)では、
+        # tmuxのcopy-modeに履歴が無くスクロールできないため、
+        # キーをそのままアプリに透過して、アプリ側のスクロール機能に任せます。
+        # Claude Codeはclaude-code.nixのtui = "fullscreen"設定によりalternate screenで動作し、
+        # keybindings.jsonのScrollコンテキストで同じキーにスクロールを割り当てています。
+        # OpenCodeも同様にopencode.nixのtui.keybindsで割り当てています。
+        # 通常画面(シェルなど)では従来通りcopy-modeでスクロールします。
+        # copy-modeの-eは最下部まで戻った時に自動でcopy-modeを抜けるオプションで、
+        # 普通のターミナルのスクロールバックと同じ感覚になります。
+
         # shift+up/down = 1行スクロール
-        bind -n S-Up copy-mode \; send-keys -X scroll-up
-        bind -n S-Down copy-mode \; send-keys -X scroll-down
+        bind -n S-Up if -F "#{alternate_on}" { send-keys S-Up } { copy-mode -e ; send-keys -X scroll-up }
+        bind -n S-Down if -F "#{alternate_on}" { send-keys S-Down } { copy-mode -e ; send-keys -X scroll-down }
 
         # shift+left/right = ページスクロール
-        bind -n S-Left copy-mode \; send-keys -X page-up
-        bind -n S-Right copy-mode \; send-keys -X page-down
+        bind -n S-Left if -F "#{alternate_on}" { send-keys S-Left } { copy-mode -e ; send-keys -X page-up }
+        bind -n S-Right if -F "#{alternate_on}" { send-keys S-Right } { copy-mode -e ; send-keys -X page-down }
 
         # PageUp/PageDown = ページスクロール
-        bind -n PageUp copy-mode \; send-keys -X page-up
-        bind -n PageDown copy-mode \; send-keys -X page-down
+        bind -n PageUp if -F "#{alternate_on}" { send-keys PageUp } { copy-mode -e ; send-keys -X page-up }
+        bind -n PageDown if -F "#{alternate_on}" { send-keys PageDown } { copy-mode -e ; send-keys -X page-down }
 
         # クイックウィンドウ切り替え(Alt+数字)
         bind -n M-1 select-window -t 1

@@ -29,7 +29,7 @@ in
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
       Type = "oneshot";
-      ExecStart = "${tailscale}/bin/tailscale serve --bg --set-path=/comfy-ui http://127.0.0.1:${toString port}";
+      ExecStart = "${tailscale}/bin/tailscale serve --bg --https=443 --set-path=/comfy-ui http://127.0.0.1:${toString port}";
       ExecStop = "${tailscale}/bin/tailscale serve --https=443 --set-path=/comfy-ui off";
       RemainAfterExit = true;
       Restart = "on-failure";

@@ -1,4 +1,4 @@
-{ pkgs, username, ... }:
+{ pkgs, ... }:
 {
   programs = {
     steam = {
@@ -17,14 +17,8 @@
       # Protonプレフィックスへwinetricksを適用するトラブルシューティングツール。
       protontricks.enable = true;
     };
-    gamemode.enable = true;
     # `gamescopeSession`が有効化するが、
     # 単体ゲームのネスト起動にも使うので明示。
     gamescope.enable = true;
   };
-
-  # gamemodedはCPUガバナー変更などの特権操作をpkexecで行う。
-  # gamemodeが同梱するpolkitルールは`gamemode`グループのユーザにだけ認証なしで許可するので、
-  # ユーザをグループに追加する。
-  users.users.${username}.extraGroups = [ "gamemode" ];
 }

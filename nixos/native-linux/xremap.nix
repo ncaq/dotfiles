@@ -145,6 +145,26 @@ in
           })
           (keymapEntry {
             name = "改行と投稿を統一する";
+            application = "/LM Studio|claude/";
+            remap = {
+              # Claude Codeでは`M-enter`も送信なので、
+              # 似たアプリでの脳の混乱を避けるためにそちらも追加。
+              "M-enter" = [
+                "enter"
+                { set_mark = false; }
+              ];
+              "C-m" = [
+                "Shift-enter"
+                { set_mark = false; }
+              ];
+              "enter" = [
+                "enter"
+                { set_mark = false; }
+              ];
+            };
+          })
+          (keymapEntry {
+            name = "改行と投稿を統一する";
             application = "/Slack/";
             remap = {
               "C-m" = [
@@ -159,7 +179,7 @@ in
           })
           (keymapEntry {
             name = "改行と投稿を統一する";
-            application = "/LM Studio|claude|discord/";
+            application = "/discord/";
             remap = {
               "C-m" = [
                 "Shift-enter"

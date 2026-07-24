@@ -55,6 +55,19 @@
       "prompt.autocomplete.next" = "down,ctrl+n";
       "prompt.autocomplete.hide" = "ctrl+g";
       "prompt.autocomplete.select" = "meta+return";
+      # tmuxのスクロールキーと同じ操作でメッセージをスクロールできるようにします。
+      # tmuxはalternate screen上のペインではこれらのキーをアプリに透過してくるので、
+      # OpenCode側で同じ挙動を割り当てて通常のターミナルとスクロール操作を揃えます。
+      messages_line_up = "shift+up";
+      messages_line_down = "shift+down";
+      messages_page_up = "pageup,shift+left";
+      messages_page_down = "pagedown,shift+right";
+      # shift+矢印のデフォルトは入力欄のテキスト選択ですが、
+      # スクロールキーとして使うため無効化します。
+      input_select_up = "none";
+      input_select_down = "none";
+      input_select_left = "none";
+      input_select_right = "none";
     };
   };
 }

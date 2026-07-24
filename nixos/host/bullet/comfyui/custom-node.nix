@@ -64,6 +64,20 @@ in
             --replace-fail \
             'os.path.normpath(os.path.join(os.path.dirname(__file__), "..", CSV_META_FILE_NAME))' \
             'os.path.join("${autocompletePlusDataDir}", CSV_META_FILE_NAME)'
+          # Tailscale Serveで`/comfy-ui`サブパスに公開しているため、
+          # ルート絶対パスの参照はサブパス配下で404になる。
+          # 特に`/scripts/`の絶対importはモジュール読み込み自体を失敗させ、
+          # 拡張機能が丸ごと無効になるので相対パスへ書き換える。
+          # このモジュールは`extensions/ComfyUI-Autocomplete-Plus/js/`配下に配信されるので、
+          # 3階層上がComfyUIのルートになる。
+          substituteInPlace web/js/main.js \
+            --replace-fail 'from "/scripts/' 'from "../../../scripts/'
+          # APIエンドポイントへのfetchも同様に、
+          # ページURL(末尾スラッシュ付き)基準で解決される相対パスへ書き換える。
+          substituteInPlace web/js/main.js web/js/data.js \
+            --replace-fail "'/autocomplete-plus/" "'autocomplete-plus/"
+          substituteInPlace web/js/data.js \
+            --replace-fail '`/autocomplete-plus/' '`autocomplete-plus/'
         '';
         installPhase = ''
           runHook preInstall

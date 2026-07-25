@@ -29,6 +29,9 @@ let
       inputs ? [ ],
       outputs ? [ ],
       widgets ? null,
+      # ノードの表示名。役割が分かる名前を付ける時に指定する。
+      # 未指定ならComfyUIがノード型のデフォルト表示名を使う。
+      title ? null,
     }:
     {
       inherit
@@ -46,7 +49,8 @@ let
         "Node name for S&R" = type;
       };
     }
-    // lib.optionalAttrs (widgets != null) { widgets_values = widgets; };
+    // lib.optionalAttrs (widgets != null) { widgets_values = widgets; }
+    // lib.optionalAttrs (title != null) { inherit title; };
   mkInput = name: type: link: { inherit name type link; };
   mkOutput = name: type: links: { inherit name type links; };
   mkWorkflow =
@@ -67,10 +71,21 @@ let
   # 4/5=CONDITIONING→KSampler, 6=LATENT→KSampler
   # 後段の構成によっては同じ出力を追加のノードにも繋ぐので、
   # 追加のリンクIDを引数で受け取る。
+  #
+  # img2imgのようにEmptyLatentImage以外からLATENTを供給する場合は、
+  # `withEmptyLatent = false`にして、
+  # 呼び出し元が代替ノードからリンク6をKSamplerへ張る。
   promptNodes =
     {
       width ? defaultWidth,
       height ? defaultHeight,
+      # falseにするとEmptyLatentImage(ノード4)を生成しない。
+      withEmptyLatent ? true,
+      # img2imgでは1未満にして元画像の構図を残す。
+      denoise ? 1,
+      # withEmptyLatent = falseで代替ノードを複数挟む場合に、
+      # KSamplerのorderを後ろへずらすための値。
+      samplerOrder ? 4,
       extraModelLinks ? [ ],
       extraClipLinks ? [ ],
       extraVaeLinks ? [ ],
@@ -135,25 +150,27 @@ let
         outputs = [ (mkOutput "CONDITIONING" "CONDITIONING" ([ 5 ] ++ extraNegativeLinks)) ];
         widgets = [ negativePrompt ];
       })
-      (mkNode {
-        id = 4;
-        type = "EmptyLatentImage";
-        pos = [
-          420
-          500
-        ];
-        size = [
-          315
-          106
-        ];
-        order = 3;
-        outputs = [ (mkOutput "LATENT" "LATENT" [ 6 ]) ];
-        widgets = [
-          width
-          height
-          1 # batch_size
-        ];
-      })
+    ]
+    ++ lib.optional withEmptyLatent (mkNode {
+      id = 4;
+      type = "EmptyLatentImage";
+      pos = [
+        420
+        500
+      ];
+      size = [
+        315
+        106
+      ];
+      order = 3;
+      outputs = [ (mkOutput "LATENT" "LATENT" [ 6 ]) ];
+      widgets = [
+        width
+        height
+        1 # batch_size
+      ];
+    })
+    ++ [
       (mkNode {
         id = 5;
         type = "KSampler";
@@ -165,7 +182,7 @@ let
           315
           262
         ];
-        order = 4;
+        order = samplerOrder;
         inputs = [
           (mkInput "model" "MODEL" 1)
           (mkInput "positive" "CONDITIONING" 4)
@@ -178,11 +195,14 @@ let
           5.5 # cfg
           samplerName
           schedulerName
-          1 # denoise
+          denoise
         ];
       })
     ];
-  promptLinks = [
+  # EmptyLatentImage由来のリンク6を含まない共通リンク。
+  # `withEmptyLatent = false`のワークフローはこちらを使って、
+  # 代替のLATENT源からリンク6を自前で張る。
+  promptBaseLinks = [
     [
       1
       1
@@ -224,14 +244,6 @@ let
       "CONDITIONING"
     ]
     [
-      6
-      4
-      0
-      5
-      3
-      "LATENT"
-    ]
-    [
       7
       5
       0
@@ -248,6 +260,16 @@ let
       "VAE"
     ]
   ];
+  promptLinks = promptBaseLinks ++ [
+    [
+      6
+      4
+      0
+      5
+      3
+      "LATENT"
+    ]
+  ];
 in
 {
   inherit
@@ -256,6 +278,7 @@ in
     mkOutput
     mkWorkflow
     promptNodes
+    promptBaseLinks
     promptLinks
     seedWidgets
     samplerName

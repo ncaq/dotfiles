@@ -31,6 +31,15 @@ in
         tag = "1.3.4";
         hash = "sha256-BHtfkaqCPf/YXfGbF/xyryjt+M8izkdoUAKNJLfyvqI=";
       };
+      # 指示文を英語へ翻訳する自作ノード。
+      # Qwen-Image-Editなど指示文の公式サポートが英語と中国語のみのモデルに対して、
+      # 日本語で指示を書けるようにする。
+      # 依存はComfyUI環境に同梱済みのrequestsのみ。
+      # customNodesの型はpackageなのでプレーンなパスは渡せず、
+      # derivationに包んで渡す。
+      "ComfyUI-Translate-Text" = pkgs.writeTextDir "__init__.py" (
+        builtins.readFile ./translate-text/__init__.py
+      );
       # danbooruタグのオートコンプリート。
       # 日本語からの検索とpost count表示に対応していて、
       # メジャーなタグかどうかを確認しながら入力できる。

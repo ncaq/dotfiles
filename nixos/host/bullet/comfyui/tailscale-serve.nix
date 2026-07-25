@@ -5,7 +5,7 @@
 # tailnet経由の初回アクセスでもソケットアクティベーションによるオンデマンド起動が機能する。
 # 何のサービスか分かりやすいように、
 # また将来他のサービスも公開できるように、
-# ルートではなく`/comfy-ui`パスにマウントする。
+# ルートではなく`/comfyui`パスにマウントする。
 #
 # `--bg`は使わずフォアグラウンドで常駐させる。
 # フォアグラウンドのServe設定はCLIプロセスのセッションに紐付き、
@@ -35,7 +35,7 @@ in
     ];
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
-      ExecStart = "${tailscale}/bin/tailscale serve --https=443 --set-path=/comfy-ui http://127.0.0.1:${toString port}";
+      ExecStart = "${tailscale}/bin/tailscale serve --https=443 --set-path=/comfyui http://127.0.0.1:${toString port}";
       # tailscaledの再起動などでセッションが切れるとプロセスが終了するため、
       # 終了コードによらず常に再起動して復帰させる。
       Restart = "always";

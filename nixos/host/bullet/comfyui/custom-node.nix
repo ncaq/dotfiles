@@ -73,7 +73,7 @@ in
             --replace-fail \
             'os.path.normpath(os.path.join(os.path.dirname(__file__), "..", CSV_META_FILE_NAME))' \
             'os.path.join("${autocompletePlusDataDir}", CSV_META_FILE_NAME)'
-          # Tailscale Serveで`/comfy-ui`サブパスに公開しているため、
+          # Tailscale Serveで`/comfyui`サブパスに公開しているため、
           # ルート絶対パスの参照はサブパス配下で404になる。
           # 特に`/scripts/`の絶対importはモジュール読み込み自体を失敗させ、
           # 拡張機能が丸ごと無効になるので相対パスへ書き換える。

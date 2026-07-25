@@ -23,7 +23,7 @@ let
   # 宣言的に定義されたサービスが設定値を持っているため、
   # 値を二重管理せずにそれらのサービスを再起動して元の設定に復元する。
   restoreIdle = [
-    (systemctl + " --user restart dpms-power.service screensaver-timeout.service")
+    (systemctl + " --user restart dpms-timeout.service screensaver-timeout.service")
   ];
 in
 {

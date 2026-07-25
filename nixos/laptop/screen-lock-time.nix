@@ -1,16 +1,19 @@
 { pkgs, lib, ... }:
 {
   systemd = {
-    # 画面ロックまでの時間を30分に設定。
+    # 画面消灯までの時間を30分に設定。
     # xss-lockはXのスクリーンセーバータイムアウトをトリガーにするため、
     # xsetでタイムアウトを設定します。
-    # デスクトップPCではdpms.nixで`xset s off`していますが、
-    # ラップトップでは適度なタイムアウトを設定します。
+    # 消灯でnotifierが起動され、
+    # サイクル時間の30秒が経過するとロックされます。
+    # ラップトップは外に持ち出すためセキュリティを重視して、
+    # デスクトップと違い猶予は短めにしています。
+    # 仕組みの詳細はnative-linuxのscreen-lock.nixを参照。
     user.services.screensaver-timeout = {
       description = "Set X screensaver timeout";
       serviceConfig = {
         Type = "oneshot";
-        ExecStart = "${pkgs.xset}/bin/xset s 1800 1800";
+        ExecStart = "${pkgs.xset}/bin/xset s 1800 30";
         Restart = "on-failure";
         RestartSec = "5s";
       };

@@ -1,15 +1,20 @@
 { pkgs, ... }:
 let
-  acTimeout = 30 * 60; # AC電源時: 30分
-  battTimeout = 15 * 60; # バッテリー時: 15分
+  # AC電源時: 30.5分。
+  # スクリーンセーバーのタイムアウト(screen-lock-time.nixで30分)より後にすることで、
+  # ロックの起点が常にxss-lockのnotifier経由になり猶予時間が機能します。
+  acTimeout = 30 * 60 + 30;
+  # バッテリー時: 15分。
+  # 省電力を優先してスクリーンセーバーのタイムアウトより先に消灯させます。
+  battTimeout = 15 * 60;
 in
 {
-  systemd.user.services.dpms-power = {
-    description = "Adjust DPMS timeout based on AC/battery state";
+  systemd.user.services.dpms-timeout = {
+    description = "Configure screen saver and DPMS timeout";
     serviceConfig = {
       ExecStart = pkgs.lib.getExe (
         pkgs.writeShellApplication {
-          name = "dpms-power";
+          name = "dpms-timeout";
           runtimeInputs = with pkgs; [
             gnugrep
             upower

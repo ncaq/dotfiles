@@ -19,4 +19,15 @@ _: {
       enable = true;
     };
   };
+
+  # governorが`powersave`でもEPPはファームウェアの初期値のまま残り、
+  # seminarでは`performance`になっていて、
+  # アイドル時でもコアが最大クロック近くまでブーストしていました。
+  # desktopと同様にEPPの設定はpower-profiles-daemonに任せて、
+  # デフォルトの`balanced`プロファイルでEPPを`balance_performance`にします。
+  services.power-profiles-daemon.enable = true;
+  # upstreamのユニットは`WantedBy=graphical.target`ですが、
+  # サーバはヘッドレスで`multi-user.target`までしか到達しないため、
+  # そのままでは自動起動しません。
+  systemd.services.power-profiles-daemon.wantedBy = [ "multi-user.target" ];
 }

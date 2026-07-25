@@ -70,6 +70,38 @@ let
         hash = "sha256-wqGj6qE9TBB9x+AMP+gwyrQnqgJjYnQOoJR0WzQiozE=";
       };
     };
+    # UNETLoaderが読むcheckpoint非統合の拡散モデル。
+    diffusion_models = {
+      # 指示文で画像を編集するQwen-Image-Editの2025年11月版。
+      # Comfy-Org公式の再パッケージ版。Apache 2.0ライセンス。
+      "qwen_image_edit_2511_fp8mixed.safetensors" = fetchHuggingface {
+        owner = "Comfy-Org";
+        repo = "Qwen-Image-Edit_ComfyUI";
+        rev = "e9e85de74a8f48c1e3e2656617626348675a2f21";
+        file = "split_files/diffusion_models/qwen_image_edit_2511_fp8mixed.safetensors";
+        hash = "sha256-yf3BWORtO2HvdfIa6GbKL+gIv0pTZDEg0cHofBkoCk4=";
+      };
+    };
+    text_encoders = {
+      # Qwen-Image系が使うテキストエンコーダ。画像も読むVLM。
+      "qwen_2.5_vl_7b_fp8_scaled.safetensors" = fetchHuggingface {
+        owner = "Comfy-Org";
+        repo = "Qwen-Image_ComfyUI";
+        rev = "46839d338df81ce625d5fae27d7e370314c0fbc9";
+        file = "split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors";
+        hash = "sha256-y1Y22FKg6mqQdasb70lsDbeu8TwCNQVx44iuqVnFwLQ=";
+      };
+    };
+    vae = {
+      # Qwen-Image系のVAE。
+      "qwen_image_vae.safetensors" = fetchHuggingface {
+        owner = "Comfy-Org";
+        repo = "Qwen-Image_ComfyUI";
+        rev = "46839d338df81ce625d5fae27d7e370314c0fbc9";
+        file = "split_files/vae/qwen_image_vae.safetensors";
+        hash = "sha256-pwWA8CE+Z5Z+6clfBbtADo+wgwfgF6kkvzRBIj4CPR8=";
+      };
+    };
     controlnet = {
       # SDXL系全般で使えるControlNet統合モデル(ProMax版)。
       # openpose/lineart/tileなど複数のコントロールをこれ1つで扱える。

@@ -29,6 +29,9 @@ let
       inputs ? [ ],
       outputs ? [ ],
       widgets ? null,
+      # ノードの表示名。役割が分かる名前を付ける時に指定する。
+      # 未指定ならComfyUIがノード型のデフォルト表示名を使う。
+      title ? null,
     }:
     {
       inherit
@@ -46,7 +49,8 @@ let
         "Node name for S&R" = type;
       };
     }
-    // lib.optionalAttrs (widgets != null) { widgets_values = widgets; };
+    // lib.optionalAttrs (widgets != null) { widgets_values = widgets; }
+    // lib.optionalAttrs (title != null) { inherit title; };
   mkInput = name: type: link: { inherit name type link; };
   mkOutput = name: type: links: { inherit name type links; };
   mkWorkflow =

@@ -57,13 +57,17 @@ let
       systemd
     ];
     text = ''
-      systemctl --user stop grobi.service
+      # grobiの停止に失敗しても本来の役目には支障がないので、
+      # エラーログを残した上で続行します。
+      systemctl --user stop grobi.service ||
+        echo "screen-blank-notifier: failed to stop grobi.service (exit=$?)" >&2
       sleep_pid=""
       on_term() {
         if [ -n "$sleep_pid" ]; then
           kill "$sleep_pid" 2> /dev/null || true
         fi
         systemd-run --user --collect --on-active=${grobiRestartDelay} \
+          --timer-property=AccuracySec=1s \
           ${lib.getExe grobiStartIfUnlocked}
         exit 0
       }
@@ -88,7 +92,13 @@ let
       xsecurelock
     ];
     text = ''
-      systemctl --user stop grobi.service
+      # `writeShellApplication`はerrexitを注入するため、
+      # ここでgrobiの停止が失敗するとxsecurelockの起動前にラッパーが終了し、
+      # 画面がロックされないまま放置されるfail-openになってしまいます。
+      # ロックの起動を最優先するため、
+      # 停止の失敗はエラーログを残した上で続行します。
+      systemctl --user stop grobi.service ||
+        echo "xsecurelock-grobi-pause: failed to stop grobi.service (exit=$?)" >&2
       locker_pid=""
       on_term() {
         if [ -n "$locker_pid" ]; then
@@ -101,6 +111,7 @@ let
       wait "$locker_pid" || true
       # 解除後にモニタのEDIDが安定してからgrobiを再開します。
       systemd-run --user --collect --on-active=${grobiRestartDelay} \
+        --timer-property=AccuracySec=1s \
         systemctl --user start grobi.service
     '';
   };

@@ -33,7 +33,7 @@
           '';
         }
       );
-      Restart = "always";
+      Restart = "on-failure";
       RestartSec = "10s";
     };
     wantedBy = [ "graphical-session.target" ];

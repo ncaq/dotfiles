@@ -81,6 +81,23 @@ let
         file = "split_files/diffusion_models/qwen_image_edit_2511_fp8mixed.safetensors";
         hash = "sha256-yf3BWORtO2HvdfIa6GbKL+gIv0pTZDEg0cHofBkoCk4=";
       };
+      # Wan 2.2 image-to-videoの14B MoE構成のexpertモデル2つ。
+      # サンプリング前半をhigh noise、後半をlow noiseが担当する。
+      # Apache 2.0ライセンス。
+      "wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors" = fetchHuggingface {
+        owner = "Comfy-Org";
+        repo = "Wan_2.2_ComfyUI_Repackaged";
+        rev = "fb1388adc906ab39ffc26ee40e96b22886b56bc4";
+        file = "split_files/diffusion_models/wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors";
+        hash = "sha256-YSLnnVXg8jVpjRHWV/OxlsUnPIMNoAsrATxaBI1eakI=";
+      };
+      "wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors" = fetchHuggingface {
+        owner = "Comfy-Org";
+        repo = "Wan_2.2_ComfyUI_Repackaged";
+        rev = "fb1388adc906ab39ffc26ee40e96b22886b56bc4";
+        file = "split_files/diffusion_models/wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors";
+        hash = "sha256-VHGkV7asQEICpfvmwRWVo9VkH8dmsA84dj9yMD//wh4=";
+      };
     };
     text_encoders = {
       # Qwen-Image系が使うテキストエンコーダ。画像も読むVLM。
@@ -91,6 +108,14 @@ let
         file = "split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors";
         hash = "sha256-y1Y22FKg6mqQdasb70lsDbeu8TwCNQVx44iuqVnFwLQ=";
       };
+      # Wan系が使うテキストエンコーダ。
+      "umt5_xxl_fp8_e4m3fn_scaled.safetensors" = fetchHuggingface {
+        owner = "Comfy-Org";
+        repo = "Wan_2.2_ComfyUI_Repackaged";
+        rev = "fb1388adc906ab39ffc26ee40e96b22886b56bc4";
+        file = "split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors";
+        hash = "sha256-wzVdMBkfHwZrJtk/ugF66YCdzmxifdpfambqplEgT2g=";
+      };
     };
     vae = {
       # Qwen-Image系のVAE。
@@ -100,6 +125,33 @@ let
         rev = "46839d338df81ce625d5fae27d7e370314c0fbc9";
         file = "split_files/vae/qwen_image_vae.safetensors";
         hash = "sha256-pwWA8CE+Z5Z+6clfBbtADo+wgwfgF6kkvzRBIj4CPR8=";
+      };
+      # Wan 2.2 14BはWan 2.1と共通のVAEを使う。
+      "wan_2.1_vae.safetensors" = fetchHuggingface {
+        owner = "Comfy-Org";
+        repo = "Wan_2.2_ComfyUI_Repackaged";
+        rev = "fb1388adc906ab39ffc26ee40e96b22886b56bc4";
+        file = "split_files/vae/wan_2.1_vae.safetensors";
+        hash = "sha256-L8OdMTWaSwpk9Vh22P9/qNeAlWriyxNGOwIj4VFIl2s=";
+      };
+    };
+    loras = {
+      # Wan 2.2 I2V用のlightx2v蒸留LoRA。
+      # 4ステップ・CFG 1での高速生成を可能にする。
+      # high/low noiseの各expertモデルに対応する方を適用する。
+      "wan2.2_i2v_lightx2v_4steps_lora_v1_high_noise.safetensors" = fetchHuggingface {
+        owner = "Comfy-Org";
+        repo = "Wan_2.2_ComfyUI_Repackaged";
+        rev = "fb1388adc906ab39ffc26ee40e96b22886b56bc4";
+        file = "split_files/loras/wan2.2_i2v_lightx2v_4steps_lora_v1_high_noise.safetensors";
+        hash = "sha256-0XbICNb8RhmZto4yHvy3UBsguMN5dSPtDfFPfR3v8R4=";
+      };
+      "wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors" = fetchHuggingface {
+        owner = "Comfy-Org";
+        repo = "Wan_2.2_ComfyUI_Repackaged";
+        rev = "fb1388adc906ab39ffc26ee40e96b22886b56bc4";
+        file = "split_files/loras/wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors";
+        hash = "sha256-Ak8h3glbyPrZgJ3tPp5JouFw3PJwddqBRbp9YNiqt/k=";
       };
     };
     controlnet = {

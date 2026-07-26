@@ -29,6 +29,8 @@
 #
 # 動きの指示は日本語で書けば自作カスタムノードで英語へ翻訳される。
 # カメラワーク(近づく、回り込むなど)と動作を具体的に書くと動きが出やすい。
+# 出力はSVT-AV1のMP4。CRF 1で劣化を最小化しているが、
+# 4:2:0への色変換があるため厳密な可逆圧縮ではない。
 { lib, ... }:
 let
   inherit (import ./lib/builder.nix { inherit lib; })
@@ -712,41 +714,22 @@ in
       })
       # Wan 2.2 14Bは16fpsで学習されているのでfpsは16のまま使う。
       (mkNode {
-        id = 16;
-        type = "CreateVideo";
+        id = 17;
+        type = "SaveAv1Mp4";
         pos = [
           1780
-          740
-        ];
-        size = [
-          270
-          78
-        ];
-        order = 20;
-        inputs = [
-          (mkInput "images" "IMAGE" 21)
-          (mkInput "audio" "AUDIO" null)
-        ];
-        outputs = [ (mkOutput "VIDEO" "VIDEO" [ 22 ]) ];
-        widgets = [ 16 ]; # fps
-      })
-      (mkNode {
-        id = 17;
-        type = "SaveVideo";
-        pos = [
-          2100
           620
         ];
         size = [
           420
           470
         ];
-        order = 21;
-        inputs = [ (mkInput "video" "VIDEO" 22) ];
+        order = 20;
+        inputs = [ (mkInput "images" "IMAGE" 21) ];
         widgets = [
           "anime-video" # filename_prefix
-          "auto" # format
-          "auto" # codec
+          16 # fps
+          1 # crf
         ];
       })
     ];
@@ -915,17 +898,9 @@ in
         21
         15
         0
-        16
-        0
-        "IMAGE"
-      ]
-      [
-        22
-        16
-        0
         17
         0
-        "VIDEO"
+        "IMAGE"
       ]
       [
         23

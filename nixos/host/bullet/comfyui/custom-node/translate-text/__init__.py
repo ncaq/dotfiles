@@ -9,14 +9,35 @@
 # 翻訳に失敗した場合はエラーをログに残した上で原文をそのまま返す。
 # Qwen2.5-VLは多言語対応なので原文でもある程度は機能するため。
 import traceback
-from typing import Any
 
 import requests
 
 
+TextInputConfig = tuple[str, dict[str, bool | str]]
+InputTypes = dict[str, dict[str, TextInputConfig]]
+
+
+def translated_text(payload: object) -> str:
+    if not isinstance(payload, list) or not payload:
+        raise ValueError("Google Translate returned an invalid response")
+    segments = payload[0]
+    if not isinstance(segments, list) or not segments:
+        raise ValueError("Google Translate returned invalid segments")
+
+    translated_segments: list[str] = []
+    for segment in segments:
+        if not isinstance(segment, list) or not segment:
+            raise ValueError("Google Translate returned an invalid segment")
+        text = segment[0]
+        if not isinstance(text, str):
+            raise ValueError("Google Translate returned non-text translation data")
+        translated_segments.append(text)
+    return "".join(translated_segments)
+
+
 class TranslateTextToEnglish:
     @classmethod
-    def INPUT_TYPES(cls) -> dict[str, Any]:
+    def INPUT_TYPES(cls) -> InputTypes:
         return {
             "required": {
                 "text": ("STRING", {"multiline": True, "default": ""}),
@@ -44,16 +65,14 @@ class TranslateTextToEnglish:
                 timeout=10,
             )
             response.raise_for_status()
-            segments: list[list[Any]] = response.json()[0]
-            translated = "".join(segment[0] for segment in segments if segment[0])
-            return (translated,)
+            return (translated_text(response.json()),)
         except Exception:
             print("[translate-text] translation failed, using original text")
             traceback.print_exc()
             return (text,)
 
 
-NODE_CLASS_MAPPINGS: dict[str, type] = {
+NODE_CLASS_MAPPINGS: dict[str, type[TranslateTextToEnglish]] = {
     "TranslateTextToEnglish": TranslateTextToEnglish,
 }
 

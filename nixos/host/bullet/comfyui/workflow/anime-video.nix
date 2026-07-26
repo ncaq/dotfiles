@@ -18,6 +18,10 @@
 # 品質重視にする場合はLightning LoRAの2ノードをバイパスして、
 # 両方のKSamplerAdvancedをsteps 20(切り替え点10)、cfg 3.5にする。
 #
+# 動画の長さは秒数で指定する。
+# コアのMath Expressionノードが秒数からフレーム数を計算して、
+# WanImageToVideoのlengthへソケットで渡す。
+#
 # 動きの指示は日本語で書けば自作カスタムノードで英語へ翻訳される。
 # カメラワーク(近づく、回り込むなど)と動作を具体的に書くと動きが出やすい。
 { lib, ... }:
@@ -190,6 +194,62 @@ in
           (mkOutput "batch_size" "INT" [ ])
         ];
       })
+      # 動画の長さを秒数で指定する。
+      (mkNode {
+        id = 23;
+        type = "PrimitiveFloat";
+        title = "動画の長さ(秒)";
+        pos = [
+          (-40)
+          1160
+        ];
+        size = [
+          315
+          106
+        ];
+        order = 22;
+        outputs = [ (mkOutput "FLOAT" "FLOAT" [ 30 ]) ];
+        widgets = [
+          5.0 # value
+          "fixed" # control_after_generate
+        ];
+      })
+      # 秒数からWanImageToVideoのlengthへ渡すフレーム数を計算する。
+      # Wan 2.2 14Bは16fpsで学習されているのでfpsは16固定。
+      # WanのVAEは時間方向を4倍圧縮するため、
+      # フレーム数が4n+1の時にだけ指定通りの長さになるので、
+      # 最も近い4n+1へ丸める。
+      # 公式テンプレートのデフォルト81(16fpsで約5秒)もこの形。
+      (mkNode {
+        id = 24;
+        type = "ComfyMathExpression";
+        title = "秒数からフレーム数を計算";
+        pos = [
+          340
+          1160
+        ];
+        size = [
+          315
+          106
+        ];
+        order = 23;
+        inputs = [
+          (mkInput "values.a" "FLOAT,INT,BOOLEAN" 30)
+          # autogrowの次の空きスロット。shape 7はoptionalの意味。
+          (
+            mkInput "values.b" "FLOAT,INT,BOOLEAN" null
+            // {
+              shape = 7;
+            }
+          )
+        ];
+        outputs = [
+          (mkOutput "FLOAT" "FLOAT" [ ])
+          (mkOutput "INT" "INT" [ 31 ])
+          (mkOutput "BOOL" "BOOLEAN" [ ])
+        ];
+        widgets = [ "max(1, round(a * 16 / 4)) * 4 + 1" ];
+      })
       # 動きの指示をここに書く。
       # 日本語で書けば英語へ翻訳され、英語で書けばほぼそのまま通る。
       (mkNode {
@@ -343,6 +403,14 @@ in
               };
             }
           )
+          (
+            mkInput "length" "INT" 31
+            // {
+              widget = {
+                name = "length";
+              };
+            }
+          )
         ];
         outputs = [
           (mkOutput "positive" "CONDITIONING" [
@@ -358,7 +426,7 @@ in
         widgets = [
           704 # width(ソケットから上書きされる)
           1280 # height(ソケットから上書きされる)
-          81 # length: 16fpsで約5秒
+          81 # length(フレーム数計算ノードから上書きされる)
           1 # batch_size
         ];
       })
@@ -524,6 +592,7 @@ in
         outputs = [ (mkOutput "IMAGE" "IMAGE" [ 21 ]) ];
       })
       # Wan 2.2 14Bは16fpsで学習されているのでfpsは16のまま使う。
+      # フレーム数計算ノードの式も16fps前提なので変える時は揃えること。
       (mkNode {
         id = 16;
         type = "CreateVideo";
@@ -794,6 +863,22 @@ in
         1
         12
         6
+        "INT"
+      ]
+      [
+        30
+        23
+        0
+        24
+        0
+        "FLOAT"
+      ]
+      [
+        31
+        24
+        1
+        12
+        7
         "INT"
       ]
     ];

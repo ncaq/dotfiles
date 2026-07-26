@@ -22,6 +22,8 @@
 #
 # 動きの指示は日本語で書けば自作カスタムノードで英語へ翻訳される。
 # 「続きから」の指示なので直前の動きから繋がる動作を書くと自然になる。
+# 出力はSVT-AV1のMP4。CRF 1で劣化を最小化しているが、
+# 4:2:0への色変換があるため厳密な可逆圧縮ではない。
 { lib, ... }:
 let
   inherit (import ./lib/builder.nix { inherit lib; })
@@ -612,41 +614,22 @@ in
       })
       # Wan 2.2 14Bは16fpsで学習されているのでfpsは16のまま使う。
       (mkNode {
-        id = 16;
-        type = "CreateVideo";
+        id = 17;
+        type = "SaveAv1Mp4";
         pos = [
           1780
-          860
-        ];
-        size = [
-          270
-          78
-        ];
-        order = 24;
-        inputs = [
-          (mkInput "images" "IMAGE" 33)
-          (mkInput "audio" "AUDIO" null)
-        ];
-        outputs = [ (mkOutput "VIDEO" "VIDEO" [ 34 ]) ];
-        widgets = [ 16 ]; # fps
-      })
-      (mkNode {
-        id = 17;
-        type = "SaveVideo";
-        pos = [
-          2140
           440
         ];
         size = [
           420
           470
         ];
-        order = 25;
-        inputs = [ (mkInput "video" "VIDEO" 34) ];
+        order = 24;
+        inputs = [ (mkInput "images" "IMAGE" 33) ];
         widgets = [
           "anime-video-extend" # filename_prefix
-          "auto" # format
-          "auto" # codec
+          16 # fps
+          1 # crf
         ];
       })
     ];
@@ -911,17 +894,9 @@ in
         33
         26
         0
-        16
-        0
-        "IMAGE"
-      ]
-      [
-        34
-        16
-        0
         17
         0
-        "VIDEO"
+        "IMAGE"
       ]
     ];
   };

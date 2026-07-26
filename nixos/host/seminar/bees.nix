@@ -1,4 +1,4 @@
-{
+{ config, ... }: {
   # btrfsの重複排除デーモン。
   # 上流のsystemdユニットがNice=19とIOSchedulingClass=idleを設定しているため、
   # CPUとI/Oの優先度は元々アイドル相当。
@@ -14,11 +14,12 @@
       hashTableSizeMB = 1024;
       extraOptions = [
         # 他プロセスが動き出したら縮退。
+        # サーバなので多めにCPUコアを使って良いとする。
         "--loadavg-target"
-        "3.0"
+        (toString config.local.cpuBudgetThreads)
         # シンプルなスロットリングも併用。
         "--thread-count"
-        "3"
+        (toString config.local.cpuBudgetThreads)
         # btrfsカーネル側の遅延ワークキューの飽和を防ぐ。
         "--throttle-factor"
         "1.0"
@@ -34,11 +35,12 @@
       hashTableSizeMB = 1024;
       extraOptions = [
         # 他プロセスが動き出したら縮退。
+        # サーバなので多めにCPUコアを使って良いとする。
         "--loadavg-target"
-        "3.0"
+        (toString config.local.cpuBudgetThreads)
         # シンプルなスロットリングも併用。
         "--thread-count"
-        "3"
+        (toString config.local.cpuBudgetThreads)
         # btrfsカーネル側の遅延ワークキューの飽和を防ぐ。
         "--throttle-factor"
         "1.0"

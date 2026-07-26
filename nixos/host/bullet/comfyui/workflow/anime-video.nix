@@ -18,8 +18,13 @@
 # 品質重視にする場合はLightning LoRAの2ノードをバイパスして、
 # 両方のKSamplerAdvancedをsteps 20(切り替え点10)、cfg 3.5にする。
 #
-# 動画の長さは秒数で指定する。
-# コアのMath Expressionノードが秒数からフレーム数を計算して、
+# 動画の長さは「窓の数」で指定する。
+# Wanは81フレーム(16fpsで約5秒)前後の長さで学習されていて、
+# それを超える長さを一度に生成すると動きが逆再生のように戻ってしまうため、
+# Wan Context Windowsで81フレームの窓に分割してサンプリングする。
+# 窓は56フレームずつ進むので窓の数nで長さは81+56*(n-1)フレームになる。
+# 窓1枚なら分割は発動せず品質への影響はない。
+# コアのMath Expressionノードが窓の数からフレーム数を計算して、
 # WanImageToVideoのlengthへソケットで渡す。
 #
 # 動きの指示は日本語で書けば自作カスタムノードで英語へ翻訳される。
@@ -154,7 +159,7 @@ in
         title = "生成解像度へスケール";
         pos = [
           (-40)
-          980
+          1020
         ];
         size = [
           315
@@ -179,8 +184,8 @@ in
         id = 22;
         type = "GetImageSize";
         pos = [
-          340
-          980
+          460
+          1040
         ];
         size = [
           240
@@ -194,39 +199,39 @@ in
           (mkOutput "batch_size" "INT" [ ])
         ];
       })
-      # 動画の長さを秒数で指定する。
+      # 動画の長さを窓の数で指定する。
+      # 1窓で約5秒、以降1窓ごとに約3.5秒伸びる。
       (mkNode {
-        id = 23;
-        type = "PrimitiveFloat";
-        title = "動画の長さ(秒)";
+        id = 25;
+        type = "PrimitiveInt";
+        title = "動画の長さ: 1窓約5秒、1窓ごとに+約3.5秒";
         pos = [
           (-40)
-          1160
+          1220
         ];
         size = [
-          315
+          460
           106
         ];
         order = 22;
-        outputs = [ (mkOutput "FLOAT" "FLOAT" [ 30 ]) ];
+        outputs = [ (mkOutput "INT" "INT" [ 32 ]) ];
         widgets = [
-          5.0 # value
+          1 # value
           "fixed" # control_after_generate
         ];
       })
-      # 秒数からWanImageToVideoのlengthへ渡すフレーム数を計算する。
-      # Wan 2.2 14Bは16fpsで学習されているのでfpsは16固定。
-      # WanのVAEは時間方向を4倍圧縮するため、
-      # フレーム数が4n+1の時にだけ指定通りの長さになるので、
-      # 最も近い4n+1へ丸める。
-      # 公式テンプレートのデフォルト81(16fpsで約5秒)もこの形。
+      # WanImageToVideoのlengthへ渡すフレーム数を窓の数aから計算する。
+      # 定数81と56はコンテキスト窓ノードのcontext_length 81と、
+      # overlap 30(latent単位で7に丸められ進み幅はlatent 14=56フレーム)由来なので、
+      # そちらを変える時は揃えること。
+      # 81も56もWanの要求する4n+1のフレーム数を保つ値になっている。
       (mkNode {
         id = 24;
         type = "ComfyMathExpression";
-        title = "秒数からフレーム数を計算";
+        title = "フレーム数を計算";
         pos = [
-          340
-          1160
+          580
+          1220
         ];
         size = [
           315
@@ -234,7 +239,7 @@ in
         ];
         order = 23;
         inputs = [
-          (mkInput "values.a" "FLOAT,INT,BOOLEAN" 30)
+          (mkInput "values.a" "FLOAT,INT,BOOLEAN" 32)
           # autogrowの次の空きスロット。shape 7はoptionalの意味。
           (
             mkInput "values.b" "FLOAT,INT,BOOLEAN" null
@@ -245,10 +250,62 @@ in
         ];
         outputs = [
           (mkOutput "FLOAT" "FLOAT" [ ])
-          (mkOutput "INT" "INT" [ 31 ])
+          (mkOutput "INT" "INT" [
+            31
+            35
+          ])
           (mkOutput "BOOL" "BOOLEAN" [ ])
         ];
-        widgets = [ "max(1, round(a * 16 / 4)) * 4 + 1" ];
+        widgets = [ "81 + 56 * (max(1, a) - 1)" ];
+      })
+      # フレーム数を16fpsの秒数へ換算する。実行時の表示用。
+      (mkNode {
+        id = 28;
+        type = "ComfyMathExpression";
+        title = "フレーム数を秒数へ換算";
+        pos = [
+          940
+          1220
+        ];
+        size = [
+          315
+          106
+        ];
+        order = 24;
+        inputs = [
+          (mkInput "values.a" "FLOAT,INT,BOOLEAN" 35)
+          # autogrowの次の空きスロット。shape 7はoptionalの意味。
+          (
+            mkInput "values.b" "FLOAT,INT,BOOLEAN" null
+            // {
+              shape = 7;
+            }
+          )
+        ];
+        outputs = [
+          (mkOutput "FLOAT" "FLOAT" [ 36 ])
+          (mkOutput "INT" "INT" [ ])
+          (mkOutput "BOOL" "BOOLEAN" [ ])
+        ];
+        widgets = [ "round(a / 16 * 10) / 10" ];
+      })
+      # 実行時に実際の秒数を表示する。
+      # ノードのタイトルやウィジェットを入力に応じてリアルタイムに書き換えるには、
+      # フロントエンドのJavaScript拡張が必要なため実行時表示で妥協している。
+      (mkNode {
+        id = 29;
+        type = "PreviewAny";
+        title = "実際の動画の長さ(秒)";
+        pos = [
+          1300
+          1220
+        ];
+        size = [
+          240
+          106
+        ];
+        order = 25;
+        inputs = [ (mkInput "source" "*" 36) ];
       })
       # 動きの指示をここに書く。
       # 日本語で書けば英語へ翻訳され、英語で書けばほぼそのまま通る。
@@ -258,7 +315,7 @@ in
         title = "動きの指示(日本語でも英語でも可)";
         pos = [
           (-40)
-          (-200)
+          (-220)
         ];
         size = [
           420
@@ -274,8 +331,8 @@ in
         type = "StringConcatenate";
         title = "アニメスタイル指定の前置";
         pos = [
-          420
-          (-200)
+          460
+          (-220)
         ];
         size = [
           340
@@ -311,8 +368,8 @@ in
         type = "PreviewAny";
         title = "最終プロンプト";
         pos = [
-          800
-          (-200)
+          860
+          (-220)
         ];
         size = [
           340
@@ -326,7 +383,7 @@ in
         type = "CLIPTextEncode";
         title = "ポジティブ(スタイル+動きの指示)";
         pos = [
-          420
+          460
           340
         ];
         size = [
@@ -355,7 +412,7 @@ in
         type = "CLIPTextEncode";
         title = "ネガティブ(CFG 1では無効)";
         pos = [
-          420
+          460
           560
         ];
         size = [
@@ -373,7 +430,7 @@ in
         id = 12;
         type = "WanImageToVideo";
         pos = [
-          420
+          460
           780
         ];
         size = [
@@ -435,8 +492,8 @@ in
         type = "LoraLoaderModelOnly";
         title = "Lightning LoRA(high)";
         pos = [
-          920
-          (-60)
+          960
+          40
         ];
         size = [
           315
@@ -455,8 +512,8 @@ in
         type = "LoraLoaderModelOnly";
         title = "Lightning LoRA(low)";
         pos = [
-          920
-          60
+          960
+          620
         ];
         size = [
           315
@@ -475,7 +532,7 @@ in
         type = "ModelSamplingSD3";
         title = "shift(high)";
         pos = [
-          920
+          960
           180
         ];
         size = [
@@ -492,8 +549,8 @@ in
         type = "ModelSamplingSD3";
         title = "shift(low)";
         pos = [
-          920
-          280
+          960
+          760
         ];
         size = [
           315
@@ -504,14 +561,76 @@ in
         outputs = [ (mkOutput "MODEL" "MODEL" [ 10 ]) ];
         widgets = [ 5 ]; # shift
       })
+      # 学習範囲の81フレームの窓に分割してサンプリングして、
+      # 長尺指定時に動きが逆再生のように戻るのを防ぐ。
+      # 81フレーム以下では発動せず素通しになる。
+      # 一度に扱うlatentも窓の分だけになるのでVRAM消費も抑えられる。
+      #
+      # retain_first_frameは開始画像の条件を全ての窓に保持させる。
+      # 無効だと2枚目以降の窓が開始画像を見ずに生成され、
+      # 窓の切り替わりでキャラの顔や塗りが別物にすり替わる。
+      (mkNode {
+        id = 26;
+        type = "WanContextWindowsManual";
+        title = "コンテキスト窓(high)";
+        pos = [
+          960
+          320
+        ];
+        size = [
+          330
+          200
+        ];
+        order = 25;
+        inputs = [ (mkInput "model" "MODEL" 9) ];
+        outputs = [ (mkOutput "MODEL" "MODEL" [ 33 ]) ];
+        widgets = [
+          81 # context_length
+          30 # context_overlap
+          "standard_uniform" # context_schedule
+          1 # context_stride
+          false # closed_loop
+          "pyramid" # fuse_method
+          true # freenoise
+          true # retain_first_frame
+          false # split_conds_to_windows
+        ];
+      })
+      (mkNode {
+        id = 27;
+        type = "WanContextWindowsManual";
+        title = "コンテキスト窓(low)";
+        pos = [
+          960
+          900
+        ];
+        size = [
+          330
+          200
+        ];
+        order = 26;
+        inputs = [ (mkInput "model" "MODEL" 10) ];
+        outputs = [ (mkOutput "MODEL" "MODEL" [ 34 ]) ];
+        widgets = [
+          81 # context_length
+          30 # context_overlap
+          "standard_uniform" # context_schedule
+          1 # context_stride
+          false # closed_loop
+          "pyramid" # fuse_method
+          true # freenoise
+          true # retain_first_frame
+          false # split_conds_to_windows
+        ];
+      })
       # 前半2ステップをhigh noiseモデルで生成する。
       (mkNode {
         id = 13;
         type = "KSamplerAdvanced";
         title = "サンプリング前半(high noise)";
         pos = [
-          920
-          400
+          1380
+          40
         ];
         size = [
           315
@@ -519,7 +638,7 @@ in
         ];
         order = 17;
         inputs = [
-          (mkInput "model" "MODEL" 9)
+          (mkInput "model" "MODEL" 33)
           (mkInput "positive" "CONDITIONING" 14)
           (mkInput "negative" "CONDITIONING" 16)
           (mkInput "latent_image" "LATENT" 18)
@@ -545,8 +664,8 @@ in
         type = "KSamplerAdvanced";
         title = "サンプリング後半(low noise)";
         pos = [
-          1290
-          400
+          1380
+          620
         ];
         size = [
           315
@@ -554,7 +673,7 @@ in
         ];
         order = 18;
         inputs = [
-          (mkInput "model" "MODEL" 10)
+          (mkInput "model" "MODEL" 34)
           (mkInput "positive" "CONDITIONING" 15)
           (mkInput "negative" "CONDITIONING" 17)
           (mkInput "latent_image" "LATENT" 19)
@@ -577,8 +696,8 @@ in
         id = 15;
         type = "VAEDecode";
         pos = [
-          1660
-          400
+          1780
+          620
         ];
         size = [
           210
@@ -592,13 +711,12 @@ in
         outputs = [ (mkOutput "IMAGE" "IMAGE" [ 21 ]) ];
       })
       # Wan 2.2 14Bは16fpsで学習されているのでfpsは16のまま使う。
-      # フレーム数計算ノードの式も16fps前提なので変える時は揃えること。
       (mkNode {
         id = 16;
         type = "CreateVideo";
         pos = [
-          1660
-          500
+          1780
+          740
         ];
         size = [
           270
@@ -616,8 +734,8 @@ in
         id = 17;
         type = "SaveVideo";
         pos = [
-          1940
-          400
+          2100
+          620
         ];
         size = [
           420
@@ -701,7 +819,7 @@ in
         9
         7
         0
-        13
+        26
         0
         "MODEL"
       ]
@@ -709,7 +827,7 @@ in
         10
         8
         0
-        14
+        27
         0
         "MODEL"
       ]
@@ -866,20 +984,52 @@ in
         "INT"
       ]
       [
-        30
-        23
-        0
-        24
-        0
-        "FLOAT"
-      ]
-      [
         31
         24
         1
         12
         7
         "INT"
+      ]
+      [
+        32
+        25
+        0
+        24
+        0
+        "INT"
+      ]
+      [
+        35
+        24
+        1
+        28
+        0
+        "INT"
+      ]
+      [
+        36
+        28
+        0
+        29
+        0
+        "FLOAT"
+      ]
+      [
+        33
+        26
+        0
+        13
+        0
+        "MODEL"
+      ]
+      [
+        34
+        27
+        0
+        14
+        0
+        "MODEL"
       ]
     ];
   };

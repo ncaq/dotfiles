@@ -84,21 +84,23 @@ let
       };
     };
     text_encoders = {
-      # Qwen-Image系が使うテキストエンコーダ。画像も読むVLM。
-      "qwen_2.5_vl_7b_fp8_scaled.safetensors" = fetchHuggingface {
+      # Qwen-Image-Editで編集指示と入力画像を解析するVLM。
+      # 画像理解と複雑な指示の精度を優先してBF16版を使う。
+      "qwen_2.5_vl_7b.safetensors" = fetchHuggingface {
         owner = "Comfy-Org";
         repo = "Qwen-Image_ComfyUI";
         rev = "46839d338df81ce625d5fae27d7e370314c0fbc9";
-        file = "split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors";
-        hash = "sha256-y1Y22FKg6mqQdasb70lsDbeu8TwCNQVx44iuqVnFwLQ=";
+        file = "split_files/text_encoders/qwen_2.5_vl_7b.safetensors";
+        hash = "sha256-z6/XOUWbyGJXOXJZ9hKpruiOW5joW1wNDRcX6JizRjo=";
       };
       # Wan系が使うテキストエンコーダ。
-      "umt5_xxl_fp8_e4m3fn_scaled.safetensors" = fetchHuggingface {
+      # 複雑な動作やカメラ指示の追従精度を優先してFP16版を使う。
+      "umt5_xxl_fp16.safetensors" = fetchHuggingface {
         owner = "Comfy-Org";
         repo = "Wan_2.2_ComfyUI_Repackaged";
         rev = "fb1388adc906ab39ffc26ee40e96b22886b56bc4";
-        file = "split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors";
-        hash = "sha256-wzVdMBkfHwZrJtk/ugF66YCdzmxifdpfambqplEgT2g=";
+        file = "split_files/text_encoders/umt5_xxl_fp16.safetensors";
+        hash = "sha256-e4hQ8ZYeHPinfMpMlko1jTA/SQgzxsCH0M/0svmdsq8=";
       };
     };
     vae = {

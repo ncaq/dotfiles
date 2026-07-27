@@ -119,7 +119,7 @@ in
           ])
         ];
         widgets = [
-          "umt5_xxl_fp8_e4m3fn_scaled.safetensors"
+          "umt5_xxl_fp16.safetensors"
           "wan" # type
           "default" # device
         ];

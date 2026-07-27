@@ -65,7 +65,7 @@ in
           ])
         ];
         widgets = [
-          "qwen_2.5_vl_7b_fp8_scaled.safetensors"
+          "qwen_2.5_vl_7b.safetensors"
           "qwen_image" # type
           "default" # device
         ];

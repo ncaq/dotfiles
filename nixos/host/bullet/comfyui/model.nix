@@ -44,15 +44,6 @@ let
         file = "waiIllustriousSDXL_v170.safetensors";
         hash = "sha256-8Rawx4/0QUZ7DNyPGTbh7RjqMemZfHsTKxuNtTPwvQQ=";
       };
-      # Illustrious-XLにdanbooru/e621約1300万枚を追加学習したモデル。
-      # 画質とタグ網羅性に強い。非商用ライセンス。
-      "NoobAI-XL-v1.1.safetensors" = fetchHuggingface {
-        owner = "Laxhar";
-        repo = "noobai-XL-1.1";
-        rev = "814a274af2b8097c0828819d561ec74c7d0c6cea";
-        file = "NoobAI-XL-v1.1.safetensors";
-        hash = "sha256-ZoHo5LE0yB8WUzrO2w1AbX5eNm4WJLQQUXjGTQCwXVE=";
-      };
       # SDXLをアニメ画像で再学習したモデル。タグ設計が分かりやすい。
       "animagine-xl-4.0.safetensors" = fetchHuggingface {
         owner = "cagliostrolab";

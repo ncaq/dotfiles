@@ -40,6 +40,13 @@ in
       "ComfyUI-Translate-Text" = pkgs.writeTextDir "__init__.py" (
         builtins.readFile ./custom-node/translate-text/__init__.py
       );
+      # 画像を選ばないことも許可する自作LoadImage。
+      # (none)のままなら出力がNoneになり、optional入力が未接続扱いになる。
+      # WanFirstLastFrameToVideoのend_imageなど任意入力の有効・無効を、
+      # バイパス操作なしで画像指定の有無だけで切り替えるために使う。
+      "ComfyUI-Load-Image-Optional" = pkgs.writeTextDir "__init__.py" (
+        builtins.readFile ./custom-node/load-image-optional/__init__.py
+      );
       # danbooruタグのオートコンプリート。
       # 日本語からの検索とpost count表示に対応していて、
       # メジャーなタグかどうかを確認しながら入力できる。

@@ -81,10 +81,15 @@ in
         ...
       }:
       let
+        comfyuiPython = config.services.comfyui.package.pythonRuntime.python;
         torch = lib.findFirst (
           pkg: lib.getName pkg == "torch"
         ) null config.services.comfyui.package.heavyDeps;
         cudaNvcc = torch.cudaPackages.cuda_nvcc;
+        sageattention = comfyuiPython.pkgs.callPackage ../../../../pkgs/sageattention.nix {
+          inherit torch;
+          cudaCapabilities = [ "12.0" ];
+        };
       in
       {
         imports = [ inputs.utensils-comfyui-nix.nixosModules.default ];
@@ -121,6 +126,7 @@ in
         # Tritonは未指定時にNixOSには存在しない`/sbin/ldconfig`でlibcudaを探す。
         systemd.services.comfyui.environment = {
           CC = lib.getExe pkgs.stdenv.cc;
+          PYTHONPATH = lib.makeSearchPath comfyuiPython.sitePackages [ sageattention ];
           TRITON_CUDACRT_PATH = "${torch.cudaPackages.cuda_cudart}/include";
           TRITON_LIBCUDA_PATH = "/run/opengl-driver/lib";
           TRITON_LIBDEVICE_PATH = "${cudaNvcc}/nvvm/libdevice/libdevice.10.bc";

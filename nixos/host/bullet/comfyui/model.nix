@@ -52,14 +52,6 @@ let
         file = "animagine-xl-4.0.safetensors";
         hash = "sha256-HVtD/3W2q1mFAtTHedL7+j3OylHGDDtglkCmB3IzORY=";
       };
-      # Illustrious系の公式ベースモデル。素の状態やマージ元として。
-      "Illustrious-XL-v2.0.safetensors" = fetchHuggingface {
-        owner = "OnomaAIResearch";
-        repo = "Illustrious-XL-v2.0";
-        rev = "69459c1fe6f46db41ab31e6114f05acc0e06bcaa";
-        file = "Illustrious-XL-v2.0.safetensors";
-        hash = "sha256-wqGj6qE9TBB9x+AMP+gwyrQnqgJjYnQOoJR0WzQiozE=";
-      };
     };
     # UNETLoaderが読むcheckpoint非統合の拡散モデル。
     diffusion_models = {

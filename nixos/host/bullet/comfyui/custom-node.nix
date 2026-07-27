@@ -40,11 +40,6 @@ in
       "ComfyUI-Translate-Text" = pkgs.writeTextDir "__init__.py" (
         builtins.readFile ./custom-node/translate-text/__init__.py
       );
-      # ComfyUI標準のAV1出力はWebM固定なので、
-      # Firefoxでのプレビューにも対応するAV1-in-MP4出力を追加する。
-      "ComfyUI-Save-AV1" = pkgs.writeTextDir "__init__.py" (
-        builtins.readFile ./custom-node/save-av1/__init__.py
-      );
       # danbooruタグのオートコンプリート。
       # 日本語からの検索とpost count表示に対応していて、
       # メジャーなタグかどうかを確認しながら入力できる。

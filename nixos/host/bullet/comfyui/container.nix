@@ -106,9 +106,17 @@ in
           inherit dataDir;
           # コンテナ内のfirewallを開ける。到達できるのはvethを持つホストのみ。
           openFirewall = true;
-          # xformers 0.0.30はBlackwell(sm_120)に対応していないため使わない。
-          # RTX 5090に対応したSageAttentionで、動画生成の大半を占めるattentionを高速化する。
-          extraArgs = [ "--use-sage-attention" ];
+          extraArgs = [
+            # WanのRoPEやFP8量子化処理をeager実装からTritonカーネルへ切り替える。
+            "--enable-triton-backend"
+            # FP16の行列積で低精度の累積を許可して、LoRAやFP16 fallbackを高速化する。
+            # 丸め誤差が増えるため生成結果は変化する可能性がある。
+            "--fast"
+            "fp16_accumulation"
+            # xformers 0.0.30はBlackwell(sm_120)に対応していないため使わない。
+            # SageAttentionで動画生成の大半を占めるattentionを近似計算して高速化する。
+            "--use-sage-attention"
+          ];
         };
         # Tritonは未指定時にNixOSには存在しない`/sbin/ldconfig`でlibcudaを探す。
         systemd.services.comfyui.environment = {

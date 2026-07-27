@@ -1,9 +1,9 @@
 # アニメ調イラスト1枚をWan 2.2 14B I2Vで動画にするワークフロー。
 #
-# 公式テンプレートvideo_wan2_2_14B_i2vのLightning LoRA有効構成を、
+# 公式テンプレートvideo_wan2_2_14B_i2vと同じ4ステップ構成を、
 # サブグラフや切り替えスイッチを除いてフラットに展開したもの。
 # high noise→low noiseの2つのexpertモデルをKSamplerAdvanced 2段で使い分ける。
-# lightx2v 4steps LoRAで4ステップ・CFG 1の高速生成にしている。
+# lightx2vの4-step distilled full modelで4ステップ・CFG 1の高速生成にしている。
 #
 # Wan 2.2は実写方向へのバイアスが強く、
 # アニメ絵を入力すると実写風に崩れたり動かなかったりしやすい。
@@ -14,9 +14,6 @@
 # 生成解像度は入力画像から自動で決まる。
 # アスペクト比を保ったまま総ピクセル量0.9メガピクセル(720p相当)へスケールして、
 # 16の倍数へ丸めた実寸をWanImageToVideoへ渡す。
-#
-# 品質重視にする場合はLightning LoRAの2ノードをバイパスして、
-# 両方のKSamplerAdvancedをsteps 20(切り替え点10)、cfg 3.5にする。
 #
 # 動画の長さは「窓の数」で指定する。
 # Wanは81フレーム(16fpsで約5秒)前後の長さで学習されていて、
@@ -80,7 +77,7 @@ in
         order = 0;
         outputs = [ (mkOutput "MODEL" "MODEL" [ 1 ]) ];
         widgets = [
-          "wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors"
+          "wan2.2_i2v_A14b_high_noise_lightx2v_4step.safetensors"
           "default" # weight_dtype
         ];
       })
@@ -99,7 +96,7 @@ in
         order = 1;
         outputs = [ (mkOutput "MODEL" "MODEL" [ 2 ]) ];
         widgets = [
-          "wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors"
+          "wan2.2_i2v_A14b_low_noise_lightx2v_4step.safetensors"
           "default" # weight_dtype
         ];
       })
@@ -537,46 +534,6 @@ in
         ];
       })
       (mkNode {
-        id = 5;
-        type = "LoraLoaderModelOnly";
-        title = "Lightning LoRA(high)";
-        pos = [
-          1340
-          200
-        ];
-        size = [
-          315
-          82
-        ];
-        order = 13;
-        inputs = [ (mkInput "model" "MODEL" 1) ];
-        outputs = [ (mkOutput "MODEL" "MODEL" [ 7 ]) ];
-        widgets = [
-          "wan2.2_i2v_lightx2v_4steps_lora_v1_high_noise.safetensors"
-          1 # strength_model
-        ];
-      })
-      (mkNode {
-        id = 6;
-        type = "LoraLoaderModelOnly";
-        title = "Lightning LoRA(low)";
-        pos = [
-          1340
-          880
-        ];
-        size = [
-          315
-          82
-        ];
-        order = 14;
-        inputs = [ (mkInput "model" "MODEL" 2) ];
-        outputs = [ (mkOutput "MODEL" "MODEL" [ 8 ]) ];
-        widgets = [
-          "wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors"
-          1 # strength_model
-        ];
-      })
-      (mkNode {
         id = 7;
         type = "ModelSamplingSD3";
         title = "shift(high)";
@@ -589,7 +546,7 @@ in
           58
         ];
         order = 15;
-        inputs = [ (mkInput "model" "MODEL" 7) ];
+        inputs = [ (mkInput "model" "MODEL" 1) ];
         outputs = [ (mkOutput "MODEL" "MODEL" [ 9 ]) ];
         widgets = [ 5 ]; # shift
       })
@@ -606,7 +563,7 @@ in
           58
         ];
         order = 16;
-        inputs = [ (mkInput "model" "MODEL" 8) ];
+        inputs = [ (mkInput "model" "MODEL" 2) ];
         outputs = [ (mkOutput "MODEL" "MODEL" [ 10 ]) ];
         widgets = [ 5 ]; # shift
       })
@@ -786,7 +743,7 @@ in
         1
         1
         0
-        5
+        7
         0
         "MODEL"
       ]
@@ -794,7 +751,7 @@ in
         2
         2
         0
-        6
+        8
         0
         "MODEL"
       ]
@@ -829,22 +786,6 @@ in
         15
         1
         "VAE"
-      ]
-      [
-        7
-        5
-        0
-        7
-        0
-        "MODEL"
-      ]
-      [
-        8
-        6
-        0
-        8
-        0
-        "MODEL"
       ]
       [
         9

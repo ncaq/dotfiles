@@ -27,6 +27,22 @@
 # コアのMath Expressionノードが窓の数からフレーム数を計算して、
 # WanImageToVideoのlengthへソケットで渡す。
 #
+# 任意で動画の終了ポーズも画像で指定できる(FLF2V方式)。
+# 成り行き生成では動作が中途半端なポーズで終わりやすく、
+# anime-video-extendでの継ぎ足しの破綻に繋がる。
+# 「終了ポーズの画像」ノードで画像を選ぶと、
+# WanFirstLastFrameToVideoが末尾フレームを指定画像へ固定するため、
+# 動作が動画内で必ず完結する。
+# 終了ポーズの画像は開始画像を元にanime-editやqwen-editなどで先に作っておく。
+# ノード内部で生成解像度へbilinear+中央クロップされるため、
+# 開始画像と同じアスペクト比の画像を用意するのが安全。
+# 複数窓の長尺生成でも末尾の条件は最終フレームを含む窓にだけ効くが、
+# 終了ポーズへ向かうのは最後の窓の中だけなので、
+# 長い動作を終了ポーズで縛りたい時は区間を分けてanime-video-extendで繋ぐ方が確実。
+# (none)のままなら自作のLoadImageOptionalがNoneを出力して、
+# end_imageは未指定扱いになり、
+# 従来どおり開始フレームのみの成り行き生成になる。
+#
 # 動きの指示は日本語で書けば自作カスタムノードで英語へ翻訳される。
 # カメラワーク(近づく、回り込むなど)と動作を具体的に書くと動きが出やすい。
 # 出力は公式SaveWEBMノードによるSVT-AV1のWebM。
@@ -54,8 +70,8 @@ in
         type = "UNETLoader";
         title = "high noiseモデル";
         pos = [
-          (-40)
-          60
+          1340
+          40
         ];
         size = [
           385
@@ -73,8 +89,8 @@ in
         type = "UNETLoader";
         title = "low noiseモデル";
         pos = [
-          (-40)
-          200
+          1340
+          740
         ];
         size = [
           385
@@ -91,8 +107,8 @@ in
         id = 3;
         type = "CLIPLoader";
         pos = [
-          (-40)
-          340
+          860
+          40
         ];
         size = [
           385
@@ -115,8 +131,8 @@ in
         id = 4;
         type = "VAELoader";
         pos = [
-          (-40)
-          500
+          860
+          980
         ];
         size = [
           385
@@ -137,7 +153,7 @@ in
         title = "動かす画像";
         pos = [
           (-40)
-          620
+          320
         ];
         size = [
           340
@@ -153,6 +169,31 @@ in
           "image"
         ];
       })
+      # 動画の終了時点のポーズを指定する任意入力。
+      # 自作のLoadImageOptionalで、(none)のままなら未指定扱いになる。
+      # 開始画像と同じキャラ・同じ画風・同じアスペクト比の画像を使う。
+      (mkNode {
+        id = 30;
+        type = "LoadImageOptional";
+        title = "終了ポーズの画像(任意)";
+        pos = [
+          (-40)
+          710
+        ];
+        size = [
+          340
+          314
+        ];
+        order = 26;
+        outputs = [
+          (mkOutput "IMAGE" "IMAGE" [ 37 ])
+          (mkOutput "MASK" "MASK" [ ])
+        ];
+        widgets = [
+          "(none)"
+          "image"
+        ];
+      })
       # アスペクト比を保って0.9メガピクセルへスケールしつつ、
       # 幅と高さをWanの要求する16の倍数へ丸める。
       # 生成を速くしたい時はmegapixelsを0.5などへ下げる。
@@ -161,8 +202,8 @@ in
         type = "ImageScaleToTotalPixels";
         title = "生成解像度へスケール";
         pos = [
-          (-40)
-          1020
+          480
+          520
         ];
         size = [
           315
@@ -187,8 +228,8 @@ in
         id = 22;
         type = "GetImageSize";
         pos = [
-          460
-          1040
+          480
+          730
         ];
         size = [
           240
@@ -210,7 +251,7 @@ in
         title = "動画の長さ: 1窓約5秒、1窓ごとに+約3.5秒";
         pos = [
           (-40)
-          1220
+          1100
         ];
         size = [
           460
@@ -233,8 +274,8 @@ in
         type = "ComfyMathExpression";
         title = "フレーム数を計算";
         pos = [
-          580
-          1220
+          480
+          1100
         ];
         size = [
           315
@@ -267,8 +308,8 @@ in
         type = "ComfyMathExpression";
         title = "フレーム数を秒数へ換算";
         pos = [
-          940
-          1220
+          480
+          1260
         ];
         size = [
           315
@@ -300,8 +341,8 @@ in
         type = "PreviewAny";
         title = "実際の動画の長さ(秒)";
         pos = [
-          1300
-          1220
+          840
+          1260
         ];
         size = [
           240
@@ -318,7 +359,7 @@ in
         title = "動きの指示(日本語でも英語でも可)";
         pos = [
           (-40)
-          (-220)
+          40
         ];
         size = [
           420
@@ -334,8 +375,8 @@ in
         type = "StringConcatenate";
         title = "アニメスタイル指定の前置";
         pos = [
-          460
-          (-220)
+          480
+          40
         ];
         size = [
           340
@@ -371,8 +412,8 @@ in
         type = "PreviewAny";
         title = "最終プロンプト";
         pos = [
-          860
-          (-220)
+          480
+          240
         ];
         size = [
           340
@@ -386,8 +427,8 @@ in
         type = "CLIPTextEncode";
         title = "ポジティブ(スタイル+動きの指示)";
         pos = [
-          460
-          340
+          860
+          220
         ];
         size = [
           420
@@ -415,8 +456,8 @@ in
         type = "CLIPTextEncode";
         title = "ネガティブ(CFG 1では無効)";
         pos = [
-          460
-          560
+          860
+          450
         ];
         size = [
           420
@@ -427,26 +468,31 @@ in
         outputs = [ (mkOutput "CONDITIONING" "CONDITIONING" [ 13 ]) ];
         widgets = [ negativePrompt ];
       })
-      # スケール済み画像から初期latentを作る。
+      # スケール済み画像を開始フレームにして初期latentを作る。
+      # end_imageは任意入力で、終了ポーズ画像が指定されている時だけ、
+      # 拡散過程で末尾フレームが境界条件として強制される。
+      # 未指定時(None)はWanImageToVideoと等価な開始フレームのみの条件付けになる。
       # 解像度はソケット経由で自動で入るので手動調整は不要。
       (mkNode {
         id = 12;
-        type = "WanImageToVideo";
+        type = "WanFirstLastFrameToVideo";
         pos = [
-          460
-          780
+          860
+          680
         ];
         size = [
           315
-          210
+          230
         ];
         order = 12;
         inputs = [
           (mkInput "positive" "CONDITIONING" 12)
           (mkInput "negative" "CONDITIONING" 13)
           (mkInput "vae" "VAE" 5)
-          (mkInput "clip_vision_output" "CLIP_VISION_OUTPUT" null)
+          (mkInput "clip_vision_start_image" "CLIP_VISION_OUTPUT" null)
+          (mkInput "clip_vision_end_image" "CLIP_VISION_OUTPUT" null)
           (mkInput "start_image" "IMAGE" 26)
+          (mkInput "end_image" "IMAGE" 37)
           (
             mkInput "width" "INT" 28
             // {
@@ -495,8 +541,8 @@ in
         type = "LoraLoaderModelOnly";
         title = "Lightning LoRA(high)";
         pos = [
-          960
-          40
+          1340
+          200
         ];
         size = [
           315
@@ -515,8 +561,8 @@ in
         type = "LoraLoaderModelOnly";
         title = "Lightning LoRA(low)";
         pos = [
-          960
-          620
+          1340
+          880
         ];
         size = [
           315
@@ -535,8 +581,8 @@ in
         type = "ModelSamplingSD3";
         title = "shift(high)";
         pos = [
-          960
-          180
+          1340
+          340
         ];
         size = [
           315
@@ -552,8 +598,8 @@ in
         type = "ModelSamplingSD3";
         title = "shift(low)";
         pos = [
-          960
-          760
+          1340
+          1020
         ];
         size = [
           315
@@ -577,8 +623,8 @@ in
         type = "WanContextWindowsManual";
         title = "コンテキスト窓(high)";
         pos = [
-          960
-          320
+          1340
+          460
         ];
         size = [
           330
@@ -604,8 +650,8 @@ in
         type = "WanContextWindowsManual";
         title = "コンテキスト窓(low)";
         pos = [
-          960
-          900
+          1340
+          1140
         ];
         size = [
           330
@@ -632,7 +678,7 @@ in
         type = "KSamplerAdvanced";
         title = "サンプリング前半(high noise)";
         pos = [
-          1380
+          1780
           40
         ];
         size = [
@@ -667,8 +713,8 @@ in
         type = "KSamplerAdvanced";
         title = "サンプリング後半(low noise)";
         pos = [
-          1380
-          620
+          1780
+          460
         ];
         size = [
           315
@@ -699,8 +745,8 @@ in
         id = 15;
         type = "VAEDecode";
         pos = [
-          1780
-          620
+          2160
+          40
         ];
         size = [
           210
@@ -718,8 +764,8 @@ in
         id = 17;
         type = "SaveWEBM";
         pos = [
-          1780
-          620
+          2160
+          180
         ];
         size = [
           420
@@ -933,7 +979,7 @@ in
         21
         0
         12
-        4
+        5
         "IMAGE"
       ]
       [
@@ -949,7 +995,7 @@ in
         22
         0
         12
-        5
+        7
         "INT"
       ]
       [
@@ -957,7 +1003,7 @@ in
         22
         1
         12
-        6
+        8
         "INT"
       ]
       [
@@ -965,7 +1011,7 @@ in
         24
         1
         12
-        7
+        9
         "INT"
       ]
       [
@@ -1007,6 +1053,14 @@ in
         14
         0
         "MODEL"
+      ]
+      [
+        37
+        30
+        0
+        12
+        6
+        "IMAGE"
       ]
     ];
   };

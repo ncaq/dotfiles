@@ -12,6 +12,21 @@
 # 弱点は繋ぎ目で動きの勢いが一瞬失われることと、
 # 区間を重ねるごとに色味や質感が少しずつ劣化していくこと。
 #
+# 任意で区間の終了ポーズも画像で指定できる(FLF2V方式)。
+# 成り行き生成では5秒以内に動作が完結せず中途半端なポーズで終わって、
+# 次の継ぎ足しが破綻しやすい。
+# 「終了ポーズの画像」ノードで画像を選ぶと、
+# WanFirstLastFrameToVideoが末尾フレームを指定画像へ固定するため、
+# 動作が区間内で必ず完結し、
+# キーフレームを先に用意しておけば長尺の動きを計画的に設計できる。
+# 終了ポーズの画像は元動画の最終フレームを元に、
+# anime-editやqwen-editなどで先に作っておく。
+# ノード内部で生成解像度へbilinear+中央クロップされるため、
+# 元動画と同じアスペクト比の画像を用意するのが安全。
+# (none)のままなら自作のLoadImageOptionalがNoneを出力して、
+# end_imageは未指定扱いになり、
+# 従来どおり開始フレームのみの成り行き生成になる。
+#
 # モデル構成とサンプリング設定はanime-videoと同じ。
 # Wan 2.2 14B I2VのLightning LoRA有効構成で、
 # 4ステップ・CFG 1の高速生成にしている。
@@ -49,8 +64,8 @@ in
         type = "UNETLoader";
         title = "high noiseモデル";
         pos = [
-          (-40)
-          60
+          1340
+          40
         ];
         size = [
           385
@@ -68,8 +83,8 @@ in
         type = "UNETLoader";
         title = "low noiseモデル";
         pos = [
-          (-40)
-          200
+          1340
+          500
         ];
         size = [
           385
@@ -86,8 +101,8 @@ in
         id = 3;
         type = "CLIPLoader";
         pos = [
-          (-40)
-          340
+          860
+          40
         ];
         size = [
           385
@@ -110,8 +125,8 @@ in
         id = 4;
         type = "VAELoader";
         pos = [
-          (-40)
-          500
+          860
+          980
         ];
         size = [
           385
@@ -132,7 +147,7 @@ in
         title = "延長する動画";
         pos = [
           (-40)
-          620
+          320
         ];
         size = [
           340
@@ -142,12 +157,37 @@ in
         outputs = [ (mkOutput "VIDEO" "VIDEO" [ 11 ]) ];
         widgets = [ "example.webm" ];
       })
+      # 区間の終了時点のポーズを指定する任意入力。
+      # 自作のLoadImageOptionalで、(none)のままなら未指定扱いになる。
+      # 元動画と同じキャラ・同じ画風・同じアスペクト比の画像を使う。
+      (mkNode {
+        id = 27;
+        type = "LoadImageOptional";
+        title = "終了ポーズの画像(任意)";
+        pos = [
+          (-40)
+          710
+        ];
+        size = [
+          340
+          314
+        ];
+        order = 25;
+        outputs = [
+          (mkOutput "IMAGE" "IMAGE" [ 34 ])
+          (mkOutput "MASK" "MASK" [ ])
+        ];
+        widgets = [
+          "(none)"
+          "image"
+        ];
+      })
       (mkNode {
         id = 23;
         type = "GetVideoComponents";
         pos = [
-          (-40)
-          1000
+          480
+          520
         ];
         size = [
           240
@@ -171,8 +211,8 @@ in
         type = "ImageFromBatch";
         title = "最終フレームを取り出す";
         pos = [
-          (-40)
-          1180
+          480
+          700
         ];
         size = [
           315
@@ -194,8 +234,8 @@ in
         type = "ImageScaleToTotalPixels";
         title = "生成解像度へスケール";
         pos = [
-          (-40)
-          1340
+          480
+          880
         ];
         size = [
           315
@@ -220,8 +260,8 @@ in
         id = 22;
         type = "GetImageSize";
         pos = [
-          460
-          1040
+          480
+          1090
         ];
         size = [
           240
@@ -243,7 +283,7 @@ in
         title = "続きの動きの指示(日本語でも英語でも可)";
         pos = [
           (-40)
-          (-220)
+          40
         ];
         size = [
           420
@@ -259,8 +299,8 @@ in
         type = "StringConcatenate";
         title = "アニメスタイル指定の前置";
         pos = [
-          460
-          (-220)
+          480
+          40
         ];
         size = [
           340
@@ -296,8 +336,8 @@ in
         type = "PreviewAny";
         title = "最終プロンプト";
         pos = [
-          860
-          (-220)
+          480
+          240
         ];
         size = [
           340
@@ -311,8 +351,8 @@ in
         type = "CLIPTextEncode";
         title = "ポジティブ(スタイル+動きの指示)";
         pos = [
-          460
-          340
+          860
+          220
         ];
         size = [
           420
@@ -340,8 +380,8 @@ in
         type = "CLIPTextEncode";
         title = "ネガティブ(CFG 1では無効)";
         pos = [
-          460
-          560
+          860
+          450
         ];
         size = [
           420
@@ -352,27 +392,33 @@ in
         outputs = [ (mkOutput "CONDITIONING" "CONDITIONING" [ 23 ]) ];
         widgets = [ negativePrompt ];
       })
-      # 元動画の最終フレームから初期latentを作る。
+      # 元動画の最終フレームを開始フレームにして初期latentを作る。
+      # end_imageは任意入力で、終了ポーズ画像が指定されている時だけ、
+      # 拡散過程で末尾フレームが境界条件として強制され、
+      # 動作が区間内で終了ポーズへ収束する。
+      # 未指定時(None)はWanImageToVideoと等価な開始フレームのみの条件付けになる。
       # 解像度はソケット経由で自動で入るので手動調整は不要。
       # 1回の延長は学習範囲内の81フレーム(約5秒)固定。
       (mkNode {
         id = 12;
-        type = "WanImageToVideo";
+        type = "WanFirstLastFrameToVideo";
         pos = [
-          460
-          780
+          860
+          680
         ];
         size = [
           315
-          210
+          230
         ];
         order = 14;
         inputs = [
           (mkInput "positive" "CONDITIONING" 22)
           (mkInput "negative" "CONDITIONING" 23)
           (mkInput "vae" "VAE" 5)
-          (mkInput "clip_vision_output" "CLIP_VISION_OUTPUT" null)
+          (mkInput "clip_vision_start_image" "CLIP_VISION_OUTPUT" null)
+          (mkInput "clip_vision_end_image" "CLIP_VISION_OUTPUT" null)
           (mkInput "start_image" "IMAGE" 15)
+          (mkInput "end_image" "IMAGE" 34)
           (
             mkInput "width" "INT" 17
             // {
@@ -413,8 +459,8 @@ in
         type = "LoraLoaderModelOnly";
         title = "Lightning LoRA(high)";
         pos = [
-          960
-          40
+          1340
+          200
         ];
         size = [
           315
@@ -433,8 +479,8 @@ in
         type = "ModelSamplingSD3";
         title = "shift(high)";
         pos = [
-          960
-          180
+          1340
+          340
         ];
         size = [
           315
@@ -450,8 +496,8 @@ in
         type = "LoraLoaderModelOnly";
         title = "Lightning LoRA(low)";
         pos = [
-          960
-          320
+          1340
+          660
         ];
         size = [
           315
@@ -470,8 +516,8 @@ in
         type = "ModelSamplingSD3";
         title = "shift(low)";
         pos = [
-          960
-          460
+          1340
+          800
         ];
         size = [
           315
@@ -488,7 +534,7 @@ in
         type = "KSamplerAdvanced";
         title = "サンプリング前半(high noise)";
         pos = [
-          1380
+          1780
           40
         ];
         size = [
@@ -523,8 +569,8 @@ in
         type = "KSamplerAdvanced";
         title = "サンプリング後半(low noise)";
         pos = [
-          1380
-          440
+          1780
+          460
         ];
         size = [
           315
@@ -555,8 +601,8 @@ in
         id = 15;
         type = "VAEDecode";
         pos = [
-          1780
-          440
+          2160
+          40
         ];
         size = [
           210
@@ -577,8 +623,8 @@ in
         type = "ImageFromBatch";
         title = "新区間の先頭フレームを除去";
         pos = [
-          1780
-          560
+          2160
+          160
         ];
         size = [
           315
@@ -599,8 +645,8 @@ in
         type = "ImageBatch";
         title = "元動画と連結";
         pos = [
-          1780
-          720
+          2160
+          340
         ];
         size = [
           240
@@ -618,8 +664,8 @@ in
         id = 17;
         type = "SaveWEBM";
         pos = [
-          1780
-          440
+          2160
+          490
         ];
         size = [
           420
@@ -753,7 +799,7 @@ in
         21
         0
         12
-        4
+        5
         "IMAGE"
       ]
       [
@@ -769,7 +815,7 @@ in
         22
         0
         12
-        5
+        7
         "INT"
       ]
       [
@@ -777,7 +823,7 @@ in
         22
         1
         12
-        6
+        8
         "INT"
       ]
       [
@@ -898,6 +944,14 @@ in
         0
         17
         0
+        "IMAGE"
+      ]
+      [
+        34
+        27
+        0
+        12
+        6
         "IMAGE"
       ]
     ];

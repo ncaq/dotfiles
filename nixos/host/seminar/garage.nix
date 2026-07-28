@@ -117,6 +117,10 @@ in
   };
 
   systemd = {
+    services."container@garage" = {
+      requires = [ "sops-install-secrets.service" ];
+      after = [ "sops-install-secrets.service" ];
+    };
     tmpfiles.rules = [
       "d /var/lib/garage      0750 garage garage -"
       "d /var/lib/garage/meta 0750 garage garage -"

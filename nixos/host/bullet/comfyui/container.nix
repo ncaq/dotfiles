@@ -88,6 +88,7 @@ in
         cudaNvcc = torch.cudaPackages.cuda_nvcc;
         sageattention = comfyuiPython.pkgs.callPackage ../../../../pkgs/sageattention.nix {
           inherit torch;
+          # torchの全CUDA世代ではなく、RTX 5090向けのカーネルだけをビルドする。
           cudaCapabilities = [ "12.0" ];
         };
       in

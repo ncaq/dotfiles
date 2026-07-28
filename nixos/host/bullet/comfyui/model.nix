@@ -44,15 +44,6 @@ let
         file = "waiIllustriousSDXL_v170.safetensors";
         hash = "sha256-8Rawx4/0QUZ7DNyPGTbh7RjqMemZfHsTKxuNtTPwvQQ=";
       };
-      # Illustrious-XLにdanbooru/e621約1300万枚を追加学習したモデル。
-      # 画質とタグ網羅性に強い。非商用ライセンス。
-      "NoobAI-XL-v1.1.safetensors" = fetchHuggingface {
-        owner = "Laxhar";
-        repo = "noobai-XL-1.1";
-        rev = "814a274af2b8097c0828819d561ec74c7d0c6cea";
-        file = "NoobAI-XL-v1.1.safetensors";
-        hash = "sha256-ZoHo5LE0yB8WUzrO2w1AbX5eNm4WJLQQUXjGTQCwXVE=";
-      };
       # SDXLをアニメ画像で再学習したモデル。タグ設計が分かりやすい。
       "animagine-xl-4.0.safetensors" = fetchHuggingface {
         owner = "cagliostrolab";
@@ -60,14 +51,6 @@ let
         rev = "2b7c1b397761bf5bd3cc42e5b39ec99314a75a96";
         file = "animagine-xl-4.0.safetensors";
         hash = "sha256-HVtD/3W2q1mFAtTHedL7+j3OylHGDDtglkCmB3IzORY=";
-      };
-      # Illustrious系の公式ベースモデル。素の状態やマージ元として。
-      "Illustrious-XL-v2.0.safetensors" = fetchHuggingface {
-        owner = "OnomaAIResearch";
-        repo = "Illustrious-XL-v2.0";
-        rev = "69459c1fe6f46db41ab31e6114f05acc0e06bcaa";
-        file = "Illustrious-XL-v2.0.safetensors";
-        hash = "sha256-wqGj6qE9TBB9x+AMP+gwyrQnqgJjYnQOoJR0WzQiozE=";
       };
     };
     # UNETLoaderが読むcheckpoint非統合の拡散モデル。
@@ -81,40 +64,43 @@ let
         file = "split_files/diffusion_models/qwen_image_edit_2511_fp8mixed.safetensors";
         hash = "sha256-yf3BWORtO2HvdfIa6GbKL+gIv0pTZDEg0cHofBkoCk4=";
       };
-      # Wan 2.2 image-to-videoの14B MoE構成のexpertモデル2つ。
+      # Wan 2.2 I2V 14B MoEを4ステップ用に蒸留したfull expertモデル2つ。
+      # LoRA近似ではなく蒸留済みの全重みを使い、
       # サンプリング前半をhigh noise、後半をlow noiseが担当する。
       # Apache 2.0ライセンス。
-      "wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors" = fetchHuggingface {
-        owner = "Comfy-Org";
-        repo = "Wan_2.2_ComfyUI_Repackaged";
-        rev = "fb1388adc906ab39ffc26ee40e96b22886b56bc4";
-        file = "split_files/diffusion_models/wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors";
-        hash = "sha256-YSLnnVXg8jVpjRHWV/OxlsUnPIMNoAsrATxaBI1eakI=";
+      "wan2.2_i2v_A14b_high_noise_lightx2v_4step.safetensors" = fetchHuggingface {
+        owner = "lightx2v";
+        repo = "Wan2.2-Distill-Models";
+        rev = "715f592b12e99e398923d255ee6a4dae85543cee";
+        file = "wan2.2_i2v_A14b_high_noise_lightx2v_4step.safetensors";
+        hash = "sha256-OdOvdORuWemJ21zDb0AeZm8653x2SOtV06/5/uR3Fvo=";
       };
-      "wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors" = fetchHuggingface {
-        owner = "Comfy-Org";
-        repo = "Wan_2.2_ComfyUI_Repackaged";
-        rev = "fb1388adc906ab39ffc26ee40e96b22886b56bc4";
-        file = "split_files/diffusion_models/wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors";
-        hash = "sha256-VHGkV7asQEICpfvmwRWVo9VkH8dmsA84dj9yMD//wh4=";
+      "wan2.2_i2v_A14b_low_noise_lightx2v_4step.safetensors" = fetchHuggingface {
+        owner = "lightx2v";
+        repo = "Wan2.2-Distill-Models";
+        rev = "715f592b12e99e398923d255ee6a4dae85543cee";
+        file = "wan2.2_i2v_A14b_low_noise_lightx2v_4step.safetensors";
+        hash = "sha256-o7hoCv/iqy4hISEKg/+n01H3faGBkeV7s1nXg5vrqKI=";
       };
     };
     text_encoders = {
-      # Qwen-Image系が使うテキストエンコーダ。画像も読むVLM。
-      "qwen_2.5_vl_7b_fp8_scaled.safetensors" = fetchHuggingface {
+      # Qwen-Image-Editで編集指示と入力画像を解析するVLM。
+      # 画像理解と複雑な指示の精度を優先してBF16版を使う。
+      "qwen_2.5_vl_7b.safetensors" = fetchHuggingface {
         owner = "Comfy-Org";
         repo = "Qwen-Image_ComfyUI";
         rev = "46839d338df81ce625d5fae27d7e370314c0fbc9";
-        file = "split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors";
-        hash = "sha256-y1Y22FKg6mqQdasb70lsDbeu8TwCNQVx44iuqVnFwLQ=";
+        file = "split_files/text_encoders/qwen_2.5_vl_7b.safetensors";
+        hash = "sha256-z6/XOUWbyGJXOXJZ9hKpruiOW5joW1wNDRcX6JizRjo=";
       };
       # Wan系が使うテキストエンコーダ。
-      "umt5_xxl_fp8_e4m3fn_scaled.safetensors" = fetchHuggingface {
+      # 複雑な動作やカメラ指示の追従精度を優先してFP16版を使う。
+      "umt5_xxl_fp16.safetensors" = fetchHuggingface {
         owner = "Comfy-Org";
         repo = "Wan_2.2_ComfyUI_Repackaged";
         rev = "fb1388adc906ab39ffc26ee40e96b22886b56bc4";
-        file = "split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors";
-        hash = "sha256-wzVdMBkfHwZrJtk/ugF66YCdzmxifdpfambqplEgT2g=";
+        file = "split_files/text_encoders/umt5_xxl_fp16.safetensors";
+        hash = "sha256-e4hQ8ZYeHPinfMpMlko1jTA/SQgzxsCH0M/0svmdsq8=";
       };
     };
     vae = {
@@ -133,25 +119,6 @@ let
         rev = "fb1388adc906ab39ffc26ee40e96b22886b56bc4";
         file = "split_files/vae/wan_2.1_vae.safetensors";
         hash = "sha256-L8OdMTWaSwpk9Vh22P9/qNeAlWriyxNGOwIj4VFIl2s=";
-      };
-    };
-    loras = {
-      # Wan 2.2 I2V用のlightx2v蒸留LoRA。
-      # 4ステップ・CFG 1での高速生成を可能にする。
-      # high/low noiseの各expertモデルに対応する方を適用する。
-      "wan2.2_i2v_lightx2v_4steps_lora_v1_high_noise.safetensors" = fetchHuggingface {
-        owner = "Comfy-Org";
-        repo = "Wan_2.2_ComfyUI_Repackaged";
-        rev = "fb1388adc906ab39ffc26ee40e96b22886b56bc4";
-        file = "split_files/loras/wan2.2_i2v_lightx2v_4steps_lora_v1_high_noise.safetensors";
-        hash = "sha256-0XbICNb8RhmZto4yHvy3UBsguMN5dSPtDfFPfR3v8R4=";
-      };
-      "wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors" = fetchHuggingface {
-        owner = "Comfy-Org";
-        repo = "Wan_2.2_ComfyUI_Repackaged";
-        rev = "fb1388adc906ab39ffc26ee40e96b22886b56bc4";
-        file = "split_files/loras/wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors";
-        hash = "sha256-Ak8h3glbyPrZgJ3tPp5JouFw3PJwddqBRbp9YNiqt/k=";
       };
     };
     controlnet = {

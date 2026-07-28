@@ -74,7 +74,24 @@ in
         };
       };
     config =
-      { lib, ... }:
+      {
+        lib,
+        pkgs,
+        config,
+        ...
+      }:
+      let
+        comfyuiPython = config.services.comfyui.package.pythonRuntime.python;
+        torch = lib.findFirst (
+          pkg: lib.getName pkg == "torch"
+        ) (throw "torch not found in comfyui heavyDeps") config.services.comfyui.package.heavyDeps;
+        cudaNvcc = torch.cudaPackages.cuda_nvcc;
+        sageattention = comfyuiPython.pkgs.callPackage ../../../../pkgs/sageattention.nix {
+          inherit torch;
+          # torchの全CUDA世代ではなく、RTX 5090向けのカーネルだけをビルドする。
+          cudaCapabilities = [ "12.0" ];
+        };
+      in
       {
         imports = [ inputs.utensils-comfyui-nix.nixosModules.default ];
         system.stateVersion = "26.05";
@@ -95,11 +112,26 @@ in
           inherit dataDir;
           # コンテナ内のfirewallを開ける。到達できるのはvethを持つホストのみ。
           openFirewall = true;
-          # xformers 0.0.30のflash-attentionカーネルはBlackwell(sm_120)のカーネルイメージを含まず、
-          # Qwen系モデルのサンプリング開始時に、
-          # `CUDA error: no kernel image is available for execution on the device`
-          # でクラッシュするためPyTorch組み込みのSDPAを使う。
-          extraArgs = [ "--use-pytorch-cross-attention" ];
+          extraArgs = [
+            # WanのRoPEやFP8量子化処理をeager実装からTritonカーネルへ切り替える。
+            "--enable-triton-backend"
+            # FP16の行列積で低精度の累積を許可して、LoRAやFP16 fallbackを高速化する。
+            # 丸め誤差が増えるため生成結果は変化する可能性がある。
+            "--fast"
+            "fp16_accumulation"
+            # xformers 0.0.30はBlackwell(sm_120)に対応していないため使わない。
+            # SageAttentionで動画生成の大半を占めるattentionを近似計算して高速化する。
+            "--use-sage-attention"
+          ];
+        };
+        # Tritonは未指定時にNixOSには存在しない`/sbin/ldconfig`でlibcudaを探す。
+        systemd.services.comfyui.environment = {
+          CC = lib.getExe pkgs.stdenv.cc;
+          PYTHONPATH = lib.makeSearchPath comfyuiPython.sitePackages [ sageattention ];
+          TRITON_CUDACRT_PATH = "${torch.cudaPackages.cuda_cudart}/include";
+          TRITON_LIBCUDA_PATH = "/run/opengl-driver/lib";
+          TRITON_LIBDEVICE_PATH = "${cudaNvcc}/nvvm/libdevice/libdevice.10.bc";
+          TRITON_PTXAS_PATH = "${cudaNvcc}/bin/ptxas";
         };
       };
   };

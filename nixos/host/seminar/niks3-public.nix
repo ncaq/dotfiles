@@ -125,11 +125,13 @@ in
         "caddy.service"
         "garage-setup-niks3-public.service"
         "postgresql-ready.service"
+        "sops-install-secrets.service"
       ];
       after = [
         "caddy.service"
         "garage-setup-niks3-public.service"
         "postgresql-ready.service"
+        "sops-install-secrets.service"
       ];
     };
     garage-setup-niks3-public = import ../../../lib/garage-setup.nix {

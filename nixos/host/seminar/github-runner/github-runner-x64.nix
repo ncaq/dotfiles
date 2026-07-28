@@ -178,6 +178,8 @@ in
         addr = addrOf name;
       in
       lib.nameValuePair "container@${name}" {
+        requires = [ "sops-install-secrets.service" ];
+        after = [ "sops-install-secrets.service" ];
         # NixOSコンテナモジュールが生成するpostStartは`ip addr add`/`ip route add`を使うため、
         # systemd-networkdが先に設定済みの場合にEEXISTエラーで失敗します。
         # 冪等にするために`2>/dev/null || true`を付けます。

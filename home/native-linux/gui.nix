@@ -13,6 +13,7 @@
       evince
       gimp
       inkscape
+      kdePackages.kdenlive
       libreoffice
       nautilus
       pear-desktop

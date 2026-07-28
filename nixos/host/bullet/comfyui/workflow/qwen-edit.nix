@@ -5,7 +5,7 @@
 #
 # 公式テンプレートのimage_qwen_image_edit_2511.jsonから、
 # Lightning LoRAの切り替えスイッチ類を除いた基本構成。
-# サンプリング設定はComfy推奨値(20 steps, CFG 4.0)。
+# サンプリング設定はQwen公式推奨値(40 steps, CFG 4.0)。
 #
 # 指示文は公式には英語と中国語がサポート対象なので、
 # 自作カスタムノードのTranslate Text to Englishを前段に置いて、
@@ -303,7 +303,7 @@ in
         ];
         outputs = [ (mkOutput "LATENT" "LATENT" [ 17 ]) ];
         widgets = seedWidgets ++ [
-          20 # steps
+          40 # steps
           4 # cfg
           "euler"
           "simple"

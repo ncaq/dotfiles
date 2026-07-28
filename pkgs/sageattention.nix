@@ -41,6 +41,11 @@ buildPythonPackage rec {
     ninja
   ];
 
+  # ninjaをnativeBuildInputsに追加すると、
+  # setup hookがPythonのpypaBuildPhaseをninjaBuildPhaseへ置き換え、
+  # build.ninjaがまだないソース直下でninjaを実行してしまう。
+  # この置換だけを防ぎ、
+  # pypaBuildPhase内のPyTorch BuildExtensionからninjaを使う。
   dontUseNinjaBuild = true;
 
   dependencies = [
@@ -60,6 +65,7 @@ buildPythonPackage rec {
 
   preBuild = ''
     export CPATH="${cudaPackages.cuda_cudart}/include:${cudaPackages.cuda_cccl}/include:${lib.getDev cudaPackages.libcublas}/include:${lib.getDev cudaPackages.libcusolver}/include:${lib.getDev cudaPackages.libcusparse}/include''${CPATH:+:$CPATH}"
+    export MAX_JOBS="$NIX_BUILD_CORES"
   '';
 
   pythonImportsCheck = [ "sageattention" ];

@@ -8,6 +8,9 @@
       getSlot =
         slots: index:
         if 0 <= index && index < builtins.length slots then builtins.elemAt slots index else null;
+      acceptsType =
+        slotType: linkType:
+        slotType == "*" || linkType == "*" || builtins.elem linkType (lib.splitString "," slotType);
       nodeReferenceErrors = lib.concatMap (
         node:
         lib.concatLists (
@@ -45,6 +48,7 @@
           sourceSlot = builtins.elemAt link 2;
           targetNodeId = builtins.elemAt link 3;
           targetSlot = builtins.elemAt link 4;
+          linkType = builtins.elemAt link 5;
           sourceNode = findNode sourceNodeId;
           targetNode = findNode targetNodeId;
           sourceOutput = if sourceNode == null then null else getSlot sourceNode.outputs sourceSlot;
@@ -56,6 +60,12 @@
         ++ lib.optional (
           targetInput == null || targetInput.link != linkId
         ) "  リンク${toString linkId}の接続先ノード${toString targetNodeId}の入力${toString targetSlot}がリンクを参照していません"
+        ++ lib.optional (
+          sourceOutput != null && !(acceptsType sourceOutput.type linkType)
+        ) "  リンク${toString linkId}の型${linkType}が接続元の出力型${sourceOutput.type}と一致しません"
+        ++ lib.optional (
+          targetInput != null && !(acceptsType targetInput.type linkType)
+        ) "  リンク${toString linkId}の型${linkType}が接続先の入力型${targetInput.type}と一致しません"
       ) workflow.links;
     in
     nodeReferenceErrors ++ linkEndpointErrors;

@@ -84,7 +84,7 @@ in
         comfyuiPython = config.services.comfyui.package.pythonRuntime.python;
         torch = lib.findFirst (
           pkg: lib.getName pkg == "torch"
-        ) null config.services.comfyui.package.heavyDeps;
+        ) (throw "torch not found in comfyui heavyDeps") config.services.comfyui.package.heavyDeps;
         cudaNvcc = torch.cudaPackages.cuda_nvcc;
         sageattention = comfyuiPython.pkgs.callPackage ../../../../pkgs/sageattention.nix {
           inherit torch;

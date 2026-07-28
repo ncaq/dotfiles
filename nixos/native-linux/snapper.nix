@@ -64,13 +64,10 @@ in
     # snapperのSPACE_LIMITはbtrfsのquota(qgroup)を前提とするが、
     # NixOSにはquotaを宣言的に有効化するオプションがない。
     # そのためquotaの有効化とqgroupの作成だけをoneshotサービスで命令的に行う。
-    # quotaモードは、従来のfull quotaだとスナップショットが多い環境で、
-    # 書き込み性能の低下やcleanup時の高負荷を招くため、
-    # simple quota(squota)を使う。
-    # squotaは有効化後の書き込みのみ計測するので既存分は0から始まるが、
-    # 新規スナップショットの差分から徐々に正確になる。
+    # snapperは使用量の計算時にquota rescanを要求するため、
+    # rescanをサポートしないsimple quota(squota)ではなくfull quotaを使う。
     snapper-setup-quota = {
-      description = "Enable btrfs simple quota and qgroup for snapper SPACE_LIMIT";
+      description = "Enable btrfs quota and qgroup for snapper SPACE_LIMIT";
       wantedBy = [ "multi-user.target" ];
       after = [ "local-fs.target" ];
       before = [
@@ -88,8 +85,13 @@ in
         gnugrep
       ];
       script = ''
-        # simple quotaを有効化する。既に有効でも無害に終了する。
-        btrfs quota enable --simple /
+        # quotaモードは有効なまま変更できないため、squotaの場合だけ作り直す。
+        if btrfs quota status / | grep -qE '^  Mode:[[:space:]]+squota'; then
+          btrfs quota disable /
+        fi
+        # full quotaを有効化し、既存データのaccountingが完了するまで待つ。
+        btrfs quota enable /
+        btrfs quota rescan --wait-norescan /
         # snapperが参照するレベル1のqgroupを用意する。既存ならスキップする。
         if ! btrfs qgroup show / | grep -qE '^1/0[[:space:]]'; then
           btrfs qgroup create 1/0 /

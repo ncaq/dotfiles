@@ -23,6 +23,14 @@ in
       # Power Lora Loaderなどワークフロー整理のノード群。
       # comfyui-nixがパッケージ済みのものを使う。
       "rgthree-comfy" = pkgs.comfyui-custom-nodes.rgthree-comfy;
+      # 複数フレームを同時に参照して時間的一貫性を保つ動画超解像。
+      # RTX 5090では7B FP16モデルをBlockSwapとVAE tiling付きで使う。
+      "ComfyUI-SeedVR2_VideoUpscaler" = pkgs.fetchFromGitHub {
+        owner = "numz";
+        repo = "ComfyUI-SeedVR2_VideoUpscaler";
+        rev = "4490bd1f482e026674543386bb2a4d176da245b9";
+        hash = "sha256-6nsqFflLw9vYH/du35ET46fdAm1NMjjTe2bA8JmaBE4=";
+      };
       # UltralyticsDetectorProvider(YOLOによる顔検出)を提供する。
       # FaceDetailerに検出器を渡すために必要。
       "ComfyUI-Impact-Subpack" = pkgs.fetchFromGitHub {
@@ -46,6 +54,10 @@ in
       # バイパス操作なしで画像指定の有無だけで切り替えるために使う。
       "ComfyUI-Load-Image-Optional" = pkgs.writeTextDir "__init__.py" (
         builtins.readFile ./custom-node/load-image-optional/__init__.py
+      );
+      # 元fpsと音声を維持し、RGB48から10-bit SVT-AV1へ直接変換する保存ノード。
+      "ComfyUI-Save-SVT-AV1" = pkgs.writeTextDir "__init__.py" (
+        builtins.readFile ./custom-node/save-svt-av1/__init__.py
       );
       # danbooruタグのオートコンプリート。
       # 日本語からの検索とpost count表示に対応していて、

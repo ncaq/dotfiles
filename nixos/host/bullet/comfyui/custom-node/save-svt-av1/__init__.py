@@ -53,9 +53,10 @@ class SaveSvtAv1:
         )
         output_name = f"{filename}_{counter:05}_.mkv"
         output_path = os.path.join(output_dir, output_name)
+        partial_path = os.path.join(output_dir, f"{filename}_{counter:05}_.partial.mkv")
         frame_rate = Fraction(fps).limit_denominator(1001)
 
-        with av.open(output_path, mode="w") as container:
+        with av.open(partial_path, mode="w") as container:
             if prompt is not None:
                 container.metadata["prompt"] = json.dumps(prompt)
             if extra_pnginfo is not None:
@@ -117,6 +118,8 @@ class SaveSvtAv1:
                     audio_pts += frame.samples
                     container.mux(audio_stream.encode(frame))
                 container.mux(audio_stream.encode(None))
+
+        os.replace(partial_path, output_path)
 
         return {
             "ui": {

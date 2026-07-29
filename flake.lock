@@ -72,11 +72,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1784596570,
-        "narHash": "sha256-jz61yEoQWInVejIQTNd7XZMtCH/jDvGngAX8w2uiw/E=",
+        "lastModified": 1785290087,
+        "narHash": "sha256-hDM87KSJGMy5tg59tFhJ0m+0vWuddpA4Zt53TgRmP4w=",
         "owner": "ncaq",
         "repo": ".emacs.d",
-        "rev": "e19ff05a5f2a3fe759683c0be5a76f5c87304536",
+        "rev": "f518e30d0a112e2f7c57476bd3dda3f3a612618a",
         "type": "github"
       },
       "original": {
@@ -222,11 +222,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1785204092,
-        "narHash": "sha256-Z9JtNtPcjyJlOJuji7j6AkewqKt6QzJemOA06GEnISg=",
+        "lastModified": 1785304038,
+        "narHash": "sha256-xSQQI0Jv9mHXYOFftBojQgqvS0pHpTmo0LdLTlRYgpU=",
         "owner": "ncaq",
         "repo": "git-hooks",
-        "rev": "0365babc9e250a52ba9a7b17f375f70471f8f573",
+        "rev": "0d97de29b306d74c3685afed115071cfbea0bc83",
         "type": "github"
       },
       "original": {
@@ -286,11 +286,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1785245212,
-        "narHash": "sha256-NyiWJPxwavPgf19z3DPVeXN7NH+708+Qi4ISjPonecA=",
+        "lastModified": 1785320270,
+        "narHash": "sha256-2v4jQcCDsGFXx//ttuHOgPZVwfqIsZt5PcnGDUtwLhw=",
         "owner": "ncaq",
         "repo": "konoka",
-        "rev": "45adfde364819a49392a5369123a5c3e5633489f",
+        "rev": "2f8b2d8d5256d23a96888358e4d362857def98c2",
         "type": "github"
       },
       "original": {
@@ -438,11 +438,11 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1785104993,
-        "narHash": "sha256-eKbrvPoAOFutbYMdbB3r5EQVmFxKv24iKqHPPUXA0gM=",
+        "lastModified": 1785133411,
+        "narHash": "sha256-Yjv0WEg39KRYS0rBdTbu6Fc/or/ihAKk13W9sQ6VWd0=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "8623c4c20aa4ca2f5fb81510d2944066c3fb0d96",
+        "rev": "2f5a153c270b70cb0f8c11f46d96d6d3bc39f4e3",
         "type": "github"
       },
       "original": {
@@ -722,11 +722,11 @@
     "www-ncaq-net": {
       "flake": false,
       "locked": {
-        "lastModified": 1785045306,
-        "narHash": "sha256-oU3AHwnJVpK7xeQ27ZC5p2P7IlR7qtqoFOhUlHcayeM=",
+        "lastModified": 1785320262,
+        "narHash": "sha256-39MHmZxUPNBTnJ5tNUwOmYZ4/pQ3p3Tk0/KlvC+rfJc=",
         "owner": "ncaq",
         "repo": "www.ncaq.net",
-        "rev": "e9e077ee344d9ed153ff7dab9498234976ca88d7",
+        "rev": "68f8105e060a4801a6f1649e9ee8debe4ac2f28a",
         "type": "github"
       },
       "original": {

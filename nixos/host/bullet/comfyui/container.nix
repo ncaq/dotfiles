@@ -82,15 +82,19 @@ in
       }:
       let
         comfyuiPython = config.services.comfyui.package.pythonRuntime.python;
+        # python.pkgs.torchはoverride前なので、実行環境に含まれるCUDA wheel版を使う。
         torch = lib.findFirst (
           pkg: lib.getName pkg == "torch"
         ) (throw "torch not found in comfyui heavyDeps") config.services.comfyui.package.heavyDeps;
-        cudaNvcc = torch.cudaPackages.cuda_nvcc;
+        inherit (torch) cudaPackages;
+        cudaNvcc = cudaPackages.cuda_nvcc;
+        cudaNvrtc = cudaPackages.cuda_nvrtc;
         sageattention = comfyuiPython.pkgs.callPackage ../../../../pkgs/sageattention.nix {
           inherit torch;
           # torchの全CUDA世代ではなく、RTX 5090向けのカーネルだけをビルドする。
           cudaCapabilities = [ "12.0" ];
         };
+        seedvr2PythonDeps = with comfyuiPython.pkgs; [ rotary-embedding-torch ];
       in
       {
         imports = [ inputs.utensils-comfyui-nix.nixosModules.default ];
@@ -127,8 +131,11 @@ in
         # Tritonは未指定時にNixOSには存在しない`/sbin/ldconfig`でlibcudaを探す。
         systemd.services.comfyui.environment = {
           CC = lib.getExe pkgs.stdenv.cc;
-          PYTHONPATH = lib.makeSearchPath comfyuiPython.sitePackages [ sageattention ];
-          TRITON_CUDACRT_PATH = "${torch.cudaPackages.cuda_cudart}/include";
+          # SeedVR2のVAE attentionが実行時コンパイルにNVRTCを使う。
+          # ComfyUIのtorchと同じCUDAパッケージセットから検索パスを指定する。
+          LD_LIBRARY_PATH = lib.makeLibraryPath [ cudaNvrtc ];
+          PYTHONPATH = lib.makeSearchPath comfyuiPython.sitePackages ([ sageattention ] ++ seedvr2PythonDeps);
+          TRITON_CUDACRT_PATH = "${cudaPackages.cuda_cudart}/include";
           TRITON_LIBCUDA_PATH = "/run/opengl-driver/lib";
           TRITON_LIBDEVICE_PATH = "${cudaNvcc}/nvvm/libdevice/libdevice.10.bc";
           TRITON_PTXAS_PATH = "${cudaNvcc}/bin/ptxas";

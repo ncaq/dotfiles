@@ -158,6 +158,24 @@ let
         hash = "sha256-+HLYN9PJDtLgUie+1xGvVnGm/RyffX6RyRGmHxVemdo=";
       };
     };
+    # ComfyUI-SeedVR2_VideoUpscalerが登録する専用モデルディレクトリ。
+    # 通常版はsharp版より線の過剰強調が少ないため、アニメ動画の標準にする。
+    SEEDVR2 = {
+      "seedvr2_ema_7b_fp16.safetensors" = fetchHuggingface {
+        owner = "numz";
+        repo = "SeedVR2_comfyUI";
+        rev = "09ced71023636e9bc8cdf9cdecfb2625d1e691e8";
+        file = "seedvr2_ema_7b_fp16.safetensors";
+        hash = "sha256-e4JBqpV2Bqts+2btq8ltQyNPmBnFOStE0kktnwsLvko=";
+      };
+      "ema_vae_fp16.safetensors" = fetchHuggingface {
+        owner = "numz";
+        repo = "SeedVR2_comfyUI";
+        rev = "09ced71023636e9bc8cdf9cdecfb2625d1e691e8";
+        file = "ema_vae_fp16.safetensors";
+        hash = "sha256-IGeFSPQg2Y0m8RRC01KPi4yU5X7gRu+T27djPahhLKE=";
+      };
+    };
   };
   # カテゴリ名(ultralytics/bboxのような入れ子含む)から、
   # 作成するべきディレクトリの前置パス一覧を求める。

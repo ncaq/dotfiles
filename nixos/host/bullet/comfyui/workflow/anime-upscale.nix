@@ -139,9 +139,9 @@ in
           3840 # max_resolution
           5 # batch_size: 4n+1
           true # uniform_batch_size
-          "lab" # color_correction
           3 # temporal_overlap
           0 # prepend_frames
+          "lab" # color_correction
           0 # input_noise_scale
           0 # latent_noise_scale
           "cpu" # offload_device

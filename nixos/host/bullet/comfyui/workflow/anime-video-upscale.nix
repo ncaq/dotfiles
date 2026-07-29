@@ -20,7 +20,7 @@ let
     ;
 in
 {
-  local.comfyui.workflows.anime-upscale = mkWorkflow {
+  local.comfyui.workflows.anime-video-upscale = mkWorkflow {
     nodes = [
       (mkNode {
         id = 1;
@@ -195,7 +195,7 @@ in
         outputs = [ ];
         widgets = [
           24 # fpsはリンクで上書きされる
-          "anime-upscale-svt-av1"
+          "anime-video-upscale-svt-av1"
           1 # CRF: near-lossless
           4 # preset: 品質優先
         ];

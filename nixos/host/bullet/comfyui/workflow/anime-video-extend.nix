@@ -615,10 +615,9 @@ in
         ];
       })
       # 元動画のフレーム列の後ろへ新区間を連結する。
-      # ImageBatchはdeprecated扱いだがコアに連結の代替ノードがない。
       (mkNode {
         id = 26;
-        type = "ImageBatch";
+        type = "BatchImagesNode";
         title = "元動画と連結";
         pos = [
           2160
@@ -630,8 +629,8 @@ in
         ];
         order = 23;
         inputs = [
-          (mkInput "image1" "IMAGE" 13)
-          (mkInput "image2" "IMAGE" 32)
+          (mkInput "images.image0" "IMAGE" 13)
+          (mkInput "images.image1" "IMAGE" 32)
         ];
         outputs = [ (mkOutput "IMAGE" "IMAGE" [ 33 ]) ];
       })

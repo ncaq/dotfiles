@@ -5,7 +5,6 @@ from fractions import Fraction
 from typing import Any
 
 import av
-import numpy as np
 import torch
 
 import folder_paths
@@ -98,10 +97,12 @@ class SaveSvtAv1:
                     image[..., :3]
                     .float()
                     .mul(65535)
+                    .round()
                     .clamp(0, 65535)
+                    .to(torch.uint16)
+                    .contiguous()
                     .cpu()
                     .numpy()
-                    .astype(np.uint16)
                 )
                 frame = av.VideoFrame.from_ndarray(rgb48, format="rgb48le")
                 for packet in video_stream.encode(frame):

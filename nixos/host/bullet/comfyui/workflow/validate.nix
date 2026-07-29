@@ -23,6 +23,11 @@ assert overlapTest;
       let
         linkErrors = link.invalidReferences workflow;
         overlappingNodePairs = overlap.overlappingNodePairs workflow.nodes;
+        nodeIds = map (node: node.id) workflow.nodes;
+        appInputs = workflow.extra.linearData.inputs or [ ];
+        appOutputs = workflow.extra.linearData.outputs or [ ];
+        invalidAppInputIds = lib.filter (id: !(lib.elem id nodeIds)) (map lib.head appInputs);
+        invalidAppOutputIds = lib.filter (id: !(lib.elem id nodeIds)) appOutputs;
       in
       [
         {
@@ -38,6 +43,14 @@ assert overlapTest;
             ComfyUIワークフロー${name}で以下のノードが重なっています(余白${toString overlap.margin}px未満を含む):
             ${lib.concatMapStringsSep "\n" describeOverlap overlappingNodePairs}
           '';
+        }
+        {
+          assertion = invalidAppInputIds == [ ];
+          message = "ComfyUIワークフロー${name}のApp Mode入力が存在しないノードを参照しています: ${toString invalidAppInputIds}";
+        }
+        {
+          assertion = invalidAppOutputIds == [ ];
+          message = "ComfyUIワークフロー${name}のApp Mode出力が存在しないノードを参照しています: ${toString invalidAppOutputIds}";
         }
       ]
     ) config.local.comfyui.workflows

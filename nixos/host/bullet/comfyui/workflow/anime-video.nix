@@ -51,6 +51,8 @@ let
     mkNode
     mkInput
     mkOutput
+    mkAppInput
+    mkAppInputWith
     mkWorkflow
     seedWidgets
     ;
@@ -61,6 +63,23 @@ let
 in
 {
   local.comfyui.workflows.anime-video = mkWorkflow {
+    app = {
+      inputs = [
+        (mkAppInput 9 "image")
+        (mkAppInputWith 30 "image" {
+          description = "任意。動画の最後に到達させたいポーズ";
+        })
+        (mkAppInputWith 19 "text" {
+          height = 160;
+          description = "動きとカメラワーク。日本語でも英語でも入力可能";
+        })
+        (mkAppInputWith 25 "value" {
+          description = "動画の長さ。1で約5秒、以降1増えるごとに約3.5秒追加";
+        })
+        (mkAppInput 13 "noise_seed")
+      ];
+      outputs = [ 17 ];
+    };
     nodes = [
       (mkNode {
         id = 1;

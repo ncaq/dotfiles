@@ -13,6 +13,8 @@ let
     mkNode
     mkInput
     mkOutput
+    mkAppInput
+    mkAppInputWith
     mkWorkflow
     promptNodes
     promptBaseLinks
@@ -20,6 +22,24 @@ let
 in
 {
   local.comfyui.workflows.anime-edit = mkWorkflow {
+    app = {
+      inputs = [
+        (mkAppInput 4 "image")
+        (mkAppInputWith 2 "text" {
+          height = 160;
+          description = "画像をどのように描き直すか";
+        })
+        (mkAppInputWith 3 "text" {
+          height = 120;
+          description = "画像に含めたくない内容";
+        })
+        (mkAppInputWith 5 "denoise" {
+          description = "元画像を変える強さ。0.3で微調整、0.5で描き直し、0.7以上で大胆に変更";
+        })
+        (mkAppInput 5 "seed")
+      ];
+      outputs = [ 7 ];
+    };
     nodes =
       promptNodes {
         # EmptyLatentImageの代わりにLoadImage+VAEEncodeからLATENTを供給する。

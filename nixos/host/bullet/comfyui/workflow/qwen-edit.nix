@@ -21,12 +21,25 @@ let
     mkNode
     mkInput
     mkOutput
+    mkAppInput
+    mkAppInputWith
     mkWorkflow
     seedWidgets
     ;
 in
 {
   local.comfyui.workflows.qwen-edit = mkWorkflow {
+    app = {
+      inputs = [
+        (mkAppInput 4 "image")
+        (mkAppInputWith 14 "text" {
+          height = 160;
+          description = "画像への編集指示。日本語でも英語でも入力可能";
+        })
+        (mkAppInput 11 "seed")
+      ];
+      outputs = [ 13 ];
+    };
     nodes = [
       (mkNode {
         id = 1;

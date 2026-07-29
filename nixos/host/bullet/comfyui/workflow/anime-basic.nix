@@ -5,6 +5,8 @@ let
     mkNode
     mkInput
     mkOutput
+    mkAppInput
+    mkAppInputWith
     mkWorkflow
     promptNodes
     promptLinks
@@ -12,6 +14,22 @@ let
 in
 {
   local.comfyui.workflows.anime-basic = mkWorkflow {
+    app = {
+      inputs = [
+        (mkAppInputWith 2 "text" {
+          height = 160;
+          description = "生成する画像の内容";
+        })
+        (mkAppInputWith 3 "text" {
+          height = 120;
+          description = "画像に含めたくない内容";
+        })
+        (mkAppInput 4 "width")
+        (mkAppInput 4 "height")
+        (mkAppInput 5 "seed")
+      ];
+      outputs = [ 7 ];
+    };
     nodes = promptNodes { } ++ [
       (mkNode {
         id = 6;

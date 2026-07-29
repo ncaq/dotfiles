@@ -80,8 +80,6 @@ class SaveSvtAv1:
                 audio_stream = container.add_stream("flac", rate=sample_rate, layout=layout)
                 audio_frame = av.AudioFrame.from_ndarray(waveform, format="fltp", layout=layout)
                 audio_frame.sample_rate = sample_rate
-                audio_frame.pts = 0
-                audio_frame.time_base = Fraction(1, sample_rate)
                 resampler = av.AudioResampler(format="s32p", layout=layout, rate=sample_rate)
                 audio_frames = resampler.resample(audio_frame) + resampler.resample(None)
 

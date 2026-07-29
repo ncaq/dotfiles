@@ -64,23 +64,23 @@ let
         file = "split_files/diffusion_models/qwen_image_edit_2511_fp8mixed.safetensors";
         hash = "sha256-yf3BWORtO2HvdfIa6GbKL+gIv0pTZDEg0cHofBkoCk4=";
       };
-      # Wan 2.2 I2V 14B MoEを4ステップ用に蒸留したfull expertモデル2つ。
+      # Wan 2.2 I2V 14B MoEを高品質720pデータで4ステップ用に蒸留したfull expertモデル2つ。
       # LoRA近似ではなく蒸留済みの全重みを使い、
       # サンプリング前半をhigh noise、後半をlow noiseが担当する。
       # Apache 2.0ライセンス。
-      "wan2.2_i2v_A14b_high_noise_lightx2v_4step.safetensors" = fetchHuggingface {
+      "wan2.2_i2v_A14b_high_noise_lightx2v_4step_720p_260412.safetensors" = fetchHuggingface {
         owner = "lightx2v";
         repo = "Wan2.2-Distill-Models";
-        rev = "715f592b12e99e398923d255ee6a4dae85543cee";
-        file = "wan2.2_i2v_A14b_high_noise_lightx2v_4step.safetensors";
-        hash = "sha256-OdOvdORuWemJ21zDb0AeZm8653x2SOtV06/5/uR3Fvo=";
+        rev = "db93455b9e85c4d8a3ff9297fcfa189d213cfe29";
+        file = "wan2.2_i2v_A14b_high_noise_lightx2v_4step_720p_260412.safetensors";
+        hash = "sha256-NfRDFHG0ueWS6ZQcH18v0eG/JuFAHISt/gHdIrWyuGQ=";
       };
-      "wan2.2_i2v_A14b_low_noise_lightx2v_4step.safetensors" = fetchHuggingface {
+      "wan2.2_i2v_A14b_low_noise_lightx2v_4step_720p_260412.safetensors" = fetchHuggingface {
         owner = "lightx2v";
         repo = "Wan2.2-Distill-Models";
-        rev = "715f592b12e99e398923d255ee6a4dae85543cee";
-        file = "wan2.2_i2v_A14b_low_noise_lightx2v_4step.safetensors";
-        hash = "sha256-o7hoCv/iqy4hISEKg/+n01H3faGBkeV7s1nXg5vrqKI=";
+        rev = "db93455b9e85c4d8a3ff9297fcfa189d213cfe29";
+        file = "wan2.2_i2v_A14b_low_noise_lightx2v_4step_720p_260412.safetensors";
+        hash = "sha256-kChH/FKj0w9naRXSrrhPwTxN+Sv2p5Q77uZprDTOPBU=";
       };
     };
     text_encoders = {

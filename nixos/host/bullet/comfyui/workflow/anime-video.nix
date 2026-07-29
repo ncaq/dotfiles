@@ -96,7 +96,7 @@ in
         order = 0;
         outputs = [ (mkOutput "MODEL" "MODEL" [ 1 ]) ];
         widgets = [
-          "wan2.2_i2v_A14b_high_noise_lightx2v_4step.safetensors"
+          "wan2.2_i2v_A14b_high_noise_lightx2v_4step_720p_260412.safetensors"
           "default" # weight_dtype
         ];
       })
@@ -115,7 +115,7 @@ in
         order = 1;
         outputs = [ (mkOutput "MODEL" "MODEL" [ 2 ]) ];
         widgets = [
-          "wan2.2_i2v_A14b_low_noise_lightx2v_4step.safetensors"
+          "wan2.2_i2v_A14b_low_noise_lightx2v_4step_720p_260412.safetensors"
           "default" # weight_dtype
         ];
       })

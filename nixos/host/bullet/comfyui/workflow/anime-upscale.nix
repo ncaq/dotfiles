@@ -189,7 +189,7 @@ in
         order = 6;
         inputs = [
           (mkInput "images" "IMAGE" 10)
-          (mkInput "fps" "FLOAT" 9)
+          (mkInput "fps" "FLOAT" 9) # widget metadataはフロントエンドがSaveSvtAv1の入力定義から復元
           (mkInput "audio" "AUDIO" 8)
         ];
         outputs = [ ];

@@ -53,7 +53,7 @@ class SaveSvtAv1:
         )
         output_name = f"{filename}_{counter:05}_.mkv"
         output_path = os.path.join(output_dir, output_name)
-        frame_rate = Fraction(round(fps * 1000), 1000)
+        frame_rate = Fraction(fps).limit_denominator(1001)
 
         with av.open(output_path, mode="w") as container:
             if prompt is not None:

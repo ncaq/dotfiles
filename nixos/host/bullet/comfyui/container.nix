@@ -82,7 +82,10 @@ in
       }:
       let
         comfyuiPython = config.services.comfyui.package.pythonRuntime.python;
-        torch = comfyuiPython.pkgs.torch;
+        # python.pkgs.torchはoverride前なので、実行環境に含まれるCUDA wheel版を使う。
+        torch = lib.findFirst (
+          pkg: lib.getName pkg == "torch"
+        ) (throw "torch not found in comfyui heavyDeps") config.services.comfyui.package.heavyDeps;
         inherit (torch) cudaPackages;
         cudaNvcc = cudaPackages.cuda_nvcc;
         cudaNvrtc = cudaPackages.cuda_nvrtc;

@@ -53,15 +53,31 @@ let
     // lib.optionalAttrs (title != null) { inherit title; };
   mkInput = name: type: link: { inherit name type link; };
   mkOutput = name: type: links: { inherit name type links; };
+  mkAppInput = nodeId: widgetName: [
+    nodeId
+    widgetName
+  ];
+  mkAppInputWith = nodeId: widgetName: config: [
+    nodeId
+    widgetName
+    config
+  ];
   mkWorkflow =
-    { nodes, links }:
+    {
+      nodes,
+      links,
+      app ? null,
+    }:
     {
       inherit nodes links;
       last_node_id = lib.foldl' lib.max 0 (map (node: node.id) nodes);
       last_link_id = lib.foldl' lib.max 0 (map lib.head links);
       groups = [ ];
       config = { };
-      extra = { };
+      extra = lib.optionalAttrs (app != null) {
+        linearMode = true;
+        linearData = app;
+      };
       version = 0.4;
     };
 
@@ -276,6 +292,8 @@ in
     mkNode
     mkInput
     mkOutput
+    mkAppInput
+    mkAppInputWith
     mkWorkflow
     promptNodes
     promptBaseLinks

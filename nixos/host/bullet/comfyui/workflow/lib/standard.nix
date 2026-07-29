@@ -19,6 +19,8 @@ let
     mkNode
     mkInput
     mkOutput
+    mkAppInput
+    mkAppInputWith
     mkWorkflow
     promptNodes
     promptLinks
@@ -28,6 +30,20 @@ let
     ;
 in
 mkWorkflow {
+  app = {
+    inputs = [
+      (mkAppInputWith 2 "text" {
+        height = 160;
+        description = "生成する画像の内容";
+      })
+      (mkAppInputWith 3 "text" {
+        height = 120;
+        description = "画像に含めたくない内容";
+      })
+      (mkAppInput 5 "seed")
+    ];
+    outputs = [ 15 ];
+  };
   nodes =
     promptNodes {
       inherit width height;

@@ -16,11 +16,25 @@ let
     mkNode
     mkInput
     mkOutput
+    mkAppInput
+    mkAppInputWith
     mkWorkflow
     ;
 in
 {
   local.comfyui.workflows.anime-video-upscale = mkWorkflow {
+    app = {
+      inputs = [
+        (mkAppInput 1 "file")
+        (mkAppInputWith 6 "width" {
+          description = "出力動画の幅";
+        })
+        (mkAppInputWith 6 "height" {
+          description = "出力動画の高さ";
+        })
+      ];
+      outputs = [ 9 ];
+    };
     nodes = [
       (mkNode {
         id = 1;

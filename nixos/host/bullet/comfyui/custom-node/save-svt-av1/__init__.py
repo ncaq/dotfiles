@@ -1,4 +1,5 @@
 import json
+import logging
 import math
 import os
 from fractions import Fraction
@@ -8,6 +9,28 @@ import av
 import torch
 
 import folder_paths
+from server import PromptServer
+
+logger = logging.getLogger(__name__)
+
+
+def warn_video_only(error: object) -> None:
+    detail = f"音声を保存できなかったため、映像のみ保存します: {error}"
+    logger.warning(detail)
+    try:
+        PromptServer.instance.send_sync(
+            "save-svt-av1.warning",
+            {
+                "summary": "音声を保存できませんでした",
+                "detail": detail,
+                "life": 24 * 60 * 60 * 1000,
+            },
+            PromptServer.instance.client_id,
+        )
+    except Exception as notification_error:
+        logger.warning(
+            "Failed to show audio warning in ComfyUI: %s", notification_error
+        )
 
 
 class SaveSvtAv1:
@@ -72,26 +95,71 @@ class SaveSvtAv1:
             audio_stream = None
             audio_frames: list[av.AudioFrame] = []
             if audio is not None:
-                sample_rate = int(audio["sample_rate"])
-                waveform = audio["waveform"][0]
-                sample_limit = math.ceil((sample_rate / frame_rate) * images.shape[0])
-                waveform = waveform[:, :sample_limit].float().cpu().contiguous().numpy()
-                layout = {1: "mono", 2: "stereo", 6: "5.1"}.get(
-                    waveform.shape[0], "stereo"
-                )
-                audio_stream = container.add_stream(
-                    "flac", rate=sample_rate, layout=layout
-                )
-                audio_frame = av.AudioFrame.from_ndarray(
-                    waveform, format="fltp", layout=layout
-                )
-                audio_frame.sample_rate = sample_rate
-                resampler = av.AudioResampler(
-                    format="s32p", layout=layout, rate=sample_rate
-                )
-                audio_frames = resampler.resample(audio_frame) + resampler.resample(
-                    None
-                )
+                try:
+                    sample_rate = int(audio["sample_rate"])
+                    waveform = audio["waveform"][0]
+                    sample_limit = math.ceil(
+                        (sample_rate / frame_rate) * images.shape[0]
+                    )
+                    waveform = waveform[:, :sample_limit].float()
+                    layouts = {
+                        1: "mono",
+                        2: "stereo",
+                        3: "3.0",
+                        4: "quad",
+                        5: "5.0",
+                        6: "5.1",
+                        7: "6.1",
+                        8: "7.1",
+                    }
+                    if waveform.shape[0] != 0:
+                        layout = layouts.get(waveform.shape[0], "mono")
+                        if waveform.shape[0] not in layouts:
+                            waveform = waveform.mean(dim=0, keepdim=True)
+
+                        def convert_audio(
+                            source: torch.Tensor, target_layout: str
+                        ) -> list[av.AudioFrame]:
+                            source_array = (
+                                source.transpose(0, 1)
+                                .contiguous()
+                                .view(1, -1)
+                                .cpu()
+                                .numpy()
+                            )
+                            source_frame = av.AudioFrame.from_ndarray(
+                                source_array, format="flt", layout=target_layout
+                            )
+                            source_frame.sample_rate = sample_rate
+                            resampler = av.AudioResampler(
+                                format="s32p", layout=target_layout, rate=sample_rate
+                            )
+                            return resampler.resample(
+                                source_frame
+                            ) + resampler.resample(None)
+
+                        try:
+                            audio_frames = convert_audio(waveform, layout)
+                        except Exception as error:
+                            logger.warning(
+                                "Failed to preserve audio channels; retrying as mono: %s",
+                                error,
+                            )
+                            layout = "mono"
+                            audio_frames = convert_audio(
+                                waveform.mean(dim=0, keepdim=True), layout
+                            )
+
+                        if audio_frames:
+                            audio_stream = container.add_stream(
+                                "flac", rate=sample_rate, layout=layout
+                            )
+                    else:
+                        warn_video_only("音声のチャンネル数が0です")
+                except Exception as error:
+                    warn_video_only(error)
+                    audio_stream = None
+                    audio_frames = []
 
             for image in images:
                 rgb48 = (
@@ -111,13 +179,16 @@ class SaveSvtAv1:
             container.mux(video_stream.encode())
 
             if audio_stream is not None:
-                audio_pts = 0
-                for frame in audio_frames:
-                    frame.pts = audio_pts
-                    frame.time_base = Fraction(1, frame.sample_rate)
-                    audio_pts += frame.samples
-                    container.mux(audio_stream.encode(frame))
-                container.mux(audio_stream.encode(None))
+                try:
+                    audio_pts = 0
+                    for frame in audio_frames:
+                        frame.pts = audio_pts
+                        frame.time_base = Fraction(1, frame.sample_rate)
+                        audio_pts += frame.samples
+                        container.mux(audio_stream.encode(frame))
+                    container.mux(audio_stream.encode(None))
+                except Exception as error:
+                    warn_video_only(error)
 
         os.replace(partial_path, output_path)
 
@@ -137,3 +208,4 @@ class SaveSvtAv1:
 
 NODE_CLASS_MAPPINGS: dict[str, type[SaveSvtAv1]] = {"SaveSvtAv1": SaveSvtAv1}
 NODE_DISPLAY_NAME_MAPPINGS: dict[str, str] = {"SaveSvtAv1": "Save SVT-AV1 10-bit"}
+WEB_DIRECTORY = "./web"

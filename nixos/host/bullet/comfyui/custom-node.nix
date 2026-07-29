@@ -56,9 +56,15 @@ in
         builtins.readFile ./custom-node/load-image-optional/__init__.py
       );
       # 元fpsと音声を維持し、RGB48から10-bit SVT-AV1へ直接変換する保存ノード。
-      "ComfyUI-Save-SVT-AV1" = pkgs.writeTextDir "__init__.py" (
-        builtins.readFile ./custom-node/save-svt-av1/__init__.py
-      );
+      "ComfyUI-Save-SVT-AV1" = pkgs.symlinkJoin {
+        name = "comfyui-save-svt-av1";
+        paths = [
+          (pkgs.writeTextDir "__init__.py" (builtins.readFile ./custom-node/save-svt-av1/__init__.py))
+          (pkgs.writeTextDir "web/notification.js" (
+            builtins.readFile ./custom-node/save-svt-av1/web/notification.js
+          ))
+        ];
+      };
       # danbooruタグのオートコンプリート。
       # 日本語からの検索とpost count表示に対応していて、
       # メジャーなタグかどうかを確認しながら入力できる。

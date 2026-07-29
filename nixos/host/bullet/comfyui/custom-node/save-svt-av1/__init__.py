@@ -76,12 +76,22 @@ class SaveSvtAv1:
                 waveform = audio["waveform"][0]
                 sample_limit = math.ceil((sample_rate / frame_rate) * images.shape[0])
                 waveform = waveform[:, :sample_limit].float().cpu().contiguous().numpy()
-                layout = {1: "mono", 2: "stereo", 6: "5.1"}.get(waveform.shape[0], "stereo")
-                audio_stream = container.add_stream("flac", rate=sample_rate, layout=layout)
-                audio_frame = av.AudioFrame.from_ndarray(waveform, format="fltp", layout=layout)
+                layout = {1: "mono", 2: "stereo", 6: "5.1"}.get(
+                    waveform.shape[0], "stereo"
+                )
+                audio_stream = container.add_stream(
+                    "flac", rate=sample_rate, layout=layout
+                )
+                audio_frame = av.AudioFrame.from_ndarray(
+                    waveform, format="fltp", layout=layout
+                )
                 audio_frame.sample_rate = sample_rate
-                resampler = av.AudioResampler(format="s32p", layout=layout, rate=sample_rate)
-                audio_frames = resampler.resample(audio_frame) + resampler.resample(None)
+                resampler = av.AudioResampler(
+                    format="s32p", layout=layout, rate=sample_rate
+                )
+                audio_frames = resampler.resample(audio_frame) + resampler.resample(
+                    None
+                )
 
             for image in images:
                 rgb48 = (

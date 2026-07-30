@@ -14,3 +14,5 @@ HSA = "HSA"
 Hashi = "Hashi"
 # Immediately Invoked Function Expression (IIFE)の略語。camelCase分割で"IIF"をtypoと判定する。
 IIF = "IIF"
+# `gst-thumbnailers`はGStreamerベースのサムネイラ
+thumbnailers = "thumbnailers"

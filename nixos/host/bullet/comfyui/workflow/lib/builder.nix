@@ -81,7 +81,8 @@ let
       groups = [ ];
       config = { };
       extra = lib.optionalAttrs (app != null) {
-        linearMode = true;
+        # App Mode向けの入力定義は保持しつつ、通常はNode Graphで開く。
+        linearMode = false;
         linearData = app;
       };
       version = 0.4;

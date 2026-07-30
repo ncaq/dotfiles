@@ -21,7 +21,8 @@
           # 単位はバイト。
           # Nautilusのデフォルトは50MB程度しかなく、
           # 動画ではほぼ全滅する。
-          thumbnail-limit = lib.gvariant.mkUint64 (256 * 1024 * 1024 * 1024);
+          # メモリ上で安全に取り扱えるレベルの4GBに設定しておく。
+          thumbnail-limit = lib.gvariant.mkUint64 (4 * 1024 * 1024 * 1024);
         };
       };
     }

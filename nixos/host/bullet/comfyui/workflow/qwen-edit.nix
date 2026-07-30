@@ -24,6 +24,7 @@ let
     mkAppInput
     mkAppInputWith
     mkWorkflow
+    mkFilenamePrefix
     seedWidgets
     ;
 in
@@ -354,7 +355,7 @@ in
         ];
         order = 12;
         inputs = [ (mkInput "images" "IMAGE" 18) ];
-        widgets = [ "qwen-edit" ];
+        widgets = [ (mkFilenamePrefix "qwen-edit") ];
       })
     ];
     links = [

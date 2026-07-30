@@ -7,6 +7,6 @@
     inherit lib;
     width = 832;
     height = 1216;
-    filenamePrefix = "anime-standard";
+    name = "anime-standard";
   };
 }

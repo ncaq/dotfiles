@@ -8,6 +8,7 @@ let
     mkAppInput
     mkAppInputWith
     mkWorkflow
+    mkFilenamePrefix
     promptNodes
     promptLinks
     ;
@@ -62,7 +63,7 @@ in
         ];
         order = 6;
         inputs = [ (mkInput "images" "IMAGE" 9) ];
-        widgets = [ "anime-basic" ];
+        widgets = [ (mkFilenamePrefix "anime-basic") ];
       })
     ];
     links = promptLinks ++ [

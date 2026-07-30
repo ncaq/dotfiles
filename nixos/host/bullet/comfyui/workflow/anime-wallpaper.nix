@@ -7,6 +7,6 @@
     inherit lib;
     width = 1280;
     height = 720;
-    filenamePrefix = "anime-wallpaper";
+    name = "anime-wallpaper";
   };
 }

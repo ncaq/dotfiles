@@ -99,6 +99,9 @@ in
       {
         imports = [ inputs.utensils-comfyui-nix.nixosModules.default ];
         system.stateVersion = "26.05";
+        # コンテナにはホストのタイムゾーンが伝播しないため明示する。
+        # 未設定だとUTCになり、出力ファイル名の生成日時がJSTとずれる。
+        time.timeZone = "Asia/Tokyo";
         networking.useHostResolvConf = lib.mkForce false;
         services.resolved.enable = true;
         users = {

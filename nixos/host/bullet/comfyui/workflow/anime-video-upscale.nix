@@ -19,6 +19,7 @@ let
     mkAppInput
     mkAppInputWith
     mkWorkflow
+    mkFilenamePrefix
     ;
 in
 {
@@ -209,7 +210,7 @@ in
         outputs = [ ];
         widgets = [
           24 # fpsはリンクで上書きされる
-          "anime-video-upscale-svt-av1"
+          (mkFilenamePrefix "anime-video-upscale") # filename_prefix
           1 # CRF: near-lossless
           4 # preset: 品質優先
         ];

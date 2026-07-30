@@ -54,6 +54,7 @@ let
     mkAppInput
     mkAppInputWith
     mkWorkflow
+    mkFilenamePrefix
     seedWidgets
     ;
   # 実写バイアスを打ち消すために常にプロンプトへ前置するスタイル指定。
@@ -750,7 +751,7 @@ in
         order = 20;
         inputs = [ (mkInput "images" "IMAGE" 21) ];
         widgets = [
-          "anime-video" # filename_prefix
+          (mkFilenamePrefix "anime-video") # filename_prefix
           "av1" # codec
           16 # fps
           1 # crf

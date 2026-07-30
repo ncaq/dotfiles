@@ -23,8 +23,8 @@ let
       exec garage "$@"
     '';
   };
-  # Host wrapper to execute garage CLI inside the container.
-  # Export the environment file to provide GARAGE_RPC_SECRET etc.
+  # コンテナ内のgarage CLIをホストから実行するためのラッパー。
+  # GARAGE_RPC_SECRETなどを渡すために環境ファイルをexportする。
   garageWrapper = pkgs.writeShellApplication {
     name = "garage";
     runtimeInputs = with pkgs; [
@@ -65,7 +65,7 @@ in
           useHostResolvConf = lib.mkForce false;
           firewall.allowedTCPPorts = [
             3900 # S3 API
-            3903 # Admin API (host access only via private network)
+            3903 # Admin API (プライベートネットワーク経由でホストからのみアクセス)
           ];
         };
         users = {
@@ -96,8 +96,12 @@ in
             };
           };
         };
-        # Override DynamicUser to use explicit UIDs matching host bind-mount ownership.
-        # Re-enable security settings that DynamicUser=true would implicitly activate.
+        # ホスト側bind mountの所有権と一致する明示的なUIDを使うためDynamicUserを無効化する。
+        # DynamicUser=trueが暗黙に有効化していたセキュリティ設定を再有効化し、
+        # さらに追加のハードニングを上乗せする。
+        # GarageはRustバイナリで、必要なのはS3/RPC/Admin APIのTCP通信と、
+        # bind mountされたmetadata_dirとdata_dirへのファイルアクセスだけ。
+        # これらは上流モジュールのStateDirectory/ReadWritePathsで書き込み可能になっている。
         systemd.services.garage.serviceConfig = {
           DynamicUser = lib.mkForce false;
           User = "garage";
@@ -106,6 +110,27 @@ in
           PrivateTmp = true;
           RestrictSUIDSGID = true;
           RemoveIPC = true;
+          # 空リストはNixOSモジュールがディレクティブごと省略してしまうため、
+          # 空文字列でbounding setを空集合にリセットする。
+          CapabilityBoundingSet = "";
+          LockPersonality = true;
+          MemoryDenyWriteExecute = true;
+          PrivateDevices = true;
+          ProtectClock = true;
+          ProtectControlGroups = true;
+          ProtectHostname = true;
+          ProtectKernelLogs = true;
+          ProtectKernelModules = true;
+          ProtectKernelTunables = true;
+          RestrictAddressFamilies = [
+            "AF_INET"
+            "AF_INET6"
+            "AF_UNIX"
+          ];
+          RestrictNamespaces = true;
+          RestrictRealtime = true;
+          SystemCallArchitectures = "native";
+          SystemCallFilter = [ "@system-service" ];
         };
         environment.systemPackages = [ pkgs.garage_2 ];
       };
@@ -142,14 +167,14 @@ in
       group = "garage";
       mode = "0400";
     };
-    # Managed by sops-nix.
-    # To create (first time only):
+    # sops-nixで管理している。
+    # 作成方法(初回のみ):
     # ```
     # rpc_secret=$(openssl rand -hex 32)
     # admin_token=$(openssl rand -base64 32)
     # metrics_token=$(openssl rand -base64 32)
     # ```
-    # Then `sops secrets/seminar/garage.yaml` and set:
+    # その後`sops secrets/seminar/garage.yaml`で以下を設定する:
     # ```
     # rpc_secret: <hex>
     # admin_token: <base64>
@@ -180,7 +205,7 @@ in
     };
   };
 
-  # Initial cluster setup (manual, first time only):
+  # クラスタの初期セットアップ(手動、初回のみ):
   # ```
   # sudo garage status
   # sudo garage layout assign <node-id> -z seminar -c 8T

@@ -84,6 +84,31 @@ in
       # `EnvironmentFile`はsystemdがroot権限で読み込んでからプロセスに渡すため、
       # `DynamicUser`で動くcollectorでも`0400 root`のままアクセスできます。
       EnvironmentFile = [ config.sops.templates."otelcol-env".path ];
+      # Hardening
+      # 上流モジュールのDynamicUser/ProtectSystem/DevicePolicy/NoNewPrivilegesに加えて締めます。
+      # スクレイプとOTLP送信のTCP通信とNSSのUNIXソケットだけ許可します。
+      # 空リストはNixOSモジュールがディレクティブごと省略してしまうため、
+      # 空文字列でbounding setを空集合にリセットする。
+      CapabilityBoundingSet = "";
+      LockPersonality = true;
+      MemoryDenyWriteExecute = true;
+      ProtectClock = true;
+      ProtectControlGroups = true;
+      ProtectHome = true;
+      ProtectHostname = true;
+      ProtectKernelLogs = true;
+      ProtectKernelModules = true;
+      ProtectKernelTunables = true;
+      RestrictAddressFamilies = [
+        "AF_INET"
+        "AF_INET6"
+        "AF_UNIX"
+      ];
+      RestrictNamespaces = true;
+      RestrictRealtime = true;
+      RestrictSUIDSGID = true;
+      SystemCallArchitectures = "native";
+      SystemCallFilter = [ "@system-service" ];
     };
     after = [ "sops-install-secrets.service" ];
     requires = [ "sops-install-secrets.service" ];

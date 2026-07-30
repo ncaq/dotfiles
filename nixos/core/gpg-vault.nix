@@ -156,7 +156,9 @@ in
         # ハードニング。
         # 秘密鍵を扱うプロセスなので、
         # 不要な場所を見せず不要な特権と通信経路を断ちます。
-        CapabilityBoundingSet = [ ];
+        # 空リストはNixOSモジュールがディレクティブごと省略してしまうため、
+        # 空文字列でbounding setを空集合にリセットする。
+        CapabilityBoundingSet = "";
         LockPersonality = true;
         NoNewPrivileges = true;
         PrivateDevices = true;

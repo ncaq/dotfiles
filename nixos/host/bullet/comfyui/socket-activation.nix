@@ -26,7 +26,35 @@ in
           # `lib.getExe'`は使えない。
           ExecStart = "${pkgs.systemd}/lib/systemd/systemd-socket-proxyd ${localAddress}:${toString port}";
           DynamicUser = true;
+          # Hardening
+          # 受け取ったソケットとコンテナへのTCP接続を仲介するだけなので、
+          # capabilityもファイルシステムへのアクセスも不要。
+          # 空リストはNixOSモジュールがディレクティブごと省略してしまうため、
+          # 空文字列でbounding setを空集合にリセットする。
+          CapabilityBoundingSet = "";
+          LockPersonality = true;
+          MemoryDenyWriteExecute = true;
+          NoNewPrivileges = true;
+          PrivateDevices = true;
           PrivateTmp = true;
+          ProtectClock = true;
+          ProtectControlGroups = true;
+          ProtectHome = true;
+          ProtectHostname = true;
+          ProtectKernelLogs = true;
+          ProtectKernelModules = true;
+          ProtectKernelTunables = true;
+          ProtectSystem = "strict";
+          RestrictAddressFamilies = [
+            "AF_INET"
+            "AF_INET6"
+            "AF_UNIX"
+          ];
+          RestrictNamespaces = true;
+          RestrictRealtime = true;
+          RestrictSUIDSGID = true;
+          SystemCallArchitectures = "native";
+          SystemCallFilter = [ "@system-service" ];
         };
       };
       "container@comfyui" = {

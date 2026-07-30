@@ -143,6 +143,32 @@ in
           ExecStart = "${postgresql}/bin/pg_isready -h /run/postgresql --timeout=5";
           Restart = "on-failure";
           RestartSec = "1s";
+          # Hardening
+          # pg_isreadyはUNIXソケットに接続を試みるだけなので、
+          # ネットワーク名前空間ごと隔離してAF_UNIXだけ許可する。
+          # 空リストはNixOSモジュールがディレクティブごと省略してしまうため、
+          # 空文字列でbounding setを空集合にリセットする。
+          CapabilityBoundingSet = "";
+          LockPersonality = true;
+          MemoryDenyWriteExecute = true;
+          NoNewPrivileges = true;
+          PrivateDevices = true;
+          PrivateNetwork = true;
+          PrivateTmp = true;
+          ProtectClock = true;
+          ProtectControlGroups = true;
+          ProtectHome = true;
+          ProtectHostname = true;
+          ProtectKernelLogs = true;
+          ProtectKernelModules = true;
+          ProtectKernelTunables = true;
+          ProtectSystem = "strict";
+          RestrictAddressFamilies = [ "AF_UNIX" ];
+          RestrictNamespaces = true;
+          RestrictRealtime = true;
+          RestrictSUIDSGID = true;
+          SystemCallArchitectures = "native";
+          SystemCallFilter = [ "@system-service" ];
         };
       };
 

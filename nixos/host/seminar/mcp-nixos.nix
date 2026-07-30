@@ -142,11 +142,33 @@ in
             Restart = "always";
             RestartSec = 5;
             # Hardening
+            # PythonはlibffiがW^X違反のメモリを使うことがあるため、
+            # MemoryDenyWriteExecuteは設定しません。
             NoNewPrivileges = true;
             ProtectSystem = "strict";
             ProtectHome = true;
             PrivateTmp = true;
             PrivateDevices = true;
+            # 空リストはNixOSモジュールがディレクティブごと省略してしまうため、
+            # 空文字列でbounding setを空集合にリセットする。
+            CapabilityBoundingSet = "";
+            LockPersonality = true;
+            ProtectClock = true;
+            ProtectControlGroups = true;
+            ProtectHostname = true;
+            ProtectKernelLogs = true;
+            ProtectKernelModules = true;
+            ProtectKernelTunables = true;
+            RestrictAddressFamilies = [
+              "AF_INET"
+              "AF_INET6"
+              "AF_UNIX"
+            ];
+            RestrictNamespaces = true;
+            RestrictRealtime = true;
+            RestrictSUIDSGID = true;
+            SystemCallArchitectures = "native";
+            SystemCallFilter = [ "@system-service" ];
           };
         };
       };
@@ -183,6 +205,32 @@ in
         ExecStart =
           "${pkgs.iproute2}/bin/tc qdisc replace dev vm-mcp-nixos root tbf"
           + " rate 100mbit burst 10mbit latency 400ms";
+        # Hardening
+        # tcはnetlink経由でqdiscを設定するだけなので、
+        # CAP_NET_ADMINとAF_NETLINKだけ許可する。
+        CapabilityBoundingSet = [ "CAP_NET_ADMIN" ];
+        LockPersonality = true;
+        MemoryDenyWriteExecute = true;
+        NoNewPrivileges = true;
+        PrivateDevices = true;
+        PrivateTmp = true;
+        ProtectClock = true;
+        ProtectControlGroups = true;
+        ProtectHome = true;
+        ProtectHostname = true;
+        ProtectKernelLogs = true;
+        ProtectKernelModules = true;
+        ProtectKernelTunables = true;
+        ProtectSystem = "strict";
+        RestrictAddressFamilies = [
+          "AF_NETLINK"
+          "AF_UNIX"
+        ];
+        RestrictNamespaces = true;
+        RestrictRealtime = true;
+        RestrictSUIDSGID = true;
+        SystemCallArchitectures = "native";
+        SystemCallFilter = [ "@system-service" ];
       };
     };
   };

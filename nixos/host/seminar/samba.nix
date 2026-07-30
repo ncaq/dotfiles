@@ -65,6 +65,43 @@
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
+      # Hardening
+      # smbpasswdはrootが所有する/var/lib/samba配下のpassdbを直接更新するため、
+      # 追加のcapabilityは不要。
+      # tdbのロックやキャッシュに触る可能性があるディレクトリは、
+      # `-`プレフィックスで存在する場合のみ書き込みを許可する。
+      # 空リストはNixOSモジュールがディレクティブごと省略してしまうため、
+      # 空文字列でbounding setを空集合にリセットする。
+      CapabilityBoundingSet = "";
+      LockPersonality = true;
+      MemoryDenyWriteExecute = true;
+      NoNewPrivileges = true;
+      PrivateDevices = true;
+      PrivateTmp = true;
+      ProtectClock = true;
+      ProtectControlGroups = true;
+      ProtectHome = true;
+      ProtectHostname = true;
+      ProtectKernelLogs = true;
+      ProtectKernelModules = true;
+      ProtectKernelTunables = true;
+      ProtectSystem = "strict";
+      ReadWritePaths = [
+        "/var/lib/samba"
+        "-/var/cache/samba"
+        "-/var/lock/samba"
+        "-/run/samba"
+      ];
+      RestrictAddressFamilies = [
+        "AF_INET"
+        "AF_INET6"
+        "AF_UNIX"
+      ];
+      RestrictNamespaces = true;
+      RestrictRealtime = true;
+      RestrictSUIDSGID = true;
+      SystemCallArchitectures = "native";
+      SystemCallFilter = [ "@system-service" ];
     };
     script = ''
       set -euo pipefail

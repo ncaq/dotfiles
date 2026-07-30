@@ -15,7 +15,6 @@
       inkscape
       kdePackages.kdenlive
       libreoffice
-      nautilus
       pear-desktop
       rhythmbox
       vlc

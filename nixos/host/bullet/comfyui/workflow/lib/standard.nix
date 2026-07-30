@@ -12,7 +12,8 @@
   lib,
   width,
   height,
-  filenamePrefix,
+  # ワークフロー名。出力先サブディレクトリとファイル名の元になる。
+  name,
 }:
 let
   inherit (import ./builder.nix { inherit lib; })
@@ -22,6 +23,7 @@ let
     mkAppInput
     mkAppInputWith
     mkWorkflow
+    mkFilenamePrefix
     promptNodes
     promptLinks
     seedWidgets
@@ -300,7 +302,7 @@ mkWorkflow {
         ];
         order = 14;
         inputs = [ (mkInput "images" "IMAGE" 27) ];
-        widgets = [ filenamePrefix ];
+        widgets = [ (mkFilenamePrefix name) ];
       })
     ];
   links = promptLinks ++ [

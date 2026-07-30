@@ -19,6 +19,12 @@ let
     "randomize"
   ];
 
+  # 出力をワークフローごとのサブディレクトリへ分けて、
+  # ファイル名を連番だけでなく生成日時にするfilename_prefixを組み立てる。
+  # %year%などの置換はサーバ側のfolder_paths.get_save_image_pathが行うため、
+  # フロントエンドの%date:...%と違い自作ノードを含む全ての保存ノードで機能する。
+  mkFilenamePrefix = name: "${name}/${name}-%year%-%month%-%day%-%hour%-%minute%-%second%";
+
   mkNode =
     {
       id,
@@ -295,6 +301,7 @@ in
     mkAppInput
     mkAppInputWith
     mkWorkflow
+    mkFilenamePrefix
     promptNodes
     promptBaseLinks
     promptLinks

@@ -291,6 +291,7 @@ in
           "mcp__plugin_claude-code-home-manager_backlog__get_wiki"
           "mcp__plugin_claude-code-home-manager_backlog__get_wiki_pages"
           "mcp__plugin_claude-code-home-manager_backlog__get_wikis_count"
+          "mcp__plugin_claude-code-home-manager_cloudflare"
           "mcp__plugin_claude-code-home-manager_context7"
           "mcp__plugin_claude-code-home-manager_deepwiki"
           "mcp__plugin_claude-code-home-manager_github__get_commit"
@@ -316,6 +317,9 @@ in
           "mcp__plugin_claude-code-home-manager_github__search_pull_requests"
           "mcp__plugin_claude-code-home-manager_github__search_repositories"
           "mcp__plugin_claude-code-home-manager_github__search_users"
+          "mcp__plugin_claude-code-home-manager_mdn"
+          "mcp__plugin_claude-code-home-manager_microsoft-learn"
+          "mcp__plugin_claude-code-home-manager_nixos"
           "mcp__plugin_nix-tasuke_nixos"
         ];
         ask = [

@@ -12,6 +12,7 @@
 # CRF 1はnear-losslessだが、4:2:0への色差変換があるため厳密な可逆圧縮ではない。
 { lib, ... }:
 let
+  name = "anime-video-upscale";
   inherit (import ./lib/builder.nix { inherit lib; })
     mkNode
     mkInput
@@ -23,7 +24,7 @@ let
     ;
 in
 {
-  local.comfyui.workflows.anime-video-upscale = mkWorkflow {
+  local.comfyui.workflows.${name} = mkWorkflow {
     app = {
       inputs = [
         (mkAppInput 1 "file")
@@ -210,7 +211,7 @@ in
         outputs = [ ];
         widgets = [
           24 # fpsはリンクで上書きされる
-          (mkFilenamePrefix "anime-video-upscale") # filename_prefix
+          (mkFilenamePrefix name) # filename_prefix
           1 # CRF: near-lossless
           4 # preset: 品質優先
         ];

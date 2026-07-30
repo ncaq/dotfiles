@@ -1,6 +1,7 @@
 # txt2imgの基本形。
 { lib, ... }:
 let
+  name = "anime-basic";
   inherit (import ./lib/builder.nix { inherit lib; })
     mkNode
     mkInput
@@ -14,7 +15,7 @@ let
     ;
 in
 {
-  local.comfyui.workflows.anime-basic = mkWorkflow {
+  local.comfyui.workflows.${name} = mkWorkflow {
     app = {
       inputs = [
         (mkAppInputWith 2 "text" {
@@ -63,7 +64,7 @@ in
         ];
         order = 6;
         inputs = [ (mkInput "images" "IMAGE" 9) ];
-        widgets = [ (mkFilenamePrefix "anime-basic") ];
+        widgets = [ (mkFilenamePrefix name) ];
       })
     ];
     links = promptLinks ++ [

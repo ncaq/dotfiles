@@ -9,6 +9,7 @@
 # 0.7以上で構図だけ借りた大胆な変更。
 { lib, ... }:
 let
+  name = "anime-edit";
   inherit (import ./lib/builder.nix { inherit lib; })
     mkNode
     mkInput
@@ -22,7 +23,7 @@ let
     ;
 in
 {
-  local.comfyui.workflows.anime-edit = mkWorkflow {
+  local.comfyui.workflows.${name} = mkWorkflow {
     app = {
       inputs = [
         (mkAppInput 4 "image")
@@ -121,7 +122,7 @@ in
           ];
           order = 7;
           inputs = [ (mkInput "images" "IMAGE" 9) ];
-          widgets = [ (mkFilenamePrefix "anime-edit") ];
+          widgets = [ (mkFilenamePrefix name) ];
         })
       ];
     links = promptBaseLinks ++ [

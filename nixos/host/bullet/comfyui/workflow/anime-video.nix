@@ -47,6 +47,7 @@
 # 8-bit RGBから4:2:0への色変換があるため厳密な可逆圧縮ではない。
 { lib, ... }:
 let
+  name = "anime-video";
   inherit (import ./lib/builder.nix { inherit lib; })
     mkNode
     mkInput
@@ -63,7 +64,7 @@ let
   negativePrompt = "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走，写实风格，照片级，3D渲染，真人";
 in
 {
-  local.comfyui.workflows.anime-video = mkWorkflow {
+  local.comfyui.workflows.${name} = mkWorkflow {
     app = {
       inputs = [
         (mkAppInput 9 "image")
@@ -751,7 +752,7 @@ in
         order = 20;
         inputs = [ (mkInput "images" "IMAGE" 21) ];
         widgets = [
-          (mkFilenamePrefix "anime-video") # filename_prefix
+          (mkFilenamePrefix name) # filename_prefix
           "av1" # codec
           16 # fps
           1 # crf

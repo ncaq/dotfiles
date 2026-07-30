@@ -17,6 +17,7 @@
 # この基本形では1枚だけ使う。
 { lib, ... }:
 let
+  name = "qwen-edit";
   inherit (import ./lib/builder.nix { inherit lib; })
     mkNode
     mkInput
@@ -29,7 +30,7 @@ let
     ;
 in
 {
-  local.comfyui.workflows.qwen-edit = mkWorkflow {
+  local.comfyui.workflows.${name} = mkWorkflow {
     app = {
       inputs = [
         (mkAppInput 4 "image")
@@ -355,7 +356,7 @@ in
         ];
         order = 12;
         inputs = [ (mkInput "images" "IMAGE" 18) ];
-        widgets = [ (mkFilenamePrefix "qwen-edit") ];
+        widgets = [ (mkFilenamePrefix name) ];
       })
     ];
     links = [

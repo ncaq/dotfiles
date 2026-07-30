@@ -2,11 +2,13 @@
 # SDXLが破綻しにくい1280x720で生成して、
 # 1.5倍のhires fixでちょうど標準的なモニタサイズの1920x1080が出力される。
 { lib, ... }:
+let
+  name = "anime-wallpaper";
+in
 {
-  local.comfyui.workflows.anime-wallpaper = import ./lib/standard.nix {
-    inherit lib;
+  local.comfyui.workflows.${name} = import ./lib/standard.nix {
+    inherit lib name;
     width = 1280;
     height = 720;
-    name = "anime-wallpaper";
   };
 }

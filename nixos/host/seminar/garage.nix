@@ -12,13 +12,18 @@ let
     group = "garage";
     isSystemUser = true;
   };
+  # コンテナ内へbind mountされる環境ファイルのパス。
+  # sops-nixの展開先はramfsでidmapped mountに対応していないため、
+  # garage-env.serviceがtmpfsである/runへ複製したものをbind mountする。
+  envDir = "/run/garage";
+  envFile = "${envDir}/garage.env";
   garageWithEnv = pkgs.writeShellApplication {
     name = "garage-with-env";
     runtimeInputs = [ ];
     text = ''
       set -a
       # shellcheck source=/dev/null
-      source /etc/garage.env
+      source ${envFile}
       set +a
       exec garage "$@"
     '';
@@ -40,23 +45,22 @@ in
     autoStart = true;
     ephemeral = true;
     privateNetwork = true;
-    privateUsers = "identity";
+    # 毎起動ランダムな高位UID範囲へマップして、
+    # コンテナを脱出されてもホスト上では無権限のUIDになるようにする。
+    # identityと違いコンテナ内rootがホストのUID 0を持たなくなる。
+    # garageはUNIXソケットのpeer認証を使わないためpickにできる。
+    privateUsers = "pick";
     hostAddress = addr.host;
     localAddress = addr.guest;
-    bindMounts = {
-      "/etc/garage.env" = {
-        hostPath = config.sops.templates."garage-env".path;
-        isReadOnly = true;
-      };
-      "/var/lib/garage/meta" = {
-        hostPath = "/var/lib/garage/meta";
-        isReadOnly = false;
-      };
-      "/mnt/noa/garage/data" = {
-        hostPath = "/mnt/noa/garage/data";
-        isReadOnly = false;
-      };
-    };
+    # pickでは素のbind mountだと所有者が無効なUIDに見えてアクセスできないため、
+    # idmapオプションで数値IDをホストとコンテナで同一視させる。
+    # データディレクトリはbtrfs、環境ファイルはtmpfs上にありどちらもidmap対応。
+    # `bindMounts`はマウントオプションを渡せないのでextraFlagsで指定する。
+    extraFlags = [
+      "--bind-ro=${envDir}:${envDir}:idmap"
+      "--bind=/var/lib/garage/meta:/var/lib/garage/meta:idmap"
+      "--bind=/mnt/noa/garage/data:/mnt/noa/garage/data:idmap"
+    ];
     config =
       { lib, ... }:
       {
@@ -77,7 +81,7 @@ in
           garage = {
             enable = true;
             package = pkgs.garage_2;
-            environmentFile = "/etc/garage.env";
+            environmentFile = envFile;
             settings = {
               metadata_dir = "/var/lib/garage/meta";
               data_dir = "/mnt/noa/garage/data";
@@ -142,9 +146,33 @@ in
   };
 
   systemd = {
-    services."container@garage" = {
-      requires = [ "sops-install-secrets.service" ];
-      after = [ "sops-install-secrets.service" ];
+    services = {
+      # sopsテンプレートの環境ファイルをtmpfsへ複製する。
+      # 展開先の/run/secrets.dはramfsでidmapped mountできないため、
+      # idmap対応のtmpfs(/run)に置き直してからコンテナへbind mountする。
+      # コンテナ内ではPID 1(コンテナroot)がEnvironmentFileとして読むので、
+      # idmapで同一視されるroot:rootの0400で置く。
+      garage-env = {
+        description = "Copy garage environment file to tmpfs for idmapped bind mount";
+        requires = [ "sops-install-secrets.service" ];
+        after = [ "sops-install-secrets.service" ];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          RuntimeDirectory = "garage";
+          RuntimeDirectoryMode = "0700";
+          ExecStart = "${pkgs.coreutils}/bin/install -m 0400 ${
+            config.sops.templates."garage-env".path
+          } ${envFile}";
+        };
+      };
+      "container@garage" = {
+        requires = [ "garage-env.service" ];
+        after = [ "garage-env.service" ];
+        # extraFlagsのbind mountはbindMountsと違いRequiresMountsForが自動付与されないため、
+        # 明示的に指定して/mnt/noaのマウントを待つ。
+        unitConfig.RequiresMountsFor = [ "/mnt/noa/garage/data" ];
+      };
     };
     tmpfiles.rules = [
       "d /var/lib/garage      0750 garage garage -"

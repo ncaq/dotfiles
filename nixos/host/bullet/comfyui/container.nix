@@ -16,6 +16,8 @@ let
   # コンテナ内のcomfyuiユーザのID。
   # ephemeralコンテナでは動的割り当ての記録が起動ごとに消えるため、
   # bind mountした`/var/lib/comfyui`の所有権がずれないように固定する。
+  # idmap付きbind mountは数値IDをホストとコンテナで同一視するため、
+  # `privateUsers = "pick"`でもこの固定が引き続き必要。
   # nixpkgsが静的IDに予約している400未満と、
   # 動的割り当てが使う999からの降順領域を避けた任意の値。
   comfyuiUid = 500;
@@ -48,13 +50,18 @@ in
     autoStart = false;
     ephemeral = true;
     privateNetwork = true;
-    privateUsers = "identity";
+    # 毎起動ランダムな高位UID範囲へマップして、
+    # コンテナを脱出されてもホスト上では無権限のUIDになるようにする。
+    # identityと違いコンテナ内rootがホストのUID 0を持たなくなる。
+    privateUsers = "pick";
     inherit hostAddress localAddress;
     # CUDAを使うためにNVIDIAデバイスをコンテナへ渡す。
     allowedDevices = map (node: {
       inherit node;
       modifier = "rw";
     }) nvidiaDevices;
+    # NVIDIAデバイスノードは0666、ドライバライブラリはworld-readableなので、
+    # UIDがマップされないpickでもotherパーミッションでアクセスできる。
     bindMounts =
       lib.genAttrs nvidiaDevices (device: {
         hostPath = device;
@@ -67,12 +74,12 @@ in
           hostPath = "/run/opengl-driver";
           isReadOnly = true;
         };
-        # モデルやカスタムノードなどのデータはホスト側に永続化する。
-        ${dataDir} = {
-          hostPath = dataDir;
-          isReadOnly = false;
-        };
       };
+    # モデルやカスタムノードなどのデータはホスト側に永続化する。
+    # pickでは素のbind mountだと所有者が無効なUIDに見えて書き込めないため、
+    # idmapオプションで数値IDをホストとコンテナで同一視させる。
+    # `bindMounts`はマウントオプションを渡せないのでextraFlagsで指定する。
+    extraFlags = [ "--bind=${dataDir}:${dataDir}:idmap" ];
     config =
       {
         lib,

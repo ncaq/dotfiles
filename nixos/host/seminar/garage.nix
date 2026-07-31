@@ -14,7 +14,7 @@ let
   };
   # コンテナ内へbind mountされる環境ファイルのパス。
   # sops-nixの展開先はramfsでidmapped mountに対応していないため、
-  # garage-env.serviceがtmpfsである/runへ複製したものをbind mountする。
+  # container@garageのExecStartPreがtmpfsである/runへ複製したものをbind mountする。
   envDir = "/run/garage";
   envFile = "${envDir}/garage.env";
   garageWithEnv = pkgs.writeShellApplication {
@@ -146,33 +146,23 @@ in
   };
 
   systemd = {
-    services = {
+    services."container@garage" = {
+      requires = [ "sops-install-secrets.service" ];
+      after = [ "sops-install-secrets.service" ];
+      # extraFlagsのbind mountはbindMountsと違いRequiresMountsForが自動付与されないため、
+      # 明示的に指定して/mnt/noaのマウントを待つ。
+      unitConfig.RequiresMountsFor = [ "/mnt/noa/garage/data" ];
       # sopsテンプレートの環境ファイルをtmpfsへ複製する。
       # 展開先の/run/secrets.dはramfsでidmapped mountできないため、
       # idmap対応のtmpfs(/run)に置き直してからコンテナへbind mountする。
       # コンテナ内ではPID 1(コンテナroot)がEnvironmentFileとして読むので、
       # idmapで同一視されるroot:rootの0400で置く。
-      garage-env = {
-        description = "Copy garage environment file to tmpfs for idmapped bind mount";
-        requires = [ "sops-install-secrets.service" ];
-        after = [ "sops-install-secrets.service" ];
-        serviceConfig = {
-          Type = "oneshot";
-          RemainAfterExit = true;
-          RuntimeDirectory = "garage";
-          RuntimeDirectoryMode = "0700";
-          ExecStart = "${pkgs.coreutils}/bin/install -m 0400 ${
-            config.sops.templates."garage-env".path
-          } ${envFile}";
-        };
-      };
-      "container@garage" = {
-        requires = [ "garage-env.service" ];
-        after = [ "garage-env.service" ];
-        # extraFlagsのbind mountはbindMountsと違いRequiresMountsForが自動付与されないため、
-        # 明示的に指定して/mnt/noaのマウントを待つ。
-        unitConfig.RequiresMountsFor = [ "/mnt/noa/garage/data" ];
-      };
+      # 独立したユニットにするとRuntimeDirectoryの寿命やrestartの伝播が
+      # コンテナと噛み合わなくなるため、コンテナ自身の起動処理に含める。
+      serviceConfig.ExecStartPre = [
+        "${pkgs.coreutils}/bin/install -d -m 0700 ${envDir}"
+        "${pkgs.coreutils}/bin/install -m 0400 ${config.sops.templates."garage-env".path} ${envFile}"
+      ];
     };
     tmpfiles.rules = [
       "d /var/lib/garage      0750 garage garage -"
@@ -194,6 +184,9 @@ in
       owner = "garage";
       group = "garage";
       mode = "0400";
+      # シークレットのローテート時に/run/garageへの複製とコンテナ内のgarageを
+      # 新しい内容で確実にやり直すため、コンテナごと再起動する。
+      restartUnits = [ "container@garage.service" ];
     };
     # sops-nixで管理している。
     # 作成方法(初回のみ):

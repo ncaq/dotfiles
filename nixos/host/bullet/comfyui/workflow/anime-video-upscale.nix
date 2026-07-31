@@ -5,8 +5,13 @@
 # 幅と高さは4:2:0で扱える偶数へ丸める。
 #
 # RTX 5090の32GB VRAMで7B FP16を安定して動かすため、
-# DiTの16ブロックとI/O部品をCPUへ退避し、VAEはタイル処理する。
-# VRAMに余裕があればblocks_to_swapを減らすと高速になる。
+# DiTは全36ブロックとI/O部品をCPUへ退避し、VAEはタイル処理する。
+# swap削減よりbatch_size増加の方が実測で圧倒的に効くため、
+# 空いたVRAMは全てbatch_size(4n+1)へ回す。
+# 4K出力の実測(33フレーム)ではbatch_size 13が最速かつピーク約24GiBで、
+# 17はパディングとデコード増で逆に遅くなり、
+# swapを16ブロックへ減らしても速度はほぼ変わらなかった。
+# blocks_to_swapは出力へビット単位で影響しない純粋な速度ノブ。
 #
 # SeedVR2 CLIは動画を128フレームずつ処理し、チャンク境界へ時間的文脈を渡す。
 # 出力はRGB48から10-bit RGB 4:4:4のx265 losslessへ逐次変換するため、全尺をRAMへ展開しない。
@@ -107,11 +112,11 @@ in
         widgets = [
           "seedvr2_ema_7b_fp16.safetensors"
           "cuda:0"
-          16 # blocks_to_swap
+          36 # blocks_to_swap: 全ブロック退避で空くVRAMをbatch_sizeへ回す
           true # swap_io_components
           "cpu" # offload_device
           true # cache_model
-          "sdpa" # attention_mode: 品質と互換性を優先
+          "sdpa" # attention_mode: sageattn_2でも実測で速度差がなく品質と互換性を優先
         ];
       })
       (mkNode {
@@ -199,7 +204,7 @@ in
           3840 # max_resolution(計算した長辺から上書きされる)
           3840 # output_width(元動画の比率から上書きされる)
           2160 # output_height(元動画の比率から上書きされる)
-          5 # batch_size: 4n+1
+          13 # batch_size: 4n+1、時間窓拡大で一貫性と速度を両立
           true # uniform_batch_size
           "lab" # color_correction
           3 # temporal_overlap

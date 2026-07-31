@@ -139,7 +139,6 @@ class SeedVR2StreamingVideoUpscaler:
         command = [
             sys.executable,
             str(seedvr2_dir / "inference_cli.py"),
-            os.fspath(source),
             "--output",
             os.fspath(partial_path),
             "--output_format",
@@ -209,6 +208,10 @@ class SeedVR2StreamingVideoUpscaler:
             "--debug": enable_debug,
         }
         command.extend(flag for flag, enabled in enabled_flags.items() if enabled)
+        # 入力パスは`--`の後の位置引数として渡し、
+        # HTTPアップロード由来の`-`で始まるファイル名が、
+        # argparseにオプションとして解釈されるのを防ぐ(CWE-88)。
+        command.extend(["--", os.fspath(source)])
 
         logger.info("Running SeedVR2 streaming upscale: %s", " ".join(command))
         process = subprocess.Popen(command, start_new_session=True)

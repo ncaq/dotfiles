@@ -9,7 +9,9 @@
 # VRAMに余裕があればblocks_to_swapを減らすと高速になる。
 #
 # SeedVR2 CLIは動画を128フレームずつ処理し、チャンク境界へ時間的文脈を渡す。
-# 出力はRGB48から10-bit x265 CRF 1へ逐次変換するため、全尺をRAMへ展開しない。
+# 出力はRGB48から10-bit RGB 4:4:4のx265 losslessへ逐次変換するため、全尺をRAMへ展開しない。
+# gbrp10leはクロマサブサンプリングもRGB→YUV変換も行わないため、
+# 10-bit量子化以降は数学的に無損失になる。
 { lib, ... }:
 let
   name = "anime-video-upscale";
@@ -207,7 +209,8 @@ in
           "cpu" # offload_device
           128 # chunk_size
           (mkFilenamePrefix name) # filename_prefix
-          1 # x265 CRF: near-lossless
+          1 # crf(losslessが偽の時のみ使用)
+          true # lossless: x265 lossless RGB 4:4:4
           false # enable_debug
         ];
       })
@@ -402,7 +405,7 @@ in
         ];
         order = 13;
         widgets = [
-          "出力は映像のみのx265 10-bit CRF 1 MP4。元動画の映像以外を再muxする例:\n\nffmpeg -i upscaled.mp4 -i original.mkv -map 0:v:0 -map 1:a? -map 1:s? -map_metadata 1 -map_chapters 1 -c copy remuxed.mkv"
+          "出力は映像のみのx265 10-bit RGB 4:4:4 lossless MP4。ハードウェアデコード非対応なのでmpvなどのソフトウェアデコードで再生する。元動画の映像以外を再muxする例:\n\nffmpeg -i upscaled.mp4 -i original.mkv -map 0:v:0 -map 1:a? -map 1:s? -map_metadata 1 -map_chapters 1 -c copy remuxed.mkv"
         ];
       })
     ];

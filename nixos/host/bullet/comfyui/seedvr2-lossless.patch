@@ -1,48 +1,64 @@
 --- a/inference_cli.py
 +++ b/inference_cli.py
-@@ -166 +166,2 @@
+@@ -166,3 +166,20 @@
 -    def __init__(self, path: str, width: int, height: int, fps: float, use_10bit: bool = False):
+-        pix_fmt = 'yuv420p10le' if use_10bit else 'yuv420p'
+-        codec = 'libx265' if use_10bit else 'libx264'
 +    def __init__(self, path: str, width: int, height: int, fps: float, use_10bit: bool = False,
-+                 crf: int = 12, output_width: int = 0, output_height: int = 0):
-@@ -167,0 +169 @@
++                 crf: int = 12, lossless: bool = False,
++                 output_width: int = 0, output_height: int = 0):
++        if use_10bit and lossless:
++            # gbrp10le keeps RGB as-is: no chroma subsampling and no RGB->YUV
++            # matrix rounding, so with lossless=1 the encode is mathematically
++            # lossless against the 10-bit RGB input.
++            pix_fmt = 'gbrp10le'
++        else:
++            pix_fmt = 'yuv420p10le' if use_10bit else 'yuv420p'
 +        input_pix_fmt = 'rgb48le' if use_10bit else 'rgb24'
-@@ -168,0 +171,4 @@
++        codec = 'libx265' if use_10bit else 'libx264'
 +        scale_args = (
 +            ['-vf', f'scale={output_width}:{output_height}:flags=lanczos']
 +            if output_width > 0 and output_height > 0 else []
 +        )
-@@ -171 +177 @@
++        rate_args = (
++            ['-x265-params', 'lossless=1'] if use_10bit and lossless
++            else ['-crf', str(crf)]
++        )
+@@ -171 +188 @@
 -            ['ffmpeg', '-y', '-f', 'rawvideo', '-pix_fmt', 'rgb24',
 +            ['ffmpeg', '-y', '-f', 'rawvideo', '-pix_fmt', input_pix_fmt,
-@@ -173 +179,2 @@
+@@ -173 +190,2 @@
 -             '-c:v', codec, '-pix_fmt', pix_fmt, '-preset', 'medium', '-crf', '12', path],
 +             *scale_args, '-c:v', codec, '-pix_fmt', pix_fmt,
-+             '-preset', 'medium', '-crf', str(crf), path],
-@@ -183 +190 @@
++             '-preset', 'medium', *rate_args, path],
+@@ -183 +201 @@
 -            self.proc.stdin.write(frame_rgb.astype(np.uint8).tobytes())
 +            self.proc.stdin.write(frame_rgb.tobytes())
-@@ -204,4 +211,2 @@
+@@ -204,4 +222,2 @@
 -                debug.log(
 -                    f"ffmpeg exited with code {self.proc.returncode}. "
 -                    "Check output file for corruption.",
 -                    level="WARNING", force=True, category="file"
 +                raise RuntimeError(
 +                    f"ffmpeg exited with code {self.proc.returncode}"
-@@ -528 +533,2 @@
+@@ -528 +544,3 @@
 -                    video_backend=args.video_backend, use_10bit=args.use_10bit)
 +                    video_backend=args.video_backend, use_10bit=args.use_10bit, crf=args.crf,
-+                    output_width=args.output_width, output_height=args.output_height)
-@@ -557 +563,2 @@
++                    lossless=args.lossless, output_width=args.output_width,
++                    output_height=args.output_height)
+@@ -557 +575,3 @@
 -                        video_backend=args.video_backend, use_10bit=args.use_10bit)
 +                        video_backend=args.video_backend, use_10bit=args.use_10bit, crf=args.crf,
-+                        output_width=args.output_width, output_height=args.output_height)
-@@ -742 +749,4 @@
++                        lossless=args.lossless, output_width=args.output_width,
++                        output_height=args.output_height)
+@@ -742 +762,5 @@
 -    use_10bit: bool = False
 +    use_10bit: bool = False,
 +    crf: int = 12,
++    lossless: bool = False,
 +    output_width: int = 0,
 +    output_height: int = 0
-@@ -763 +773,10 @@
+@@ -763 +787,10 @@
 -    frames_np = (frames_tensor.cpu().numpy() * 255.0).astype(np.uint8)
 +    if video_backend == "ffmpeg" and use_10bit:
 +        # Round and clamp before the uint16 cast: without them, values
@@ -54,14 +70,17 @@
 +                     .clamp_(0, 65535).to(torch.uint16).cpu().numpy())
 +    else:
 +        frames_np = (frames_tensor.cpu().numpy() * 255.0).astype(np.uint8)
-@@ -770 +789,3 @@
+@@ -770 +803,4 @@
 -            writer = FFMPEGVideoWriter(output_path, W, H, fps, use_10bit)
 +            writer = FFMPEGVideoWriter(
-+                output_path, W, H, fps, use_10bit, crf, output_width, output_height
++                output_path, W, H, fps, use_10bit, crf, lossless,
++                output_width, output_height
 +            )
-@@ -1358,0 +1380,6 @@
+@@ -1358,0 +1395,8 @@
 +    io_group.add_argument("--crf", type=int, default=12,
 +                        help="Video encoder CRF (default: 12)")
++    io_group.add_argument("--lossless", action="store_true",
++                        help="Encode lossless RGB 4:4:4 with x265 (10-bit ffmpeg backend only)")
 +    io_group.add_argument("--output_width", type=int, default=0,
 +                        help="Final output width. 0 keeps the SeedVR2 output width (default: 0)")
 +    io_group.add_argument("--output_height", type=int, default=0,

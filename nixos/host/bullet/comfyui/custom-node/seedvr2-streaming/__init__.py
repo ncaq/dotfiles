@@ -87,6 +87,7 @@ class SeedVR2StreamingVideoUpscaler:
                 ),
                 "filename_prefix": ("STRING", {"default": "anime-video-upscale"}),
                 "crf": ("INT", {"default": 1, "min": 0, "max": 51}),
+                "lossless": ("BOOLEAN", {"default": True}),
                 "enable_debug": ("BOOLEAN", {"default": False}),
             }
         }
@@ -117,6 +118,7 @@ class SeedVR2StreamingVideoUpscaler:
         chunk_size: int,
         filename_prefix: str,
         crf: int,
+        lossless: bool,
         enable_debug: bool,
     ) -> dict[str, Any]:
         source = video.get_stream_source()
@@ -197,6 +199,7 @@ class SeedVR2StreamingVideoUpscaler:
             vae.get("tile_debug", "false"),
         ]
         enabled_flags = {
+            "--lossless": lossless,
             "--uniform_batch_size": uniform_batch_size,
             "--swap_io_components": dit.get("swap_io_components", False),
             "--cache_dit": dit.get("cache_model", False),

@@ -32,7 +32,7 @@ in
           rev = "4490bd1f482e026674543386bb2a4d176da245b9";
           hash = "sha256-6nsqFflLw9vYH/du35ET46fdAm1NMjjTe2bA8JmaBE4=";
         };
-        patches = [ ./seedvr2-near-lossless.patch ];
+        patches = [ ./seedvr2-lossless.patch ];
       };
       # SeedVR2 CLIのチャンク処理をComfyUIから起動し、長尺動画をRAM上限付きで処理する。
       "ComfyUI-SeedVR2-Streaming" = pkgs.writeTextDir "__init__.py" (

@@ -71,10 +71,9 @@ lib.mkMerge [
             "credentials=${config.sops.templates."cifs-credentials".path}"
             "uid=${toString userConfig.uid}"
             "gid=${toString config.users.groups.${userConfig.group}.gid}"
-            # 所有グループ(users)にも書き込みを許可する。
-            # bulletのComfyUIコンテナなど、
-            # uidの異なるサービスユーザがグループ経由で書き込めるようにするため。
-            # デフォルトの0755ではファイルが実行可能に見えてしまう問題も直る。
+            # デフォルトの0755/0755だとファイルが実行可能に見えてしまうため、
+            # ファイルから実行ビットを落とす。
+            # 所有グループ(users)への書き込み許可も維持する。
             "dir_mode=0775"
             "file_mode=0664"
             # systemdはデフォルトだと`Before=remote-fs.target`を追加します。

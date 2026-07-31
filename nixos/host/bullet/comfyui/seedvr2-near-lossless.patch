@@ -42,18 +42,24 @@
 +    crf: int = 12,
 +    output_width: int = 0,
 +    output_height: int = 0
-@@ -763 +773,4 @@
+@@ -763 +773,10 @@
 -    frames_np = (frames_tensor.cpu().numpy() * 255.0).astype(np.uint8)
 +    if video_backend == "ffmpeg" and use_10bit:
-+        frames_np = (frames_tensor.cpu().numpy() * 65535.0).astype(np.uint16)
++        # Round and clamp before the uint16 cast: without them, values
++        # slightly above 1.0 wrap around and turn highlights black.
++        # float() also guards float16 inputs against overflow at mul(65535).
++        # In-place ops avoid extra float copies of the whole chunk; callers
++        # only read .shape after this, so mutating the input is safe.
++        frames_np = (frames_tensor.float().mul_(65535).round_()
++                     .clamp_(0, 65535).to(torch.uint16).cpu().numpy())
 +    else:
 +        frames_np = (frames_tensor.cpu().numpy() * 255.0).astype(np.uint8)
-@@ -770 +783,3 @@
+@@ -770 +789,3 @@
 -            writer = FFMPEGVideoWriter(output_path, W, H, fps, use_10bit)
 +            writer = FFMPEGVideoWriter(
 +                output_path, W, H, fps, use_10bit, crf, output_width, output_height
 +            )
-@@ -1358,0 +1374,6 @@
+@@ -1358,0 +1380,6 @@
 +    io_group.add_argument("--crf", type=int, default=12,
 +                        help="Video encoder CRF (default: 12)")
 +    io_group.add_argument("--output_width", type=int, default=0,

@@ -21,8 +21,10 @@
       "tailscaled.service"
     ];
     # tailscale CLIはtailscaledのLocalAPIにUNIXソケット経由で接続するだけなので、
-    # capabilityも書き込み可能なファイルシステムも不要でハードニングをそのまま適用できる。
-    serviceConfig = hardening.network // {
+    # UNIXソケットのみ許可のハードニングまで絞れる。
+    # seminar上で同等のサンドボックスを再現して`tailscale status --json`が
+    # 動作することを確認済み。
+    serviceConfig = hardening.unixSocket // {
       Type = "oneshot";
       RemainAfterExit = true;
       ExecStart = lib.getExe (

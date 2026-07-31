@@ -30,8 +30,10 @@ in
     wantedBy = [ "multi-user.target" ];
     # tailscale CLIはtailscaledのLocalAPIにUNIXソケット経由で接続してセッションを維持するだけで、
     # 実際のプロキシ転送はtailscaled側が行うため、
-    # capabilityも書き込み可能なファイルシステムも不要でハードニングをそのまま適用できる。
-    serviceConfig = hardening.network // {
+    # UNIXソケットのみ許可のハードニングまで絞れる。
+    # seminar上で同等のサンドボックスを再現して、
+    # フォアグラウンドのserveセッションが登録・維持できることを確認済み。
+    serviceConfig = hardening.unixSocket // {
       ExecStart = "${tailscale}/bin/tailscale serve --https=8443 http://127.0.0.1:8081";
       # tailscaledの再起動などでセッションが切れるとプロセスが終了するため、
       # 終了コードによらず常に再起動して復帰させる。

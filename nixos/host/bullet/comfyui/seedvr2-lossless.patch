@@ -1,6 +1,11 @@
 --- a/inference_cli.py
 +++ b/inference_cli.py
-@@ -166,3 +166,20 @@
+@@ -162,2 +162,2 @@
+-        Frames must be passed to write() in BGR format (same as cv2.VideoWriter).
+-        Internally converts to RGB for ffmpeg rawvideo input.
++        Frames must be passed to write() in RGB format matching input_pix_fmt
++        (rgb24 for 8-bit, rgb48le for 10-bit).
+@@ -166,3 +166,22 @@
 -    def __init__(self, path: str, width: int, height: int, fps: float, use_10bit: bool = False):
 -        pix_fmt = 'yuv420p10le' if use_10bit else 'yuv420p'
 -        codec = 'libx265' if use_10bit else 'libx264'
@@ -21,44 +26,51 @@
 +            if output_width > 0 and output_height > 0 else []
 +        )
 +        rate_args = (
-+            ['-x265-params', 'lossless=1'] if use_10bit and lossless
++            # frame-threads=12 measured ~8% faster than the auto value on a
++            # 9950X3D for 4K lossless, with identical output size.
++            ['-x265-params', 'lossless=1:frame-threads=12'] if use_10bit and lossless
 +            else ['-crf', str(crf)]
 +        )
-@@ -171 +188 @@
+@@ -171 +190 @@
 -            ['ffmpeg', '-y', '-f', 'rawvideo', '-pix_fmt', 'rgb24',
 +            ['ffmpeg', '-y', '-f', 'rawvideo', '-pix_fmt', input_pix_fmt,
-@@ -173 +190,2 @@
+@@ -173 +192,2 @@
 -             '-c:v', codec, '-pix_fmt', pix_fmt, '-preset', 'medium', '-crf', '12', path],
 +             *scale_args, '-c:v', codec, '-pix_fmt', pix_fmt,
 +             '-preset', 'medium', *rate_args, path],
-@@ -183 +201 @@
+@@ -177 +197 @@
+-    def write(self, frame_bgr: np.ndarray):
++    def write(self, frame_rgb: np.ndarray):
+@@ -181 +200,0 @@
+-        frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
+@@ -183 +202 @@
 -            self.proc.stdin.write(frame_rgb.astype(np.uint8).tobytes())
 +            self.proc.stdin.write(frame_rgb.tobytes())
-@@ -204,4 +222,2 @@
+@@ -204,4 +223,2 @@
 -                debug.log(
 -                    f"ffmpeg exited with code {self.proc.returncode}. "
 -                    "Check output file for corruption.",
 -                    level="WARNING", force=True, category="file"
 +                raise RuntimeError(
 +                    f"ffmpeg exited with code {self.proc.returncode}"
-@@ -528 +544,3 @@
+@@ -528 +545,3 @@
 -                    video_backend=args.video_backend, use_10bit=args.use_10bit)
 +                    video_backend=args.video_backend, use_10bit=args.use_10bit, crf=args.crf,
 +                    lossless=args.lossless, output_width=args.output_width,
 +                    output_height=args.output_height)
-@@ -557 +575,3 @@
+@@ -557 +576,3 @@
 -                        video_backend=args.video_backend, use_10bit=args.use_10bit)
 +                        video_backend=args.video_backend, use_10bit=args.use_10bit, crf=args.crf,
 +                        lossless=args.lossless, output_width=args.output_width,
 +                        output_height=args.output_height)
-@@ -742 +762,5 @@
+@@ -742 +763,5 @@
 -    use_10bit: bool = False
 +    use_10bit: bool = False,
 +    crf: int = 12,
 +    lossless: bool = False,
 +    output_width: int = 0,
 +    output_height: int = 0
-@@ -763 +787,10 @@
+@@ -763 +788,10 @@
 -    frames_np = (frames_tensor.cpu().numpy() * 255.0).astype(np.uint8)
 +    if video_backend == "ffmpeg" and use_10bit:
 +        # Round and clamp before the uint16 cast: without them, values
@@ -70,13 +82,22 @@
 +                     .clamp_(0, 65535).to(torch.uint16).cpu().numpy())
 +    else:
 +        frames_np = (frames_tensor.cpu().numpy() * 255.0).astype(np.uint8)
-@@ -770 +803,4 @@
+@@ -770 +804,4 @@
 -            writer = FFMPEGVideoWriter(output_path, W, H, fps, use_10bit)
 +            writer = FFMPEGVideoWriter(
 +                output_path, W, H, fps, use_10bit, crf, lossless,
 +                output_width, output_height
 +            )
-@@ -1358,0 +1395,8 @@
+@@ -778,2 +815,6 @@
+-        frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+-        writer.write(frame_bgr)
++        if video_backend == "ffmpeg":
++            # FFMPEGVideoWriter takes RGB directly: skipping the BGR round
++            # trip avoids two full-frame conversions per frame.
++            writer.write(frame)
++        else:
++            writer.write(cv2.cvtColor(frame, cv2.COLOR_RGB2BGR))
+@@ -1358,0 +1400,8 @@
 +    io_group.add_argument("--crf", type=int, default=12,
 +                        help="Video encoder CRF (default: 12)")
 +    io_group.add_argument("--lossless", action="store_true",

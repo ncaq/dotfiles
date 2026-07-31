@@ -21,7 +21,13 @@
 # ホスト側のセキュリティは緩まない。
 # サーバ側の認証と所有権はマウント資格情報(ncaq)で決まるので、
 # どのUIDで書いてもseminar上ではncaqのファイルになる。
-{ lib, config, ... }:
+{
+  lib,
+  pkgs,
+  config,
+  utils,
+  ...
+}:
 let
   # コンテナ内から見える出力ディレクトリ。
   # ncaqがseminar上で見るパスと揃えて分かりやすくする。
@@ -30,6 +36,11 @@ let
   # 親ディレクトリを0700にしてホストの一般ユーザから隠す。
   hostMountParent = "/run/comfyui-cifs";
   hostMountPoint = "${hostMountParent}/output";
+  mountUnit = "${utils.escapeSystemdPath hostMountPoint}.mount";
+  inherit (import ../../../../lib/seminar-cifs.nix { inherit pkgs; })
+    baseMountOptions
+    waitForSeminar
+    ;
 in
 {
   containers.comfyui = {
@@ -59,40 +70,86 @@ in
           "seminar-online.service"
           "sops-install-secrets.service"
         ];
-        # wantedByは設定しない。
-        # `container@comfyui`のRequiresMountsForが必要時にpullする。
-        # コンテナが停止して誰も必要としなくなったら自動でアンマウントする。
-        unitConfig.StopWhenUnneeded = true;
+        unitConfig = {
+          # wantedByは設定しない。
+          # `container@comfyui`のRequiresMountsForが必要時にpullする。
+          # コンテナが停止して誰も必要としなくなったら自動でアンマウントする。
+          StopWhenUnneeded = true;
+          # `nofail`は意図的に付けない。
+          # wantedByを持たずブート時に引き込まれないため、
+          # remote-fs.target経由でブートをブロックする経路がそもそもなく、
+          # 失敗はコンテナの起動失敗として顕在化させて気付けるようにしたい。
+          # マウント失敗時はリトライ用サービスに委ねる。
+          # mountユニット自体はRestart=を持てないため、
+          # 到達性を待ってから再マウントする別サービスで補う。
+          OnFailure = [ "comfyui-cifs-retry.service" ];
+          # リトライが恒久的な失敗(認証エラーなど)で無限ループしないよう起動回数を制限する。
+          StartLimitIntervalSec = 600;
+          StartLimitBurst = 5;
+        };
         what = "//seminar/chihiro/comfyui-output";
         where = hostMountPoint;
         type = "cifs";
-        options = lib.concatStringsSep "," [
-          # 認証。`nixos/native-linux/cifs.nix`と同じ資格情報を使う。
-          "credentials=${config.sops.templates."cifs-credentials".path}"
-          # コンテナのUIDはpickで毎起動変わるため、
-          # 誰でも書けるモードにしてUID非依存で書き込めるようにする。
-          # このマウントは0700の親ディレクトリで隠されているので、
-          # ホストの一般ユーザからはアクセスできない。
-          "dir_mode=0777"
-          "file_mode=0666"
-          # セキュリティ
-          "nodev"
-          "noexec"
-          "nosuid"
-          # パフォーマンス
-          "noatime"
-          # SMBダイアレクトはcifs.nixと同じ理由でSMB3.0以上を明示する。
-          "vers=3"
-        ];
+        # 認証・セキュリティ・ダイアレクトの共通部分は`lib/seminar-cifs.nix`で管理する。
+        # 資格情報は`nixos/native-linux/cifs.nix`と同じものを使う。
+        options = lib.concatStringsSep "," (
+          baseMountOptions config.sops.templates."cifs-credentials".path
+          ++ [
+            # コンテナのUIDはpickで毎起動変わるため、
+            # 誰でも書けるモードにしてUID非依存で書き込めるようにする。
+            # このマウントは0700の親ディレクトリで隠されているので、
+            # ホストの一般ユーザからはアクセスできない。
+            "dir_mode=0777"
+            "file_mode=0666"
+          ]
+        );
         mountConfig = {
           TimeoutSec = 30;
         };
       }
     ];
-    # extraFlagsのbind mountはbindMountsと違いRequiresMountsForが自動付与されないため、
-    # 明示的に指定してコンテナ起動時にCIFSマウントを引き込む。
-    # マウント失敗時はコンテナも起動しない。
-    services."container@comfyui".unitConfig.RequiresMountsFor = [ hostMountPoint ];
+    services = {
+      # extraFlagsのbind mountはbindMountsと違いRequiresMountsForが自動付与されないため、
+      # 明示的に指定してコンテナ起動時にCIFSマウントを引き込む。
+      # マウント失敗時はコンテナも起動しない。
+      "container@comfyui".unitConfig.RequiresMountsFor = [ hostMountPoint ];
+      # マウント失敗時にOnFailureから起動されるリトライサービス。
+      # seminarへの到達性が回復するまで待ってから再マウントする。
+      # 再マウント直後に誰も必要としていなければStopWhenUnneededですぐ外れるが、
+      # 到達性の回復を待つ経路を作ることで、
+      # seminarの一時的なダウン後に自動復旧できるようにする。
+      comfyui-cifs-retry = {
+        description = "Retry mounting ComfyUI CIFS output after failure";
+        unitConfig = {
+          # mount側のStartLimitだけに停止保証を頼らない。
+          # mountがstart-limit-hitで拒否された場合にOnFailureが再発火するかは、
+          # systemdのバージョンで挙動が異なるため(systemd/systemd#33710)、
+          # 再発火する環境でもこのサービス自身の起動制限でループを確実に打ち切る。
+          StartLimitIntervalSec = 600;
+          StartLimitBurst = 5;
+        };
+        serviceConfig = {
+          Type = "oneshot";
+          TimeoutStartSec = 600;
+          ExecStart = lib.getExe (
+            pkgs.writeShellApplication {
+              name = "retry-comfyui-cifs";
+              runtimeInputs = with pkgs; [
+                coreutils
+                systemd
+                waitForSeminar
+              ];
+              # 失敗直後の即時再試行は同じ理由で失敗しやすいので少し置く。
+              text = ''
+                sleep 10
+                wait-for-seminar
+                systemctl restart "${mountUnit}"
+              '';
+            }
+          );
+        };
+      };
+    };
     tmpfiles.rules = [
       "d ${hostMountParent} 0700 root root - -"
       "d ${hostMountPoint} 0700 root root - -"

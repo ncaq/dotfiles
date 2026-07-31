@@ -8,22 +8,10 @@
 }:
 let
   userConfig = config.users.users.${username};
-  # seminarのSMBポートへ実際にTCP接続できるまで待つスクリプト。
-  # `network-online.target`や`tailscale-online.service`はどちらも
-  # 「seminarに到達できる」ことまでは保証しないため、
-  # マウント前に実到達性を確認する必要がある。
-  waitForSeminar = pkgs.writeShellApplication {
-    name = "wait-for-seminar";
-    runtimeInputs = with pkgs; [
-      bash
-      coreutils
-    ];
-    text = ''
-      until timeout 5 bash -c ': < /dev/tcp/seminar/445'; do
-        sleep 2
-      done
-    '';
-  };
+  inherit (import ../../lib/seminar-cifs.nix { inherit pkgs; })
+    baseMountOptions
+    waitForSeminar
+    ;
 in
 lib.mkMerge [
   (lib.mkIf (hostName != "seminar") {
@@ -66,32 +54,23 @@ lib.mkMerge [
           what = "//seminar/chihiro";
           where = "/mnt/chihiro";
           type = "cifs";
-          options = lib.concatStringsSep "," [
-            # 認証
-            "credentials=${config.sops.templates."cifs-credentials".path}"
-            "uid=${toString userConfig.uid}"
-            "gid=${toString config.users.groups.${userConfig.group}.gid}"
-            # デフォルトの0755/0755だとファイルが実行可能に見えてしまうため、
-            # ファイルから実行ビットを落とす。
-            # 所有グループ(users)への書き込み許可も維持する。
-            "dir_mode=0775"
-            "file_mode=0664"
-            # systemdはデフォルトだと`Before=remote-fs.target`を追加します。
-            # `nofail`を指定することでその挙動が抑制され、
-            # `remote-fs.target`経由のブートブロックを防ぎます。
-            "nofail"
-            # セキュリティ
-            "nodev"
-            "noexec"
-            "nosuid"
-            # パフォーマンス
-            "noatime"
-            # SMBダイアレクトを明示的に指定。
-            # 未指定だとkernelが`No dialect specified on mount`の警告を出す。
-            # `vers=3`はSMB3.0以上を意味し、ネゴシエーションで3.x系の最新版が選択される。
-            # SMB1/SMB2系を排除しつつ、将来のマイナーバージョン更新にも自動追従する。
-            "vers=3"
-          ];
+          # 認証・セキュリティ・ダイアレクトの共通部分は`lib/seminar-cifs.nix`で管理する。
+          options = lib.concatStringsSep "," (
+            baseMountOptions config.sops.templates."cifs-credentials".path
+            ++ [
+              "uid=${toString userConfig.uid}"
+              "gid=${toString config.users.groups.${userConfig.group}.gid}"
+              # デフォルトの0755/0755だとファイルが実行可能に見えてしまうため、
+              # ファイルから実行ビットを落とす。
+              # 所有グループ(users)への書き込み許可も維持する。
+              "dir_mode=0775"
+              "file_mode=0664"
+              # systemdはデフォルトだと`Before=remote-fs.target`を追加します。
+              # `nofail`を指定することでその挙動が抑制され、
+              # `remote-fs.target`経由のブートブロックを防ぎます。
+              "nofail"
+            ]
+          );
           mountConfig = {
             TimeoutSec = 30;
           };

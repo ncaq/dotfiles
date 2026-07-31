@@ -6,7 +6,6 @@
     cryptsetup
     duperemove
     exfatprogs
-    gnome.gvfs
     gocryptfs
     gptfdisk
     ntfs3g

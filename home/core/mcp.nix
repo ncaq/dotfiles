@@ -18,6 +18,9 @@ in
           BACKLOG_DOMAIN.file = config.sops.secrets."backlog-mcp-server/domain".path;
         };
       };
+      cloudflare = {
+        url = "https://docs.mcp.cloudflare.com/mcp";
+      };
       context7 = {
         command = lib.getExe pkgs.context7-mcp;
       };
@@ -32,6 +35,15 @@ in
         env = {
           GITHUB_PERSONAL_ACCESS_TOKEN.file = config.sops.secrets."github-mcp-server/pat".path;
         };
+      };
+      mdn = {
+        url = "https://mcp.mdn.mozilla.net/";
+      };
+      microsoft-learn = {
+        url = "https://learn.microsoft.com/api/mcp";
+      };
+      nixos = {
+        url = "https://mcp-nixos.ncaq.net/mcp";
       };
     };
   };

@@ -135,8 +135,12 @@ in
       # idmap対応のtmpfs(/run)に置き直してからコンテナへbind mountする。
       # コンテナ内ではPID 1(コンテナroot)がEnvironmentFileとして読むので、
       # idmapで同一視されるroot:rootの0400で置く。
-      # 独立したユニットにするとRuntimeDirectoryの寿命やrestartの伝播が
-      # コンテナと噛み合わなくなるため、コンテナ自身の起動処理に含める。
+      # 複製を独立したユニットで行うと以下の問題があるため、
+      # コンテナ自身の起動処理に含めて寿命を一致させる。
+      # - 独立ユニットの再起動でRuntimeDirectoryの/run/garageが作り直されると、
+      #   bind mount済みのコンテナは削除済みの古いinodeを掴んだままになり、
+      #   以後コンテナ内で環境ファイルが読めなくなる
+      # - requires/afterだけでは独立ユニットのrestartがコンテナへ伝播しない
       serviceConfig.ExecStartPre = [
         "${pkgs.coreutils}/bin/install -d -m 0700 ${envDir}"
         "${pkgs.coreutils}/bin/install -m 0400 ${config.sops.templates."garage-env".path} ${envFile}"

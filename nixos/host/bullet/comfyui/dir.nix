@@ -39,7 +39,7 @@ let
   mountUnit = "${utils.escapeSystemdPath hostMountPoint}.mount";
   inherit (import ../../../../lib/seminar-cifs.nix { inherit pkgs; })
     baseMountOptions
-    waitForSeminar
+    mkRetryService
     ;
 in
 {
@@ -118,36 +118,10 @@ in
       # 再マウント直後に誰も必要としていなければStopWhenUnneededですぐ外れるが、
       # 到達性の回復を待つ経路を作ることで、
       # seminarの一時的なダウン後に自動復旧できるようにする。
-      comfyui-cifs-retry = {
+      comfyui-cifs-retry = mkRetryService {
+        name = "comfyui-cifs";
         description = "Retry mounting ComfyUI CIFS output after failure";
-        unitConfig = {
-          # mount側のStartLimitだけに停止保証を頼らない。
-          # mountがstart-limit-hitで拒否された場合にOnFailureが再発火するかは、
-          # systemdのバージョンで挙動が異なるため(systemd/systemd#33710)、
-          # 再発火する環境でもこのサービス自身の起動制限でループを確実に打ち切る。
-          StartLimitIntervalSec = 600;
-          StartLimitBurst = 5;
-        };
-        serviceConfig = {
-          Type = "oneshot";
-          TimeoutStartSec = 600;
-          ExecStart = lib.getExe (
-            pkgs.writeShellApplication {
-              name = "retry-comfyui-cifs";
-              runtimeInputs = with pkgs; [
-                coreutils
-                systemd
-                waitForSeminar
-              ];
-              # 失敗直後の即時再試行は同じ理由で失敗しやすいので少し置く。
-              text = ''
-                sleep 10
-                wait-for-seminar
-                systemctl restart "${mountUnit}"
-              '';
-            }
-          );
-        };
+        inherit mountUnit;
       };
     };
     tmpfiles.rules = [

@@ -10,6 +10,7 @@ let
   userConfig = config.users.users.${username};
   inherit (import ../../lib/seminar-cifs.nix { inherit pkgs; })
     baseMountOptions
+    mkRetryService
     waitForSeminar
     ;
 in
@@ -103,36 +104,10 @@ lib.mkMerge [
 
         # マウント失敗時にOnFailureから起動されるリトライサービス。
         # 到達性が回復するまで待ってから再マウントする。
-        mnt-chihiro-retry = {
+        mnt-chihiro-retry = mkRetryService {
+          name = "mnt-chihiro";
           description = "Retry mounting /mnt/chihiro after failure";
-          unitConfig = {
-            # mount側のStartLimitだけに停止保証を頼らない。
-            # mountがstart-limit-hitで拒否された場合にOnFailureが再発火するかは、
-            # systemdのバージョンで挙動が異なるため(systemd/systemd#33710)、
-            # 再発火する環境でもこのサービス自身の起動制限でループを確実に打ち切る。
-            StartLimitIntervalSec = 600;
-            StartLimitBurst = 5;
-          };
-          serviceConfig = {
-            Type = "oneshot";
-            TimeoutStartSec = 600;
-            ExecStart = lib.getExe (
-              pkgs.writeShellApplication {
-                name = "retry-mnt-chihiro";
-                runtimeInputs = with pkgs; [
-                  coreutils
-                  systemd
-                  waitForSeminar
-                ];
-                # 失敗直後の即時再試行は同じ理由で失敗しやすいので少し置く。
-                text = ''
-                  sleep 10
-                  wait-for-seminar
-                  systemctl restart mnt-chihiro.mount
-                '';
-              }
-            );
-          };
+          mountUnit = "mnt-chihiro.mount";
         };
       };
 

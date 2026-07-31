@@ -2,6 +2,7 @@
   pkgs,
   config,
   lib,
+  hardening,
   ...
 }:
 let
@@ -29,6 +30,11 @@ in
       # ホストのネットワークスタックから隔離してTCP接続を遮断するために有効化している。
       # hostAddress/localAddressを意図的に設定せず、IPアドレスを持たない状態にしている。
       privateNetwork = true;
+      # peer認証はSO_PEERCREDで得たクライアントの実UIDを、
+      # このコンテナのユーザ名前空間で解決してユーザ名と照合する。
+      # クライアントはホストや他コンテナ(identity)のプロセスなので、
+      # pickにするとUIDが解決できず認証が全て失敗する。
+      # そのためidentity(UID分離なし、capability分離のみ)より厳しくできない。
       privateUsers = "identity";
       bindMounts = {
         # Unixソケットディレクトリ。
@@ -135,7 +141,8 @@ in
         # それでも接続できなければ失敗とします。
         startLimitBurst = 30;
         startLimitIntervalSec = 60;
-        serviceConfig = {
+        # pg_isreadyはUNIXソケットに接続を試みるだけ。
+        serviceConfig = hardening.unixSocket // {
           Type = "oneshot";
           RemainAfterExit = true;
           User = "postgres";

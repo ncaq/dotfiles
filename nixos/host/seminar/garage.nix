@@ -2,6 +2,7 @@
   pkgs,
   lib,
   config,
+  hardening,
   ...
 }:
 let
@@ -12,19 +13,24 @@ let
     group = "garage";
     isSystemUser = true;
   };
+  # コンテナ内へbind mountされる環境ファイルのパス。
+  # sops-nixの展開先はramfsでidmapped mountに対応していないため、
+  # container@garageのExecStartPreがtmpfsである/runへ複製したものをbind mountする。
+  envDir = "/run/garage";
+  envFile = "${envDir}/garage.env";
   garageWithEnv = pkgs.writeShellApplication {
     name = "garage-with-env";
     runtimeInputs = [ ];
     text = ''
       set -a
       # shellcheck source=/dev/null
-      source /etc/garage.env
+      source ${envFile}
       set +a
       exec garage "$@"
     '';
   };
-  # Host wrapper to execute garage CLI inside the container.
-  # Export the environment file to provide GARAGE_RPC_SECRET etc.
+  # コンテナ内のgarage CLIをホストから実行するためのラッパー。
+  # GARAGE_RPC_SECRETなどを渡すために環境ファイルをexportする。
   garageWrapper = pkgs.writeShellApplication {
     name = "garage";
     runtimeInputs = with pkgs; [
@@ -40,23 +46,22 @@ in
     autoStart = true;
     ephemeral = true;
     privateNetwork = true;
-    privateUsers = "identity";
+    # 毎起動ランダムな高位UID範囲へマップして、
+    # コンテナを脱出されてもホスト上では無権限のUIDになるようにする。
+    # identityと違いコンテナ内rootがホストのUID 0を持たなくなる。
+    # garageはUNIXソケットのpeer認証を使わないためpickにできる。
+    privateUsers = "pick";
     hostAddress = addr.host;
     localAddress = addr.guest;
-    bindMounts = {
-      "/etc/garage.env" = {
-        hostPath = config.sops.templates."garage-env".path;
-        isReadOnly = true;
-      };
-      "/var/lib/garage/meta" = {
-        hostPath = "/var/lib/garage/meta";
-        isReadOnly = false;
-      };
-      "/mnt/noa/garage/data" = {
-        hostPath = "/mnt/noa/garage/data";
-        isReadOnly = false;
-      };
-    };
+    # pickでは素のbind mountだと所有者が無効なUIDに見えてアクセスできないため、
+    # idmapオプションで数値IDをホストとコンテナで同一視させる。
+    # データディレクトリはbtrfs、環境ファイルはtmpfs上にありどちらもidmap対応。
+    # `bindMounts`はマウントオプションを渡せないのでextraFlagsで指定する。
+    extraFlags = [
+      "--bind-ro=${envDir}:${envDir}:idmap"
+      "--bind=/var/lib/garage/meta:/var/lib/garage/meta:idmap"
+      "--bind=/mnt/noa/garage/data:/mnt/noa/garage/data:idmap"
+    ];
     config =
       { lib, ... }:
       {
@@ -65,7 +70,7 @@ in
           useHostResolvConf = lib.mkForce false;
           firewall.allowedTCPPorts = [
             3900 # S3 API
-            3903 # Admin API (host access only via private network)
+            3903 # Admin API (プライベートネットワーク経由でホストからのみアクセス)
           ];
         };
         users = {
@@ -77,7 +82,7 @@ in
           garage = {
             enable = true;
             package = pkgs.garage_2;
-            environmentFile = "/etc/garage.env";
+            environmentFile = envFile;
             settings = {
               metadata_dir = "/var/lib/garage/meta";
               data_dir = "/mnt/noa/garage/data";
@@ -96,15 +101,17 @@ in
             };
           };
         };
-        # Override DynamicUser to use explicit UIDs matching host bind-mount ownership.
-        # Re-enable security settings that DynamicUser=true would implicitly activate.
-        systemd.services.garage.serviceConfig = {
+        # ホスト側bind mountの所有権と一致する明示的なUIDを使うためDynamicUserを無効化する。
+        # DynamicUser=trueが暗黙に有効化していたセキュリティ設定を再有効化し、
+        # さらに追加のハードニングを上乗せする。
+        # GarageはRustバイナリで、必要なのはS3/RPC/Admin APIのTCP通信と、
+        # bind mountされたmetadata_dirとdata_dirへのファイルアクセスだけ。
+        # これらは上流モジュールのStateDirectory/ReadWritePathsで書き込み可能になっている。
+        systemd.services.garage.serviceConfig = hardening.network // {
           DynamicUser = lib.mkForce false;
           User = "garage";
           Group = "garage";
-          ProtectSystem = "strict";
-          PrivateTmp = true;
-          RestrictSUIDSGID = true;
+          # DynamicUser=trueが暗黙に有効化していたIPC隔離を再有効化する。
           RemoveIPC = true;
         };
         environment.systemPackages = [ pkgs.garage_2 ];
@@ -120,6 +127,34 @@ in
     services."container@garage" = {
       requires = [ "sops-install-secrets.service" ];
       after = [ "sops-install-secrets.service" ];
+      # extraFlagsのbind mountはbindMountsと違いRequiresMountsForが自動付与されないため、
+      # 明示的に指定して/mnt/noaのマウントを待つ。
+      unitConfig.RequiresMountsFor = [ "/mnt/noa/garage/data" ];
+      # sopsテンプレートの環境ファイルをtmpfsへ複製する。
+      # 展開先の/run/secrets.dはramfsでidmapped mountできないため、
+      # idmap対応のtmpfs(/run)に置き直してからコンテナへbind mountする。
+      # コンテナ内ではPID 1(コンテナroot)がEnvironmentFileとして読むので、
+      # idmapで同一視されるroot:rootの0400で置く。
+      # 複製を独立したユニットで行うと以下の問題があるため、
+      # コンテナ自身の起動処理に含めて寿命を一致させる。
+      # - 独立ユニットの再起動でRuntimeDirectoryの/run/garageが作り直されると、
+      #   bind mount済みのコンテナは削除済みの古いinodeを掴んだままになり、
+      #   以後コンテナ内で環境ファイルが読めなくなる
+      # - requires/afterだけでは独立ユニットのrestartがコンテナへ伝播しない
+      serviceConfig = {
+        # /run/garageはRuntimeDirectoryで管理して、
+        # コンテナ停止時に平文シークレットごと自動削除させる。
+        # systemdはRuntimeDirectoryをExecStartPreより前に作成するので複製に間に合う。
+        # 上流モジュールがephemeral時に設定するnixos-containers/%iとはリストマージで共存する。
+        # RuntimeDirectoryModeは指定しない。
+        # ユニット内の全RuntimeDirectoryへ適用されるため、
+        # 0700にするとコンテナルートFSのnixos-containers/%i(0755)のモードまで変わってしまう。
+        # ディレクトリが0755でも環境ファイル自体が0400なので内容は漏れない。
+        RuntimeDirectory = "garage";
+        ExecStartPre = "${pkgs.coreutils}/bin/install -m 0400 ${
+          config.sops.templates."garage-env".path
+        } ${envFile}";
+      };
     };
     tmpfiles.rules = [
       "d /var/lib/garage      0750 garage garage -"
@@ -141,15 +176,18 @@ in
       owner = "garage";
       group = "garage";
       mode = "0400";
+      # シークレットのローテート時に/run/garageへの複製とコンテナ内のgarageを
+      # 新しい内容で確実にやり直すため、コンテナごと再起動する。
+      restartUnits = [ "container@garage.service" ];
     };
-    # Managed by sops-nix.
-    # To create (first time only):
+    # sops-nixで管理している。
+    # 作成方法(初回のみ):
     # ```
     # rpc_secret=$(openssl rand -hex 32)
     # admin_token=$(openssl rand -base64 32)
     # metrics_token=$(openssl rand -base64 32)
     # ```
-    # Then `sops secrets/seminar/garage.yaml` and set:
+    # その後`sops secrets/seminar/garage.yaml`で以下を設定する:
     # ```
     # rpc_secret: <hex>
     # admin_token: <base64>
@@ -180,7 +218,7 @@ in
     };
   };
 
-  # Initial cluster setup (manual, first time only):
+  # クラスタの初期セットアップ(手動、初回のみ):
   # ```
   # sudo garage status
   # sudo garage layout assign <node-id> -z seminar -c 8T

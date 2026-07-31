@@ -3,6 +3,7 @@
   importPkgsStable,
   importPkgsUnstable,
   importDirModules,
+  hardening,
   inputs,
 }:
 {
@@ -13,6 +14,7 @@ let
   specialArgs = {
     inherit
       importDirModules
+      hardening
       inputs
 
       hostName

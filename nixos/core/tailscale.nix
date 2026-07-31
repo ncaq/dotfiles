@@ -2,6 +2,7 @@
   pkgs,
   lib,
   config,
+  hardening,
   ...
 }:
 {
@@ -19,7 +20,11 @@
       "network-online.target"
       "tailscaled.service"
     ];
-    serviceConfig = {
+    # tailscale CLIはtailscaledのLocalAPIにUNIXソケット経由で接続するだけなので、
+    # UNIXソケットのみ許可のハードニングまで絞れる。
+    # seminar上で同等のサンドボックスを再現して`tailscale status --json`が
+    # 動作することを確認済み。
+    serviceConfig = hardening.unixSocket // {
       Type = "oneshot";
       RemainAfterExit = true;
       ExecStart = lib.getExe (

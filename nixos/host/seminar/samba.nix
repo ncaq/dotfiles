@@ -2,6 +2,7 @@
   pkgs,
   lib,
   config,
+  hardening,
   ...
 }:
 {
@@ -62,9 +63,23 @@
     after = [ "samba-smbd.service" ];
     bindsTo = [ "samba-smbd.service" ];
     wantedBy = [ "multi-user.target" ];
-    serviceConfig = {
+    # smbpasswdはrootが所有する/var/lib/samba配下のpassdbを直接更新するだけで、
+    # 追加のcapabilityもネットワーク通信も不要なので、
+    # UNIXソケットのみ許可のハードニングまで絞る。
+    # 平文のSMBパスワードを読むユニットなので絞る価値が大きい。
+    # seminar上で同等のサンドボックスを再現して、
+    # `smbpasswd -a -s`が成功することを確認済み。
+    serviceConfig = hardening.unixSocket // {
       Type = "oneshot";
       RemainAfterExit = true;
+      # tdbのロックやキャッシュに触る可能性があるディレクトリは、
+      # `-`プレフィックスで存在する場合のみ書き込みを許可する。
+      ReadWritePaths = [
+        "/var/lib/samba"
+        "-/var/cache/samba"
+        "-/var/lock/samba"
+        "-/run/samba"
+      ];
     };
     script = ''
       set -euo pipefail

@@ -29,6 +29,8 @@ in
     autoStart = true;
     ephemeral = true;
     privateNetwork = true;
+    # PostgreSQLのpeer認証がホストと同一のUIDでの接続を要求するため、
+    # pickにはできずidentity(UID分離なし、capability分離のみ)のまま。
     privateUsers = "identity";
     hostAddress = addr.host;
     localAddress = addr.guest;

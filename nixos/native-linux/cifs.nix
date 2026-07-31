@@ -8,22 +8,11 @@
 }:
 let
   userConfig = config.users.users.${username};
-  # seminarのSMBポートへ実際にTCP接続できるまで待つスクリプト。
-  # `network-online.target`や`tailscale-online.service`はどちらも
-  # 「seminarに到達できる」ことまでは保証しないため、
-  # マウント前に実到達性を確認する必要がある。
-  waitForSeminar = pkgs.writeShellApplication {
-    name = "wait-for-seminar";
-    runtimeInputs = with pkgs; [
-      bash
-      coreutils
-    ];
-    text = ''
-      until timeout 5 bash -c ': < /dev/tcp/seminar/445'; do
-        sleep 2
-      done
-    '';
-  };
+  inherit (import ../../lib/seminar-cifs.nix { inherit pkgs; })
+    baseMountOptions
+    mkRetryService
+    waitForSeminar
+    ;
 in
 lib.mkMerge [
   (lib.mkIf (hostName != "seminar") {
@@ -66,33 +55,23 @@ lib.mkMerge [
           what = "//seminar/chihiro";
           where = "/mnt/chihiro";
           type = "cifs";
-          options = lib.concatStringsSep "," [
-            # 認証
-            "credentials=${config.sops.templates."cifs-credentials".path}"
-            "uid=${toString userConfig.uid}"
-            "gid=${toString config.users.groups.${userConfig.group}.gid}"
-            # 所有グループ(users)にも書き込みを許可する。
-            # bulletのComfyUIコンテナなど、
-            # uidの異なるサービスユーザがグループ経由で書き込めるようにするため。
-            # デフォルトの0755ではファイルが実行可能に見えてしまう問題も直る。
-            "dir_mode=0775"
-            "file_mode=0664"
-            # systemdはデフォルトだと`Before=remote-fs.target`を追加します。
-            # `nofail`を指定することでその挙動が抑制され、
-            # `remote-fs.target`経由のブートブロックを防ぎます。
-            "nofail"
-            # セキュリティ
-            "nodev"
-            "noexec"
-            "nosuid"
-            # パフォーマンス
-            "noatime"
-            # SMBダイアレクトを明示的に指定。
-            # 未指定だとkernelが`No dialect specified on mount`の警告を出す。
-            # `vers=3`はSMB3.0以上を意味し、ネゴシエーションで3.x系の最新版が選択される。
-            # SMB1/SMB2系を排除しつつ、将来のマイナーバージョン更新にも自動追従する。
-            "vers=3"
-          ];
+          # 認証・セキュリティ・ダイアレクトの共通部分は`lib/seminar-cifs.nix`で管理する。
+          options = lib.concatStringsSep "," (
+            baseMountOptions config.sops.templates."cifs-credentials".path
+            ++ [
+              "uid=${toString userConfig.uid}"
+              "gid=${toString config.users.groups.${userConfig.group}.gid}"
+              # デフォルトの0755/0755だとファイルが実行可能に見えてしまうため、
+              # ファイルから実行ビットを落とす。
+              # 所有グループ(users)への書き込み許可も維持する。
+              "dir_mode=0775"
+              "file_mode=0664"
+              # systemdはデフォルトだと`Before=remote-fs.target`を追加します。
+              # `nofail`を指定することでその挙動が抑制され、
+              # `remote-fs.target`経由のブートブロックを防ぎます。
+              "nofail"
+            ]
+          );
           mountConfig = {
             TimeoutSec = 30;
           };
@@ -125,36 +104,10 @@ lib.mkMerge [
 
         # マウント失敗時にOnFailureから起動されるリトライサービス。
         # 到達性が回復するまで待ってから再マウントする。
-        mnt-chihiro-retry = {
+        mnt-chihiro-retry = mkRetryService {
+          name = "mnt-chihiro";
           description = "Retry mounting /mnt/chihiro after failure";
-          unitConfig = {
-            # mount側のStartLimitだけに停止保証を頼らない。
-            # mountがstart-limit-hitで拒否された場合にOnFailureが再発火するかは、
-            # systemdのバージョンで挙動が異なるため(systemd/systemd#33710)、
-            # 再発火する環境でもこのサービス自身の起動制限でループを確実に打ち切る。
-            StartLimitIntervalSec = 600;
-            StartLimitBurst = 5;
-          };
-          serviceConfig = {
-            Type = "oneshot";
-            TimeoutStartSec = 600;
-            ExecStart = lib.getExe (
-              pkgs.writeShellApplication {
-                name = "retry-mnt-chihiro";
-                runtimeInputs = with pkgs; [
-                  coreutils
-                  systemd
-                  waitForSeminar
-                ];
-                # 失敗直後の即時再試行は同じ理由で失敗しやすいので少し置く。
-                text = ''
-                  sleep 10
-                  wait-for-seminar
-                  systemctl restart mnt-chihiro.mount
-                '';
-              }
-            );
-          };
+          mountUnit = "mnt-chihiro.mount";
         };
       };
 

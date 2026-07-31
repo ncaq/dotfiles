@@ -1,4 +1,9 @@
-{ lib, pkgs, ... }:
+{
+  lib,
+  pkgs,
+  hardening,
+  ...
+}:
 {
   boot = {
     loader = {
@@ -68,8 +73,15 @@
       unitConfig = {
         ConditionPathExists = limineLastBootedEntryPath;
       };
-      serviceConfig = {
+      # efivarfsの変数を削除するだけでソケットは使わない。
+      # /sysへの書き込みが必要なのでProtectKernelTunablesは設定できない。
+      serviceConfig = builtins.removeAttrs hardening.isolated [ "ProtectKernelTunables" ] // {
         Type = "oneshot";
+        # chattrによるimmutable属性の解除にCAP_LINUX_IMMUTABLEが必要。
+        CapabilityBoundingSet = [ "CAP_LINUX_IMMUTABLE" ];
+        # `ProtectSystem = "strict"`は/sysを読み書き可能なまま残すが、
+        # efivarfsは/sys配下の別マウントなので明示的にReadWritePathsへ入れる。
+        ReadWritePaths = [ "/sys/firmware/efi/efivars" ];
         ExecStart = lib.getExe (
           pkgs.writeShellApplication {
             name = "limine-forget-last-entry";

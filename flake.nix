@@ -158,6 +158,8 @@
 
       # ディレクトリ内の全`.nix`ファイルをimportするヘルパー関数。
       importDirModules = import ./lib/import-dir-modules.nix { inherit lib; };
+      # systemdサービス共通のハードニング設定。
+      hardening = import ./lib/systemd-hardening.nix;
       # nixpkgsの共通設定。
       nixpkgsConfig = import ./lib/nixpkgs-config.nix { inherit lib; };
       # 全環境で共通のoverlays。
@@ -193,6 +195,7 @@
           importPkgsStable
           importPkgsUnstable
           importDirModules
+          hardening
           inputs
           ;
       };

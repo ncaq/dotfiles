@@ -141,10 +141,20 @@ in
       #   bind mount済みのコンテナは削除済みの古いinodeを掴んだままになり、
       #   以後コンテナ内で環境ファイルが読めなくなる
       # - requires/afterだけでは独立ユニットのrestartがコンテナへ伝播しない
-      serviceConfig.ExecStartPre = [
-        "${pkgs.coreutils}/bin/install -d -m 0700 ${envDir}"
-        "${pkgs.coreutils}/bin/install -m 0400 ${config.sops.templates."garage-env".path} ${envFile}"
-      ];
+      serviceConfig = {
+        # /run/garageはRuntimeDirectoryで管理して、
+        # コンテナ停止時に平文シークレットごと自動削除させる。
+        # systemdはRuntimeDirectoryをExecStartPreより前に作成するので複製に間に合う。
+        # 上流モジュールがephemeral時に設定するnixos-containers/%iとはリストマージで共存する。
+        # RuntimeDirectoryModeは指定しない。
+        # ユニット内の全RuntimeDirectoryへ適用されるため、
+        # 0700にするとコンテナルートFSのnixos-containers/%i(0755)のモードまで変わってしまう。
+        # ディレクトリが0755でも環境ファイル自体が0400なので内容は漏れない。
+        RuntimeDirectory = "garage";
+        ExecStartPre = "${pkgs.coreutils}/bin/install -m 0400 ${
+          config.sops.templates."garage-env".path
+        } ${envFile}";
+      };
     };
     tmpfiles.rules = [
       "d /var/lib/garage      0750 garage garage -"

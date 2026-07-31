@@ -2,6 +2,7 @@
   pkgs,
   lib,
   config,
+  hardening,
   ...
 }:
 {
@@ -19,38 +20,11 @@
       "network-online.target"
       "tailscaled.service"
     ];
-    serviceConfig = {
+    # tailscale CLIはtailscaledのLocalAPIにUNIXソケット経由で接続するだけなので、
+    # capabilityも書き込み可能なファイルシステムも不要でハードニングをそのまま適用できる。
+    serviceConfig = hardening.network // {
       Type = "oneshot";
       RemainAfterExit = true;
-      # Hardening
-      # tailscale CLIはtailscaledのLocalAPIにUNIXソケット経由で接続するだけなので、
-      # capabilityも書き込み可能なファイルシステムも不要。
-      # 空リストはNixOSモジュールがディレクティブごと省略してしまうため、
-      # 空文字列でbounding setを空集合にリセットする。
-      CapabilityBoundingSet = "";
-      LockPersonality = true;
-      MemoryDenyWriteExecute = true;
-      NoNewPrivileges = true;
-      PrivateDevices = true;
-      PrivateTmp = true;
-      ProtectClock = true;
-      ProtectControlGroups = true;
-      ProtectHome = true;
-      ProtectHostname = true;
-      ProtectKernelLogs = true;
-      ProtectKernelModules = true;
-      ProtectKernelTunables = true;
-      ProtectSystem = "strict";
-      RestrictAddressFamilies = [
-        "AF_INET"
-        "AF_INET6"
-        "AF_UNIX"
-      ];
-      RestrictNamespaces = true;
-      RestrictRealtime = true;
-      RestrictSUIDSGID = true;
-      SystemCallArchitectures = "native";
-      SystemCallFilter = [ "@system-service" ];
       ExecStart = lib.getExe (
         pkgs.writeShellApplication {
           name = "wait-for-tailscale";

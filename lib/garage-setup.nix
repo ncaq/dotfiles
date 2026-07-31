@@ -11,44 +11,25 @@
   config,
   name,
 }:
+let
+  hardening = import ./systemd-hardening.nix;
+in
 {
   description = "Setup Garage bucket and key for ${name}";
   requires = [ "container@garage.service" ];
   after = [ "container@garage.service" ];
   wantedBy = [ "multi-user.target" ];
-  serviceConfig = {
+  serviceConfig = hardening.network // {
     Type = "oneshot";
     RemainAfterExit = true;
     RuntimeDirectory = "garage-setup/${name}";
     RuntimeDirectoryMode = "0700";
-    # Hardening
+    # 生成したキーファイルをクライアントユーザへchownするために必要なcapabilityだけ許可する。
     CapabilityBoundingSet = [
       "CAP_CHOWN"
       "CAP_DAC_READ_SEARCH"
       "CAP_FOWNER"
     ];
-    LockPersonality = true;
-    MemoryDenyWriteExecute = true;
-    NoNewPrivileges = true;
-    PrivateDevices = true;
-    PrivateTmp = true;
-    ProtectClock = true;
-    ProtectControlGroups = true;
-    ProtectHome = true;
-    ProtectHostname = true;
-    ProtectKernelLogs = true;
-    ProtectKernelModules = true;
-    ProtectKernelTunables = true;
-    ProtectSystem = "strict";
-    RestrictAddressFamilies = [
-      "AF_INET"
-      "AF_INET6"
-      "AF_UNIX"
-    ];
-    RestrictNamespaces = true;
-    RestrictRealtime = true;
-    RestrictSUIDSGID = true;
-    SystemCallArchitectures = "native";
     SystemCallFilter = [
       "@system-service"
       "~@privileged"

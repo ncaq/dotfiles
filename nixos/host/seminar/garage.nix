@@ -2,6 +2,7 @@
   pkgs,
   lib,
   config,
+  hardening,
   ...
 }:
 let
@@ -106,35 +107,12 @@ in
         # GarageはRustバイナリで、必要なのはS3/RPC/Admin APIのTCP通信と、
         # bind mountされたmetadata_dirとdata_dirへのファイルアクセスだけ。
         # これらは上流モジュールのStateDirectory/ReadWritePathsで書き込み可能になっている。
-        systemd.services.garage.serviceConfig = {
+        systemd.services.garage.serviceConfig = hardening.network // {
           DynamicUser = lib.mkForce false;
           User = "garage";
           Group = "garage";
-          ProtectSystem = "strict";
-          PrivateTmp = true;
-          RestrictSUIDSGID = true;
+          # DynamicUser=trueが暗黙に有効化していたIPC隔離を再有効化する。
           RemoveIPC = true;
-          # 空リストはNixOSモジュールがディレクティブごと省略してしまうため、
-          # 空文字列でbounding setを空集合にリセットする。
-          CapabilityBoundingSet = "";
-          LockPersonality = true;
-          MemoryDenyWriteExecute = true;
-          PrivateDevices = true;
-          ProtectClock = true;
-          ProtectControlGroups = true;
-          ProtectHostname = true;
-          ProtectKernelLogs = true;
-          ProtectKernelModules = true;
-          ProtectKernelTunables = true;
-          RestrictAddressFamilies = [
-            "AF_INET"
-            "AF_INET6"
-            "AF_UNIX"
-          ];
-          RestrictNamespaces = true;
-          RestrictRealtime = true;
-          SystemCallArchitectures = "native";
-          SystemCallFilter = [ "@system-service" ];
         };
         environment.systemPackages = [ pkgs.garage_2 ];
       };

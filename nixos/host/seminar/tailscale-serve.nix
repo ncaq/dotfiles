@@ -1,4 +1,4 @@
-{ config, ... }:
+{ config, hardening, ... }:
 let
   tailscale = config.services.tailscale.package;
 in
@@ -28,42 +28,15 @@ in
       "tailscaled.service"
     ];
     wantedBy = [ "multi-user.target" ];
-    serviceConfig = {
+    # tailscale CLIはtailscaledのLocalAPIにUNIXソケット経由で接続してセッションを維持するだけで、
+    # 実際のプロキシ転送はtailscaled側が行うため、
+    # capabilityも書き込み可能なファイルシステムも不要でハードニングをそのまま適用できる。
+    serviceConfig = hardening.network // {
       ExecStart = "${tailscale}/bin/tailscale serve --https=8443 http://127.0.0.1:8081";
       # tailscaledの再起動などでセッションが切れるとプロセスが終了するため、
       # 終了コードによらず常に再起動して復帰させる。
       Restart = "always";
       RestartSec = "10s";
-      # Hardening
-      # tailscale CLIはtailscaledのLocalAPIにUNIXソケット経由で接続してセッションを維持するだけで、
-      # 実際のプロキシ転送はtailscaled側が行うため、
-      # capabilityも書き込み可能なファイルシステムも不要。
-      # 空リストはNixOSモジュールがディレクティブごと省略してしまうため、
-      # 空文字列でbounding setを空集合にリセットする。
-      CapabilityBoundingSet = "";
-      LockPersonality = true;
-      MemoryDenyWriteExecute = true;
-      NoNewPrivileges = true;
-      PrivateDevices = true;
-      PrivateTmp = true;
-      ProtectClock = true;
-      ProtectControlGroups = true;
-      ProtectHome = true;
-      ProtectHostname = true;
-      ProtectKernelLogs = true;
-      ProtectKernelModules = true;
-      ProtectKernelTunables = true;
-      ProtectSystem = "strict";
-      RestrictAddressFamilies = [
-        "AF_INET"
-        "AF_INET6"
-        "AF_UNIX"
-      ];
-      RestrictNamespaces = true;
-      RestrictRealtime = true;
-      RestrictSUIDSGID = true;
-      SystemCallArchitectures = "native";
-      SystemCallFilter = [ "@system-service" ];
     };
   };
 }

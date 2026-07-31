@@ -22,6 +22,7 @@
 {
   pkgs,
   username,
+  hardening,
   ...
 }:
 let
@@ -134,7 +135,10 @@ in
         umask 077
         ${pkgs.gnupg}/bin/gpg --batch --no-autostart --quiet --import ${keyConfig.publicKeyFile}
       '';
-      serviceConfig = {
+      # 秘密鍵を扱うプロセスなので、
+      # 不要な場所を見せず不要な特権と通信経路を断ちます。
+      # gpg-agentのソケットはUNIXドメインのみでネットワーク通信は不要です。
+      serviceConfig = hardening.unixSocket // {
         User = "gpg-vault";
         Group = "gpg-vault";
         # gpg-agentはソケットを作り終えてからforkするため、
@@ -153,25 +157,6 @@ in
         RuntimeDirectoryMode = "0750";
         StateDirectory = "gpg-vault";
         StateDirectoryMode = "0700";
-        # ハードニング。
-        # 秘密鍵を扱うプロセスなので、
-        # 不要な場所を見せず不要な特権と通信経路を断ちます。
-        # 空リストはNixOSモジュールがディレクティブごと省略してしまうため、
-        # 空文字列でbounding setを空集合にリセットする。
-        CapabilityBoundingSet = "";
-        LockPersonality = true;
-        NoNewPrivileges = true;
-        PrivateDevices = true;
-        PrivateTmp = true;
-        ProtectControlGroups = true;
-        ProtectHome = true;
-        ProtectKernelModules = true;
-        ProtectKernelTunables = true;
-        ProtectSystem = "strict";
-        # gpg-agentのソケットはUNIXドメインのみでネットワーク通信は不要です。
-        RestrictAddressFamilies = [ "AF_UNIX" ];
-        RestrictNamespaces = true;
-        SystemCallFilter = [ "@system-service" ];
       };
     };
 

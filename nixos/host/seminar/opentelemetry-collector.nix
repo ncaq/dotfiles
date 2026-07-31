@@ -1,4 +1,4 @@
-{ config, ... }:
+{ config, hardening, ... }:
 let
   garageAddr = config.machineAddresses.garage.guest;
 in
@@ -74,42 +74,26 @@ in
   };
 
   systemd.services.opentelemetry-collector = {
-    serviceConfig = {
-      # collector内部のmemory_limiterに加えて、
-      # cgroupレベルでもメモリ上限を設けて二重に保護します。
-      # memory_limiterのlimit_mib(256MiB)より上に設定して、
-      # 通常はcollector側で先に制御が効くようにします。
-      MemoryHigh = "384M";
-      MemoryMax = "512M";
-      # `EnvironmentFile`はsystemdがroot権限で読み込んでからプロセスに渡すため、
-      # `DynamicUser`で動くcollectorでも`0400 root`のままアクセスできます。
-      EnvironmentFile = [ config.sops.templates."otelcol-env".path ];
-      # Hardening
-      # 上流モジュールのDynamicUser/ProtectSystem/DevicePolicy/NoNewPrivilegesに加えて締めます。
-      # スクレイプとOTLP送信のTCP通信とNSSのUNIXソケットだけ許可します。
-      # 空リストはNixOSモジュールがディレクティブごと省略してしまうため、
-      # 空文字列でbounding setを空集合にリセットする。
-      CapabilityBoundingSet = "";
-      LockPersonality = true;
-      MemoryDenyWriteExecute = true;
-      ProtectClock = true;
-      ProtectControlGroups = true;
-      ProtectHome = true;
-      ProtectHostname = true;
-      ProtectKernelLogs = true;
-      ProtectKernelModules = true;
-      ProtectKernelTunables = true;
-      RestrictAddressFamilies = [
-        "AF_INET"
-        "AF_INET6"
-        "AF_UNIX"
-      ];
-      RestrictNamespaces = true;
-      RestrictRealtime = true;
-      RestrictSUIDSGID = true;
-      SystemCallArchitectures = "native";
-      SystemCallFilter = [ "@system-service" ];
-    };
+    # 上流モジュールがDynamicUser/ProtectSystem/DevicePolicy/NoNewPrivilegesを設定済みなので、
+    # 上流と重複・衝突する属性は外してその上に締めます。
+    serviceConfig =
+      builtins.removeAttrs hardening.network [
+        "NoNewPrivileges"
+        "PrivateDevices"
+        "PrivateTmp"
+        "ProtectSystem"
+      ]
+      // {
+        # collector内部のmemory_limiterに加えて、
+        # cgroupレベルでもメモリ上限を設けて二重に保護します。
+        # memory_limiterのlimit_mib(256MiB)より上に設定して、
+        # 通常はcollector側で先に制御が効くようにします。
+        MemoryHigh = "384M";
+        MemoryMax = "512M";
+        # `EnvironmentFile`はsystemdがroot権限で読み込んでからプロセスに渡すため、
+        # `DynamicUser`で動くcollectorでも`0400 root`のままアクセスできます。
+        EnvironmentFile = [ config.sops.templates."otelcol-env".path ];
+      };
     after = [ "sops-install-secrets.service" ];
     requires = [ "sops-install-secrets.service" ];
   };

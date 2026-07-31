@@ -1,4 +1,9 @@
-{ lib, pkgs, ... }:
+{
+  lib,
+  pkgs,
+  hardening,
+  ...
+}:
 {
   boot = {
     loader = {
@@ -68,35 +73,15 @@
       unitConfig = {
         ConditionPathExists = limineLastBootedEntryPath;
       };
-      serviceConfig = {
+      # efivarfsの変数を削除するだけでソケットは使わない。
+      # /sysへの書き込みが必要なのでProtectKernelTunablesは設定できない。
+      serviceConfig = builtins.removeAttrs hardening.isolated [ "ProtectKernelTunables" ] // {
         Type = "oneshot";
-        # Hardening
-        # efivarfsの変数削除に必要なもの以外を締める。
         # chattrによるimmutable属性の解除にCAP_LINUX_IMMUTABLEが必要。
+        CapabilityBoundingSet = [ "CAP_LINUX_IMMUTABLE" ];
         # `ProtectSystem = "strict"`は/sysを読み書き可能なまま残すが、
         # efivarfsは/sys配下の別マウントなので明示的にReadWritePathsへ入れる。
-        # /sysへの書き込みが必要なのでProtectKernelTunablesは設定できない。
-        CapabilityBoundingSet = [ "CAP_LINUX_IMMUTABLE" ];
-        LockPersonality = true;
-        MemoryDenyWriteExecute = true;
-        NoNewPrivileges = true;
-        PrivateDevices = true;
-        PrivateNetwork = true;
-        PrivateTmp = true;
-        ProtectClock = true;
-        ProtectControlGroups = true;
-        ProtectHome = true;
-        ProtectHostname = true;
-        ProtectKernelLogs = true;
-        ProtectKernelModules = true;
-        ProtectSystem = "strict";
         ReadWritePaths = [ "/sys/firmware/efi/efivars" ];
-        RestrictAddressFamilies = [ "AF_UNIX" ];
-        RestrictNamespaces = true;
-        RestrictRealtime = true;
-        RestrictSUIDSGID = true;
-        SystemCallArchitectures = "native";
-        SystemCallFilter = [ "@system-service" ];
         ExecStart = lib.getExe (
           pkgs.writeShellApplication {
             name = "limine-forget-last-entry";

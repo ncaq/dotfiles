@@ -125,6 +125,33 @@ class SeedVR2StreamingVideoUpscaler:
         if not isinstance(source, (str, os.PathLike)):
             raise TypeError("SeedVR2 streaming requires a video backed by a file")
 
+        # inference_cli.pyは`--vae_model`を持たずVAEはDEFAULT_VAE固定なので、
+        # UIで他のVAEを選んでも反映されない。黙って無視せず失敗させる。
+        cli_fixed_vae = "ema_vae_fp16.safetensors"
+        if vae["model"] != cli_fixed_vae:
+            raise ValueError(
+                f"SeedVR2 CLI always uses VAE {cli_fixed_vae}, got {vae['model']}"
+            )
+        # CLIは両モデル共通の単一推論デバイスを`--cuda_device`で受け取る。
+        if dit["device"] != vae["device"]:
+            raise ValueError(
+                "SeedVR2 CLI uses a single inference device for both models, "
+                f"got DiT={dit['device']} and VAE={vae['device']}"
+            )
+        cuda_device = dit["device"].removeprefix("cuda:")
+        if not cuda_device.isdigit():
+            raise ValueError(
+                f"SeedVR2 CLI only supports cuda devices, got {dit['device']}"
+            )
+        # torch compile設定はCLIへ引き渡していない。
+        if (
+            dit["torch_compile_args"] is not None
+            or vae["torch_compile_args"] is not None
+        ):
+            raise ValueError(
+                "torch compile settings are not forwarded to the SeedVR2 CLI"
+            )
+
         output_dir, filename, counter, subfolder, _ = folder_paths.get_save_image_path(
             filename_prefix,
             folder_paths.get_output_directory(),
@@ -156,6 +183,8 @@ class SeedVR2StreamingVideoUpscaler:
             model_dir,
             "--dit_model",
             dit["model"],
+            "--cuda_device",
+            cuda_device,
             "--resolution",
             str(resolution),
             "--max_resolution",
@@ -177,34 +206,34 @@ class SeedVR2StreamingVideoUpscaler:
             "--latent_noise_scale",
             str(latent_noise_scale),
             "--dit_offload_device",
-            dit.get("offload_device", "none"),
+            dit["offload_device"],
             "--vae_offload_device",
-            vae.get("offload_device", "none"),
+            vae["offload_device"],
             "--tensor_offload_device",
             offload_device,
             "--blocks_to_swap",
-            str(dit.get("blocks_to_swap", 0)),
+            str(dit["blocks_to_swap"]),
             "--attention_mode",
-            dit.get("attention_mode", "sdpa"),
+            dit["attention_mode"],
             "--vae_encode_tile_size",
-            str(vae.get("encode_tile_size", 1024)),
+            str(vae["encode_tile_size"]),
             "--vae_encode_tile_overlap",
-            str(vae.get("encode_tile_overlap", 128)),
+            str(vae["encode_tile_overlap"]),
             "--vae_decode_tile_size",
-            str(vae.get("decode_tile_size", 1024)),
+            str(vae["decode_tile_size"]),
             "--vae_decode_tile_overlap",
-            str(vae.get("decode_tile_overlap", 128)),
+            str(vae["decode_tile_overlap"]),
             "--tile_debug",
-            vae.get("tile_debug", "false"),
+            str(vae["tile_debug"]),
         ]
         enabled_flags = {
             "--lossless": lossless,
             "--uniform_batch_size": uniform_batch_size,
-            "--swap_io_components": dit.get("swap_io_components", False),
-            "--cache_dit": dit.get("cache_model", False),
-            "--vae_encode_tiled": vae.get("encode_tiled", False),
-            "--vae_decode_tiled": vae.get("decode_tiled", False),
-            "--cache_vae": vae.get("cache_model", False),
+            "--swap_io_components": dit["swap_io_components"],
+            "--cache_dit": dit["cache_model"],
+            "--vae_encode_tiled": vae["encode_tiled"],
+            "--vae_decode_tiled": vae["decode_tiled"],
+            "--cache_vae": vae["cache_model"],
             "--debug": enable_debug,
         }
         command.extend(flag for flag, enabled in enabled_flags.items() if enabled)

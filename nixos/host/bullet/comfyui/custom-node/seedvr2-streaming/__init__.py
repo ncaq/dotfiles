@@ -226,14 +226,23 @@ class SeedVR2StreamingVideoUpscaler:
             os.replace(partial_path, output_path)
         except BaseException:
             if process.poll() is None:
-                os.killpg(process.pid, signal.SIGTERM)
+                try:
+                    os.killpg(process.pid, signal.SIGTERM)
+                except ProcessLookupError as error:
+                    logger.info(
+                        "SeedVR2 process already exited before SIGTERM: %s", error
+                    )
                 try:
                     process.wait(timeout=10)
                 except subprocess.TimeoutExpired:
-                    os.killpg(process.pid, signal.SIGKILL)
+                    try:
+                        os.killpg(process.pid, signal.SIGKILL)
+                    except ProcessLookupError as error:
+                        logger.info(
+                            "SeedVR2 process already exited before SIGKILL: %s", error
+                        )
                     process.wait()
-            if partial_path.exists():
-                partial_path.unlink()
+            partial_path.unlink(missing_ok=True)
             raise
 
         return {

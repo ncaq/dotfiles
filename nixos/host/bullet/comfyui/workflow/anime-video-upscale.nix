@@ -1,15 +1,15 @@
 # アニメ動画をSeedVR2 7B FP16で4Kへアップスケールするワークフロー。
 #
 # 指定した出力長辺と元動画の比率から幅と高さを自動計算し、
-# SeedVR2と最後のImageScaleへ同じ目標寸法を渡す。
+# SeedVR2と保存直前のLanczosスケールへ同じ目標寸法を渡す。
 # 幅と高さは4:2:0で扱える偶数へ丸める。
 #
 # RTX 5090の32GB VRAMで7B FP16を安定して動かすため、
 # DiTの16ブロックとI/O部品をCPUへ退避し、VAEはタイル処理する。
 # VRAMに余裕があればblocks_to_swapを減らすと高速になる。
 #
-# 自作保存ノードはRGB48から10-bit SVT-AV1へ変換し、音声をFLACで格納する。
-# CRF 1はnear-losslessだが、4:2:0への色差変換があるため厳密な可逆圧縮ではない。
+# SeedVR2 CLIは動画を128フレームずつ処理し、チャンク境界へ時間的文脈を渡す。
+# 出力はRGB48から10-bit x265 CRF 1へ逐次変換するため、全尺をRAMへ展開しない。
 { lib, ... }:
 let
   name = "anime-video-upscale";
@@ -35,7 +35,7 @@ in
       outputs = [
         15
         16
-        9
+        5
       ];
     };
     nodes = [
@@ -45,14 +45,19 @@ in
         title = "アップスケールする動画";
         pos = [
           (-40)
-          220
+          190
         ];
         size = [
           340
           310
         ];
         order = 1;
-        outputs = [ (mkOutput "VIDEO" "VIDEO" [ 1 ]) ];
+        outputs = [
+          (mkOutput "VIDEO" "VIDEO" [
+            1
+            26
+          ])
+        ];
         widgets = [
           "example.mp4"
           "image"
@@ -60,25 +65,27 @@ in
       })
       (mkNode {
         id = 2;
-        type = "GetVideoComponents";
+        type = "GetVideoSize";
+        title = "元動画の解像度";
         pos = [
-          380
-          760
+          360
+          700
         ];
         size = [
           240
-          106
+          100
         ];
         order = 2;
         inputs = [ (mkInput "video" "VIDEO" 1) ];
         outputs = [
-          (mkOutput "images" "IMAGE" [
-            2
-            6
+          (mkOutput "width" "INT" [
+            12
+            14
           ])
-          (mkOutput "audio" "AUDIO" [ 8 ])
-          (mkOutput "fps" "FLOAT" [ 9 ])
-          (mkOutput "bit_depth" "INT" [ ])
+          (mkOutput "height" "INT" [
+            13
+            15
+          ])
         ];
       })
       (mkNode {
@@ -86,7 +93,7 @@ in
         type = "SeedVR2LoadDiTModel";
         title = "SeedVR2 7B FP16";
         pos = [
-          380
+          360
           40
         ];
         size = [
@@ -110,8 +117,8 @@ in
         type = "SeedVR2LoadVAEModel";
         title = "SeedVR2 VAE FP16 tiled";
         pos = [
-          380
           360
+          330
         ];
         size = [
           390
@@ -135,19 +142,19 @@ in
       })
       (mkNode {
         id = 5;
-        type = "SeedVR2VideoUpscaler";
-        title = "時間的一貫性を保って4K化";
+        type = "SeedVR2StreamingVideoUpscaler";
+        title = "時間的一貫性を保ってアップスケールして保存";
         pos = [
-          850
-          220
+          780
+          40
         ];
         size = [
-          360
-          430
+          420
+          520
         ];
         order = 12;
         inputs = [
-          (mkInput "image" "IMAGE" 2)
+          (mkInput "video" "VIDEO" 26)
           (mkInput "dit" "SEEDVR2_DIT" 3)
           (mkInput "vae" "SEEDVR2_VAE" 4)
           (
@@ -166,13 +173,30 @@ in
               };
             }
           )
+          (
+            mkInput "output_width" "INT" 16
+            // {
+              widget = {
+                name = "output_width";
+              };
+            }
+          )
+          (
+            mkInput "output_height" "INT" 17
+            // {
+              widget = {
+                name = "output_height";
+              };
+            }
+          )
         ];
-        outputs = [ (mkOutput "IMAGE" "IMAGE" [ 5 ]) ];
         widgets = [
           42
           "fixed"
           2160 # resolution(計算した短辺から上書きされる)
           3840 # max_resolution(計算した長辺から上書きされる)
+          3840 # output_width(元動画の比率から上書きされる)
+          2160 # output_height(元動画の比率から上書きされる)
           5 # batch_size: 4n+1
           true # uniform_batch_size
           "lab" # color_correction
@@ -181,35 +205,10 @@ in
           0 # input_noise_scale
           0 # latent_noise_scale
           "cpu" # offload_device
+          128 # chunk_size
+          (mkFilenamePrefix name) # filename_prefix
+          1 # x265 CRF: near-lossless
           false # enable_debug
-        ];
-      })
-      # 元動画の寸法を基準にすることで、SeedVR2やImageScaleの丸めに依存せず、
-      # 元のアスペクト比から最終出力寸法を再現できるようにする。
-      (mkNode {
-        id = 7;
-        type = "GetImageSize";
-        title = "元動画の解像度";
-        pos = [
-          680
-          760
-        ];
-        size = [
-          240
-          86
-        ];
-        order = 3;
-        inputs = [ (mkInput "image" "IMAGE" 6) ];
-        outputs = [
-          (mkOutput "width" "INT" [
-            12
-            14
-          ])
-          (mkOutput "height" "INT" [
-            13
-            15
-          ])
-          (mkOutput "batch_size" "INT" [ ])
         ];
       })
       (mkNode {
@@ -241,12 +240,12 @@ in
         type = "ComfyMathExpression";
         title = "出力幅を自動計算";
         pos = [
-          1020
-          760
+          360
+          840
         ];
         size = [
           315
-          130
+          180
         ];
         order = 4;
         inputs = [
@@ -277,12 +276,12 @@ in
         type = "ComfyMathExpression";
         title = "出力高さを自動計算";
         pos = [
-          1020
-          960
+          360
+          1060
         ];
         size = [
           315
-          130
+          180
         ];
         order = 5;
         inputs = [
@@ -313,12 +312,12 @@ in
         type = "ComfyMathExpression";
         title = "SeedVR2の短辺を計算";
         pos = [
-          1020
-          1160
+          690
+          840
         ];
         size = [
           315
-          106
+          130
         ];
         order = 8;
         inputs = [
@@ -337,12 +336,12 @@ in
         type = "ComfyMathExpression";
         title = "SeedVR2の長辺上限を計算";
         pos = [
-          1020
-          1320
+          690
+          1060
         ];
         size = [
           315
-          106
+          130
         ];
         order = 9;
         inputs = [
@@ -363,12 +362,12 @@ in
         type = "PreviewAny";
         title = "自動計算された出力幅";
         pos = [
-          1380
-          760
+          1020
+          840
         ];
         size = [
           315
-          100
+          130
         ];
         order = 6;
         inputs = [ (mkInput "source" "*" 18) ];
@@ -379,101 +378,31 @@ in
         type = "PreviewAny";
         title = "自動計算された出力高さ";
         pos = [
-          1380
-          920
+          1020
+          1060
         ];
         size = [
           315
-          100
+          130
         ];
         order = 7;
         inputs = [ (mkInput "source" "*" 19) ];
         outputs = [ (mkOutput "STRING" "STRING" [ ]) ];
       })
       (mkNode {
-        id = 6;
-        type = "ImageScale";
-        title = "元のアスペクト比を維持して仕上げ";
-        pos = [
-          1290
-          220
-        ];
-        size = [
-          360
-          190
-        ];
-        order = 13;
-        inputs = [
-          (mkInput "image" "IMAGE" 5)
-          (
-            mkInput "width" "INT" 16
-            // {
-              widget = {
-                name = "width";
-              };
-            }
-          )
-          (
-            mkInput "height" "INT" 17
-            // {
-              widget = {
-                name = "height";
-              };
-            }
-          )
-        ];
-        outputs = [
-          (mkOutput "IMAGE" "IMAGE" [
-            10
-          ])
-        ];
-        widgets = [
-          "lanczos"
-          3840 # width(元動画の比率から上書きされる)
-          2160 # height(元動画の比率から上書きされる)
-          "disabled" # crop
-        ];
-      })
-      (mkNode {
-        id = 9;
-        type = "SaveSvtAv1";
-        title = "SVT-AV1 near-lossless + FLAC";
-        pos = [
-          1730
-          220
-        ];
-        size = [
-          420
-          280
-        ];
-        order = 14;
-        inputs = [
-          (mkInput "images" "IMAGE" 10)
-          (mkInput "fps" "FLOAT" 9) # widget metadataはフロントエンドがSaveSvtAv1の入力定義から復元
-          (mkInput "audio" "AUDIO" 8)
-        ];
-        outputs = [ ];
-        widgets = [
-          24 # fpsはリンクで上書きされる
-          (mkFilenamePrefix name) # filename_prefix
-          1 # CRF: near-lossless
-          4 # preset: 品質優先
-        ];
-      })
-      (mkNode {
         id = 10;
         type = "Note";
         pos = [
-          1730
-          600
+          780
+          610
         ];
         size = [
-          420
-          250
+          555
+          180
         ];
-        order = 15;
+        order = 13;
         widgets = [
-          "元fpsとAUDIOバッチ先頭の音声を維持し、映像長へ切り詰めてFLACで保存する。1から8チャンネルは維持し、それ以上はmonoへ変換する。映像はSVT-AV1 10-bit CRF 1でMKVへ保存する。字幕、チャプター、複数音声、添付フォントまで維持する場合は、出力映像を元MKVとmkvmergeで再muxする。"
+          "出力は映像のみのx265 10-bit CRF 1 MP4。元動画の映像以外を再muxする例:\n\nffmpeg -i upscaled.mp4 -i original.mkv -map 0:v:0 -map 1:a? -map 1:s? -map_metadata 1 -map_chapters 1 -c copy remuxed.mkv"
         ];
       })
     ];
@@ -487,12 +416,12 @@ in
         "VIDEO"
       ]
       [
-        2
-        2
+        26
+        1
         0
         5
         0
-        "IMAGE"
+        "VIDEO"
       ]
       [
         3
@@ -511,52 +440,12 @@ in
         "SEEDVR2_VAE"
       ]
       [
-        5
-        5
-        0
-        6
-        0
-        "IMAGE"
-      ]
-      [
-        6
-        2
-        0
-        7
-        0
-        "IMAGE"
-      ]
-      [
         7
         8
         0
         11
         2
         "INT"
-      ]
-      [
-        8
-        2
-        1
-        9
-        2
-        "AUDIO"
-      ]
-      [
-        9
-        2
-        2
-        9
-        1
-        "FLOAT"
-      ]
-      [
-        10
-        6
-        0
-        9
-        0
-        "IMAGE"
       ]
       [
         11
@@ -568,7 +457,7 @@ in
       ]
       [
         12
-        7
+        2
         0
         11
         0
@@ -576,7 +465,7 @@ in
       ]
       [
         13
-        7
+        2
         1
         11
         1
@@ -584,7 +473,7 @@ in
       ]
       [
         14
-        7
+        2
         0
         12
         0
@@ -592,7 +481,7 @@ in
       ]
       [
         15
-        7
+        2
         1
         12
         1
@@ -602,16 +491,16 @@ in
         16
         11
         1
-        6
-        1
+        5
+        5
         "INT"
       ]
       [
         17
         12
         1
+        5
         6
-        2
         "INT"
       ]
       [

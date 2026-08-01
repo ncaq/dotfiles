@@ -164,8 +164,8 @@ let
         hash = "sha256-+HLYN9PJDtLgUie+1xGvVnGm/RyffX6RyRGmHxVemdo=";
       };
     };
+    # ComfyUI-SeedVR2_VideoUpscalerが登録する専用モデルディレクトリ。
     SEEDVR2 = {
-      # ComfyUI-SeedVR2_VideoUpscalerが登録する専用モデルディレクトリ。
       # 通常版はsharp版より線の過剰強調が少ないため、アニメ動画の標準にする。
       "seedvr2_ema_7b_fp16.safetensors" = fetchHuggingface {
         owner = "numz";

@@ -2,7 +2,7 @@ SeedVR2 CLIのffmpeg出力を強化するパッチ。
 
 - 10-bit時の入力をrgb48leにして、gbrp10le(RGB 4:4:4)のx265 losslessで出力する
 - crf, lossless, output_width, output_heightのCLIオプションを追加する
-- 出力寸法指定時はLanczosでリサイズする
+- 出力寸法指定時はLanczosでリサイズする(入力と同寸法ならスケーラを挿入しない)
 - uint16変換に丸めとクランプを加えてラップアラウンドを防ぐ
 - ffmpeg異常終了を警告ログではなくRuntimeErrorにして、stderr末尾を例外メッセージへ含める
 - RGB→BGR→RGBの無駄な二重色変換を削除する
@@ -19,7 +19,7 @@ SeedVR2 CLIのffmpeg出力を強化するパッチ。
  
  # Project imports
  from src.utils.downloads import download_weight
-@@ -159,33 +160,71 @@
+@@ -159,33 +160,78 @@
          RuntimeError: If ffmpeg is not found in system PATH
      
      Note:
@@ -43,9 +43,16 @@ SeedVR2 CLIのffmpeg出力を強化するパッチ。
 +            pix_fmt = 'yuv420p10le' if use_10bit else 'yuv420p'
 +        input_pix_fmt = 'rgb48le' if use_10bit else 'rgb24'
          codec = 'libx265' if use_10bit else 'libx264'
++        # Skip the scaler when the requested size matches the input;
++        # inserting it anyway would run a useless Lanczos convolution over
++        # every frame.
++        needs_scale = (
++            output_width > 0 and output_height > 0
++            and (output_width, output_height) != (width, height)
++        )
 +        scale_args = (
 +            ['-vf', f'scale={output_width}:{output_height}:flags=lanczos']
-+            if output_width > 0 and output_height > 0 else []
++            if needs_scale else []
 +        )
 +        rate_args = (
 +            # frame-threads=12 measured ~8% faster than the auto value on a
@@ -102,7 +109,7 @@ SeedVR2 CLIのffmpeg出力を強化するパッチ。
              )
      
      def isOpened(self) -> bool:
-@@ -200,13 +239,15 @@
+@@ -200,13 +246,15 @@
              
              self.proc.wait()
              
@@ -124,7 +131,7 @@ SeedVR2 CLIのffmpeg出力を強化するパッチ。
  
  
  # =============================================================================
-@@ -519,17 +560,20 @@
+@@ -519,17 +567,20 @@
                  'frames_to_process': frames_to_process,
              }
              result = _gpu_processing(None, device_list, args, video_info=video_info)
@@ -150,7 +157,7 @@ SeedVR2 CLIのffmpeg出力を強化するパッチ。
          
          # Single GPU: stream in main process
          else:
-@@ -548,15 +592,20 @@
+@@ -548,15 +599,20 @@
                  cleanup_timer_name="chunk_cleanup"
              ):
                  chunk_count += 1
@@ -175,7 +182,7 @@ SeedVR2 CLIのffmpeg出力を強化するパッチ。
                  del result
              
              chunk_idx = chunk_count
-@@ -733,13 +782,33 @@
+@@ -733,13 +789,33 @@
      cv2.imwrite(file_path, frame_bgr)
  
  
@@ -210,7 +217,7 @@ SeedVR2 CLIのffmpeg出力を強化するパッチ。
  ) -> Optional[cv2.VideoWriter]:
      """
      Save frames tensor to MP4 video file.
-@@ -749,7 +818,11 @@
+@@ -749,7 +825,11 @@
      an existing writer is passed and kept open for subsequent chunks.
      
      Args:
@@ -223,7 +230,7 @@ SeedVR2 CLIのffmpeg出力を強化するパッチ。
          output_path: Output video file path (directory created if doesn't exist)
          fps: Frames per second for output video (default: 30.0)
          writer: Existing VideoWriter for streaming (if None, creates new one)
-@@ -760,14 +833,32 @@
+@@ -760,14 +840,32 @@
      Raises:
          ValueError: If video writer cannot be initialized
      """
@@ -258,7 +265,7 @@ SeedVR2 CLIのffmpeg出力を強化するパッチ。
          else:
              fourcc = cv2.VideoWriter_fourcc(*'mp4v')
              writer = cv2.VideoWriter(output_path, fourcc, fps, (W, H))
-@@ -775,8 +866,12 @@
+@@ -775,8 +873,12 @@
              raise ValueError(f"Cannot create video writer for: {output_path}")
      
      for i, frame in enumerate(frames_np):
@@ -273,7 +280,7 @@ SeedVR2 CLIのffmpeg出力を強化するパッチ。
          if debug.enabled and (i + 1) % 100 == 0:
              debug.log(f"Written {i + 1}/{T} frames", category="file")
      
-@@ -1356,6 +1451,14 @@
+@@ -1356,6 +1458,14 @@
      io_group.add_argument("--10bit", dest="use_10bit", action="store_true",
                          help="Save 10-bit video with x265 codec (reduces banding). Without this flag, "
                           "ffmpeg uses x264 for maximum compatibility. Requires --video_backend ffmpeg")

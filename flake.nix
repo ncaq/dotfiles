@@ -200,24 +200,35 @@
           ;
       };
 
-      hostDefs = {
-        "SSD0086" = mkNixosSystem {
+      # 各ホストの静的な情報。
+      # NixOSのoptionはホストの構成内で閉じていて他のホストからは参照できないため、
+      # 他のホストが知る必要のある情報はここに書いて、
+      # `specialArgs`の`hostInfo`として全ホストのモジュールに渡す。
+      hostInfo = {
+        "SSD0086" = {
           system = "x86_64-linux";
-          hostName = "SSD0086";
         };
-        "bullet" = mkNixosSystem {
+        "bullet" = {
           system = "x86_64-linux";
-          hostName = "bullet";
+          # オンボード有線NICのMACアドレス。
+          # seminarがWake-on-LANのmagic packetを送る宛先に使う。
+          macAddress = "34:5a:60:bf:07:ad";
         };
-        "creep" = mkNixosSystem {
+        "creep" = {
           system = "x86_64-linux";
-          hostName = "creep";
         };
-        "seminar" = mkNixosSystem {
+        "seminar" = {
           system = "x86_64-linux";
-          hostName = "seminar";
         };
       };
+
+      hostDefs = lib.mapAttrs (
+        hostName: info:
+        mkNixosSystem {
+          inherit (info) system;
+          inherit hostName hostInfo;
+        }
+      ) hostInfo;
 
       nixosConfigurations = lib.mapAttrs (_: def: def.nixosSystem) hostDefs;
 

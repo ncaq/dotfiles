@@ -9,6 +9,7 @@
 {
   system,
   hostName,
+  hostInfo,
 }:
 let
   specialArgs = {
@@ -18,6 +19,7 @@ let
       inputs
 
       hostName
+      hostInfo
       ;
     username = "ncaq";
     pkgs-unstable = importPkgsUnstable system;

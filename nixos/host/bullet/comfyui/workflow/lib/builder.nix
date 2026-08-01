@@ -23,7 +23,13 @@ let
   # ファイル名を連番だけでなく生成日時にするfilename_prefixを組み立てる。
   # %year%などの置換はサーバ側のfolder_paths.get_save_image_pathが行うため、
   # フロントエンドの%date:...%と違い自作ノードを含む全ての保存ノードで機能する。
-  mkFilenamePrefix = name: "${name}/${name}-%year%-%month%-%day%-%hour%-%minute%-%second%";
+  # 第1引数はワークフロー名で、サブディレクトリ名とファイル名の両方に使われる。
+  # 第2引数はファイル名だけに足すサフィックスで、
+  # 同じワークフローが複数の保存ノードを持つ時に役割を区別する。
+  # サブディレクトリはワークフロー単位のままなので階層は増えない。
+  mkFilenamePrefixWith =
+    name: suffix: "${name}/${name}${suffix}-%year%-%month%-%day%-%hour%-%minute%-%second%";
+  mkFilenamePrefix = name: mkFilenamePrefixWith name "";
 
   mkNode =
     {
@@ -31,6 +37,9 @@ let
       type,
       pos,
       size,
+      # ノードの実行順。
+      # ノードごとに一意で、かつリンクの依存に沿って増える値を振る。
+      # `lib/order.nix`の検証がこの規約を機械的に確かめる。
       order,
       inputs ? [ ],
       outputs ? [ ],
@@ -303,6 +312,7 @@ in
     mkAppInputWith
     mkWorkflow
     mkFilenamePrefix
+    mkFilenamePrefixWith
     promptNodes
     promptBaseLinks
     promptLinks

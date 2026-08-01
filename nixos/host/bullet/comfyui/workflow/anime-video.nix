@@ -13,7 +13,7 @@
 #
 # 生成解像度は入力画像から自動で決まる。
 # アスペクト比を保ったまま総ピクセル量0.9メガピクセル(720p相当)へスケールして、
-# 16の倍数へ丸めた実寸をWanImageToVideoへ渡す。
+# 16の倍数へ丸めた実寸をWanFirstLastFrameToVideoへ渡す。
 #
 # 動画の長さは「窓の数」で指定する。
 # Wanは81フレーム(16fpsで約5秒)前後の長さで学習されていて、
@@ -22,7 +22,7 @@
 # 窓は56フレームずつ進むので窓の数nで長さは81+56*(n-1)フレームになる。
 # 窓1枚なら分割は発動せず品質への影響はない。
 # コアのMath Expressionノードが窓の数からフレーム数を計算して、
-# WanImageToVideoのlengthへソケットで渡す。
+# WanFirstLastFrameToVideoのlengthへソケットで渡す。
 #
 # 任意で動画の終了ポーズも画像で指定できる(FLF2V方式)。
 # 成り行き生成では動作が中途半端なポーズで終わりやすく、
@@ -202,7 +202,7 @@ in
           340
           314
         ];
-        order = 26;
+        order = 5;
         outputs = [
           (mkOutput "IMAGE" "IMAGE" [ 37 ])
           (mkOutput "MASK" "MASK" [ ])
@@ -227,7 +227,7 @@ in
           315
           130
         ];
-        order = 5;
+        order = 6;
         inputs = [ (mkInput "image" "IMAGE" 11) ];
         outputs = [
           (mkOutput "IMAGE" "IMAGE" [
@@ -241,7 +241,7 @@ in
           16 # resolution_steps
         ];
       })
-      # スケール後の実寸をWanImageToVideoへ渡す。
+      # スケール後の実寸をWanFirstLastFrameToVideoへ渡す。
       (mkNode {
         id = 22;
         type = "GetImageSize";
@@ -253,7 +253,7 @@ in
           240
           86
         ];
-        order = 6;
+        order = 7;
         inputs = [ (mkInput "image" "IMAGE" 27) ];
         outputs = [
           (mkOutput "width" "INT" [ 28 ])
@@ -275,14 +275,14 @@ in
           460
           106
         ];
-        order = 22;
+        order = 8;
         outputs = [ (mkOutput "INT" "INT" [ 32 ]) ];
         widgets = [
           1 # value
           "fixed" # control_after_generate
         ];
       })
-      # WanImageToVideoのlengthへ渡すフレーム数を窓の数aから計算する。
+      # WanFirstLastFrameToVideoのlengthへ渡すフレーム数を窓の数aから計算する。
       # 定数81と56はコンテキスト窓ノードのcontext_length 81と、
       # overlap 30(latent単位で7に丸められ進み幅はlatent 14=56フレーム)由来なので、
       # そちらを変える時は揃えること。
@@ -299,7 +299,7 @@ in
           315
           106
         ];
-        order = 23;
+        order = 9;
         inputs = [
           (mkInput "values.a" "FLOAT,INT,BOOLEAN" 32)
           # autogrowの次の空きスロット。shape 7はoptionalの意味。
@@ -333,7 +333,7 @@ in
           315
           106
         ];
-        order = 24;
+        order = 10;
         inputs = [
           (mkInput "values.a" "FLOAT,INT,BOOLEAN" 35)
           # autogrowの次の空きスロット。shape 7はoptionalの意味。
@@ -366,7 +366,7 @@ in
           240
           106
         ];
-        order = 25;
+        order = 11;
         inputs = [ (mkInput "source" "*" 36) ];
       })
       # 動きの指示をここに書く。
@@ -383,7 +383,7 @@ in
           420
           200
         ];
-        order = 7;
+        order = 12;
         outputs = [ (mkOutput "english_text" "STRING" [ 23 ]) ];
         widgets = [ "カメラはゆっくりと近づく。キャラクターは穏やかに微笑み、髪と服が風に揺れる。" ];
       })
@@ -400,7 +400,7 @@ in
           340
           130
         ];
-        order = 8;
+        order = 13;
         inputs = [
           (
             mkInput "string_b" "STRING" 23
@@ -437,7 +437,7 @@ in
           340
           200
         ];
-        order = 9;
+        order = 14;
         inputs = [ (mkInput "source" "*" 25) ];
       })
       (mkNode {
@@ -452,7 +452,7 @@ in
           420
           160
         ];
-        order = 10;
+        order = 15;
         inputs = [
           (mkInput "clip" "CLIP" 3)
           (
@@ -481,7 +481,7 @@ in
           420
           160
         ];
-        order = 11;
+        order = 16;
         inputs = [ (mkInput "clip" "CLIP" 4) ];
         outputs = [ (mkOutput "CONDITIONING" "CONDITIONING" [ 13 ]) ];
         widgets = [ negativePrompt ];
@@ -502,7 +502,7 @@ in
           315
           230
         ];
-        order = 12;
+        order = 17;
         inputs = [
           (mkInput "positive" "CONDITIONING" 12)
           (mkInput "negative" "CONDITIONING" 13)
@@ -566,7 +566,7 @@ in
           315
           58
         ];
-        order = 15;
+        order = 18;
         inputs = [ (mkInput "model" "MODEL" 1) ];
         outputs = [ (mkOutput "MODEL" "MODEL" [ 9 ]) ];
         widgets = [ 5 ]; # shift
@@ -583,7 +583,7 @@ in
           315
           58
         ];
-        order = 16;
+        order = 19;
         inputs = [ (mkInput "model" "MODEL" 2) ];
         outputs = [ (mkOutput "MODEL" "MODEL" [ 10 ]) ];
         widgets = [ 5 ]; # shift
@@ -608,7 +608,7 @@ in
           330
           200
         ];
-        order = 25;
+        order = 20;
         inputs = [ (mkInput "model" "MODEL" 9) ];
         outputs = [ (mkOutput "MODEL" "MODEL" [ 33 ]) ];
         widgets = [
@@ -635,7 +635,7 @@ in
           330
           200
         ];
-        order = 26;
+        order = 21;
         inputs = [ (mkInput "model" "MODEL" 10) ];
         outputs = [ (mkOutput "MODEL" "MODEL" [ 34 ]) ];
         widgets = [
@@ -663,7 +663,7 @@ in
           315
           334
         ];
-        order = 17;
+        order = 22;
         inputs = [
           (mkInput "model" "MODEL" 33)
           (mkInput "positive" "CONDITIONING" 14)
@@ -698,7 +698,7 @@ in
           315
           334
         ];
-        order = 18;
+        order = 23;
         inputs = [
           (mkInput "model" "MODEL" 34)
           (mkInput "positive" "CONDITIONING" 15)
@@ -730,7 +730,7 @@ in
           210
           46
         ];
-        order = 19;
+        order = 24;
         inputs = [
           (mkInput "samples" "LATENT" 20)
           (mkInput "vae" "VAE" 6)
@@ -749,7 +749,7 @@ in
           420
           470
         ];
-        order = 20;
+        order = 25;
         inputs = [ (mkInput "images" "IMAGE" 21) ];
         widgets = [
           (mkFilenamePrefix name) # filename_prefix

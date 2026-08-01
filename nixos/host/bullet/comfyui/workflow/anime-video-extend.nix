@@ -38,6 +38,10 @@
 # 動きの指示は日本語で書けば自作カスタムノードで英語へ翻訳される。
 # 「続きから」の指示なので直前の動きから繋がる動作を書くと自然になる。
 # 出力は自作保存ノードによるSVT-AV1 losslessのWebM。
+# 新区間のみと、繋ぎ目を確認するための連結済み動画を別々に保存する。
+# 新区間を個別に保存するのは、
+# 延長を繰り返すと連結済み動画がComfyUIのアップロード上限を超えるためと、
+# 連結済み動画を入力に使い続けると再エンコードによる劣化が重なるため。
 # 8-bit RGBから10-bit YUV 4:2:0への色変換後の映像を可逆圧縮する。
 # 色変換とクロマサブサンプリングを挟むため、元のRGB画像に対する厳密な可逆圧縮ではない。
 { lib, ... }:
@@ -51,6 +55,7 @@ let
     mkAppInputWith
     mkWorkflow
     mkFilenamePrefix
+    mkFilenamePrefixWith
     seedWidgets
     ;
   # 実写バイアスを打ち消すために常にプロンプトへ前置するスタイル指定。
@@ -74,7 +79,10 @@ in
         })
         (mkAppInput 13 "noise_seed")
       ];
-      outputs = [ 17 ];
+      outputs = [
+        17
+        28
+      ];
     };
     nodes = [
       (mkNode {
@@ -82,7 +90,7 @@ in
         type = "UNETLoader";
         title = "high noiseモデル";
         pos = [
-          1340
+          1260
           40
         ];
         size = [
@@ -101,8 +109,8 @@ in
         type = "UNETLoader";
         title = "low noiseモデル";
         pos = [
-          1340
-          500
+          1260
+          180
         ];
         size = [
           385
@@ -119,7 +127,7 @@ in
         id = 3;
         type = "CLIPLoader";
         pos = [
-          860
+          800
           40
         ];
         size = [
@@ -143,8 +151,8 @@ in
         id = 4;
         type = "VAELoader";
         pos = [
-          860
-          980
+          800
+          190
         ];
         size = [
           385
@@ -165,7 +173,7 @@ in
         title = "延長する動画";
         pos = [
           (-40)
-          320
+          650
         ];
         size = [
           340
@@ -184,13 +192,13 @@ in
         title = "終了ポーズの画像(任意)";
         pos = [
           (-40)
-          710
+          280
         ];
         size = [
           340
           314
         ];
-        order = 25;
+        order = 5;
         outputs = [
           (mkOutput "IMAGE" "IMAGE" [ 34 ])
           (mkOutput "MASK" "MASK" [ ])
@@ -204,14 +212,14 @@ in
         id = 23;
         type = "GetVideoComponents";
         pos = [
-          480
-          520
+          440
+          560
         ];
         size = [
           240
           106
         ];
-        order = 5;
+        order = 6;
         inputs = [ (mkInput "video" "VIDEO" 11) ];
         outputs = [
           (mkOutput "images" "IMAGE" [
@@ -229,14 +237,14 @@ in
         type = "ImageFromBatch";
         title = "最終フレームを取り出す";
         pos = [
-          480
-          700
+          440
+          730
         ];
         size = [
           315
           106
         ];
-        order = 6;
+        order = 7;
         inputs = [ (mkInput "image" "IMAGE" 12) ];
         outputs = [ (mkOutput "IMAGE" "IMAGE" [ 14 ]) ];
         widgets = [
@@ -252,14 +260,14 @@ in
         type = "ImageScaleToTotalPixels";
         title = "生成解像度へスケール";
         pos = [
-          480
-          880
+          800
+          760
         ];
         size = [
           315
           130
         ];
-        order = 7;
+        order = 8;
         inputs = [ (mkInput "image" "IMAGE" 14) ];
         outputs = [
           (mkOutput "IMAGE" "IMAGE" [
@@ -273,19 +281,19 @@ in
           16 # resolution_steps
         ];
       })
-      # スケール後の実寸をWanImageToVideoへ渡す。
+      # スケール後の実寸をWanFirstLastFrameToVideoへ渡す。
       (mkNode {
         id = 22;
         type = "GetImageSize";
         pos = [
-          480
-          1090
+          1160
+          800
         ];
         size = [
           240
           86
         ];
-        order = 8;
+        order = 9;
         inputs = [ (mkInput "image" "IMAGE" 16) ];
         outputs = [
           (mkOutput "width" "INT" [ 17 ])
@@ -307,7 +315,7 @@ in
           420
           200
         ];
-        order = 9;
+        order = 10;
         outputs = [ (mkOutput "english_text" "STRING" [ 19 ]) ];
         widgets = [ "カメラはゆっくりと近づく。キャラクターは穏やかに微笑み、髪と服が風に揺れる。" ];
       })
@@ -317,14 +325,14 @@ in
         type = "StringConcatenate";
         title = "アニメスタイル指定の前置";
         pos = [
-          480
+          440
           40
         ];
         size = [
           340
           130
         ];
-        order = 10;
+        order = 11;
         inputs = [
           (
             mkInput "string_b" "STRING" 19
@@ -354,14 +362,14 @@ in
         type = "PreviewAny";
         title = "最終プロンプト";
         pos = [
-          480
-          240
+          440
+          260
         ];
         size = [
           340
           200
         ];
-        order = 11;
+        order = 12;
         inputs = [ (mkInput "source" "*" 21) ];
       })
       (mkNode {
@@ -369,14 +377,14 @@ in
         type = "CLIPTextEncode";
         title = "ポジティブ(スタイル+動きの指示)";
         pos = [
-          860
-          220
+          800
+          330
         ];
         size = [
           420
           160
         ];
-        order = 12;
+        order = 13;
         inputs = [
           (mkInput "clip" "CLIP" 3)
           (
@@ -398,14 +406,14 @@ in
         type = "CLIPTextEncode";
         title = "ネガティブ(CFG 1では無効)";
         pos = [
-          860
-          450
+          800
+          530
         ];
         size = [
           420
           160
         ];
-        order = 13;
+        order = 14;
         inputs = [ (mkInput "clip" "CLIP" 4) ];
         outputs = [ (mkOutput "CONDITIONING" "CONDITIONING" [ 23 ]) ];
         widgets = [ negativePrompt ];
@@ -421,14 +429,14 @@ in
         id = 12;
         type = "WanFirstLastFrameToVideo";
         pos = [
-          860
-          680
+          1260
+          520
         ];
         size = [
           315
           230
         ];
-        order = 14;
+        order = 15;
         inputs = [
           (mkInput "positive" "CONDITIONING" 22)
           (mkInput "negative" "CONDITIONING" 23)
@@ -477,8 +485,8 @@ in
         type = "ModelSamplingSD3";
         title = "shift(high)";
         pos = [
-          1340
-          340
+          1260
+          310
         ];
         size = [
           315
@@ -494,14 +502,14 @@ in
         type = "ModelSamplingSD3";
         title = "shift(low)";
         pos = [
-          1340
-          800
+          1260
+          410
         ];
         size = [
           315
           58
         ];
-        order = 18;
+        order = 17;
         inputs = [ (mkInput "model" "MODEL" 2) ];
         outputs = [ (mkOutput "MODEL" "MODEL" [ 10 ]) ];
         widgets = [ 5 ]; # shift
@@ -512,14 +520,14 @@ in
         type = "KSamplerAdvanced";
         title = "サンプリング前半(high noise)";
         pos = [
-          1780
+          1660
           40
         ];
         size = [
           315
           334
         ];
-        order = 19;
+        order = 18;
         inputs = [
           (mkInput "model" "MODEL" 9)
           (mkInput "positive" "CONDITIONING" 24)
@@ -547,14 +555,14 @@ in
         type = "KSamplerAdvanced";
         title = "サンプリング後半(low noise)";
         pos = [
-          1780
-          460
+          1660
+          450
         ];
         size = [
           315
           334
         ];
-        order = 20;
+        order = 19;
         inputs = [
           (mkInput "model" "MODEL" 10)
           (mkInput "positive" "CONDITIONING" 25)
@@ -579,14 +587,14 @@ in
         id = 15;
         type = "VAEDecode";
         pos = [
-          2160
+          2040
           40
         ];
         size = [
           210
           46
         ];
-        order = 21;
+        order = 20;
         inputs = [
           (mkInput "samples" "LATENT" 30)
           (mkInput "vae" "VAE" 6)
@@ -601,19 +609,48 @@ in
         type = "ImageFromBatch";
         title = "新区間の先頭フレームを除去";
         pos = [
-          2160
-          160
+          2040
+          140
         ];
         size = [
           315
           106
         ];
-        order = 22;
+        order = 21;
         inputs = [ (mkInput "image" "IMAGE" 31) ];
-        outputs = [ (mkOutput "IMAGE" "IMAGE" [ 32 ]) ];
+        outputs = [
+          (mkOutput "IMAGE" "IMAGE" [
+            32
+            35
+          ])
+        ];
         widgets = [
           1 # batch_index
           4096 # length
+        ];
+      })
+      # 新区間だけを保存する。
+      # 先頭フレームは元動画の最終フレームとの重複なので、
+      # ここでは除去済みのフレーム列を使い、後でそのまま連結できるようにする。
+      # 連結済み動画の保存とはグラフ上のデータ依存を持たない独立した出力。
+      (mkNode {
+        id = 28;
+        type = "SaveSvtAv1";
+        title = "新区間のみを保存";
+        pos = [
+          2400
+          40
+        ];
+        size = [
+          420
+          470
+        ];
+        order = 22;
+        inputs = [ (mkInput "images" "IMAGE" 35) ];
+        widgets = [
+          (mkFilenamePrefixWith name "-segment") # filename_prefix
+          16 # fps
+          4 # preset
         ];
       })
       # 元動画のフレーム列の後ろへ新区間を連結する。
@@ -622,8 +659,8 @@ in
         type = "BatchImagesNode";
         title = "元動画と連結";
         pos = [
-          2160
-          340
+          2040
+          320
         ];
         size = [
           240
@@ -640,9 +677,10 @@ in
       (mkNode {
         id = 17;
         type = "SaveSvtAv1";
+        title = "連結済み動画を保存";
         pos = [
-          2160
-          490
+          2400
+          550
         ];
         size = [
           420
@@ -896,6 +934,14 @@ in
         0
         26
         1
+        "IMAGE"
+      ]
+      [
+        35
+        25
+        0
+        28
+        0
         "IMAGE"
       ]
       [

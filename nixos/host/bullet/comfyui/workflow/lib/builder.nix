@@ -37,6 +37,9 @@ let
       type,
       pos,
       size,
+      # ノードの実行順。
+      # ノードごとに一意で、かつリンクの依存に沿って増える値を振る。
+      # `lib/order.nix`の検証がこの規約を機械的に確かめる。
       order,
       inputs ? [ ],
       outputs ? [ ],

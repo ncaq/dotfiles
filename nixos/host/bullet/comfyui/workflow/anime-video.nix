@@ -13,7 +13,7 @@
 #
 # 生成解像度は入力画像から自動で決まる。
 # アスペクト比を保ったまま総ピクセル量0.9メガピクセル(720p相当)へスケールして、
-# 16の倍数へ丸めた実寸をWanImageToVideoへ渡す。
+# 16の倍数へ丸めた実寸をWanFirstLastFrameToVideoへ渡す。
 #
 # 動画の長さは「窓の数」で指定する。
 # Wanは81フレーム(16fpsで約5秒)前後の長さで学習されていて、
@@ -22,7 +22,7 @@
 # 窓は56フレームずつ進むので窓の数nで長さは81+56*(n-1)フレームになる。
 # 窓1枚なら分割は発動せず品質への影響はない。
 # コアのMath Expressionノードが窓の数からフレーム数を計算して、
-# WanImageToVideoのlengthへソケットで渡す。
+# WanFirstLastFrameToVideoのlengthへソケットで渡す。
 #
 # 任意で動画の終了ポーズも画像で指定できる(FLF2V方式)。
 # 成り行き生成では動作が中途半端なポーズで終わりやすく、
@@ -241,7 +241,7 @@ in
           16 # resolution_steps
         ];
       })
-      # スケール後の実寸をWanImageToVideoへ渡す。
+      # スケール後の実寸をWanFirstLastFrameToVideoへ渡す。
       (mkNode {
         id = 22;
         type = "GetImageSize";
@@ -282,7 +282,7 @@ in
           "fixed" # control_after_generate
         ];
       })
-      # WanImageToVideoのlengthへ渡すフレーム数を窓の数aから計算する。
+      # WanFirstLastFrameToVideoのlengthへ渡すフレーム数を窓の数aから計算する。
       # 定数81と56はコンテキスト窓ノードのcontext_length 81と、
       # overlap 30(latent単位で7に丸められ進み幅はlatent 14=56フレーム)由来なので、
       # そちらを変える時は揃えること。

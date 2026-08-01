@@ -195,7 +195,7 @@ in
           340
           314
         ];
-        order = 25;
+        order = 5;
         outputs = [
           (mkOutput "IMAGE" "IMAGE" [ 34 ])
           (mkOutput "MASK" "MASK" [ ])
@@ -216,7 +216,7 @@ in
           240
           106
         ];
-        order = 5;
+        order = 6;
         inputs = [ (mkInput "video" "VIDEO" 11) ];
         outputs = [
           (mkOutput "images" "IMAGE" [
@@ -241,7 +241,7 @@ in
           315
           106
         ];
-        order = 6;
+        order = 7;
         inputs = [ (mkInput "image" "IMAGE" 12) ];
         outputs = [ (mkOutput "IMAGE" "IMAGE" [ 14 ]) ];
         widgets = [
@@ -264,7 +264,7 @@ in
           315
           130
         ];
-        order = 7;
+        order = 8;
         inputs = [ (mkInput "image" "IMAGE" 14) ];
         outputs = [
           (mkOutput "IMAGE" "IMAGE" [
@@ -290,7 +290,7 @@ in
           240
           86
         ];
-        order = 8;
+        order = 9;
         inputs = [ (mkInput "image" "IMAGE" 16) ];
         outputs = [
           (mkOutput "width" "INT" [ 17 ])
@@ -312,7 +312,7 @@ in
           420
           200
         ];
-        order = 9;
+        order = 10;
         outputs = [ (mkOutput "english_text" "STRING" [ 19 ]) ];
         widgets = [ "カメラはゆっくりと近づく。キャラクターは穏やかに微笑み、髪と服が風に揺れる。" ];
       })
@@ -329,7 +329,7 @@ in
           340
           130
         ];
-        order = 10;
+        order = 11;
         inputs = [
           (
             mkInput "string_b" "STRING" 19
@@ -366,7 +366,7 @@ in
           340
           200
         ];
-        order = 11;
+        order = 12;
         inputs = [ (mkInput "source" "*" 21) ];
       })
       (mkNode {
@@ -381,7 +381,7 @@ in
           420
           160
         ];
-        order = 12;
+        order = 13;
         inputs = [
           (mkInput "clip" "CLIP" 3)
           (
@@ -410,7 +410,7 @@ in
           420
           160
         ];
-        order = 13;
+        order = 14;
         inputs = [ (mkInput "clip" "CLIP" 4) ];
         outputs = [ (mkOutput "CONDITIONING" "CONDITIONING" [ 23 ]) ];
         widgets = [ negativePrompt ];
@@ -433,7 +433,7 @@ in
           315
           230
         ];
-        order = 14;
+        order = 15;
         inputs = [
           (mkInput "positive" "CONDITIONING" 22)
           (mkInput "negative" "CONDITIONING" 23)
@@ -506,7 +506,7 @@ in
           315
           58
         ];
-        order = 18;
+        order = 17;
         inputs = [ (mkInput "model" "MODEL" 2) ];
         outputs = [ (mkOutput "MODEL" "MODEL" [ 10 ]) ];
         widgets = [ 5 ]; # shift
@@ -524,7 +524,7 @@ in
           315
           334
         ];
-        order = 19;
+        order = 18;
         inputs = [
           (mkInput "model" "MODEL" 9)
           (mkInput "positive" "CONDITIONING" 24)
@@ -559,7 +559,7 @@ in
           315
           334
         ];
-        order = 20;
+        order = 19;
         inputs = [
           (mkInput "model" "MODEL" 10)
           (mkInput "positive" "CONDITIONING" 25)
@@ -591,7 +591,7 @@ in
           210
           46
         ];
-        order = 21;
+        order = 20;
         inputs = [
           (mkInput "samples" "LATENT" 30)
           (mkInput "vae" "VAE" 6)
@@ -613,7 +613,7 @@ in
           315
           106
         ];
-        order = 22;
+        order = 21;
         inputs = [ (mkInput "image" "IMAGE" 31) ];
         outputs = [
           (mkOutput "IMAGE" "IMAGE" [
@@ -642,7 +642,7 @@ in
           420
           470
         ];
-        order = 23;
+        order = 22;
         inputs = [ (mkInput "images" "IMAGE" 35) ];
         widgets = [
           (mkFilenamePrefixWith name "-segment") # filename_prefix
@@ -663,7 +663,7 @@ in
           240
           78
         ];
-        order = 24;
+        order = 23;
         inputs = [
           (mkInput "images.image0" "IMAGE" 13)
           (mkInput "images.image1" "IMAGE" 32)
@@ -683,7 +683,7 @@ in
           420
           470
         ];
-        order = 25;
+        order = 24;
         inputs = [ (mkInput "images" "IMAGE" 33) ];
         widgets = [
           (mkFilenamePrefix name) # filename_prefix

@@ -9,12 +9,15 @@
 let
   link = import ./lib/link.nix { inherit lib; };
   linkTest = import ./lib/link-test.nix { inherit lib; };
+  order = import ./lib/order.nix { inherit lib; };
+  orderTest = import ./lib/order-test.nix { inherit lib; };
   overlap = import ./lib/overlap.nix { inherit lib; };
   overlapTest = import ./lib/overlap-test.nix { inherit lib; };
   describeOverlap =
     pair: "  ${toString pair.a.id}(${pair.a.label}) と ${toString pair.b.id}(${pair.b.label})";
 in
 assert linkTest;
+assert orderTest;
 assert overlapTest;
 {
   config.assertions = lib.concatLists (
@@ -22,6 +25,7 @@ assert overlapTest;
       name: workflow:
       let
         linkErrors = link.invalidReferences workflow;
+        orderErrors = order.orderErrors workflow;
         overlappingNodePairs = overlap.overlappingNodePairs workflow.nodes;
         nodeIds = map (node: node.id) workflow.nodes;
         appInputs = workflow.extra.linearData.inputs or [ ];
@@ -35,6 +39,13 @@ assert overlapTest;
           message = ''
             ComfyUIワークフロー${name}で以下のリンク参照が不整合です:
             ${lib.concatStringsSep "\n" linkErrors}
+          '';
+        }
+        {
+          assertion = orderErrors == [ ];
+          message = ''
+            ComfyUIワークフロー${name}で以下のノード実行順が不整合です:
+            ${lib.concatStringsSep "\n" orderErrors}
           '';
         }
         {

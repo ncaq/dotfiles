@@ -151,38 +151,6 @@ in
           ])
         ];
       })
-      # 編集指示。画像を参照しながら指示文をエンコードする。
-      # 指示文は翻訳ノードから入力ソケット経由で受け取るので、
-      # promptウィジェットはソケットに変換した状態で置く。
-      (mkNode {
-        id = 6;
-        type = "TextEncodeQwenImageEditPlus";
-        title = "編集指示のエンコード";
-        pos = [
-          420
-          60
-        ];
-        size = [
-          420
-          200
-        ];
-        order = 5;
-        inputs = [
-          (mkInput "clip" "CLIP" 2)
-          (mkInput "vae" "VAE" 4)
-          (mkInput "image1" "IMAGE" 9)
-          (
-            mkInput "prompt" "STRING" 19
-            // {
-              widget = {
-                name = "prompt";
-              };
-            }
-          )
-        ];
-        outputs = [ (mkOutput "CONDITIONING" "CONDITIONING" [ 12 ]) ];
-        widgets = [ "" ];
-      })
       # 編集指示をここに書く。
       # 日本語で書けば英語へ翻訳され、英語で書けばほぼそのまま通る。
       (mkNode {
@@ -197,7 +165,7 @@ in
           420
           200
         ];
-        order = 13;
+        order = 5;
         outputs = [
           (mkOutput "english_text" "STRING" [
             19
@@ -220,8 +188,40 @@ in
           340
           200
         ];
-        order = 14;
+        order = 6;
         inputs = [ (mkInput "source" "*" 20) ];
+      })
+      # 編集指示。画像を参照しながら指示文をエンコードする。
+      # 指示文は翻訳ノードから入力ソケット経由で受け取るので、
+      # promptウィジェットはソケットに変換した状態で置く。
+      (mkNode {
+        id = 6;
+        type = "TextEncodeQwenImageEditPlus";
+        title = "編集指示のエンコード";
+        pos = [
+          420
+          60
+        ];
+        size = [
+          420
+          200
+        ];
+        order = 7;
+        inputs = [
+          (mkInput "clip" "CLIP" 2)
+          (mkInput "vae" "VAE" 4)
+          (mkInput "image1" "IMAGE" 9)
+          (
+            mkInput "prompt" "STRING" 19
+            // {
+              widget = {
+                name = "prompt";
+              };
+            }
+          )
+        ];
+        outputs = [ (mkOutput "CONDITIONING" "CONDITIONING" [ 12 ]) ];
+        widgets = [ "" ];
       })
       # ネガティブ側は空の指示文。
       (mkNode {
@@ -236,7 +236,7 @@ in
           420
           160
         ];
-        order = 6;
+        order = 8;
         inputs = [
           (mkInput "clip" "CLIP" 3)
           (mkInput "vae" "VAE" 5)
@@ -256,7 +256,7 @@ in
           315
           58
         ];
-        order = 7;
+        order = 9;
         inputs = [ (mkInput "model" "MODEL" 1) ];
         outputs = [ (mkOutput "MODEL" "MODEL" [ 14 ]) ];
         widgets = [ 3.1 ]; # shift
@@ -272,7 +272,7 @@ in
           315
           82
         ];
-        order = 8;
+        order = 10;
         inputs = [ (mkInput "model" "MODEL" 14) ];
         outputs = [ (mkOutput "patched_model" "MODEL" [ 15 ]) ];
         widgets = [
@@ -291,7 +291,7 @@ in
           210
           46
         ];
-        order = 9;
+        order = 11;
         inputs = [
           (mkInput "pixels" "IMAGE" 11)
           (mkInput "vae" "VAE" 6)
@@ -309,7 +309,7 @@ in
           315
           262
         ];
-        order = 10;
+        order = 12;
         inputs = [
           (mkInput "model" "MODEL" 15)
           (mkInput "positive" "CONDITIONING" 12)
@@ -336,7 +336,7 @@ in
           210
           46
         ];
-        order = 11;
+        order = 13;
         inputs = [
           (mkInput "samples" "LATENT" 17)
           (mkInput "vae" "VAE" 7)
@@ -354,7 +354,7 @@ in
           420
           470
         ];
-        order = 12;
+        order = 14;
         inputs = [ (mkInput "images" "IMAGE" 18) ];
         widgets = [ (mkFilenamePrefix name) ];
       })

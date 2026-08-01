@@ -42,6 +42,7 @@ in
         ];
       };
       # SeedVR2 CLIのチャンク処理をComfyUIから起動し、長尺動画をRAM上限付きで処理する。
+      # 解像度の自動計算に使う、VIDEOから幅と高さを取り出す汎用ノードGetVideoSizeも同梱する。
       "ComfyUI-SeedVR2-Streaming" = pkgs.writeTextDir "__init__.py" (
         builtins.readFile ./custom-node/seedvr2-streaming/__init__.py
       );

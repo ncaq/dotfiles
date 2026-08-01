@@ -11,7 +11,9 @@ from comfy.model_management import throw_exception_if_processing_interrupted
 
 logger = logging.getLogger(__name__)
 
-# Keep the custom_nodes symlink path: resolving it would jump into this node's Nix store path.
+# custom_nodes配下のsymlinkのままのパスを保つため実体解決はしない。
+# resolve()するとこのノード自身のNix storeパスへ飛んでしまい、
+# 隣のSeedVR2ディレクトリを辿れなくなる。
 seedvr2_dir = Path(__file__).absolute().parent.parent / "ComfyUI-SeedVR2_VideoUpscaler"
 
 

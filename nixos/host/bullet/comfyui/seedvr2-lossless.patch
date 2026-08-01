@@ -9,6 +9,10 @@ SeedVR2 CLIのffmpeg出力を強化するパッチ。
 - write()のtobytes()によるフレーム全体コピーをmemoryviewで回避する
 - 10-bit経路で破壊的に消費した入力テンソルを毒化して、以後の使用を例外にする
 
+upstreamへは未提出。
+上流のCLIがRGB 4:4:4 losslessの出力と出力リサイズを提供したら、
+このパッチは削除してそちらへ移行する。
+
 --- a/inference_cli.py
 +++ b/inference_cli.py
 @@ -110,6 +110,7 @@
@@ -19,7 +23,35 @@ SeedVR2 CLIのffmpeg出力を強化するパッチ。
  
  # Project imports
  from src.utils.downloads import download_weight
-@@ -159,33 +160,78 @@
+@@ -144,48 +145,103 @@
+     Video writer using ffmpeg subprocess for encoding with 10-bit support.
+     
+     Provides cv2.VideoWriter-compatible interface (write, isOpened, release) while
+-    using ffmpeg for encoding. Enables 10-bit output (yuv420p10le with x265) which
+-    reduces banding artifacts in gradients compared to 8-bit opencv output.
++    using ffmpeg for encoding. Enables 10-bit output (yuv420p10le, or gbrp10le
++    when lossless, with x265) which reduces banding artifacts in gradients
++    compared to 8-bit opencv output.
+     
+     Args:
+         path: Output video file path
+         width: Frame width in pixels
+         height: Frame height in pixels
+         fps: Frames per second
+-        use_10bit: If True, uses x265 codec with yuv420p10le pixel format.
++        use_10bit: If True, uses x265 codec with a 10-bit pixel format
++                   (gbrp10le when lossless, else yuv420p10le) and rgb48le input.
+                    If False, uses x264 with yuv420p (default: False)
++        crf: Constant rate factor passed to the encoder; ignored when the
++             lossless path is taken (default: 12)
++        lossless: With use_10bit, encode mathematically lossless RGB 4:4:4
++                  (gbrp10le with -x265-params lossless=1) (default: False)
++        output_width: Scale the output to this width with Lanczos;
++                      0 keeps the input width (default: 0)
++        output_height: Scale the output to this height with Lanczos;
++                       0 keeps the input height (default: 0)
+     
+     Raises:
          RuntimeError: If ffmpeg is not found in system PATH
      
      Note:
@@ -109,7 +141,7 @@ SeedVR2 CLIのffmpeg出力を強化するパッチ。
              )
      
      def isOpened(self) -> bool:
-@@ -200,13 +246,15 @@
+@@ -200,13 +256,15 @@
              
              self.proc.wait()
              
@@ -131,7 +163,7 @@ SeedVR2 CLIのffmpeg出力を強化するパッチ。
  
  
  # =============================================================================
-@@ -519,17 +567,20 @@
+@@ -519,17 +577,20 @@
                  'frames_to_process': frames_to_process,
              }
              result = _gpu_processing(None, device_list, args, video_info=video_info)
@@ -157,7 +189,7 @@ SeedVR2 CLIのffmpeg出力を強化するパッチ。
          
          # Single GPU: stream in main process
          else:
-@@ -548,15 +599,20 @@
+@@ -548,15 +609,20 @@
                  cleanup_timer_name="chunk_cleanup"
              ):
                  chunk_count += 1
@@ -182,7 +214,7 @@ SeedVR2 CLIのffmpeg出力を強化するパッチ。
                  del result
              
              chunk_idx = chunk_count
-@@ -733,13 +789,33 @@
+@@ -733,41 +799,88 @@
      cv2.imwrite(file_path, frame_bgr)
  
  
@@ -217,8 +249,16 @@ SeedVR2 CLIのffmpeg出力を強化するパッチ。
  ) -> Optional[cv2.VideoWriter]:
      """
      Save frames tensor to MP4 video file.
-@@ -749,7 +825,11 @@
-     an existing writer is passed and kept open for subsequent chunks.
+-    
+-    Converts tensor from Float32 [0,1] to uint8 [0,255], RGB to BGR for OpenCV,
+-    and writes to video file using mp4v codec. Supports streaming mode where
+-    an existing writer is passed and kept open for subsequent chunks.
++
++    With the opencv backend, converts the tensor from Float32 [0,1] to
++    uint8 [0,255] and RGB to BGR, writing with the mp4v codec. With the
++    ffmpeg backend, frames stay RGB (uint8 for 8-bit; uint16 [0,65535] when
++    use_10bit). Supports streaming mode where an existing writer is passed
++    and kept open for subsequent chunks.
      
      Args:
 -        frames_tensor: Frames in format [T, H, W, C], Float32, range [0,1]
@@ -230,7 +270,14 @@ SeedVR2 CLIのffmpeg出力を強化するパッチ。
          output_path: Output video file path (directory created if doesn't exist)
          fps: Frames per second for output video (default: 30.0)
          writer: Existing VideoWriter for streaming (if None, creates new one)
-@@ -760,14 +840,32 @@
+-    
++        video_backend: "opencv" (cv2.VideoWriter) or "ffmpeg" (FFMPEGVideoWriter)
++        use_10bit, crf, lossless, output_width, output_height:
++            Passed through to FFMPEGVideoWriter; see its docstring
++
+     Returns:
+         VideoWriter if streaming mode (caller must close), None if standalone mode
+     
      Raises:
          ValueError: If video writer cannot be initialized
      """
@@ -265,7 +312,7 @@ SeedVR2 CLIのffmpeg出力を強化するパッチ。
          else:
              fourcc = cv2.VideoWriter_fourcc(*'mp4v')
              writer = cv2.VideoWriter(output_path, fourcc, fps, (W, H))
-@@ -775,8 +873,12 @@
+@@ -775,8 +888,12 @@
              raise ValueError(f"Cannot create video writer for: {output_path}")
      
      for i, frame in enumerate(frames_np):
@@ -280,7 +327,7 @@ SeedVR2 CLIのffmpeg出力を強化するパッチ。
          if debug.enabled and (i + 1) % 100 == 0:
              debug.log(f"Written {i + 1}/{T} frames", category="file")
      
-@@ -1356,6 +1458,14 @@
+@@ -1356,6 +1473,14 @@
      io_group.add_argument("--10bit", dest="use_10bit", action="store_true",
                          help="Save 10-bit video with x265 codec (reduces banding). Without this flag, "
                           "ffmpeg uses x264 for maximum compatibility. Requires --video_backend ffmpeg")

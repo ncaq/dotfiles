@@ -38,6 +38,7 @@
 # 動きの指示は日本語で書けば自作カスタムノードで英語へ翻訳される。
 # 「続きから」の指示なので直前の動きから繋がる動作を書くと自然になる。
 # 出力は自作保存ノードによるSVT-AV1 losslessのWebM。
+# 新区間のみと、繋ぎ目を確認するための連結済み動画を別々に保存する。
 # 8-bit RGBから10-bit YUV 4:2:0への色変換後の映像を可逆圧縮する。
 # 色変換とクロマサブサンプリングを挟むため、元のRGB画像に対する厳密な可逆圧縮ではない。
 { lib, ... }:
@@ -74,7 +75,10 @@ in
         })
         (mkAppInput 13 "noise_seed")
       ];
-      outputs = [ 17 ];
+      outputs = [
+        17
+        28
+      ];
     };
     nodes = [
       (mkNode {
@@ -82,7 +86,7 @@ in
         type = "UNETLoader";
         title = "high noiseモデル";
         pos = [
-          1340
+          1260
           40
         ];
         size = [
@@ -101,8 +105,8 @@ in
         type = "UNETLoader";
         title = "low noiseモデル";
         pos = [
-          1340
-          500
+          1260
+          180
         ];
         size = [
           385
@@ -119,7 +123,7 @@ in
         id = 3;
         type = "CLIPLoader";
         pos = [
-          860
+          800
           40
         ];
         size = [
@@ -143,8 +147,8 @@ in
         id = 4;
         type = "VAELoader";
         pos = [
-          860
-          980
+          800
+          190
         ];
         size = [
           385
@@ -165,7 +169,7 @@ in
         title = "延長する動画";
         pos = [
           (-40)
-          320
+          650
         ];
         size = [
           340
@@ -184,7 +188,7 @@ in
         title = "終了ポーズの画像(任意)";
         pos = [
           (-40)
-          710
+          280
         ];
         size = [
           340
@@ -204,8 +208,8 @@ in
         id = 23;
         type = "GetVideoComponents";
         pos = [
-          480
-          520
+          440
+          560
         ];
         size = [
           240
@@ -229,8 +233,8 @@ in
         type = "ImageFromBatch";
         title = "最終フレームを取り出す";
         pos = [
-          480
-          700
+          440
+          730
         ];
         size = [
           315
@@ -252,8 +256,8 @@ in
         type = "ImageScaleToTotalPixels";
         title = "生成解像度へスケール";
         pos = [
-          480
-          880
+          800
+          760
         ];
         size = [
           315
@@ -278,8 +282,8 @@ in
         id = 22;
         type = "GetImageSize";
         pos = [
-          480
-          1090
+          1160
+          800
         ];
         size = [
           240
@@ -317,7 +321,7 @@ in
         type = "StringConcatenate";
         title = "アニメスタイル指定の前置";
         pos = [
-          480
+          440
           40
         ];
         size = [
@@ -354,8 +358,8 @@ in
         type = "PreviewAny";
         title = "最終プロンプト";
         pos = [
-          480
-          240
+          440
+          260
         ];
         size = [
           340
@@ -369,8 +373,8 @@ in
         type = "CLIPTextEncode";
         title = "ポジティブ(スタイル+動きの指示)";
         pos = [
-          860
-          220
+          800
+          330
         ];
         size = [
           420
@@ -398,8 +402,8 @@ in
         type = "CLIPTextEncode";
         title = "ネガティブ(CFG 1では無効)";
         pos = [
-          860
-          450
+          800
+          530
         ];
         size = [
           420
@@ -421,8 +425,8 @@ in
         id = 12;
         type = "WanFirstLastFrameToVideo";
         pos = [
-          860
-          680
+          1260
+          520
         ];
         size = [
           315
@@ -477,8 +481,8 @@ in
         type = "ModelSamplingSD3";
         title = "shift(high)";
         pos = [
-          1340
-          340
+          1260
+          310
         ];
         size = [
           315
@@ -494,8 +498,8 @@ in
         type = "ModelSamplingSD3";
         title = "shift(low)";
         pos = [
-          1340
-          800
+          1260
+          410
         ];
         size = [
           315
@@ -512,7 +516,7 @@ in
         type = "KSamplerAdvanced";
         title = "サンプリング前半(high noise)";
         pos = [
-          1780
+          1660
           40
         ];
         size = [
@@ -547,8 +551,8 @@ in
         type = "KSamplerAdvanced";
         title = "サンプリング後半(low noise)";
         pos = [
-          1780
-          460
+          1660
+          450
         ];
         size = [
           315
@@ -579,7 +583,7 @@ in
         id = 15;
         type = "VAEDecode";
         pos = [
-          2160
+          2040
           40
         ];
         size = [
@@ -601,8 +605,8 @@ in
         type = "ImageFromBatch";
         title = "新区間の先頭フレームを除去";
         pos = [
-          2160
-          160
+          2040
+          140
         ];
         size = [
           315
@@ -610,10 +614,38 @@ in
         ];
         order = 22;
         inputs = [ (mkInput "image" "IMAGE" 31) ];
-        outputs = [ (mkOutput "IMAGE" "IMAGE" [ 32 ]) ];
+        outputs = [
+          (mkOutput "IMAGE" "IMAGE" [
+            32
+            35
+          ])
+        ];
         widgets = [
           1 # batch_index
           4096 # length
+        ];
+      })
+      # 新区間だけを保存する。先頭フレームは元動画の最終フレームとの重複なので、
+      # ここでは除去済みのフレーム列を使い、後でそのまま連結できるようにする。
+      # 連結済み動画の保存とは独立しているため、エンコードを並行して実行できる。
+      (mkNode {
+        id = 28;
+        type = "SaveSvtAv1";
+        title = "新区間のみを保存";
+        pos = [
+          2400
+          40
+        ];
+        size = [
+          420
+          470
+        ];
+        order = 23;
+        inputs = [ (mkInput "images" "IMAGE" 35) ];
+        widgets = [
+          (mkFilenamePrefix "${name}/segment") # filename_prefix
+          16 # fps
+          4 # preset
         ];
       })
       # 元動画のフレーム列の後ろへ新区間を連結する。
@@ -622,14 +654,14 @@ in
         type = "BatchImagesNode";
         title = "元動画と連結";
         pos = [
-          2160
-          340
+          2040
+          320
         ];
         size = [
           240
           78
         ];
-        order = 23;
+        order = 24;
         inputs = [
           (mkInput "images.image0" "IMAGE" 13)
           (mkInput "images.image1" "IMAGE" 32)
@@ -640,15 +672,16 @@ in
       (mkNode {
         id = 17;
         type = "SaveSvtAv1";
+        title = "連結済み動画を保存";
         pos = [
-          2160
-          490
+          2400
+          550
         ];
         size = [
           420
           470
         ];
-        order = 24;
+        order = 25;
         inputs = [ (mkInput "images" "IMAGE" 33) ];
         widgets = [
           (mkFilenamePrefix name) # filename_prefix
@@ -896,6 +929,14 @@ in
         0
         26
         1
+        "IMAGE"
+      ]
+      [
+        35
+        25
+        0
+        28
+        0
         "IMAGE"
       ]
       [

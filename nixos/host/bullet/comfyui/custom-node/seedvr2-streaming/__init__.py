@@ -3,7 +3,6 @@ import os
 import signal
 import subprocess
 import sys
-import time
 from pathlib import Path
 from typing import Any
 
@@ -245,9 +244,15 @@ class SeedVR2StreamingVideoUpscaler:
         logger.info("Running SeedVR2 streaming upscale: %s", " ".join(command))
         process = subprocess.Popen(command, start_new_session=True)
         try:
-            while process.poll() is None:
-                throw_exception_if_processing_interrupted()
-                time.sleep(1)
+            # wait(timeout=1)は終了した瞬間に返るので、
+            # poll()とsleep(1)の組と違い正常終了時に最大1秒待たされない。
+            # 割り込みの確認間隔は従来どおり1秒のまま。
+            while True:
+                try:
+                    process.wait(timeout=1)
+                    break
+                except subprocess.TimeoutExpired:
+                    throw_exception_if_processing_interrupted()
             if process.returncode != 0:
                 raise subprocess.CalledProcessError(process.returncode, command)
             if not partial_path.is_file() or partial_path.stat().st_size == 0:

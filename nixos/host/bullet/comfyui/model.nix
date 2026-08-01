@@ -1,13 +1,10 @@
 # ComfyUIの`models/`配下に宣言的に配置するモデルファイル群。
 #
 # モデルはNix storeへfetchurlで取得して、
-# ComfyUIのmodelsディレクトリへシンボリックリンクで配置する。
+# linkFarmでComfyUIのディレクトリ構造にまとめる。
+# ComfyUIには追加モデル検索パスとして渡し、
+# 書き込み可能なmodelsディレクトリはオンデマンド取得用に残す。
 # storeのパスはホストのシステムクロージャから参照されるのでGCされない。
-# コンテナはephemeralだがホスト側のtmpfilesルールなので再起動しても残る。
-#
-# モデルを削除・置換した時、
-# 永続データディレクトリに古いシンボリックリンクが残り得ますが、
-# しばらく残るのは気にしないことにします。
 #
 # CivitAIのダウンロードURLはAPIキーが必要なことがあるため、
 # 認証なしで安定して取得できるHugging FaceのURLのみを使う。
@@ -192,24 +189,33 @@ let
       };
     };
   };
-  # カテゴリ名(ultralytics/bboxのような入れ子含む)から、
-  # 作成するべきディレクトリの前置パス一覧を求める。
-  modelDirs = lib.unique (
-    lib.concatMap (
-      category:
-      let
-        parts = lib.splitString "/" category;
-      in
-      lib.genList (i: lib.concatStringsSep "/" (lib.take (i + 1) parts)) (lib.length parts)
-    ) (lib.attrNames models)
+  modelDir = pkgs.linkFarm "comfyui-models" (
+    lib.flatten (
+      lib.mapAttrsToList (
+        category:
+        lib.mapAttrsToList (
+          name: path: {
+            name = "${category}/${name}";
+            inherit path;
+          }
+        )
+      ) models
+    )
   );
-  modelDirRules = map (dir: "d ${dataDir}/models/${dir} 0755 comfyui comfyui - -") modelDirs;
-  modelLinkRules = lib.flatten (
-    lib.mapAttrsToList (
-      category:
-      lib.mapAttrsToList (name: file: "L+ ${dataDir}/models/${category}/${name} - - - - ${file}")
-    ) models
-  );
+  extraModelPaths = (pkgs.formats.yaml { }).generate "comfyui-extra-model-paths.yaml" {
+    nix = {
+      base_path = modelDir;
+      checkpoints = "checkpoints";
+      controlnet = "controlnet";
+      diffusion_models = "diffusion_models";
+      seedvr2 = "SEEDVR2";
+      text_encoders = "text_encoders";
+      ultralytics = "ultralytics";
+      ultralytics_bbox = "ultralytics/bbox";
+      upscale_models = "upscale_models";
+      vae = "vae";
+    };
+  };
 in
 {
   options.local.comfyui.models = lib.mkOption {
@@ -220,10 +226,10 @@ in
 
   config = {
     local.comfyui.models = models;
-    systemd.tmpfiles.rules = [
-      "d ${dataDir}/models 0755 comfyui comfyui - -"
-    ]
-    ++ modelDirRules
-    ++ modelLinkRules;
+    containers.comfyui.config.services.comfyui.extraArgs = [
+      "--extra-model-paths-config"
+      "${extraModelPaths}"
+    ];
+    systemd.tmpfiles.rules = [ "d ${dataDir}/models 0755 comfyui comfyui - -" ];
   };
 }

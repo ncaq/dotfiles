@@ -34,6 +34,22 @@ logger = logging.getLogger(__name__)
 seedvr2_dir = Path(__file__).absolute().parent.parent / "ComfyUI-SeedVR2_VideoUpscaler"
 
 
+def get_model_dir(*model_names: str) -> str:
+    model_dir = next(
+        (
+            Path(path)
+            for path in folder_paths.get_folder_paths("seedvr2")
+            if all((Path(path) / name).is_file() for name in model_names)
+        ),
+        None,
+    )
+    if model_dir is None:
+        raise FileNotFoundError(
+            f"SeedVR2 models must share a directory: {', '.join(model_names)}"
+        )
+    return os.fspath(model_dir)
+
+
 class GetVideoSize:
     @classmethod
     def INPUT_TYPES(cls) -> dict[str, Any]:
@@ -179,7 +195,7 @@ class SeedVR2StreamingVideoUpscaler:
         output_name = f"{filename}_{counter:05}_.mp4"
         output_path = Path(output_dir) / output_name
         partial_path = Path(output_dir) / f"{filename}_{counter:05}_.partial.mp4"
-        model_dir = os.path.join(folder_paths.models_dir, "SEEDVR2")
+        model_dir = get_model_dir(dit["model"], cli_fixed_vae)
 
         command = [
             sys.executable,

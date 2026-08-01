@@ -212,9 +212,18 @@ let
   );
 in
 {
-  systemd.tmpfiles.rules = [
-    "d ${dataDir}/models 0755 comfyui comfyui - -"
-  ]
-  ++ modelDirRules
-  ++ modelLinkRules;
+  options.local.comfyui.models = lib.mkOption {
+    type = lib.types.attrsOf (lib.types.attrsOf lib.types.package);
+    readOnly = true;
+    description = "ComfyUIのmodelsディレクトリへ配置するモデル。";
+  };
+
+  config = {
+    local.comfyui.models = models;
+    systemd.tmpfiles.rules = [
+      "d ${dataDir}/models 0755 comfyui comfyui - -"
+    ]
+    ++ modelDirRules
+    ++ modelLinkRules;
+  };
 }

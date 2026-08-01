@@ -16,6 +16,21 @@ let
   overlapTest = import ./lib/overlap-test.nix { inherit lib; };
   describeOverlap =
     pair: "  ${toString pair.a.id}(${pair.a.label}) と ${toString pair.b.id}(${pair.b.label})";
+  modelNames = lib.flatten (
+    lib.mapAttrsToList (
+      category:
+      lib.mapAttrsToList (
+        name: _:
+        let
+          categoryParts = lib.splitString "/" category;
+        in
+        [ name ]
+        ++ lib.optional (
+          1 < lib.length categoryParts
+        ) "${lib.concatStringsSep "/" (lib.tail categoryParts)}/${name}"
+      )
+    ) config.local.comfyui.models
+  );
 in
 assert linkTest;
 assert orderTest;
@@ -33,6 +48,15 @@ assert overlapTest;
         appOutputs = workflow.extra.linearData.outputs or [ ];
         invalidAppInputIds = lib.filter (id: !(lib.elem id nodeIds)) (map lib.head appInputs);
         invalidAppOutputIds = lib.filter (id: !(lib.elem id nodeIds)) appOutputs;
+        referencedModels = lib.unique (
+          lib.concatMap (
+            node:
+            lib.filter (
+              widget: builtins.isString widget && builtins.match ".*\\.(safetensors|pt)" widget != null
+            ) (node.widgets_values or [ ])
+          ) workflow.nodes
+        );
+        missingModels = lib.filter (model: !(lib.elem model modelNames)) referencedModels;
       in
       [
         {
@@ -63,6 +87,10 @@ assert overlapTest;
         {
           assertion = invalidAppOutputIds == [ ];
           message = "ComfyUIワークフロー${name}のApp Mode出力が存在しないノードを参照しています: ${toString invalidAppOutputIds}";
+        }
+        {
+          assertion = missingModels == [ ];
+          message = "ComfyUIワークフロー${name}が未宣言のモデルを参照しています: ${toString missingModels}";
         }
       ]
     ) config.local.comfyui.workflows

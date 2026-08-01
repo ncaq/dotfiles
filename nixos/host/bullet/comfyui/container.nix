@@ -150,6 +150,7 @@ in
           TRITON_LIBDEVICE_PATH = "${cudaNvcc}/nvvm/libdevice/libdevice.10.bc";
           TRITON_PTXAS_PATH = "${cudaNvcc}/bin/ptxas";
         };
+        systemd.services.comfyui.path = with pkgs; [ ffmpeg ];
       };
   };
   # ComfyUIはCUDA初期化時にnvidia-uvmを必要とするが、

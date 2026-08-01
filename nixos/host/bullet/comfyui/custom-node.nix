@@ -25,12 +25,27 @@ in
       "rgthree-comfy" = pkgs.comfyui-custom-nodes.rgthree-comfy;
       # 複数フレームを同時に参照して時間的一貫性を保つ動画超解像。
       # RTX 5090では7B FP16モデルをBlockSwapとVAE tiling付きで使う。
-      "ComfyUI-SeedVR2_VideoUpscaler" = pkgs.fetchFromGitHub {
-        owner = "numz";
-        repo = "ComfyUI-SeedVR2_VideoUpscaler";
-        rev = "4490bd1f482e026674543386bb2a4d176da245b9";
-        hash = "sha256-6nsqFflLw9vYH/du35ET46fdAm1NMjjTe2bA8JmaBE4=";
+      "ComfyUI-SeedVR2_VideoUpscaler" = pkgs.applyPatches {
+        src = pkgs.fetchFromGitHub {
+          owner = "numz";
+          repo = "ComfyUI-SeedVR2_VideoUpscaler";
+          rev = "4490bd1f482e026674543386bb2a4d176da245b9";
+          hash = "sha256-6nsqFflLw9vYH/du35ET46fdAm1NMjjTe2bA8JmaBE4=";
+        };
+        patches = [ ./seedvr2-lossless.patch ];
+        # GNU patchの既定はfuzz 2とオフセット探索で文脈のずれを黙って許容する。
+        # 上流のrev更新でパッチの文脈が一致しなくなった時に、
+        # 意味の違う位置へ適用されるより確実にビルド失敗させたい。
+        patchFlags = [
+          "-p1"
+          "-F0"
+        ];
       };
+      # SeedVR2 CLIのチャンク処理をComfyUIから起動し、長尺動画をRAM上限付きで処理する。
+      # 解像度の自動計算に使う、VIDEOから幅と高さを取り出す汎用ノードGetVideoSizeも同梱する。
+      "ComfyUI-SeedVR2-Streaming" = pkgs.writeTextDir "__init__.py" (
+        builtins.readFile ./custom-node/seedvr2-streaming/__init__.py
+      );
       # UltralyticsDetectorProvider(YOLOによる顔検出)を提供する。
       # FaceDetailerに検出器を渡すために必要。
       "ComfyUI-Impact-Subpack" = pkgs.fetchFromGitHub {

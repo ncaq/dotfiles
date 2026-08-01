@@ -1,0 +1,344 @@
+SeedVR2 CLIのffmpeg出力を強化するパッチ。
+
+- 10-bit時の入力をrgb48leにして、gbrp10le(RGB 4:4:4)のx265 losslessで出力する
+- crf, lossless, output_width, output_heightのCLIオプションを追加する
+- 出力寸法指定時はLanczosでリサイズする(入力と同寸法ならスケーラを挿入しない)
+- uint16変換に丸めとクランプを加えてラップアラウンドを防ぐ
+- ffmpeg異常終了を警告ログではなくRuntimeErrorにして、stderr末尾を例外メッセージへ含める
+- RGB→BGR→RGBの無駄な二重色変換を削除する
+- write()のtobytes()によるフレーム全体コピーをmemoryviewで回避する
+- 10-bit経路で破壊的に消費した入力テンソルを毒化して、以後の使用を例外にする
+
+upstreamへは未提出。
+上流のCLIがRGB 4:4:4 losslessの出力と出力リサイズを提供したら、
+このパッチは削除してそちらへ移行する。
+
+--- a/inference_cli.py
++++ b/inference_cli.py
+@@ -110,6 +110,7 @@
+ import numpy as np
+ import subprocess
+ import shutil
++import tempfile
+ 
+ # Project imports
+ from src.utils.downloads import download_weight
+@@ -144,48 +145,103 @@
+     Video writer using ffmpeg subprocess for encoding with 10-bit support.
+     
+     Provides cv2.VideoWriter-compatible interface (write, isOpened, release) while
+-    using ffmpeg for encoding. Enables 10-bit output (yuv420p10le with x265) which
+-    reduces banding artifacts in gradients compared to 8-bit opencv output.
++    using ffmpeg for encoding. Enables 10-bit output (yuv420p10le, or gbrp10le
++    when lossless, with x265) which reduces banding artifacts in gradients
++    compared to 8-bit opencv output.
+     
+     Args:
+         path: Output video file path
+         width: Frame width in pixels
+         height: Frame height in pixels
+         fps: Frames per second
+-        use_10bit: If True, uses x265 codec with yuv420p10le pixel format.
++        use_10bit: If True, uses x265 codec with a 10-bit pixel format
++                   (gbrp10le when lossless, else yuv420p10le) and rgb48le input.
+                    If False, uses x264 with yuv420p (default: False)
++        crf: Constant rate factor passed to the encoder; ignored when the
++             lossless path is taken (default: 12)
++        lossless: With use_10bit, encode mathematically lossless RGB 4:4:4
++                  (gbrp10le with -x265-params lossless=1) (default: False)
++        output_width: Scale the output to this width with Lanczos;
++                      0 keeps the input width (default: 0)
++        output_height: Scale the output to this height with Lanczos;
++                       0 keeps the input height (default: 0)
+     
+     Raises:
+         RuntimeError: If ffmpeg is not found in system PATH
+     
+     Note:
+-        Frames must be passed to write() in BGR format (same as cv2.VideoWriter).
+-        Internally converts to RGB for ffmpeg rawvideo input.
++        Frames must be passed to write() in RGB format matching input_pix_fmt
++        (rgb24 for 8-bit, rgb48le for 10-bit).
+     """
+     
+-    def __init__(self, path: str, width: int, height: int, fps: float, use_10bit: bool = False):
+-        pix_fmt = 'yuv420p10le' if use_10bit else 'yuv420p'
++    def __init__(self, path: str, width: int, height: int, fps: float, use_10bit: bool = False,
++                 crf: int = 12, lossless: bool = False,
++                 output_width: int = 0, output_height: int = 0):
++        if use_10bit and lossless:
++            # gbrp10le keeps RGB as-is: no chroma subsampling and no RGB->YUV
++            # matrix rounding, so with lossless=1 the encode is mathematically
++            # lossless against the 10-bit RGB input.
++            pix_fmt = 'gbrp10le'
++        else:
++            pix_fmt = 'yuv420p10le' if use_10bit else 'yuv420p'
++        input_pix_fmt = 'rgb48le' if use_10bit else 'rgb24'
+         codec = 'libx265' if use_10bit else 'libx264'
++        # Skip the scaler when the requested size matches the input;
++        # inserting it anyway would run a useless Lanczos convolution over
++        # every frame.
++        needs_scale = (
++            output_width > 0 and output_height > 0
++            and (output_width, output_height) != (width, height)
++        )
++        scale_args = (
++            ['-vf', f'scale={output_width}:{output_height}:flags=lanczos']
++            if needs_scale else []
++        )
++        rate_args = (
++            # frame-threads=12 measured ~8% faster than the auto value on a
++            # 9950X3D for 4K lossless, with identical output size.
++            ['-x265-params', 'lossless=1:frame-threads=12'] if use_10bit and lossless
++            else ['-crf', str(crf)]
++        )
+         
++        # ffmpeg logs to stderr. A PIPE would deadlock once the OS buffer
++        # fills because nothing drains it while frames are being fed, so
++        # spool stderr to an unnamed temp file and read the tail back only
++        # when ffmpeg fails.
++        self.stderr_file = tempfile.TemporaryFile()
+         self.proc = subprocess.Popen(
+-            ['ffmpeg', '-y', '-f', 'rawvideo', '-pix_fmt', 'rgb24',
++            ['ffmpeg', '-y', '-f', 'rawvideo', '-pix_fmt', input_pix_fmt,
+              '-s', f'{width}x{height}', '-r', str(fps), '-i', '-',
+-             '-c:v', codec, '-pix_fmt', pix_fmt, '-preset', 'medium', '-crf', '12', path],
+-            stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
++             *scale_args, '-c:v', codec, '-pix_fmt', pix_fmt,
++             '-preset', 'medium', *rate_args, path],
++            stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=self.stderr_file
+         )
+     
+-    def write(self, frame_bgr: np.ndarray):
++    def _stderr_tail(self, limit: int = 4096) -> str:
++        try:
++            size = self.stderr_file.seek(0, os.SEEK_END)
++            self.stderr_file.seek(max(0, size - limit))
++            return self.stderr_file.read().decode('utf-8', errors='replace').strip()
++        except Exception as e:
++            return f"(failed to read ffmpeg stderr: {e})"
++    
++    def write(self, frame_rgb: np.ndarray):
+         if not self.isOpened():
+             raise RuntimeError("FFMPEGVideoWriter: ffmpeg process is not running")
+         
+-        frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
+         try:
+-            self.proc.stdin.write(frame_rgb.astype(np.uint8).tobytes())
++            # memoryview streams the frame buffer as-is, avoiding the
++            # full-frame bytes copy of tobytes() (~50MiB per 4K rgb48le
++            # frame) in this serial loop while the GPU sits idle.
++            # ascontiguousarray is a no-op for the C-contiguous frames the
++            # callers pass and only copies for exotic strides, which the
++            # buffer handed to write() must not have.
++            self.proc.stdin.write(memoryview(np.ascontiguousarray(frame_rgb)))
+             self.proc.stdin.flush()  # Critical: prevent buffering issues
+         except BrokenPipeError:
+             raise RuntimeError(
+                 "FFMPEGVideoWriter: ffmpeg process terminated unexpectedly. "
+-                "Check video path, codec support, and disk space."
++                f"ffmpeg stderr tail:\n{self._stderr_tail()}"
+             )
+     
+     def isOpened(self) -> bool:
+@@ -200,13 +256,15 @@
+             
+             self.proc.wait()
+             
+-            if self.proc.returncode != 0:
+-                debug.log(
+-                    f"ffmpeg exited with code {self.proc.returncode}. "
+-                    "Check output file for corruption.",
+-                    level="WARNING", force=True, category="file"
+-                )
++            returncode = self.proc.returncode
++            stderr_tail = self._stderr_tail()
++            self.stderr_file.close()
+             self.proc = None
++            if returncode != 0:
++                raise RuntimeError(
++                    f"ffmpeg exited with code {returncode}. "
++                    f"ffmpeg stderr tail:\n{stderr_tail}"
++                )
+ 
+ 
+ # =============================================================================
+@@ -519,17 +577,20 @@
+                 'frames_to_process': frames_to_process,
+             }
+             result = _gpu_processing(None, device_list, args, video_info=video_info)
+-            
++            # save_frames_to_video consumes result destructively, so read
++            # the frame count before saving.
++            frames_written = result.shape[0]
++
+             # Save result
+             if is_png:
+                 save_frames_to_image(result, output_path, base_name)
+             else:
+-                video_writer = save_frames_to_video(result, output_path, fps, 
+-                    video_backend=args.video_backend, use_10bit=args.use_10bit)
++                video_writer = save_frames_to_video(result, output_path, fps,
++                    video_backend=args.video_backend, use_10bit=args.use_10bit, crf=args.crf,
++                    lossless=args.lossless, output_width=args.output_width,
++                    output_height=args.output_height)
+                 if video_writer is not None:
+                     video_writer.release()
+-            
+-            frames_written = result.shape[0]
+         
+         # Single GPU: stream in main process
+         else:
+@@ -548,15 +609,20 @@
+                 cleanup_timer_name="chunk_cleanup"
+             ):
+                 chunk_count += 1
+-                
++                # save_frames_to_video consumes result destructively, so
++                # read the frame count before saving.
++                chunk_frames = result.shape[0]
++
+                 # Save output
+                 if is_png:
+                     save_frames_to_image(result, output_path, base_name, start_index=frames_written)
+                 else:
+                     video_writer = save_frames_to_video(result, output_path, fps, writer=video_writer,
+-                        video_backend=args.video_backend, use_10bit=args.use_10bit)
+-                
+-                frames_written += result.shape[0]
++                        video_backend=args.video_backend, use_10bit=args.use_10bit, crf=args.crf,
++                        lossless=args.lossless, output_width=args.output_width,
++                        output_height=args.output_height)
++
++                frames_written += chunk_frames
+                 del result
+             
+             chunk_idx = chunk_count
+@@ -733,41 +799,88 @@
+     cv2.imwrite(file_path, frame_bgr)
+ 
+ 
++class _ConsumedTensor(torch.Tensor):
++    """
++    Poison type for tensors destructively consumed by save_frames_to_video.
++
++    Any torch operation on the consumed tensor, including .shape and repr,
++    raises RuntimeError instead of silently reading data that was scaled
++    in place. del and garbage collection still work normally.
++    """
++    @classmethod
++    def __torch_function__(cls, func, types, args=(), kwargs=None):
++        raise RuntimeError(
++            "frames_tensor was consumed destructively by save_frames_to_video; "
++            "read everything you need from it (e.g. .shape) before the call"
++        )
++
++
+ def save_frames_to_video(
+     frames_tensor: torch.Tensor, 
+     output_path: str, 
+     fps: float = 30.0,
+     writer: Optional[cv2.VideoWriter] = None,
+     video_backend: str = "opencv",
+-    use_10bit: bool = False
++    use_10bit: bool = False,
++    crf: int = 12,
++    lossless: bool = False,
++    output_width: int = 0,
++    output_height: int = 0
+ ) -> Optional[cv2.VideoWriter]:
+     """
+     Save frames tensor to MP4 video file.
+-    
+-    Converts tensor from Float32 [0,1] to uint8 [0,255], RGB to BGR for OpenCV,
+-    and writes to video file using mp4v codec. Supports streaming mode where
+-    an existing writer is passed and kept open for subsequent chunks.
++
++    With the opencv backend, converts the tensor from Float32 [0,1] to
++    uint8 [0,255] and RGB to BGR, writing with the mp4v codec. With the
++    ffmpeg backend, frames stay RGB (uint8 for 8-bit; uint16 [0,65535] when
++    use_10bit). Supports streaming mode where an existing writer is passed
++    and kept open for subsequent chunks.
+     
+     Args:
+-        frames_tensor: Frames in format [T, H, W, C], Float32, range [0,1]
++        frames_tensor: Frames in format [T, H, W, C], Float32, range [0,1].
++            Destructively consumed on the ffmpeg 10-bit path: scaled in
++            place, emptied with set_() and re-classed to _ConsumedTensor,
++            so ANY later use (including .shape) raises RuntimeError.
++            Callers must read everything they need before the call.
+         output_path: Output video file path (directory created if doesn't exist)
+         fps: Frames per second for output video (default: 30.0)
+         writer: Existing VideoWriter for streaming (if None, creates new one)
+-    
++        video_backend: "opencv" (cv2.VideoWriter) or "ffmpeg" (FFMPEGVideoWriter)
++        use_10bit, crf, lossless, output_width, output_height:
++            Passed through to FFMPEGVideoWriter; see its docstring
++
+     Returns:
+         VideoWriter if streaming mode (caller must close), None if standalone mode
+     
+     Raises:
+         ValueError: If video writer cannot be initialized
+     """
+-    frames_np = (frames_tensor.cpu().numpy() * 255.0).astype(np.uint8)
++    if video_backend == "ffmpeg" and use_10bit:
++        # Round and clamp before the uint16 cast: without them, values
++        # slightly above 1.0 wrap around and turn highlights black.
++        # float() also guards float16 inputs against overflow at mul(65535).
++        # In-place ops avoid extra float copies of the whole chunk.
++        frames_np = (frames_tensor.float().mul_(65535).round_()
++                     .clamp_(0, 65535).to(torch.uint16).cpu().numpy())
++        # When the input is already float32, float() returns self and the
++        # chain above has scaled the caller's tensor by 65535. set_()
++        # empties it and releases the large float storage right away, and
++        # the poison class makes any later use raise instead of silently
++        # reading broken values.
++        frames_tensor.set_()
++        frames_tensor.__class__ = _ConsumedTensor
++    else:
++        frames_np = (frames_tensor.cpu().numpy() * 255.0).astype(np.uint8)
+     T, H, W, C = frames_np.shape
+     
+     if writer is None:
+         debug.log(f"Saving {T} frames to video: {output_path} (backend={video_backend})", category="file")
+         os.makedirs(Path(output_path).parent, exist_ok=True)
+         if video_backend == "ffmpeg":
+-            writer = FFMPEGVideoWriter(output_path, W, H, fps, use_10bit)
++            writer = FFMPEGVideoWriter(
++                output_path, W, H, fps, use_10bit, crf, lossless,
++                output_width, output_height
++            )
+         else:
+             fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+             writer = cv2.VideoWriter(output_path, fourcc, fps, (W, H))
+@@ -775,8 +888,12 @@
+             raise ValueError(f"Cannot create video writer for: {output_path}")
+     
+     for i, frame in enumerate(frames_np):
+-        frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+-        writer.write(frame_bgr)
++        if video_backend == "ffmpeg":
++            # FFMPEGVideoWriter takes RGB directly: skipping the BGR round
++            # trip avoids two full-frame conversions per frame.
++            writer.write(frame)
++        else:
++            writer.write(cv2.cvtColor(frame, cv2.COLOR_RGB2BGR))
+         if debug.enabled and (i + 1) % 100 == 0:
+             debug.log(f"Written {i + 1}/{T} frames", category="file")
+     
+@@ -1356,6 +1473,14 @@
+     io_group.add_argument("--10bit", dest="use_10bit", action="store_true",
+                         help="Save 10-bit video with x265 codec (reduces banding). Without this flag, "
+                          "ffmpeg uses x264 for maximum compatibility. Requires --video_backend ffmpeg")
++    io_group.add_argument("--crf", type=int, default=12,
++                        help="Video encoder CRF (default: 12)")
++    io_group.add_argument("--lossless", action="store_true",
++                        help="Encode lossless RGB 4:4:4 with x265 (10-bit ffmpeg backend only)")
++    io_group.add_argument("--output_width", type=int, default=0,
++                        help="Final output width. 0 keeps the SeedVR2 output width (default: 0)")
++    io_group.add_argument("--output_height", type=int, default=0,
++                        help="Final output height. 0 keeps the SeedVR2 output height (default: 0)")
+     io_group.add_argument("--model_dir", type=str, default=None,
+                         help=f"Model directory (default: ./models/{SEEDVR2_FOLDER_NAME})")
+     

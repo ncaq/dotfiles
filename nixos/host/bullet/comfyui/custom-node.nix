@@ -33,6 +33,13 @@ in
           hash = "sha256-6nsqFflLw9vYH/du35ET46fdAm1NMjjTe2bA8JmaBE4=";
         };
         patches = [ ./seedvr2-lossless.patch ];
+        # GNU patchの既定はfuzz 2とオフセット探索で文脈のずれを黙って許容する。
+        # 上流のrev更新でパッチの文脈が一致しなくなった時に、
+        # 意味の違う位置へ適用されるより確実にビルド失敗させたい。
+        patchFlags = [
+          "-p1"
+          "-F0"
+        ];
       };
       # SeedVR2 CLIのチャンク処理をComfyUIから起動し、長尺動画をRAM上限付きで処理する。
       "ComfyUI-SeedVR2-Streaming" = pkgs.writeTextDir "__init__.py" (

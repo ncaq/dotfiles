@@ -4,12 +4,20 @@ SeedVR2 CLIのffmpeg出力を強化するパッチ。
 - crf, lossless, output_width, output_heightのCLIオプションを追加する
 - 出力寸法指定時はLanczosでリサイズする
 - uint16変換に丸めとクランプを加えてラップアラウンドを防ぐ
-- ffmpeg異常終了を警告ログではなくRuntimeErrorにする
+- ffmpeg異常終了を警告ログではなくRuntimeErrorにして、stderr末尾を例外メッセージへ含める
 - RGB→BGR→RGBの無駄な二重色変換を削除する
 
 --- a/inference_cli.py
 +++ b/inference_cli.py
-@@ -159,28 +159,47 @@
+@@ -110,6 +110,7 @@
+ import numpy as np
+ import subprocess
+ import shutil
++import tempfile
+ 
+ # Project imports
+ from src.utils.downloads import download_weight
+@@ -159,33 +160,65 @@
          RuntimeError: If ffmpeg is not found in system PATH
      
      Note:
@@ -44,17 +52,31 @@ SeedVR2 CLIのffmpeg出力を強化するパッチ。
 +            else ['-crf', str(crf)]
 +        )
          
++        # ffmpeg logs to stderr. A PIPE would deadlock once the OS buffer
++        # fills because nothing drains it while frames are being fed, so
++        # spool stderr to an unnamed temp file and read the tail back only
++        # when ffmpeg fails.
++        self.stderr_file = tempfile.TemporaryFile()
          self.proc = subprocess.Popen(
 -            ['ffmpeg', '-y', '-f', 'rawvideo', '-pix_fmt', 'rgb24',
 +            ['ffmpeg', '-y', '-f', 'rawvideo', '-pix_fmt', input_pix_fmt,
               '-s', f'{width}x{height}', '-r', str(fps), '-i', '-',
 -             '-c:v', codec, '-pix_fmt', pix_fmt, '-preset', 'medium', '-crf', '12', path],
+-            stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
 +             *scale_args, '-c:v', codec, '-pix_fmt', pix_fmt,
 +             '-preset', 'medium', *rate_args, path],
-             stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
++            stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=self.stderr_file
          )
      
 -    def write(self, frame_bgr: np.ndarray):
++    def _stderr_tail(self, limit: int = 4096) -> str:
++        try:
++            size = self.stderr_file.seek(0, os.SEEK_END)
++            self.stderr_file.seek(max(0, size - limit))
++            return self.stderr_file.read().decode('utf-8', errors='replace').strip()
++        except Exception as e:
++            return f"(failed to read ffmpeg stderr: {e})"
++    
 +    def write(self, frame_rgb: np.ndarray):
          if not self.isOpened():
              raise RuntimeError("FFMPEGVideoWriter: ffmpeg process is not running")
@@ -66,20 +88,35 @@ SeedVR2 CLIのffmpeg出力を強化するパッチ。
              self.proc.stdin.flush()  # Critical: prevent buffering issues
          except BrokenPipeError:
              raise RuntimeError(
-@@ -201,10 +220,8 @@
+                 "FFMPEGVideoWriter: ffmpeg process terminated unexpectedly. "
+-                "Check video path, codec support, and disk space."
++                f"ffmpeg stderr tail:\n{self._stderr_tail()}"
+             )
+     
+     def isOpened(self) -> bool:
+@@ -200,13 +233,15 @@
+             
              self.proc.wait()
              
-             if self.proc.returncode != 0:
+-            if self.proc.returncode != 0:
 -                debug.log(
 -                    f"ffmpeg exited with code {self.proc.returncode}. "
 -                    "Check output file for corruption.",
 -                    level="WARNING", force=True, category="file"
-+                raise RuntimeError(
-+                    f"ffmpeg exited with code {self.proc.returncode}"
-                 )
+-                )
++            returncode = self.proc.returncode
++            stderr_tail = self._stderr_tail()
++            self.stderr_file.close()
              self.proc = None
++            if returncode != 0:
++                raise RuntimeError(
++                    f"ffmpeg exited with code {returncode}. "
++                    f"ffmpeg stderr tail:\n{stderr_tail}"
++                )
  
-@@ -525,7 +542,9 @@
+ 
+ # =============================================================================
+@@ -525,7 +560,9 @@
                  save_frames_to_image(result, output_path, base_name)
              else:
                  video_writer = save_frames_to_video(result, output_path, fps, 
@@ -90,7 +127,7 @@ SeedVR2 CLIのffmpeg出力を強化するパッチ。
                  if video_writer is not None:
                      video_writer.release()
              
-@@ -554,7 +573,9 @@
+@@ -554,7 +591,9 @@
                      save_frames_to_image(result, output_path, base_name, start_index=frames_written)
                  else:
                      video_writer = save_frames_to_video(result, output_path, fps, writer=video_writer,
@@ -101,7 +138,7 @@ SeedVR2 CLIのffmpeg出力を強化するパッチ。
                  
                  frames_written += result.shape[0]
                  del result
-@@ -739,7 +760,11 @@
+@@ -739,7 +778,11 @@
      fps: float = 30.0,
      writer: Optional[cv2.VideoWriter] = None,
      video_backend: str = "opencv",
@@ -114,7 +151,7 @@ SeedVR2 CLIのffmpeg出力を強化するパッチ。
  ) -> Optional[cv2.VideoWriter]:
      """
      Save frames tensor to MP4 video file.
-@@ -760,14 +785,26 @@
+@@ -760,14 +803,26 @@
      Raises:
          ValueError: If video writer cannot be initialized
      """
@@ -143,7 +180,7 @@ SeedVR2 CLIのffmpeg出力を強化するパッチ。
          else:
              fourcc = cv2.VideoWriter_fourcc(*'mp4v')
              writer = cv2.VideoWriter(output_path, fourcc, fps, (W, H))
-@@ -775,8 +812,12 @@
+@@ -775,8 +830,12 @@
              raise ValueError(f"Cannot create video writer for: {output_path}")
      
      for i, frame in enumerate(frames_np):
@@ -158,7 +195,7 @@ SeedVR2 CLIのffmpeg出力を強化するパッチ。
          if debug.enabled and (i + 1) % 100 == 0:
              debug.log(f"Written {i + 1}/{T} frames", category="file")
      
-@@ -1356,6 +1397,14 @@
+@@ -1356,6 +1415,14 @@
      io_group.add_argument("--10bit", dest="use_10bit", action="store_true",
                          help="Save 10-bit video with x265 codec (reduces banding). Without this flag, "
                           "ffmpeg uses x264 for maximum compatibility. Requires --video_backend ffmpeg")

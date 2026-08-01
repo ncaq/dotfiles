@@ -29,7 +29,7 @@
     settings = {
       # パッケージはNixで管理しているため自己アップデートは無効にします。
       autoupdate = false;
-      model = "github-copilot/gpt-5.6-terra";
+      model = "github-copilot/gpt-5.6-sol";
       small_model = "github-copilot/gpt-5-mini";
       lsp = true;
       permission.external_directory = {

@@ -42,9 +42,9 @@
 #
 # 動きの指示は日本語で書けば自作カスタムノードで英語へ翻訳される。
 # カメラワーク(近づく、回り込むなど)と動作を具体的に書くと動きが出やすい。
-# 出力は公式SaveWEBMノードによるSVT-AV1のWebM。
-# CRF 1で劣化を最小化しているが、
-# 8-bit RGBから4:2:0への色変換があるため厳密な可逆圧縮ではない。
+# 出力は自作保存ノードによるSVT-AV1 losslessのWebM。
+# 8-bit RGBから10-bit YUV 4:2:0への色変換後の映像を可逆圧縮する。
+# 色変換とクロマサブサンプリングを挟むため、元のRGB画像に対する厳密な可逆圧縮ではない。
 { lib, ... }:
 let
   name = "anime-video";
@@ -740,7 +740,7 @@ in
       # Wan 2.2 14Bは16fpsで学習されているのでfpsは16のまま使う。
       (mkNode {
         id = 17;
-        type = "SaveWEBM";
+        type = "SaveSvtAv1";
         pos = [
           2160
           180
@@ -753,9 +753,8 @@ in
         inputs = [ (mkInput "images" "IMAGE" 21) ];
         widgets = [
           (mkFilenamePrefix name) # filename_prefix
-          "av1" # codec
           16 # fps
-          1 # crf
+          4 # preset
         ];
       })
     ];

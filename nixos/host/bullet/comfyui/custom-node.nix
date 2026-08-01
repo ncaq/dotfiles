@@ -70,7 +70,7 @@ in
       "ComfyUI-Load-Image-Optional" = pkgs.writeTextDir "__init__.py" (
         builtins.readFile ./custom-node/load-image-optional/__init__.py
       );
-      # 元fpsと音声を維持し、RGB48から10-bit SVT-AV1へ直接変換する保存ノード。
+      # 元fpsと音声を維持し、RGB48から10-bit SVT-AV1 losslessのWebMへ保存するノード。
       "ComfyUI-Save-SVT-AV1" = pkgs.symlinkJoin {
         name = "comfyui-save-svt-av1";
         paths = [

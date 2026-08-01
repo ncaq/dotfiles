@@ -39,9 +39,8 @@ class SaveSvtAv1:
         return {
             "required": {
                 "images": ("IMAGE",),
-                "fps": ("FLOAT", {"default": 24.0, "min": 0.01, "max": 1000.0}),
                 "filename_prefix": ("STRING", {"default": "ComfyUI"}),
-                "crf": ("INT", {"default": 1, "min": 0, "max": 63}),
+                "fps": ("FLOAT", {"default": 24.0, "min": 0.01, "max": 1000.0}),
                 "preset": ("INT", {"default": 4, "min": 0, "max": 10}),
             },
             "optional": {"audio": ("AUDIO",)},
@@ -56,9 +55,8 @@ class SaveSvtAv1:
     def save(
         self,
         images: torch.Tensor,
-        fps: float,
         filename_prefix: str,
-        crf: int,
+        fps: float,
         preset: int,
         audio: dict[str, Any] | None = None,
         prompt: dict[str, Any] | None = None,
@@ -74,9 +72,11 @@ class SaveSvtAv1:
             width,
             height,
         )
-        output_name = f"{filename}_{counter:05}_.mkv"
+        output_name = f"{filename}_{counter:05}_.webm"
         output_path = os.path.join(output_dir, output_name)
-        partial_path = os.path.join(output_dir, f"{filename}_{counter:05}_.partial.mkv")
+        partial_path = os.path.join(
+            output_dir, f"{filename}_{counter:05}_.partial.webm"
+        )
         frame_rate = Fraction(fps).limit_denominator(1001)
 
         with av.open(partial_path, mode="w") as container:
@@ -90,7 +90,10 @@ class SaveSvtAv1:
             video_stream.height = height
             video_stream.pix_fmt = "yuv420p10le"
             video_stream.bit_rate = 0
-            video_stream.options = {"crf": str(crf), "preset": str(preset)}
+            video_stream.options = {
+                "preset": str(preset),
+                "svtav1-params": "lossless=1",
+            }
 
             audio_stream = None
             audio_frames: list[av.AudioFrame] = []
@@ -132,7 +135,7 @@ class SaveSvtAv1:
                             )
                             source_frame.sample_rate = sample_rate
                             resampler = av.AudioResampler(
-                                format="s32p", layout=target_layout, rate=sample_rate
+                                format="fltp", layout=target_layout, rate=48000
                             )
                             return resampler.resample(
                                 source_frame
@@ -152,7 +155,7 @@ class SaveSvtAv1:
 
                         if audio_frames:
                             audio_stream = container.add_stream(
-                                "flac", rate=sample_rate, layout=layout
+                                "libopus", rate=48000, layout=layout
                             )
                     else:
                         warn_video_only("音声のチャンネル数が0です")
@@ -199,7 +202,7 @@ class SaveSvtAv1:
                         "filename": output_name,
                         "subfolder": subfolder,
                         "type": "output",
-                        "format": "video/mkv",
+                        "format": "video/webm",
                     }
                 ]
             }
@@ -207,5 +210,7 @@ class SaveSvtAv1:
 
 
 NODE_CLASS_MAPPINGS: dict[str, type[SaveSvtAv1]] = {"SaveSvtAv1": SaveSvtAv1}
-NODE_DISPLAY_NAME_MAPPINGS: dict[str, str] = {"SaveSvtAv1": "Save SVT-AV1 10-bit"}
+NODE_DISPLAY_NAME_MAPPINGS: dict[str, str] = {
+    "SaveSvtAv1": "Save SVT-AV1 Lossless 10-bit WebM"
+}
 WEB_DIRECTORY = "./web"

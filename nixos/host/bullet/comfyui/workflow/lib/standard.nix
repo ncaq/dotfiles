@@ -225,7 +225,7 @@ mkWorkflow {
           (mkOutput "BBOX_DETECTOR" "BBOX_DETECTOR" [ 26 ])
           (mkOutput "SEGM_DETECTOR" "SEGM_DETECTOR" [ ])
         ];
-        widgets = [ "bbox/face_yolov8m.pt" ];
+        widgets = [ "bbox/face_yolov9c.pt" ];
       })
       (mkNode {
         id = 14;

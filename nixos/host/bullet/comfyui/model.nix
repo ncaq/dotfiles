@@ -5,6 +5,10 @@
 # storeのパスはホストのシステムクロージャから参照されるのでGCされない。
 # コンテナはephemeralだがホスト側のtmpfilesルールなので再起動しても残る。
 #
+# モデルを削除・置換した時、
+# 永続データディレクトリに古いシンボリックリンクが残り得ますが、
+# しばらく残るのは気にしないことにします。
+#
 # CivitAIのダウンロードURLはAPIキーが必要なことがあるため、
 # 認証なしで安定して取得できるHugging FaceのURLのみを使う。
 # リポジトリの更新でハッシュがずれないように、
@@ -44,13 +48,14 @@ let
         file = "waiIllustriousSDXL_v170.safetensors";
         hash = "sha256-8Rawx4/0QUZ7DNyPGTbh7RjqMemZfHsTKxuNtTPwvQQ=";
       };
-      # SDXLをアニメ画像で再学習したモデル。タグ設計が分かりやすい。
-      "animagine-xl-4.0.safetensors" = fetchHuggingface {
+      # SDXLをアニメ画像で再学習したモデル。
+      # 通常版より人体、色、出力安定性を改善した公式Opt版を使う。
+      "animagine-xl-4.0-opt.safetensors" = fetchHuggingface {
         owner = "cagliostrolab";
         repo = "animagine-xl-4.0";
         rev = "2b7c1b397761bf5bd3cc42e5b39ec99314a75a96";
-        file = "animagine-xl-4.0.safetensors";
-        hash = "sha256-HVtD/3W2q1mFAtTHedL7+j3OylHGDDtglkCmB3IzORY=";
+        file = "animagine-xl-4.0-opt.safetensors";
+        hash = "sha256-YyfsqYv7ZTjdek7c4iSEobvFeoz/axHQddQNoa+4R6w=";
       };
     };
     # UNETLoaderが読むcheckpoint非統合の拡散モデル。
@@ -135,12 +140,13 @@ let
     # Impact SubpackのUltralyticsDetectorProviderが読む検出モデル。
     "ultralytics/bbox" = {
       # FaceDetailerでの顔検出に使うYOLOモデル。
-      "face_yolov8m.pt" = fetchHuggingface {
+      # 同じ学習データのYOLOv8mよりmAPが高いYOLOv9cを使う。
+      "face_yolov9c.pt" = fetchHuggingface {
         owner = "Bingsu";
         repo = "adetailer";
         rev = "53cc19de382014514d9d4038601d261a7faa9b7b";
-        file = "face_yolov8m.pt";
-        hash = "sha256-cXkjwZs/S79SULco8fprLLcqM67R0jbqnK8OIa2UPl8=";
+        file = "face_yolov9c.pt";
+        hash = "sha256-0C/kk8MeG7xkUPTcbx24agKlkyL/H20xjaBmHXLd0IQ=";
       };
     };
     upscale_models = {
@@ -158,15 +164,24 @@ let
         hash = "sha256-+HLYN9PJDtLgUie+1xGvVnGm/RyffX6RyRGmHxVemdo=";
       };
     };
-    # ComfyUI-SeedVR2_VideoUpscalerが登録する専用モデルディレクトリ。
-    # 通常版はsharp版より線の過剰強調が少ないため、アニメ動画の標準にする。
     SEEDVR2 = {
+      # ComfyUI-SeedVR2_VideoUpscalerが登録する専用モデルディレクトリ。
+      # 通常版はsharp版より線の過剰強調が少ないため、アニメ動画の標準にする。
       "seedvr2_ema_7b_fp16.safetensors" = fetchHuggingface {
         owner = "numz";
         repo = "SeedVR2_comfyUI";
         rev = "09ced71023636e9bc8cdf9cdecfb2625d1e691e8";
         file = "seedvr2_ema_7b_fp16.safetensors";
         hash = "sha256-e4JBqpV2Bqts+2btq8ltQyNPmBnFOStE0kktnwsLvko=";
+      };
+      # 強い復元や輪郭の明瞭化が必要な素材向けの公式sharp版。
+      # 過剰なディテールを生成する場合があるため通常版も残す。
+      "seedvr2_ema_7b_sharp_fp16.safetensors" = fetchHuggingface {
+        owner = "numz";
+        repo = "SeedVR2_comfyUI";
+        rev = "09ced71023636e9bc8cdf9cdecfb2625d1e691e8";
+        file = "seedvr2_ema_7b_sharp_fp16.safetensors";
+        hash = "sha256-IKk+Af8kvq7rxd5OTlvpJDWWBsNWycUVCfuiRb0td90=";
       };
       "ema_vae_fp16.safetensors" = fetchHuggingface {
         owner = "numz";

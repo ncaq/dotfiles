@@ -231,8 +231,6 @@ in
       "--extra-model-paths-config"
       "${extraModelPaths}"
     ];
-    systemd.tmpfiles.rules = [
-      "d ${dataDir}/models 0755 comfyui comfyui - -"
-    ];
+    systemd.tmpfiles.rules = [ "d ${dataDir}/models 0755 comfyui comfyui - -" ];
   };
 }

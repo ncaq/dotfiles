@@ -101,26 +101,10 @@ in
           # torchの全CUDA世代ではなく、RTX 5090向けのカーネルだけをビルドする。
           cudaCapabilities = [ "12.0" ];
         };
-        seedvr2PythonDeps = with comfyuiPython.pkgs; [ rotary-embedding-torch ];
-        loraManagerPythonEnv = comfyuiPython.withPackages (
-          pythonPkgs: with pythonPkgs; [
-            aiohttp
-            aiohttp-socks
-            aiosqlite
-            beautifulsoup4
-            brotli
-            gitpython
-            jinja2
-            natsort
-            numpy
-            olefile
-            piexif
-            pillow
-            platformdirs
-            pyyaml
-            safetensors
-            toml
-          ]
+        # カスタムノードが追加で必要とするPython依存。
+        # 各ノードがcustom-node.nixで`passthru.pythonPathDeps`として添付したものを集める。
+        customNodePythonDeps = lib.concatMap (node: node.pythonPathDeps or [ ]) (
+          lib.attrValues config.services.comfyui.customNodes
         );
       in
       {
@@ -165,11 +149,7 @@ in
           # ComfyUIのtorchと同じCUDAパッケージセットから検索パスを指定する。
           LD_LIBRARY_PATH = lib.makeLibraryPath [ cudaNvrtc ];
           PYTHONPATH = lib.makeSearchPath comfyuiPython.sitePackages (
-            [
-              sageattention
-              loraManagerPythonEnv
-            ]
-            ++ seedvr2PythonDeps
+            [ sageattention ] ++ customNodePythonDeps
           );
           TRITON_CUDACRT_PATH = "${cudaPackages.cuda_cudart}/include";
           TRITON_LIBCUDA_PATH = "/run/opengl-driver/lib";

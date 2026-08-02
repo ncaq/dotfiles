@@ -16,12 +16,21 @@ let
       exec nixos-container run forgejo -- forgejo "$@"
     '';
   };
+  garageAddr = config.machineAddresses.garage.guest;
+  # LFSオブジェクトをgarage(S3互換)に保存するためのバケットとキーをidempotentに作成します。
+  # name = "forgejo" なので/run/garage-setup/forgejoにキーが書き出され、forgejoユーザーが所有します。
+  garageSetup = import ../../../lib/garage-setup.nix {
+    inherit pkgs config;
+    name = "forgejo";
+  };
 in
 {
   containers.forgejo = {
     autoStart = true;
     ephemeral = true;
     privateNetwork = true;
+    # PostgreSQLのpeer認証がホストと同一のUIDでの接続を要求するため、
+    # pickにはできずidentity(UID分離なし、capability分離のみ)のまま。
     privateUsers = "identity";
     hostAddress = addr.host;
     localAddress = addr.guest;
@@ -33,6 +42,15 @@ in
       }
     ];
     bindMounts = {
+      # garage-setupが出力したS3キーをマウントします。
+      "/run/garage-setup/forgejo/s3-access-key" = {
+        hostPath = "/run/garage-setup/forgejo/s3-access-key";
+        isReadOnly = true;
+      };
+      "/run/garage-setup/forgejo/s3-secret-key" = {
+        hostPath = "/run/garage-setup/forgejo/s3-secret-key";
+        isReadOnly = true;
+      };
       "/run/postgresql" = {
         hostPath = "/run/postgresql";
         isReadOnly = true;
@@ -66,9 +84,14 @@ in
           resolved.enable = true;
           forgejo = {
             enable = true;
+            # LFSサーバ機能(`LFS_START_SERVER`)を有効化し、
+            # `LFS_JWT_SECRET`も自動生成します。
+            # 保存先は下の`settings.lfs`でminio(garage)に切り替えます。
+            lfs.enable = true;
             database = {
               type = "postgres";
-              # PostgreSQLは直接接続されないため、NixOSによるデータベース自動生成機能は無効にします。
+              # PostgreSQLは直接接続されないため、
+              # NixOSによるデータベース自動生成機能は無効にします。
               createDatabase = false;
               socket = "/run/postgresql";
             };
@@ -86,11 +109,27 @@ in
               };
               service = {
                 DISABLE_REGISTRATION = true;
-                REQUIRE_SIGNIN_VIEW = true;
               };
               repository = {
                 DEFAULT_BRANCH = "master";
               };
+              lfs = {
+                # LFSオブジェクトのストレージにgarage(S3互換)を使用。
+                STORAGE_TYPE = "minio";
+                MINIO_ENDPOINT = "${garageAddr}:3900";
+                MINIO_BUCKET = "forgejo";
+                MINIO_LOCATION = "garage";
+                # 内部のIP直アクセスのためSSLは不要。
+                MINIO_USE_SSL = false;
+                # コンテナ間はIP直アクセスのためpath style。
+                MINIO_BUCKET_LOOKUP = "path";
+              };
+            };
+            # S3キーはgarage-setupが起動ごとに生成するため、
+            # LoadCredential経由でファイルから読み込みます。
+            secrets.lfs = {
+              MINIO_ACCESS_KEY_ID = "/run/garage-setup/forgejo/s3-access-key";
+              MINIO_SECRET_ACCESS_KEY = "/run/garage-setup/forgejo/s3-secret-key";
             };
           };
         };
@@ -107,9 +146,18 @@ in
   postgresClient = [ "forgejo" ];
 
   systemd = {
-    services."container@forgejo" = {
-      requires = [ "postgresql-ready.service" ];
-      after = [ "postgresql-ready.service" ];
+    services = {
+      "container@forgejo" = {
+        requires = [
+          "garage-setup-forgejo.service"
+          "postgresql-ready.service"
+        ];
+        after = [
+          "garage-setup-forgejo.service"
+          "postgresql-ready.service"
+        ];
+      };
+      "garage-setup-forgejo" = garageSetup;
     };
     tmpfiles.rules = [
       "d /var/lib/forgejo 0750 forgejo forgejo -"

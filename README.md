@@ -96,7 +96,6 @@ Custom Nix packages.
 # Related external config repo
 
 - [ncaq/.emacs.d: My Emacs config](https://github.com/ncaq/.emacs.d)
-- [ncaq/.xkeysnail: My xkeysnail config](https://github.com/ncaq/.xkeysnail)
 - [ncaq/.xmonad](https://github.com/ncaq/.xmonad)
 - [ncaq/.zsh.d](https://github.com/ncaq/.zsh.d)
 - [ncaq/firge-nix: firgeフォントをnixで利用するためのリポジトリ](https://github.com/ncaq/firge-nix)

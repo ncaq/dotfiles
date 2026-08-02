@@ -44,16 +44,4 @@ in
   # Caddy起動時にはまだバインド先IPが存在しない場合がある。
   # ip_nonlocal_bindを有効にして未割当アドレスへのバインドを許可する。
   boot.kernel.sysctl."net.ipv4.ip_nonlocal_bind" = 1;
-  # garage.ncaq.netのLet's Encrypt証明書をDNS-01チャレンジで取得。
-  # Cloudflare Tunnelの接続先は変更せず(Garage直接のまま)、
-  # niks3-publicコンテナからの内部アクセスのみCaddy HTTPS経由にする。
-  security.acme = {
-    acceptTerms = true;
-    defaults.email = "ncaq@ncaq.net";
-    certs."garage.ncaq.net" = {
-      dnsProvider = "cloudflare";
-      environmentFile = config.sops.templates."cloudflare-dns-env".path;
-      group = "caddy";
-    };
-  };
 }

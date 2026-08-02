@@ -47,7 +47,10 @@ let
         else
           # 有線が無い: disconnectで抑止された自動接続を解除し、WiFiへ繋ぎ直す。
           nmcli device set "$dev" autoconnect yes || true
-          if [ "$state" != connected ]; then
+          # `connecting`(接続処理中)に重複で`connect`を叩くと、
+          # activated待ちで90秒ブロックし、デバイスを中間状態に留めて無限ループ化する。
+          # 完全に切れている`disconnected`のときだけ繋ぎ直す。
+          if [ "$state" = disconnected ]; then
             nmcli device connect "$dev" || true
           fi
         fi

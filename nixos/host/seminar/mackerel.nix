@@ -21,10 +21,20 @@ in
     runAsRoot = true;
     apiKeyFile = config.sops.templates."mackerel-api-key.conf".path;
     settings = {
-      # エージェント自身のメモリ使用量も収集
-      diagnostic = true;
-      # ファイルシステムをデバイス名(dm-1等)ではなくマウントポイント名で表示
-      filesystems.use_mountpoint = true;
+      # disk I/Oメトリクスを物理ディスク単位だけに絞ってノイズを削減する。
+      # この正規表現はデバイス名に部分一致したものを収集対象から除外する。
+      # 残したいのは物理ディスク全体(nvme0n1, nvme1n1, sda, sdb, sdc)のI/Oだけ。
+      # 除外対象は以下の通り。
+      # - loop: 中身が空のループバックデバイス。
+      # - zram: 圧縮スワップ。物理ディスクアクセスではない。
+      # - bcache: HDDをbcache仮想デバイス越しに見たもの。
+      #   複数HDDが同一SSDキャッシュを共有しており、
+      #   1本のHDDへのI/Oが sd[a-z] -> bcacheN -> bcacheNp1 -> dm-N と多重計上されて増幅する。
+      #   物理実体である sd[a-z] だけ残せば各HDDの真のI/Oが分かる。
+      # - nvme[0-9]+n[0-9]+p[0-9]+: nvmeのパーティション。親デバイス全体だけ見れば足りる。
+      # - sd[a-z][0-9]+: SCSI/SATAディスクのパーティション(現状は無いが将来用)。
+      # なおdm-*はmackerel-agentが標準で除外するため明示不要。
+      disks.ignore = "loop|zram|bcache|nvme[0-9]+n[0-9]+p[0-9]+|sd[a-z][0-9]+";
       # ヘルスチェックプラグイン
       plugin.checks = {
         ssh = {
@@ -172,13 +182,16 @@ in
               name = "check-garage";
               runtimeInputs = [ pkgs.curl ];
               text = ''
+                # S3 APIのルートGETはデータ層の過負荷に巻き込まれて遅延しやすいので、
+                # admin APIの軽量なlivenessエンドポイント/healthを使います。
+                # /healthは認証不要で、quorumを満たせば200、不足すれば503を返します。
                 http_code=$(curl -s --max-time 3 -o /dev/null -w "%{http_code}" \
-                  http://${config.machineAddresses.garage.guest}:3900 || true)
-                if [[ "$http_code" =~ ^[24][0-9][0-9]$ ]]; then
-                  echo "Garage OK (HTTP $http_code)"
+                  http://${config.machineAddresses.garage.guest}:3903/health || true)
+                if [[ "$http_code" == "200" ]]; then
+                  echo "Garage OK (health HTTP $http_code)"
                   exit 0
                 else
-                  echo "Garage CRITICAL: HTTP $http_code"
+                  echo "Garage CRITICAL: health HTTP $http_code"
                   exit 2
                 fi
               '';
@@ -283,18 +296,40 @@ in
             max_check_attempts
             ;
         };
-        github-runner-x64 = {
+        github-runner-dotfiles-x64 = {
           command = lib.getExe (
             pkgs.writeShellApplication {
-              name = "check-github-runner-x64";
+              name = "check-github-runner-dotfiles-x64";
               runtimeInputs = [ pkgs.iputils ];
               text = ''
-                runner_host=${config.machineAddresses.github-runner-x64.guest}
+                runner_host=${config.machineAddresses.github-runner-dotfiles-x64.guest}
                 if ping -c 1 -W 2 "$runner_host" > /dev/null 2>&1; then
-                  echo "GitHub Runner x64 OK"
+                  echo "GitHub Runner x64 dotfiles OK"
                   exit 0
                 else
-                  echo "GitHub Runner x64 CRITICAL: ping failed"
+                  echo "GitHub Runner x64 dotfiles CRITICAL: ping failed"
+                  exit 2
+                fi
+              '';
+            }
+          );
+          inherit
+            check_interval
+            max_check_attempts
+            ;
+        };
+        github-runner-cdn-ncaq-net-x64 = {
+          command = lib.getExe (
+            pkgs.writeShellApplication {
+              name = "check-github-runner-cdn-ncaq-net-x64";
+              runtimeInputs = [ pkgs.iputils ];
+              text = ''
+                runner_host=${config.machineAddresses.github-runner-cdn-ncaq-net-x64.guest}
+                if ping -c 1 -W 2 "$runner_host" > /dev/null 2>&1; then
+                  echo "GitHub Runner x64 cdn.ncaq.net OK"
+                  exit 0
+                else
+                  echo "GitHub Runner x64 cdn.ncaq.net CRITICAL: ping failed"
                   exit 2
                 fi
               '';

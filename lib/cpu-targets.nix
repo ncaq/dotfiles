@@ -1,6 +1,9 @@
 /**
   CPUモデルごとの最適化コンパイルフラグレジストリ。
 
+  各CPUは基本的に発売日の新しい順に登録する。
+  日付コメントは発売日(`YYYY-MM-DD`)を表す。
+
   キーは`/proc/cpuinfo`の`model name`文字列そのままを採用する。
   ベンダー独自の表記揺れを自分で正規化するよりも、
   カーネルが返す文字列をそのまま流用するほうが事故が少ない。
@@ -14,6 +17,11 @@
   該当CPU上で取得した値を写経する。
   `-march=<arch>`だけではキャッシュ階層ヒントが付与されないため、
   この情報がモデル固有最適化の主要な価値になる。
+
+  `threads`はそのCPUの論理スレッド数(SMT込み、`nproc`相当)を記録する。
+  ビルド並列度やコンテナへのCPU割り当てなど、
+  評価時に固定値を要する箇所の単一の出典として使う。
+  モデル名の`6-Core`等は物理コア数でありこの値とは一致しないので注意する。
 */
 { lib }:
 let
@@ -22,6 +30,7 @@ let
   mkTarget =
     {
       arch,
+      threads,
       tune ? arch,
       cacheParams ? [ ],
       extraFlags ? [ ],
@@ -32,6 +41,7 @@ let
     {
       inherit
         arch
+        threads
         tune
         cacheParams
         extraFlags
@@ -40,8 +50,10 @@ let
 in
 rec {
   targets = {
+    # 2025-03-12
     "AMD Ryzen 9 9950X3D 16-Core Processor" = mkTarget {
       arch = "znver5";
+      threads = 32;
       cacheParams = [
         "--param=l1-cache-size=48"
         "--param=l1-cache-line-size=64"
@@ -49,8 +61,10 @@ rec {
       ];
     };
 
+    # 2023-05-03
     "AMD Ryzen 5 PRO 7540U w/ Radeon 740M Graphics" = mkTarget {
       arch = "znver4";
+      threads = 12;
       cacheParams = [
         "--param=l1-cache-size=32"
         "--param=l1-cache-line-size=64"
@@ -58,8 +72,10 @@ rec {
       ];
     };
 
+    # 2023-01-14
     "AMD Ryzen 5 7600 6-Core Processor" = mkTarget {
       arch = "znver4";
+      threads = 12;
       cacheParams = [
         "--param=l1-cache-size=32"
         "--param=l1-cache-line-size=64"

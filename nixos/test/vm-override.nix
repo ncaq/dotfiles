@@ -5,6 +5,7 @@
 {
   pkgs,
   lib,
+  config,
   options,
   username,
   ...
@@ -16,7 +17,8 @@ lib.mkMerge [
     # 多めに設定していても破綻はしませんが、
     # リソース制限をわかりやすくするためにこちらでも記述しておきます。
     virtualisation = {
-      cores = 10; # CPUは奪い合っても良いので12スレッドから2スレッド引いた分を割り当てます。
+      # CPUは奪い合っても良いので割り当て可能スレッド数を割り当てます。
+      cores = config.local.cpuBudgetThreads;
       memorySize = 4 * 1024; # 4GB。並列に動かすことを考えて控えめにします。
     };
 

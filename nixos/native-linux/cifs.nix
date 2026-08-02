@@ -8,6 +8,11 @@
 }:
 let
   userConfig = config.users.users.${username};
+  inherit (import ../../lib/seminar-cifs.nix { inherit pkgs; })
+    baseMountOptions
+    mkRetryService
+    waitForSeminar
+    ;
 in
 lib.mkMerge [
   (lib.mkIf (hostName != "seminar") {
@@ -24,14 +29,25 @@ lib.mkMerge [
         {
           requires = [ "network-online.target" ];
           wants = [
+            "seminar-online.service"
             "sops-install-secrets.service"
             "tailscale-online.service"
           ];
           after = [
             "network-online.target"
+            "seminar-online.service"
             "sops-install-secrets.service"
             "tailscale-online.service"
           ];
+          unitConfig = {
+            # マウント失敗時はリトライ用サービスに委ねる。
+            # mountユニット自体はRestart=を持てないため、
+            # 到達性を待ってから再マウントする別サービスで補う。
+            OnFailure = [ "mnt-chihiro-retry.service" ];
+            # リトライが恒久的な失敗(認証エラーなど)で無限ループしないよう起動回数を制限する。
+            StartLimitIntervalSec = 600;
+            StartLimitBurst = 5;
+          };
           # `cifs-mount.target`に向けてwantedByする。
           # `cifs-mount.target`は`DefaultDependencies=false`のため、
           # `multi-user.target`からの暗黙的な順序依存が追加されず、ブートをブロックしない。
@@ -39,42 +55,71 @@ lib.mkMerge [
           what = "//seminar/chihiro";
           where = "/mnt/chihiro";
           type = "cifs";
-          options = lib.concatStringsSep "," [
-            # 認証
-            "credentials=${config.sops.templates."cifs-credentials".path}"
-            "uid=${toString userConfig.uid}"
-            "gid=${toString config.users.groups.${userConfig.group}.gid}"
-            # systemdはデフォルトだと`Before=remote-fs.target`を追加します。
-            # `nofail`を指定することでその挙動が抑制され、
-            # `remote-fs.target`経由のブートブロックを防ぎます。
-            "nofail"
-            # セキュリティ
-            "nodev"
-            "noexec"
-            "nosuid"
-            # パフォーマンス
-            "noatime"
-            # SMBダイアレクトを明示的に指定。
-            # 未指定だとkernelが`No dialect specified on mount`の警告を出す。
-            # `vers=3`はSMB3.0以上を意味し、ネゴシエーションで3.x系の最新版が選択される。
-            # SMB1/SMB2系を排除しつつ、将来のマイナーバージョン更新にも自動追従する。
-            "vers=3"
-          ];
+          # 認証・セキュリティ・ダイアレクトの共通部分は`lib/seminar-cifs.nix`で管理する。
+          options = lib.concatStringsSep "," (
+            baseMountOptions config.sops.templates."cifs-credentials".path
+            ++ [
+              "uid=${toString userConfig.uid}"
+              "gid=${toString config.users.groups.${userConfig.group}.gid}"
+              # デフォルトの0755/0755だとファイルが実行可能に見えてしまうため、
+              # ファイルから実行ビットを落とす。
+              # 所有グループ(users)への書き込み許可も維持する。
+              "dir_mode=0775"
+              "file_mode=0664"
+              # systemdはデフォルトだと`Before=remote-fs.target`を追加します。
+              # `nofail`を指定することでその挙動が抑制され、
+              # `remote-fs.target`経由のブートブロックを防ぎます。
+              "nofail"
+            ]
+          );
           mountConfig = {
             TimeoutSec = 30;
           };
         }
       ];
 
-      # systemd.target(5)により、
-      # ターゲットが`Wants=`で引き込んだユニットの両方が`DefaultDependencies=yes`の場合、
-      # 暗黙的に`After=`が追加される。
-      # `DefaultDependencies=false`を設定することで、
-      # `multi-user.target`が暗黙的に`After=cifs-mount.target`を追加するのを防ぎ、
-      # ブートをブロックしない。
+      services = {
+        # seminarのSMBポートへの実到達性を確認するサービス。
+        # `tailscale-online.service`はtailnetへの接続までしか保証せず、
+        # seminar自体が起動していて到達可能かは別問題のため独立したサービスにしている。
+        seminar-online = {
+          description = "Wait for seminar SMB port to be reachable";
+          wants = [
+            "network-online.target"
+            "tailscale-online.service"
+          ];
+          after = [
+            "network-online.target"
+            "tailscale-online.service"
+          ];
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+            # seminarがダウンしている場合に永久に待たないよう上限を設ける。
+            # 失敗してもマウント側はwantsなので試行自体は行われ、nofailで害はない。
+            TimeoutStartSec = 300;
+            ExecStart = lib.getExe waitForSeminar;
+          };
+        };
+
+        # マウント失敗時にOnFailureから起動されるリトライサービス。
+        # 到達性が回復するまで待ってから再マウントする。
+        mnt-chihiro-retry = mkRetryService {
+          name = "mnt-chihiro";
+          description = "Retry mounting /mnt/chihiro after failure";
+          mountUnit = "mnt-chihiro.mount";
+        };
+      };
+
       targets.cifs-mount = {
         description = "CIFS Network Mounts";
         wantedBy = [ "multi-user.target" ];
+        # systemd.target(5)により、
+        # ターゲットが`Wants=`で引き込んだユニットの両方が`DefaultDependencies=yes`の場合、
+        # 暗黙的に`After=`が追加される。
+        # `DefaultDependencies=false`を設定することで、
+        # `multi-user.target`が暗黙的に`After=cifs-mount.target`を追加するのを防ぎ、
+        # ブートをブロックしない。
         unitConfig.DefaultDependencies = false;
       };
 

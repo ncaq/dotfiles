@@ -10,7 +10,7 @@
         "calendar.timezone.local" = "Asia/Tokyo";
         "calendar.ui.version" = 3;
         "calendar.week.start" = 1; # 月曜始まり
-        "mail.shell.checkDefaultClient" = true;
+        "mail.shell.checkDefaultClient" = false; # 既定のクライアント確認は宣言的に設定している
         "mail.showCondensedAddresses" = false; # 完全なアドレス表示
         "mail.startup.enabledMailCheckOnce" = true;
         "mail.uidensity" = 0; # コンパクト表示

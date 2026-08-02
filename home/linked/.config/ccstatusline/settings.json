@@ -23,44 +23,14 @@
         "character": " | "
       },
       {
-        "id": "context-length",
-        "type": "context-length",
-        "color": "white"
-      },
-      {
-        "id": "sep-context-length-pct",
-        "type": "separator",
-        "character": " "
-      },
-      {
         "id": "context-percentage-usable",
         "type": "context-percentage-usable",
         "color": "white"
       },
       {
-        "id": "sep-context-time",
+        "id": "sep-context-weekly",
         "type": "separator",
         "character": " | "
-      },
-      {
-        "id": "session-usage",
-        "type": "session-usage",
-        "color": "green"
-      },
-      {
-        "id": "sep-session-block",
-        "type": "separator",
-        "character": " "
-      },
-      {
-        "id": "block-timer",
-        "type": "block-timer",
-        "color": "blue"
-      },
-      {
-        "id": "sep-block-weekly",
-        "type": "separator",
-        "character": " "
       },
       {
         "id": "weekly-usage",

@@ -27,10 +27,11 @@ ASCIIに対応する全角形(Fullwidth Forms)は使用禁止。
 ディレクトリパスを受け取り、
 モジュールパスのリストを返します。
 
-指定ディレクトリ内の`.nix`ファイルを自動的に収集し、
+指定ディレクトリ内の`.nix`ファイルと`default.nix`を持つサブディレクトリを自動的に収集し、
 NixOSモジュールやhome-managerモジュールの`imports`に渡せるパスのリストを返します。
 `default.nix`は呼び出し元自身の再帰importを防ぐため除外されます。
-サブディレクトリは走査しません(1階層のみ)。
+`default.nix`を持たないサブディレクトリはモジュールではないので無視されます。
+サブディレクトリの中身は走査しません(そのサブディレクトリの`default.nix`が自身で管理します)。
 
 各ディレクトリの`default.nix`で以下のように使用します:
 
@@ -39,14 +40,10 @@ NixOSモジュールやhome-managerモジュールの`imports`に渡せるパス
 { imports = importDirModules ./.; }
 ```
 
-これにより新しい`.nix`ファイルを追加するだけで自動的にimportされ、
+これにより新しい`.nix`ファイルやモジュールディレクトリを追加するだけで自動的にimportされ、
 `default.nix`の`imports`リストを手動で更新する必要がありません。
-
-サブディレクトリのモジュールが必要な場合は手動で追加します:
-
-```nix
-imports = importDirModules ./. ++ [ ./github-runner ];
-```
+一貫性のため`default.nix`はなるべくこの形だけにして、
+モジュールが他のモジュールを明示的にimportするのは避けます。
 
 `importDirModules`は`flake.nix`で`specialArgs`/`extraSpecialArgs`経由で、
 全モジュールに渡されています。
@@ -101,9 +98,11 @@ nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
 
 unstableも有効にしている理由はいくつかあります。
 
-Claude CodeやCodex CLIのようにあまりにも更新が早く、
-サーバも最新バージョンを要求してくるので、
-最新版に近いバージョンを使わないことに多大な不便が生じるパッケージをインストールしたいです。
+Claude Codeなどのコーディングエージェントはあまりにも更新が早く、
+サーバも最新バージョンのクライアントを要求してくることがあります。
+
+そのような最新版に近いバージョンを使わないことで多大な不便が生じるパッケージは、
+例外的にunstableからインストールしたいです。
 
 もう一つはstableにまだ入っていなかったり、
 stableのバージョンが自分の求める機能を提供していないパッケージを使う場合です。
@@ -154,13 +153,40 @@ nix-fast-buildコマンドで統合チェックを実行できます。
 nix-fast-build --option eval-cache false --no-link --skip-cached --no-nom
 ```
 
+## 設定の適用は`./install.sh`を使う
+
+設定をシステムに適用する時は、
+`nixos-rebuild`や`home-manager`を直接実行せずに、
+リポジトリルートの`./install.sh`を実行してください。
+
+```console
+./install.sh
+```
+
+このスクリプトは実行環境を自動判別して適切な適用コマンドを呼び分けます。
+
+- NixOS: `sudo nixos-rebuild switch --flake ".#$(hostname)"`
+- Termux(nix-on-droid): `nix-on-droid switch --flake .`
+- その他のLinux: アーキテクチャに応じた`home-manager switch`
+
+単なるラッパーではなく、
+NixOSでは適用前に最新コミットの情報を`last-commit.json`として一時的にstagingします。
+この情報は`nixos/core/label.nix`がブートエントリのラベル生成に使うため、
+`nixos-rebuild`を直接実行するとブートエントリからコミット情報が欠落します。
+
+実行にあたって知っておくべきこと:
+
+- NixOSではsudoを使いますがユーザ側によって解決されるので気にしなくても良いです
+- 実行中は`last-commit.json`のstagingにより一時的にgitがdirty状態に見えますが、
+  終了時に自動でクリーンアップされます
+
 # リポジトリ構成
 
 ## ルートディレクトリ
 
 ### LLM向けのシンボリックリンク
 
-Codex向けの`AGENTS.md`と、
+様々なコーディングエージェント向けの`AGENTS.md`と、
 Claude Code向けの`CLAUDE.md`は、
 以下のように`.github/copilot-instructions.md`のシンボリックリンクになっています。
 
@@ -203,7 +229,7 @@ Claude Codeの設定は2箇所で管理されています。
 ## `home/core/claude-code.nix`
 
 home-managerの`programs.claude-code`モジュールで全ホスト共通の設定を宣言的に管理します。
-MCPサーバ、プラグイン、権限、フックなどの主要な設定はここで管理します。
+プラグイン、権限、フックなどの主要な設定はここで管理します。
 
 ビルド時にユーザの`~/.claude/settings.json`として展開されます。
 
@@ -232,6 +258,10 @@ gpg鍵で暗号化されたyamlファイルが`secrets/`ディレクトリに格
 # ネットワーク
 
 このリポジトリで管理している全てのホストはTailscaleに接続されておりtailnet内で通信が可能です。
+
+そのtailnetに参加している全てのデバイスは、
+自分の所有しているデバイスであり、
+信頼できるものです。
 
 # seminarサーバ
 

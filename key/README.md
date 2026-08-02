@@ -4,6 +4,29 @@
 
 公開鍵のフィンガープリント: `7DDE3BC405DC58D94BF661D342248C7D0FB73D57`
 
+## 秘密鍵の隔離(gpg-vault)
+
+NixOSホストでは秘密鍵ファイルの実体を通常ユーザから隔離しています。
+コーディングエージェントなどが通常ユーザ権限でディレクトリを一括アップロードしても、
+秘密鍵ファイル自体は流出しないようにするための「うっかり防止」です。
+
+- 秘密鍵の実体: `/var/lib/gpg-vault/.gnupg/private-keys-v1.d/`(gpg-vaultユーザ所有、mode 700)
+- gpg-agent: `gpg-vault-agent.service`がgpg-vaultユーザで稼働
+- ソケット: `/run/gpg-vault/`にありgpg-vaultグループのみ接続可能
+- 通常ユーザの`~/.gnupg`: 公開鍵リングと設定のみで秘密鍵は置かない
+
+通常ユーザのgpg/sshはソケット経由でvaultのagentを使うため、
+使い勝手は通常とほぼ同じです。
+
+設定はNixOS側が`nixos/core/gpg-vault.nix`、
+クライアント側が`home/core/gpg.nix`です。
+
+トラブル時にvault側を直接調査する場合:
+
+```zsh
+sudo -u gpg-vault env GNUPGHOME=/var/lib/gpg-vault/.gnupg gpg --list-secret-keys
+```
+
 ## 鍵の構成
 
 - 暗号副鍵: 全端末で共通
@@ -85,15 +108,20 @@ gpgconf --kill gpg-agent
 ### 端末にimport
 
 副鍵をimportします。
+秘密鍵はソケット経由でvaultのagentに送られ、
+`/var/lib/gpg-vault/.gnupg/private-keys-v1.d/`に保存されます。
 
 ```zsh
 gpg --import subkeys-secret.asc
 ```
 
 パスフレーズを削除します。
+vaultのagentはgpg-vaultユーザで動いており、
+pinentryがユーザ境界を跨いで端末を開けないため、
+loopbackモードでgpg自身にパスフレーズを入力します。
 
 ```zsh
-gpg --edit-key ncaq@ncaq.net
+gpg --pinentry-mode loopback --edit-key ncaq@ncaq.net
 ```
 
 ```console
@@ -110,7 +138,7 @@ gpg> save
 動作確認。
 
 ```zsh
-gpgconf --kill gpg-agent
+sudo systemctl restart gpg-vault-agent.service
 echo "test" | gpg --sign --armor
 ```
 

@@ -11,44 +11,25 @@
   config,
   name,
 }:
+let
+  hardening = import ./systemd-hardening.nix;
+in
 {
   description = "Setup Garage bucket and key for ${name}";
   requires = [ "container@garage.service" ];
   after = [ "container@garage.service" ];
   wantedBy = [ "multi-user.target" ];
-  serviceConfig = {
+  serviceConfig = hardening.network // {
     Type = "oneshot";
     RemainAfterExit = true;
-    RuntimeDirectory = name;
+    RuntimeDirectory = "garage-setup/${name}";
     RuntimeDirectoryMode = "0700";
-    # Hardening
+    # 生成したキーファイルをクライアントユーザへchownするために必要なcapabilityだけ許可する。
     CapabilityBoundingSet = [
       "CAP_CHOWN"
       "CAP_DAC_READ_SEARCH"
       "CAP_FOWNER"
     ];
-    LockPersonality = true;
-    MemoryDenyWriteExecute = true;
-    NoNewPrivileges = true;
-    PrivateDevices = true;
-    PrivateTmp = true;
-    ProtectClock = true;
-    ProtectControlGroups = true;
-    ProtectHome = true;
-    ProtectHostname = true;
-    ProtectKernelLogs = true;
-    ProtectKernelModules = true;
-    ProtectKernelTunables = true;
-    ProtectSystem = "strict";
-    RestrictAddressFamilies = [
-      "AF_INET"
-      "AF_INET6"
-      "AF_UNIX"
-    ];
-    RestrictNamespaces = true;
-    RestrictRealtime = true;
-    RestrictSUIDSGID = true;
-    SystemCallArchitectures = "native";
     SystemCallFilter = [
       "@system-service"
       "~@privileged"
@@ -90,8 +71,8 @@
             exit 1
           fi
 
-          # Calculate expiration date (1 year from now) in RFC 3339 format.
-          EXPIRATION=$(date -u -d '+365 days' '+%Y-%m-%dT%H:%M:%SZ')
+          # Calculate expiration date (3 months from now) in RFC 3339 format.
+          EXPIRATION=$(date -u -d '+90 days' '+%Y-%m-%dT%H:%M:%SZ')
 
           # Create a new ephemeral key via admin API.
           KEY_JSON=$(garage_api POST /v2/CreateKey \
@@ -109,10 +90,12 @@
           # Write keys to runtime directory for ${name} container.
           (
             umask 0377
-            echo -n "$ACCESS_KEY" > /run/${name}/s3-access-key
-            echo -n "$SECRET_KEY" > /run/${name}/s3-secret-key
+            echo -n "$ACCESS_KEY" > /run/garage-setup/${name}/s3-access-key
+            echo -n "$SECRET_KEY" > /run/garage-setup/${name}/s3-secret-key
           )
-          chown ${name}:${name} /run/${name}/s3-access-key /run/${name}/s3-secret-key
+          chown ${name}:${name} \
+            /run/garage-setup/${name}/s3-access-key \
+            /run/garage-setup/${name}/s3-secret-key
 
           # Get existing bucket or create a new one.
           if BUCKET_JSON=$(garage_api GET "/v2/GetBucketInfo?globalAlias=${name}" 2>/dev/null); then
@@ -129,6 +112,24 @@
             --arg accessKeyId "$ACCESS_KEY" \
             '{$bucketId, $accessKeyId, permissions: {read: true, write: true}}')
           garage_api POST /v2/AllowBucketKey "$ALLOW_PAYLOAD" > /dev/null
+
+          # 未完了マルチパートアップロードを2日後に自動abortするlifecycleルールを設定する。
+          # 未完了マルチパートが溜まり続けるとメタデータDB(LMDB)が肥大化する。
+          # Garage組み込みのlifecycle workerに、
+          # 日々掃除させ負荷を平準化する。
+          # (UTC 0時に100件ずつバッチ実行、batch sizeと頻度はソースに固定されている)
+          # アプリケーション側のGCと喧嘩しにくいように、
+          # 期限は長めの2日後に設定する。
+          LIFECYCLE_PAYLOAD=$(jq -nc \
+            '{lifecycleRules: [
+               {
+                 ID: "abort-incomplete-multipart-upload",
+                 Status: "Enabled",
+                 Filter: { Prefix: "" },
+                 AbortIncompleteMultipartUpload: { DaysAfterInitiation: 2 }
+               }
+             ]}')
+          garage_api POST "/v2/UpdateBucket?id=$BUCKET_ID" "$LIFECYCLE_PAYLOAD" > /dev/null
         '';
       }
     );

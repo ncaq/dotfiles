@@ -19,6 +19,8 @@ in
     autoStart = true;
     ephemeral = true;
     privateNetwork = true;
+    # PostgreSQLのpeer認証がホストと同一のUIDでの接続を要求するため、
+    # pickにはできずidentity(UID分離なし、capability分離のみ)のまま。
     privateUsers = "identity";
     hostAddress = addr.host;
     localAddress = addr.guest;
@@ -27,19 +29,19 @@ in
         hostPath = "/run/postgresql";
         isReadOnly = true;
       };
-      "/etc/niks3-public/s3-access-key" = {
-        hostPath = "/run/niks3-public/s3-access-key";
+      "/run/garage-setup/niks3-public/s3-access-key" = {
+        hostPath = "/run/garage-setup/niks3-public/s3-access-key";
         isReadOnly = true;
       };
-      "/etc/niks3-public/s3-secret-key" = {
-        hostPath = "/run/niks3-public/s3-secret-key";
+      "/run/garage-setup/niks3-public/s3-secret-key" = {
+        hostPath = "/run/garage-setup/niks3-public/s3-secret-key";
         isReadOnly = true;
       };
-      "/etc/niks3-public/api-token" = {
+      "/run/niks3-public/api-token" = {
         hostPath = config.sops.secrets."niks3-public-api-token".path;
         isReadOnly = true;
       };
-      "/etc/niks3-public/sign-key" = {
+      "/run/niks3-public/sign-key" = {
         hostPath = config.sops.secrets."niks3-public-sign-key".path;
         isReadOnly = true;
       };
@@ -85,11 +87,11 @@ in
               bucket = "niks3-public";
               region = "garage";
               useSSL = true;
-              accessKeyFile = "/etc/niks3-public/s3-access-key";
-              secretKeyFile = "/etc/niks3-public/s3-secret-key";
+              accessKeyFile = "/run/garage-setup/niks3-public/s3-access-key";
+              secretKeyFile = "/run/garage-setup/niks3-public/s3-secret-key";
             };
-            apiTokenFile = "/etc/niks3-public/api-token";
-            signKeyFiles = [ "/etc/niks3-public/sign-key" ];
+            apiTokenFile = "/run/niks3-public/api-token";
+            signKeyFiles = [ "/run/niks3-public/sign-key" ];
             cacheUrl = "https://niks3-public.ncaq.net";
             # publicバケットですがGarage S3 APIが匿名読み取りを未サポートのため、
             # niks3のread proxy経由で配信しています。
@@ -125,11 +127,13 @@ in
         "caddy.service"
         "garage-setup-niks3-public.service"
         "postgresql-ready.service"
+        "sops-install-secrets.service"
       ];
       after = [
         "caddy.service"
         "garage-setup-niks3-public.service"
         "postgresql-ready.service"
+        "sops-install-secrets.service"
       ];
     };
     garage-setup-niks3-public = import ../../../lib/garage-setup.nix {
@@ -145,7 +149,7 @@ in
   # API_TOKEN=$(openssl rand -base64 36)
   # nix key generate-secret --key-name niks3-public.ncaq.net-1 > /tmp/niks3-sign-key
   # ```
-  # Then `sops secrets/seminar/niks3-public.yaml` and set:
+  # Then `sops secrets/niks3-public.yaml` and set:
   # ```
   # api_token: <base64>
   # sign_key: niks3-public.ncaq.net-1:<base64>
@@ -154,14 +158,14 @@ in
   # to nix.conf as `trusted-public-keys` on clients.
   sops.secrets = {
     "niks3-public-api-token" = {
-      sopsFile = ../../../secrets/seminar/niks3-public.yaml;
+      sopsFile = ../../../secrets/niks3-public.yaml;
       key = "api_token";
       owner = "niks3-public";
       group = "niks3-public";
       mode = "0400";
     };
     "niks3-public-sign-key" = {
-      sopsFile = ../../../secrets/seminar/niks3-public.yaml;
+      sopsFile = ../../../secrets/niks3-public.yaml;
       key = "sign_key";
       owner = "niks3-public";
       group = "niks3-public";

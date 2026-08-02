@@ -10,13 +10,12 @@
   ...
 }:
 let
-  # `lastModifiedDate`は"20260308123456"形式。日付は他で表示されるため時刻部分のみ使用します。
-  d = inputs.self.lastModifiedDate or "00000000000000";
-  time = "${builtins.substring 8 2 d}:${builtins.substring 10 2 d}:${builtins.substring 12 2 d}";
   # コミットリビジョン。
   # `install.sh`が最後のコミット情報ファイルをstagingするため必ずdirtyになります。
   # "-dirty"サフィックスは自前の注入によるものなので除去します。
-  shortRev = lib.strings.removeSuffix "-dirty" inputs.self.dirtyShortRev or inputs.self.shortRev;
+  shortRev =
+    lib.strings.removeSuffix "-dirty"
+      inputs.self.dirtyShortRev or inputs.self.shortRev or "nothing-rev";
   # `install.sh`が最新コミットの情報を`last-commit.json`に保存してstagingします。
   lastCommitFile = "${inputs.self}/last-commit.json";
   lastCommit =
@@ -60,5 +59,5 @@ let
   inherit (config.system.nixos) release;
 in
 {
-  system.nixos.label = "${time}-${release}-${shortRev}${dirtySuffix}${branchLabel}-${commitLabel}";
+  system.nixos.label = "${release}-${shortRev}${dirtySuffix}${branchLabel}-${commitLabel}";
 }

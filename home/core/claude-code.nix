@@ -1,141 +1,40 @@
 {
+  lib,
   pkgs,
   pkgs-unstable,
   config,
-  lib,
-  osConfig ? null,
+  codingAgentWorkDirFullPath,
+  konoka,
   ...
 }:
 let
-  # Claude Codeのパッケージをsopsシークレットから環境変数を注入するラッパーで包む。
-  # `api.githubcopilot.com`がOAuth Dynamic Client Registrationをサポートしないのと、
-  # それを正しくClaude Codeが処理しないため、
-  # PATをBearer tokenとしてHTTPヘッダーで渡す必要があります。
-  # 全シェルにトークンを展開するのはあまりやりたくないため、
-  # コマンドだけに注入する方法を取ります。
-  # `symlinkJoin`+`wrapProgram`ではなく`writeShellApplication`を使うことで、
-  # home-managerの`--mcp-config`ラッピングと合わせた二重wrappingを避けて、
-  # プロセスの名前を`claude`に保ちます。
-  claude-code-wrapped = pkgs.writeShellApplication {
-    name = "claude";
-    text = ''
-      if [[ -r ${config.sops.secrets."github-mcp-server/pat".path} ]]; then
-        GITHUB_PERSONAL_ACCESS_TOKEN="$(< ${config.sops.secrets."github-mcp-server/pat".path})"
-        export GITHUB_PERSONAL_ACCESS_TOKEN
-      fi
-      exec ${lib.getExe pkgs-unstable.claude-code} "$@"
-    '';
-  };
-
   ccstatusline = pkgs.callPackage ../../pkgs/ccstatusline.nix { };
-
-  backlog-mcp-server = pkgs.callPackage ../../pkgs/backlog-mcp-server.nix { };
-  # Backlog MCP Serverの認証情報をsops-nixで管理されたシークレットから読み込むラッパー
-  backlog-mcp-server-wrapper = pkgs.writeShellApplication {
-    name = "backlog-mcp-server-wrapper";
-    runtimeInputs = [ backlog-mcp-server ];
-    text = ''
-      if [[ -r ${config.sops.secrets."backlog-mcp-server/domain".path} ]]; then
-        BACKLOG_DOMAIN="$(< ${config.sops.secrets."backlog-mcp-server/domain".path})"
-        export BACKLOG_DOMAIN
-      fi
-      if [[ -r ${config.sops.secrets."backlog-mcp-server/api-key".path} ]]; then
-        BACKLOG_API_KEY="$(< ${config.sops.secrets."backlog-mcp-server/api-key".path})"
-        export BACKLOG_API_KEY
-      fi
-      exec backlog-mcp-server "$@"
-    '';
-  };
-
-  # npm, yarn, pnpm, bunで共通のサブコマンドを許可するためのヘルパー
-  jsPackageManagers = [
-    "npm"
-    "yarn"
-    "pnpm"
-    "bun"
-  ];
-
-  # 直接実行するサブコマンド (install等)
-  jsDirectSubcommands = [
-    "ci:*"
-    "info:*"
-    "install:*"
-    "ls:*"
-    "view:*"
-  ];
-
-  # npm run経由で実行するサブコマンド (npmは `npm run <cmd>` 形式、他は `<pkg> <cmd>` 形式)
-  jsRunSubcommands = [
-    "build:*"
-    "dev:*"
-    "fix:*"
-    "lint:*"
-    "lint:eslint"
-    "lint:prettier"
-    "lint:tsc"
-    "npm:*"
-    "prettier:*"
-    "preview:*"
-    "test:*"
-  ];
-
-  mkJsDirectPermissions = pkg: map (sub: "Bash(${pkg} ${sub})") jsDirectSubcommands;
-
-  mkJsRunPermissions =
-    pkg:
-    let
-      prefix = if pkg == "npm" then "${pkg} run" else pkg;
-    in
-    map (sub: "Bash(${prefix} ${sub})") jsRunSubcommands;
-
-  jsRunnerPermissions = lib.concatMap (
-    pkg: mkJsDirectPermissions pkg ++ mkJsRunPermissions pkg
-  ) jsPackageManagers;
-
-  # コーディングエージェントの作業ディレクトリ。
-  # konokaプラグインは`${XDG_RUNTIME_DIR:-/tmp}/coding-agent-work/`を使用します。
-  # NixOS環境では`osConfig`からUIDを取得して、
-  # `/run/user/<uid>/coding-agent-work/`を構築します。
-  # 非NixOS環境(Termux等)では`XDG_RUNTIME_DIR`が設定されない場合があるため、
-  # `/tmp`にフォールバックします。
-  codingAgentWorkDirFullPath =
-    let
-      uid = if osConfig != null then osConfig.users.users.${config.home.username}.uid else null;
-      base = if uid != null then "/run/user/${toString uid}" else "/tmp";
-    in
-    "${base}/coding-agent-work/";
 in
 {
   programs.claude-code = {
     enable = true;
-    package = claude-code-wrapped;
+    package = pkgs-unstable.claude-code;
 
     # `CLAUDE.md`と同等です。
     context = config.prompt.codingAgent;
 
-    mcpServers = {
-      github = {
-        type = "http";
-        url = "https://api.githubcopilot.com/mcp/";
-        headers = {
-          Authorization = "Bearer \${GITHUB_PERSONAL_ACCESS_TOKEN}";
-        };
-      };
-      deepwiki = {
-        type = "http";
-        url = "https://mcp.deepwiki.com/mcp";
-      };
-      backlog = {
-        type = "stdio";
-        command = lib.getExe backlog-mcp-server-wrapper;
-      };
-    };
+    # `mcp.nix`と連携します。
+    enableMcpIntegration = true;
+
+    # ビルド済みのプラグインパッケージを直接リンクします。
+    plugins = map (n: konoka.plugins.${n}) konoka.allPluginNames;
 
     settings = {
       # 応答に使う自然言語です。
       language = "japanese";
-      # 設定時に最適な値を切り替えていきます。
-      model = "opus[1m]";
+      # 常にフルの表示を要求します。
+      verbose = true;
+      # 頻繁に最適な値が変わるので設定するその時に最適なものを選びます。
+      model = "opus"; # Opusで十分賢いのでデフォルトではfableより安いモデルを使います。
+      fallbackModel = [
+        "fable"
+        "sonnet"
+      ];
       # メッセージにCo-Authored-Byフッターを付与しません。
       # 私はAIエージェントはテキストエディタの延長線上だと考えているため、
       # ツール名が書かれるのは不自然だと思っています。
@@ -195,51 +94,15 @@ in
             repo = "anthropics/claude-plugins-official";
           };
         };
-        konoka = {
-          source = {
-            source = "github";
-            repo = "ncaq/konoka";
-            ref = "v8.4.0";
-          };
-        };
-        context7-marketplace = {
-          source = {
-            source = "github";
-            repo = "upstash/context7";
-            ref = "@upstash/context7-mcp@2.2.5";
-          };
-        };
       };
       # pluginを記述しておくことで起動時にインストールされていない場合自動でインストールされます。
       enabledPlugins = {
-        # claude-plugins-official
-        "plugin-dev@claude-plugins-official" = true;
         ## lsp plugin
         "clangd-lsp@claude-plugins-official" = true;
-        "csharp-lsp@claude-plugins-official" = true;
         "gopls-lsp@claude-plugins-official" = true;
-        "jdtls-lsp@claude-plugins-official" = true;
-        "kotlin-lsp@claude-plugins-official" = true;
-        "lua-lsp@claude-plugins-official" = true;
         "pyright-lsp@claude-plugins-official" = true;
-        "ruby-lsp@claude-plugins-official" = true;
         "rust-analyzer-lsp@claude-plugins-official" = true;
-        "swift-lsp@claude-plugins-official" = true;
         "typescript-lsp@claude-plugins-official" = true;
-        # konoka
-        "commit@konoka" = true;
-        "haskell-tasuke@konoka" = true;
-        "kyosei@konoka" = true;
-        "log-analyzer@konoka" = true;
-        "nix-tasuke@konoka" = true;
-        "pr@konoka" = true;
-        "programming-tasuke@konoka" = true;
-        "proofreading-ja@konoka" = true;
-        "research@konoka" = true;
-        "rm-to-trash@konoka" = true;
-        "web-tasuke@konoka" = true;
-        # Context7
-        "context7-plugin@context7-marketplace" = true; # ライブラリドキュメント検索
       };
       skipAutoPermissionPrompt = true; # auto modeをdefaultModeにしているので許可を求めない。
       permissions = {
@@ -259,7 +122,7 @@ in
           # 適切に拒否するのが面倒なのでそのままにしています。
           "~/dotfiles/"
         ];
-        allow = jsRunnerPermissions ++ [
+        allow = [
           "Bash($EDITOR:*)"
           "Bash(* --help *)"
           "Bash(* --version)"
@@ -428,6 +291,8 @@ in
           "mcp__plugin_claude-code-home-manager_backlog__get_wiki"
           "mcp__plugin_claude-code-home-manager_backlog__get_wiki_pages"
           "mcp__plugin_claude-code-home-manager_backlog__get_wikis_count"
+          "mcp__plugin_claude-code-home-manager_cloudflare"
+          "mcp__plugin_claude-code-home-manager_context7"
           "mcp__plugin_claude-code-home-manager_deepwiki"
           "mcp__plugin_claude-code-home-manager_github__get_commit"
           "mcp__plugin_claude-code-home-manager_github__get_file_contents"
@@ -452,7 +317,9 @@ in
           "mcp__plugin_claude-code-home-manager_github__search_pull_requests"
           "mcp__plugin_claude-code-home-manager_github__search_repositories"
           "mcp__plugin_claude-code-home-manager_github__search_users"
-          "mcp__plugin_context7-plugin_context7"
+          "mcp__plugin_claude-code-home-manager_mdn"
+          "mcp__plugin_claude-code-home-manager_microsoft-learn"
+          "mcp__plugin_claude-code-home-manager_nixos"
           "mcp__plugin_nix-tasuke_nixos"
         ];
         ask = [
@@ -572,32 +439,5 @@ in
           })
         ]
       );
-  };
-
-  sops.secrets = {
-    # GitHub MCP Server用のPersonal Access Tokenをsops-nixで管理します。
-    # シークレットファイルは `sops secrets/github-mcp-server.yaml` で編集してください。
-    # 形式:
-    # pat: ghp_xxxxxxxxxxxxxxxxxxxxx
-    "github-mcp-server/pat" = {
-      sopsFile = ../../secrets/github-mcp-server.yaml;
-      key = "pat";
-      mode = "0400";
-    };
-    # Backlog MCP Server用の認証情報をsops-nixで管理します。
-    # シークレットファイルは `sops secrets/backlog-mcp-server.yaml` で編集してください。
-    # 形式:
-    # domain: your-space.backlog.com
-    # api-key: your-api-key
-    "backlog-mcp-server/domain" = {
-      sopsFile = ../../secrets/backlog-mcp-server.yaml;
-      key = "domain";
-      mode = "0400";
-    };
-    "backlog-mcp-server/api-key" = {
-      sopsFile = ../../secrets/backlog-mcp-server.yaml;
-      key = "api-key";
-      mode = "0400";
-    };
   };
 }

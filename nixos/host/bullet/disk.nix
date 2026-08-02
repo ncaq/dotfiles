@@ -8,26 +8,12 @@
           type = "gpt";
           partitions = {
             ESP = {
-              size = "1G";
+              size = "2G";
               type = "EF00";
               content = {
                 type = "filesystem";
                 format = "vfat";
                 mountpoint = "/efi";
-                mountOptions = [
-                  "noatime"
-                  "fmask=0077"
-                  "dmask=0077"
-                ];
-              };
-            };
-            nixos-boot = {
-              size = "1G";
-              type = "EA00";
-              content = {
-                type = "filesystem";
-                format = "vfat";
-                mountpoint = "/boot";
                 mountOptions = [
                   "noatime"
                   "fmask=0077"

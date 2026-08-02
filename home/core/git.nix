@@ -46,12 +46,22 @@ in
         push.default = "current";
         rerere.enabled = true;
         github.user = "ncaq";
+        credential."https://forgejo.ncaq.net" = {
+          helper = "!${pkgs.pass-git-helper}/bin/pass-git-helper $@";
+          useHttpPath = false;
+          username = "ncaq";
+        };
+        # Git LFSのロック機能は基本的に使わないので、
+        # ユーザグローバルではpushのたびの検証と通知を無効化します。
+        lfs = {
+          "https://github.com/".locksverify = false;
+          "https://forgejo.ncaq.net/".locksverify = false;
+        };
       };
       ignores = [
         "**/.claude/scheduled_tasks.lock"
         "**/.claude/settings.local.json"
         ".DS_Store"
-        ".codex"
         "Thumbs.db"
       ];
     };

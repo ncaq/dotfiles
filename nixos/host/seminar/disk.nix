@@ -3,12 +3,12 @@ _: {
     disk = {
       main = {
         type = "disk";
-        device = "/dev/disk/by-id/nvme-Samsung_SSD_970_EVO_Plus_1TB_S4EWNF0M300603J";
+        device = "/dev/disk/by-id/nvme-WD_BLACK_SN850X_HS_2000GB_25393V801805";
         content = {
           type = "gpt";
           partitions = {
             ESP = {
-              size = "1G";
+              size = "2G";
               type = "EF00";
               content = {
                 type = "filesystem";
@@ -21,59 +21,52 @@ _: {
                 ];
               };
             };
-            nixos-boot = {
-              size = "1G";
-              type = "EA00";
-              content = {
-                type = "filesystem";
-                format = "vfat";
-                mountpoint = "/boot";
-                mountOptions = [
-                  "noatime"
-                  "fmask=0077"
-                  "dmask=0077"
-                ];
-              };
-            };
             nixos-root = {
               size = "100%";
               type = "8300";
               content = {
-                type = "btrfs";
-                subvolumes = {
-                  "@" = {
-                    mountpoint = "/";
-                    mountOptions = [
-                      "noatime"
-                      "compress=zstd"
-                    ];
-                  };
-                  "@nix-store" = {
-                    mountpoint = "/nix/store";
-                    mountOptions = [
-                      "noatime"
-                      "compress=zstd"
-                    ];
-                  };
-                  "@swap" = {
-                    mountpoint = "/swap";
-                    mountOptions = [
-                      "noatime"
-                    ];
-                  };
-                  "@var-log" = {
-                    mountpoint = "/var/log";
-                    mountOptions = [
-                      "noatime"
-                      "compress=zstd"
-                    ];
-                  };
-                  "@snapshots" = {
-                    mountpoint = "/.snapshots";
-                    mountOptions = [
-                      "noatime"
-                      "compress=zstd"
-                    ];
+                type = "luks";
+                name = "nixos-root";
+                settings.allowDiscards = true;
+                # フォーマット時のみ使う一時パスワードファイル。
+                passwordFile = "/tmp/secret.password";
+                content = {
+                  type = "btrfs";
+                  subvolumes = {
+                    "@" = {
+                      mountpoint = "/";
+                      mountOptions = [
+                        "noatime"
+                        "compress=zstd"
+                      ];
+                    };
+                    "@nix-store" = {
+                      mountpoint = "/nix/store";
+                      mountOptions = [
+                        "noatime"
+                        "compress=zstd"
+                      ];
+                    };
+                    "@swap" = {
+                      mountpoint = "/swap";
+                      mountOptions = [
+                        "noatime"
+                      ];
+                    };
+                    "@var-log" = {
+                      mountpoint = "/var/log";
+                      mountOptions = [
+                        "noatime"
+                        "compress=zstd"
+                      ];
+                    };
+                    "@snapshots" = {
+                      mountpoint = "/.snapshots";
+                      mountOptions = [
+                        "noatime"
+                        "compress=zstd"
+                      ];
+                    };
                   };
                 };
               };
@@ -84,17 +77,16 @@ _: {
       # # diskoはbcacheを直接サポートしていないため、
       # # 一部は以下のように手動で設定する必要があります。
       # # bcacheデバイスの作成
-      # # キャッシュデバイス（SSD）
-      # sudo make-bcache --cache --writeback --discard /dev/disk/by-id/nvme-WD_PC_SN740_SDDQNQD-256G-1201_23252F808935
-      # # バッキングデバイス（HDD）
+      # # キャッシュデバイス(SSD)
+      # CACHE_DEVICE=/dev/disk/by-id/nvme-WD_BLACK_SN770_1TB_242810800421
+      # sudo make-bcache --cache --writeback --discard $CACHE_DEVICE
+      # # バッキングデバイス(HDD)
       # sudo make-bcache --bdev --writeback --discard /dev/disk/by-id/ata-WDC_WD121PURZ-85GUCY0_2AGN938Y
       # sudo make-bcache --bdev --writeback --discard /dev/disk/by-id/ata-WDC_WD80EAAZ-00BXBB0_WD-RD2PKLEH
       # sudo make-bcache --bdev --writeback --discard /dev/disk/by-id/ata-WDC_WD80EAZZ-00BKLB0_WD-CA2HPAUK
       # # キャッシュセットに接続
-      # CACHE_SET_UUID=$(sudo bcache-super-show /dev/disk/by-id/nvme-WD_PC_SN740_SDDQNQD-256G-1201_23252F808935|grep 'cset.uuid'|awk '{print $2}')
-      # sudo zsh -c "echo $CACHE_SET_UUID > /sys/block/bcache0/bcache/attach"
-      # sudo zsh -c "echo $CACHE_SET_UUID > /sys/block/bcache1/bcache/attach"
-      # sudo zsh -c "echo $CACHE_SET_UUID > /sys/block/bcache2/bcache/attach"
+      # CACHE_SET_UUID=$(sudo bcache-super-show $CACHE_DEVICE|grep 'cset.uuid'|awk '{print $2}')
+      # for i in 0 1 2; do sudo zsh -c "echo $CACHE_SET_UUID > /sys/block/bcache$i/bcache/attach"; done
       # # パスワードファイル作成
       # sudo nano /tmp/secret.password
       # # 初期インストール時以外はフォーマットを手動で済ませる。
@@ -125,6 +117,16 @@ _: {
                     "noatime"
                     "compress=zstd"
                   ];
+                  subvolumes = {
+                    # snapperスナップショットの転送先。
+                    # 独立したサブボリュームにすることで、
+                    # noa config(SUBVOLUME = /mnt/noa)のタイムラインスナップショットに含まれず、
+                    # バックアップの二重保存を避けられる。
+                    # `mountpoint`は指定しない。
+                    # トップレベルがマウントされている`/mnt/noa/snapshot-backup`として参照でき、
+                    # 別途マウントユニットを生成するとブート時のマウント失敗でemergencyに落ちるため。
+                    "snapshot-backup" = { };
+                  };
                   extraArgs = [
                     "-d raid1"
                     "/dev/mapper/noa0"

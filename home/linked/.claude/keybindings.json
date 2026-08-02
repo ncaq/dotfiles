@@ -38,6 +38,17 @@
       }
     },
     {
+      "context": "Scroll",
+      "bindings": {
+        "shift+up": "scroll:lineUp",
+        "shift+down": "scroll:lineDown",
+        "shift+left": "scroll:fullPageUp",
+        "shift+right": "scroll:fullPageDown",
+        "pageup": "scroll:fullPageUp",
+        "pagedown": "scroll:fullPageDown"
+      }
+    },
+    {
       "context": "HistorySearch",
       "bindings": {
         "ctrl+g": "historySearch:accept",

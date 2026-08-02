@@ -65,6 +65,31 @@
       };
     };
 
+    xremap-flake = {
+      url = "github:xremap/nix-flake";
+      inputs = {
+        nixpkgs.follows = "nixpkgs-unstable"; # オリジナルで最新のRustのためにunstableを使っている。
+        flake-parts.follows = "flake-parts";
+      };
+    };
+
+    # 依存関係が繊細であり、
+    # nixpkgsをfollowするとstableでもunstableでもビルドに失敗します。
+    # 例えば、
+    # torch wheelのCUDAランタイム依存やwebsocketsのバージョン制約が、
+    # 上流がpinしたnixpkgsリビジョンに強く紐付いているため。
+    # 上流のREADMEもfollowsなしを標準構成としており、
+    # 上流に自動追随するためには自前のpinも避けたいので、
+    # nixpkgsノードの重複は意図的に許容します。
+    # flake.lockのノード名はrootからのDFS(兄弟はアルファベット順)で決まるため、
+    # input名を`nixpkgs`より後ろに来る名前にすることで、
+    # root直下のnixpkgsがプレーンな`nixpkgs`ノード名を保ち、
+    # `nixpkgs_2`はこちら側の推移的nixpkgsに割り当てられます。
+    utensils-comfyui-nix = {
+      url = "github:utensils/comfyui-nix";
+      inputs.flake-parts.follows = "flake-parts";
+    };
+
     git-hooks = {
       url = "github:ncaq/git-hooks";
       inputs = {
@@ -90,6 +115,15 @@
 
     dot-xmonad = {
       url = "github:ncaq/.xmonad";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-parts.follows = "flake-parts";
+        treefmt-nix.follows = "treefmt-nix";
+      };
+    };
+
+    konoka = {
+      url = "github:ncaq/konoka";
       inputs = {
         nixpkgs.follows = "nixpkgs";
         flake-parts.follows = "flake-parts";
@@ -130,10 +164,14 @@
 
       # ディレクトリ内の全`.nix`ファイルをimportするヘルパー関数。
       importDirModules = import ./lib/import-dir-modules.nix { inherit lib; };
+      # systemdサービス共通のハードニング設定。
+      hardening = import ./lib/systemd-hardening.nix;
       # nixpkgsの共通設定。
       nixpkgsConfig = import ./lib/nixpkgs-config.nix { inherit lib; };
       # 全環境で共通のoverlays。
       overlays = [
+        (import ./lib/snapper-btrfs-bin-overlay.nix)
+        inputs.utensils-comfyui-nix.overlays.default
         inputs.firge-nix.overlays.default
       ];
       # system固有のpkgsを生成する関数。
@@ -163,28 +201,40 @@
           importPkgsStable
           importPkgsUnstable
           importDirModules
+          hardening
           inputs
           ;
       };
 
-      hostDefs = {
-        "SSD0086" = mkNixosSystem {
+      # 各ホストの静的な情報。
+      # NixOSのoptionはホストの構成内で閉じていて他のホストからは参照できないため、
+      # 他のホストが知る必要のある情報はここに書いて、
+      # `specialArgs`の`hostInfo`として全ホストのモジュールに渡す。
+      hostInfo = {
+        "SSD0086" = {
           system = "x86_64-linux";
-          hostName = "SSD0086";
         };
-        "bullet" = mkNixosSystem {
+        "bullet" = {
           system = "x86_64-linux";
-          hostName = "bullet";
+          # オンボード有線NICのMACアドレス。
+          # seminarがWake-on-LANのmagic packetを送る宛先に使う。
+          macAddress = "34:5a:60:bf:07:ad";
         };
-        "creep" = mkNixosSystem {
+        "creep" = {
           system = "x86_64-linux";
-          hostName = "creep";
         };
-        "seminar" = mkNixosSystem {
+        "seminar" = {
           system = "x86_64-linux";
-          hostName = "seminar";
         };
       };
+
+      hostDefs = lib.mapAttrs (
+        hostName: info:
+        mkNixosSystem {
+          inherit (info) system;
+          inherit hostName hostInfo;
+        }
+      ) hostInfo;
 
       nixosConfigurations = lib.mapAttrs (_: def: def.nixosSystem) hostDefs;
 
@@ -252,6 +302,8 @@
               deadnix.enable = true;
               nixfmt.enable = true;
               prettier.enable = true;
+              ruff-check.enable = true;
+              ruff-format.enable = true;
               shellcheck.enable = true;
               shfmt.enable = true;
               statix.enable = true;
@@ -269,15 +321,24 @@
 
           checks =
             let
-              # NixOS構成の評価チェック(評価のみ、ビルドしない)
+              # NixOS構成の評価チェック(評価のみ、ビルドしない)。
+              # env属性の中の`builtins.seq`がinstantiation時にのみ完全評価を強制する。
+              # この形には2つの理由がある。
+              # チェック対象の値自体を`builtins.seq`や`writeText`のtextで強制すると、
+              # `nix flake show`のような属性値に触れるだけのコマンドでも、
+              # 全ホストの完全評価が走り数GBのメモリを消費してしまう。
+              # (`writeText`は関数適用の時点でtextを強制評価する。)
+              # かといって`drvPath`の文字列をそのままenv属性に含めると、
+              # 文字列コンテキスト経由でtoplevelへのビルド依存が発生してしまい、
+              # チェックのビルドがシステム全体の実ビルドになってしまう。
               nixosEvalChecks =
                 lib.mapAttrs'
                   (
                     name: nixosConfig:
                     lib.nameValuePair "nixos-eval-${name}" (
-                      builtins.seq nixosConfig.config.system.build.toplevel.drvPath (
-                        pkgs.writeText "nixos-eval-${name}" name
-                      )
+                      pkgs.runCommand "nixos-eval-${name}" {
+                        evaluated = builtins.seq nixosConfig.config.system.build.toplevel.drvPath name;
+                      } ''echo "$evaluated" > "$out"''
                     )
                   )
                   (
@@ -291,9 +352,9 @@
                   hmConfig = homeConfigurations.${system} or null;
                 in
                 lib.optionalAttrs (hmConfig != null) {
-                  "hm-eval" = builtins.seq hmConfig.activationPackage.drvPath (
-                    pkgs.writeText "hm-eval-${system}" system
-                  );
+                  "hm-eval" = pkgs.runCommand "hm-eval-${system}" {
+                    evaluated = builtins.seq hmConfig.activationPackage.drvPath system;
+                  } ''echo "$evaluated" > "$out"'';
                 };
             in
             nixosEvalChecks // hmEvalChecks;
@@ -319,6 +380,7 @@
               editorconfig-checker
               nixfmt
               prettier
+              ruff
               shellcheck
               shfmt
               statix

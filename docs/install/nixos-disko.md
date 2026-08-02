@@ -16,7 +16,24 @@ export NIX_CONFIG="experimental-features = flakes nix-command"
 nix run 'nixpkgs#git' -- clone https://github.com/ncaq/dotfiles.git
 cd dotfiles
 sudo -E nix run '.#disko' -- --mode format,mount --flake ".#${NEW_HOST}"
-sudo nixos-install --flake ".#${NEW_HOST}" --root /mnt
+
+# workaround nixos-install
+
+sudo mkdir -p /mnt/build
+
+df -h /
+mount | grep -iE 'rw-store|overlay|/nix'
+sudo mount -o remount,size=48G /nix/.rw-store
+
+nix build "path:$PWD#nixosConfigurations.${NEW_HOST}.config.system.build.toplevel" \
+  --out-link /mnt/build/toplevel \
+  --extra-experimental-features "nix-command flakes"
+
+TOPLEVEL=$(readlink -f /mnt/build/toplevel)
+sudo nix copy --to /mnt "$TOPLEVEL" --no-check-sigs \
+  --extra-experimental-features "nix-command flakes"
+
+sudo nixos-install --system "$TOPLEVEL" --root /mnt --no-channel-copy
 ```
 
 Please reboot after installation.

@@ -25,8 +25,8 @@ amendなどの高度なオプションが必要な時は、
 ## log-analyzer
 
 長大なファイルやコマンドの出力を解析する時は、
-[log-analyzer:log-analyzer](https://github.com/ncaq/konoka/blob/master/plugins/log-analyzer/agents/log-analyzer.md)
-エージェントを基本的に利用してください。
+[log-analyzer:log-analyzer](https://github.com/ncaq/konoka/blob/master/plugins/log-analyzer/skills/log-analyzer/SKILL.md)
+スキルを基本的に利用してください。
 
 長大なファイルでも高速に結果が返って来ることが期待できます。
 
@@ -56,6 +56,6 @@ GitHub MCPやGitHub CLIを直接使ってPRを作成しないでください。
 
 高速に多数の情報を得ることが期待できます。
 
-[research:survey](https://github.com/ncaq/konoka/blob/master/plugins/research/agents/survey.md)
-エージェントはresearchスキルが内部的に使うためのエージェントなので、
+[research:survey](https://github.com/ncaq/konoka/blob/master/plugins/research/skills/survey/SKILL.md)
+スキルはresearchスキルが内部的に使うためのスキルなので、
 直接呼び出さないでください。

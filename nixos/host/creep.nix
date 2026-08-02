@@ -8,6 +8,8 @@
     ../client
     ../laptop
 
+    ../gaming
+
     ./creep
   ];
   local.cpuTarget = "AMD Ryzen 5 PRO 7540U w/ Radeon 740M Graphics";

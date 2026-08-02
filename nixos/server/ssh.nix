@@ -1,19 +1,7 @@
-{ username, ... }:
+{ lib, ... }:
 {
-  services.openssh = {
-    enable = true;
-    settings = {
-      # パスワード認証を無効化
-      PasswordAuthentication = false;
-    };
-  };
-  programs.mosh.enable = true;
-  users.users.${username}.openssh.authorizedKeys.keys = [
-    # 公開鍵は全世界に公開することが前提として設計されているので、dotfilesに含めて問題ない。
-
-    # GPGエージェントから利用できるSSH鍵。
-    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGYLEhh/AfM0TcAn15SgUcXZGtS3DxE/7xQmuxApawWg openpgp:0x79E75544"
-    # 独立したSSH鍵。
-    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICl317eHn8HMJgCOVEp3O2VOuj/6rMhq5IbsL2lTTOzQ ncaq@standalone"
-  ];
+  # サーバはヘッドレス運用なので、tailscaledが故障した時の復旧経路として、
+  # tailnet限定にせずLANなどからのssh/moshも受け付ける。
+  services.openssh.openFirewall = lib.mkForce true;
+  programs.mosh.openFirewall = lib.mkForce true;
 }

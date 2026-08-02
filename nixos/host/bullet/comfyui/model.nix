@@ -6,8 +6,10 @@
 # 書き込み可能なmodelsディレクトリはオンデマンド取得用に残す。
 # storeのパスはホストのシステムクロージャから参照されるのでGCされない。
 #
-# CivitAIのダウンロードURLはAPIキーが必要なことがあるため、
+# CivitaiのダウンロードURLはAPIキーが必要なことがあり、
+# fetchurlのビルド時にはsopsで管理するAPIキーを参照できないため、
 # 認証なしで安定して取得できるHugging FaceのURLのみを使う。
+# Civitaiからのオンデマンド取得はLoRA Manager(civitai.nix)が担う。
 # リポジトリの更新でハッシュがずれないように、
 # URLは`resolve/main`ではなくcommit hashで固定する。
 {
@@ -37,7 +39,7 @@ let
   models = {
     checkpoints = {
       # Illustrious-XLベースの人気マージモデル。日常使いの定番。
-      # CivitAIオリジナルの非公式ミラーなので消失リスクがある。
+      # Civitaiオリジナルの非公式ミラーなので消失リスクがある。
       "waiIllustriousSDXL_v170.safetensors" = fetchHuggingface {
         owner = "LyliaEngine";
         repo = "waiIllustriousSDXL_v170";
@@ -208,6 +210,7 @@ let
       checkpoints = "checkpoints";
       controlnet = "controlnet";
       diffusion_models = "diffusion_models";
+      loras = "loras";
       seedvr2 = "SEEDVR2";
       text_encoders = "text_encoders";
       ultralytics = "ultralytics";

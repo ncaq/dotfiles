@@ -3,24 +3,17 @@
 # Funnelではないのでインターネットには公開されない。
 # 転送先はcomfyui-proxy.socketなので、
 # tailnet経由の初回アクセスでもソケットアクティベーションによるオンデマンド起動が機能する。
-# 何のサービスか分かりやすいように、
-# また将来他のサービスも公開できるように、
-# ルートではなく`/comfyui`パスにマウントする。
-#
-# `--bg`は使わずフォアグラウンドで常駐させる。
-# フォアグラウンドのServe設定はCLIプロセスのセッションに紐付き、
-# プロセスが死ぬとtailscaled側が設定を自動で消すため、
-# Serve設定のライフサイクルがユニットのライフサイクルと完全に一致する。
-# `--bg`と違いoffによる明示的な登録解除も、
-# モジュール削除後にtailscaledへ設定が残留する心配も不要になる。
+# LoRA Managerは`/loras_static`などのルート絶対URLを使うため、
+# 専用のTailscale Service `svc:comfyui`のルートへ公開する。
 { config, hardening, ... }:
 let
   tailscale = config.services.tailscale.package;
   port = config.containers.comfyui.config.services.comfyui.port;
+  service = "svc:comfyui";
 in
 {
-  systemd.services.tailscale-serve = {
-    description = "Tailscale Serve";
+  systemd.services.tailscale-serve-comfyui = {
+    description = "Tailscale Serve for ComfyUI";
     requires = [
       "tailscaled.service"
     ];
@@ -34,17 +27,20 @@ in
       "tailscaled.service"
     ];
     wantedBy = [ "multi-user.target" ];
-    # tailscale CLIはtailscaledのLocalAPIにUNIXソケット経由で接続してセッションを維持するだけで、
+    # tailscale CLIはtailscaledのLocalAPIにUNIXソケット経由で接続するだけで、
     # 実際のプロキシ転送はtailscaled側が行うため、
     # UNIXソケットのみ許可のハードニングまで絞れる。
-    # seminar上で同等のサンドボックスを再現して、
-    # フォアグラウンドのserveセッションが登録・維持できることを確認済み。
+    # このサンドボックス下でServiceの登録、
+    # drainによる停止、
+    # 再起動での再advertise、
+    # 公開URLへのHTTPSアクセスが通ることをbullet上で確認済み。
     serviceConfig = hardening.unixSocket // {
-      ExecStart = "${tailscale}/bin/tailscale serve --https=443 --set-path=/comfyui http://127.0.0.1:${toString port}";
-      # tailscaledの再起動などでセッションが切れるとプロセスが終了するため、
-      # 終了コードによらず常に再起動して復帰させる。
-      Restart = "always";
-      RestartSec = "10s";
+      Type = "oneshot";
+      RemainAfterExit = true;
+      # Tailscale Serviceは設定をtailscaledへ永続化してコマンド自体は終了する。
+      ExecStart = "${tailscale}/bin/tailscale serve --service=${service} --https=443 http://127.0.0.1:${toString port}";
+      # endpoint設定は残して、次回起動時にそのまま再advertiseできるようにする。
+      ExecStop = "${tailscale}/bin/tailscale serve drain ${service}";
     };
   };
 }

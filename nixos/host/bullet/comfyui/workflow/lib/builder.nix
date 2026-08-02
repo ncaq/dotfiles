@@ -85,9 +85,7 @@ let
   # 入力スロットの並びとウィジェットの並びはノード定義に一致させる必要があり、
   # 崩れるとSend to Workflowが動かなくなる。
   # UIで開くまで気付けないため、ここに一箇所だけ定義して`lib/builder-test.nix`で検証する。
-  # ウィジェットは順に、LoRA一覧を保持する内部状態、テキスト、有効なLoRAのリスト。
   #
-  # CLIPとlora_stackは`shape = 7`のオプション入力になっている。
   # UNETにだけ作用するLoRAを扱うワークフローでは、
   # `clipLink`を省略してCLIPを繋がずに使う。
   mkLoraLoader =
@@ -120,6 +118,8 @@ let
       ];
       inputs = [
         (mkInput "model" "MODEL" modelLink)
+        # textウィジェットに対応する入力スロット。
+        # ソケットへ繋がずウィジェットとして使うので`link`はnullのまま。
         {
           name = "text";
           type = "AUTOCOMPLETE_TEXT_LORAS";
@@ -128,7 +128,9 @@ let
           };
           link = null;
         }
+        # shape 7はoptionalの意味。
         ((mkInput "clip" "CLIP" clipLink) // { shape = 7; })
+        # 他のLoRAノードから積み上げる時だけ使うオプション入力。
         {
           name = "lora_stack";
           type = "LORA_STACK";
@@ -139,16 +141,20 @@ let
       outputs = [
         (mkOutput "MODEL" "MODEL" modelLinks)
         (mkOutput "CLIP" "CLIP" clipLinks)
+        # LoRAのトリガーワードと適用したLoRAの一覧を文字列で出す補助出力。
+        # プロンプトへ繋ぐ使い方があるが、ここでは使わないので未接続にする。
         (mkOutput "trigger_words" "STRING" [ ])
         (mkOutput "loaded_loras" "STRING" [ ])
       ];
       widgets = [
+        # __lm_autocomplete_meta_text
+        # (テキスト補完のメタデータ。対応するテキストウィジェット名を持つ隠しウィジェット)
         {
           version = 1;
           textWidgetName = "text";
         }
-        ""
-        [ ]
+        "" # text(`<lora:名前:強度>`形式のLoRA指定)
+        [ ] # loras(LoRAごとの名前と強度と有効状態のリスト。Send to Workflowが書き込む)
       ];
     };
   mkWorkflow =

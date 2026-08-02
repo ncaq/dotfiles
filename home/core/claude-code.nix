@@ -30,9 +30,9 @@ in
       # 常にフルの表示を要求します。
       verbose = true;
       # 頻繁に最適な値が変わるので設定するその時に最適なものを選びます。
-      model = "fable";
+      model = "opus"; # Opusで十分賢いのでデフォルトではfableより安いモデルを使います。
       fallbackModel = [
-        "opus"
+        "fable"
         "sonnet"
       ];
       # メッセージにCo-Authored-Byフッターを付与しません。

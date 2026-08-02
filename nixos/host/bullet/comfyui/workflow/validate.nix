@@ -8,6 +8,7 @@
 # ワークフローを追加するだけで自動的に検証対象になる。
 { config, lib, ... }:
 let
+  builderTest = import ./lib/builder-test.nix { inherit lib; };
   link = import ./lib/link.nix { inherit lib; };
   linkTest = import ./lib/link-test.nix { inherit lib; };
   order = import ./lib/order.nix { inherit lib; };
@@ -32,6 +33,7 @@ let
     ) config.local.comfyui.models
   );
 in
+assert builderTest;
 assert linkTest;
 assert orderTest;
 assert overlapTest;

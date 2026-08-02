@@ -51,6 +51,7 @@ let
     mkNode
     mkInput
     mkOutput
+    mkLoraLoader
     mkAppInput
     mkAppInputWith
     mkWorkflow
@@ -105,61 +106,18 @@ in
         ];
       })
       # オプショナルなLoRA適用(high noise側)。
-      # 未指定ならMODELをそのまま素通しする。
-      # LoRA Managerの管理画面のSend to Workflowがこのノードへ流し込む。
       # Wan 2.2のLoRAはhigh/lowで別ファイルなので対応する側へ入れる。
       # WanのLoRAはUNETにだけ作用するのでCLIPは繋がない。
-      (mkNode {
+      (mkLoraLoader {
         id = 29;
-        type = "Lora Loader (LoraManager)";
         title = "LoRA(high noise用)";
         pos = [
           1260
           172
         ];
-        # フロントエンドがLoRA一覧の領域を確保するため最低でもこの程度の高さで描画される。
-        size = [
-          385
-          350
-        ];
         order = 1;
-        inputs = [
-          (mkInput "model" "MODEL" 36)
-          {
-            name = "text";
-            type = "AUTOCOMPLETE_TEXT_LORAS";
-            widget = {
-              name = "text";
-            };
-            link = null;
-          }
-          {
-            name = "clip";
-            type = "CLIP";
-            shape = 7;
-            link = null;
-          }
-          {
-            name = "lora_stack";
-            type = "LORA_STACK";
-            shape = 7;
-            link = null;
-          }
-        ];
-        outputs = [
-          (mkOutput "MODEL" "MODEL" [ 1 ])
-          (mkOutput "CLIP" "CLIP" [ ])
-          (mkOutput "trigger_words" "STRING" [ ])
-          (mkOutput "loaded_loras" "STRING" [ ])
-        ];
-        widgets = [
-          {
-            version = 1;
-            textWidgetName = "text";
-          }
-          ""
-          [ ]
-        ];
+        modelLink = 36;
+        modelLinks = [ 1 ];
       })
       (mkNode {
         id = 2;
@@ -181,56 +139,16 @@ in
         ];
       })
       # オプショナルなLoRA適用(low noise側)。
-      (mkNode {
+      (mkLoraLoader {
         id = 30;
-        type = "Lora Loader (LoraManager)";
         title = "LoRA(low noise用)";
         pos = [
           1260
           704
         ];
-        size = [
-          385
-          350
-        ];
         order = 3;
-        inputs = [
-          (mkInput "model" "MODEL" 37)
-          {
-            name = "text";
-            type = "AUTOCOMPLETE_TEXT_LORAS";
-            widget = {
-              name = "text";
-            };
-            link = null;
-          }
-          {
-            name = "clip";
-            type = "CLIP";
-            shape = 7;
-            link = null;
-          }
-          {
-            name = "lora_stack";
-            type = "LORA_STACK";
-            shape = 7;
-            link = null;
-          }
-        ];
-        outputs = [
-          (mkOutput "MODEL" "MODEL" [ 2 ])
-          (mkOutput "CLIP" "CLIP" [ ])
-          (mkOutput "trigger_words" "STRING" [ ])
-          (mkOutput "loaded_loras" "STRING" [ ])
-        ];
-        widgets = [
-          {
-            version = 1;
-            textWidgetName = "text";
-          }
-          ""
-          [ ]
-        ];
+        modelLink = 37;
+        modelLinks = [ 2 ];
       })
       (mkNode {
         id = 3;

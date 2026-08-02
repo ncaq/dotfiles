@@ -77,6 +77,80 @@ let
     widgetName
     config
   ];
+  # LoRA Managerの`Lora Loader (LoraManager)`ノード。
+  # LoRAが未指定ならMODELとCLIPをそのまま素通しするので、
+  # 常に配線したままで良い。
+  # LoRA Managerの管理画面のSend to Workflowがこのノードへ流し込む。
+  #
+  # 入力スロットの並びとウィジェットの並びはノード定義に一致させる必要があり、
+  # 崩れるとSend to Workflowが動かなくなる。
+  # UIで開くまで気付けないため、ここに一箇所だけ定義して`lib/builder-test.nix`で検証する。
+  # ウィジェットは順に、LoRA一覧を保持する内部状態、テキスト、有効なLoRAのリスト。
+  #
+  # CLIPとlora_stackは`shape = 7`のオプション入力になっている。
+  # UNETにだけ作用するLoRAを扱うワークフローでは、
+  # `clipLink`を省略してCLIPを繋がずに使う。
+  mkLoraLoader =
+    {
+      id,
+      pos,
+      order,
+      title ? null,
+      # MODEL入力へ繋ぐリンクID。
+      modelLink,
+      # CLIP入力へ繋ぐリンクID。nullならCLIPは未接続にする。
+      clipLink ? null,
+      # MODEL出力から出るリンクIDのリスト。
+      modelLinks,
+      # CLIP出力から出るリンクIDのリスト。
+      clipLinks ? [ ],
+    }:
+    mkNode {
+      inherit
+        id
+        pos
+        order
+        title
+        ;
+      type = "Lora Loader (LoraManager)";
+      # フロントエンドがLoRA一覧の領域を確保するため最低でもこの程度の高さで描画される。
+      size = [
+        385
+        350
+      ];
+      inputs = [
+        (mkInput "model" "MODEL" modelLink)
+        {
+          name = "text";
+          type = "AUTOCOMPLETE_TEXT_LORAS";
+          widget = {
+            name = "text";
+          };
+          link = null;
+        }
+        ((mkInput "clip" "CLIP" clipLink) // { shape = 7; })
+        {
+          name = "lora_stack";
+          type = "LORA_STACK";
+          shape = 7;
+          link = null;
+        }
+      ];
+      outputs = [
+        (mkOutput "MODEL" "MODEL" modelLinks)
+        (mkOutput "CLIP" "CLIP" clipLinks)
+        (mkOutput "trigger_words" "STRING" [ ])
+        (mkOutput "loaded_loras" "STRING" [ ])
+      ];
+      widgets = [
+        {
+          version = 1;
+          textWidgetName = "text";
+        }
+        ""
+        [ ]
+      ];
+    };
   mkWorkflow =
     {
       nodes,
@@ -150,59 +224,21 @@ let
         widgets = [ checkpoint ];
       })
       # オプショナルなLoRA適用。
-      # 未指定ならMODELとCLIPをそのまま素通しする。
-      # LoRA Managerの管理画面のSend to Workflowがこのノードへ流し込む。
-      (mkNode {
+      (mkLoraLoader {
         id = 16;
-        type = "Lora Loader (LoraManager)";
         pos = [
           (-40)
           200
         ];
-        # フロントエンドがLoRA一覧の領域を確保するため最低でもこの程度の高さで描画される。
-        size = [
-          385
-          350
-        ];
         order = 1;
-        inputs = [
-          (mkInput "model" "MODEL" 28)
-          {
-            name = "text";
-            type = "AUTOCOMPLETE_TEXT_LORAS";
-            widget = {
-              name = "text";
-            };
-            link = null;
-          }
-          ((mkInput "clip" "CLIP" 29) // { shape = 7; })
-          {
-            name = "lora_stack";
-            type = "LORA_STACK";
-            shape = 7;
-            link = null;
-          }
-        ];
-        outputs = [
-          (mkOutput "MODEL" "MODEL" ([ 1 ] ++ extraModelLinks))
-          (mkOutput "CLIP" "CLIP" (
-            [
-              2
-              3
-            ]
-            ++ extraClipLinks
-          ))
-          (mkOutput "trigger_words" "STRING" [ ])
-          (mkOutput "loaded_loras" "STRING" [ ])
-        ];
-        widgets = [
-          {
-            version = 1;
-            textWidgetName = "text";
-          }
-          ""
-          [ ]
-        ];
+        modelLink = 28;
+        clipLink = 29;
+        modelLinks = [ 1 ] ++ extraModelLinks;
+        clipLinks = [
+          2
+          3
+        ]
+        ++ extraClipLinks;
       })
       (mkNode {
         id = 2;
@@ -378,6 +414,7 @@ in
     mkNode
     mkInput
     mkOutput
+    mkLoraLoader
     mkAppInput
     mkAppInputWith
     mkWorkflow

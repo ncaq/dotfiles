@@ -22,6 +22,7 @@ let
     mkNode
     mkInput
     mkOutput
+    mkLoraLoader
     mkAppInput
     mkAppInputWith
     mkWorkflow
@@ -62,59 +63,16 @@ in
         ];
       })
       # オプショナルなLoRA適用。
-      # 未指定ならMODELをそのまま素通しする。
-      # LoRA Managerの管理画面のSend to Workflowがこのノードへ流し込む。
       # Qwen系のLoRAはUNETにだけ作用するのでCLIPは繋がない。
-      (mkNode {
+      (mkLoraLoader {
         id = 16;
-        type = "Lora Loader (LoraManager)";
         pos = [
           (-40)
           200
         ];
-        # フロントエンドがLoRA一覧の領域を確保するため最低でもこの程度の高さで描画される。
-        size = [
-          385
-          350
-        ];
         order = 1;
-        inputs = [
-          (mkInput "model" "MODEL" 21)
-          {
-            name = "text";
-            type = "AUTOCOMPLETE_TEXT_LORAS";
-            widget = {
-              name = "text";
-            };
-            link = null;
-          }
-          {
-            name = "clip";
-            type = "CLIP";
-            shape = 7;
-            link = null;
-          }
-          {
-            name = "lora_stack";
-            type = "LORA_STACK";
-            shape = 7;
-            link = null;
-          }
-        ];
-        outputs = [
-          (mkOutput "MODEL" "MODEL" [ 1 ])
-          (mkOutput "CLIP" "CLIP" [ ])
-          (mkOutput "trigger_words" "STRING" [ ])
-          (mkOutput "loaded_loras" "STRING" [ ])
-        ];
-        widgets = [
-          {
-            version = 1;
-            textWidgetName = "text";
-          }
-          ""
-          [ ]
-        ];
+        modelLink = 21;
+        modelLinks = [ 1 ];
       })
       (mkNode {
         id = 2;

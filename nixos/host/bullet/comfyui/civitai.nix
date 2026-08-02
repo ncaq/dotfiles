@@ -3,35 +3,34 @@
   config,
   ...
 }:
-let
-  environmentFile = "/run/comfyui/civitai-env";
-in
 {
   containers.comfyui = {
-    # 通常ファイルへのidmap付きbind mountはEINVALになるため使わない。
-    extraFlags = [ "--bind-ro=${config.sops.templates."civitai-env".path}:${environmentFile}" ];
-    config.systemd.services.comfyui.serviceConfig.EnvironmentFile = environmentFile;
+    # APIキーはsystemd credentialとしてコンテナへ渡す。
+    # nspawnがホストroot権限で読んでコンテナのPID 1へ引き渡すため、
+    # privateUsersのUIDマッピングやbind mountのパーミッションに依存せず、
+    # ホスト側のファイルはroot専用の0400のままにできる。
+    extraFlags = [ "--load-credential=civitai-env:${config.sops.templates."civitai-env".path}" ];
+    # コンテナのPID 1が受け取ったシステムクレデンシャルを直接読む。
+    # `/run/credentials/@system`はコンテナ内でもroot専用(0700)なので、
+    # comfyuiユーザを含む他プロセスからは読めない。
+    # LoadCredential + `%d`を使わないのは、
+    # systemdがサービス個別のcredentialディレクトリを用意するより前に、
+    # EnvironmentFileを読み込むため組み合わせられないから。
+    config.systemd.services.comfyui.serviceConfig.EnvironmentFile =
+      "/run/credentials/@system/civitai-env";
   };
   sops = {
     templates."civitai-env" = {
       content = ''
         CIVITAI_API_KEY=${config.sops.placeholder."civitai-api-key"}
       '';
-      owner = "root";
-      group = "root";
-      # privateUsersのUIDマッピングを通さずbind mountするため、
-      # コンテナ内のcomfyuiユーザが読み取れるようにする。
-      # ホスト側では親ディレクトリがroot専用で、コンテナには読み取り専用で渡す。
-      mode = "0444";
       restartUnits = [ "container@comfyui.service" ];
     };
+    # placeholder参照のための宣言。
+    # `/run/secrets`に展開されるファイル自体はどこからも参照しない。
     secrets."civitai-api-key" = {
       sopsFile = ../../../../secrets/civitai.yaml;
       key = "api_key";
-      owner = "comfyui";
-      group = "comfyui";
-      mode = "0400";
-      restartUnits = [ "container@comfyui.service" ];
     };
   };
 }

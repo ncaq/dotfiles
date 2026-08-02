@@ -23,6 +23,7 @@ in
       after = [ "local-fs.target" ];
       serviceConfig = trashHardening // {
         Type = "oneshot";
+        TimeoutStartSec = "1h";
         ExecStart = "${pkgs.trash-cli}/bin/trash-empty --all-users -f 30";
         # ゴミ箱の掃除は緊急性がないため、他の処理を最優先する。
         Nice = 19;

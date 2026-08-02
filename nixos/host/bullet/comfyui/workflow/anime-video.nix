@@ -123,7 +123,7 @@ in
         title = "low noiseモデル";
         pos = [
           1340
-          930
+          1060
         ];
         size = [
           385
@@ -142,7 +142,7 @@ in
         title = "LoRA(low noise用)";
         pos = [
           1340
-          1062
+          1192
         ];
         order = 3;
         modelLink = 39;
@@ -587,7 +587,7 @@ in
         title = "shift(high)";
         pos = [
           1340
-          572
+          702
         ];
         size = [
           315
@@ -604,7 +604,7 @@ in
         title = "shift(low)";
         pos = [
           1340
-          1462
+          1692
         ];
         size = [
           315
@@ -629,7 +629,7 @@ in
         title = "コンテキスト窓(high)";
         pos = [
           1340
-          680
+          810
         ];
         size = [
           330
@@ -656,7 +656,7 @@ in
         title = "コンテキスト窓(low)";
         pos = [
           1340
-          1570
+          1800
         ];
         size = [
           330

@@ -79,7 +79,7 @@ in
         type = "CLIPLoader";
         pos = [
           (-40)
-          640
+          700
         ];
         size = [
           385
@@ -103,7 +103,7 @@ in
         type = "VAELoader";
         pos = [
           (-40)
-          800
+          860
         ];
         size = [
           385
@@ -126,7 +126,7 @@ in
         title = "編集する画像";
         pos = [
           (-40)
-          920
+          980
         ];
         size = [
           340

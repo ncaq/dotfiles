@@ -112,6 +112,8 @@ let
         ;
       type = "Lora Loader (LoraManager)";
       # フロントエンドがLoRA一覧の領域を確保するため最低でもこの程度の高さで描画される。
+      # 実際の描画がこれを上回った場合の場所は、
+      # `lib/overlap.nix`の`growHeights`が見込んで空けさせている。
       size = [
         385
         350

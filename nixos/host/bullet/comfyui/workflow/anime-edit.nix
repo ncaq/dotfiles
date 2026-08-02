@@ -57,7 +57,7 @@ in
           type = "LoadImage";
           pos = [
             (-40)
-            620
+            700
           ];
           size = [
             340

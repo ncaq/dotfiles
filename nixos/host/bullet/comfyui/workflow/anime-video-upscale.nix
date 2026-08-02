@@ -50,6 +50,8 @@ in
       ];
     };
     nodes = [
+      # 動画を読み込むとプレビューがここより下へ展開されて伸びる。
+      # その分の場所は`lib/overlap.nix`の`growHeights`が見込んで空けさせている。
       (mkNode {
         id = 1;
         type = "LoadVideo";

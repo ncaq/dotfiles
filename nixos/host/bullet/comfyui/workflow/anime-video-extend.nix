@@ -125,7 +125,7 @@ in
         title = "low noiseモデル";
         pos = [
           1260
-          572
+          702
         ];
         size = [
           385
@@ -144,7 +144,7 @@ in
         title = "LoRA(low noise用)";
         pos = [
           1260
-          704
+          834
         ];
         order = 3;
         modelLink = 37;
@@ -194,6 +194,8 @@ in
         ];
         widgets = [ "wan_2.1_vae.safetensors" ];
       })
+      # 動画を読み込むとプレビューがここより下へ展開されて伸びる。
+      # その分の場所は`lib/overlap.nix`の`growHeights`が見込んで空けさせている。
       (mkNode {
         id = 9;
         type = "LoadVideo";
@@ -457,7 +459,7 @@ in
         type = "WanFirstLastFrameToVideo";
         pos = [
           1260
-          1320
+          1550
         ];
         size = [
           315
@@ -513,7 +515,7 @@ in
         title = "shift(high)";
         pos = [
           1260
-          1104
+          1334
         ];
         size = [
           315
@@ -530,7 +532,7 @@ in
         title = "shift(low)";
         pos = [
           1260
-          1212
+          1442
         ];
         size = [
           315

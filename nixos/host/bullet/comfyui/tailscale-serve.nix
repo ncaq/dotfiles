@@ -27,6 +27,13 @@ in
       "tailscaled.service"
     ];
     wantedBy = [ "multi-user.target" ];
+    # tailscale CLIはtailscaledのLocalAPIにUNIXソケット経由で接続するだけで、
+    # 実際のプロキシ転送はtailscaled側が行うため、
+    # UNIXソケットのみ許可のハードニングまで絞れる。
+    # このサンドボックス下でServiceの登録、
+    # drainによる停止、
+    # 再起動での再advertise、
+    # 公開URLへのHTTPSアクセスが通ることをbullet上で確認済み。
     serviceConfig = hardening.unixSocket // {
       Type = "oneshot";
       RemainAfterExit = true;

@@ -46,7 +46,7 @@ in
       promptNodes {
         # EmptyLatentImageの代わりにLoadImage+VAEEncodeからLATENTを供給する。
         withEmptyLatent = false;
-        samplerOrder = 5;
+        samplerOrder = 6;
         denoise = 0.5;
         # VAEEncodeへ。
         extraVaeLinks = [ 13 ];
@@ -57,13 +57,13 @@ in
           type = "LoadImage";
           pos = [
             (-40)
-            500
+            620
           ];
           size = [
             340
             314
           ];
-          order = 3;
+          order = 4;
           outputs = [
             (mkOutput "IMAGE" "IMAGE" [ 12 ])
             (mkOutput "MASK" "MASK" [ ])
@@ -84,7 +84,7 @@ in
             210
             46
           ];
-          order = 4;
+          order = 5;
           inputs = [
             (mkInput "pixels" "IMAGE" 12)
             (mkInput "vae" "VAE" 13)
@@ -102,7 +102,7 @@ in
             210
             46
           ];
-          order = 6;
+          order = 7;
           inputs = [
             (mkInput "samples" "LATENT" 7)
             (mkInput "vae" "VAE" 8)
@@ -120,7 +120,7 @@ in
             420
             470
           ];
-          order = 7;
+          order = 8;
           inputs = [ (mkInput "images" "IMAGE" 9) ];
           widgets = [ (mkFilenamePrefix name) ];
         })

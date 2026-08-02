@@ -96,10 +96,67 @@ in
           82
         ];
         order = 0;
-        outputs = [ (mkOutput "MODEL" "MODEL" [ 1 ]) ];
+        outputs = [ (mkOutput "MODEL" "MODEL" [ 38 ]) ];
         widgets = [
           "wan2.2_i2v_A14b_high_noise_lightx2v_4step_720p_260412.safetensors"
           "default" # weight_dtype
+        ];
+      })
+      # オプショナルなLoRA適用(high noise側)。
+      # 未指定ならMODELをそのまま素通しする。
+      # LoRA Managerの管理画面のSend to Workflowがこのノードへ流し込む。
+      # Wan 2.2のLoRAはhigh/lowで別ファイルなので対応する側へ入れる。
+      # WanのLoRAはUNETにだけ作用するのでCLIPは繋がない。
+      (mkNode {
+        id = 31;
+        type = "Lora Loader (LoraManager)";
+        title = "LoRA(high noise用)";
+        pos = [
+          1340
+          172
+        ];
+        # フロントエンドがLoRA一覧の領域を確保するため最低でもこの程度の高さで描画される。
+        size = [
+          385
+          350
+        ];
+        order = 1;
+        inputs = [
+          (mkInput "model" "MODEL" 38)
+          {
+            name = "text";
+            type = "AUTOCOMPLETE_TEXT_LORAS";
+            widget = {
+              name = "text";
+            };
+            link = null;
+          }
+          {
+            name = "clip";
+            type = "CLIP";
+            shape = 7;
+            link = null;
+          }
+          {
+            name = "lora_stack";
+            type = "LORA_STACK";
+            shape = 7;
+            link = null;
+          }
+        ];
+        outputs = [
+          (mkOutput "MODEL" "MODEL" [ 1 ])
+          (mkOutput "CLIP" "CLIP" [ ])
+          (mkOutput "trigger_words" "STRING" [ ])
+          (mkOutput "loaded_loras" "STRING" [ ])
+        ];
+        widgets = [
+          {
+            version = 1;
+            textWidgetName = "text";
+          }
+          ""
+          [ ]
         ];
       })
       (mkNode {
@@ -108,17 +165,69 @@ in
         title = "low noiseモデル";
         pos = [
           1340
-          740
+          930
         ];
         size = [
           385
           82
         ];
-        order = 1;
-        outputs = [ (mkOutput "MODEL" "MODEL" [ 2 ]) ];
+        order = 2;
+        outputs = [ (mkOutput "MODEL" "MODEL" [ 39 ]) ];
         widgets = [
           "wan2.2_i2v_A14b_low_noise_lightx2v_4step_720p_260412.safetensors"
           "default" # weight_dtype
+        ];
+      })
+      # オプショナルなLoRA適用(low noise側)。
+      (mkNode {
+        id = 32;
+        type = "Lora Loader (LoraManager)";
+        title = "LoRA(low noise用)";
+        pos = [
+          1340
+          1062
+        ];
+        size = [
+          385
+          350
+        ];
+        order = 3;
+        inputs = [
+          (mkInput "model" "MODEL" 39)
+          {
+            name = "text";
+            type = "AUTOCOMPLETE_TEXT_LORAS";
+            widget = {
+              name = "text";
+            };
+            link = null;
+          }
+          {
+            name = "clip";
+            type = "CLIP";
+            shape = 7;
+            link = null;
+          }
+          {
+            name = "lora_stack";
+            type = "LORA_STACK";
+            shape = 7;
+            link = null;
+          }
+        ];
+        outputs = [
+          (mkOutput "MODEL" "MODEL" [ 2 ])
+          (mkOutput "CLIP" "CLIP" [ ])
+          (mkOutput "trigger_words" "STRING" [ ])
+          (mkOutput "loaded_loras" "STRING" [ ])
+        ];
+        widgets = [
+          {
+            version = 1;
+            textWidgetName = "text";
+          }
+          ""
+          [ ]
         ];
       })
       (mkNode {
@@ -132,7 +241,7 @@ in
           385
           106
         ];
-        order = 2;
+        order = 4;
         outputs = [
           (mkOutput "CLIP" "CLIP" [
             3
@@ -156,7 +265,7 @@ in
           385
           58
         ];
-        order = 3;
+        order = 5;
         outputs = [
           (mkOutput "VAE" "VAE" [
             5
@@ -177,7 +286,7 @@ in
           340
           314
         ];
-        order = 4;
+        order = 6;
         outputs = [
           (mkOutput "IMAGE" "IMAGE" [ 11 ])
           (mkOutput "MASK" "MASK" [ ])
@@ -202,7 +311,7 @@ in
           340
           314
         ];
-        order = 5;
+        order = 7;
         outputs = [
           (mkOutput "IMAGE" "IMAGE" [ 37 ])
           (mkOutput "MASK" "MASK" [ ])
@@ -227,7 +336,7 @@ in
           315
           130
         ];
-        order = 6;
+        order = 8;
         inputs = [ (mkInput "image" "IMAGE" 11) ];
         outputs = [
           (mkOutput "IMAGE" "IMAGE" [
@@ -253,7 +362,7 @@ in
           240
           86
         ];
-        order = 7;
+        order = 9;
         inputs = [ (mkInput "image" "IMAGE" 27) ];
         outputs = [
           (mkOutput "width" "INT" [ 28 ])
@@ -275,7 +384,7 @@ in
           460
           106
         ];
-        order = 8;
+        order = 10;
         outputs = [ (mkOutput "INT" "INT" [ 32 ]) ];
         widgets = [
           1 # value
@@ -299,7 +408,7 @@ in
           315
           106
         ];
-        order = 9;
+        order = 11;
         inputs = [
           (mkInput "values.a" "FLOAT,INT,BOOLEAN" 32)
           # autogrowの次の空きスロット。shape 7はoptionalの意味。
@@ -333,7 +442,7 @@ in
           315
           106
         ];
-        order = 10;
+        order = 12;
         inputs = [
           (mkInput "values.a" "FLOAT,INT,BOOLEAN" 35)
           # autogrowの次の空きスロット。shape 7はoptionalの意味。
@@ -366,7 +475,7 @@ in
           240
           106
         ];
-        order = 11;
+        order = 13;
         inputs = [ (mkInput "source" "*" 36) ];
       })
       # 動きの指示をここに書く。
@@ -383,7 +492,7 @@ in
           420
           200
         ];
-        order = 12;
+        order = 14;
         outputs = [ (mkOutput "english_text" "STRING" [ 23 ]) ];
         widgets = [ "カメラはゆっくりと近づく。キャラクターは穏やかに微笑み、髪と服が風に揺れる。" ];
       })
@@ -400,7 +509,7 @@ in
           340
           130
         ];
-        order = 13;
+        order = 15;
         inputs = [
           (
             mkInput "string_b" "STRING" 23
@@ -437,7 +546,7 @@ in
           340
           200
         ];
-        order = 14;
+        order = 16;
         inputs = [ (mkInput "source" "*" 25) ];
       })
       (mkNode {
@@ -452,7 +561,7 @@ in
           420
           160
         ];
-        order = 15;
+        order = 17;
         inputs = [
           (mkInput "clip" "CLIP" 3)
           (
@@ -481,7 +590,7 @@ in
           420
           160
         ];
-        order = 16;
+        order = 18;
         inputs = [ (mkInput "clip" "CLIP" 4) ];
         outputs = [ (mkOutput "CONDITIONING" "CONDITIONING" [ 13 ]) ];
         widgets = [ negativePrompt ];
@@ -502,7 +611,7 @@ in
           315
           230
         ];
-        order = 17;
+        order = 19;
         inputs = [
           (mkInput "positive" "CONDITIONING" 12)
           (mkInput "negative" "CONDITIONING" 13)
@@ -560,13 +669,13 @@ in
         title = "shift(high)";
         pos = [
           1340
-          340
+          572
         ];
         size = [
           315
           58
         ];
-        order = 18;
+        order = 20;
         inputs = [ (mkInput "model" "MODEL" 1) ];
         outputs = [ (mkOutput "MODEL" "MODEL" [ 9 ]) ];
         widgets = [ 5 ]; # shift
@@ -577,13 +686,13 @@ in
         title = "shift(low)";
         pos = [
           1340
-          1020
+          1462
         ];
         size = [
           315
           58
         ];
-        order = 19;
+        order = 21;
         inputs = [ (mkInput "model" "MODEL" 2) ];
         outputs = [ (mkOutput "MODEL" "MODEL" [ 10 ]) ];
         widgets = [ 5 ]; # shift
@@ -602,13 +711,13 @@ in
         title = "コンテキスト窓(high)";
         pos = [
           1340
-          460
+          680
         ];
         size = [
           330
           200
         ];
-        order = 20;
+        order = 22;
         inputs = [ (mkInput "model" "MODEL" 9) ];
         outputs = [ (mkOutput "MODEL" "MODEL" [ 33 ]) ];
         widgets = [
@@ -629,13 +738,13 @@ in
         title = "コンテキスト窓(low)";
         pos = [
           1340
-          1140
+          1570
         ];
         size = [
           330
           200
         ];
-        order = 21;
+        order = 23;
         inputs = [ (mkInput "model" "MODEL" 10) ];
         outputs = [ (mkOutput "MODEL" "MODEL" [ 34 ]) ];
         widgets = [
@@ -663,7 +772,7 @@ in
           315
           334
         ];
-        order = 22;
+        order = 24;
         inputs = [
           (mkInput "model" "MODEL" 33)
           (mkInput "positive" "CONDITIONING" 14)
@@ -698,7 +807,7 @@ in
           315
           334
         ];
-        order = 23;
+        order = 25;
         inputs = [
           (mkInput "model" "MODEL" 34)
           (mkInput "positive" "CONDITIONING" 15)
@@ -730,7 +839,7 @@ in
           210
           46
         ];
-        order = 24;
+        order = 26;
         inputs = [
           (mkInput "samples" "LATENT" 20)
           (mkInput "vae" "VAE" 6)
@@ -749,7 +858,7 @@ in
           420
           470
         ];
-        order = 25;
+        order = 27;
         inputs = [ (mkInput "images" "IMAGE" 21) ];
         widgets = [
           (mkFilenamePrefix name) # filename_prefix
@@ -760,16 +869,32 @@ in
     ];
     links = [
       [
+        38
         1
+        0
+        31
+        0
+        "MODEL"
+      ]
+      [
         1
+        31
         0
         7
         0
         "MODEL"
       ]
       [
+        39
         2
+        0
+        32
+        0
+        "MODEL"
+      ]
+      [
         2
+        32
         0
         8
         0

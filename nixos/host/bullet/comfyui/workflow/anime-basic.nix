@@ -44,7 +44,7 @@ in
           210
           46
         ];
-        order = 5;
+        order = 6;
         inputs = [
           (mkInput "samples" "LATENT" 7)
           (mkInput "vae" "VAE" 8)
@@ -62,7 +62,7 @@ in
           420
           470
         ];
-        order = 6;
+        order = 7;
         inputs = [ (mkInput "images" "IMAGE" 9) ];
         widgets = [ (mkFilenamePrefix name) ];
       })

@@ -97,12 +97,17 @@ let
       version = 0.4;
     };
 
-  # checkpoint読み込みとプロンプトエンコードの共通部分。
+  # checkpoint読み込み、LoRA適用、プロンプトエンコードの共通部分。
   # どのワークフローも同じノードIDとリンクIDで始まる。
-  # リンク: 1=MODEL→KSampler, 2/3=CLIP→TextEncode,
+  # リンク: 28=MODEL→LoraLoader, 29=CLIP→LoraLoader,
+  # 1=MODEL→KSampler, 2/3=CLIP→TextEncode,
   # 4/5=CONDITIONING→KSampler, 6=LATENT→KSampler
   # 後段の構成によっては同じ出力を追加のノードにも繋ぐので、
   # 追加のリンクIDを引数で受け取る。
+  # MODELとCLIPの追加リンクはLoRA適用後のLoraLoader(ノード16)から出る。
+  #
+  # LoraLoaderのノードID 16とリンクID 28/29は、
+  # 呼び出し元が使うIDと衝突しない大きめの値を予約している。
   #
   # img2imgのようにEmptyLatentImage以外からLATENTを供給する場合は、
   # `withEmptyLatent = false`にして、
@@ -117,7 +122,7 @@ let
       denoise ? 1,
       # withEmptyLatent = falseで代替ノードを複数挟む場合に、
       # KSamplerのorderを後ろへずらすための値。
-      samplerOrder ? 4,
+      samplerOrder ? 5,
       extraModelLinks ? [ ],
       extraClipLinks ? [ ],
       extraVaeLinks ? [ ],
@@ -130,13 +135,54 @@ let
         type = "CheckpointLoaderSimple";
         pos = [
           (-40)
-          200
+          20
         ];
         size = [
           385
           98
         ];
         order = 0;
+        outputs = [
+          (mkOutput "MODEL" "MODEL" [ 28 ])
+          (mkOutput "CLIP" "CLIP" [ 29 ])
+          (mkOutput "VAE" "VAE" ([ 8 ] ++ extraVaeLinks))
+        ];
+        widgets = [ checkpoint ];
+      })
+      # オプショナルなLoRA適用。
+      # 未指定ならMODELとCLIPをそのまま素通しする。
+      # LoRA Managerの管理画面のSend to Workflowがこのノードへ流し込む。
+      (mkNode {
+        id = 16;
+        type = "Lora Loader (LoraManager)";
+        pos = [
+          (-40)
+          200
+        ];
+        # フロントエンドがLoRA一覧の領域を確保するため最低でもこの程度の高さで描画される。
+        size = [
+          385
+          350
+        ];
+        order = 1;
+        inputs = [
+          (mkInput "model" "MODEL" 28)
+          {
+            name = "text";
+            type = "AUTOCOMPLETE_TEXT_LORAS";
+            widget = {
+              name = "text";
+            };
+            link = null;
+          }
+          ((mkInput "clip" "CLIP" 29) // { shape = 7; })
+          {
+            name = "lora_stack";
+            type = "LORA_STACK";
+            shape = 7;
+            link = null;
+          }
+        ];
         outputs = [
           (mkOutput "MODEL" "MODEL" ([ 1 ] ++ extraModelLinks))
           (mkOutput "CLIP" "CLIP" (
@@ -146,9 +192,17 @@ let
             ]
             ++ extraClipLinks
           ))
-          (mkOutput "VAE" "VAE" ([ 8 ] ++ extraVaeLinks))
+          (mkOutput "trigger_words" "STRING" [ ])
+          (mkOutput "loaded_loras" "STRING" [ ])
         ];
-        widgets = [ checkpoint ];
+        widgets = [
+          {
+            version = 1;
+            textWidgetName = "text";
+          }
+          ""
+          [ ]
+        ];
       })
       (mkNode {
         id = 2;
@@ -161,7 +215,7 @@ let
           420
           160
         ];
-        order = 1;
+        order = 2;
         inputs = [ (mkInput "clip" "CLIP" 2) ];
         outputs = [ (mkOutput "CONDITIONING" "CONDITIONING" ([ 4 ] ++ extraPositiveLinks)) ];
         widgets = [ positivePrompt ];
@@ -177,7 +231,7 @@ let
           420
           160
         ];
-        order = 2;
+        order = 3;
         inputs = [ (mkInput "clip" "CLIP" 3) ];
         outputs = [ (mkOutput "CONDITIONING" "CONDITIONING" ([ 5 ] ++ extraNegativeLinks)) ];
         widgets = [ negativePrompt ];
@@ -194,7 +248,7 @@ let
         315
         106
       ];
-      order = 3;
+      order = 4;
       outputs = [ (mkOutput "LATENT" "LATENT" [ 6 ]) ];
       widgets = [
         width
@@ -236,8 +290,24 @@ let
   # 代替のLATENT源からリンク6を自前で張る。
   promptBaseLinks = [
     [
+      28
+      1
+      0
+      16
+      0
+      "MODEL"
+    ]
+    [
+      29
       1
       1
+      16
+      2
+      "CLIP"
+    ]
+    [
+      1
+      16
       0
       5
       0
@@ -245,7 +315,7 @@ let
     ]
     [
       2
-      1
+      16
       1
       2
       0
@@ -253,7 +323,7 @@ let
     ]
     [
       3
-      1
+      16
       1
       3
       0

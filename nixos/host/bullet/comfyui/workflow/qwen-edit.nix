@@ -55,10 +55,65 @@ in
           82
         ];
         order = 0;
-        outputs = [ (mkOutput "MODEL" "MODEL" [ 1 ]) ];
+        outputs = [ (mkOutput "MODEL" "MODEL" [ 21 ]) ];
         widgets = [
           "qwen_image_edit_2511_fp8mixed.safetensors"
           "default" # weight_dtype
+        ];
+      })
+      # オプショナルなLoRA適用。
+      # 未指定ならMODELをそのまま素通しする。
+      # LoRA Managerの管理画面のSend to Workflowがこのノードへ流し込む。
+      # Qwen系のLoRAはUNETにだけ作用するのでCLIPは繋がない。
+      (mkNode {
+        id = 16;
+        type = "Lora Loader (LoraManager)";
+        pos = [
+          (-40)
+          200
+        ];
+        # フロントエンドがLoRA一覧の領域を確保するため最低でもこの程度の高さで描画される。
+        size = [
+          385
+          350
+        ];
+        order = 1;
+        inputs = [
+          (mkInput "model" "MODEL" 21)
+          {
+            name = "text";
+            type = "AUTOCOMPLETE_TEXT_LORAS";
+            widget = {
+              name = "text";
+            };
+            link = null;
+          }
+          {
+            name = "clip";
+            type = "CLIP";
+            shape = 7;
+            link = null;
+          }
+          {
+            name = "lora_stack";
+            type = "LORA_STACK";
+            shape = 7;
+            link = null;
+          }
+        ];
+        outputs = [
+          (mkOutput "MODEL" "MODEL" [ 1 ])
+          (mkOutput "CLIP" "CLIP" [ ])
+          (mkOutput "trigger_words" "STRING" [ ])
+          (mkOutput "loaded_loras" "STRING" [ ])
+        ];
+        widgets = [
+          {
+            version = 1;
+            textWidgetName = "text";
+          }
+          ""
+          [ ]
         ];
       })
       (mkNode {
@@ -66,13 +121,13 @@ in
         type = "CLIPLoader";
         pos = [
           (-40)
-          200
+          640
         ];
         size = [
           385
           106
         ];
-        order = 1;
+        order = 2;
         outputs = [
           (mkOutput "CLIP" "CLIP" [
             2
@@ -90,13 +145,13 @@ in
         type = "VAELoader";
         pos = [
           (-40)
-          360
+          800
         ];
         size = [
           385
           58
         ];
-        order = 2;
+        order = 3;
         outputs = [
           (mkOutput "VAE" "VAE" [
             4
@@ -113,13 +168,13 @@ in
         title = "編集する画像";
         pos = [
           (-40)
-          480
+          920
         ];
         size = [
           340
           314
         ];
-        order = 3;
+        order = 4;
         outputs = [
           (mkOutput "IMAGE" "IMAGE" [ 8 ])
           (mkOutput "MASK" "MASK" [ ])
@@ -141,7 +196,7 @@ in
           240
           46
         ];
-        order = 4;
+        order = 5;
         inputs = [ (mkInput "image" "IMAGE" 8) ];
         outputs = [
           (mkOutput "IMAGE" "IMAGE" [
@@ -165,7 +220,7 @@ in
           420
           200
         ];
-        order = 5;
+        order = 6;
         outputs = [
           (mkOutput "english_text" "STRING" [
             19
@@ -188,7 +243,7 @@ in
           340
           200
         ];
-        order = 6;
+        order = 7;
         inputs = [ (mkInput "source" "*" 20) ];
       })
       # 編集指示。画像を参照しながら指示文をエンコードする。
@@ -206,7 +261,7 @@ in
           420
           200
         ];
-        order = 7;
+        order = 8;
         inputs = [
           (mkInput "clip" "CLIP" 2)
           (mkInput "vae" "VAE" 4)
@@ -236,7 +291,7 @@ in
           420
           160
         ];
-        order = 8;
+        order = 9;
         inputs = [
           (mkInput "clip" "CLIP" 3)
           (mkInput "vae" "VAE" 5)
@@ -256,7 +311,7 @@ in
           315
           58
         ];
-        order = 9;
+        order = 10;
         inputs = [ (mkInput "model" "MODEL" 1) ];
         outputs = [ (mkOutput "MODEL" "MODEL" [ 14 ]) ];
         widgets = [ 3.1 ]; # shift
@@ -272,7 +327,7 @@ in
           315
           82
         ];
-        order = 10;
+        order = 11;
         inputs = [ (mkInput "model" "MODEL" 14) ];
         outputs = [ (mkOutput "patched_model" "MODEL" [ 15 ]) ];
         widgets = [
@@ -291,7 +346,7 @@ in
           210
           46
         ];
-        order = 11;
+        order = 12;
         inputs = [
           (mkInput "pixels" "IMAGE" 11)
           (mkInput "vae" "VAE" 6)
@@ -309,7 +364,7 @@ in
           315
           262
         ];
-        order = 12;
+        order = 13;
         inputs = [
           (mkInput "model" "MODEL" 15)
           (mkInput "positive" "CONDITIONING" 12)
@@ -336,7 +391,7 @@ in
           210
           46
         ];
-        order = 13;
+        order = 14;
         inputs = [
           (mkInput "samples" "LATENT" 17)
           (mkInput "vae" "VAE" 7)
@@ -354,15 +409,23 @@ in
           420
           470
         ];
-        order = 14;
+        order = 15;
         inputs = [ (mkInput "images" "IMAGE" 18) ];
         widgets = [ (mkFilenamePrefix name) ];
       })
     ];
     links = [
       [
+        21
         1
+        0
+        16
+        0
+        "MODEL"
+      ]
+      [
         1
+        16
         0
         8
         0

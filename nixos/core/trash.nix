@@ -20,7 +20,11 @@ in
   systemd = {
     services.trash-empty = {
       description = "Remove files older than 30 days from all trash cans";
-      after = [ "local-fs.target" ];
+      after = [
+        "local-fs.target"
+        "remote-fs.target"
+        "mnt-chihiro.mount"
+      ];
       serviceConfig = trashHardening // {
         Type = "oneshot";
         TimeoutStartSec = "1h";

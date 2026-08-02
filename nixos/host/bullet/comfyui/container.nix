@@ -102,6 +102,26 @@ in
           cudaCapabilities = [ "12.0" ];
         };
         seedvr2PythonDeps = with comfyuiPython.pkgs; [ rotary-embedding-torch ];
+        loraManagerPythonEnv = comfyuiPython.withPackages (
+          pythonPkgs: with pythonPkgs; [
+            aiohttp
+            aiohttp-socks
+            aiosqlite
+            beautifulsoup4
+            brotli
+            gitpython
+            jinja2
+            natsort
+            numpy
+            olefile
+            piexif
+            pillow
+            platformdirs
+            pyyaml
+            safetensors
+            toml
+          ]
+        );
       in
       {
         imports = [ inputs.utensils-comfyui-nix.nixosModules.default ];
@@ -144,7 +164,13 @@ in
           # SeedVR2のVAE attentionが実行時コンパイルにNVRTCを使う。
           # ComfyUIのtorchと同じCUDAパッケージセットから検索パスを指定する。
           LD_LIBRARY_PATH = lib.makeLibraryPath [ cudaNvrtc ];
-          PYTHONPATH = lib.makeSearchPath comfyuiPython.sitePackages ([ sageattention ] ++ seedvr2PythonDeps);
+          PYTHONPATH = lib.makeSearchPath comfyuiPython.sitePackages (
+            [
+              sageattention
+              loraManagerPythonEnv
+            ]
+            ++ seedvr2PythonDeps
+          );
           TRITON_CUDACRT_PATH = "${cudaPackages.cuda_cudart}/include";
           TRITON_LIBCUDA_PATH = "/run/opengl-driver/lib";
           TRITON_LIBDEVICE_PATH = "${cudaNvcc}/nvvm/libdevice/libdevice.10.bc";

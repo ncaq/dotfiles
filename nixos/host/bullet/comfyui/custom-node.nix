@@ -7,7 +7,11 @@
 # comfyui-nixのPython環境には主要カスタムノードの依存
 # (ultralytics, segment-anything, opencv4など)が同梱されているので、
 # ここではソースを配置するだけでよい。
-{ config, pkgs, ... }:
+{
+  pkgs,
+  config,
+  ...
+}:
 let
   dataDir = config.containers.comfyui.config.services.comfyui.dataDir;
   # ComfyUI-Autocomplete-PlusがタグCSVをダウンロードする先。
@@ -23,6 +27,13 @@ in
       # Power Lora Loaderなどワークフロー整理のノード群。
       # comfyui-nixがパッケージ済みのものを使う。
       "rgthree-comfy" = pkgs.comfyui-custom-nodes.rgthree-comfy;
+      # Civitaiからの取得、プレビュー、トリガーワード、レシピを一元管理する。
+      "ComfyUI-Lora-Manager" = pkgs.fetchFromGitHub {
+        owner = "willmiao";
+        repo = "ComfyUI-Lora-Manager";
+        tag = "v1.2.0";
+        hash = "sha256-xwAXjD5/Yxlmz5F1bKlw6iksiRf+SuNAoeeUnhohfM4=";
+      };
       # 複数フレームを同時に参照して時間的一貫性を保つ動画超解像。
       # RTX 5090では7B FP16モデルをBlockSwapとVAE tiling付きで使う。
       "ComfyUI-SeedVR2_VideoUpscaler" = pkgs.applyPatches {

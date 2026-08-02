@@ -208,6 +208,7 @@ let
       checkpoints = "checkpoints";
       controlnet = "controlnet";
       diffusion_models = "diffusion_models";
+      loras = "loras";
       seedvr2 = "SEEDVR2";
       text_encoders = "text_encoders";
       ultralytics = "ultralytics";
@@ -230,6 +231,8 @@ in
       "--extra-model-paths-config"
       "${extraModelPaths}"
     ];
-    systemd.tmpfiles.rules = [ "d ${dataDir}/models 0755 comfyui comfyui - -" ];
+    systemd.tmpfiles.rules = [
+      "d ${dataDir}/models 0755 comfyui comfyui - -"
+    ];
   };
 }

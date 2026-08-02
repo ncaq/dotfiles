@@ -1,6 +1,7 @@
 # 宣言された全ワークフローの構造とレイアウトを評価時に検証する。
 #
 # 存在しないノードへのリンクやノードの重なり、
+# ノードIDやリンクIDの重複、
 # 実行順(`order`)の重複や依存への逆行はUIで開くまで気付きにくく、
 # ノードを追加するたびに手動検証が漏れて何度も再発したため、
 # NixOSのassertionsで機械的に検出する。
@@ -9,6 +10,8 @@
 { config, lib, ... }:
 let
   builderTest = import ./lib/builder-test.nix { inherit lib; };
+  duplicate = import ./lib/duplicate.nix { inherit lib; };
+  duplicateTest = import ./lib/duplicate-test.nix { inherit lib; };
   link = import ./lib/link.nix { inherit lib; };
   linkTest = import ./lib/link-test.nix { inherit lib; };
   order = import ./lib/order.nix { inherit lib; };
@@ -34,6 +37,7 @@ let
   );
 in
 assert builderTest;
+assert duplicateTest;
 assert linkTest;
 assert orderTest;
 assert overlapTest;
@@ -42,6 +46,7 @@ assert overlapTest;
     lib.mapAttrsToList (
       name: workflow:
       let
+        duplicateIdErrors = duplicate.duplicateIdErrors workflow;
         linkErrors = link.invalidReferences workflow;
         orderErrors = order.orderErrors workflow;
         overlappingNodePairs = overlap.overlappingNodePairs workflow.nodes;
@@ -61,6 +66,13 @@ assert overlapTest;
         missingModels = lib.filter (model: !(lib.elem model modelNames)) referencedModels;
       in
       [
+        {
+          assertion = duplicateIdErrors == [ ];
+          message = ''
+            ComfyUIワークフロー${name}で以下のIDが重複しています:
+            ${lib.concatStringsSep "\n" duplicateIdErrors}
+          '';
+        }
         {
           assertion = linkErrors == [ ];
           message = ''

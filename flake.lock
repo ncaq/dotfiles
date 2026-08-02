@@ -383,11 +383,11 @@
         "nmd": "nmd"
       },
       "locked": {
-        "lastModified": 1782163734,
-        "narHash": "sha256-zHC7IBDDlxgnfkYv4Y+Sk2DEVpb1FS5yU08Q3il7vRc=",
+        "lastModified": 1783837781,
+        "narHash": "sha256-2MKUKRNV+5qs3nbQDmz7L6KRHSEHDy/lZjfIAYMZSOE=",
         "owner": "newAM",
         "repo": "nix-on-droid",
-        "rev": "dff2d1eb9b40d88c523a62252d899219105c5517",
+        "rev": "4f963e270e6dc7f3cfb412c73a0eb8c0c350bce2",
         "type": "github"
       },
       "original": {

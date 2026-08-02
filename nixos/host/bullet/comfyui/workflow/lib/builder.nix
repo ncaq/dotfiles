@@ -77,6 +77,88 @@ let
     widgetName
     config
   ];
+  # LoRA Managerの`Lora Loader (LoraManager)`ノード。
+  # LoRAが未指定ならMODELとCLIPをそのまま素通しするので、
+  # 常に配線したままで良い。
+  # LoRA Managerの管理画面のSend to Workflowがこのノードへ流し込む。
+  #
+  # 入力スロットの並びとウィジェットの並びはノード定義に一致させる必要があり、
+  # 崩れるとSend to Workflowが動かなくなる。
+  # UIで開くまで気付けないため、ここに一箇所だけ定義して`lib/builder-test.nix`で検証する。
+  #
+  # UNETにだけ作用するLoRAを扱うワークフローでは、
+  # `clipLink`を省略してCLIPを繋がずに使う。
+  mkLoraLoader =
+    {
+      id,
+      pos,
+      order,
+      title ? null,
+      # MODEL入力へ繋ぐリンクID。
+      modelLink,
+      # CLIP入力へ繋ぐリンクID。nullならCLIPは未接続にする。
+      clipLink ? null,
+      # MODEL出力から出るリンクIDのリスト。
+      modelLinks,
+      # CLIP出力から出るリンクIDのリスト。
+      clipLinks ? [ ],
+    }:
+    mkNode {
+      inherit
+        id
+        pos
+        order
+        title
+        ;
+      type = "Lora Loader (LoraManager)";
+      # フロントエンドがLoRA一覧の領域を確保するため最低でもこの程度の高さで描画される。
+      # 実際の描画がこれを上回った場合の場所は、
+      # `lib/overlap.nix`の`growHeights`が見込んで空けさせている。
+      size = [
+        385
+        350
+      ];
+      inputs = [
+        (mkInput "model" "MODEL" modelLink)
+        # textウィジェットに対応する入力スロット。
+        # ソケットへ繋がずウィジェットとして使うので`link`はnullのまま。
+        {
+          name = "text";
+          type = "AUTOCOMPLETE_TEXT_LORAS";
+          widget = {
+            name = "text";
+          };
+          link = null;
+        }
+        # shape 7はoptionalの意味。
+        ((mkInput "clip" "CLIP" clipLink) // { shape = 7; })
+        # 他のLoRAノードから積み上げる時だけ使うオプション入力。
+        {
+          name = "lora_stack";
+          type = "LORA_STACK";
+          shape = 7;
+          link = null;
+        }
+      ];
+      outputs = [
+        (mkOutput "MODEL" "MODEL" modelLinks)
+        (mkOutput "CLIP" "CLIP" clipLinks)
+        # LoRAのトリガーワードと適用したLoRAの一覧を文字列で出す補助出力。
+        # プロンプトへ繋ぐ使い方があるが、ここでは使わないので未接続にする。
+        (mkOutput "trigger_words" "STRING" [ ])
+        (mkOutput "loaded_loras" "STRING" [ ])
+      ];
+      widgets = [
+        # __lm_autocomplete_meta_text
+        # (テキスト補完のメタデータ。対応するテキストウィジェット名を持つ隠しウィジェット)
+        {
+          version = 1;
+          textWidgetName = "text";
+        }
+        "" # text(`<lora:名前:強度>`形式のLoRA指定)
+        [ ] # loras(LoRAごとの名前と強度と有効状態のリスト。Send to Workflowが書き込む)
+      ];
+    };
   mkWorkflow =
     {
       nodes,
@@ -97,12 +179,23 @@ let
       version = 0.4;
     };
 
-  # checkpoint読み込みとプロンプトエンコードの共通部分。
+  # checkpoint読み込み、LoRA適用、プロンプトエンコードの共通部分。
   # どのワークフローも同じノードIDとリンクIDで始まる。
-  # リンク: 1=MODEL→KSampler, 2/3=CLIP→TextEncode,
+  # リンク: 28=MODEL→LoraLoader, 29=CLIP→LoraLoader,
+  # 1=MODEL→KSampler, 2/3=CLIP→TextEncode,
   # 4/5=CONDITIONING→KSampler, 6=LATENT→KSampler
   # 後段の構成によっては同じ出力を追加のノードにも繋ぐので、
   # 追加のリンクIDを引数で受け取る。
+  # MODELとCLIPの追加リンクはLoRA適用後のLoraLoader(ノード16)から出る。
+  #
+  # ここが使うのはノードID 1から5と16、
+  # リンクID 1から8(`withEmptyLatent = false`なら6を除く)と28/29なので、
+  # 呼び出し元はこれらを避けて番号を振る。
+  # LoraLoaderのノード16とリンク28/29には余裕がない。
+  # 最も多くのノードを使う`lib/standard.nix`はノード15とリンク27まで使い切っていて、
+  # これらはちょうど次の空き番号だからで、
+  # 呼び出し元がノードやリンクを1つ足すだけで自然に衝突する。
+  # 衝突した場合は`lib/duplicate.nix`の検証が評価時に検出する。
   #
   # img2imgのようにEmptyLatentImage以外からLATENTを供給する場合は、
   # `withEmptyLatent = false`にして、
@@ -117,7 +210,7 @@ let
       denoise ? 1,
       # withEmptyLatent = falseで代替ノードを複数挟む場合に、
       # KSamplerのorderを後ろへずらすための値。
-      samplerOrder ? 4,
+      samplerOrder ? 5,
       extraModelLinks ? [ ],
       extraClipLinks ? [ ],
       extraVaeLinks ? [ ],
@@ -130,7 +223,7 @@ let
         type = "CheckpointLoaderSimple";
         pos = [
           (-40)
-          200
+          20
         ];
         size = [
           385
@@ -138,17 +231,28 @@ let
         ];
         order = 0;
         outputs = [
-          (mkOutput "MODEL" "MODEL" ([ 1 ] ++ extraModelLinks))
-          (mkOutput "CLIP" "CLIP" (
-            [
-              2
-              3
-            ]
-            ++ extraClipLinks
-          ))
+          (mkOutput "MODEL" "MODEL" [ 28 ])
+          (mkOutput "CLIP" "CLIP" [ 29 ])
           (mkOutput "VAE" "VAE" ([ 8 ] ++ extraVaeLinks))
         ];
         widgets = [ checkpoint ];
+      })
+      # オプショナルなLoRA適用。
+      (mkLoraLoader {
+        id = 16;
+        pos = [
+          (-40)
+          200
+        ];
+        order = 1;
+        modelLink = 28;
+        clipLink = 29;
+        modelLinks = [ 1 ] ++ extraModelLinks;
+        clipLinks = [
+          2
+          3
+        ]
+        ++ extraClipLinks;
       })
       (mkNode {
         id = 2;
@@ -161,7 +265,7 @@ let
           420
           160
         ];
-        order = 1;
+        order = 2;
         inputs = [ (mkInput "clip" "CLIP" 2) ];
         outputs = [ (mkOutput "CONDITIONING" "CONDITIONING" ([ 4 ] ++ extraPositiveLinks)) ];
         widgets = [ positivePrompt ];
@@ -177,7 +281,7 @@ let
           420
           160
         ];
-        order = 2;
+        order = 3;
         inputs = [ (mkInput "clip" "CLIP" 3) ];
         outputs = [ (mkOutput "CONDITIONING" "CONDITIONING" ([ 5 ] ++ extraNegativeLinks)) ];
         widgets = [ negativePrompt ];
@@ -194,7 +298,7 @@ let
         315
         106
       ];
-      order = 3;
+      order = 4;
       outputs = [ (mkOutput "LATENT" "LATENT" [ 6 ]) ];
       widgets = [
         width
@@ -236,8 +340,24 @@ let
   # 代替のLATENT源からリンク6を自前で張る。
   promptBaseLinks = [
     [
+      28
+      1
+      0
+      16
+      0
+      "MODEL"
+    ]
+    [
+      29
       1
       1
+      16
+      2
+      "CLIP"
+    ]
+    [
+      1
+      16
       0
       5
       0
@@ -245,7 +365,7 @@ let
     ]
     [
       2
-      1
+      16
       1
       2
       0
@@ -253,7 +373,7 @@ let
     ]
     [
       3
-      1
+      16
       1
       3
       0
@@ -308,6 +428,7 @@ in
     mkNode
     mkInput
     mkOutput
+    mkLoraLoader
     mkAppInput
     mkAppInputWith
     mkWorkflow

@@ -51,6 +51,7 @@ let
     mkNode
     mkInput
     mkOutput
+    mkLoraLoader
     mkAppInput
     mkAppInputWith
     mkWorkflow
@@ -98,11 +99,25 @@ in
           82
         ];
         order = 0;
-        outputs = [ (mkOutput "MODEL" "MODEL" [ 1 ]) ];
+        outputs = [ (mkOutput "MODEL" "MODEL" [ 36 ]) ];
         widgets = [
           "wan2.2_i2v_A14b_high_noise_lightx2v_4step_720p_260412.safetensors"
           "default" # weight_dtype
         ];
+      })
+      # オプショナルなLoRA適用(high noise側)。
+      # Wan 2.2のLoRAはhigh/lowで別ファイルなので対応する側へ入れる。
+      # WanのLoRAはUNETにだけ作用するのでCLIPは繋がない。
+      (mkLoraLoader {
+        id = 29;
+        title = "LoRA(high noise用)";
+        pos = [
+          1260
+          172
+        ];
+        order = 1;
+        modelLink = 36;
+        modelLinks = [ 1 ];
       })
       (mkNode {
         id = 2;
@@ -110,18 +125,30 @@ in
         title = "low noiseモデル";
         pos = [
           1260
-          180
+          702
         ];
         size = [
           385
           82
         ];
-        order = 1;
-        outputs = [ (mkOutput "MODEL" "MODEL" [ 2 ]) ];
+        order = 2;
+        outputs = [ (mkOutput "MODEL" "MODEL" [ 37 ]) ];
         widgets = [
           "wan2.2_i2v_A14b_low_noise_lightx2v_4step_720p_260412.safetensors"
           "default" # weight_dtype
         ];
+      })
+      # オプショナルなLoRA適用(low noise側)。
+      (mkLoraLoader {
+        id = 30;
+        title = "LoRA(low noise用)";
+        pos = [
+          1260
+          834
+        ];
+        order = 3;
+        modelLink = 37;
+        modelLinks = [ 2 ];
       })
       (mkNode {
         id = 3;
@@ -134,7 +161,7 @@ in
           385
           106
         ];
-        order = 2;
+        order = 4;
         outputs = [
           (mkOutput "CLIP" "CLIP" [
             3
@@ -158,7 +185,7 @@ in
           385
           58
         ];
-        order = 3;
+        order = 5;
         outputs = [
           (mkOutput "VAE" "VAE" [
             5
@@ -167,6 +194,8 @@ in
         ];
         widgets = [ "wan_2.1_vae.safetensors" ];
       })
+      # 動画を読み込むとプレビューがここより下へ展開されて伸びる。
+      # その分の場所は`lib/overlap.nix`の`growHeights`が見込んで空けさせている。
       (mkNode {
         id = 9;
         type = "LoadVideo";
@@ -179,7 +208,7 @@ in
           340
           310
         ];
-        order = 4;
+        order = 6;
         outputs = [ (mkOutput "VIDEO" "VIDEO" [ 11 ]) ];
         widgets = [ "example.webm" ];
       })
@@ -198,7 +227,7 @@ in
           340
           314
         ];
-        order = 5;
+        order = 7;
         outputs = [
           (mkOutput "IMAGE" "IMAGE" [ 34 ])
           (mkOutput "MASK" "MASK" [ ])
@@ -219,7 +248,7 @@ in
           240
           106
         ];
-        order = 6;
+        order = 8;
         inputs = [ (mkInput "video" "VIDEO" 11) ];
         outputs = [
           (mkOutput "images" "IMAGE" [
@@ -244,7 +273,7 @@ in
           315
           106
         ];
-        order = 7;
+        order = 9;
         inputs = [ (mkInput "image" "IMAGE" 12) ];
         outputs = [ (mkOutput "IMAGE" "IMAGE" [ 14 ]) ];
         widgets = [
@@ -267,7 +296,7 @@ in
           315
           130
         ];
-        order = 8;
+        order = 10;
         inputs = [ (mkInput "image" "IMAGE" 14) ];
         outputs = [
           (mkOutput "IMAGE" "IMAGE" [
@@ -286,14 +315,14 @@ in
         id = 22;
         type = "GetImageSize";
         pos = [
-          1160
           800
+          960
         ];
         size = [
           240
           86
         ];
-        order = 9;
+        order = 11;
         inputs = [ (mkInput "image" "IMAGE" 16) ];
         outputs = [
           (mkOutput "width" "INT" [ 17 ])
@@ -315,7 +344,7 @@ in
           420
           200
         ];
-        order = 10;
+        order = 12;
         outputs = [ (mkOutput "english_text" "STRING" [ 19 ]) ];
         widgets = [ "カメラはゆっくりと近づく。キャラクターは穏やかに微笑み、髪と服が風に揺れる。" ];
       })
@@ -332,7 +361,7 @@ in
           340
           130
         ];
-        order = 11;
+        order = 13;
         inputs = [
           (
             mkInput "string_b" "STRING" 19
@@ -369,7 +398,7 @@ in
           340
           200
         ];
-        order = 12;
+        order = 14;
         inputs = [ (mkInput "source" "*" 21) ];
       })
       (mkNode {
@@ -384,7 +413,7 @@ in
           420
           160
         ];
-        order = 13;
+        order = 15;
         inputs = [
           (mkInput "clip" "CLIP" 3)
           (
@@ -413,7 +442,7 @@ in
           420
           160
         ];
-        order = 14;
+        order = 16;
         inputs = [ (mkInput "clip" "CLIP" 4) ];
         outputs = [ (mkOutput "CONDITIONING" "CONDITIONING" [ 23 ]) ];
         widgets = [ negativePrompt ];
@@ -430,13 +459,13 @@ in
         type = "WanFirstLastFrameToVideo";
         pos = [
           1260
-          520
+          1550
         ];
         size = [
           315
           230
         ];
-        order = 15;
+        order = 17;
         inputs = [
           (mkInput "positive" "CONDITIONING" 22)
           (mkInput "negative" "CONDITIONING" 23)
@@ -486,13 +515,13 @@ in
         title = "shift(high)";
         pos = [
           1260
-          310
+          1334
         ];
         size = [
           315
           58
         ];
-        order = 16;
+        order = 18;
         inputs = [ (mkInput "model" "MODEL" 1) ];
         outputs = [ (mkOutput "MODEL" "MODEL" [ 9 ]) ];
         widgets = [ 5 ]; # shift
@@ -503,13 +532,13 @@ in
         title = "shift(low)";
         pos = [
           1260
-          410
+          1442
         ];
         size = [
           315
           58
         ];
-        order = 17;
+        order = 19;
         inputs = [ (mkInput "model" "MODEL" 2) ];
         outputs = [ (mkOutput "MODEL" "MODEL" [ 10 ]) ];
         widgets = [ 5 ]; # shift
@@ -527,7 +556,7 @@ in
           315
           334
         ];
-        order = 18;
+        order = 20;
         inputs = [
           (mkInput "model" "MODEL" 9)
           (mkInput "positive" "CONDITIONING" 24)
@@ -562,7 +591,7 @@ in
           315
           334
         ];
-        order = 19;
+        order = 21;
         inputs = [
           (mkInput "model" "MODEL" 10)
           (mkInput "positive" "CONDITIONING" 25)
@@ -594,7 +623,7 @@ in
           210
           46
         ];
-        order = 20;
+        order = 22;
         inputs = [
           (mkInput "samples" "LATENT" 30)
           (mkInput "vae" "VAE" 6)
@@ -616,7 +645,7 @@ in
           315
           106
         ];
-        order = 21;
+        order = 23;
         inputs = [ (mkInput "image" "IMAGE" 31) ];
         outputs = [
           (mkOutput "IMAGE" "IMAGE" [
@@ -645,7 +674,7 @@ in
           420
           470
         ];
-        order = 22;
+        order = 24;
         inputs = [ (mkInput "images" "IMAGE" 35) ];
         widgets = [
           (mkFilenamePrefixWith name "-segment") # filename_prefix
@@ -666,7 +695,7 @@ in
           240
           78
         ];
-        order = 23;
+        order = 25;
         inputs = [
           (mkInput "images.image0" "IMAGE" 13)
           (mkInput "images.image1" "IMAGE" 32)
@@ -686,7 +715,7 @@ in
           420
           470
         ];
-        order = 24;
+        order = 26;
         inputs = [ (mkInput "images" "IMAGE" 33) ];
         widgets = [
           (mkFilenamePrefix name) # filename_prefix
@@ -697,16 +726,32 @@ in
     ];
     links = [
       [
+        36
         1
+        0
+        29
+        0
+        "MODEL"
+      ]
+      [
         1
+        29
         0
         7
         0
         "MODEL"
       ]
       [
+        37
         2
+        0
+        30
+        0
+        "MODEL"
+      ]
+      [
         2
+        30
         0
         8
         0

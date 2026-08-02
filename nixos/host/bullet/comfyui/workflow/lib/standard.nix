@@ -8,6 +8,12 @@
 #
 # FaceDetailerの`widgets_values`の並びは、
 # ComfyUI-Impact-Pack 8.28の定義に合わせている。
+#
+# `promptNodes`が使うノード1から5と16、
+# リンク1から8と28/29は避けて番号を振る必要がある。
+# ここはノード15とリンク27まで使っていて、
+# 次の空き番号が`promptNodes`のLoraLoaderに当たるため、
+# ノードやリンクを足す時は16と28/29を飛ばして17と30から振る。
 {
   lib,
   width,
@@ -84,7 +90,7 @@ mkWorkflow {
           210
           46
         ];
-        order = 7;
+        order = 8;
         inputs = [
           (mkInput "samples" "LATENT" 7)
           (mkInput "vae" "VAE" 8)
@@ -102,7 +108,7 @@ mkWorkflow {
           315
           58
         ];
-        order = 5;
+        order = 6;
         outputs = [ (mkOutput "UPSCALE_MODEL" "UPSCALE_MODEL" [ 9 ]) ];
         widgets = [ "4x-AnimeSharp.safetensors" ];
       })
@@ -117,7 +123,7 @@ mkWorkflow {
           240
           46
         ];
-        order = 8;
+        order = 9;
         inputs = [
           (mkInput "upscale_model" "UPSCALE_MODEL" 9)
           (mkInput "image" "IMAGE" 10)
@@ -137,7 +143,7 @@ mkWorkflow {
           315
           82
         ];
-        order = 9;
+        order = 10;
         inputs = [ (mkInput "image" "IMAGE" 11) ];
         outputs = [ (mkOutput "IMAGE" "IMAGE" [ 12 ]) ];
         widgets = [
@@ -156,7 +162,7 @@ mkWorkflow {
           210
           46
         ];
-        order = 10;
+        order = 11;
         inputs = [
           (mkInput "pixels" "IMAGE" 12)
           (mkInput "vae" "VAE" 13)
@@ -175,7 +181,7 @@ mkWorkflow {
           315
           262
         ];
-        order = 11;
+        order = 12;
         inputs = [
           (mkInput "model" "MODEL" 14)
           (mkInput "positive" "CONDITIONING" 15)
@@ -202,7 +208,7 @@ mkWorkflow {
           210
           46
         ];
-        order = 12;
+        order = 13;
         inputs = [
           (mkInput "samples" "LATENT" 18)
           (mkInput "vae" "VAE" 19)
@@ -220,7 +226,7 @@ mkWorkflow {
           315
           78
         ];
-        order = 6;
+        order = 7;
         outputs = [
           (mkOutput "BBOX_DETECTOR" "BBOX_DETECTOR" [ 26 ])
           (mkOutput "SEGM_DETECTOR" "SEGM_DETECTOR" [ ])
@@ -238,7 +244,7 @@ mkWorkflow {
           400
           800
         ];
-        order = 13;
+        order = 14;
         inputs = [
           (mkInput "image" "IMAGE" 20)
           (mkInput "model" "MODEL" 21)
@@ -300,7 +306,7 @@ mkWorkflow {
           420
           470
         ];
-        order = 14;
+        order = 15;
         inputs = [ (mkInput "images" "IMAGE" 27) ];
         widgets = [ (mkFilenamePrefix name) ];
       })
@@ -348,7 +354,7 @@ mkWorkflow {
     ]
     [
       14
-      1
+      16
       0
       11
       0
@@ -404,7 +410,7 @@ mkWorkflow {
     ]
     [
       21
-      1
+      16
       0
       14
       1
@@ -412,7 +418,7 @@ mkWorkflow {
     ]
     [
       22
-      1
+      16
       1
       14
       2

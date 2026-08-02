@@ -186,8 +186,14 @@ let
   # 追加のリンクIDを引数で受け取る。
   # MODELとCLIPの追加リンクはLoRA適用後のLoraLoader(ノード16)から出る。
   #
-  # LoraLoaderのノードID 16とリンクID 28/29は、
-  # 呼び出し元が使うIDと衝突しない大きめの値を予約している。
+  # ここが使うのはノードID 1から5と16、
+  # リンクID 1から8(`withEmptyLatent = false`なら6を除く)と28/29なので、
+  # 呼び出し元はこれらを避けて番号を振る。
+  # LoraLoaderのノード16とリンク28/29には余裕がない。
+  # 最も多くのノードを使う`lib/standard.nix`はノード15とリンク27まで使い切っていて、
+  # これらはちょうど次の空き番号だからで、
+  # 呼び出し元がノードやリンクを1つ足すだけで自然に衝突する。
+  # 衝突した場合は`lib/duplicate.nix`の検証が評価時に検出する。
   #
   # img2imgのようにEmptyLatentImage以外からLATENTを供給する場合は、
   # `withEmptyLatent = false`にして、

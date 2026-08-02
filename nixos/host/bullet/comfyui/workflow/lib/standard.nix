@@ -8,6 +8,12 @@
 #
 # FaceDetailerの`widgets_values`の並びは、
 # ComfyUI-Impact-Pack 8.28の定義に合わせている。
+#
+# `promptNodes`が使うノード1から5と16、
+# リンク1から8と28/29は避けて番号を振る必要がある。
+# ここはノード15とリンク27まで使っていて、
+# 次の空き番号が`promptNodes`のLoraLoaderに当たるため、
+# ノードやリンクを足す時は16と28/29を飛ばして17と30から振る。
 {
   lib,
   width,

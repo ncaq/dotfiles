@@ -72,6 +72,9 @@ in
         # comfyui-nixがパッケージ済みのものを使う。
         "rgthree-comfy" = pkgs.comfyui-custom-nodes.rgthree-comfy;
         # Civitaiからの取得、プレビュー、トリガーワード、レシピを一元管理する。
+        # Civitaiにはpickle形式(.pt/.ckpt)のモデルもあり読み込み時の任意コード実行が懸念されるが、
+        # ComfyUI本体は非safetensorsも`torch.load(weights_only=True)`固定で読むことと、
+        # そもそも外部取得物の実行を想定したコンテナ隔離があることから受容する。
         "ComfyUI-Lora-Manager" = withPythonPathDeps [ loraManagerPythonEnv ] loraManagerSrc;
         # 複数フレームを同時に参照して時間的一貫性を保つ動画超解像。
         # RTX 5090では7B FP16モデルをBlockSwapとVAE tiling付きで使う。

@@ -1,13 +1,31 @@
-{ username, ... }:
+{ config, username, ... }:
 {
   services.openssh = {
     enable = true;
+    # ラップトップなどが信頼できないネットワークに接続することもあるため、
+    # firewallの開放は全インターフェイスではなくtailnetに限定する。
+    openFirewall = false;
     settings = {
       # パスワード認証を無効化
       PasswordAuthentication = false;
     };
   };
-  programs.mosh.enable = true;
+  programs.mosh = {
+    enable = true;
+    # sshdと同様にtailnetに限定する。
+    openFirewall = false;
+  };
+  # ssh/moshはtailnet越しの接続のみ受け付ける。
+  networking.firewall.interfaces.${config.services.tailscale.interfaceName} = {
+    allowedTCPPorts = config.services.openssh.ports;
+    # nixpkgsのprograms.moshモジュールがopenFirewallで開放する範囲と同じ。
+    allowedUDPPortRanges = [
+      {
+        from = 60000;
+        to = 61000;
+      }
+    ];
+  };
   users.users.${username}.openssh.authorizedKeys.keys = [
     # 公開鍵は全世界に公開することが前提として設計されているので、dotfilesに含めて問題ない。
 

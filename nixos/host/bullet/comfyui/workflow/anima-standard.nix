@@ -425,7 +425,7 @@ in
         ]
         ++ seedWidgets
         ++ [
-          24 # steps
+          18 # steps
           4 # cfg
           "euler" # sampler_name
           "simple" # scheduler

@@ -67,6 +67,8 @@ let
       # 一方、生成画像は派生モデルに含まれず、販売、コミッション、広告、有料ゲーム、
       # などの素材を含む商用利用が明示的に許可されている。
       # https://huggingface.co/circlestone-labs/Anima/blob/f7382c4bf9d7ffe4ceea593a0adbb470c56dd79b/LICENSE.md
+      # NVIDIA Cosmosの派生モデルでもあるため、NVIDIA Open Model Licenseも適用される。
+      # https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license/
 
       # 高品質と一貫性を優先した最新版。通常生成のデフォルトにする。
       "anima-aesthetic-v1.1.safetensors" = fetchHuggingface {

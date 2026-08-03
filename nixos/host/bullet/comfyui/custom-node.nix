@@ -83,12 +83,16 @@ in
         # https://github.com/ltdrdata/ComfyUI-Impact-Pack/issues/1186
         "ComfyUI-Impact-Pack" = pkgs.comfyui-custom-nodes.impact-pack.overrideAttrs (old: {
           patches = (old.patches or [ ]) ++ [ ./impact-pack-anima-size.patch ];
+          # 上流更新で文脈がずれた場合に別の関数へ黙って適用しないようfuzzを無効化する。
+          # overrideAttrsで指定するため、上流パッケージにpatchesが追加された場合も同じフラグが適用される。
           patchFlags = [
             "-p1"
             "-F0"
           ];
+          # パッチのインデント崩れをComfyUI起動前のビルド時に検出する。
           postPatch = (old.postPatch or "") + ''
-            ${comfyuiPython}/bin/python -m py_compile modules/impact/core.py
+            ${comfyuiPython}/bin/python -c \
+              'import ast, pathlib; ast.parse(pathlib.Path("modules/impact/core.py").read_text())'
           '';
         });
         # Power Lora Loaderなどワークフロー整理のノード群。

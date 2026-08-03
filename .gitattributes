@@ -9,6 +9,9 @@
 *.zip filter=lfs diff=lfs merge=lfs -text
 *.zst filter=lfs diff=lfs merge=lfs -text
 
+# unified diff context lines require one leading marker space even when the source line is empty
+*.patch whitespace=-blank-at-eol
+
 # executable binary
 *.a filter=lfs diff=lfs merge=lfs -text
 *.bin filter=lfs diff=lfs merge=lfs -text

@@ -1,9 +1,13 @@
-# 画像の幅と高さを指定した倍数へ切り下げるComfyUIノード。
-# Animaなどlatent寸法に制約があるモデルへ画像を渡す前に使う。
-# リサイズによる歪みやpadding追加を避けるため、中央から最大multiple - 1pxだけcropする。
+# Animaなどlatent寸法に制約があるモデル向けの2つのComfyUIノード。
+# AlignImageSizeは画像を中央から最大multiple - 1pxだけcropし、
+# リサイズによる歪みやpadding追加を避けながら各辺を指定した倍数へ揃える。
+# AlignImageDimensionsはEmptyLatentImageへ渡す生成幅と高さを事前に切り下げる。
 from typing import Any
 
 import torch
+
+# この既定値はworkflow/lib/builder.nixのanimaSizeMultipleと同期する。
+ANIMA_SIZE_MULTIPLE = 16
 
 
 class AlignImageSize:
@@ -12,7 +16,15 @@ class AlignImageSize:
         return {
             "required": {
                 "image": ("IMAGE",),
-                "multiple": ("INT", {"default": 16, "min": 1, "max": 256, "step": 1}),
+                "multiple": (
+                    "INT",
+                    {
+                        "default": ANIMA_SIZE_MULTIPLE,
+                        "min": 1,
+                        "max": 256,
+                        "step": 1,
+                    },
+                ),
             }
         }
 
@@ -39,12 +51,33 @@ class AlignImageDimensions:
     def INPUT_TYPES(cls) -> dict[str, Any]:
         return {
             "required": {
-                "width": ("INT", {"default": 1024, "min": 16, "max": 16384, "step": 8}),
+                "width": (
+                    "INT",
+                    {
+                        "default": 1024,
+                        "min": ANIMA_SIZE_MULTIPLE,
+                        "max": 16384,
+                        "step": 8,
+                    },
+                ),
                 "height": (
                     "INT",
-                    {"default": 1024, "min": 16, "max": 16384, "step": 8},
+                    {
+                        "default": 1024,
+                        "min": ANIMA_SIZE_MULTIPLE,
+                        "max": 16384,
+                        "step": 8,
+                    },
                 ),
-                "multiple": ("INT", {"default": 16, "min": 1, "max": 256, "step": 1}),
+                "multiple": (
+                    "INT",
+                    {
+                        "default": ANIMA_SIZE_MULTIPLE,
+                        "min": 1,
+                        "max": 256,
+                        "step": 1,
+                    },
+                ),
             }
         }
 

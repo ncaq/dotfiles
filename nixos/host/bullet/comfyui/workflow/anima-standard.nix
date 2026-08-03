@@ -16,6 +16,7 @@ let
     mkWorkflow
     mkFilenamePrefix
     seedWidgets
+    animaSizeMultiple
     ;
 in
 {
@@ -196,7 +197,7 @@ in
         widgets = [
           1024 # width
           1024 # height
-          16 # multiple
+          animaSizeMultiple # multiple
         ];
       })
       (mkNode {
@@ -367,7 +368,7 @@ in
         order = 14;
         inputs = [ (mkInput "image" "IMAGE" 29) ];
         outputs = [ (mkOutput "IMAGE" "IMAGE" [ 13 ]) ];
-        widgets = [ 16 ];
+        widgets = [ animaSizeMultiple ];
       })
       (mkNode {
         id = 13;

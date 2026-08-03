@@ -1,13 +1,14 @@
 diff --git a/modules/impact/core.py b/modules/impact/core.py
-index 801b71f..61454e1 100644
+index 801b71f..a35e24b 100644
 --- a/modules/impact/core.py
 +++ b/modules/impact/core.py
-@@ -325,6 +325,12 @@ def enhance_detail(image, model, clip, vae, guide_size, guide_size_for_bbox, max
+@@ -325,6 +325,13 @@ def enhance_detail(image, model, clip, vae, guide_size, guide_size_for_bbox, max
      if detailer_hook is not None:
          new_w, new_h = detailer_hook.touch_scaled_size(new_w, new_h)
  
 +    # Cosmos-based models require latent dimensions divisible by their spatial patch size.
 +    # Aligning pixels to VAE downscale 8 * spatial patch size 2 satisfies that constraint.
++    # Keep this value synchronized with workflow/lib/builder.nix animaSizeMultiple.
 +    multiple = 16
 +    new_w = max(multiple, (new_w // multiple) * multiple)
 +    new_h = max(multiple, (new_h // multiple) * multiple)

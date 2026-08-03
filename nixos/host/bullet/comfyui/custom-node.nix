@@ -164,7 +164,9 @@ in
         # バイパス操作なしで画像指定の有無だけで切り替えるために使う。
         "ComfyUI-Load-Image-Optional" =
           writeCheckedInitPy "comfyui-load-image-optional" ./custom-node/load-image-optional/__init__.py;
-        # Animaなどlatent寸法に制約があるモデル向けに、画像を指定した倍数の寸法へ中央cropする。
+        # Animaなどlatent寸法に制約があるモデル向けの自作ノード群。
+        # 画像を指定した倍数へ中央cropするノードと、
+        # EmptyLatentImageへ渡す幅と高さを指定した倍数へ切り下げるノードを提供する。
         "ComfyUI-Align-Image-Size" =
           writeCheckedInitPy "comfyui-align-image-size" ./custom-node/align-image-size/__init__.py;
         # 元fpsと音声を維持し、RGB48から10-bit SVT-AV1 losslessのWebMへ保存するノード。

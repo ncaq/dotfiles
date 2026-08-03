@@ -1,6 +1,8 @@
 # Animaによる通常のimg2img画像編集。
 # 入力画像をQwen-Image VAEでlatent化し、denoiseで元画像を残す強さを調整する。
-# 入力画像はAnimaのlatent寸法制約を満たすように各辺を16の倍数へ揃える。
+# 入力画像はアスペクト比を維持して約1MPへスケールし、
+# Animaのlatent寸法制約を満たすように各辺を16の倍数へ揃える。
+# 目標画素数はApp Modeのmegapixels入力で変更できる。
 # 指示箇所だけを変更するqwen-editと違い、画像全体をプロンプトに沿って描き直す。
 #
 # denoiseの目安:
@@ -20,6 +22,7 @@ let
     mkWorkflow
     mkFilenamePrefix
     seedWidgets
+    animaSizeMultiple
     ;
 in
 {
@@ -198,7 +201,7 @@ in
         widgets = [
           "lanczos" # upscale_method
           1.0 # megapixels
-          16 # resolution_steps
+          animaSizeMultiple # resolution_steps
         ];
       })
       (mkNode {

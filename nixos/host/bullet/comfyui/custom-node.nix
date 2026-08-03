@@ -27,14 +27,29 @@ in
     { config, ... }:
     let
       comfyuiPython = config.services.comfyui.package.pythonRuntime.python;
-      # 自作カスタムノードの__init__.pyを構文検査してから配置する。
+      # Pythonソースをビルド時に構文検査するシェルコマンドを組み立てる。
       # 文法エラーがあってもコンテナ起動時のノード読み込み失敗まで気付けないため、
-      # Impact Packのパッチと同様にビルド時のpy_compileで検出する。
-      # バイトコードは書き込み不可のstoreの隣ではなく一時領域へ逃がす。
+      # 自作ノードの配置とパッチ適用の両方でこれを通す。
+      #
+      # ast.parseは構文木さえ作れれば通してしまい、
+      # パッチのインデント崩れで関数の外へ出たreturnやループ外のbreakを見逃す。
+      # py_compileと同じcompile()まで通しつつ、
+      # 書き込み不可のstoreの隣へバイトコードを出さないよう自前で呼ぶ。
+      #
+      # ソースはbytesで読む。
+      # テキストモードだとロケール未設定のビルド環境ではASCII扱いになり、
+      # 日本語コメントで構文と無関係な復号エラーになる。
+      # bytesならcompile()がPEP 263に従いUTF-8として解釈する。
+      checkPythonSyntax = path: ''
+        ${comfyuiPython}/bin/python -c \
+          'import sys; compile(open(sys.argv[1], "rb").read(), sys.argv[1], "exec")' \
+          ${path}
+      '';
+      # 自作カスタムノードの__init__.pyを構文検査してから配置する。
       writeCheckedInitPy =
         name: source:
         pkgs.runCommand name { } ''
-          PYTHONPYCACHEPREFIX="$TMPDIR/pycache" ${comfyuiPython}/bin/python -m py_compile ${source}
+          ${checkPythonSyntax source}
           install -D -m 0644 ${source} $out/__init__.py
         '';
       # ノードのPython依存をPYTHONPATHへ載せるための添付。
@@ -90,10 +105,7 @@ in
             "-F0"
           ];
           # パッチのインデント崩れをComfyUI起動前のビルド時に検出する。
-          postPatch = (old.postPatch or "") + ''
-            ${comfyuiPython}/bin/python -c \
-              'import ast, pathlib; ast.parse(pathlib.Path("modules/impact/core.py").read_text())'
-          '';
+          postPatch = (old.postPatch or "") + checkPythonSyntax "modules/impact/core.py";
         });
         # Power Lora Loaderなどワークフロー整理のノード群。
         # comfyui-nixがパッケージ済みのものを使う。

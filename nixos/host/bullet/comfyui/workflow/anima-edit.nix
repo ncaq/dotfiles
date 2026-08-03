@@ -1,5 +1,6 @@
 # Animaによる通常のimg2img画像編集。
 # 入力画像をQwen-Image VAEでlatent化し、denoiseで元画像を残す強さを調整する。
+# 入力画像はAnimaのlatent寸法制約を満たすように各辺を16の倍数へ揃える。
 # 指示箇所だけを変更するqwen-editと違い、画像全体をプロンプトに沿って描き直す。
 #
 # denoiseの目安:
@@ -106,7 +107,8 @@ in
         ];
         widgets = [ "qwen_image_vae.safetensors" ];
       })
-      # 通常のAnima LoRAはMODELだけへ適用する。
+      # Anima公式はLLM adapterを学習しないよう推奨しているため、
+      # 通常のAnima LoRAはMODELだけへ適用してCLIPを素通しする。
       (mkLoraLoader {
         id = 10;
         title = "Anima LoRA (MODEL only)";
@@ -176,6 +178,7 @@ in
           "image"
         ];
       })
+      # ImageScaleToTotalPixelsのresolution_stepsはComfyUI 0.28.2の定義に合わせている。
       # アスペクト比を維持して約1MPへスケールし、Animaの要求する16の倍数へ丸める。
       (mkNode {
         id = 7;
@@ -193,9 +196,9 @@ in
         inputs = [ (mkInput "image" "IMAGE" 7) ];
         outputs = [ (mkOutput "IMAGE" "IMAGE" [ 10 ]) ];
         widgets = [
-          "lanczos"
-          1.0
-          16
+          "lanczos" # upscale_method
+          1.0 # megapixels
+          16 # resolution_steps
         ];
       })
       (mkNode {
@@ -236,11 +239,11 @@ in
         ];
         outputs = [ (mkOutput "LATENT" "LATENT" [ 12 ]) ];
         widgets = seedWidgets ++ [
-          40
-          4
-          "euler"
-          "simple"
-          0.5
+          40 # steps
+          4 # cfg
+          "euler" # sampler_name
+          "simple" # scheduler
+          0.5 # denoise
         ];
       })
       (mkNode {

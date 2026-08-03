@@ -1,7 +1,8 @@
 # Qwen-Image-Edit 2511による指示ベースの画像編集。
 # 「Remove the object on the table」のような自然言語の指示文で、
 # 読み込んだ画像を編集する。
-# img2img(sdxl-edit)と違い元画像の同一性を保ったまま指示箇所だけを変更できる。
+# 通常のimg2img(anima-editやsdxl-edit)と違い、
+# 元画像の同一性を保ったまま指示箇所だけを変更できる。
 #
 # 公式テンプレートのimage_qwen_image_edit_2511.jsonから、
 # Lightning LoRAの切り替えスイッチ類を除いた基本構成。

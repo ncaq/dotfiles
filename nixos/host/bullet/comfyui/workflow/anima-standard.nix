@@ -2,6 +2,7 @@
 # LoRA、1.5倍のhires fix、FaceDetailerを一つのパイプラインで適用する。
 # 高品質と一貫性を優先してAesthetic v1.1をデフォルトにする。
 # Baseは多様性とLoRA利用向けにモデル一覧から切り替えられる。
+# FaceDetailerのwidgets_valuesはComfyUI-Impact-Pack 8.28の定義に合わせている。
 { lib, ... }:
 let
   name = "anima-standard";
@@ -243,11 +244,11 @@ in
         ];
         outputs = [ (mkOutput "LATENT" "LATENT" [ 7 ]) ];
         widgets = seedWidgets ++ [
-          30
-          4
-          "euler"
-          "simple"
-          1
+          30 # steps
+          4 # cfg
+          "euler" # sampler_name
+          "simple" # scheduler
+          1 # denoise
         ];
       })
       (mkNode {
@@ -302,8 +303,8 @@ in
         inputs = [ (mkInput "image" "IMAGE" 12) ];
         outputs = [ (mkOutput "IMAGE" "IMAGE" [ 29 ]) ];
         widgets = [
-          "lanczos"
-          0.375
+          "lanczos" # upscale_method
+          0.375 # scale_by
         ];
       })
       # 1.5倍後の各辺を中央cropし、Animaが要求する16の倍数へ揃える。
@@ -362,11 +363,12 @@ in
         ];
         outputs = [ (mkOutput "LATENT" "LATENT" [ 18 ]) ];
         widgets = seedWidgets ++ [
-          24
-          4
-          "euler"
-          "simple"
-          0.3
+          24 # steps
+          4 # cfg
+          "euler" # sampler_name
+          "simple" # scheduler
+          # 元の構図と顔を維持しながらアップスケーラの細部だけを再生成する。
+          0.3 # denoise
         ];
       })
       (mkNode {
@@ -417,36 +419,36 @@ in
           (mkOutput "cnet_images" "IMAGE" [ ])
         ];
         widgets = [
-          512
-          true
-          1024
+          512 # guide_size
+          true # guide_size_for(bbox)
+          1024 # max_size
         ]
         ++ seedWidgets
         ++ [
-          24
-          4
-          "euler"
-          "simple"
-          0.35
-          5
-          true
-          true
-          0.5
-          10
-          3.0
-          "center-1"
-          0
-          0.93
-          0
-          0.7
-          "False"
-          10
-          ""
-          1
-          false
-          20
-          false
-          false
+          24 # steps
+          4 # cfg
+          "euler" # sampler_name
+          "simple" # scheduler
+          0.35 # denoise
+          5 # feather
+          true # noise_mask
+          true # force_inpaint
+          0.5 # bbox_threshold
+          10 # bbox_dilation
+          3.0 # bbox_crop_factor
+          "center-1" # sam_detection_hint
+          0 # sam_dilation
+          0.93 # sam_threshold
+          0 # sam_bbox_expansion
+          0.7 # sam_mask_hint_threshold
+          "False" # sam_mask_hint_use_negative
+          10 # drop_size
+          "" # wildcard
+          1 # cycle
+          false # inpaint_model
+          20 # noise_mask_feather
+          false # tiled_encode
+          false # tiled_decode
         ];
       })
       (mkNode {

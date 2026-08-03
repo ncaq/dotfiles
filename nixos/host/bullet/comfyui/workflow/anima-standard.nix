@@ -363,7 +363,7 @@ in
         ];
         outputs = [ (mkOutput "LATENT" "LATENT" [ 18 ]) ];
         widgets = seedWidgets ++ [
-          24 # steps
+          18 # steps
           4 # cfg
           "euler" # sampler_name
           "simple" # scheduler
@@ -442,7 +442,7 @@ in
           0 # sam_bbox_expansion
           0.7 # sam_mask_hint_threshold
           "False" # sam_mask_hint_use_negative
-          10 # drop_size
+          32 # drop_size
           "" # wildcard
           1 # cycle
           false # inpaint_model

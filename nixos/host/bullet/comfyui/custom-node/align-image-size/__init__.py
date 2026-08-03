@@ -15,8 +15,12 @@ class AlignImageSize:
     def align(self, image, multiple):
         height = image.shape[1]
         width = image.shape[2]
-        target_height = max(multiple, height // multiple * multiple)
-        target_width = max(multiple, width // multiple * multiple)
+        if height < multiple or width < multiple:
+            raise ValueError(
+                f"Image dimensions {width}x{height} must be at least {multiple} pixels"
+            )
+        target_height = height // multiple * multiple
+        target_width = width // multiple * multiple
         top = (height - target_height) // 2
         left = (width - target_width) // 2
         return (image[:, top : top + target_height, left : left + target_width, :],)

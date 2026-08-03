@@ -40,7 +40,10 @@ class AlignImageDimensions:
         return {
             "required": {
                 "width": ("INT", {"default": 1024, "min": 16, "max": 16384, "step": 8}),
-                "height": ("INT", {"default": 1024, "min": 16, "max": 16384, "step": 8}),
+                "height": (
+                    "INT",
+                    {"default": 1024, "min": 16, "max": 16384, "step": 8},
+                ),
                 "multiple": ("INT", {"default": 16, "min": 1, "max": 256, "step": 1}),
             }
         }

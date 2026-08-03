@@ -78,7 +78,8 @@ in
             "-F0"
           ];
           postPatch = (old.postPatch or "") + ''
-            ${comfyuiPython}/bin/python -m py_compile modules/impact/core.py
+            ${comfyuiPython}/bin/python -c \
+              'import ast, pathlib; ast.parse(pathlib.Path("modules/impact/core.py").read_text())'
           '';
         });
         # Power Lora Loaderなどワークフロー整理のノード群。

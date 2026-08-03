@@ -1,6 +1,7 @@
-# 画像の幅と高さを指定した倍数へ切り下げるComfyUIノード。
-# Animaなどlatent寸法に制約があるモデルへ画像を渡す前に使う。
-# リサイズによる歪みやpadding追加を避けるため、中央から最大multiple - 1pxだけcropする。
+# Animaなどlatent寸法に制約があるモデル向けの2つのComfyUIノード。
+# AlignImageSizeは画像を中央から最大multiple - 1pxだけcropし、
+# リサイズによる歪みやpadding追加を避けながら各辺を指定した倍数へ揃える。
+# AlignImageDimensionsはEmptyLatentImageへ渡す生成幅と高さを事前に切り下げる。
 from typing import Any
 
 import torch

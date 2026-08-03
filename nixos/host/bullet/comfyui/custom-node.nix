@@ -145,7 +145,9 @@ in
         "ComfyUI-Load-Image-Optional" = pkgs.writeTextDir "__init__.py" (
           builtins.readFile ./custom-node/load-image-optional/__init__.py
         );
-        # Animaなどlatent寸法に制約があるモデル向けに、画像を指定した倍数の寸法へ中央cropする。
+        # Animaなどlatent寸法に制約があるモデル向けの自作ノード群。
+        # 画像を指定した倍数へ中央cropするノードと、
+        # EmptyLatentImageへ渡す幅と高さを指定した倍数へ切り下げるノードを提供する。
         "ComfyUI-Align-Image-Size" = pkgs.writeTextDir "__init__.py" (
           builtins.readFile ./custom-node/align-image-size/__init__.py
         );

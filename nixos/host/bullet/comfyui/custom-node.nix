@@ -27,6 +27,16 @@ in
     { config, ... }:
     let
       comfyuiPython = config.services.comfyui.package.pythonRuntime.python;
+      # 自作カスタムノードの__init__.pyを構文検査してから配置する。
+      # 文法エラーがあってもコンテナ起動時のノード読み込み失敗まで気付けないため、
+      # Impact Packのパッチと同様にビルド時のpy_compileで検出する。
+      # バイトコードは書き込み不可のstoreの隣ではなく一時領域へ逃がす。
+      writeCheckedInitPy =
+        name: source:
+        pkgs.runCommand name { } ''
+          PYTHONPYCACHEPREFIX="$TMPDIR/pycache" ${comfyuiPython}/bin/python -m py_compile ${source}
+          install -D -m 0644 ${source} $out/__init__.py
+        '';
       # ノードのPython依存をPYTHONPATHへ載せるための添付。
       # passthruはderivation本体に影響しないので再ビルドは発生しない。
       withPythonPathDeps =
@@ -114,9 +124,8 @@ in
         );
         # SeedVR2 CLIのチャンク処理をComfyUIから起動し、長尺動画をRAM上限付きで処理する。
         # 解像度の自動計算に使う、VIDEOから幅と高さを取り出す汎用ノードGetVideoSizeも同梱する。
-        "ComfyUI-SeedVR2-Streaming" = pkgs.writeTextDir "__init__.py" (
-          builtins.readFile ./custom-node/seedvr2-streaming/__init__.py
-        );
+        "ComfyUI-SeedVR2-Streaming" =
+          writeCheckedInitPy "comfyui-seedvr2-streaming" ./custom-node/seedvr2-streaming/__init__.py;
         # UltralyticsDetectorProvider(YOLOによる顔検出)を提供する。
         # FaceDetailerに検出器を渡すために必要。
         "ComfyUI-Impact-Subpack" = pkgs.fetchFromGitHub {
@@ -131,25 +140,22 @@ in
         # 依存はComfyUI環境に同梱済みのrequestsのみ。
         # customNodesの型はpackageなのでプレーンなパスは渡せず、
         # derivationに包んで渡す。
-        "ComfyUI-Translate-Text" = pkgs.writeTextDir "__init__.py" (
-          builtins.readFile ./custom-node/translate-text/__init__.py
-        );
+        "ComfyUI-Translate-Text" =
+          writeCheckedInitPy "comfyui-translate-text" ./custom-node/translate-text/__init__.py;
         # 画像を選ばないことも許可する自作LoadImage。
         # (none)のままなら出力がNoneになり、optional入力が未接続扱いになる。
         # WanFirstLastFrameToVideoのend_imageなど任意入力の有効・無効を、
         # バイパス操作なしで画像指定の有無だけで切り替えるために使う。
-        "ComfyUI-Load-Image-Optional" = pkgs.writeTextDir "__init__.py" (
-          builtins.readFile ./custom-node/load-image-optional/__init__.py
-        );
+        "ComfyUI-Load-Image-Optional" =
+          writeCheckedInitPy "comfyui-load-image-optional" ./custom-node/load-image-optional/__init__.py;
         # Animaなどlatent寸法に制約があるモデル向けに、画像を指定した倍数の寸法へ中央cropする。
-        "ComfyUI-Align-Image-Size" = pkgs.writeTextDir "__init__.py" (
-          builtins.readFile ./custom-node/align-image-size/__init__.py
-        );
+        "ComfyUI-Align-Image-Size" =
+          writeCheckedInitPy "comfyui-align-image-size" ./custom-node/align-image-size/__init__.py;
         # 元fpsと音声を維持し、RGB48から10-bit SVT-AV1 losslessのWebMへ保存するノード。
         "ComfyUI-Save-SVT-AV1" = pkgs.symlinkJoin {
           name = "comfyui-save-svt-av1";
           paths = [
-            (pkgs.writeTextDir "__init__.py" (builtins.readFile ./custom-node/save-svt-av1/__init__.py))
+            (writeCheckedInitPy "comfyui-save-svt-av1-init" ./custom-node/save-svt-av1/__init__.py)
             (pkgs.writeTextDir "web/notification.js" (
               builtins.readFile ./custom-node/save-svt-av1/web/notification.js
             ))

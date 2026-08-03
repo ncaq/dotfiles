@@ -84,6 +84,26 @@ let
     else
       node
   ) belowGrowingNodes;
+  # ノード2をposへ動かした配置。境界値の検証に使う。
+  moveSecondTo = pos: map (node: if node.id == 2 then node // { inherit pos; } else node) validNodes;
+  # 横の余白がちょうどmarginの配置と、1px足りない配置。
+  exactMarginNodes = moveSecondTo [
+    (100 + overlap.margin)
+    0
+  ];
+  underMarginNodes = moveSecondTo [
+    (100 + overlap.margin - 1)
+    0
+  ];
+  # 縦はタイトルバーの高さも占有に入る。
+  verticalClearNodes = moveSecondTo [
+    0
+    (100 + overlap.titleHeight + overlap.margin)
+  ];
+  verticalTightNodes = moveSecondTo [
+    0
+    (100 + overlap.titleHeight + overlap.margin - 1)
+  ];
 in
 assert lib.assertMsg (overlap.overlappingNodePairs validNodes == [ ]) "重なっていないノードを拒否しました";
 assert lib.assertMsg (overlap.overlappingNodePairs overlappingNodes != [ ]) "重なったノードを検出できませんでした";
@@ -93,4 +113,16 @@ assert lib.assertMsg (
 assert lib.assertMsg (
   overlap.overlappingNodePairs clearOfGrowingNodes == [ ]
 ) "下へ広がる分を空けた配置を拒否しました";
+assert lib.assertMsg (
+  overlap.overlappingNodePairs exactMarginNodes == [ ]
+) "横の余白がちょうどmarginの配置を拒否しました";
+assert lib.assertMsg (
+  overlap.overlappingNodePairs underMarginNodes != [ ]
+) "横の余白がmarginに足りない配置を検出できませんでした";
+assert lib.assertMsg (
+  overlap.overlappingNodePairs verticalClearNodes == [ ]
+) "縦の余白がちょうどmarginの配置を拒否しました";
+assert lib.assertMsg (
+  overlap.overlappingNodePairs verticalTightNodes != [ ]
+) "タイトルバーの高さの分だけ縦の余白が足りない配置を検出できませんでした";
 true

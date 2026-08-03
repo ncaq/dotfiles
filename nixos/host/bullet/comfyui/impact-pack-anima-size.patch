@@ -1,0 +1,12 @@
+diff --git a/modules/impact/core.py b/modules/impact/core.py
+--- a/modules/impact/core.py
++++ b/modules/impact/core.py
+@@ -328 +328,7 @@
+-    logging.info(f"Detailer: segment upscale for ({bbox_w, bbox_h}) | crop region {w, h} x {upscale} -> {new_w, new_h}")
++    # Cosmos-based models require latent dimensions divisible by their spatial patch size.
++    # Aligning pixels to VAE downscale 8 * spatial patch size 2 satisfies that constraint.
++    multiple = 16
++    new_w = max(multiple, (new_w // multiple) * multiple)
++    new_h = max(multiple, (new_h // multiple) * multiple)
++
++    logging.info(f"Detailer: segment upscale for ({bbox_w, bbox_h}) | crop region {w, h} x {upscale} -> {new_w, new_h}")

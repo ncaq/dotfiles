@@ -66,19 +66,19 @@ in
     {
       services.comfyui.customNodes = {
         # FaceDetailerなどディテール修復ノード群。ADetailer相当。
-        # Animaのlatent寸法制約に合わせて作業解像度を16の倍数へ揃える。
+        # comfyui-nixがパッケージ済みのものを使う。
+        # Impact Packの顔cropは任意寸法になり、Cosmos系のAnimaではlatentが、
+        # spatial patch sizeで割り切れずFaceDetailerが失敗する。
+        # 上流で修正されたら補正パッチを削除する。
         # https://github.com/ltdrdata/ComfyUI-Impact-Pack/issues/1186
         "ComfyUI-Impact-Pack" = pkgs.comfyui-custom-nodes.impact-pack.overrideAttrs (old: {
+          patches = (old.patches or [ ]) ++ [ ./impact-pack-anima-size.patch ];
+          patchFlags = [
+            "-p1"
+            "-F0"
+          ];
           postPatch = (old.postPatch or "") + ''
-                    substituteInPlace modules/impact/core.py \
-                      --replace-fail \
-                        '    logging.info(f"Detailer: segment upscale for ({bbox_w, bbox_h}) | crop region {w, h} x {upscale} -> {new_w, new_h}")' \
-                        '    # Cosmos-based models require latent dimensions divisible by their spatial patch size.
-            # Aligning pixels to VAE downscale 8 * spatial patch size 2 satisfies that constraint.
-            multiple = 16
-            new_w = max(multiple, (new_w // multiple) * multiple)
-            new_h = max(multiple, (new_h // multiple) * multiple)
-            logging.info(f"Detailer: segment upscale for ({bbox_w, bbox_h}) | crop region {w, h} x {upscale} -> {new_w, new_h}")'
+            ${comfyuiPython}/bin/python -m py_compile modules/impact/core.py
           '';
         });
         # Power Lora Loaderなどワークフロー整理のノード群。

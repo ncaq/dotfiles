@@ -13,6 +13,8 @@ let
   # SDXLのポートレートバケット解像度をデフォルトにする。
   defaultWidth = 832;
   defaultHeight = 1216;
+  # Qwen-Image VAEの8倍圧縮とAnimaのspatial patch size 2を掛けた画像寸法の整列単位。
+  animaSizeMultiple = 16;
   # seedウィジェットは値の直後に実行後の挙動(randomizeなど)が並ぶ。
   seedWidgets = [
     0
@@ -440,5 +442,6 @@ in
     seedWidgets
     samplerName
     schedulerName
+    animaSizeMultiple
     ;
 }

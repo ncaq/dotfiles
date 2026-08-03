@@ -20,6 +20,7 @@ let
     mkWorkflow
     mkFilenamePrefix
     seedWidgets
+    animaSizeMultiple
     ;
 in
 {
@@ -198,7 +199,7 @@ in
         widgets = [
           "lanczos" # upscale_method
           1.0 # megapixels
-          16 # resolution_steps
+          animaSizeMultiple # resolution_steps
         ];
       })
       (mkNode {

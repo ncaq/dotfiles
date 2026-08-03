@@ -6,6 +6,9 @@ from typing import Any
 
 import torch
 
+# この既定値はworkflow/lib/builder.nixのanimaSizeMultipleと同期する。
+ANIMA_SIZE_MULTIPLE = 16
+
 
 class AlignImageSize:
     @classmethod
@@ -13,7 +16,15 @@ class AlignImageSize:
         return {
             "required": {
                 "image": ("IMAGE",),
-                "multiple": ("INT", {"default": 16, "min": 1, "max": 256, "step": 1}),
+                "multiple": (
+                    "INT",
+                    {
+                        "default": ANIMA_SIZE_MULTIPLE,
+                        "min": 1,
+                        "max": 256,
+                        "step": 1,
+                    },
+                ),
             }
         }
 
@@ -40,12 +51,33 @@ class AlignImageDimensions:
     def INPUT_TYPES(cls) -> dict[str, Any]:
         return {
             "required": {
-                "width": ("INT", {"default": 1024, "min": 16, "max": 16384, "step": 8}),
+                "width": (
+                    "INT",
+                    {
+                        "default": 1024,
+                        "min": ANIMA_SIZE_MULTIPLE,
+                        "max": 16384,
+                        "step": 8,
+                    },
+                ),
                 "height": (
                     "INT",
-                    {"default": 1024, "min": 16, "max": 16384, "step": 8},
+                    {
+                        "default": 1024,
+                        "min": ANIMA_SIZE_MULTIPLE,
+                        "max": 16384,
+                        "step": 8,
+                    },
                 ),
-                "multiple": ("INT", {"default": 16, "min": 1, "max": 256, "step": 1}),
+                "multiple": (
+                    "INT",
+                    {
+                        "default": ANIMA_SIZE_MULTIPLE,
+                        "min": 1,
+                        "max": 256,
+                        "step": 1,
+                    },
+                ),
             }
         }
 

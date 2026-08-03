@@ -141,6 +141,10 @@ in
         "ComfyUI-Load-Image-Optional" = pkgs.writeTextDir "__init__.py" (
           builtins.readFile ./custom-node/load-image-optional/__init__.py
         );
+        # Animaなどlatent寸法に制約があるモデル向けに、画像を指定した倍数の寸法へ中央cropする。
+        "ComfyUI-Align-Image-Size" = pkgs.writeTextDir "__init__.py" (
+          builtins.readFile ./custom-node/align-image-size/__init__.py
+        );
         # 元fpsと音声を維持し、RGB48から10-bit SVT-AV1 losslessのWebMへ保存するノード。
         "ComfyUI-Save-SVT-AV1" = pkgs.symlinkJoin {
           name = "comfyui-save-svt-av1";

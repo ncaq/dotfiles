@@ -300,24 +300,41 @@ in
         ];
         order = 12;
         inputs = [ (mkInput "image" "IMAGE" 12) ];
-        outputs = [ (mkOutput "IMAGE" "IMAGE" [ 13 ]) ];
+        outputs = [ (mkOutput "IMAGE" "IMAGE" [ 29 ]) ];
         widgets = [
           "lanczos"
           0.375
         ];
       })
+      # 1.5倍後の各辺を中央cropし、Animaが要求する16の倍数へ揃える。
       (mkNode {
-        id = 13;
-        type = "VAEEncode";
+        id = 19;
+        type = "AlignImageSize";
         pos = [
           1560
           420
         ];
         size = [
           210
-          46
+          58
         ];
         order = 13;
+        inputs = [ (mkInput "image" "IMAGE" 29) ];
+        outputs = [ (mkOutput "IMAGE" "IMAGE" [ 13 ]) ];
+        widgets = [ 16 ];
+      })
+      (mkNode {
+        id = 13;
+        type = "VAEEncode";
+        pos = [
+          1560
+          560
+        ];
+        size = [
+          210
+          46
+        ];
+        order = 14;
         inputs = [
           (mkInput "pixels" "IMAGE" 13)
           (mkInput "vae" "VAE" 28)
@@ -336,7 +353,7 @@ in
           315
           262
         ];
-        order = 14;
+        order = 15;
         inputs = [
           (mkInput "model" "MODEL" 14)
           (mkInput "positive" "CONDITIONING" 15)
@@ -363,7 +380,7 @@ in
           210
           46
         ];
-        order = 15;
+        order = 16;
         inputs = [
           (mkInput "samples" "LATENT" 18)
           (mkInput "vae" "VAE" 19)
@@ -381,7 +398,7 @@ in
           400
           800
         ];
-        order = 16;
+        order = 17;
         inputs = [
           (mkInput "image" "IMAGE" 20)
           (mkInput "model" "MODEL" 21)
@@ -443,7 +460,7 @@ in
           420
           470
         ];
-        order = 17;
+        order = 18;
         inputs = [ (mkInput "images" "IMAGE" 27) ];
         widgets = [ (mkFilenamePrefix name) ];
       })
@@ -546,8 +563,16 @@ in
         "IMAGE"
       ]
       [
-        13
+        29
         12
+        0
+        19
+        0
+        "IMAGE"
+      ]
+      [
+        13
+        19
         0
         13
         0

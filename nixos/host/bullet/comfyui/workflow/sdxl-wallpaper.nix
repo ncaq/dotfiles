@@ -3,7 +3,7 @@
 # 1.5倍のhires fixでちょうど標準的なモニタサイズの1920x1080が出力される。
 { lib, ... }:
 let
-  name = "anime-wallpaper";
+  name = "sdxl-wallpaper";
 in
 {
   local.comfyui.workflows.${name} = import ./lib/standard.nix {

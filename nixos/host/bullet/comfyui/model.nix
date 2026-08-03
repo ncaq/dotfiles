@@ -59,6 +59,33 @@ let
     };
     # UNETLoaderが読むcheckpoint非統合の拡散モデル。
     diffusion_models = {
+      # AnimaはCircleStone Labs Non-Commercial License v1.2。
+      # モデル本体とfine-tune、merge、LoRAなどの派生モデルは、
+      # 個人的な研究、実験、私的娯楽などの非商用かつ非production用途に限られる。
+      # 企業内でも非production環境での評価と非商用R&Dまでで、
+      # 有料API、公開生成サービス、収益化製品などの機能としての推論には別途商用ライセンスが必要。
+      # 一方、生成画像は派生モデルに含まれず、販売、コミッション、広告、有料ゲーム、
+      # などの素材を含む商用利用が明示的に許可されている。
+      # https://huggingface.co/circlestone-labs/Anima/blob/f7382c4bf9d7ffe4ceea593a0adbb470c56dd79b/LICENSE.md
+      # NVIDIA Cosmosの派生モデルでもあるため、NVIDIA Open Model Licenseも適用される。
+      # https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license/
+
+      # 高品質と一貫性を優先した最新版。通常生成のデフォルトにする。
+      "anima-aesthetic-v1.1.safetensors" = fetchHuggingface {
+        owner = "circlestone-labs";
+        repo = "Anima";
+        rev = "f7382c4bf9d7ffe4ceea593a0adbb470c56dd79b";
+        file = "split_files/diffusion_models/anima-aesthetic-v1.1.safetensors";
+        hash = "sha256-PBhoOHo6H/UEu7h8M2eDIZZerTgfz4evvQJk2qYAwII=";
+      };
+      # 既定画風の影響が弱く、作風の多様性とLoRA適性が最も高い基礎モデル。
+      "anima-base-v1.0.safetensors" = fetchHuggingface {
+        owner = "circlestone-labs";
+        repo = "Anima";
+        rev = "f7382c4bf9d7ffe4ceea593a0adbb470c56dd79b";
+        file = "split_files/diffusion_models/anima-base-v1.0.safetensors";
+        hash = "sha256-vUO3z/4e0RU9nEHnvrLxjLEnPq+6o68+3WoXPckKAG4=";
+      };
       # 指示文で画像を編集するQwen-Image-Editの2025年11月版。
       # Comfy-Org公式の再パッケージ版。Apache 2.0ライセンス。
       "qwen_image_edit_2511_fp8mixed.safetensors" = fetchHuggingface {
@@ -88,6 +115,14 @@ let
       };
     };
     text_encoders = {
+      # Animaが使うQwen3 0.6Bベースのテキストエンコーダ。
+      "qwen_3_06b_base.safetensors" = fetchHuggingface {
+        owner = "circlestone-labs";
+        repo = "Anima";
+        rev = "f7382c4bf9d7ffe4ceea593a0adbb470c56dd79b";
+        file = "split_files/text_encoders/qwen_3_06b_base.safetensors";
+        hash = "sha256-zSpRIAPi+fPNPDKpw1c/gguyjJQPc8V7Hdqpg9kiPro=";
+      };
       # Qwen-Image-Editで編集指示と入力画像を解析するVLM。
       # 画像理解と複雑な指示の精度を優先してBF16版を使う。
       "qwen_2.5_vl_7b.safetensors" = fetchHuggingface {

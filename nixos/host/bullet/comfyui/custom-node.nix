@@ -67,7 +67,24 @@ in
       services.comfyui.customNodes = {
         # FaceDetailerなどディテール修復ノード群。ADetailer相当。
         # comfyui-nixがパッケージ済みのものを使う。
-        "ComfyUI-Impact-Pack" = pkgs.comfyui-custom-nodes.impact-pack;
+        # Impact Packの顔cropは任意寸法になり、Cosmos系のAnimaではlatentが、
+        # spatial patch sizeで割り切れずFaceDetailerが失敗する。
+        # 上流で修正されたら補正パッチを削除する。
+        # https://github.com/ltdrdata/ComfyUI-Impact-Pack/issues/1186
+        "ComfyUI-Impact-Pack" = pkgs.comfyui-custom-nodes.impact-pack.overrideAttrs (old: {
+          patches = (old.patches or [ ]) ++ [ ./impact-pack-anima-size.patch ];
+          # 上流更新で文脈がずれた場合に別の関数へ黙って適用しないようfuzzを無効化する。
+          # overrideAttrsで指定するため、上流パッケージにpatchesが追加された場合も同じフラグが適用される。
+          patchFlags = [
+            "-p1"
+            "-F0"
+          ];
+          # パッチのインデント崩れをComfyUI起動前のビルド時に検出する。
+          postPatch = (old.postPatch or "") + ''
+            ${comfyuiPython}/bin/python -c \
+              'import ast, pathlib; ast.parse(pathlib.Path("modules/impact/core.py").read_text())'
+          '';
+        });
         # Power Lora Loaderなどワークフロー整理のノード群。
         # comfyui-nixがパッケージ済みのものを使う。
         "rgthree-comfy" = pkgs.comfyui-custom-nodes.rgthree-comfy;
@@ -127,6 +144,12 @@ in
         # バイパス操作なしで画像指定の有無だけで切り替えるために使う。
         "ComfyUI-Load-Image-Optional" = pkgs.writeTextDir "__init__.py" (
           builtins.readFile ./custom-node/load-image-optional/__init__.py
+        );
+        # Animaなどlatent寸法に制約があるモデル向けの自作ノード群。
+        # 画像を指定した倍数へ中央cropするノードと、
+        # EmptyLatentImageへ渡す幅と高さを指定した倍数へ切り下げるノードを提供する。
+        "ComfyUI-Align-Image-Size" = pkgs.writeTextDir "__init__.py" (
+          builtins.readFile ./custom-node/align-image-size/__init__.py
         );
         # 元fpsと音声を維持し、RGB48から10-bit SVT-AV1 losslessのWebMへ保存するノード。
         "ComfyUI-Save-SVT-AV1" = pkgs.symlinkJoin {

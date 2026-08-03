@@ -1,4 +1,5 @@
-# img2imgによる画像編集。
+# SDXL系モデルの通常のimg2imgによる画像編集。
+# Anima系モデルを使う場合はanima-editを使う。
 # 既存の画像を読み込んでVAEでlatentへ変換して、
 # 低めのdenoiseで再サンプリングすることで、
 # 元画像の構図を残したままプロンプトに沿って描き直す。
@@ -9,7 +10,7 @@
 # 0.7以上で構図だけ借りた大胆な変更。
 { lib, ... }:
 let
-  name = "anime-edit";
+  name = "sdxl-edit";
   inherit (import ./lib/builder.nix { inherit lib; })
     mkNode
     mkInput

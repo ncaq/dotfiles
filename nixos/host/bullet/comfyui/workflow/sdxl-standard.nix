@@ -3,7 +3,7 @@
 # 1.5倍のhires fixで1248x1824が出力される。
 { lib, ... }:
 let
-  name = "anime-standard";
+  name = "sdxl-standard";
 in
 {
   local.comfyui.workflows.${name} = import ./lib/standard.nix {

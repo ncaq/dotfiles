@@ -215,13 +215,17 @@ in
           (
             mkInput "width" "INT" 30
             // {
-              widget = { name = "width"; };
+              widget = {
+                name = "width";
+              };
             }
           )
           (
             mkInput "height" "INT" 31
             // {
-              widget = { name = "height"; };
+              widget = {
+                name = "height";
+              };
             }
           )
         ];
@@ -344,7 +348,7 @@ in
         inputs = [ (mkInput "image" "IMAGE" 12) ];
         outputs = [ (mkOutput "IMAGE" "IMAGE" [ 29 ]) ];
         widgets = [
-          "lanczos" # upscale_method
+          "area" # upscale_method
           0.375 # scale_by
         ];
       })

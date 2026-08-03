@@ -147,7 +147,7 @@ mkWorkflow {
         inputs = [ (mkInput "image" "IMAGE" 11) ];
         outputs = [ (mkOutput "IMAGE" "IMAGE" [ 12 ]) ];
         widgets = [
-          "lanczos" # upscale_method
+          "area" # upscale_method
           0.375 # scale_by
         ];
       })

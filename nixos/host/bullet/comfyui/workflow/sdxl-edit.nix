@@ -9,7 +9,7 @@
 # 0.7以上で構図だけ借りた大胆な変更。
 { lib, ... }:
 let
-  name = "anime-edit";
+  name = "sdxl-edit";
   inherit (import ./lib/builder.nix { inherit lib; })
     mkNode
     mkInput

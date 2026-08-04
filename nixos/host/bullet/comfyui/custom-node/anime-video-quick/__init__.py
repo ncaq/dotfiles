@@ -24,6 +24,9 @@ from PIL import Image
 
 
 anime_style_prefix = "Anime style, 2D cel animation, flat colors."
+wan_frame_count = 81
+wan_fps = 16.0
+wan_temporal_compression = 4
 negative_prompt = (
     "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，"
     "整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，"
@@ -217,12 +220,12 @@ def wan_conditioning(
     width: int,
     height: int,
 ) -> tuple[Any, Any, dict[str, torch.Tensor]]:
-    length = 81
+    latent_frame_count = (wan_frame_count - 1) // wan_temporal_compression + 1
     latent = torch.zeros(
         [
             1,
             vae.latent_channels,
-            21,
+            latent_frame_count,
             height // vae.spacial_compression_encode(),
             width // vae.spacial_compression_encode(),
         ],
@@ -234,16 +237,29 @@ def wan_conditioning(
     end = comfy.utils.common_upscale(
         end_image[..., :3].movedim(-1, 1), width, height, "bilinear", "center"
     ).movedim(1, -1)
-    images = torch.ones((length, height, width, 3)) * 0.5
+    images = torch.ones((wan_frame_count, height, width, 3)) * 0.5
     images[: start.shape[0]] = start
     images[-end.shape[0] :] = end
-    mask = torch.ones((1, 1, latent.shape[2] * 4, latent.shape[-2], latent.shape[-1]))
+    mask = torch.ones(
+        (
+            1,
+            1,
+            latent.shape[2] * wan_temporal_compression,
+            latent.shape[-2],
+            latent.shape[-1],
+        )
+    )
+    # Wan VAEの時間圧縮では先頭潜在フレームが元動画の4フレームに対応する。
     mask[:, :, : start.shape[0] + 3] = 0.0
     mask[:, :, -end.shape[0] :] = 0.0
     encoded = vae.encode(images)
-    mask = mask.view(1, mask.shape[2] // 4, 4, mask.shape[3], mask.shape[4]).transpose(
-        1, 2
-    )
+    mask = mask.view(
+        1,
+        mask.shape[2] // wan_temporal_compression,
+        wan_temporal_compression,
+        mask.shape[3],
+        mask.shape[4],
+    ).transpose(1, 2)
     values = {"concat_latent_image": encoded, "concat_mask": mask}
     return (
         node_helpers.conditioning_set_values(positive, values),
@@ -304,12 +320,12 @@ def generate_segment(
     return flatten_image_batch(vae.decode(low["samples"]))
 
 
-def save_video(images: torch.Tensor, path: Path, fps: float = 16.0) -> None:
+def save_video(images: torch.Tensor, path: Path) -> None:
     height, width = images.shape[1:3]
     temporary = path.with_suffix(".partial.webm")
     with av.open(temporary, mode="w") as container:
         stream = container.add_stream(
-            "libsvtav1", rate=Fraction(fps).limit_denominator(1001)
+            "libsvtav1", rate=Fraction(wan_fps).limit_denominator(1001)
         )
         stream.width = width
         stream.height = height
@@ -594,6 +610,7 @@ class AnimeVideoQuick:
                         wan_height,
                     )
                     if index != 0:
+                        # 直前区間の終了フレームと同じ先頭フレームを重複させない。
                         frames = frames[1:]
                     save_video(frames, video_path)
                     manifest["completed_segments"] = index + 1

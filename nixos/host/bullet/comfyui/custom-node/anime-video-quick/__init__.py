@@ -393,6 +393,11 @@ def sanitize_job_id(job_id: str) -> str:
     return re.sub(r"[^A-Za-z0-9._-]+", "-", job_id.strip()).strip(".-")
 
 
+def file_fingerprint(path: Path, base: Path) -> tuple[str, int, int]:
+    status = path.stat()
+    return path.relative_to(base).as_posix(), status.st_mtime_ns, status.st_size
+
+
 class AnimeVideoQuick:
     @classmethod
     def INPUT_TYPES(cls) -> dict[str, Any]:
@@ -458,14 +463,7 @@ class AnimeVideoQuick:
         ]
         if any(not path.is_file() for path in expected_paths):
             return float("NaN")
-        return tuple(
-            (
-                path.relative_to(output_dir).as_posix(),
-                path.stat().st_mtime_ns,
-                path.stat().st_size,
-            )
-            for path in expected_paths
-        )
+        return tuple(file_fingerprint(path, output_dir) for path in expected_paths)
 
     def generate(
         self,
@@ -641,7 +639,11 @@ class AnimeVideoQuick:
 
             final_name = f"{filename_prefix}-final.webm"
             final_path = output_dir / final_name
-            concat_videos(video_paths, final_path)
+            if not final_path.exists() or any(
+                final_path.stat().st_mtime_ns < path.stat().st_mtime_ns
+                for path in video_paths
+            ):
+                concat_videos(video_paths, final_path)
             manifest["status"] = "completed"
             manifest["video"] = str(final_path)
             manifest.pop("error", None)

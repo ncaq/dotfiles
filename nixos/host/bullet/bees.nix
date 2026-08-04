@@ -11,13 +11,13 @@
     extraOptions = [
       # 他プロセスが動き出したら縮退。
       "--loadavg-target"
-      "8.0"
+      "4.0"
       # シンプルなスロットリングも併用。
       "--thread-count"
-      "8"
+      "3"
       # btrfsカーネル側の遅延ワークキューの飽和を防ぐ。
       "--throttle-factor"
-      "2.0"
+      "3.0"
     ];
   };
 }

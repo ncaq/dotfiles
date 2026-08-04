@@ -352,10 +352,10 @@ def save_video(images: torch.Tensor, path: Path) -> None:
 
 
 def concat_videos(paths: list[Path], output_path: Path) -> None:
-    list_path = output_path.with_suffix(".concat.txt")
+    list_path = paths[0].parent / "concat.txt"
     temporary = output_path.with_suffix(".partial.webm")
     list_path.write_text(
-        "".join(f"file '{path.as_posix()}'\n" for path in paths), encoding="utf-8"
+        "".join(f"file '{path.name}'\n" for path in paths), encoding="utf-8"
     )
     try:
         subprocess.run(
@@ -366,8 +366,6 @@ def concat_videos(paths: list[Path], output_path: Path) -> None:
                 "error",
                 "-f",
                 "concat",
-                "-safe",
-                "0",
                 "-i",
                 str(list_path),
                 "-c",

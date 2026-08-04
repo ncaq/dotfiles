@@ -179,6 +179,11 @@ in
             ))
           ];
         };
+        # 複数行の指示からQwen編集画像を先に全て作り、
+        # そのキーフレーム間をWan FLF2Vで順番に動画化する。
+        # 各成果物を都度保存するため、長さに比例して画像テンソルをRAMへ蓄積しない。
+        "ComfyUI-Anime-Video-Quick" =
+          writeCheckedInitPy "comfyui-anime-video-quick" ./custom-node/anime-video-quick/__init__.py;
         # danbooruタグのオートコンプリート。
         # 日本語からの検索とpost count表示に対応していて、
         # メジャーなタグかどうかを確認しながら入力できる。

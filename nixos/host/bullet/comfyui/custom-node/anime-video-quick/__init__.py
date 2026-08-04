@@ -237,7 +237,7 @@ def wan_conditioning(
     end = comfy.utils.common_upscale(
         end_image[..., :3].movedim(-1, 1), width, height, "bilinear", "center"
     ).movedim(1, -1)
-    images = torch.ones((wan_frame_count, height, width, 3)) * 0.5
+    images = torch.full((wan_frame_count, height, width, 3), 0.5)
     images[: start.shape[0]] = start
     images[-end.shape[0] :] = end
     mask = torch.ones(
@@ -249,8 +249,8 @@ def wan_conditioning(
             latent.shape[-1],
         )
     )
-    # Wan VAEの時間圧縮では先頭潜在フレームが元動画の4フレームに対応する。
-    mask[:, :, : start.shape[0] + 3] = 0.0
+    # Wan VAEの先頭潜在フレームに対応する元動画の全フレームを条件付けする。
+    mask[:, :, : start.shape[0] + wan_temporal_compression - 1] = 0.0
     mask[:, :, -end.shape[0] :] = 0.0
     encoded = vae.encode(images)
     mask = mask.view(

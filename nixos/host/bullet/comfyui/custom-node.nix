@@ -27,6 +27,31 @@ in
     { config, ... }:
     let
       comfyuiPython = config.services.comfyui.package.pythonRuntime.python;
+      # Pythonソースをビルド時に構文検査するシェルコマンドを組み立てる。
+      # 文法エラーがあってもコンテナ起動時のノード読み込み失敗まで気付けないため、
+      # 自作ノードの配置とパッチ適用の両方でこれを通す。
+      #
+      # ast.parseは構文木さえ作れれば通してしまい、
+      # パッチのインデント崩れで関数の外へ出たreturnやループ外のbreakを見逃す。
+      # py_compileと同じcompile()まで通しつつ、
+      # 書き込み不可のstoreの隣へバイトコードを出さないよう自前で呼ぶ。
+      #
+      # ソースはbytesで読む。
+      # テキストモードだとロケール未設定のビルド環境ではASCII扱いになり、
+      # 日本語コメントで構文と無関係な復号エラーになる。
+      # bytesならcompile()がPEP 263に従いUTF-8として解釈する。
+      checkPythonSyntax = path: ''
+        ${comfyuiPython}/bin/python -c \
+          'import sys; compile(open(sys.argv[1], "rb").read(), sys.argv[1], "exec")' \
+          ${path}
+      '';
+      # 自作カスタムノードの__init__.pyを構文検査してから配置する。
+      writeCheckedInitPy =
+        name: source:
+        pkgs.runCommand name { } ''
+          ${checkPythonSyntax source}
+          install -D -m 0644 ${source} $out/__init__.py
+        '';
       # ノードのPython依存をPYTHONPATHへ載せるための添付。
       # passthruはderivation本体に影響しないので再ビルドは発生しない。
       withPythonPathDeps =
@@ -80,10 +105,7 @@ in
             "-F0"
           ];
           # パッチのインデント崩れをComfyUI起動前のビルド時に検出する。
-          postPatch = (old.postPatch or "") + ''
-            ${comfyuiPython}/bin/python -c \
-              'import ast, pathlib; ast.parse(pathlib.Path("modules/impact/core.py").read_text())'
-          '';
+          postPatch = (old.postPatch or "") + checkPythonSyntax "modules/impact/core.py";
         });
         # Power Lora Loaderなどワークフロー整理のノード群。
         # comfyui-nixがパッケージ済みのものを使う。
@@ -118,9 +140,8 @@ in
         );
         # SeedVR2 CLIのチャンク処理をComfyUIから起動し、長尺動画をRAM上限付きで処理する。
         # 解像度の自動計算に使う、VIDEOから幅と高さを取り出す汎用ノードGetVideoSizeも同梱する。
-        "ComfyUI-SeedVR2-Streaming" = pkgs.writeTextDir "__init__.py" (
-          builtins.readFile ./custom-node/seedvr2-streaming/__init__.py
-        );
+        "ComfyUI-SeedVR2-Streaming" =
+          writeCheckedInitPy "comfyui-seedvr2-streaming" ./custom-node/seedvr2-streaming/__init__.py;
         # UltralyticsDetectorProvider(YOLOによる顔検出)を提供する。
         # FaceDetailerに検出器を渡すために必要。
         "ComfyUI-Impact-Subpack" = pkgs.fetchFromGitHub {
@@ -135,27 +156,24 @@ in
         # 依存はComfyUI環境に同梱済みのrequestsのみ。
         # customNodesの型はpackageなのでプレーンなパスは渡せず、
         # derivationに包んで渡す。
-        "ComfyUI-Translate-Text" = pkgs.writeTextDir "__init__.py" (
-          builtins.readFile ./custom-node/translate-text/__init__.py
-        );
+        "ComfyUI-Translate-Text" =
+          writeCheckedInitPy "comfyui-translate-text" ./custom-node/translate-text/__init__.py;
         # 画像を選ばないことも許可する自作LoadImage。
         # (none)のままなら出力がNoneになり、optional入力が未接続扱いになる。
         # WanFirstLastFrameToVideoのend_imageなど任意入力の有効・無効を、
         # バイパス操作なしで画像指定の有無だけで切り替えるために使う。
-        "ComfyUI-Load-Image-Optional" = pkgs.writeTextDir "__init__.py" (
-          builtins.readFile ./custom-node/load-image-optional/__init__.py
-        );
+        "ComfyUI-Load-Image-Optional" =
+          writeCheckedInitPy "comfyui-load-image-optional" ./custom-node/load-image-optional/__init__.py;
         # Animaなどlatent寸法に制約があるモデル向けの自作ノード群。
         # 画像を指定した倍数へ中央cropするノードと、
         # EmptyLatentImageへ渡す幅と高さを指定した倍数へ切り下げるノードを提供する。
-        "ComfyUI-Align-Image-Size" = pkgs.writeTextDir "__init__.py" (
-          builtins.readFile ./custom-node/align-image-size/__init__.py
-        );
+        "ComfyUI-Align-Image-Size" =
+          writeCheckedInitPy "comfyui-align-image-size" ./custom-node/align-image-size/__init__.py;
         # 元fpsと音声を維持し、RGB48から10-bit SVT-AV1 losslessのWebMへ保存するノード。
         "ComfyUI-Save-SVT-AV1" = pkgs.symlinkJoin {
           name = "comfyui-save-svt-av1";
           paths = [
-            (pkgs.writeTextDir "__init__.py" (builtins.readFile ./custom-node/save-svt-av1/__init__.py))
+            (writeCheckedInitPy "comfyui-save-svt-av1-init" ./custom-node/save-svt-av1/__init__.py)
             (pkgs.writeTextDir "web/notification.js" (
               builtins.readFile ./custom-node/save-svt-av1/web/notification.js
             ))

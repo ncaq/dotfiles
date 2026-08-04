@@ -8,7 +8,7 @@ import traceback
 from datetime import datetime
 from fractions import Fraction
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
 
 import av
 import comfy.model_management
@@ -33,9 +33,18 @@ negative_prompt = (
 )
 
 
-def split_prompts(text: str) -> list[dict[str, int | str]]:
+class Segment(TypedDict):
+    scene: int
+    prompt: str
+
+
+class TranslatedSegment(Segment):
+    english: str
+
+
+def split_prompts(text: str) -> list[Segment]:
     scene = 0
-    segments: list[dict[str, int | str]] = []
+    segments: list[Segment] = []
     for line in text.splitlines():
         prompt = line.strip()
         if prompt:
@@ -436,7 +445,7 @@ class AnimeVideoQuick:
             translated_segments = manifest["segments"]
         else:
             translated_segments = [
-                {**segment, "english": translate(str(segment["prompt"]))}
+                {**segment, "english": translate(segment["prompt"])}
                 for segment in segments
             ]
             manifest = {
@@ -480,7 +489,7 @@ class AnimeVideoQuick:
                     qwen_clip,
                     qwen_vae,
                     current,
-                    str(segment["english"]),
+                    segment["english"],
                     (seed + retry_seed_offset + index - 1) & 0xFFFFFFFFFFFFFFFF,
                 )
                 save_image(current, keyframe_path)
@@ -525,7 +534,7 @@ class AnimeVideoQuick:
                     loaded_wan_vae,
                     start,
                     end,
-                    str(segment["english"]),
+                    segment["english"],
                     (seed + retry_seed_offset + index) & 0xFFFFFFFFFFFFFFFF,
                     wan_width,
                     wan_height,

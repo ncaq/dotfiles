@@ -11,8 +11,13 @@
 #
 # 出力先のanime-video-quick/<job ID>/manifest.jsonに進捗を記録する。
 # 同じ入力とjob IDで再実行すると生成済みファイルを飛ばして途中から再開する。
-# 破綻した区間はsegments/anime-video-quick-<job ID>-segment-<番号>.webmを削除して、
-# 再実行すればその区間だけ作り直せる。
+# 動画区間は0始まりで、N行目はsegments/*-segment-<N-1>.webmに対応する。
+# 破綻した動画区間を削除して再実行すると、その区間だけを作り直す。
+# 終了キーフレームは1始まりで、N行目はkeyframes/*-keyframe-<N>.pngに対応する。
+# 絵から作り直す場合は該当キーフレームを削除する。そこから後の画像と動画も再生成される。
+# retry_seed_offsetは再生成する画像と動画にだけ加算され、既存の成果物には作用しない。
+# manifestはQwenのMODEL、CLIP、VAEやモデルへのパッチを識別できない。
+# Qwen側の設定を変える場合は別のjob IDを使う。
 { lib, ... }:
 let
   name = "anime-video-quick";
@@ -36,7 +41,7 @@ in
         })
         (mkAppInput 12 "seed")
         (mkAppInputWith 12 "retry_seed_offset" {
-          description = "破綻区間を削除して再生成する時に増やすseed差分";
+          description = "削除して再生成する画像と動画に加えるseed差分";
         })
         (mkAppInputWith 12 "job_id" {
           description = "空なら日時から自動生成。同じ値で未完了地点から再開";

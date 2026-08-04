@@ -491,9 +491,16 @@ class AnimeVideoQuick:
         }
         if manifest_path.exists():
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-            if manifest.get("identity") != identity:
+            previous_identity = manifest.get("identity", {})
+            differing_identity_keys = [
+                key
+                for key, value in identity.items()
+                if previous_identity.get(key) != value
+            ]
+            if differing_identity_keys:
                 raise ValueError(
-                    "同じjob IDに異なる開始画像、プロンプト、またはseedが指定されています"
+                    "同じjob IDに異なる生成条件が指定されています: "
+                    + ", ".join(differing_identity_keys)
                 )
             translated_segments = manifest["segments"]
         else:

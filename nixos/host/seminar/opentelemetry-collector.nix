@@ -1,6 +1,8 @@
 { config, hardening, ... }:
 let
   garageAddr = config.machineAddresses.garage.guest;
+  niks3PublicAddr = config.machineAddresses.niks3-public.guest;
+  niks3PrivateAddr = config.machineAddresses.niks3-private.guest;
 in
 {
   # PrometheusメトリクスをOpenTelemetry Collectorでスクレイプし、
@@ -30,6 +32,20 @@ in
           };
           static_configs = [ { targets = [ "${garageAddr}:3903" ]; } ];
         }
+        {
+          job_name = "niks3-public";
+          scrape_interval = "60s";
+          scheme = "http";
+          metrics_path = "/metrics";
+          static_configs = [ { targets = [ "${niks3PublicAddr}:5751" ]; } ];
+        }
+        {
+          job_name = "niks3-private";
+          scrape_interval = "60s";
+          scheme = "http";
+          metrics_path = "/metrics";
+          static_configs = [ { targets = [ "${niks3PrivateAddr}:5751" ]; } ];
+        }
       ];
       processors = {
         # 公式ベストプラクティスに従いmemory_limiterをパイプライン先頭に置き、
@@ -46,10 +62,10 @@ in
         # 対象プレフィックスにマッチしないものを破棄します。
         # プレフィックス一致なので、
         # prometheus receiverによる名前正規化(_total付与等)が起きても取りこぼしません。
-        "filter/garage" = {
+        "filter/metrics" = {
           error_mode = "ignore";
           metrics.metric = [
-            ''not IsMatch(name, "^(api_s3_|block_|rpc_|table_|cluster_)")''
+            ''not IsMatch(name, "^(api_s3_|block_|rpc_|table_|cluster_|niks3_)")''
           ];
         };
         batch = { };
@@ -65,7 +81,7 @@ in
         receivers = [ "prometheus" ];
         processors = [
           "memory_limiter"
-          "filter/garage"
+          "filter/metrics"
           "batch"
         ];
         exporters = [ "otlp_grpc/mackerel" ];

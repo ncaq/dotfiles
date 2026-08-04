@@ -142,7 +142,9 @@ def scaled_image(image: torch.Tensor, megapixels: float, multiple: int) -> torch
     ).movedim(1, -1)
 
 
-def qwen_conditioning(clip: Any, vae: Any, image: torch.Tensor, prompt: str) -> Any:
+def qwen_image_conditioning(
+    vae: Any, image: torch.Tensor
+) -> tuple[torch.Tensor, torch.Tensor]:
     samples = image.movedim(-1, 1)
     vision_scale = math.sqrt(384 * 384 / (samples.shape[3] * samples.shape[2]))
     vision_width = round(samples.shape[3] * vision_scale)
@@ -158,6 +160,15 @@ def qwen_conditioning(clip: Any, vae: Any, image: torch.Tensor, prompt: str) -> 
         samples, latent_width, latent_height, "area", "disabled"
     ).movedim(1, -1)
     reference_latent = vae.encode(latent_image[..., :3])
+    return vision_image, reference_latent
+
+
+def qwen_conditioning(
+    clip: Any,
+    vision_image: torch.Tensor,
+    reference_latent: torch.Tensor,
+    prompt: str,
+) -> Any:
 
     template = (
         "<|im_start|>system\nDescribe the key features of the input image "
@@ -187,8 +198,9 @@ def generate_keyframe(
     seed: int,
 ) -> torch.Tensor:
     source = scaled_image(image, 1.0, 8)
-    positive = qwen_conditioning(clip, vae, source, prompt)
-    negative = qwen_conditioning(clip, vae, source, "")
+    vision_image, reference_latent = qwen_image_conditioning(vae, source)
+    positive = qwen_conditioning(clip, vision_image, reference_latent, prompt)
+    negative = qwen_conditioning(clip, vision_image, reference_latent, "")
     latent = {"samples": vae.encode(source[..., :3])}
     sampled = nodes.common_ksampler(
         model, seed, 40, 4.0, "euler", "simple", positive, negative, latent, denoise=1.0
@@ -244,6 +256,7 @@ def generate_segment(
     model_high: Any,
     model_low: Any,
     clip: Any,
+    negative: Any,
     vae: Any,
     start_image: torch.Tensor,
     end_image: torch.Tensor,
@@ -255,7 +268,6 @@ def generate_segment(
     positive = clip.encode_from_tokens_scheduled(
         clip.tokenize(f"{anime_style_prefix} {prompt}")
     )
-    negative = clip.encode_from_tokens_scheduled(clip.tokenize(negative_prompt))
     positive, negative, latent = wan_conditioning(
         positive, negative, vae, start_image, end_image, width, height
     )
@@ -549,6 +561,9 @@ class AnimeVideoQuick:
                     wan_clip, "wan", "default"
                 )[0]
                 loaded_wan_vae = nodes.VAELoader().load_vae(wan_vae)[0]
+                wan_negative = loaded_wan_clip.encode_from_tokens_scheduled(
+                    loaded_wan_clip.tokenize(negative_prompt)
+                )
                 wan_start = scaled_image(load_image(start_path), 0.9, 16)
                 wan_height, wan_width = wan_start.shape[1:3]
 
@@ -569,6 +584,7 @@ class AnimeVideoQuick:
                         loaded_wan_model_high,
                         loaded_wan_model_low,
                         loaded_wan_clip,
+                        wan_negative,
                         loaded_wan_vae,
                         start,
                         end,

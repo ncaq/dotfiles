@@ -438,17 +438,33 @@ class AnimeVideoQuick:
             / "anime-video-quick"
             / safe_job_id
         )
-        if not output_dir.exists():
-            return ()
+        filename_prefix = f"anime-video-quick-{safe_job_id}"
+        manifest_path = output_dir / "manifest.json"
+        if not manifest_path.exists():
+            return float("NaN")
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        segment_count = len(manifest["segments"])
+        expected_paths = [
+            output_dir / "keyframes" / f"{filename_prefix}-keyframe-000-start.png",
+            *(
+                output_dir / "keyframes" / f"{filename_prefix}-keyframe-{index:03}.png"
+                for index in range(1, segment_count + 1)
+            ),
+            *(
+                output_dir / "segments" / f"{filename_prefix}-segment-{index:03}.webm"
+                for index in range(segment_count)
+            ),
+            output_dir / f"{filename_prefix}-final.webm",
+        ]
+        if any(not path.is_file() for path in expected_paths):
+            return float("NaN")
         return tuple(
             (
                 path.relative_to(output_dir).as_posix(),
                 path.stat().st_mtime_ns,
                 path.stat().st_size,
             )
-            for directory in (output_dir / "keyframes", output_dir / "segments")
-            for path in sorted(directory.glob("*"))
-            if path.is_file()
+            for path in expected_paths
         )
 
     def generate(

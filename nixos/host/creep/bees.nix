@@ -1,3 +1,7 @@
+{ pkgs, ... }:
+let
+  beesUnit = "beesd@root.service";
+in
 {
   # btrfsの重複排除デーモン。
   # 上流のsystemdユニットがNice=19とIOSchedulingClass=idleを設定しているため、
@@ -21,4 +25,14 @@
       "3.0"
     ];
   };
+  # 重複排除はそこまで急ぎの処理ではないので、
+  # バッテリー駆動中は停止します。
+  systemd.services."beesd@root".unitConfig.ConditionACPower = true;
+  services.acpid.acEventCommands = ''
+    if [ "$(< /sys/class/power_supply/AC/online)" = 1 ]; then
+      ${pkgs.systemd}/bin/systemctl start ${beesUnit}
+    else
+      ${pkgs.systemd}/bin/systemctl stop ${beesUnit}
+    fi
+  '';
 }

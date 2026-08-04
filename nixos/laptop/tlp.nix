@@ -39,6 +39,9 @@ _: {
         # バッテリー時は電力を更に重視したいので、
         # `balance_power`から`power`に変更します。
         CPU_ENERGY_PERF_POLICY_ON_BAT = "power";
+
+        # バッテリー時はファームウェアにも省電力を優先させます。
+        PLATFORM_PROFILE_ON_BAT = "low-power";
       };
     };
   };

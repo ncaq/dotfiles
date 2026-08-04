@@ -193,7 +193,7 @@ def generate_keyframe(
     sampled = nodes.common_ksampler(
         model, seed, 40, 4.0, "euler", "simple", positive, negative, latent, denoise=1.0
     )[0]
-    return flatten_image_batch(vae.decode(sampled["samples"]))
+    return flatten_image_batch(vae.decode(sampled["samples"]))[:1]
 
 
 def wan_conditioning(

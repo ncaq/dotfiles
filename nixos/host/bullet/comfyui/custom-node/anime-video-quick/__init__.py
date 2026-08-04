@@ -363,6 +363,10 @@ def write_manifest(path: Path, manifest: dict[str, Any]) -> None:
     os.replace(temporary, path)
 
 
+def sanitize_job_id(job_id: str) -> str:
+    return re.sub(r"[^A-Za-z0-9._-]+", "-", job_id.strip()).strip(".-")
+
+
 class AnimeVideoQuick:
     @classmethod
     def INPUT_TYPES(cls) -> dict[str, Any]:
@@ -398,6 +402,29 @@ class AnimeVideoQuick:
     CATEGORY = "video"
     OUTPUT_NODE = True
 
+    @classmethod
+    def IS_CHANGED(cls, job_id: str, **kwargs: Any) -> object:
+        safe_job_id = sanitize_job_id(job_id)
+        if not safe_job_id:
+            return float("NaN")
+        output_dir = (
+            Path(folder_paths.get_output_directory())
+            / "anime-video-quick"
+            / safe_job_id
+        )
+        if not output_dir.exists():
+            return ()
+        return tuple(
+            (
+                path.relative_to(output_dir).as_posix(),
+                path.stat().st_mtime_ns,
+                path.stat().st_size,
+            )
+            for directory in (output_dir / "keyframes", output_dir / "segments")
+            for path in sorted(directory.glob("*"))
+            if path.is_file()
+        )
+
     def generate(
         self,
         image: torch.Tensor,
@@ -414,7 +441,7 @@ class AnimeVideoQuick:
         job_id: str,
     ) -> dict[str, Any]:
         segments = split_prompts(prompts)
-        safe_job_id = re.sub(r"[^A-Za-z0-9._-]+", "-", job_id.strip()).strip(".-")
+        safe_job_id = sanitize_job_id(job_id)
         if not safe_job_id:
             safe_job_id = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
         relative_dir = Path("anime-video-quick") / safe_job_id
@@ -459,7 +486,6 @@ class AnimeVideoQuick:
             start_path = keyframe_dir / f"{filename_prefix}-keyframe-000-start.png"
             if not start_path.exists():
                 save_image(image, start_path)
-            current = load_image(start_path)
             first_missing_keyframe = next(
                 (
                     index
@@ -477,75 +503,87 @@ class AnimeVideoQuick:
                         missing_ok=True
                     )
 
-            for index, segment in enumerate(translated_segments, start=1):
-                keyframe_path = (
-                    keyframe_dir / f"{filename_prefix}-keyframe-{index:03}.png"
-                )
-                if first_missing_keyframe is None or index < first_missing_keyframe:
-                    current = load_image(keyframe_path)
-                    continue
-                current = generate_keyframe(
-                    qwen_model,
-                    qwen_clip,
-                    qwen_vae,
-                    current,
-                    segment["english"],
-                    (seed + retry_seed_offset + index - 1) & 0xFFFFFFFFFFFFFFFF,
-                )
-                save_image(current, keyframe_path)
-                manifest["completed_keyframes"] = index
-                write_manifest(manifest_path, manifest)
-
-            del current
-            comfy.model_management.unload_all_models()
-            comfy.model_management.soft_empty_cache(force=True)
-
-            loaded_wan_model_high = ModelSamplingSD3().patch(
-                nodes.UNETLoader().load_unet(wan_model_high, "default")[0], 5
-            )[0]
-            loaded_wan_model_low = ModelSamplingSD3().patch(
-                nodes.UNETLoader().load_unet(wan_model_low, "default")[0], 5
-            )[0]
-            loaded_wan_clip = nodes.CLIPLoader().load_clip(wan_clip, "wan", "default")[
-                0
-            ]
-            loaded_wan_vae = nodes.VAELoader().load_vae(wan_vae)[0]
-            wan_start = scaled_image(load_image(start_path), 0.9, 16)
-            wan_height, wan_width = wan_start.shape[1:3]
-
-            video_paths: list[Path] = []
-            for index, segment in enumerate(translated_segments):
-                video_path = segment_dir / f"{filename_prefix}-segment-{index:03}.webm"
-                video_paths.append(video_path)
-                if video_path.exists():
-                    continue
-                start = load_image(
+            if first_missing_keyframe is not None:
+                previous_path = (
                     start_path
-                    if index == 0
-                    else keyframe_dir / f"{filename_prefix}-keyframe-{index:03}.png"
+                    if first_missing_keyframe == 1
+                    else keyframe_dir
+                    / f"{filename_prefix}-keyframe-{first_missing_keyframe - 1:03}.png"
                 )
-                end = load_image(
-                    keyframe_dir / f"{filename_prefix}-keyframe-{index + 1:03}.png"
-                )
-                frames = generate_segment(
-                    loaded_wan_model_high,
-                    loaded_wan_model_low,
-                    loaded_wan_clip,
-                    loaded_wan_vae,
-                    start,
-                    end,
-                    segment["english"],
-                    (seed + retry_seed_offset + index) & 0xFFFFFFFFFFFFFFFF,
-                    wan_width,
-                    wan_height,
-                )
-                if index != 0:
-                    frames = frames[1:]
-                save_video(frames, video_path)
-                manifest["completed_segments"] = index + 1
-                write_manifest(manifest_path, manifest)
-                del start, end, frames
-                comfy.model_management.soft_empty_cache()
+                current = load_image(previous_path)
+                for index in range(
+                    first_missing_keyframe, len(translated_segments) + 1
+                ):
+                    segment = translated_segments[index - 1]
+                    keyframe_path = (
+                        keyframe_dir / f"{filename_prefix}-keyframe-{index:03}.png"
+                    )
+                    current = generate_keyframe(
+                        qwen_model,
+                        qwen_clip,
+                        qwen_vae,
+                        current,
+                        segment["english"],
+                        (seed + retry_seed_offset + index - 1) & 0xFFFFFFFFFFFFFFFF,
+                    )
+                    save_image(current, keyframe_path)
+                    manifest["completed_keyframes"] = index
+                    write_manifest(manifest_path, manifest)
+                del current
+
+            video_paths = [
+                segment_dir / f"{filename_prefix}-segment-{index:03}.webm"
+                for index in range(len(translated_segments))
+            ]
+            if any(not path.exists() for path in video_paths):
+                comfy.model_management.unload_all_models()
+                comfy.model_management.soft_empty_cache(force=True)
+
+                loaded_wan_model_high = ModelSamplingSD3().patch(
+                    nodes.UNETLoader().load_unet(wan_model_high, "default")[0], 5
+                )[0]
+                loaded_wan_model_low = ModelSamplingSD3().patch(
+                    nodes.UNETLoader().load_unet(wan_model_low, "default")[0], 5
+                )[0]
+                loaded_wan_clip = nodes.CLIPLoader().load_clip(
+                    wan_clip, "wan", "default"
+                )[0]
+                loaded_wan_vae = nodes.VAELoader().load_vae(wan_vae)[0]
+                wan_start = scaled_image(load_image(start_path), 0.9, 16)
+                wan_height, wan_width = wan_start.shape[1:3]
+
+                for index, (segment, video_path) in enumerate(
+                    zip(translated_segments, video_paths, strict=True)
+                ):
+                    if video_path.exists():
+                        continue
+                    start = load_image(
+                        start_path
+                        if index == 0
+                        else keyframe_dir / f"{filename_prefix}-keyframe-{index:03}.png"
+                    )
+                    end = load_image(
+                        keyframe_dir / f"{filename_prefix}-keyframe-{index + 1:03}.png"
+                    )
+                    frames = generate_segment(
+                        loaded_wan_model_high,
+                        loaded_wan_model_low,
+                        loaded_wan_clip,
+                        loaded_wan_vae,
+                        start,
+                        end,
+                        segment["english"],
+                        (seed + retry_seed_offset + index) & 0xFFFFFFFFFFFFFFFF,
+                        wan_width,
+                        wan_height,
+                    )
+                    if index != 0:
+                        frames = frames[1:]
+                    save_video(frames, video_path)
+                    manifest["completed_segments"] = index + 1
+                    write_manifest(manifest_path, manifest)
+                    del start, end, frames
+                    comfy.model_management.soft_empty_cache()
 
             final_name = f"{filename_prefix}-final.webm"
             final_path = output_dir / final_name

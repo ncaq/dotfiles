@@ -17,7 +17,9 @@
 # 絵から作り直す場合は該当キーフレームを削除する。そこから後の画像と動画も再生成される。
 # retry_seed_offsetは再生成する画像と動画にだけ加算され、既存の成果物には作用しない。
 # manifestはQwenのMODEL、CLIP、VAEやモデルへのパッチを識別できない。
-# Qwen側の設定を変える場合は別のjob IDを使う。
+# 開始画像、プロンプト、seed、Wanモデル群、Qwen側の設定を変える場合は別のjob IDを使う。
+# job IDでは英数字、ピリオド、アンダースコア、ハイフン以外をハイフンへ置換する。
+# 置換後に空なら日時から自動生成する。
 { lib, ... }:
 let
   name = "anime-video-quick";
@@ -44,7 +46,7 @@ in
           description = "削除して再生成する画像と動画に加えるseed差分";
         })
         (mkAppInputWith 12 "job_id" {
-          description = "空なら日時から自動生成。同じ値で未完了地点から再開";
+          description = "英数字と._-を使用。空なら日時生成。同じ値で再開";
         })
       ];
       outputs = [ 12 ];

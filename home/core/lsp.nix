@@ -4,12 +4,15 @@
   # Emacsなどのテキストエディタや、
   # コーディングエージェントなどが利用します。
   home.packages = with pkgs; [
+    astro-language-server
     bash-language-server
+    biome
     ccls
     clang-tools
     clojure-lsp
     cmake-language-server
     csharp-ls
+    dart
     dhall-lsp-server
     docker-compose-language-service
     dockerfile-language-server
@@ -17,6 +20,8 @@
     elmPackages.elm-language-server
     erlang-language-platform
     fortls
+    fsautocomplete
+    gleam
     gopls
     graphql-language-service-cli
     haskell-language-server
@@ -28,8 +33,11 @@
     metals
     nginx-language-server
     nil
+    nixd
     ocamlPackages.ocaml-lsp
     omnisharp-roslyn
+    oxlint
+    prisma_7
     pyright
     ruby-lsp
     rust-analyzer
@@ -41,6 +49,8 @@
     taplo
     terraform-ls
     texlab
+    tinymist
+    ty
     typescript-language-server
     vscode-langservers-extracted
     vue-language-server

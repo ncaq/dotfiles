@@ -61,7 +61,6 @@ in
   home.packages = with pkgs; [
     cachix
     cachix-push-ncaq
-    nil
     niks3-push-ncaq
     nix-diff
     nix-fast-build-wrapper

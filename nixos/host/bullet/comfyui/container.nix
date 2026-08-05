@@ -93,19 +93,11 @@ in
         torch = lib.findFirst (
           pkg: lib.getName pkg == "torch"
         ) (throw "torch not found in comfyui heavyDeps") config.services.comfyui.package.heavyDeps;
-        inherit (torch) cudaPackages;
-        cudaNvcc = cudaPackages.cuda_nvcc;
-        cudaNvrtc = cudaPackages.cuda_nvrtc;
         sageattention = comfyuiPython.pkgs.callPackage ../../../../pkgs/sageattention.nix {
           inherit torch;
           # torchの全CUDA世代ではなく、RTX 5090向けのカーネルだけをビルドする。
           cudaCapabilities = [ "12.0" ];
         };
-        # カスタムノードが追加で必要とするPython依存。
-        # 各ノードがcustom-node.nixで`passthru.pythonPathDeps`として添付したものを集める。
-        customNodePythonDeps = lib.concatMap (node: node.pythonPathDeps or [ ]) (
-          lib.attrValues config.services.comfyui.customNodes
-        );
       in
       {
         imports = [ inputs.utensils-comfyui-nix.nixosModules.default ];
@@ -142,20 +134,11 @@ in
             "--use-sage-attention"
           ];
         };
-        # Tritonは未指定時にNixOSには存在しない`/sbin/ldconfig`でlibcudaを探す。
-        systemd.services.comfyui.environment = {
-          CC = lib.getExe pkgs.stdenv.cc;
-          # SeedVR2のVAE attentionが実行時コンパイルにNVRTCを使う。
-          # ComfyUIのtorchと同じCUDAパッケージセットから検索パスを指定する。
-          LD_LIBRARY_PATH = lib.makeLibraryPath [ cudaNvrtc ];
-          PYTHONPATH = lib.makeSearchPath comfyuiPython.sitePackages (
-            [ sageattention ] ++ customNodePythonDeps
-          );
-          TRITON_CUDACRT_PATH = "${cudaPackages.cuda_cudart}/include";
-          TRITON_LIBCUDA_PATH = "/run/opengl-driver/lib";
-          TRITON_LIBDEVICE_PATH = "${cudaNvcc}/nvvm/libdevice/libdevice.10.bc";
-          TRITON_PTXAS_PATH = "${cudaNvcc}/bin/ptxas";
-        };
+        # comfyui-nix同梱のSageAttention 1.0.6より新しい2.2.0を優先する。
+        # extraPythonPackagesでは同名パッケージが衝突するため、検索パスで差し替える。
+        systemd.services.comfyui.environment.PYTHONPATH = lib.makeSearchPath comfyuiPython.sitePackages [
+          sageattention
+        ];
         systemd.services.comfyui.path = with pkgs; [ ffmpeg ];
       };
   };

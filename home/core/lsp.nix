@@ -40,7 +40,6 @@
     prisma_7 # Prisma CLI内蔵のLanguage Server
     pyright # Pythonの型検査と補完
     ruby-lsp # Ruby
-    rust-analyzer # Rust
     serve-d # D
     sourcekit-lsp # SwiftとObjective-C
     sqls # SQL

@@ -4,57 +4,57 @@
   # Emacsなどのテキストエディタや、
   # コーディングエージェントなどが利用します。
   home.packages = with pkgs; [
-    astro-language-server
-    bash-language-server
-    biome
-    ccls
-    clang-tools
-    clojure-lsp
-    cmake-language-server
-    csharp-ls
-    dart
-    dhall-lsp-server
-    docker-compose-language-service
-    dockerfile-language-server
-    elixir-ls
-    elmPackages.elm-language-server
-    erlang-language-platform
-    fortls
-    fsautocomplete
-    gleam
-    gopls
-    graphql-language-service-cli
-    haskell-language-server
-    jdt-language-server
-    kotlin-language-server
-    ltex-ls-plus
-    lua-language-server
-    marksman
-    metals
-    nginx-language-server
-    nil
-    nixd
-    ocamlPackages.ocaml-lsp
-    omnisharp-roslyn
-    oxlint
-    prisma_7
-    pyright
-    ruby-lsp
-    rust-analyzer
-    serve-d
-    sourcekit-lsp
-    sqls
-    svelte-language-server
-    tailwindcss-language-server
-    taplo
-    terraform-ls
-    texlab
-    tinymist
-    ty
-    typescript-language-server
-    vscode-langservers-extracted
-    vue-language-server
-    yaml-language-server
-    zls
+    astro-language-server # Astro
+    bash-language-server # Bashなどのシェルスクリプト
+    biome # JavaScriptやTypeScriptなどのWeb言語
+    ccls # CとC++
+    clang-tools # CとC++向けのclangdを含みます
+    clojure-lsp # Clojure
+    cmake-language-server # CMake
+    csharp-ls # C#
+    dart # Dart SDK内蔵のLanguage Server
+    dhall-lsp-server # Dhall
+    docker-compose-language-service # Docker Compose
+    dockerfile-language-server # Dockerfile
+    elixir-ls # Elixir
+    elmPackages.elm-language-server # Elm
+    erlang-language-platform # Erlang
+    fortls # Fortran
+    fsautocomplete # F#
+    gleam # Gleam内蔵のLanguage Server
+    gopls # Go
+    graphql-language-service-cli # GraphQL
+    haskell-language-server # Haskell
+    jdt-language-server # Java
+    kotlin-language-server # Kotlin
+    ltex-ls-plus # LaTeXやMarkdownなどの文法・スペル検査
+    lua-language-server # Lua
+    marksman # Markdown
+    metals # Scala
+    nginx-language-server # nginx設定
+    nil # Nix
+    nixd # Nix、評価や補完機能が豊富な実装
+    ocamlPackages.ocaml-lsp # OCaml
+    omnisharp-roslyn # C#向けのOmniSharp
+    oxlint # JavaScriptやTypeScript向けの高速LSPとlinter
+    prisma_7 # Prisma CLI内蔵のLanguage Server
+    pyright # Pythonの型検査と補完
+    ruby-lsp # Ruby
+    rust-analyzer # Rust
+    serve-d # D
+    sourcekit-lsp # SwiftとObjective-C
+    sqls # SQL
+    svelte-language-server # Svelte
+    tailwindcss-language-server # Tailwind CSS
+    taplo # TOML
+    terraform-ls # Terraform
+    texlab # LaTeX
+    tinymist # Typst
+    ty # Python向けの高速な型検査と補完
+    typescript-language-server # TypeScriptとJavaScript
+    vscode-langservers-extracted # HTML、CSS、JSON、ESLint
+    vue-language-server # Vue
+    yaml-language-server # YAML
+    zls # Zig
   ];
 }

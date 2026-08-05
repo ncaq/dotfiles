@@ -99,9 +99,14 @@ in
       enabledPlugins = {
         ## lsp plugin
         "clangd-lsp@claude-plugins-official" = true;
+        "csharp-lsp@claude-plugins-official" = true;
         "gopls-lsp@claude-plugins-official" = true;
+        "jdtls-lsp@claude-plugins-official" = true;
+        "lua-lsp@claude-plugins-official" = true;
         "pyright-lsp@claude-plugins-official" = true;
+        "ruby-lsp@claude-plugins-official" = true;
         "rust-analyzer-lsp@claude-plugins-official" = true;
+        "swift-lsp@claude-plugins-official" = true;
         "typescript-lsp@claude-plugins-official" = true;
       };
       skipAutoPermissionPrompt = true; # auto modeをdefaultModeにしているので許可を求めない。

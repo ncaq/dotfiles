@@ -10,8 +10,6 @@
   home.packages = with pkgs; [
     act
     docker-client # clientOnlyなdockerパッケージ。buildx(BuildKit)とcomposeプラグイン同梱。
-    docker-compose-language-service
-    dockerfile-language-server
     hadolint
   ];
 }

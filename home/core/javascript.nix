@@ -50,8 +50,6 @@ in
     npm-check-updates
     prettier
     typescript
-    typescript-language-server
-    vscode-langservers-extracted
     yarn-berry
   ];
 }

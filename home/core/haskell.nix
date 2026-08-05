@@ -37,7 +37,6 @@ in
         cabal-install
         fourmolu
         ghc
-        haskell-language-server
         hlint
         hpack
         pandoc

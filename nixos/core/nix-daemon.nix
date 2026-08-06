@@ -1,5 +1,8 @@
-{ config, ... }:
+{ config, inputs, ... }:
 {
+  # 現在デプロイされている構成を、編集可能な作業ツリーに依存せず再評価できるようにします。
+  environment.etc."nixos-flake".source = inputs.self.outPath;
+
   nix = {
     settings = {
       experimental-features = [

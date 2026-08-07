@@ -9,13 +9,17 @@ use log::{error, warn};
 #[derive(Parser)]
 #[command(about = "Clone and safely update a Git repository")]
 struct Args {
-    #[arg(value_name = "URL")]
+    #[arg(value_name = "URL", help = "Git remote URL to subscribe to")]
     remote: RemoteUrl,
 
-    #[arg(value_name = "PATH")]
+    #[arg(value_name = "PATH", help = "Absolute worktree destination path")]
     worktree: WorktreePath,
 
-    #[arg(value_name = "FILTER", allow_hyphen_values = true)]
+    #[arg(
+        value_name = "FILTER",
+        allow_hyphen_values = true,
+        help = "Partial clone filter for the initial clone, such as blob:none"
+    )]
     partial_clone_filter: PartialCloneFilter,
 }
 

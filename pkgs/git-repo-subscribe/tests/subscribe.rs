@@ -6,7 +6,8 @@ use std::process::{Command, Output};
 
 use git_repo_subscribe::{
     BranchName, ConfiguredRemote, Outcome, PartialCloneFilter, PartialCloneFilterError, RemoteUrl,
-    RemoteUrlError, Repository, SkipReason, WorktreePath, WorktreePathError, subscribe,
+    RemoteUrlError, Repository, SkipReason, SubscribeError, WorktreePath, WorktreePathError,
+    subscribe,
 };
 use tempfile::TempDir;
 
@@ -135,6 +136,20 @@ fn fast_forwards_clean_default_branch() {
         .is_empty()
     );
     assert_historical_blob_missing(&fixture);
+}
+
+#[test]
+fn repeated_update_without_remote_changes_is_idempotent() {
+    let fixture = Fixture::new();
+    subscribe(&fixture.repository()).unwrap();
+    let initial_head = git_text_in(&fixture.subscription, ["rev-parse", "HEAD"]);
+
+    assert_eq!(subscribe(&fixture.repository()).unwrap(), Outcome::Updated);
+    assert_eq!(
+        git_text_in(&fixture.subscription, ["rev-parse", "HEAD"]),
+        initial_head
+    );
+    assert!(temporary_refs(&fixture.subscription).is_empty());
 }
 
 #[test]
@@ -330,6 +345,85 @@ fn skips_repository_without_origin() {
 }
 
 #[test]
+fn skips_unavailable_remote() {
+    let fixture = Fixture::new();
+    subscribe(&fixture.repository()).unwrap();
+    fs::remove_dir_all(&fixture.remote).expect("remove remote repository");
+
+    assert_eq!(
+        subscribe(&fixture.repository()).unwrap(),
+        Outcome::Skipped(SkipReason::RemoteUnavailable)
+    );
+}
+
+#[test]
+fn skips_remote_without_default_branch() {
+    let fixture = Fixture::new();
+    subscribe(&fixture.repository()).unwrap();
+    git_in(
+        &fixture.remote,
+        ["symbolic-ref", "HEAD", "refs/heads/missing"],
+    );
+
+    assert_eq!(
+        subscribe(&fixture.repository()).unwrap(),
+        Outcome::Skipped(SkipReason::DefaultBranchUnknown)
+    );
+}
+
+#[test]
+fn skips_unborn_head() {
+    let fixture = Fixture::new();
+    let unborn = fixture.temp_dir.path().join("unborn");
+    git(["init", "--initial-branch=master"], &unborn);
+    git_in(
+        &unborn,
+        ["remote", "add", "origin", fixture.remote_url.as_str()],
+    );
+
+    assert_eq!(
+        subscribe(&fixture.repository_at(unborn)).unwrap(),
+        Outcome::Skipped(SkipReason::UnbornHead)
+    );
+}
+
+#[test]
+fn cli_clones_missing_repository() {
+    let fixture = Fixture::new();
+
+    assert_success(
+        subscribe_command(&fixture)
+            .output()
+            .expect("run subscriber"),
+    );
+    assert!(fixture.subscription.join(".git").is_dir());
+}
+
+#[test]
+fn cli_reports_clone_failure() {
+    let fixture = Fixture::new();
+    let missing_remote = fixture.temp_dir.path().join("missing.git");
+    let remote_url = format!("file://{}", missing_remote.display());
+    let destination = fixture.temp_dir.path().join("failed-subscription");
+    let output = subscriber_command(&remote_url, &destination)
+        .output()
+        .expect("run subscriber");
+
+    assert!(!output.status.success());
+    assert!(!destination.exists());
+
+    let error = subscribe(&Repository::new(
+        remote_url.parse().expect("valid missing remote URL"),
+        WorktreePath::try_from(destination).expect("valid destination"),
+        "blob:none".parse().expect("valid partial clone filter"),
+    ))
+    .expect_err("clone must fail");
+    assert!(matches!(&error, SubscribeError::GitFailed { .. }));
+    assert!(error.is_git_failure());
+    assert_ne!(error.exit_code(), 0);
+}
+
+#[test]
 fn validates_remote_urls() {
     assert!(
         "https://github.com/NixOS/nixpkgs.git"
@@ -422,14 +516,29 @@ fn validates_branch_names() {
 }
 
 fn subscribe_command(fixture: &Fixture) -> Command {
+    subscriber_command(fixture.remote_url.as_str(), &fixture.subscription)
+}
+
+fn subscriber_command(remote_url: &str, destination: &Path) -> Command {
     let mut command = Command::new(env!("CARGO_BIN_EXE_git-repo-subscribe"));
     command
         .env("RUST_LOG", "warn")
         .env("RUST_LOG_STYLE", "never")
-        .arg(fixture.remote_url.as_str())
-        .arg(&fixture.subscription)
-        .arg("blob:limit=1m");
+        .arg(remote_url)
+        .arg(destination)
+        .arg("blob:none");
     command
+}
+
+fn temporary_refs(path: &Path) -> String {
+    git_text_in(
+        path,
+        [
+            "for-each-ref",
+            "--format=%(refname)",
+            "refs/git-repo-subscribe",
+        ],
+    )
 }
 
 fn assert_historical_blob_missing(fixture: &Fixture) {

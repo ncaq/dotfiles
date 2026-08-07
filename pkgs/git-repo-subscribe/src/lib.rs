@@ -97,6 +97,8 @@ pub enum SkipReason {
     LocalChanges,
     /// The worktree has a detached `HEAD`.
     DetachedHead,
+    /// The worktree has no commit checked out yet.
+    UnbornHead,
     /// The remote could not be queried for its default branch.
     RemoteUnavailable,
     /// The remote response did not identify a default branch.
@@ -142,6 +144,7 @@ impl SkipReason {
             ),
             Self::LocalChanges => format!("{path} has local changes; skipping update."),
             Self::DetachedHead => format!("{path} has a detached HEAD; skipping update."),
+            Self::UnbornHead => format!("{path} has an unborn HEAD; skipping update."),
             Self::RemoteUnavailable => format!(
                 "unable to query the default branch of {}; skipping update.",
                 repository.remote()
@@ -343,11 +346,15 @@ pub fn subscribe(repository: &Repository) -> Result<Outcome, SubscribeError> {
         }));
     }
 
+    let Some(initial_head) = optional_head_id(worktree)? else {
+        return Ok(Outcome::Skipped(SkipReason::UnbornHead));
+    };
+
     let fetch_ref = TemporaryRef::for_current_process();
     let refspec = format!("+{}:{}", initial_branch.as_str(), fetch_ref.as_str());
     let initial_state = WorktreeState {
         origin: Some(origin_url),
-        head: head_id(worktree)?,
+        head: initial_head,
         branch: Some(initial_branch),
         has_local_changes: false,
     };
@@ -433,6 +440,13 @@ fn parse_default_branch(remote_head: &str) -> Result<Option<BranchName>, Subscri
 
 fn head_id(path: &Path) -> Result<CommitId, SubscribeError> {
     CommitId::parse(&git_text_in(path, ["rev-parse", "HEAD"])?).map_err(Into::into)
+}
+
+fn optional_head_id(path: &Path) -> Result<Option<CommitId>, SubscribeError> {
+    git_optional_text_in(path, ["rev-parse", "--verify", "HEAD"])?
+        .map(|head| CommitId::parse(&head))
+        .transpose()
+        .map_err(Into::into)
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -681,6 +695,20 @@ mod tests {
             .expect("parse ls-remote output")
             .expect("default branch exists");
         assert_eq!(branch.as_str(), "master");
+    }
+
+    #[test]
+    fn ignores_unrelated_remote_refs() {
+        assert_eq!(
+            parse_default_branch("ref: refs/heads/topic\trefs/heads/topic\n")
+                .expect("parse ls-remote output"),
+            None
+        );
+    }
+
+    #[test]
+    fn reports_invalid_default_branch() {
+        assert!(parse_default_branch("ref: refs/heads/invalid..branch\tHEAD\n").is_err());
     }
 
     #[test]

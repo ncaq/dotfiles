@@ -1,3 +1,11 @@
+//! Clone configured Git repositories and safely fast-forward existing worktrees.
+//!
+//! The crate validates repository configuration before invoking the Git CLI. Existing
+//! worktrees are updated only when they point to the configured remote, are clean, and
+//! have the remote default branch checked out.
+
+#![deny(missing_docs)]
+
 mod domain;
 
 use std::ffi::{OsStr, OsString};
@@ -12,6 +20,9 @@ pub use domain::{BranchName, ConfiguredRemote, PartialCloneFilter, RemoteUrl, Wo
 use domain::{CommitId, TemporaryRef};
 
 #[derive(Debug)]
+/// A validated Git repository subscription.
+///
+/// Its fields are immutable and can only be constructed from validated domain values.
 pub struct Repository {
     remote: RemoteUrl,
     worktree: WorktreePath,
@@ -19,6 +30,7 @@ pub struct Repository {
 }
 
 impl Repository {
+    /// Creates a repository subscription from validated configuration values.
     #[must_use]
     pub fn new(
         remote: RemoteUrl,
@@ -32,16 +44,19 @@ impl Repository {
         }
     }
 
+    /// Returns the configured remote URL.
     #[must_use]
     pub fn remote(&self) -> &RemoteUrl {
         &self.remote
     }
 
+    /// Returns the local worktree path.
     #[must_use]
     pub fn worktree(&self) -> &WorktreePath {
         &self.worktree
     }
 
+    /// Returns the filter used only when initially cloning the repository.
     #[must_use]
     pub fn partial_clone_filter(&self) -> &PartialCloneFilter {
         &self.partial_clone_filter
@@ -49,37 +64,61 @@ impl Repository {
 }
 
 #[derive(Debug, Eq, PartialEq)]
+/// The result of processing a repository subscription.
 pub enum Outcome {
+    /// A missing worktree was cloned.
     Cloned,
+    /// An existing worktree was successfully fast-forwarded or was already current.
     Updated,
+    /// Updating was safely skipped for the contained reason.
     Skipped(SkipReason),
 }
 
 #[derive(Debug, Eq, PartialEq)]
+/// A non-fatal condition that prevents a safe update.
 pub enum SkipReason {
+    /// The configured path exists but is not a Git worktree.
     NotWorktree,
+    /// The configured path is inside a worktree but is not its root.
     NotWorktreeRoot,
+    /// The worktree has no `origin` remote.
     NoOrigin,
+    /// The configured and actual `origin` URLs differ.
     OriginMismatch {
+        /// The URL currently configured for `origin`.
         actual: ConfiguredRemote,
     },
+    /// The worktree contains tracked or untracked local changes.
     LocalChanges,
+    /// The worktree has a detached `HEAD`.
     DetachedHead,
+    /// The remote could not be queried for its default branch.
     RemoteUnavailable,
+    /// The remote response did not identify a default branch.
     DefaultBranchUnknown,
+    /// The checked-out branch is not the remote default branch.
     NotDefaultBranch {
+        /// The branch currently checked out in the worktree.
         current: BranchName,
+        /// The default branch reported by the remote.
         default: BranchName,
     },
+    /// Fetching the default branch failed.
     FetchFailed,
+    /// The `origin` URL changed while the fetch was running.
     OriginChanged,
+    /// `HEAD` changed while the fetch was running.
     HeadChanged,
+    /// The checked-out branch changed while the fetch was running.
     BranchChanged,
+    /// The worktree gained local changes while the fetch was running.
     LocalChangesDuringFetch,
+    /// The fetched commit could not be merged with a fast-forward.
     FastForwardFailed,
 }
 
 impl SkipReason {
+    /// Formats a human-readable warning for this skip reason and repository.
     #[must_use]
     pub fn warning(&self, repository: &Repository) -> String {
         let path = repository.worktree();
@@ -127,39 +166,58 @@ impl SkipReason {
 }
 
 #[derive(Debug, Error)]
+/// A fatal failure while processing a repository subscription.
 pub enum SubscribeError {
+    /// A missing parent directory could not be created.
     #[error("failed to create {}: {source}", .path.display())]
     CreateParent {
+        /// The parent directory that could not be created.
         path: PathBuf,
+        /// The underlying filesystem error.
         source: std::io::Error,
     },
+    /// The Git executable could not be started.
     #[error("failed to run git {}: {source}", display_args(.args))]
     RunGit {
+        /// The Git arguments that could not be executed.
         args: Vec<OsString>,
+        /// The underlying process creation error.
         source: std::io::Error,
     },
+    /// A Git command required for the operation exited unsuccessfully.
     #[error("git {} failed with {status}", display_args(.args))]
     GitFailed {
+        /// The arguments passed to Git.
         args: Vec<OsString>,
+        /// The unsuccessful Git exit status.
         status: ExitStatus,
     },
+    /// Git returned output that was not valid UTF-8.
     #[error("git {} returned non-UTF-8 output: {source}", display_args(.args))]
     InvalidGitOutput {
+        /// The arguments passed to Git.
         args: Vec<OsString>,
+        /// The UTF-8 decoding error.
         source: std::string::FromUtf8Error,
     },
+    /// A filesystem path could not be resolved to its canonical form.
     #[error("failed to resolve {}: {source}", .path.display())]
     Canonicalize {
+        /// The path that could not be resolved.
         path: PathBuf,
+        /// The underlying filesystem error.
         source: std::io::Error,
     },
+    /// Git returned a branch name that is invalid according to Git's rules.
     #[error("Git returned an invalid branch name: {0}")]
     InvalidBranch(#[from] domain::BranchNameError),
+    /// Git returned an invalid full object ID.
     #[error("Git returned an invalid commit ID: {0}")]
     InvalidCommitId(#[from] gix_hash::decode::Error),
 }
 
 impl SubscribeError {
+    /// Returns the process exit code corresponding to this fatal error.
     #[must_use]
     pub fn exit_code(&self) -> u8 {
         match self {
@@ -171,12 +229,18 @@ impl SubscribeError {
         }
     }
 
+    /// Returns whether Git already emitted the user-facing failure details.
     #[must_use]
     pub fn is_git_failure(&self) -> bool {
         matches!(self, Self::GitFailed { .. })
     }
 }
 
+/// Clones a missing repository or safely updates an existing worktree.
+///
+/// Existing worktrees are updated only when they are clean, use the configured `origin`,
+/// and have the remote default branch checked out. Expected unsafe states are returned as
+/// [`Outcome::Skipped`], while process and data errors are returned as [`SubscribeError`].
 pub fn subscribe(repository: &Repository) -> Result<Outcome, SubscribeError> {
     let worktree = repository.worktree().as_path();
     if !worktree.exists() {

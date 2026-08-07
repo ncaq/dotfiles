@@ -510,8 +510,8 @@ where
     let mut command = git_command();
     command.arg("-C").arg(path).args(&collected);
     if quiet {
-        command.stdout(std::process::Stdio::null());
-        command.stderr(std::process::Stdio::null());
+        command.stdout(Stdio::null());
+        command.stderr(Stdio::null());
     }
     command
         .status()

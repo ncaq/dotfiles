@@ -69,7 +69,7 @@ impl Fixture {
         Repository::new(
             self.remote_url.clone(),
             WorktreePath::try_from(path).expect("valid worktree path"),
-            "blob:limit=1m".parse().expect("valid partial clone filter"),
+            "blob:none".parse().expect("valid partial clone filter"),
         )
     }
 
@@ -94,7 +94,7 @@ fn clones_partial_repository_with_complete_history() {
             &fixture.subscription,
             ["config", "--get", "remote.origin.partialclonefilter"]
         ),
-        "blob:limit=1048576"
+        "blob:none"
     );
     assert_eq!(
         git_text_in(
@@ -191,6 +191,7 @@ fn skips_diverged_default_branch_without_changing_head() {
         subscribe(&fixture.repository()).unwrap(),
         Outcome::Skipped(SkipReason::FastForwardFailed)
     );
+    assert!(temporary_refs(&fixture.subscription).is_empty());
 }
 
 #[test]
@@ -234,7 +235,7 @@ fn skips_detached_head() {
 }
 
 #[test]
-fn skips_non_repository_and_nested_path() {
+fn skips_non_repository_directory() {
     let fixture = Fixture::new();
     let not_repository = fixture.temp_dir.path().join("not-a-repository");
     fs::create_dir(&not_repository).expect("create non-repository");
@@ -244,7 +245,11 @@ fn skips_non_repository_and_nested_path() {
         Outcome::Skipped(SkipReason::NotWorktree)
     );
     assert_directory_empty(repository.worktree().as_path());
+}
 
+#[test]
+fn skips_nested_worktree_path() {
+    let fixture = Fixture::new();
     subscribe(&fixture.repository()).unwrap();
     let nested = fixture.subscription.join("nested");
     fs::create_dir(&nested).expect("create nested directory");
@@ -293,6 +298,7 @@ fn protects_ignored_file() {
         fs::read_to_string(fixture.subscription.join("ignored")).unwrap(),
         "local ignored content\n"
     );
+    assert!(temporary_refs(&fixture.subscription).is_empty());
 }
 
 #[test]

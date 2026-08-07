@@ -10,28 +10,19 @@ use url::Url;
 /// A validated Git remote URL using the `https`, `ssh`, or `file` scheme.
 ///
 /// The original spelling is retained for exact comparison with the URL stored by Git.
-pub struct RemoteUrl {
-    original: String,
-    parsed: Url,
-}
+pub struct RemoteUrl(String);
 
 impl RemoteUrl {
     /// Returns the original validated URL string passed to Git.
     #[must_use]
     pub fn as_str(&self) -> &str {
-        &self.original
-    }
-
-    /// Returns the parsed URL representation.
-    #[must_use]
-    pub fn parsed(&self) -> &Url {
-        &self.parsed
+        &self.0
     }
 }
 
 impl Display for RemoteUrl {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.original.fmt(formatter)
+        self.0.fmt(formatter)
     }
 }
 
@@ -56,10 +47,7 @@ impl FromStr for RemoteUrl {
         if matches!(url.scheme(), "https" | "file") && !url.username().is_empty() {
             return Err(RemoteUrlError::Username);
         }
-        Ok(Self {
-            original: value.to_owned(),
-            parsed: url,
-        })
+        Ok(Self(value.to_owned()))
     }
 }
 
@@ -158,18 +146,6 @@ impl PartialCloneFilter {
     #[must_use]
     pub fn git_argument(&self) -> String {
         format!("--filter={}", self.0)
-    }
-
-    /// Returns the filter specification without the `--filter=` prefix.
-    #[must_use]
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-}
-
-impl Display for PartialCloneFilter {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.0.fmt(formatter)
     }
 }
 

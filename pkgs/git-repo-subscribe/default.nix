@@ -12,7 +12,6 @@ rustPlatform.buildRustPackage {
   cargoLock.lockFile = ./Cargo.lock;
 
   nativeBuildInputs = [ makeWrapper ];
-  buildInputs = [ git ];
   nativeCheckInputs = [ git ];
 
   postInstall = ''

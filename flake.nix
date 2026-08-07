@@ -298,6 +298,7 @@
               prettier.enable = true;
               ruff-check.enable = true;
               ruff-format.enable = true;
+              rustfmt.enable = true;
               shellcheck.enable = true;
               shfmt.enable = true;
               statix.enable = true;
@@ -352,7 +353,7 @@
                   } ''echo "$evaluated" > "$out"'';
                 };
             in
-            nixosEvalChecks // hmEvalChecks // git-repo-subscribe.tests;
+            nixosEvalChecks // hmEvalChecks // { inherit git-repo-subscribe; };
 
           packages = {
             # flake.lockの管理バージョンをre-exportすることで安定した利用を促進。

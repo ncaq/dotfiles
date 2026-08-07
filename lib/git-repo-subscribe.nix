@@ -40,7 +40,7 @@ let
 
       partialCloneFilter = lib.mkOption {
         type = filterType;
-        default = "blob:limit=1m";
+        default = "blob:none";
         description = "Partial clone filter used for the initial clone";
       };
     };
@@ -88,16 +88,11 @@ in
       subscribeGitRepositoryPids=()
       ${subscribeCommands}
 
-      subscribeGitRepositoriesFailed=
       for pid in "''${subscribeGitRepositoryPids[@]}"; do
         if ! wait "$pid"; then
-          subscribeGitRepositoriesFailed=yes
+          echo "warning: unable to subscribe to a Git repository; continuing activation" >&2
         fi
       done
-
-      if [[ -n "$subscribeGitRepositoriesFailed" ]]; then
-        exit 1
-      fi
     '';
   };
 }

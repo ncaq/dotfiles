@@ -39,4 +39,9 @@ in
   };
 
   home.shell.enableZshIntegration = true;
+
+  programs.git-repo-subscribe.repositories.dot-zsh = {
+    url = "https://github.com/ncaq/.zsh.d.git";
+    path = zshUserDotDir;
+  };
 }

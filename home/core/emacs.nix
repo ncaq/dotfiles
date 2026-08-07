@@ -1,5 +1,6 @@
 {
   pkgs,
+  config,
   lib,
   isWSL,
   osConfig ? null,
@@ -58,5 +59,10 @@ in
     # Nixの設定をスマートに解決するためのものです。
     # Emacsの設定自体はローカルのファイルシステムで管理します。
     packages = [ emacsPackage ];
+  };
+
+  programs.git-repo-subscribe.repositories.dot-emacs = {
+    url = "https://github.com/ncaq/.emacs.d.git";
+    path = "${config.home.homeDirectory}/.emacs.d";
   };
 }

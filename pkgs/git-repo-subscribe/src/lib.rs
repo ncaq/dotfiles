@@ -301,21 +301,21 @@ pub fn subscribe(repository: &Repository) -> Result<Outcome, SubscribeError> {
         return Ok(Outcome::Skipped(SkipReason::NotWorktreeRoot));
     }
 
-    let Some(origin_url) = git_optional_text_in(worktree, ["remote", "get-url", "origin"])? else {
+    let initial_state = WorktreeState::read(worktree)?;
+    let Some(origin_url) = initial_state.origin.as_ref() else {
         return Ok(Outcome::Skipped(SkipReason::NoOrigin));
     };
-    let origin_url = ConfiguredRemote::new(origin_url);
-    if origin_url != *repository.remote() {
+    if origin_url != repository.remote() {
         return Ok(Outcome::Skipped(SkipReason::OriginMismatch {
-            actual: origin_url,
+            actual: ConfiguredRemote::new(origin_url.to_string()),
         }));
     }
 
-    if has_local_changes(worktree)? {
+    if initial_state.has_local_changes {
         return Ok(Outcome::Skipped(SkipReason::LocalChanges));
     }
 
-    let Some(initial_branch) = current_branch(worktree)? else {
+    let Some(initial_branch) = initial_state.branch.as_ref() else {
         return Ok(Outcome::Skipped(SkipReason::DetachedHead));
     };
 
@@ -342,20 +342,19 @@ pub fn subscribe(repository: &Repository) -> Result<Outcome, SubscribeError> {
     let Some(default_branch) = parse_default_branch(&remote_head)? else {
         return Ok(Outcome::Skipped(SkipReason::DefaultBranchUnknown));
     };
-    if initial_branch != default_branch {
+    if initial_branch != &default_branch {
         return Ok(Outcome::Skipped(SkipReason::NotDefaultBranch {
-            current: initial_branch,
+            current: initial_branch.clone(),
             default: default_branch,
         }));
     }
 
-    let head = head_id(worktree)?;
     let fetch_ref = TemporaryRef::for_current_process();
     let _fetch_ref_guard = FetchRefGuard {
         worktree,
         fetch_ref: &fetch_ref,
     };
-    let refspec = format!("+{}:{}", default_branch.as_str(), fetch_ref.as_str());
+    let refspec = format!("+{}:{}", initial_branch.as_str(), fetch_ref.as_str());
     if !git_status_in(
         worktree,
         ["fetch", "--no-write-fetch-head", "origin", &refspec],
@@ -364,20 +363,17 @@ pub fn subscribe(repository: &Repository) -> Result<Outcome, SubscribeError> {
         return Ok(Outcome::Skipped(SkipReason::FetchFailed));
     }
 
-    if git_optional_text_in(worktree, ["remote", "get-url", "origin"])?
-        .map(ConfiguredRemote::new)
-        .as_ref()
-        != Some(&origin_url)
-    {
+    let current_state = WorktreeState::read(worktree)?;
+    if current_state.origin != initial_state.origin {
         return Ok(Outcome::Skipped(SkipReason::OriginChanged));
     }
-    if optional_head_id(worktree)? != Some(head) {
+    if current_state.head != initial_state.head {
         return Ok(Outcome::Skipped(SkipReason::HeadChanged));
     }
-    if current_branch(worktree)?.as_ref() != Some(&initial_branch) {
+    if current_state.branch != initial_state.branch {
         return Ok(Outcome::Skipped(SkipReason::BranchChanged));
     }
-    if has_local_changes(worktree)? {
+    if current_state.has_local_changes {
         return Ok(Outcome::Skipped(SkipReason::LocalChangesDuringFetch));
     }
     if !git_status_in(
@@ -399,7 +395,13 @@ pub fn subscribe(repository: &Repository) -> Result<Outcome, SubscribeError> {
 fn has_local_changes(path: &Path) -> Result<bool, SubscribeError> {
     Ok(!git_text_in(
         path,
-        ["status", "--porcelain=v1", "--untracked-files=normal"],
+        [
+            "-c",
+            "core.untrackedCache=true",
+            "status",
+            "--porcelain=v1",
+            "--untracked-files=normal",
+        ],
     )?
     .is_empty())
 }
@@ -427,11 +429,24 @@ fn head_id(path: &Path) -> Result<CommitId, SubscribeError> {
     CommitId::parse(&git_text_in(path, ["rev-parse", "HEAD"])?).map_err(Into::into)
 }
 
-fn optional_head_id(path: &Path) -> Result<Option<CommitId>, SubscribeError> {
-    git_optional_text_in(path, ["rev-parse", "HEAD"])?
-        .map(|value| CommitId::parse(&value))
-        .transpose()
-        .map_err(Into::into)
+#[derive(Debug, Eq, PartialEq)]
+struct WorktreeState {
+    origin: Option<ConfiguredRemote>,
+    head: CommitId,
+    branch: Option<BranchName>,
+    has_local_changes: bool,
+}
+
+impl WorktreeState {
+    fn read(path: &Path) -> Result<Self, SubscribeError> {
+        Ok(Self {
+            origin: git_optional_text_in(path, ["remote", "get-url", "origin"])?
+                .map(ConfiguredRemote::new),
+            head: head_id(path)?,
+            branch: current_branch(path)?,
+            has_local_changes: has_local_changes(path)?,
+        })
+    }
 }
 
 fn canonicalize(path: &Path) -> Result<PathBuf, SubscribeError> {

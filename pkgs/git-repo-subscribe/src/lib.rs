@@ -410,8 +410,15 @@ fn has_local_changes(path: &Path) -> Result<bool, SubscribeError> {
 }
 
 fn current_branch(path: &Path) -> Result<Option<BranchName>, SubscribeError> {
-    git_optional_text_in(path, ["symbolic-ref", "--quiet", "--short", "HEAD"])?
-        .map(BranchName::parse)
+    git_optional_text_in(path, ["symbolic-ref", "--quiet", "HEAD"])?
+        .map(|branch| {
+            BranchName::parse(
+                branch
+                    .strip_prefix("refs/heads/")
+                    .unwrap_or(&branch)
+                    .to_owned(),
+            )
+        })
         .transpose()
         .map_err(Into::into)
 }

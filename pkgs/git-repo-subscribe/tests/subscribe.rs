@@ -40,8 +40,7 @@ impl Fixture {
         git_in(&source, ["config", "user.name", "Test"]);
         git_in(&source, ["remote", "add", "origin", path_text(&remote)]);
 
-        fs::write(source.join("historical"), vec![0; 2 * 1024 * 1024])
-            .expect("write historical blob");
+        fs::write(source.join("historical"), "historical\n").expect("write historical blob");
         let historical_blob = git_text_in(&source, ["hash-object", "historical"]);
         git_in(&source, ["add", "historical"]);
         git_in(&source, ["commit", "-m", "historical"]);
@@ -124,18 +123,23 @@ fn fast_forwards_clean_default_branch() {
         git_text_in(&fixture.subscription, ["rev-parse", "HEAD"]),
         git_text_in(&fixture.source, ["rev-parse", "HEAD"])
     );
-    assert!(
-        git_text_in(
-            &fixture.subscription,
-            [
-                "for-each-ref",
-                "--format=%(refname)",
-                "refs/git-repo-subscribe"
-            ]
-        )
-        .is_empty()
-    );
+    assert!(temporary_refs(&fixture.subscription).is_empty());
     assert_historical_blob_missing(&fixture);
+}
+
+#[test]
+fn fetches_default_branch_when_tag_has_same_name() {
+    let fixture = Fixture::new();
+    subscribe(&fixture.repository()).unwrap();
+    git_in(&fixture.source, ["tag", "master", "HEAD~1"]);
+    git_in(&fixture.source, ["push", "origin", "refs/tags/master"]);
+    fixture.push_update("updated\n", "update");
+
+    assert_eq!(subscribe(&fixture.repository()).unwrap(), Outcome::Updated);
+    assert_eq!(
+        git_text_in(&fixture.subscription, ["rev-parse", "HEAD"]),
+        git_text_in(&fixture.source, ["rev-parse", "refs/heads/master"])
+    );
 }
 
 #[test]
@@ -215,6 +219,43 @@ fn skips_local_changes() {
     let fixture = Fixture::new();
     subscribe(&fixture.repository()).unwrap();
     fs::write(fixture.subscription.join("untracked"), "dirty\n").expect("write local change");
+
+    assert_eq!(
+        subscribe(&fixture.repository()).unwrap(),
+        Outcome::Skipped(SkipReason::LocalChanges)
+    );
+}
+
+#[test]
+fn skips_modified_tracked_file() {
+    let fixture = Fixture::new();
+    subscribe(&fixture.repository()).unwrap();
+    fs::write(fixture.subscription.join("tracked"), "modified\n").expect("modify tracked file");
+
+    assert_eq!(
+        subscribe(&fixture.repository()).unwrap(),
+        Outcome::Skipped(SkipReason::LocalChanges)
+    );
+}
+
+#[test]
+fn skips_staged_changes() {
+    let fixture = Fixture::new();
+    subscribe(&fixture.repository()).unwrap();
+    fs::write(fixture.subscription.join("staged"), "staged\n").expect("write staged file");
+    git_in(&fixture.subscription, ["add", "staged"]);
+
+    assert_eq!(
+        subscribe(&fixture.repository()).unwrap(),
+        Outcome::Skipped(SkipReason::LocalChanges)
+    );
+}
+
+#[test]
+fn skips_deleted_tracked_file() {
+    let fixture = Fixture::new();
+    subscribe(&fixture.repository()).unwrap();
+    fs::remove_file(fixture.subscription.join("tracked")).expect("delete tracked file");
 
     assert_eq!(
         subscribe(&fixture.repository()).unwrap(),
@@ -360,6 +401,27 @@ fn skips_unavailable_remote() {
         subscribe(&fixture.repository()).unwrap(),
         Outcome::Skipped(SkipReason::RemoteUnavailable)
     );
+}
+
+#[test]
+fn skips_failed_fetch_without_leaking_temporary_ref() {
+    let fixture = Fixture::new();
+    subscribe(&fixture.repository()).unwrap();
+    let initial_head = git_text_in(&fixture.subscription, ["rev-parse", "HEAD"]);
+    git_in(
+        &fixture.subscription,
+        ["config", "remote.origin.uploadpack", "false"],
+    );
+
+    assert_eq!(
+        subscribe(&fixture.repository()).unwrap(),
+        Outcome::Skipped(SkipReason::FetchFailed)
+    );
+    assert_eq!(
+        git_text_in(&fixture.subscription, ["rev-parse", "HEAD"]),
+        initial_head
+    );
+    assert!(temporary_refs(&fixture.subscription).is_empty());
 }
 
 #[test]
@@ -528,6 +590,17 @@ fn subscribe_command(fixture: &Fixture) -> Command {
 fn subscriber_command(remote_url: &str, destination: &Path) -> Command {
     let mut command = Command::new(env!("CARGO_BIN_EXE_git-repo-subscribe"));
     command
+        .env(
+            "HOME",
+            destination.parent().expect("destination has a parent"),
+        )
+        .env(
+            "XDG_CONFIG_HOME",
+            destination
+                .parent()
+                .expect("destination has a parent")
+                .join("xdg-config"),
+        )
         .env("RUST_LOG", "warn")
         .env("RUST_LOG_STYLE", "never")
         .arg(remote_url)
@@ -548,7 +621,8 @@ fn temporary_refs(path: &Path) -> String {
 }
 
 fn assert_historical_blob_missing(fixture: &Fixture) {
-    let object = Command::new("git")
+    let mut command = git_command();
+    let object = command
         .env("GIT_NO_LAZY_FETCH", "1")
         .arg("-C")
         .arg(&fixture.subscription)
@@ -570,19 +644,19 @@ fn assert_directory_empty(path: &Path) {
 }
 
 fn git<const N: usize>(args: [&str; N], path: &Path) {
-    let mut command = Command::new("git");
+    let mut command = git_command();
     command.args(args).arg(path);
     assert_success(command.output().expect("run git"));
 }
 
 fn git_in<const N: usize>(path: &Path, args: [&str; N]) {
-    let mut command = Command::new("git");
+    let mut command = git_command();
     command.arg("-C").arg(path).args(args);
     assert_success(command.output().expect("run git"));
 }
 
 fn git_text_in<const N: usize>(path: &Path, args: [&str; N]) -> String {
-    let mut command = Command::new("git");
+    let mut command = git_command();
     command.arg("-C").arg(path).args(args);
     let output = command.output().expect("run git");
     assert_success(output.clone());
@@ -590,6 +664,15 @@ fn git_text_in<const N: usize>(path: &Path, args: [&str; N]) -> String {
         .expect("Git output is UTF-8")
         .trim_end()
         .to_owned()
+}
+
+fn git_command() -> Command {
+    let mut command = Command::new("git");
+    command
+        .env("GIT_CONFIG_GLOBAL", "/dev/null")
+        .env("GIT_CONFIG_NOSYSTEM", "1")
+        .env("GIT_CONFIG_SYSTEM", "/dev/null");
+    command
 }
 
 fn assert_success(output: Output) {

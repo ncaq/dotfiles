@@ -11,10 +11,9 @@ rustPlatform.buildRustPackage {
 
   cargoLock.lockFile = ./Cargo.lock;
 
-  nativeBuildInputs = [
-    git
-    makeWrapper
-  ];
+  nativeBuildInputs = [ makeWrapper ];
+  buildInputs = [ git ];
+  nativeCheckInputs = [ git ];
 
   postInstall = ''
     wrapProgram $out/bin/git-repo-subscribe \

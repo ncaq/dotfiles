@@ -288,6 +288,9 @@
           system,
           ...
         }:
+        let
+          git-repo-subscribe = pkgs.callPackage ./pkgs/git-repo-subscribe { };
+        in
         {
           treefmt.config = {
             projectRootFile = "flake.nix";
@@ -316,7 +319,6 @@
 
           checks =
             let
-              git-repo-subscribe = pkgs.callPackage ./pkgs/git-repo-subscribe { };
               # NixOS構成の評価チェック(評価のみ、ビルドしない)。
               # env属性の中の`builtins.seq`がinstantiation時にのみ完全評価を強制する。
               # この形には2つの理由がある。
@@ -364,6 +366,8 @@
               home-manager
               nix-fast-build
               ;
+            # Gitリポジトリを購読するためのツール。
+            inherit git-repo-subscribe;
             # PRコメントにnvd diffを投稿するスクリプト。
             nvd-pr-diff = pkgs.callPackage ./pkgs/nvd-pr-diff { };
           };

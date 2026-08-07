@@ -109,17 +109,7 @@ fn clones_partial_repository_with_complete_history() {
         ),
         "false"
     );
-    let object = Command::new("git")
-        .env("GIT_NO_LAZY_FETCH", "1")
-        .arg("-C")
-        .arg(&fixture.subscription)
-        .args(["cat-file", "-e", &fixture.historical_blob])
-        .output()
-        .expect("inspect historical blob");
-    assert!(
-        !object.status.success(),
-        "historical large blob was fetched"
-    );
+    assert_historical_blob_missing(&fixture);
 }
 
 #[test]
@@ -143,6 +133,40 @@ fn fast_forwards_clean_default_branch() {
             ]
         )
         .is_empty()
+    );
+    assert_historical_blob_missing(&fixture);
+}
+
+#[test]
+fn skips_diverged_default_branch_without_changing_head() {
+    let fixture = Fixture::new();
+    subscribe(&fixture.repository()).unwrap();
+    git_in(
+        &fixture.subscription,
+        ["config", "user.email", "test@example.com"],
+    );
+    git_in(&fixture.subscription, ["config", "user.name", "Test"]);
+    fs::write(fixture.subscription.join("tracked"), "local\n").expect("write local update");
+    git_in(&fixture.subscription, ["commit", "-am", "local"]);
+    let local_head = git_text_in(&fixture.subscription, ["rev-parse", "HEAD"]);
+    fixture.push_update("remote\n", "remote");
+
+    let output = subscribe_command(&fixture)
+        .output()
+        .expect("run subscriber");
+    assert_success(output.clone());
+    assert!(
+        String::from_utf8_lossy(&output.stderr).contains("unable to fast-forward"),
+        "unexpected stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(
+        git_text_in(&fixture.subscription, ["rev-parse", "HEAD"]),
+        local_head
+    );
+    assert_eq!(
+        subscribe(&fixture.repository()).unwrap(),
+        Outcome::Skipped(SkipReason::FastForwardFailed)
     );
 }
 
@@ -196,6 +220,7 @@ fn skips_non_repository_and_nested_path() {
         subscribe(&repository).unwrap(),
         Outcome::Skipped(SkipReason::NotWorktree)
     );
+    assert_directory_empty(repository.worktree().as_path());
 
     subscribe(&fixture.repository()).unwrap();
     let nested = fixture.subscription.join("nested");
@@ -205,6 +230,7 @@ fn skips_non_repository_and_nested_path() {
         subscribe(&repository).unwrap(),
         Outcome::Skipped(SkipReason::NotWorktreeRoot)
     );
+    assert_directory_empty(repository.worktree().as_path());
 }
 
 #[cfg(unix)]
@@ -270,6 +296,32 @@ fn skips_different_origin() {
 }
 
 #[test]
+fn skips_repository_without_origin() {
+    let fixture = Fixture::new();
+    subscribe(&fixture.repository()).unwrap();
+    git_in(&fixture.subscription, ["remote", "remove", "origin"]);
+    let head = git_text_in(&fixture.subscription, ["rev-parse", "HEAD"]);
+
+    let output = subscribe_command(&fixture)
+        .output()
+        .expect("run subscriber");
+    assert_success(output.clone());
+    assert!(
+        String::from_utf8_lossy(&output.stderr).contains("has no origin remote"),
+        "unexpected stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(
+        git_text_in(&fixture.subscription, ["rev-parse", "HEAD"]),
+        head
+    );
+    assert_eq!(
+        subscribe(&fixture.repository()).unwrap(),
+        Outcome::Skipped(SkipReason::NoOrigin)
+    );
+}
+
+#[test]
 fn validates_domain_inputs() {
     assert!(
         "https://github.com/NixOS/nixpkgs.git"
@@ -321,6 +373,39 @@ fn validates_domain_inputs() {
     );
     assert!("".parse::<PartialCloneFilter>().is_err());
     assert!("blob:none tree:0".parse::<PartialCloneFilter>().is_err());
+}
+
+fn subscribe_command(fixture: &Fixture) -> Command {
+    let mut command = Command::new(env!("CARGO_BIN_EXE_git-repo-subscribe"));
+    command
+        .env("RUST_LOG", "warn")
+        .env("RUST_LOG_STYLE", "never")
+        .arg(fixture.remote_url.as_str())
+        .arg(&fixture.subscription)
+        .arg("blob:limit=1m");
+    command
+}
+
+fn assert_historical_blob_missing(fixture: &Fixture) {
+    let object = Command::new("git")
+        .env("GIT_NO_LAZY_FETCH", "1")
+        .arg("-C")
+        .arg(&fixture.subscription)
+        .args(["cat-file", "-e", &fixture.historical_blob])
+        .output()
+        .expect("inspect historical blob");
+    assert!(
+        !object.status.success(),
+        "historical large blob was fetched"
+    );
+}
+
+fn assert_directory_empty(path: &Path) {
+    assert!(
+        fs::read_dir(path).expect("read directory").next().is_none(),
+        "{} is not empty",
+        path.display()
+    );
 }
 
 fn git<const N: usize>(args: [&str; N], path: &Path) {

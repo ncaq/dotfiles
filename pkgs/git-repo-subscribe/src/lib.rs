@@ -1,3 +1,5 @@
+mod domain;
+
 use std::ffi::{OsStr, OsString};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -6,11 +8,44 @@ use std::process::{Command, ExitStatus, Output, Stdio};
 use log::warn;
 use thiserror::Error;
 
+pub use domain::{BranchName, ConfiguredRemote, PartialCloneFilter, RemoteUrl, WorktreePath};
+use domain::{CommitId, TemporaryRef};
+
 #[derive(Debug)]
 pub struct Repository {
-    pub url: String,
-    pub path: PathBuf,
-    pub partial_clone_filter: String,
+    remote: RemoteUrl,
+    worktree: WorktreePath,
+    partial_clone_filter: PartialCloneFilter,
+}
+
+impl Repository {
+    #[must_use]
+    pub fn new(
+        remote: RemoteUrl,
+        worktree: WorktreePath,
+        partial_clone_filter: PartialCloneFilter,
+    ) -> Self {
+        Self {
+            remote,
+            worktree,
+            partial_clone_filter,
+        }
+    }
+
+    #[must_use]
+    pub fn remote(&self) -> &RemoteUrl {
+        &self.remote
+    }
+
+    #[must_use]
+    pub fn worktree(&self) -> &WorktreePath {
+        &self.worktree
+    }
+
+    #[must_use]
+    pub fn partial_clone_filter(&self) -> &PartialCloneFilter {
+        &self.partial_clone_filter
+    }
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -25,12 +60,17 @@ pub enum SkipReason {
     NotWorktree,
     NotWorktreeRoot,
     NoOrigin,
-    OriginMismatch { actual: String },
+    OriginMismatch {
+        actual: ConfiguredRemote,
+    },
     LocalChanges,
     DetachedHead,
     RemoteUnavailable,
     DefaultBranchUnknown,
-    NotDefaultBranch { current: String, default: String },
+    NotDefaultBranch {
+        current: BranchName,
+        default: BranchName,
+    },
     FetchFailed,
     OriginChanged,
     HeadChanged,
@@ -42,7 +82,7 @@ pub enum SkipReason {
 impl SkipReason {
     #[must_use]
     pub fn warning(&self, repository: &Repository) -> String {
-        let path = repository.path.display();
+        let path = repository.worktree();
         match self {
             Self::NotWorktree => format!("{path} is not a Git worktree; skipping update."),
             Self::NotWorktreeRoot => {
@@ -51,23 +91,23 @@ impl SkipReason {
             Self::NoOrigin => format!("{path} has no origin remote; skipping update."),
             Self::OriginMismatch { actual } => format!(
                 "origin URL of {path} is {actual}, expected {}; skipping update.",
-                repository.url
+                repository.remote()
             ),
             Self::LocalChanges => format!("{path} has local changes; skipping update."),
             Self::DetachedHead => format!("{path} has a detached HEAD; skipping update."),
             Self::RemoteUnavailable => format!(
                 "unable to query the default branch of {}; skipping update.",
-                repository.url
+                repository.remote()
             ),
             Self::DefaultBranchUnknown => format!(
                 "unable to determine the default branch of {}; skipping update.",
-                repository.url
+                repository.remote()
             ),
             Self::NotDefaultBranch { current, default } => format!(
                 "{path} is on {current}, not the default branch {default}; skipping update."
             ),
             Self::FetchFailed => {
-                format!("unable to fetch {}; skipping update.", repository.url)
+                format!("unable to fetch {}; skipping update.", repository.remote())
             }
             Self::OriginChanged => {
                 format!("origin URL of {path} changed while fetching; skipping update.")
@@ -113,6 +153,10 @@ pub enum SubscribeError {
         path: PathBuf,
         source: std::io::Error,
     },
+    #[error("Git returned an invalid branch name: {0}")]
+    InvalidBranch(#[from] domain::BranchNameError),
+    #[error("Git returned an invalid commit ID: {0}")]
+    InvalidCommitId(#[from] gix_hash::decode::Error),
 }
 
 impl SubscribeError {
@@ -134,8 +178,9 @@ impl SubscribeError {
 }
 
 pub fn subscribe(repository: &Repository) -> Result<Outcome, SubscribeError> {
-    if !repository.path.exists() {
-        if let Some(parent) = repository.path.parent()
+    let worktree = repository.worktree().as_path();
+    if !worktree.exists() {
+        if let Some(parent) = worktree.parent()
             && !parent.as_os_str().is_empty()
         {
             fs::create_dir_all(parent).map_err(|source| SubscribeError::CreateParent {
@@ -145,55 +190,63 @@ pub fn subscribe(repository: &Repository) -> Result<Outcome, SubscribeError> {
         }
         git_status_checked([
             OsStr::new("clone"),
-            OsStr::new(&format!("--filter={}", repository.partial_clone_filter)),
+            OsStr::new(&repository.partial_clone_filter().git_argument()),
             OsStr::new("--single-branch"),
             OsStr::new("--"),
-            OsStr::new(&repository.url),
-            repository.path.as_os_str(),
+            OsStr::new(repository.remote().as_str()),
+            worktree.as_os_str(),
         ])?;
         return Ok(Outcome::Cloned);
     }
 
-    if !git_status_in(
-        &repository.path,
-        ["rev-parse", "--is-inside-work-tree"],
-        true,
-    )? {
+    if !git_status_in(worktree, ["rev-parse", "--is-inside-work-tree"], true)? {
         return Ok(Outcome::Skipped(SkipReason::NotWorktree));
     }
 
-    let worktree_root = git_text_in(&repository.path, ["rev-parse", "--show-toplevel"])?;
-    if canonicalize(&repository.path)? != canonicalize(Path::new(&worktree_root))? {
+    let worktree_root = git_text_in(worktree, ["rev-parse", "--show-toplevel"])?;
+    if canonicalize(worktree)? != canonicalize(Path::new(&worktree_root))? {
         return Ok(Outcome::Skipped(SkipReason::NotWorktreeRoot));
     }
 
-    let Some(origin_url) = git_optional_text_in(&repository.path, ["remote", "get-url", "origin"])?
-    else {
+    let Some(origin_url) = git_optional_text_in(worktree, ["remote", "get-url", "origin"])? else {
         return Ok(Outcome::Skipped(SkipReason::NoOrigin));
     };
-    if origin_url != repository.url {
+    let origin_url = ConfiguredRemote::new(origin_url);
+    if origin_url != *repository.remote() {
         return Ok(Outcome::Skipped(SkipReason::OriginMismatch {
             actual: origin_url,
         }));
     }
 
-    if has_local_changes(&repository.path)? {
+    if has_local_changes(worktree)? {
         return Ok(Outcome::Skipped(SkipReason::LocalChanges));
     }
 
-    let Some(initial_branch) = current_branch(&repository.path)? else {
+    let Some(initial_branch) = current_branch(worktree)? else {
         return Ok(Outcome::Skipped(SkipReason::DetachedHead));
     };
 
-    let remote_head = match git_output(["ls-remote", "--symref", "--", &repository.url, "HEAD"])? {
+    let remote_head = match git_output([
+        "ls-remote",
+        "--symref",
+        "--",
+        repository.remote().as_str(),
+        "HEAD",
+    ])? {
         output if output.status.success() => output,
         _ => return Ok(Outcome::Skipped(SkipReason::RemoteUnavailable)),
     };
     let remote_head = output_text(
-        ["ls-remote", "--symref", "--", &repository.url, "HEAD"],
+        [
+            "ls-remote",
+            "--symref",
+            "--",
+            repository.remote().as_str(),
+            "HEAD",
+        ],
         remote_head.stdout,
     )?;
-    let Some(default_branch) = parse_default_branch(&remote_head) else {
+    let Some(default_branch) = parse_default_branch(&remote_head)? else {
         return Ok(Outcome::Skipped(SkipReason::DefaultBranchUnknown));
     };
     if initial_branch != default_branch {
@@ -203,40 +256,45 @@ pub fn subscribe(repository: &Repository) -> Result<Outcome, SubscribeError> {
         }));
     }
 
-    let head = git_text_in(&repository.path, ["rev-parse", "HEAD"])?;
-    let fetch_ref = format!("refs/git-repo-subscribe/{}", std::process::id());
+    let head = head_id(worktree)?;
+    let fetch_ref = TemporaryRef::for_current_process();
     let _fetch_ref_guard = FetchRefGuard {
-        worktree: &repository.path,
+        worktree,
         fetch_ref: &fetch_ref,
     };
-    let refspec = format!("+{default_branch}:{fetch_ref}");
+    let refspec = format!("+{}:{}", default_branch.as_str(), fetch_ref.as_str());
     if !git_status_in(
-        &repository.path,
+        worktree,
         ["fetch", "--no-write-fetch-head", "origin", &refspec],
         false,
     )? {
         return Ok(Outcome::Skipped(SkipReason::FetchFailed));
     }
 
-    if git_optional_text_in(&repository.path, ["remote", "get-url", "origin"])?.as_deref()
-        != Some(origin_url.as_str())
+    if git_optional_text_in(worktree, ["remote", "get-url", "origin"])?
+        .map(ConfiguredRemote::new)
+        .as_ref()
+        != Some(&origin_url)
     {
         return Ok(Outcome::Skipped(SkipReason::OriginChanged));
     }
-    if git_optional_text_in(&repository.path, ["rev-parse", "HEAD"])?.as_deref()
-        != Some(head.as_str())
-    {
+    if optional_head_id(worktree)? != Some(head) {
         return Ok(Outcome::Skipped(SkipReason::HeadChanged));
     }
-    if current_branch(&repository.path)?.as_deref() != Some(initial_branch.as_str()) {
+    if current_branch(worktree)?.as_ref() != Some(&initial_branch) {
         return Ok(Outcome::Skipped(SkipReason::BranchChanged));
     }
-    if has_local_changes(&repository.path)? {
+    if has_local_changes(worktree)? {
         return Ok(Outcome::Skipped(SkipReason::LocalChangesDuringFetch));
     }
     if !git_status_in(
-        &repository.path,
-        ["merge", "--ff-only", "--no-overwrite-ignore", &fetch_ref],
+        worktree,
+        [
+            "merge",
+            "--ff-only",
+            "--no-overwrite-ignore",
+            fetch_ref.as_str(),
+        ],
         false,
     )? {
         return Ok(Outcome::Skipped(SkipReason::FastForwardFailed));
@@ -253,16 +311,34 @@ fn has_local_changes(path: &Path) -> Result<bool, SubscribeError> {
     .is_empty())
 }
 
-fn current_branch(path: &Path) -> Result<Option<String>, SubscribeError> {
-    git_optional_text_in(path, ["symbolic-ref", "--quiet", "--short", "HEAD"])
+fn current_branch(path: &Path) -> Result<Option<BranchName>, SubscribeError> {
+    git_optional_text_in(path, ["symbolic-ref", "--quiet", "--short", "HEAD"])?
+        .map(BranchName::parse)
+        .transpose()
+        .map_err(Into::into)
 }
 
-fn parse_default_branch(remote_head: &str) -> Option<String> {
-    remote_head.lines().find_map(|line| {
-        line.strip_prefix("ref: refs/heads/")
-            .and_then(|value| value.strip_suffix("\tHEAD"))
-            .map(ToOwned::to_owned)
-    })
+fn parse_default_branch(remote_head: &str) -> Result<Option<BranchName>, SubscribeError> {
+    remote_head
+        .lines()
+        .find_map(|line| {
+            line.strip_prefix("ref: refs/heads/")
+                .and_then(|value| value.strip_suffix("\tHEAD"))
+                .map(|value| BranchName::parse(value.to_owned()))
+        })
+        .transpose()
+        .map_err(Into::into)
+}
+
+fn head_id(path: &Path) -> Result<CommitId, SubscribeError> {
+    CommitId::parse(&git_text_in(path, ["rev-parse", "HEAD"])?).map_err(Into::into)
+}
+
+fn optional_head_id(path: &Path) -> Result<Option<CommitId>, SubscribeError> {
+    git_optional_text_in(path, ["rev-parse", "HEAD"])?
+        .map(|value| CommitId::parse(&value))
+        .transpose()
+        .map_err(Into::into)
 }
 
 fn canonicalize(path: &Path) -> Result<PathBuf, SubscribeError> {
@@ -420,7 +496,7 @@ fn display_args(args: &[OsString]) -> String {
 
 struct FetchRefGuard<'a> {
     worktree: &'a Path,
-    fetch_ref: &'a str,
+    fetch_ref: &'a TemporaryRef,
 }
 
 impl Drop for FetchRefGuard<'_> {
@@ -428,14 +504,17 @@ impl Drop for FetchRefGuard<'_> {
         let status = Command::new("git")
             .arg("-C")
             .arg(self.worktree)
-            .args(["update-ref", "-d", self.fetch_ref])
+            .args(["update-ref", "-d", self.fetch_ref.as_str()])
             .status();
         match status {
             Ok(exit_status) if !exit_status.success() => warn!(
                 "unable to remove temporary ref {}: git exited with {exit_status}",
-                self.fetch_ref
+                self.fetch_ref.as_str()
             ),
-            Err(error) => warn!("unable to remove temporary ref {}: {error}", self.fetch_ref),
+            Err(error) => warn!(
+                "unable to remove temporary ref {}: {error}",
+                self.fetch_ref.as_str()
+            ),
             Ok(_) => {}
         }
     }
@@ -447,9 +526,9 @@ mod tests {
 
     #[test]
     fn parses_default_branch() {
-        assert_eq!(
-            parse_default_branch("ref: refs/heads/master\tHEAD\nabc\tHEAD\n"),
-            Some("master".to_owned())
-        );
+        let branch = parse_default_branch("ref: refs/heads/master\tHEAD\nabc\tHEAD\n")
+            .expect("parse ls-remote output")
+            .expect("default branch exists");
+        assert_eq!(branch.as_str(), "master");
     }
 }

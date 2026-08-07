@@ -9,9 +9,7 @@ let
   git-repo-subscribe = pkgs.callPackage ../pkgs/git-repo-subscribe { };
 
   gitRemoteType = lib.types.addCheck lib.types.str (
-    url:
-    builtins.match "^((https|ssh|git|file)://[^[:space:]]+|([^/:@[:space:]]+@)?[^/:[:space:]]+:[^[:space:]]+)$" url
-    != null
+    url: builtins.match "^(https|ssh|file)://[^[:space:]]+$" url != null
   );
   absolutePathType = lib.types.addCheck lib.types.str (
     path:

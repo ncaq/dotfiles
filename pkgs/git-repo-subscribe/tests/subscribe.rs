@@ -2,13 +2,16 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
-use git_repo_subscribe::{Outcome, Repository, SkipReason, subscribe};
+use git_repo_subscribe::{
+    ConfiguredRemote, Outcome, PartialCloneFilter, RemoteUrl, Repository, SkipReason, WorktreePath,
+    subscribe,
+};
 use tempfile::TempDir;
 
 struct Fixture {
     temp_dir: TempDir,
     remote: PathBuf,
-    remote_url: String,
+    remote_url: RemoteUrl,
     source: PathBuf,
     subscription: PathBuf,
     historical_blob: String,
@@ -18,7 +21,9 @@ impl Fixture {
     fn new() -> Self {
         let temp_dir = tempfile::tempdir().expect("create temporary directory");
         let remote = temp_dir.path().join("remote.git");
-        let remote_url = format!("file://{}", remote.display());
+        let remote_url = format!("file://{}", remote.display())
+            .parse()
+            .expect("parse remote URL");
         let source = temp_dir.path().join("source");
         let subscription = temp_dir.path().join("subscription");
 
@@ -54,11 +59,15 @@ impl Fixture {
     }
 
     fn repository(&self) -> Repository {
-        Repository {
-            url: self.remote_url.clone(),
-            path: self.subscription.clone(),
-            partial_clone_filter: "blob:limit=1m".to_owned(),
-        }
+        self.repository_at(self.subscription.clone())
+    }
+
+    fn repository_at(&self, path: PathBuf) -> Repository {
+        Repository::new(
+            self.remote_url.clone(),
+            WorktreePath::try_from(path).expect("valid worktree path"),
+            "blob:limit=1m".parse().expect("valid partial clone filter"),
+        )
     }
 
     fn push_update(&self, content: &str, message: &str) {
@@ -145,8 +154,8 @@ fn skips_non_default_branch() {
     assert_eq!(
         subscribe(&fixture.repository()).unwrap(),
         Outcome::Skipped(SkipReason::NotDefaultBranch {
-            current: "topic".to_owned(),
-            default: "master".to_owned(),
+            current: "topic".parse().unwrap(),
+            default: "master".parse().unwrap(),
         })
     );
 }
@@ -180,8 +189,7 @@ fn skips_non_repository_and_nested_path() {
     let fixture = Fixture::new();
     let not_repository = fixture.temp_dir.path().join("not-a-repository");
     fs::create_dir(&not_repository).expect("create non-repository");
-    let mut repository = fixture.repository();
-    repository.path = not_repository;
+    let repository = fixture.repository_at(not_repository);
     assert_eq!(
         subscribe(&repository).unwrap(),
         Outcome::Skipped(SkipReason::NotWorktree)
@@ -190,7 +198,7 @@ fn skips_non_repository_and_nested_path() {
     subscribe(&fixture.repository()).unwrap();
     let nested = fixture.subscription.join("nested");
     fs::create_dir(&nested).expect("create nested directory");
-    repository.path = nested;
+    let repository = fixture.repository_at(nested);
     assert_eq!(
         subscribe(&repository).unwrap(),
         Outcome::Skipped(SkipReason::NotWorktreeRoot)
@@ -240,9 +248,63 @@ fn skips_different_origin() {
     assert_eq!(
         subscribe(&fixture.repository()).unwrap(),
         Outcome::Skipped(SkipReason::OriginMismatch {
-            actual: other_remote_url,
+            actual: ConfiguredRemote::new(other_remote_url),
         })
     );
+}
+
+#[test]
+fn validates_domain_inputs() {
+    assert!(
+        "https://github.com/NixOS/nixpkgs.git"
+            .parse::<RemoteUrl>()
+            .is_ok()
+    );
+    assert!(
+        "ssh://git@github.com/NixOS/nixpkgs.git"
+            .parse::<RemoteUrl>()
+            .is_ok()
+    );
+    assert!("file:///tmp/repository.git".parse::<RemoteUrl>().is_ok());
+    assert!(
+        "git@github.com:NixOS/nixpkgs.git"
+            .parse::<RemoteUrl>()
+            .is_err()
+    );
+    assert!(
+        "git://github.com/NixOS/nixpkgs.git"
+            .parse::<RemoteUrl>()
+            .is_err()
+    );
+    assert!(
+        "https://user:password@example.com/repo.git"
+            .parse::<RemoteUrl>()
+            .is_err()
+    );
+    assert!(
+        "https://token@example.com/repo.git"
+            .parse::<RemoteUrl>()
+            .is_err()
+    );
+    assert!(
+        "https://example.com/repo.git\n"
+            .parse::<RemoteUrl>()
+            .is_err()
+    );
+
+    assert!("/tmp/repository".parse::<WorktreePath>().is_ok());
+    assert!("relative/repository".parse::<WorktreePath>().is_err());
+    assert!("/tmp/../repository".parse::<WorktreePath>().is_err());
+    assert!("/".parse::<WorktreePath>().is_err());
+
+    assert!("blob:limit=1m".parse::<PartialCloneFilter>().is_ok());
+    assert!(
+        "combine:blob:none+tree:0"
+            .parse::<PartialCloneFilter>()
+            .is_ok()
+    );
+    assert!("".parse::<PartialCloneFilter>().is_err());
+    assert!("blob:none tree:0".parse::<PartialCloneFilter>().is_err());
 }
 
 fn git<const N: usize>(args: [&str; N], path: &Path) {

@@ -77,6 +77,8 @@ pub enum Outcome {
 #[derive(Debug, Eq, PartialEq)]
 /// A non-fatal condition that prevents a safe update.
 pub enum SkipReason {
+    /// The configured path is a symbolic link.
+    SymbolicLink,
     /// The configured path exists but is not a Git worktree.
     NotWorktree,
     /// The configured path is inside a worktree but is not its root.
@@ -123,6 +125,9 @@ impl SkipReason {
     pub fn warning(&self, repository: &Repository) -> String {
         let path = repository.worktree();
         match self {
+            Self::SymbolicLink => {
+                format!("{path} is a symbolic link; skipping update.")
+            }
             Self::NotWorktree => format!("{path} is not a Git worktree; skipping update."),
             Self::NotWorktreeRoot => {
                 format!("{path} is not the root of its Git worktree; skipping update.")
@@ -172,6 +177,14 @@ pub enum SubscribeError {
     #[error("failed to create {}: {source}", .path.display())]
     CreateParent {
         /// The parent directory that could not be created.
+        path: PathBuf,
+        /// The underlying filesystem error.
+        source: std::io::Error,
+    },
+    /// The configured worktree path could not be inspected.
+    #[error("failed to inspect {}: {source}", .path.display())]
+    InspectWorktree {
+        /// The path that could not be inspected.
         path: PathBuf,
         /// The underlying filesystem error.
         source: std::io::Error,
@@ -243,7 +256,23 @@ impl SubscribeError {
 /// [`Outcome::Skipped`], while process and data errors are returned as [`SubscribeError`].
 pub fn subscribe(repository: &Repository) -> Result<Outcome, SubscribeError> {
     let worktree = repository.worktree().as_path();
-    if !worktree.exists() {
+    let worktree_metadata = match fs::symlink_metadata(worktree) {
+        Ok(metadata) => Some(metadata),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
+        Err(source) => {
+            return Err(SubscribeError::InspectWorktree {
+                path: worktree.to_path_buf(),
+                source,
+            });
+        }
+    };
+    if worktree_metadata
+        .as_ref()
+        .is_some_and(|metadata| metadata.file_type().is_symlink())
+    {
+        return Ok(Outcome::Skipped(SkipReason::SymbolicLink));
+    }
+    if worktree_metadata.is_none() {
         if let Some(parent) = worktree.parent()
             && !parent.as_os_str().is_empty()
         {
@@ -444,7 +473,7 @@ where
     S: AsRef<OsStr>,
 {
     let collected = collect_args(args.clone());
-    let mut command = Command::new("git");
+    let mut command = git_command();
     command.arg("-C").arg(path).args(&collected);
     if quiet {
         command.stdout(std::process::Stdio::null());
@@ -465,13 +494,14 @@ where
     S: AsRef<OsStr>,
 {
     let collected = collect_args(args.clone());
-    let status = Command::new("git")
-        .args(&collected)
-        .status()
-        .map_err(|source| SubscribeError::RunGit {
-            args: collected.clone(),
-            source,
-        })?;
+    let status =
+        git_command()
+            .args(&collected)
+            .status()
+            .map_err(|source| SubscribeError::RunGit {
+                args: collected.clone(),
+                source,
+            })?;
     if status.success() {
         Ok(())
     } else {
@@ -488,7 +518,7 @@ where
     S: AsRef<OsStr>,
 {
     let collected = collect_args(args);
-    let output = Command::new("git")
+    let output = git_command()
         .args(&collected)
         .stderr(Stdio::inherit())
         .output()
@@ -505,7 +535,7 @@ where
     S: AsRef<OsStr>,
 {
     let collected = collect_args(args);
-    Command::new("git")
+    git_command()
         .arg("-C")
         .arg(path)
         .args(&collected)
@@ -528,6 +558,26 @@ where
             args: collect_args(args),
             source,
         })
+}
+
+fn git_command() -> Command {
+    let mut command = Command::new("git");
+    let ssh_command = [
+        "ssh",
+        "-oBatchMode=yes",
+        "-oConnectTimeout=60",
+        "-oServerAliveInterval=15",
+        "-oServerAliveCountMax=4",
+    ]
+    .join(" ");
+    command
+        .env("GIT_TERMINAL_PROMPT", "0")
+        .env("GIT_ASKPASS", "false")
+        .env("SSH_ASKPASS", "false")
+        .env("GIT_SSH_COMMAND", ssh_command)
+        .env("GIT_HTTP_LOW_SPEED_LIMIT", "1")
+        .env("GIT_HTTP_LOW_SPEED_TIME", "60");
+    command
 }
 
 fn git_failed<I, S>(args: I, status: ExitStatus) -> SubscribeError
@@ -565,7 +615,7 @@ struct FetchRefGuard<'a> {
 
 impl Drop for FetchRefGuard<'_> {
     fn drop(&mut self) {
-        let status = Command::new("git")
+        let status = git_command()
             .arg("-C")
             .arg(self.worktree)
             .args(["update-ref", "-d", self.fetch_ref.as_str()])
@@ -586,7 +636,9 @@ impl Drop for FetchRefGuard<'_> {
 
 #[cfg(test)]
 mod tests {
-    use super::parse_default_branch;
+    use std::collections::HashMap;
+
+    use super::{git_command, parse_default_branch};
 
     #[test]
     fn parses_default_branch() {
@@ -594,5 +646,24 @@ mod tests {
             .expect("parse ls-remote output")
             .expect("default branch exists");
         assert_eq!(branch.as_str(), "master");
+    }
+
+    #[test]
+    fn configures_git_for_non_interactive_network_access() {
+        let command = git_command();
+        let environment = command
+            .get_envs()
+            .filter_map(|(name, value)| {
+                value.map(|value| (name.to_string_lossy(), value.to_string_lossy()))
+            })
+            .collect::<HashMap<_, _>>();
+
+        assert_eq!(environment["GIT_TERMINAL_PROMPT"], "0");
+        assert_eq!(environment["GIT_ASKPASS"], "false");
+        assert_eq!(environment["SSH_ASKPASS"], "false");
+        assert!(environment["GIT_SSH_COMMAND"].contains("BatchMode=yes"));
+        assert!(environment["GIT_SSH_COMMAND"].contains("ConnectTimeout=60"));
+        assert_eq!(environment["GIT_HTTP_LOW_SPEED_LIMIT"], "1");
+        assert_eq!(environment["GIT_HTTP_LOW_SPEED_TIME"], "60");
     }
 }

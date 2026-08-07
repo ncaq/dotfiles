@@ -1,4 +1,6 @@
 use std::fs;
+#[cfg(unix)]
+use std::os::unix::fs::symlink;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
@@ -203,6 +205,20 @@ fn skips_non_repository_and_nested_path() {
         subscribe(&repository).unwrap(),
         Outcome::Skipped(SkipReason::NotWorktreeRoot)
     );
+}
+
+#[cfg(unix)]
+#[test]
+fn skips_symbolic_link_destination() {
+    let fixture = Fixture::new();
+    let destination = fixture.temp_dir.path().join("destination");
+    symlink(&destination, &fixture.subscription).expect("create broken symbolic link");
+
+    assert_eq!(
+        subscribe(&fixture.repository()).unwrap(),
+        Outcome::Skipped(SkipReason::SymbolicLink)
+    );
+    assert!(!destination.exists());
 }
 
 #[test]

@@ -351,7 +351,11 @@ pub fn subscribe(repository: &Repository) -> Result<Outcome, SubscribeError> {
     };
 
     let fetch_ref = TemporaryRef::for_current_process();
-    let refspec = format!("+{}:{}", initial_branch.as_str(), fetch_ref.as_str());
+    let refspec = format!(
+        "+refs/heads/{}:{}",
+        initial_branch.as_str(),
+        fetch_ref.as_str()
+    );
     let initial_state = WorktreeState {
         origin: Some(origin_url),
         head: initial_head,
@@ -372,17 +376,8 @@ pub fn subscribe(repository: &Repository) -> Result<Outcome, SubscribeError> {
     }
 
     let current_state = WorktreeState::read(worktree)?;
-    if current_state.origin != initial_state.origin {
-        return Ok(Outcome::Skipped(SkipReason::OriginChanged));
-    }
-    if current_state.head != initial_state.head {
-        return Ok(Outcome::Skipped(SkipReason::HeadChanged));
-    }
-    if current_state.branch != initial_state.branch {
-        return Ok(Outcome::Skipped(SkipReason::BranchChanged));
-    }
-    if current_state.has_local_changes {
-        return Ok(Outcome::Skipped(SkipReason::LocalChangesDuringFetch));
+    if let Some(reason) = detect_concurrent_change(&initial_state, &current_state) {
+        return Ok(Outcome::Skipped(reason));
     }
     if !git_status_in(
         worktree,
@@ -465,6 +460,23 @@ impl WorktreeState {
             branch: current_branch(path)?,
             has_local_changes: has_local_changes(path)?,
         })
+    }
+}
+
+fn detect_concurrent_change(
+    initial: &WorktreeState,
+    current: &WorktreeState,
+) -> Option<SkipReason> {
+    if current.origin != initial.origin {
+        Some(SkipReason::OriginChanged)
+    } else if current.head != initial.head {
+        Some(SkipReason::HeadChanged)
+    } else if current.branch != initial.branch {
+        Some(SkipReason::BranchChanged)
+    } else if current.has_local_changes {
+        Some(SkipReason::LocalChangesDuringFetch)
+    } else {
+        None
     }
 }
 
@@ -607,12 +619,18 @@ fn git_command() -> Command {
     for variable in [
         "GIT_ALTERNATE_OBJECT_DIRECTORIES",
         "GIT_COMMON_DIR",
+        "GIT_CEILING_DIRECTORIES",
         "GIT_CONFIG",
         "GIT_CONFIG_COUNT",
+        "GIT_CONFIG_GLOBAL",
+        "GIT_CONFIG_NOSYSTEM",
         "GIT_CONFIG_PARAMETERS",
+        "GIT_CONFIG_SYSTEM",
         "GIT_DIR",
+        "GIT_DISCOVERY_ACROSS_FILESYSTEM",
         "GIT_GRAFT_FILE",
         "GIT_INDEX_FILE",
+        "GIT_NAMESPACE",
         "GIT_OBJECT_DIRECTORY",
         "GIT_SHALLOW_FILE",
         "GIT_WORK_TREE",
@@ -687,7 +705,10 @@ impl Drop for FetchRefGuard<'_> {
 mod tests {
     use std::collections::{HashMap, HashSet};
 
-    use super::{git_command, parse_default_branch};
+    use super::{
+        BranchName, CommitId, ConfiguredRemote, SkipReason, WorktreeState,
+        detect_concurrent_change, git_command, parse_default_branch,
+    };
 
     #[test]
     fn parses_default_branch() {
@@ -709,6 +730,58 @@ mod tests {
     #[test]
     fn reports_invalid_default_branch() {
         assert!(parse_default_branch("ref: refs/heads/invalid..branch\tHEAD\n").is_err());
+    }
+
+    #[test]
+    fn detects_changed_origin_after_fetch() {
+        let initial = worktree_state("file:///initial", '0', "master", false);
+        let current = worktree_state("file:///changed", '0', "master", false);
+
+        assert_eq!(
+            detect_concurrent_change(&initial, &current),
+            Some(SkipReason::OriginChanged)
+        );
+    }
+
+    #[test]
+    fn detects_changed_head_after_fetch() {
+        let initial = worktree_state("file:///remote", '0', "master", false);
+        let current = worktree_state("file:///remote", '1', "master", false);
+
+        assert_eq!(
+            detect_concurrent_change(&initial, &current),
+            Some(SkipReason::HeadChanged)
+        );
+    }
+
+    #[test]
+    fn detects_changed_branch_after_fetch() {
+        let initial = worktree_state("file:///remote", '0', "master", false);
+        let current = worktree_state("file:///remote", '0', "topic", false);
+
+        assert_eq!(
+            detect_concurrent_change(&initial, &current),
+            Some(SkipReason::BranchChanged)
+        );
+    }
+
+    #[test]
+    fn detects_local_changes_after_fetch() {
+        let initial = worktree_state("file:///remote", '0', "master", false);
+        let current = worktree_state("file:///remote", '0', "master", true);
+
+        assert_eq!(
+            detect_concurrent_change(&initial, &current),
+            Some(SkipReason::LocalChangesDuringFetch)
+        );
+    }
+
+    #[test]
+    fn accepts_unchanged_worktree_after_fetch() {
+        let initial = worktree_state("file:///remote", '0', "master", false);
+        let current = worktree_state("file:///remote", '0', "master", false);
+
+        assert_eq!(detect_concurrent_change(&initial, &current), None);
     }
 
     #[test]
@@ -734,18 +807,33 @@ mod tests {
         assert_eq!(environment["GIT_HTTP_LOW_SPEED_TIME"], "60");
         for variable in [
             "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+            "GIT_CEILING_DIRECTORIES",
             "GIT_COMMON_DIR",
             "GIT_CONFIG",
             "GIT_CONFIG_COUNT",
+            "GIT_CONFIG_GLOBAL",
+            "GIT_CONFIG_NOSYSTEM",
             "GIT_CONFIG_PARAMETERS",
+            "GIT_CONFIG_SYSTEM",
             "GIT_DIR",
+            "GIT_DISCOVERY_ACROSS_FILESYSTEM",
             "GIT_GRAFT_FILE",
             "GIT_INDEX_FILE",
+            "GIT_NAMESPACE",
             "GIT_OBJECT_DIRECTORY",
             "GIT_SHALLOW_FILE",
             "GIT_WORK_TREE",
         ] {
             assert!(removed_environment.contains(variable));
+        }
+    }
+
+    fn worktree_state(origin: &str, head_digit: char, branch: &str, dirty: bool) -> WorktreeState {
+        WorktreeState {
+            origin: Some(ConfiguredRemote::new(origin.to_owned())),
+            head: CommitId::parse(&head_digit.to_string().repeat(40)).expect("valid commit ID"),
+            branch: Some(BranchName::parse(branch.to_owned()).expect("valid branch name")),
+            has_local_changes: dirty,
         }
     }
 }

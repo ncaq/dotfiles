@@ -1,6 +1,6 @@
 {
-  pkgs,
   lib,
+  pkgs,
   config,
   isWSL,
   osConfig ? null,
@@ -36,20 +36,22 @@ let
   };
 in
 {
-  services.emacs = {
-    enable = true;
-    package = emacsPackage;
-    client = {
+  services = {
+    emacs = {
       enable = true;
-      arguments = [
-        "--reuse-frame"
-        "--alternate-editor=emacs"
-      ];
+      package = emacsPackage;
+      client = {
+        enable = true;
+        arguments = [
+          "--reuse-frame"
+          "--alternate-editor=emacs"
+        ];
+      };
+      defaultEditor = true;
     };
-    defaultEditor = true;
   };
 
-  home = {
+  programs = {
     # Emacsの設定はEmacs Lispで行うのがDSLとして最適化されていて楽なので、
     # 基本的にNix言語ではなく`.emacs.d`に直接Emacs Lispを書いて管理します。
     # またEmacsの設定は即座に反映したいため、
@@ -58,14 +60,11 @@ in
     # それは外部依存ライブラリを解決したり、
     # Nixの設定をスマートに解決するためのものです。
     # Emacsの設定自体はローカルのファイルシステムで管理します。
-    activation.cloneEmacsConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      if [ ! -d "${config.home.homeDirectory}/.emacs.d" ]; then
-        $DRY_RUN_CMD ${pkgs.git}/bin/git clone \
-          https://github.com/ncaq/.emacs.d.git \
-          "${config.home.homeDirectory}/.emacs.d"
-      fi
-    '';
-
-    packages = [ emacsPackage ];
+    git-repo-subscribe.repositories.dot-emacs = {
+      url = "https://github.com/ncaq/.emacs.d.git";
+      path = "${config.home.homeDirectory}/.emacs.d";
+    };
   };
+
+  home.packages = [ emacsPackage ];
 }

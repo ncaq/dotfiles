@@ -412,37 +412,6 @@ in
 
           echo "merged $CLAUDE_JSON"
         '';
-    }
-    //
-      # dotfilesの編集に常に参考にするリポジトリをDesktopにクローンしておきます。
-      builtins.listToAttrs (
-        let
-          cloneGitHubRepo =
-            { owner, name }:
-            lib.nameValuePair name (
-              lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-                if [ ! -d "${config.home.homeDirectory}/Desktop/${name}" ]; then
-                  $DRY_RUN_CMD ${pkgs.git}/bin/git clone --depth=50 \
-                    https://github.com/${owner}/${name}.git \
-                    "${config.home.homeDirectory}/Desktop/${name}"
-                fi
-              ''
-            );
-        in
-        [
-          (cloneGitHubRepo {
-            owner = "NixOS";
-            name = "nixpkgs";
-          })
-          (cloneGitHubRepo {
-            owner = "nix-community";
-            name = "home-manager";
-          })
-          (cloneGitHubRepo {
-            owner = "ncaq";
-            name = "infra.ncaq.net";
-          })
-        ]
-      );
+    };
   };
 }

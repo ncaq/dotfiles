@@ -288,6 +288,9 @@
           system,
           ...
         }:
+        let
+          git-repo-subscribe = pkgs.callPackage ./pkgs/git-repo-subscribe { };
+        in
         {
           treefmt.config = {
             projectRootFile = "flake.nix";
@@ -298,6 +301,7 @@
               prettier.enable = true;
               ruff-check.enable = true;
               ruff-format.enable = true;
+              rustfmt.enable = true;
               shellcheck.enable = true;
               shfmt.enable = true;
               statix.enable = true;
@@ -351,7 +355,7 @@
                   } ''echo "$evaluated" > "$out"'';
                 };
             in
-            nixosEvalChecks // hmEvalChecks;
+            nixosEvalChecks // hmEvalChecks // { inherit git-repo-subscribe; };
 
           packages = {
             # flake.lockの管理バージョンをre-exportすることで安定した利用を促進。
@@ -362,6 +366,8 @@
               home-manager
               nix-fast-build
               ;
+            # Gitリポジトリを購読するためのツール。
+            inherit git-repo-subscribe;
             # PRコメントにnvd diffを投稿するスクリプト。
             nvd-pr-diff = pkgs.callPackage ./pkgs/nvd-pr-diff { };
           };

@@ -5,8 +5,8 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
 use git_repo_subscribe::{
-    ConfiguredRemote, Outcome, PartialCloneFilter, RemoteUrl, Repository, SkipReason, WorktreePath,
-    subscribe,
+    BranchName, ConfiguredRemote, Outcome, PartialCloneFilter, PartialCloneFilterError, RemoteUrl,
+    RemoteUrlError, Repository, SkipReason, WorktreePath, WorktreePathError, subscribe,
 };
 use tempfile::TempDir;
 
@@ -146,6 +146,14 @@ fn skips_diverged_default_branch_without_changing_head() {
         ["config", "user.email", "test@example.com"],
     );
     git_in(&fixture.subscription, ["config", "user.name", "Test"]);
+    git_in(
+        &fixture.subscription,
+        [
+            "config",
+            "core.hooksPath",
+            path_text(&fixture.temp_dir.path().join("hooks")),
+        ],
+    );
     fs::write(fixture.subscription.join("tracked"), "local\n").expect("write local update");
     git_in(&fixture.subscription, ["commit", "-am", "local"]);
     let local_head = git_text_in(&fixture.subscription, ["rev-parse", "HEAD"]);
@@ -322,7 +330,7 @@ fn skips_repository_without_origin() {
 }
 
 #[test]
-fn validates_domain_inputs() {
+fn validates_remote_urls() {
     assert!(
         "https://github.com/NixOS/nixpkgs.git"
             .parse::<RemoteUrl>()
@@ -334,45 +342,83 @@ fn validates_domain_inputs() {
             .is_ok()
     );
     assert!("file:///tmp/repository.git".parse::<RemoteUrl>().is_ok());
-    assert!(
-        "git@github.com:NixOS/nixpkgs.git"
-            .parse::<RemoteUrl>()
-            .is_err()
-    );
-    assert!(
-        "git://github.com/NixOS/nixpkgs.git"
-            .parse::<RemoteUrl>()
-            .is_err()
-    );
-    assert!(
-        "https://user:password@example.com/repo.git"
-            .parse::<RemoteUrl>()
-            .is_err()
-    );
-    assert!(
-        "https://token@example.com/repo.git"
-            .parse::<RemoteUrl>()
-            .is_err()
-    );
-    assert!(
-        "https://example.com/repo.git\n"
-            .parse::<RemoteUrl>()
-            .is_err()
-    );
+    assert!(matches!(
+        "git@github.com:NixOS/nixpkgs.git".parse::<RemoteUrl>(),
+        Err(RemoteUrlError::Parse(_))
+    ));
+    assert!(matches!(
+        "git://github.com/NixOS/nixpkgs.git".parse::<RemoteUrl>(),
+        Err(RemoteUrlError::UnsupportedScheme(_))
+    ));
+    assert!(matches!(
+        "https://user:password@example.com/repo.git".parse::<RemoteUrl>(),
+        Err(RemoteUrlError::Password)
+    ));
+    assert!(matches!(
+        "https://token@example.com/repo.git".parse::<RemoteUrl>(),
+        Err(RemoteUrlError::Username)
+    ));
+    assert!(matches!(
+        "https://example.com/repo.git\n".parse::<RemoteUrl>(),
+        Err(RemoteUrlError::UnsafeCharacter)
+    ));
+    assert!(matches!(
+        "https://example.com/repo.git\u{1b}".parse::<RemoteUrl>(),
+        Err(RemoteUrlError::UnsafeCharacter)
+    ));
+    assert!(matches!(
+        "https://user\\@example.com/repo.git".parse::<RemoteUrl>(),
+        Err(RemoteUrlError::Backslash)
+    ));
+}
 
+#[test]
+fn validates_worktree_paths() {
     assert!("/tmp/repository".parse::<WorktreePath>().is_ok());
-    assert!("relative/repository".parse::<WorktreePath>().is_err());
-    assert!("/tmp/../repository".parse::<WorktreePath>().is_err());
-    assert!("/".parse::<WorktreePath>().is_err());
+    assert!(matches!(
+        "relative/repository".parse::<WorktreePath>(),
+        Err(WorktreePathError::Relative)
+    ));
+    assert!(matches!(
+        "/tmp/../repository".parse::<WorktreePath>(),
+        Err(WorktreePathError::NotNormalized)
+    ));
+    assert!(matches!(
+        "/".parse::<WorktreePath>(),
+        Err(WorktreePathError::Root)
+    ));
+}
 
+#[test]
+fn validates_partial_clone_filters() {
     assert!("blob:limit=1m".parse::<PartialCloneFilter>().is_ok());
     assert!(
         "combine:blob:none+tree:0"
             .parse::<PartialCloneFilter>()
             .is_ok()
     );
-    assert!("".parse::<PartialCloneFilter>().is_err());
-    assert!("blob:none tree:0".parse::<PartialCloneFilter>().is_err());
+    assert!(matches!(
+        "".parse::<PartialCloneFilter>(),
+        Err(PartialCloneFilterError::Empty)
+    ));
+    assert!(matches!(
+        "blob:none tree:0".parse::<PartialCloneFilter>(),
+        Err(PartialCloneFilterError::UnsafeCharacter)
+    ));
+    assert!(matches!(
+        "blob:none\0".parse::<PartialCloneFilter>(),
+        Err(PartialCloneFilterError::UnsafeCharacter)
+    ));
+    assert!(matches!(
+        "blob:none\u{1b}".parse::<PartialCloneFilter>(),
+        Err(PartialCloneFilterError::UnsafeCharacter)
+    ));
+}
+
+#[test]
+fn validates_branch_names() {
+    assert!("master".parse::<BranchName>().is_ok());
+    assert!("invalid..branch".parse::<BranchName>().is_err());
 }
 
 fn subscribe_command(fixture: &Fixture) -> Command {

@@ -16,7 +16,10 @@ use std::process::{Command, ExitStatus, Output, Stdio};
 use log::warn;
 use thiserror::Error;
 
-pub use domain::{BranchName, ConfiguredRemote, PartialCloneFilter, RemoteUrl, WorktreePath};
+pub use domain::{
+    BranchName, ConfiguredRemote, PartialCloneFilter, PartialCloneFilterError, RemoteUrl,
+    RemoteUrlError, WorktreePath, WorktreePathError,
+};
 use domain::{CommitId, TemporaryRef};
 
 #[derive(Debug)]
@@ -301,60 +304,58 @@ pub fn subscribe(repository: &Repository) -> Result<Outcome, SubscribeError> {
         return Ok(Outcome::Skipped(SkipReason::NotWorktreeRoot));
     }
 
-    let initial_state = WorktreeState::read(worktree)?;
-    let Some(origin_url) = initial_state.origin.as_ref() else {
+    let Some(origin_url) = origin_url(worktree)? else {
         return Ok(Outcome::Skipped(SkipReason::NoOrigin));
     };
-    if origin_url != repository.remote() {
+    if &origin_url != repository.remote() {
         return Ok(Outcome::Skipped(SkipReason::OriginMismatch {
             actual: ConfiguredRemote::new(origin_url.to_string()),
         }));
     }
 
-    if initial_state.has_local_changes {
-        return Ok(Outcome::Skipped(SkipReason::LocalChanges));
-    }
-
-    let Some(initial_branch) = initial_state.branch.as_ref() else {
+    let Some(initial_branch) = current_branch(worktree)? else {
         return Ok(Outcome::Skipped(SkipReason::DetachedHead));
     };
 
-    let remote_head = match git_output([
+    if has_local_changes(worktree)? {
+        return Ok(Outcome::Skipped(SkipReason::LocalChanges));
+    }
+
+    let remote_head_args = [
         "ls-remote",
         "--symref",
         "--",
         repository.remote().as_str(),
         "HEAD",
-    ])? {
-        output if output.status.success() => output,
-        _ => return Ok(Outcome::Skipped(SkipReason::RemoteUnavailable)),
-    };
-    let remote_head = output_text(
-        [
-            "ls-remote",
-            "--symref",
-            "--",
-            repository.remote().as_str(),
-            "HEAD",
-        ],
-        remote_head.stdout,
-    )?;
+    ];
+    let remote_head = git_output(remote_head_args)?;
+    if !remote_head.status.success() {
+        return Ok(Outcome::Skipped(SkipReason::RemoteUnavailable));
+    }
+    let remote_head = output_text(remote_head_args, remote_head.stdout)?;
     let Some(default_branch) = parse_default_branch(&remote_head)? else {
         return Ok(Outcome::Skipped(SkipReason::DefaultBranchUnknown));
     };
-    if initial_branch != &default_branch {
+    if initial_branch != default_branch {
         return Ok(Outcome::Skipped(SkipReason::NotDefaultBranch {
-            current: initial_branch.clone(),
+            current: initial_branch,
             default: default_branch,
         }));
     }
 
     let fetch_ref = TemporaryRef::for_current_process();
+    let refspec = format!("+{}:{}", initial_branch.as_str(), fetch_ref.as_str());
+    let initial_state = WorktreeState {
+        origin: Some(origin_url),
+        head: head_id(worktree)?,
+        branch: Some(initial_branch),
+        has_local_changes: false,
+    };
+
     let _fetch_ref_guard = FetchRefGuard {
         worktree,
         fetch_ref: &fetch_ref,
     };
-    let refspec = format!("+{}:{}", initial_branch.as_str(), fetch_ref.as_str());
     if !git_status_in(
         worktree,
         ["fetch", "--no-write-fetch-head", "origin", &refspec],
@@ -413,6 +414,11 @@ fn current_branch(path: &Path) -> Result<Option<BranchName>, SubscribeError> {
         .map_err(Into::into)
 }
 
+fn origin_url(path: &Path) -> Result<Option<ConfiguredRemote>, SubscribeError> {
+    git_optional_text_in(path, ["remote", "get-url", "origin"])
+        .map(|origin| origin.map(ConfiguredRemote::new))
+}
+
 fn parse_default_branch(remote_head: &str) -> Result<Option<BranchName>, SubscribeError> {
     remote_head
         .lines()
@@ -440,8 +446,7 @@ struct WorktreeState {
 impl WorktreeState {
     fn read(path: &Path) -> Result<Self, SubscribeError> {
         Ok(Self {
-            origin: git_optional_text_in(path, ["remote", "get-url", "origin"])?
-                .map(ConfiguredRemote::new),
+            origin: origin_url(path)?,
             head: head_id(path)?,
             branch: current_branch(path)?,
             has_local_changes: has_local_changes(path)?,
@@ -585,6 +590,21 @@ fn git_command() -> Command {
         "-oServerAliveCountMax=4",
     ]
     .join(" ");
+    for variable in [
+        "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+        "GIT_COMMON_DIR",
+        "GIT_CONFIG",
+        "GIT_CONFIG_COUNT",
+        "GIT_CONFIG_PARAMETERS",
+        "GIT_DIR",
+        "GIT_GRAFT_FILE",
+        "GIT_INDEX_FILE",
+        "GIT_OBJECT_DIRECTORY",
+        "GIT_SHALLOW_FILE",
+        "GIT_WORK_TREE",
+    ] {
+        command.env_remove(variable);
+    }
     command
         .env("GIT_TERMINAL_PROMPT", "0")
         .env("GIT_ASKPASS", "false")
@@ -651,7 +671,7 @@ impl Drop for FetchRefGuard<'_> {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
+    use std::collections::{HashMap, HashSet};
 
     use super::{git_command, parse_default_branch};
 
@@ -672,6 +692,10 @@ mod tests {
                 value.map(|value| (name.to_string_lossy(), value.to_string_lossy()))
             })
             .collect::<HashMap<_, _>>();
+        let removed_environment = command
+            .get_envs()
+            .filter_map(|(name, value)| value.is_none().then(|| name.to_string_lossy()))
+            .collect::<HashSet<_>>();
 
         assert_eq!(environment["GIT_TERMINAL_PROMPT"], "0");
         assert_eq!(environment["GIT_ASKPASS"], "false");
@@ -680,5 +704,20 @@ mod tests {
         assert!(environment["GIT_SSH_COMMAND"].contains("ConnectTimeout=60"));
         assert_eq!(environment["GIT_HTTP_LOW_SPEED_LIMIT"], "1");
         assert_eq!(environment["GIT_HTTP_LOW_SPEED_TIME"], "60");
+        for variable in [
+            "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+            "GIT_COMMON_DIR",
+            "GIT_CONFIG",
+            "GIT_CONFIG_COUNT",
+            "GIT_CONFIG_PARAMETERS",
+            "GIT_DIR",
+            "GIT_GRAFT_FILE",
+            "GIT_INDEX_FILE",
+            "GIT_OBJECT_DIRECTORY",
+            "GIT_SHALLOW_FILE",
+            "GIT_WORK_TREE",
+        ] {
+            assert!(removed_environment.contains(variable));
+        }
     }
 }

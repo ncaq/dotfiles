@@ -39,8 +39,11 @@ impl FromStr for RemoteUrl {
     type Err = RemoteUrlError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
-        if value.chars().any(char::is_whitespace) || value.chars().any(char::is_control) {
+        if has_unsafe_argument_character(value) {
             return Err(RemoteUrlError::UnsafeCharacter);
+        }
+        if value.contains('\\') {
+            return Err(RemoteUrlError::Backslash);
         }
         let url = Url::parse(value)?;
         match url.scheme() {
@@ -78,6 +81,9 @@ pub enum RemoteUrlError {
     /// The URL contains whitespace or a control character.
     #[error("Git remote URL must not contain whitespace or control characters")]
     UnsafeCharacter,
+    /// The URL contains a backslash, which Git and URL parsers can interpret differently.
+    #[error("Git remote URL must not contain backslashes")]
+    Backslash,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -118,7 +124,7 @@ impl TryFrom<PathBuf> for WorktreePath {
         }
         if path
             .components()
-            .any(|component| matches!(component, Component::CurDir | Component::ParentDir))
+            .any(|component| component == Component::ParentDir)
         {
             return Err(WorktreePathError::NotNormalized);
         }
@@ -135,8 +141,8 @@ pub enum WorktreePathError {
     /// The path refers to the filesystem root.
     #[error("worktree path must not be the filesystem root")]
     Root,
-    /// The path contains a current-directory or parent-directory component.
-    #[error("worktree path must not contain `.` or `..` components")]
+    /// The path contains a parent-directory component.
+    #[error("worktree path must not contain `..` components")]
     NotNormalized,
 }
 
@@ -174,7 +180,7 @@ impl FromStr for PartialCloneFilter {
         if value.is_empty() {
             return Err(PartialCloneFilterError::Empty);
         }
-        if value.chars().any(char::is_whitespace) || value.contains('\0') {
+        if has_unsafe_argument_character(value) {
             return Err(PartialCloneFilterError::UnsafeCharacter);
         }
         Ok(Self(value.to_owned()))
@@ -188,8 +194,14 @@ pub enum PartialCloneFilterError {
     #[error("partial clone filter must not be empty")]
     Empty,
     /// The filter contains characters that would make it unsafe as one argument.
-    #[error("partial clone filter must not contain whitespace or NUL")]
+    #[error("partial clone filter must not contain whitespace or control characters")]
     UnsafeCharacter,
+}
+
+fn has_unsafe_argument_character(value: &str) -> bool {
+    value
+        .chars()
+        .any(|character| character.is_whitespace() || character.is_control())
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]

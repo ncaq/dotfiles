@@ -56,6 +56,10 @@ let
     ];
 
   repositories = lib.attrValues cfg.repositories;
+  subscribeCommands = lib.concatMapStringsSep "\n" (repository: ''
+    $DRY_RUN_CMD ${mkSubscribeCommand repository} &
+    subscribeGitRepositoryPids+=("$!")
+  '') repositories;
   repositoryPaths = map (repository: repository.path) repositories;
   haveNestedRepositoryPaths = lib.any (
     path: lib.any (other: path != other && lib.hasPrefix "${path}/" other) repositoryPaths
@@ -80,10 +84,20 @@ in
       }
     ];
 
-    home.activation.subscribeGitRepositories = lib.hm.dag.entryAfter [ "writeBoundary" ] (
-      lib.concatMapStringsSep "\n" (
-        repository: "$DRY_RUN_CMD ${mkSubscribeCommand repository}"
-      ) repositories
-    );
+    home.activation.subscribeGitRepositories = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      subscribeGitRepositoryPids=()
+      ${subscribeCommands}
+
+      subscribeGitRepositoriesFailed=
+      for pid in "''${subscribeGitRepositoryPids[@]}"; do
+        if ! wait "$pid"; then
+          subscribeGitRepositoriesFailed=yes
+        fi
+      done
+
+      if [[ -n "$subscribeGitRepositoriesFailed" ]]; then
+        exit 1
+      fi
+    '';
   };
 }

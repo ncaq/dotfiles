@@ -298,7 +298,9 @@ pub fn subscribe(repository: &Repository) -> Result<Outcome, SubscribeError> {
         return Ok(Outcome::Cloned);
     }
 
-    if !git_status_in(worktree, ["rev-parse", "--is-inside-work-tree"], true)? {
+    if git_optional_text_in_quiet(worktree, ["rev-parse", "--is-inside-work-tree"])?.as_deref()
+        != Some("true")
+    {
         return Ok(Outcome::Skipped(SkipReason::NotWorktree));
     }
 
@@ -520,6 +522,29 @@ where
     }
 }
 
+fn git_optional_text_in_quiet<I, S>(path: &Path, args: I) -> Result<Option<String>, SubscribeError>
+where
+    I: IntoIterator<Item = S> + Clone,
+    S: AsRef<OsStr>,
+{
+    let collected = collect_args(args.clone());
+    let output = git_command()
+        .arg("-C")
+        .arg(path)
+        .args(&collected)
+        .stderr(Stdio::null())
+        .output()
+        .map_err(|source| SubscribeError::RunGit {
+            args: collected,
+            source,
+        })?;
+    if output.status.success() {
+        output_text(args, output.stdout).map(Some)
+    } else {
+        Ok(None)
+    }
+}
+
 fn git_status_in<I, S>(path: &Path, args: I, quiet: bool) -> Result<bool, SubscribeError>
 where
     I: IntoIterator<Item = S> + Clone,
@@ -635,16 +660,24 @@ fn git_command() -> Command {
         "GIT_CONFIG_SYSTEM",
         "GIT_DIR",
         "GIT_DISCOVERY_ACROSS_FILESYSTEM",
+        "GIT_EXEC_PATH",
         "GIT_GRAFT_FILE",
         "GIT_INDEX_FILE",
         "GIT_NAMESPACE",
         "GIT_OBJECT_DIRECTORY",
+        "GIT_PROXY_COMMAND",
         "GIT_SHALLOW_FILE",
+        "GIT_SSH_VARIANT",
+        "GIT_TEMPLATE_DIR",
         "GIT_WORK_TREE",
     ] {
         command.env_remove(variable);
     }
     command
+        .current_dir("/")
+        .env("GIT_CONFIG_GLOBAL", "/dev/null")
+        .env("GIT_CONFIG_NOSYSTEM", "1")
+        .env("GIT_CONFIG_SYSTEM", "/dev/null")
         .env("GIT_TERMINAL_PROMPT", "0")
         .env("GIT_ASKPASS", "false")
         .env("SSH_ASKPASS", "false")
@@ -711,6 +744,7 @@ impl Drop for FetchRefGuard<'_> {
 #[cfg(test)]
 mod tests {
     use std::collections::{HashMap, HashSet};
+    use std::path::Path;
 
     use super::{
         BranchName, CommitId, ConfiguredRemote, SkipReason, WorktreeState,
@@ -806,6 +840,9 @@ mod tests {
             .collect::<HashSet<_>>();
 
         assert_eq!(environment["GIT_TERMINAL_PROMPT"], "0");
+        assert_eq!(environment["GIT_CONFIG_GLOBAL"], "/dev/null");
+        assert_eq!(environment["GIT_CONFIG_NOSYSTEM"], "1");
+        assert_eq!(environment["GIT_CONFIG_SYSTEM"], "/dev/null");
         assert_eq!(environment["GIT_ASKPASS"], "false");
         assert_eq!(environment["SSH_ASKPASS"], "false");
         assert!(environment["GIT_SSH_COMMAND"].contains("BatchMode=yes"));
@@ -818,21 +855,23 @@ mod tests {
             "GIT_COMMON_DIR",
             "GIT_CONFIG",
             "GIT_CONFIG_COUNT",
-            "GIT_CONFIG_GLOBAL",
-            "GIT_CONFIG_NOSYSTEM",
             "GIT_CONFIG_PARAMETERS",
-            "GIT_CONFIG_SYSTEM",
             "GIT_DIR",
             "GIT_DISCOVERY_ACROSS_FILESYSTEM",
+            "GIT_EXEC_PATH",
             "GIT_GRAFT_FILE",
             "GIT_INDEX_FILE",
             "GIT_NAMESPACE",
             "GIT_OBJECT_DIRECTORY",
+            "GIT_PROXY_COMMAND",
             "GIT_SHALLOW_FILE",
+            "GIT_SSH_VARIANT",
+            "GIT_TEMPLATE_DIR",
             "GIT_WORK_TREE",
         ] {
             assert!(removed_environment.contains(variable));
         }
+        assert_eq!(command.get_current_dir(), Some(Path::new("/")));
     }
 
     fn worktree_state(origin: &str, head_digit: char, branch: &str, dirty: bool) -> WorktreeState {

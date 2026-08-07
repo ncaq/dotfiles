@@ -302,6 +302,17 @@ fn skips_nested_worktree_path() {
     assert_directory_empty(repository.worktree().as_path());
 }
 
+#[test]
+fn skips_git_directory() {
+    let fixture = Fixture::new();
+    subscribe(&fixture.repository()).unwrap();
+
+    assert_eq!(
+        subscribe(&fixture.repository_at(fixture.subscription.join(".git"))).unwrap(),
+        Outcome::Skipped(SkipReason::NotWorktree)
+    );
+}
+
 #[cfg(unix)]
 #[test]
 fn skips_symbolic_link_destination() {

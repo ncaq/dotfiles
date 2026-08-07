@@ -10,7 +10,9 @@ let
 
   # ここでは評価時の基本的な誤りだけを検出し、完全な入力検証は実行時のRust側で行います。
   gitRemoteType = lib.types.addCheck lib.types.str (
-    url: builtins.match "^(https|ssh|file)://[^[:space:]]+$" url != null
+    url:
+    builtins.match "^(https|file)://[^@[:space:]]+$" url != null
+    || builtins.match "^ssh://([^:/@[:space:]]+@)?[^@[:space:]]+$" url != null
   );
   absolutePathType = lib.types.addCheck lib.types.str (
     path:
@@ -57,10 +59,13 @@ let
     ];
 
   repositories = lib.attrValues cfg.repositories;
-  subscribeCommands = lib.concatMapStringsSep "\n" (repository: ''
-    $DRY_RUN_CMD ${mkSubscribeCommand repository} &
-    subscribeGitRepositoryPids+=("$!")
-  '') repositories;
+  subscribeCommands = lib.concatStringsSep "\n" (
+    lib.mapAttrsToList (name: repository: ''
+      $DRY_RUN_CMD ${mkSubscribeCommand repository} &
+      subscribeGitRepositoryNames+=(${lib.escapeShellArg name})
+      subscribeGitRepositoryPids+=("$!")
+    '') cfg.repositories
+  );
   repositoryPaths = map (repository: repository.path) repositories;
   haveNestedRepositoryPaths = lib.any (
     path: lib.any (other: path != other && lib.hasPrefix "${path}/" other) repositoryPaths
@@ -86,12 +91,13 @@ in
     ];
 
     home.activation.subscribeGitRepositories = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      subscribeGitRepositoryNames=()
       subscribeGitRepositoryPids=()
       ${subscribeCommands}
 
-      for pid in "''${subscribeGitRepositoryPids[@]}"; do
-        if ! wait "$pid"; then
-          echo "warning: unable to subscribe to a Git repository; continuing activation" >&2
+      for index in "''${!subscribeGitRepositoryPids[@]}"; do
+        if ! wait "''${subscribeGitRepositoryPids[$index]}"; then
+          echo "warning: unable to subscribe to Git repository ''${subscribeGitRepositoryNames[$index]}; continuing activation" >&2
         fi
       done
     '';

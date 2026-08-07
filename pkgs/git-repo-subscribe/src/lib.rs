@@ -1,9 +1,10 @@
-use std::error::Error;
 use std::ffi::{OsStr, OsString};
-use std::fmt::{self, Display};
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::process::{Command, ExitStatus, Output};
+use std::process::{Command, ExitStatus, Output, Stdio};
+
+use log::warn;
+use thiserror::Error;
 
 #[derive(Debug)]
 pub struct Repository {
@@ -85,68 +86,33 @@ impl SkipReason {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum SubscribeError {
+    #[error("failed to create {}: {source}", .path.display())]
     CreateParent {
         path: PathBuf,
         source: std::io::Error,
     },
+    #[error("failed to run git {}: {source}", display_args(.args))]
     RunGit {
         args: Vec<OsString>,
         source: std::io::Error,
     },
+    #[error("git {} failed with {status}", display_args(.args))]
     GitFailed {
         args: Vec<OsString>,
         status: ExitStatus,
     },
+    #[error("git {} returned non-UTF-8 output: {source}", display_args(.args))]
     InvalidGitOutput {
         args: Vec<OsString>,
         source: std::string::FromUtf8Error,
     },
+    #[error("failed to resolve {}: {source}", .path.display())]
     Canonicalize {
         path: PathBuf,
         source: std::io::Error,
     },
-}
-
-impl Display for SubscribeError {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::CreateParent { path, source } => {
-                write!(formatter, "failed to create {}: {source}", path.display())
-            }
-            Self::RunGit { args, source } => {
-                write!(
-                    formatter,
-                    "failed to run git {}: {source}",
-                    display_args(args)
-                )
-            }
-            Self::GitFailed { args, status } => {
-                write!(formatter, "git {} failed with {status}", display_args(args))
-            }
-            Self::InvalidGitOutput { args, source } => write!(
-                formatter,
-                "git {} returned non-UTF-8 output: {source}",
-                display_args(args)
-            ),
-            Self::Canonicalize { path, source } => {
-                write!(formatter, "failed to resolve {}: {source}", path.display())
-            }
-        }
-    }
-}
-
-impl Error for SubscribeError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        match self {
-            Self::CreateParent { source, .. }
-            | Self::RunGit { source, .. }
-            | Self::Canonicalize { source, .. } => Some(source),
-            Self::InvalidGitOutput { source, .. } => Some(source),
-            Self::GitFailed { .. } => None,
-        }
-    }
 }
 
 impl SubscribeError {
@@ -313,7 +279,6 @@ where
     S: AsRef<OsStr>,
 {
     let output = git_output_in(path, args.clone())?;
-    write_stderr(&output.stderr);
     if !output.status.success() {
         return Err(git_failed(args, output.status));
     }
@@ -326,7 +291,6 @@ where
     S: AsRef<OsStr>,
 {
     let output = git_output_in(path, args.clone())?;
-    write_stderr(&output.stderr);
     if output.status.success() {
         output_text(args, output.stdout).map(Some)
     } else {
@@ -386,12 +350,12 @@ where
     let collected = collect_args(args);
     let output = Command::new("git")
         .args(&collected)
+        .stderr(Stdio::inherit())
         .output()
         .map_err(|source| SubscribeError::RunGit {
             args: collected.clone(),
             source,
         })?;
-    write_stderr(&output.stderr);
     Ok(output)
 }
 
@@ -405,6 +369,7 @@ where
         .arg("-C")
         .arg(path)
         .args(&collected)
+        .stderr(Stdio::inherit())
         .output()
         .map_err(|source| SubscribeError::RunGit {
             args: collected,
@@ -453,11 +418,6 @@ fn display_args(args: &[OsString]) -> String {
         .join(" ")
 }
 
-fn write_stderr(stderr: &[u8]) {
-    use std::io::Write;
-    let _ = std::io::stderr().write_all(stderr);
-}
-
 struct FetchRefGuard<'a> {
     worktree: &'a Path,
     fetch_ref: &'a str,
@@ -471,14 +431,11 @@ impl Drop for FetchRefGuard<'_> {
             .args(["update-ref", "-d", self.fetch_ref])
             .status();
         match status {
-            Ok(exit_status) if !exit_status.success() => eprintln!(
-                "Warning: unable to remove temporary ref {}: git exited with {exit_status}",
+            Ok(exit_status) if !exit_status.success() => warn!(
+                "unable to remove temporary ref {}: git exited with {exit_status}",
                 self.fetch_ref
             ),
-            Err(error) => eprintln!(
-                "Warning: unable to remove temporary ref {}: {error}",
-                self.fetch_ref
-            ),
+            Err(error) => warn!("unable to remove temporary ref {}: {error}", self.fetch_ref),
             Ok(_) => {}
         }
     }

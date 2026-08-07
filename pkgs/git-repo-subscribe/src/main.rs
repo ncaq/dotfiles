@@ -2,8 +2,11 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 
 use git_repo_subscribe::{Outcome, Repository, subscribe};
+use log::{error, warn};
 
 fn main() -> ExitCode {
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("warn")).init();
+
     let mut args = std::env::args();
     let _program = args.next();
     let (Some(url), Some(path), Some(partial_clone_filter), None) =
@@ -20,13 +23,13 @@ fn main() -> ExitCode {
     };
     match subscribe(&repository) {
         Ok(Outcome::Skipped(reason)) => {
-            eprintln!("Warning: {}", reason.warning(&repository));
+            warn!("{}", reason.warning(&repository));
             ExitCode::SUCCESS
         }
         Ok(Outcome::Cloned | Outcome::Updated) => ExitCode::SUCCESS,
         Err(error) => {
             if !error.is_git_failure() {
-                eprintln!("Error: {error}");
+                error!("{error}");
             }
             ExitCode::from(error.exit_code())
         }

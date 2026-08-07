@@ -38,13 +38,5 @@ in
     autojump.enable = true;
   };
 
-  home = {
-    shell.enableZshIntegration = true;
-
-    activation.cloneZshConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      if [ ! -d "${zshUserDotDir}" ]; then
-        $DRY_RUN_CMD ${pkgs.git}/bin/git clone https://github.com/ncaq/.zsh.d.git "${zshUserDotDir}"
-      fi
-    '';
-  };
+  home.shell.enableZshIntegration = true;
 }

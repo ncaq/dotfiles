@@ -315,6 +315,7 @@
 
           checks =
             let
+              git-repo-subscribe = pkgs.callPackage ./pkgs/git-repo-subscribe { };
               # NixOS構成の評価チェック(評価のみ、ビルドしない)。
               # env属性の中の`builtins.seq`がinstantiation時にのみ完全評価を強制する。
               # この形には2つの理由がある。
@@ -351,7 +352,7 @@
                   } ''echo "$evaluated" > "$out"'';
                 };
             in
-            nixosEvalChecks // hmEvalChecks;
+            nixosEvalChecks // hmEvalChecks // git-repo-subscribe.tests;
 
           packages = {
             # flake.lockの管理バージョンをre-exportすることで安定した利用を促進。

@@ -1,7 +1,6 @@
 {
   pkgs,
   lib,
-  config,
   isWSL,
   osConfig ? null,
   inputs,
@@ -58,14 +57,6 @@ in
     # それは外部依存ライブラリを解決したり、
     # Nixの設定をスマートに解決するためのものです。
     # Emacsの設定自体はローカルのファイルシステムで管理します。
-    activation.cloneEmacsConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      if [ ! -d "${config.home.homeDirectory}/.emacs.d" ]; then
-        $DRY_RUN_CMD ${pkgs.git}/bin/git clone \
-          https://github.com/ncaq/.emacs.d.git \
-          "${config.home.homeDirectory}/.emacs.d"
-      fi
-    '';
-
     packages = [ emacsPackage ];
   };
 }

@@ -123,6 +123,10 @@ fn fast_forwards_clean_default_branch() {
         git_text_in(&fixture.subscription, ["rev-parse", "HEAD"]),
         git_text_in(&fixture.source, ["rev-parse", "HEAD"])
     );
+    assert_eq!(
+        git_text_in(&fixture.subscription, ["rev-parse", "origin/master"]),
+        git_text_in(&fixture.source, ["rev-parse", "HEAD"])
+    );
     assert!(temporary_refs(&fixture.subscription).is_empty());
     assert_historical_blob_missing(&fixture);
 }

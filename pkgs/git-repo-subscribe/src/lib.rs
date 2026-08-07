@@ -358,11 +358,15 @@ pub fn subscribe(repository: &Repository) -> Result<Outcome, SubscribeError> {
         initial_branch.as_str(),
         fetch_ref.as_str()
     );
+    let tracking_refspec = format!(
+        "+refs/heads/{}:refs/remotes/origin/{}",
+        initial_branch.as_str(),
+        initial_branch.as_str()
+    );
     let initial_state = WorktreeState {
         origin: Some(origin_url),
         head: initial_head,
         branch: Some(initial_branch),
-        has_local_changes: false,
     };
 
     let _fetch_ref_guard = FetchRefGuard {
@@ -371,14 +375,22 @@ pub fn subscribe(repository: &Repository) -> Result<Outcome, SubscribeError> {
     };
     if !git_status_in(
         worktree,
-        ["fetch", "--no-write-fetch-head", "origin", &refspec],
+        [
+            "fetch",
+            "--no-write-fetch-head",
+            "origin",
+            &refspec,
+            &tracking_refspec,
+        ],
         false,
     )? {
         return Ok(Outcome::Skipped(SkipReason::FetchFailed));
     }
 
     let current_state = WorktreeState::read(worktree)?;
-    if let Some(reason) = detect_concurrent_change(&initial_state, &current_state) {
+    if let Some(reason) = detect_concurrent_change(&initial_state, &current_state, || {
+        has_local_changes(worktree)
+    })? {
         return Ok(Outcome::Skipped(reason));
     }
     if !git_status_in(
@@ -458,7 +470,6 @@ struct WorktreeState {
     origin: Option<ConfiguredRemote>,
     head: CommitId,
     branch: Option<BranchName>,
-    has_local_changes: bool,
 }
 
 impl WorktreeState {
@@ -467,25 +478,25 @@ impl WorktreeState {
             origin: origin_url(path)?,
             head: head_id(path)?,
             branch: current_branch(path)?,
-            has_local_changes: has_local_changes(path)?,
         })
     }
 }
 
-fn detect_concurrent_change(
+fn detect_concurrent_change<E>(
     initial: &WorktreeState,
     current: &WorktreeState,
-) -> Option<SkipReason> {
+    has_local_changes: impl FnOnce() -> Result<bool, E>,
+) -> Result<Option<SkipReason>, E> {
     if current.origin != initial.origin {
-        Some(SkipReason::OriginChanged)
+        Ok(Some(SkipReason::OriginChanged))
     } else if current.head != initial.head {
-        Some(SkipReason::HeadChanged)
+        Ok(Some(SkipReason::HeadChanged))
     } else if current.branch != initial.branch {
-        Some(SkipReason::BranchChanged)
-    } else if current.has_local_changes {
-        Some(SkipReason::LocalChangesDuringFetch)
+        Ok(Some(SkipReason::BranchChanged))
+    } else if has_local_changes()? {
+        Ok(Some(SkipReason::LocalChangesDuringFetch))
     } else {
-        None
+        Ok(None)
     }
 }
 
@@ -775,54 +786,63 @@ mod tests {
 
     #[test]
     fn detects_changed_origin_after_fetch() {
-        let initial = worktree_state("file:///initial", '0', "master", false);
-        let current = worktree_state("file:///changed", '0', "master", false);
+        let initial = worktree_state("file:///initial", '0', "master");
+        let current = worktree_state("file:///changed", '0', "master");
 
         assert_eq!(
-            detect_concurrent_change(&initial, &current),
-            Some(SkipReason::OriginChanged)
+            detect_concurrent_change(&initial, &current, || -> Result<bool, ()> {
+                panic!("local changes must not be inspected")
+            }),
+            Ok(Some(SkipReason::OriginChanged))
         );
     }
 
     #[test]
     fn detects_changed_head_after_fetch() {
-        let initial = worktree_state("file:///remote", '0', "master", false);
-        let current = worktree_state("file:///remote", '1', "master", false);
+        let initial = worktree_state("file:///remote", '0', "master");
+        let current = worktree_state("file:///remote", '1', "master");
 
         assert_eq!(
-            detect_concurrent_change(&initial, &current),
-            Some(SkipReason::HeadChanged)
+            detect_concurrent_change(&initial, &current, || -> Result<bool, ()> {
+                panic!("local changes must not be inspected")
+            }),
+            Ok(Some(SkipReason::HeadChanged))
         );
     }
 
     #[test]
     fn detects_changed_branch_after_fetch() {
-        let initial = worktree_state("file:///remote", '0', "master", false);
-        let current = worktree_state("file:///remote", '0', "topic", false);
+        let initial = worktree_state("file:///remote", '0', "master");
+        let current = worktree_state("file:///remote", '0', "topic");
 
         assert_eq!(
-            detect_concurrent_change(&initial, &current),
-            Some(SkipReason::BranchChanged)
+            detect_concurrent_change(&initial, &current, || -> Result<bool, ()> {
+                panic!("local changes must not be inspected")
+            }),
+            Ok(Some(SkipReason::BranchChanged))
         );
     }
 
     #[test]
     fn detects_local_changes_after_fetch() {
-        let initial = worktree_state("file:///remote", '0', "master", false);
-        let current = worktree_state("file:///remote", '0', "master", true);
+        let initial = worktree_state("file:///remote", '0', "master");
+        let current = worktree_state("file:///remote", '0', "master");
 
         assert_eq!(
-            detect_concurrent_change(&initial, &current),
-            Some(SkipReason::LocalChangesDuringFetch)
+            detect_concurrent_change(&initial, &current, || Ok::<_, ()>(true)),
+            Ok(Some(SkipReason::LocalChangesDuringFetch))
         );
     }
 
     #[test]
     fn accepts_unchanged_worktree_after_fetch() {
-        let initial = worktree_state("file:///remote", '0', "master", false);
-        let current = worktree_state("file:///remote", '0', "master", false);
+        let initial = worktree_state("file:///remote", '0', "master");
+        let current = worktree_state("file:///remote", '0', "master");
 
-        assert_eq!(detect_concurrent_change(&initial, &current), None);
+        assert_eq!(
+            detect_concurrent_change(&initial, &current, || Ok::<_, ()>(false)),
+            Ok(None)
+        );
     }
 
     #[test]
@@ -874,12 +894,11 @@ mod tests {
         assert_eq!(command.get_current_dir(), Some(Path::new("/")));
     }
 
-    fn worktree_state(origin: &str, head_digit: char, branch: &str, dirty: bool) -> WorktreeState {
+    fn worktree_state(origin: &str, head_digit: char, branch: &str) -> WorktreeState {
         WorktreeState {
             origin: Some(ConfiguredRemote::new(origin.to_owned())),
             head: CommitId::parse(&head_digit.to_string().repeat(40)).expect("valid commit ID"),
             branch: Some(BranchName::parse(branch.to_owned()).expect("valid branch name")),
-            has_local_changes: dirty,
         }
     }
 }

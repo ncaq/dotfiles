@@ -1,25 +1,31 @@
 use std::path::PathBuf;
 use std::process::ExitCode;
 
+use clap::Parser;
 use git_repo_subscribe::{Outcome, Repository, subscribe};
 use log::{error, warn};
+
+#[derive(Parser)]
+#[command(about = "Clone and safely update a Git repository")]
+struct Args {
+    #[arg(value_name = "URL")]
+    url: String,
+
+    #[arg(value_name = "PATH")]
+    path: PathBuf,
+
+    #[arg(value_name = "FILTER")]
+    partial_clone_filter: String,
+}
 
 fn main() -> ExitCode {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("warn")).init();
 
-    let mut args = std::env::args();
-    let _program = args.next();
-    let (Some(url), Some(path), Some(partial_clone_filter), None) =
-        (args.next(), args.next(), args.next(), args.next())
-    else {
-        eprintln!("Usage: git-repo-subscribe URL PATH FILTER");
-        return ExitCode::from(2);
-    };
-
+    let args = Args::parse();
     let repository = Repository {
-        url,
-        path: PathBuf::from(path),
-        partial_clone_filter,
+        url: args.url,
+        path: args.path,
+        partial_clone_filter: args.partial_clone_filter,
     };
     match subscribe(&repository) {
         Ok(Outcome::Skipped(reason)) => {

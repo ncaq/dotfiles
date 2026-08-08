@@ -55,9 +55,17 @@ in
           };
         };
         # Tailscale Serveにつながるホスト側socket proxyからの接続だけを許可する。
-        networking.firewall.extraInputRules = ''
-          ip saddr ${config.containers.ollama.hostAddress} tcp dport 8080 accept
-        '';
+        # ホストのFORWARDはACCEPTなので、
+        # 他のコンテナからも自分のIPへ到達できてしまい、
+        # 認証を無効化したUIには送信元の制限が必要になる。
+        networking = {
+          # `extraInputRules`はnftables backendでしか適用されず、
+          # iptables backendでは何の警告もなく無視される。
+          nftables.enable = true;
+          firewall.extraInputRules = ''
+            ip saddr ${config.containers.ollama.hostAddress} tcp dport 8080 accept
+          '';
+        };
         # bind mountしたStateDirectoryを固定ユーザで扱う。
         systemd.services.open-webui = {
           # 音声ファイルの変換などに使うffmpegを実行パスへ追加する。

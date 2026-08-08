@@ -1,0 +1,77 @@
+# Ollamaと同じコンテナで動かすWeb UI。
+{
+  pkgs,
+  config,
+  username,
+  ...
+}:
+let
+  openWebuiUid = 502;
+  openWebuiGid = openWebuiUid;
+  stateDir = "/var/lib/open-webui";
+  ollama = config.containers.ollama.config.services.ollama;
+  package = pkgs.open-webui;
+in
+{
+  users = {
+    users = {
+      open-webui = {
+        uid = openWebuiUid;
+        group = "open-webui";
+        isSystemUser = true;
+      };
+      ${username}.extraGroups = [ "open-webui" ];
+    };
+    groups.open-webui.gid = openWebuiGid;
+  };
+
+  containers.ollama = {
+    # チャット履歴、設定、アップロードなどをコンテナの再作成後も保持する。
+    extraFlags = [ "--bind=${stateDir}:${stateDir}:idmap" ];
+    config =
+      { lib, pkgs, ... }:
+      {
+        users = {
+          users.open-webui = {
+            uid = openWebuiUid;
+            group = "open-webui";
+            isSystemUser = true;
+          };
+          groups.open-webui.gid = openWebuiGid;
+        };
+        services.open-webui = {
+          enable = true;
+          inherit package stateDir;
+          host = "0.0.0.0";
+          port = 8080;
+          # 認証を無効化するため、全接続元へfirewallを開かない。
+          openFirewall = false;
+          environment = {
+            # 所有する端末だけのtailnetとACLを認証境界にするsingle-user mode。
+            WEBUI_AUTH = "False";
+            # 接続先をUIのDBへ保存させず、常に宣言したOllamaだけを使う。
+            ENABLE_PERSISTENT_CONFIG = "False";
+            OLLAMA_BASE_URL = "http://127.0.0.1:${toString ollama.port}";
+          };
+        };
+        # Tailscale Serveにつながるホスト側socket proxyからの接続だけを許可する。
+        networking.firewall.extraInputRules = ''
+          ip saddr ${config.containers.ollama.hostAddress} tcp dport 8080 accept
+        '';
+        # bind mountしたStateDirectoryを固定ユーザで扱う。
+        systemd.services.open-webui = {
+          # 音声ファイルの変換などに使うffmpegを実行パスへ追加する。
+          path = [ pkgs.ffmpeg-headless ];
+          serviceConfig = {
+            DynamicUser = lib.mkForce false;
+            User = "open-webui";
+            Group = "open-webui";
+          };
+        };
+      };
+  };
+
+  # Open WebUIもOllamaと同じコンテナcgroup上限を共有する。
+  # UI処理を含めてもホスト全体のメモリ保護を優先する。
+  systemd.tmpfiles.rules = [ "d ${stateDir} 0750 open-webui open-webui - -" ];
+}

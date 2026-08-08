@@ -104,6 +104,10 @@ in
           uid = 501;
           gid = 501;
         };
+        open-webui = {
+          uid = 502;
+          gid = 502;
+        };
       };
       description = "Service user/group IDs (must match between host and isolated environment)";
     };

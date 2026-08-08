@@ -16,9 +16,6 @@ let
   dataDir = "/var/lib/ollama";
   enableCuda = hostName == "bullet";
   package = if enableCuda then pkgs.ollama-cuda else pkgs.ollama-cpu;
-  # bulletは32GiBのVRAMに収まる範囲で汎用品質を優先して27Bモデルを使う。
-  # CPUで推論するcreepとseminarは、応答速度とMemoryMax内の余裕を両立する9Bモデルを使う。
-  model = if enableCuda then "qwen3.6:27b" else "qwen3.5:9b";
   nvidiaDevices = [
     "/dev/nvidia-modeset"
     "/dev/nvidia-uvm"
@@ -65,7 +62,8 @@ in
         };
       }
     );
-    # モデルを永続化し、privateUsersによるUID変換後も固定UIDで読み書きできるようにする。
+    # 可変データを永続化し、
+    # privateUsersによるUID変換後も固定UIDで読み書きできるようにする。
     extraFlags = [ "--bind=${dataDir}:${dataDir}:idmap" ];
     config =
       { lib, pkgs, ... }:
@@ -86,7 +84,7 @@ in
           host = "0.0.0.0";
           inherit port;
           openFirewall = true; # コンテナなので無制限公開ではない。
-          loadModels = [ model ];
+          loadModels = config.local.ollama.loadModels;
           syncModels = true;
           environmentVariables = {
             OLLAMA_KEEP_ALIVE = "15m";

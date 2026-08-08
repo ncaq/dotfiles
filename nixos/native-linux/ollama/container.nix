@@ -85,7 +85,7 @@ in
           inherit port;
           openFirewall = true; # コンテナなので無制限公開ではない。
           loadModels = config.local.ollama.loadModels;
-          syncModels = true;
+          syncModels = false; # オンデマンド追加したモデルを残す。
           environmentVariables = {
             OLLAMA_KEEP_ALIVE = "15m";
           };

@@ -35,6 +35,10 @@ in
           host = "192.168.100.10";
           guest = "192.168.100.11";
         };
+        ollama = {
+          host = "192.168.100.20";
+          guest = "192.168.100.21";
+        };
         mcp-nixos = {
           host = "192.168.100.30";
           guest = "192.168.100.31";
@@ -95,6 +99,10 @@ in
         forgejo = {
           uid = 991;
           gid = 986;
+        };
+        ollama = {
+          uid = 501;
+          gid = 501;
         };
       };
       description = "Service user/group IDs (must match between host and isolated environment)";

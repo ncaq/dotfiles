@@ -1,0 +1,4 @@
+{ importDirModules, ... }:
+{
+  imports = importDirModules ./.;
+}

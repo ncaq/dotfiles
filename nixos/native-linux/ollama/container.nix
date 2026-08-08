@@ -16,6 +16,7 @@ let
   dataDir = "/var/lib/ollama";
   enableCuda = hostName == "bullet";
   package = if enableCuda then pkgs.ollama-cuda else pkgs.ollama-cpu;
+  model = if enableCuda then "qwen3.6:27b" else "qwen3.5:9b";
   nvidiaDevices = [
     "/dev/nvidia-modeset"
     "/dev/nvidia-uvm"
@@ -83,6 +84,8 @@ in
           host = "0.0.0.0";
           inherit port;
           openFirewall = true; # コンテナなので無制限公開ではない。
+          loadModels = [ model ];
+          syncModels = true;
           environmentVariables = {
             OLLAMA_KEEP_ALIVE = "15m";
           };

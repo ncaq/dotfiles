@@ -52,6 +52,13 @@ in
             # 接続先をUIのDBへ保存させず、常に宣言したOllamaだけを使う。
             ENABLE_PERSISTENT_CONFIG = "False";
             OLLAMA_BASE_URL = "http://127.0.0.1:${toString ollama.port}";
+            # ノートやカレンダーなどの組み込みツールを既定で渡さない。
+            # Open WebUIはOllamaが申告するcapabilitiesを見ないため、
+            # tools非対応のモデルにもfunction callingを要求してしまい、
+            # `does not support tools`で会話そのものが失敗する。
+            # モデル個別の設定が優先されるので、
+            # 対応モデルだけUIから有効化できる。
+            DEFAULT_MODEL_METADATA = builtins.toJSON { capabilities.builtin_tools = false; };
           };
         };
         # Tailscale Serveにつながるホスト側socket proxyからの接続だけを許可する。

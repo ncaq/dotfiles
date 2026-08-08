@@ -68,7 +68,7 @@ in
     # モデルを永続化し、privateUsersによるUID変換後も固定UIDで読み書きできるようにする。
     extraFlags = [ "--bind=${dataDir}:${dataDir}:idmap" ];
     config =
-      { lib, ... }:
+      { lib, pkgs, ... }:
       {
         system.stateVersion = "26.05";
         time.timeZone = "Asia/Tokyo";
@@ -92,6 +92,20 @@ in
             OLLAMA_KEEP_ALIVE = "15m";
           };
         };
+        # nixpkgsのOllamaモジュールは固定ユーザを指定してもDynamicUserを有効にするため、
+        # bind mountしたStateDirectoryを固定ユーザで扱えるように上書きする。
+        systemd.services = {
+          ollama.serviceConfig.DynamicUser = lib.mkForce false;
+          ollama-model-loader = {
+            # GNU parallelがsystem userのnologin shellを使わないようにする。
+            environment.SHELL = lib.getExe pkgs.bash;
+            serviceConfig = {
+              DynamicUser = lib.mkForce false;
+              User = "ollama";
+              Group = "ollama";
+            };
+          };
+        };
       };
   };
 
@@ -102,7 +116,10 @@ in
       MemoryHigh = "50%";
       MemoryMax = "60%";
     };
-    tmpfiles.rules = [ "d ${dataDir} 0750 ollama ollama - -" ];
+    tmpfiles.rules = [
+      "d ${dataDir} 0750 ollama ollama - -"
+      "d ${dataDir}/models 0750 ollama ollama - -"
+    ];
   };
 
   boot.kernelModules = lib.optionals enableCuda [ "nvidia_uvm" ];

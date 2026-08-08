@@ -53,7 +53,12 @@ in
         bindsTo = [ "ollama.service" ];
         environment = config.systemd.services.ollama.environment;
         serviceConfig = {
-          Type = "oneshot";
+          # oneshotにするとGGUFの登録が終わるまでmulti-user.targetに到達せず、
+          # nspawnのready通知が`container@ollama.service`の`TimeoutStartSec`を超えて、
+          # 登録の途中でコンテナごとkillされる無限ループに陥る。
+          # nixpkgsの`ollama-model-loader`と同じく起動直後にreadyとして扱い、
+          # 登録は背後で進める。
+          Type = "exec";
           User = "ollama";
           Group = "ollama";
           ExecStart = lib.getExe loader;

@@ -121,6 +121,15 @@ in
   };
 
   systemd = {
+    services."container@open-webui".serviceConfig = {
+      # RAGの文書取り込みでは埋め込みモデルがプロセス内で動き、
+      # torchがコア数分のスレッドを立てて数GiB規模のRSSが数分続く。
+      # 常時起動のホストで他のワークロードを巻き添えにしないよう上限を設ける。
+      # OSや他の処理のために2スレッド分を残す既存のCPU予算を使う。
+      CPUQuota = "${toString (config.local.cpuBudgetThreads * 100)}%";
+      MemoryHigh = "8G"; # ソフトリミット。これを超えるとメモリを積極的に解放する。
+      MemoryMax = "16G"; # ハードリミット。大きな文書の取り込みでも足りるだろうという推定値。
+    };
     # NixOSコンテナモジュールが生成するpostStartは`ip addr add`と`ip route add`を使うため、
     # systemd-networkdが先に設定済みだとEEXISTで失敗する。
     # 実際の設定はsystemd-networkdに任せるので、冪等にして失敗を無視する。

@@ -382,35 +382,42 @@ in
           overrideJson = pkgs.writeText "overrides.json" (builtins.toJSON claudeJsonOverrides);
         in
         lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-          CLAUDE_JSON="$HOME/.claude.json"
-          # Claude Codeの設定が存在していない場合はマージせずに終了します。
-          # 初回起動時にClaude Code自身がファイルを生成します。
-          if [ ! -f "$CLAUDE_JSON" ]; then
-            echo "Claude Code config not found at $CLAUDE_JSON, skipping merge."
-            exit 0
-          fi
+          # home-managerは全てのactivationエントリを1つのbashスクリプトに連結するため、
+          # ここでexitするとactivation全体が終了して後続のエントリが実行されません。
+          # サブシェルで囲んでexitの影響をこのエントリ内に閉じ込めます。
+          # `set -e`はサブシェルにも継承されるため、
+          # 失敗時にactivationを中断させる`exit 1`の意図は維持されます。
+          (
+            CLAUDE_JSON="$HOME/.claude.json"
+            # Claude Codeの設定が存在していない場合はマージせずに終了します。
+            # 初回起動時にClaude Code自身がファイルを生成します。
+            if [ ! -f "$CLAUDE_JSON" ]; then
+              echo "Claude Code config not found at $CLAUDE_JSON, skipping merge."
+              exit 0
+            fi
 
-          # jqを使ってマージします。
-          if ! MERGED=$(${pkgs.jq}/bin/jq \
-            -S --slurpfile overrides ${overrideJson} '. * $overrides[0]' "$CLAUDE_JSON"); then
-            # マージが失敗したらエラーを出して終了します。
-            echo "Failed to merge Claude Code config, invalid JSON format."
-            exit 1
-          fi
+            # jqを使ってマージします。
+            if ! MERGED=$(${pkgs.jq}/bin/jq \
+              -S --slurpfile overrides ${overrideJson} '. * $overrides[0]' "$CLAUDE_JSON"); then
+              # マージが失敗したらエラーを出して終了します。
+              echo "Failed to merge Claude Code config, invalid JSON format."
+              exit 1
+            fi
 
-          CURRENT=$(${pkgs.jq}/bin/jq -S . "$CLAUDE_JSON")
+            CURRENT=$(${pkgs.jq}/bin/jq -S . "$CLAUDE_JSON")
 
-          # マージ結果と既存の内容が同じならスキップ。
-          if [ "$MERGED" = "$CURRENT" ]; then
-            # スキップするのは何事もないときなので特にメッセージは出力しません。
-            exit 0
-          fi
+            # マージ結果と既存の内容が同じならスキップ。
+            if [ "$MERGED" = "$CURRENT" ]; then
+              # スキップするのは何事もないときなので特にメッセージは出力しません。
+              exit 0
+            fi
 
-          # 書き込みを行います。
-          echo "$MERGED" \
-            | $DRY_RUN_CMD ${pkgs.coreutils}/bin/install -m 644 /dev/stdin "$CLAUDE_JSON"
+            # 書き込みを行います。
+            echo "$MERGED" \
+              | $DRY_RUN_CMD ${pkgs.coreutils}/bin/install -m 644 /dev/stdin "$CLAUDE_JSON"
 
-          echo "merged $CLAUDE_JSON"
+            echo "merged $CLAUDE_JSON"
+          )
         '';
     };
   };

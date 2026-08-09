@@ -24,9 +24,21 @@
   drainによる停止、
   再起動での再advertise、
   公開URLへのHTTPSアクセスが通ることをbullet上で確認済み。
+
+  # 引数
+
+  - `pkgs`: flockの実行に使うパッケージの供給元
+  - `hardening`: `lib/systemd-hardening.nix`の設定集。
+    NixOSモジュールへは`flake.nix`の`specialArgs`経由で配布されるものをそのまま渡す
+  - `tailscale`: 使うtailscaleのパッケージ
+  - `service`: `svc:`から始まるTailscale Service名
+  - `label`: ユニットのdescriptionに出る人間向けの表示名
+  - `port`: 転送先のホスト側ポート番号
+  - `socket`: 転送先のsocketユニット名
 */
 {
   pkgs,
+  hardening,
   tailscale,
   service,
   label,
@@ -34,7 +46,6 @@
   socket,
 }:
 let
-  hardening = import ./systemd-hardening.nix;
   lockFile = "/run/lock/tailscale-serve.lock";
   serialize = command: "${pkgs.lib.getExe' pkgs.util-linux "flock"} ${lockFile} ${command}";
 in

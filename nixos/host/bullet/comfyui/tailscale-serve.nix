@@ -3,10 +3,15 @@
 # Funnelではないのでインターネットには公開されない。
 # LoRA Managerは`/loras_static`などのルート絶対URLを使うため、
 # 専用のTailscale Service `svc:comfyui`のルートへ公開する。
-{ pkgs, config, ... }:
+{
+  pkgs,
+  config,
+  hardening,
+  ...
+}:
 {
   systemd.services.tailscale-serve-comfyui = import ../../../../lib/tailscale-serve.nix {
-    inherit pkgs;
+    inherit pkgs hardening;
     tailscale = config.services.tailscale.package;
     service = "svc:comfyui";
     label = "ComfyUI";

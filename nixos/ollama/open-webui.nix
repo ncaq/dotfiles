@@ -9,6 +9,7 @@ let
   openWebuiUid = 502;
   openWebuiGid = openWebuiUid;
   stateDir = config.local.ollama.openWebuiStateDir;
+  port = 8080;
   ollama = config.containers.ollama.config.services.ollama;
   package = pkgs.open-webui;
 in
@@ -46,9 +47,8 @@ in
         };
         services.open-webui = {
           enable = true;
-          inherit package stateDir;
+          inherit package stateDir port;
           host = "0.0.0.0";
-          port = 8080;
           # 認証を無効化するため、全接続元へfirewallを開かない。
           openFirewall = false;
           # `environment`を定義すると既定値は丸ごと置き換わり、
@@ -78,7 +78,7 @@ in
           # iptables backendでは何の警告もなく無視される。
           nftables.enable = true;
           firewall.extraInputRules = ''
-            ip saddr ${config.containers.ollama.hostAddress} tcp dport 8080 accept
+            ip saddr ${config.containers.ollama.hostAddress} tcp dport ${toString port} accept
           '';
         };
         # bind mountしたStateDirectoryを固定ユーザで扱う。

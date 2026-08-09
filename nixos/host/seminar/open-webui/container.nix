@@ -15,6 +15,9 @@ let
   user = config.serviceUser.open-webui;
   stateDir = "/var/lib/open-webui";
   port = 8080;
+  # コンテナのモジュールでは`config`がコンテナ自身のものになるため、
+  # ホスト側のオプションはここで束縛しておく。
+  ollamaPort = config.local.openWebui.ollamaPort;
   # unfreeの許可はホスト側のnixpkgsの設定にしかないため、
   # コンテナ内のpkgsではなくホスト側から取る。
   package = pkgs.open-webui;
@@ -49,6 +52,7 @@ in
       {
         lib,
         pkgs,
+        config,
         options,
         ...
       }:
@@ -78,7 +82,7 @@ in
             # 接続先をUIのDBへ保存させず、常に宣言したOllamaだけを使う。
             ENABLE_PERSISTENT_CONFIG = "False";
             # ホスト側のCaddyがbullet優先でOllamaへ振り分ける。
-            OLLAMA_BASE_URL = "http://${addr.host}:${toString config.local.openWebui.ollamaPort}";
+            OLLAMA_BASE_URL = "http://${addr.host}:${toString ollamaPort}";
             # ノートやカレンダーなどの組み込みツールを既定で渡さない。
             # Open WebUIはOllamaが申告するcapabilitiesを見ないため、
             # tools非対応のモデルにもfunction callingを要求してしまい、
@@ -104,6 +108,13 @@ in
             ip saddr ${addr.host} tcp dport ${toString port} accept
           '';
         };
+        # 送信元の制限が黙って無効化されることは評価時に防げる。
+        assertions = [
+          {
+            assertion = config.networking.nftables.enable;
+            message = "open-webui container requires the nftables backend for firewall.extraInputRules to take effect";
+          }
+        ];
         # bind mountしたStateDirectoryを固定ユーザで扱う。
         systemd.services.open-webui = {
           # 音声ファイルの変換などに使うffmpegを実行パスへ追加する。

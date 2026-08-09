@@ -17,7 +17,7 @@ let
   package = if enableCuda then pkgs.ollama-cuda else pkgs.ollama-cpu;
   # 推論に必要な最小限だけを渡す。
   # NVIDIAのcharデバイスはioctl経由の攻撃面が広く、
-  # 同じコンテナで認証を無効化したUIも動いているため、
+  # このコンテナは認証のないHTTP APIをtailnetへ公開しているため、
   # モード設定用の`nvidia-modeset`とデバッグ用の`nvidia-uvm-tools`は渡さない。
   nvidiaDevices = [
     "/dev/nvidia-uvm"
@@ -119,8 +119,8 @@ in
   systemd = {
     services."container@ollama".serviceConfig = {
       # OSや他の処理のために2スレッド分を残す既存のCPU予算を使う。
-      # 同居するOpen WebUIもこの上限を共有し、
-      # UI処理を含めてホスト全体のメモリ保護を優先する。
+      # CPU推論のホストではメモリを大量に使うため、
+      # 推論の速度よりホスト全体のメモリ保護を優先する。
       CPUQuota = "${toString (config.local.cpuBudgetThreads * 100)}%";
       MemoryHigh = "50%";
       MemoryMax = "60%";

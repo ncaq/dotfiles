@@ -41,10 +41,17 @@ in
       # これがないと`lb_policy first`が最初のupstreamを不健全と認識しない。
       # https://github.com/caddyserver/caddy/issues/4432
       fail_duration 30s
-      # bulletが落ちているとTailVIPへの接続はRSTではなく無応答になるため、
-      # 既定の3秒より短くして`lb_try_duration`の中に収める。
       transport http {
+        # bulletが落ちているとTailVIPへの接続はRSTではなく無応答になるため、
+        # 既定の3秒より短くして`lb_try_duration`の中に収める。
         dial_timeout 1s
+        # アイドル接続を抱え続けると、bulletが落ちた後もプールに残った接続へ投げてしまう。
+        # tailnetの経路が消えるだけでソケットは開いたままに見えるため、
+        # 接続し直さない限り`dial_timeout`が効かず応答を永久に待つ。
+        # 既定の2分は長すぎるので、次のリクエストが繋ぎ直す程度まで縮める。
+        # 連続したリクエストの間だけは再利用が効く。
+        # 推論時間の長さに比べればプールからの破棄によるオーバーヘッドは誤差レベル。
+        keepalive 5s
       }
       # Tailscale Serviceは名前ごとに証明書とVIPを持つので、
       # Hostヘッダも選ばれたupstreamのものへ揃える。

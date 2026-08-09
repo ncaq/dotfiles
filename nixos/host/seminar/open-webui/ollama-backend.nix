@@ -11,6 +11,17 @@
 #
 # どちらも優先度を指定できないため、
 # 前段のCaddyで優先順位付きのフェイルオーバーを行う。
+#
+# 救えるのはbulletへ接続できない場合だけで、
+# bulletは起動しているのにOllamaのコンテナが上がらない場合は救えない。
+# その状態でもホスト側のsocketはlistenしているのでTCPの接続自体は即座に成立し、
+# proxyの疎通待ちが終わるまで接続は受理されたまま無応答になる。
+# Caddyは応答を待ち続けてフォールバックせず、最終的に502を返す。
+#
+# アクティブヘルスチェックを足せばこれも検出できるが採用しない。
+# プローブもTailscale Service経由でホスト側のsocketへ届くため、
+# `health_interval`ごとにsocket activationが発火して、
+# 使っていない間はGPUもメモリも消費しないという設計が成立しなくなる。
 { config, ... }:
 let
   addr = config.machineAddresses.open-webui;
@@ -60,5 +71,9 @@ in
   '';
 
   # Open WebUIコンテナのvethからCaddyへの接続を許可する。
-  networking.firewall.interfaces."ve-+".allowedTCPPorts = [ port ];
+  # ここで開くのはOllama本体ではなくフェイルオーバーを行うCaddyだが、
+  # その先は認証のないOllamaなので`ve-+`のワイルドカードでは開けない。
+  # ホストのFORWARDはACCEPTなので、
+  # 他のコンテナで動く外部由来のコードからも到達できてしまう。
+  networking.firewall.interfaces."ve-open-webui".allowedTCPPorts = [ port ];
 }

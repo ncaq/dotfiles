@@ -22,19 +22,23 @@
 # プローブもTailscale Service経由でホスト側のsocketへ届くため、
 # `health_interval`ごとにsocket activationが発火して、
 # 使っていない間はGPUもメモリも消費しないという設計が成立しなくなる。
-{ config, ... }:
+{ lib, config, ... }:
 let
   addr = config.machineAddresses.open-webui;
   port = config.local.openWebui.ollamaPort;
   # `tailscale status`で確認できるこのtailnetのMagicDNSのsuffix。
   tailnet = "border-saurolophus.ts.net";
+  ollamaService = import ../../../../lib/ollama-tailscale-service.nix;
+  # 使いたい順のホスト名。
+  # GPUのbulletを先に書き、落ちていればCPUのseminarへ回す。
+  hosts = [
+    "bullet"
+    "seminar"
+  ];
   # 1つの`reverse_proxy`の中でhttpとhttpsのupstreamは混在できないため、
   # seminar自身のOllamaにもHTTPSのTailscale Service経由で繋ぐ。
   # 自分のServiceへの経路はtailscaledの中で完結する。
-  upstreams = [
-    "https://ollama-bullet.${tailnet}"
-    "https://ollama-seminar.${tailnet}"
-  ];
+  upstreams = map (host: "https://${lib.removePrefix "svc:" (ollamaService host)}.${tailnet}") hosts;
 in
 {
   # `caddy.nix`の`:8081`と同じく、ホスト名なしのアドレスにしてHTTPだけで待ち受ける。

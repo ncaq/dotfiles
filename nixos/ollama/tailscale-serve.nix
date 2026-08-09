@@ -9,7 +9,7 @@
   systemd.services.tailscale-serve-ollama = import ../../lib/tailscale-serve.nix {
     inherit pkgs hardening;
     tailscale = config.services.tailscale.package;
-    service = "svc:ollama-${config.networking.hostName}";
+    service = import ../../lib/ollama-tailscale-service.nix config.networking.hostName;
     label = "Ollama";
     port = config.containers.ollama.config.services.ollama.port;
     socket = "ollama-proxy.socket";

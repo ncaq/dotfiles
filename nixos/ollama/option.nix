@@ -5,16 +5,18 @@
   片方だけ変更しても評価は成功して実機で壊れるまで気付けない。
   永続データ領域のパスはホストとコンテナの双方から参照されるため特に危ない。
 */
-{ lib, hostName, ... }:
+{ lib, config, ... }:
 {
   options.local.ollama = {
     enableCuda = lib.mkOption {
       type = lib.types.bool;
-      readOnly = true;
-      default = hostName == "bullet";
+      default = config.hardware.nvidia.enabled;
+      defaultText = lib.literalExpression "config.hardware.nvidia.enabled";
       description = ''
         NVIDIAのGPUで推論するかどうか。
         falseならCPU向けのパッケージを使い、GPUのデバイスもコンテナへ渡さない。
+        GPUを積んだホストを増やしてもここを編集しなくて済むように、
+        NVIDIAのドライバを使うかどうかから導く。
       '';
     };
 

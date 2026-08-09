@@ -4,6 +4,7 @@
 # UI自体は負荷の軽い処理なのでseminarのCPUで足りる。
 # 推論は`ollama-backend.nix`がbulletのOllamaへ優先的に振り分ける。
 {
+  lib,
   pkgs,
   config,
   username,
@@ -119,6 +120,27 @@ in
       };
   };
 
-  # コンテナへidmap bindする永続データ領域をホスト側に用意する。
-  systemd.tmpfiles.rules = [ "d ${stateDir} 0750 open-webui open-webui - -" ];
+  systemd = {
+    # NixOSコンテナモジュールが生成するpostStartは`ip addr add`と`ip route add`を使うため、
+    # systemd-networkdが先に設定済みだとEEXISTで失敗する。
+    # 実際の設定はsystemd-networkdに任せるので、冪等にして失敗を無視する。
+    services."container@open-webui".postStart = lib.mkForce ''
+      ifaceHost=ve-$INSTANCE
+      ip link set dev "$ifaceHost" up
+      ip addr add ${addr.host} dev "$ifaceHost" 2>/dev/null || true
+      ip route add ${addr.guest} dev "$ifaceHost" 2>/dev/null || true
+    '';
+    # vethのアドレスとルートをsystemd-networkdで設定する。
+    # 何も宣言しないとsystemdに同梱の`80-container-ve.network`が適用されて、
+    # link localアドレスと動的な/28がvethに乗る。
+    # するとコンテナ宛の送信元アドレスがそちらから選ばれてしまい、
+    # コンテナ側で`hostAddress`からの接続だけを許可しているルールにマッチしない。
+    network.networks."20-open-webui-veth" = {
+      matchConfig.Name = "ve-open-webui";
+      addresses = [ { Address = "${addr.host}/32"; } ];
+      routes = [ { Destination = "${addr.guest}/32"; } ];
+    };
+    # コンテナへidmap bindする永続データ領域をホスト側に用意する。
+    tmpfiles.rules = [ "d ${stateDir} 0750 open-webui open-webui - -" ];
+  };
 }

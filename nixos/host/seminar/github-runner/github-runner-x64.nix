@@ -136,70 +136,45 @@ in
 {
   containers = lib.mapAttrs mkRunnerContainer runnerContainerDefs;
 
-  systemd = {
+  systemd = lib.mkMerge (
     # ホスト側systemd-networkdでvethインターフェースにIPアドレスとルートを設定します。
-    # NixOSコンテナモジュールのExecStartPostはコンテナのdefault target到達後に実行されるため、
-    # github-runnerサービスの起動時にはまだホスト側のネットワーク設定が完了していません。
-    # github-runnerサービスの起動にはネットワークが必要なためデッドロックしてしまいます。
-    # systemd-networkdはvethインターフェース作成直後に設定を適用するため、
-    # コンテナ内のサービスが起動する前にネットワークが使用可能になります。
-    network.networks = lib.mapAttrs' (
+    lib.mapAttrsToList (
       name: _:
-      lib.nameValuePair "20-${name}-veth" {
-        # Linuxのインターフェース名はIFNAMSIZ(15文字)制限があるため、
-        # 実際のインターフェース名は`ve-github-rRhHH`のように短縮されます。
-        # しかしsystemd-networkdのmatchConfig.Nameはaltname(代替名)もマッチするため、
-        # コンテナ名から生成される完全な名前で正しくマッチします。
-        matchConfig.Name = "ve-${name}";
-        addresses = [
-          { Address = "${(addrOf name).host}/32"; }
-        ];
-        routes = [
-          { Destination = "${(addrOf name).guest}/32"; }
-        ];
-      }
-    ) runnerContainerDefs;
-
-    # bindMountsのhostPathは起動時に存在している必要があります。
-    # `/run`はtmpfsで毎boot消えるため再生成します。
-    # コンテナ内のgithub-runnerサービスは`User=github-runner`で起動し、
-    # `WorkingDirectory=/run/github-runner/<name>`へchdirするため、
-    # `github-runner`ユーザーが親ディレクトリをtraverseできる必要があります。
-    # `privateUsers = "identity"`によりホストとコンテナのUIDは一致するため、
-    # ホスト側のディレクトリ所有者を`github-runner`にしておけば、
-    # コンテナ内のサービスも同ユーザーとしてアクセスできます。
-    tmpfiles.rules = [
-      "d /run/github-runner 0700 github-runner github-runner -"
-    ];
-
-    services = lib.mapAttrs' (
-      name: _:
-      let
+      import ../../../../lib/container-veth.nix {
+        inherit lib name;
         addr = addrOf name;
-      in
-      lib.nameValuePair "container@${name}" {
-        requires = [ "sops-install-secrets.service" ];
-        after = [ "sops-install-secrets.service" ];
-        # NixOSコンテナモジュールが生成するpostStartは`ip addr add`/`ip route add`を使うため、
-        # systemd-networkdが先に設定済みの場合にEEXISTエラーで失敗します。
-        # 冪等にするために`2>/dev/null || true`を付けます。
-        # 実際の設定はsystemd-networkdに任せるため、
-        # postStartの内容が失敗していても問題ありません。
-        postStart = lib.mkForce ''
-          ifaceHost=ve-$INSTANCE
-          ip link set dev "$ifaceHost" up
-          ip addr add ${addr.host} dev "$ifaceHost" 2>/dev/null || true
-          ip route add ${addr.guest} dev "$ifaceHost" 2>/dev/null || true
-        '';
-        serviceConfig = {
-          # CIジョブがホストのリソースを過剰に消費しないよう制限します。
-          # CPUQuotaはコア数×100%で指定する必要があります。
-          # 割り当て可能スレッド数分を割り当てます。
-          CPUQuota = "${toString (config.local.cpuBudgetThreads * 100)}%";
-          MemoryHigh = "16G"; # ソフトリミット。これを超えるとメモリを積極的に解放します。
-          MemoryMax = "32G"; # ハードリミット。これぐらいで十分だろうという推定値。
-        };
       }
-    ) runnerContainerDefs;
-  };
+    ) runnerContainerDefs
+    ++ [
+      {
+        # bindMountsのhostPathは起動時に存在している必要があります。
+        # `/run`はtmpfsで毎boot消えるため再生成します。
+        # コンテナ内のgithub-runnerサービスは`User=github-runner`で起動し、
+        # `WorkingDirectory=/run/github-runner/<name>`へchdirするため、
+        # `github-runner`ユーザーが親ディレクトリをtraverseできる必要があります。
+        # `privateUsers = "identity"`によりホストとコンテナのUIDは一致するため、
+        # ホスト側のディレクトリ所有者を`github-runner`にしておけば、
+        # コンテナ内のサービスも同ユーザーとしてアクセスできます。
+        tmpfiles.rules = [
+          "d /run/github-runner 0700 github-runner github-runner -"
+        ];
+
+        services = lib.mapAttrs' (
+          name: _:
+          lib.nameValuePair "container@${name}" {
+            requires = [ "sops-install-secrets.service" ];
+            after = [ "sops-install-secrets.service" ];
+            serviceConfig = {
+              # CIジョブがホストのリソースを過剰に消費しないよう制限します。
+              # CPUQuotaはコア数×100%で指定する必要があります。
+              # 割り当て可能スレッド数分を割り当てます。
+              CPUQuota = "${toString (config.local.cpuBudgetThreads * 100)}%";
+              MemoryHigh = "16G"; # ソフトリミット。これを超えるとメモリを積極的に解放します。
+              MemoryMax = "32G"; # ハードリミット。これぐらいで十分だろうという推定値。
+            };
+          }
+        ) runnerContainerDefs;
+      }
+    ]
+  );
 }

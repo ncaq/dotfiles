@@ -142,10 +142,6 @@ in
         systemd.services.comfyui.path = with pkgs; [ ffmpeg ];
       };
   };
-  # ComfyUIはCUDA初期化時にnvidia-uvmを必要とするが、
-  # コンテナ内からホストのカーネルモジュールはロードできないため、
-  # ブート時にロードしてデバイスノードの存在を保証する。
-  boot.kernelModules = [ "nvidia_uvm" ];
   networking = {
     # コンテナから外(モデルやカスタムノードのダウンロードなど)へ出られるようにする。
     nat = {

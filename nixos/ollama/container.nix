@@ -131,7 +131,6 @@ in
     ];
   };
 
-  boot.kernelModules = lib.optionals enableCuda [ "nvidia_uvm" ];
   networking = {
     nat = {
       enable = true;

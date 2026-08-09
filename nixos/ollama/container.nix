@@ -91,7 +91,11 @@ in
           loadModels = config.local.ollama.loadModels;
           syncModels = false; # オンデマンド追加したモデルを残す。
           environmentVariables = {
-            OLLAMA_KEEP_ALIVE = "15m";
+            # GPUのホストではVRAMを他のオンデマンドコンテナと分け合うため短くする。
+            # 27BのQ4だけで17-18GiBを占め、
+            # 画像や動画の生成が同じGPUへ載らなくなる。
+            # CPUのホストは常駐しても他を圧迫しないので長く保つ。
+            OLLAMA_KEEP_ALIVE = if enableCuda then "5m" else "15m";
           };
         };
         # nixpkgsのOllamaモジュールは固定ユーザを指定してもDynamicUserを有効にするため、

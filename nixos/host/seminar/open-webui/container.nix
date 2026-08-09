@@ -1,4 +1,8 @@
-# Ollamaと同じコンテナで動かすWeb UI。
+# Ollamaのチャット用Web UIを動かすNixOS Containerの定義。
+#
+# 常時起動のseminarだけで動かして、チャット履歴を1箇所へ集約する。
+# UI自体は負荷の軽い処理なのでseminarのCPUで足りる。
+# 推論は`ollama-backend.nix`がbulletのOllamaへ優先的に振り分ける。
 {
   pkgs,
   config,
@@ -6,28 +10,39 @@
   ...
 }:
 let
-  openWebuiUid = 502;
-  openWebuiGid = openWebuiUid;
-  stateDir = config.local.ollama.openWebuiStateDir;
+  addr = config.machineAddresses.open-webui;
+  user = config.serviceUser.open-webui;
+  stateDir = "/var/lib/open-webui";
   port = 8080;
-  ollama = config.containers.ollama.config.services.ollama;
+  # unfreeの許可はホスト側のnixpkgsの設定にしかないため、
+  # コンテナ内のpkgsではなくホスト側から取る。
   package = pkgs.open-webui;
 in
 {
+  # コンテナ内と同じIDでホスト側にもユーザとグループを作る。
+  # bind mountした永続データ領域の所有者をホストからも名前で扱えるようにするため。
   users = {
     users = {
       open-webui = {
-        uid = openWebuiUid;
+        inherit (user) uid;
         group = "open-webui";
         isSystemUser = true;
       };
       ${username}.extraGroups = [ "open-webui" ];
     };
-    groups.open-webui.gid = openWebuiGid;
+    groups.open-webui.gid = user.gid;
   };
 
-  containers.ollama = {
+  containers.open-webui = {
+    # ホスト側のsocketへの初回アクセスで起動する。
+    autoStart = false;
+    ephemeral = true;
+    privateNetwork = true;
+    privateUsers = "pick";
+    hostAddress = addr.host;
+    localAddress = addr.guest;
     # チャット履歴、設定、アップロードなどをコンテナの再作成後も保持する。
+    # privateUsersによるUID変換後も固定UIDで読み書きできるようにidmapを付ける。
     extraFlags = [ "--bind=${stateDir}:${stateDir}:idmap" ];
     config =
       {
@@ -37,13 +52,15 @@ in
         ...
       }:
       {
+        system.stateVersion = "26.05";
+        time.timeZone = "Asia/Tokyo";
         users = {
           users.open-webui = {
-            uid = openWebuiUid;
+            inherit (user) uid;
             group = "open-webui";
             isSystemUser = true;
           };
-          groups.open-webui.gid = openWebuiGid;
+          groups.open-webui.gid = user.gid;
         };
         services.open-webui = {
           enable = true;
@@ -59,7 +76,8 @@ in
             WEBUI_AUTH = "False";
             # 接続先をUIのDBへ保存させず、常に宣言したOllamaだけを使う。
             ENABLE_PERSISTENT_CONFIG = "False";
-            OLLAMA_BASE_URL = "http://127.0.0.1:${toString ollama.port}";
+            # ホスト側のCaddyがbullet優先でOllamaへ振り分ける。
+            OLLAMA_BASE_URL = "http://${addr.host}:${toString config.local.openWebui.ollamaPort}";
             # ノートやカレンダーなどの組み込みツールを既定で渡さない。
             # Open WebUIはOllamaが申告するcapabilitiesを見ないため、
             # tools非対応のモデルにもfunction callingを要求してしまい、
@@ -69,16 +87,20 @@ in
             DEFAULT_MODEL_METADATA = builtins.toJSON { capabilities.builtin_tools = false; };
           };
         };
-        # Tailscale Serveにつながるホスト側socket proxyからの接続だけを許可する。
-        # ホストのFORWARDはACCEPTなので、
-        # 他のコンテナからも自分のIPへ到達できてしまい、
-        # 認証を無効化したUIには送信元の制限が必要になる。
+        # 埋め込みモデルの取得などで名前解決が必要になる。
+        services.resolved.enable = true;
         networking = {
+          useHostResolvConf = lib.mkForce false;
+          # Tailscale Serveにつながるホスト側socket proxyからの接続だけを許可する。
+          # ホストのFORWARDはACCEPTなので、
+          # 他のコンテナからも自分のIPへ到達できてしまい、
+          # 認証を無効化したUIには送信元の制限が必要になる。
+          #
           # `extraInputRules`はnftables backendでしか適用されず、
           # iptables backendでは何の警告もなく無視される。
           nftables.enable = true;
           firewall.extraInputRules = ''
-            ip saddr ${config.containers.ollama.hostAddress} tcp dport ${toString port} accept
+            ip saddr ${addr.host} tcp dport ${toString port} accept
           '';
         };
         # bind mountしたStateDirectoryを固定ユーザで扱う。

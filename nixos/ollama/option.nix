@@ -28,16 +28,6 @@
       '';
     };
 
-    openWebuiStateDir = lib.mkOption {
-      type = lib.types.str;
-      readOnly = true;
-      default = "/var/lib/open-webui";
-      description = ''
-        チャット履歴や設定を置くOpen WebUIの永続データ領域。
-        ホストからコンテナへidmap bindするので両側で同じパスになる。
-      '';
-    };
-
     loadModels = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       readOnly = true;

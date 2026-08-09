@@ -1,8 +1,9 @@
 # ホスト側のsocketへの初回アクセスでOllamaコンテナを起動する。
 { pkgs, config, ... }:
 {
-  systemd = import ../../lib/ollama-socket-activation.nix {
+  systemd = import ../../lib/container-socket-activation.nix {
     inherit pkgs;
+    container = "ollama";
     name = "ollama";
     label = "Ollama";
     localAddress = config.containers.ollama.localAddress;

@@ -1,13 +1,15 @@
 /**
-  Ollamaコンテナ内のサービスをホスト側socketへの初回アクセスで起動するproxyを生成する関数。
+  NixOS Container内のサービスを、
+  ホスト側socketへの初回アクセスで起動するproxyを生成する関数。
 
-  OllamaとOpen WebUIはサービス名とポートと疎通確認パスだけが違うため、
+  対象がサービス名とポートと疎通確認パスだけしか違わないため、
   それぞれに同じ形の定義を書くと片方だけ直した差分が残りやすい。
 
   `systemd`へそのまま代入できる`{ services, sockets }`を返す。
 */
 {
   pkgs,
+  container,
   name,
   label,
   localAddress,
@@ -16,12 +18,13 @@
 }:
 let
   hardening = import ./systemd-hardening.nix;
+  containerService = "container@${container}.service";
 in
 {
   services."${name}-proxy" = {
     description = "systemd-socket-proxyd for on-demand ${label} activation";
-    requires = [ "container@ollama.service" ];
-    after = [ "container@ollama.service" ];
+    requires = [ containerService ];
+    after = [ containerService ];
     # コンテナのready通知より後にサービスがlistenを開始するため、疎通まで待つ。
     preStart = ''
       until ${pkgs.lib.getExe pkgs.curl} --fail --silent --output /dev/null "http://${localAddress}:${toString port}${healthPath}"; do

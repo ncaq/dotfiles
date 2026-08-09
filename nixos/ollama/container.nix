@@ -84,7 +84,10 @@ in
           group = "ollama";
           host = "0.0.0.0";
           inherit port;
-          openFirewall = true; # コンテナなので無制限公開ではない。
+          # コンテナのIPはホスト内に閉じているため、tailnet外のLANからは到達できない。
+          # ホストのFORWARDはACCEPTなので他のコンテナからも到達できるが、
+          # ComfyUIなどから推論を利用する構想があるためこれは意図的に許容する。
+          openFirewall = true;
           loadModels = config.local.ollama.loadModels;
           syncModels = false; # オンデマンド追加したモデルを残す。
           environmentVariables = {
@@ -116,6 +119,8 @@ in
   systemd = {
     services."container@ollama".serviceConfig = {
       # OSや他の処理のために2スレッド分を残す既存のCPU予算を使う。
+      # 同居するOpen WebUIもこの上限を共有し、
+      # UI処理を含めてホスト全体のメモリ保護を優先する。
       CPUQuota = "${toString (config.local.cpuBudgetThreads * 100)}%";
       MemoryHigh = "50%";
       MemoryMax = "60%";

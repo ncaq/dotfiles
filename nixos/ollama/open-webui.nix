@@ -97,7 +97,6 @@ in
       };
   };
 
-  # Open WebUIもOllamaと同じコンテナcgroup上限を共有する。
-  # UI処理を含めてもホスト全体のメモリ保護を優先する。
+  # コンテナへidmap bindする永続データ領域をホスト側に用意する。
   systemd.tmpfiles.rules = [ "d ${stateDir} 0750 open-webui open-webui - -" ];
 }

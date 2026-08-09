@@ -92,7 +92,12 @@ in
         # nixpkgsのOllamaモジュールは固定ユーザを指定してもDynamicUserを有効にするため、
         # bind mountしたStateDirectoryを固定ユーザで扱えるように上書きする。
         systemd.services = {
-          ollama.serviceConfig.DynamicUser = lib.mkForce false;
+          ollama.serviceConfig = {
+            DynamicUser = lib.mkForce false;
+            # StateDirectoryのモードは起動ごとにsystemdが強制するため、
+            # tmpfilesで宣言するだけでは既定の0755へ戻されてしまう。
+            StateDirectoryMode = "0750";
+          };
           ollama-model-loader = {
             # GNU parallelがsystem userのnologin shellを使わないようにする。
             environment.SHELL = lib.getExe pkgs.bash;

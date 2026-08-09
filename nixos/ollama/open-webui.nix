@@ -89,6 +89,9 @@ in
             DynamicUser = lib.mkForce false;
             User = "open-webui";
             Group = "open-webui";
+            # StateDirectoryのモードは起動ごとにsystemdが強制するため、
+            # tmpfilesで宣言するだけでは既定の0755へ戻されてしまう。
+            StateDirectoryMode = "0750";
           };
         };
       };

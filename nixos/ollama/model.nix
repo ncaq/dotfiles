@@ -1,5 +1,10 @@
 # Ollamaに読み込ませるモデルの定義。
-{ pkgs, config, ... }:
+{
+  lib,
+  pkgs,
+  config,
+  ...
+}:
 let
   enableCuda = config.local.ollama.enableCuda;
   fetchHuggingFace = import ../../lib/fetch-hugging-face.nix { inherit pkgs; };
@@ -12,11 +17,20 @@ let
       ]
     else
       [
-        # CPUで推論するホストは応答速度とMemoryMax内の余裕を両立する9Bモデルを使う。
-        "qwen3.5:9b"
+        # CPUの推論はメモリ帯域で頭打ちになり、
+        # 1トークンごとに読み出す重みの量がそのまま速度を決める。
+        # 総パラメータではなくactive parameterが効くため、
+        # 同じ品質帯ならdenseよりMoEの方が圧倒的に速い。
+        # seminarでの実測では9Bのdenseが約10トークン/秒に対し、
+        # このactive 3BのMoEは約19トークン/秒だった。
+        "qwen3.6:35b-a3b"
       ];
   # 表現の自由度を優先したモデル。
-  freedomModels = {
+  # CPUで推論するホストには置かない。
+  # seminarでの実測では24Bのdenseは約4トークン/秒しか出ず、
+  # 対話を待っていられる速度ではないため、
+  # ディスクとロード時間を消費するだけになる。
+  freedomModels = lib.optionalAttrs enableCuda {
     "mistralprism-24b:q4_k_m" = fetchHuggingFace {
       owner = "Aratako";
       repo = "MistralPrism-24B-GGUF";

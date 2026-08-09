@@ -63,6 +63,10 @@ in
           host = "192.168.100.80";
           guest = "192.168.100.81";
         };
+        open-webui = {
+          host = "192.168.100.90";
+          guest = "192.168.100.91";
+        };
       };
       description = "Network addresses for containers and microVMs";
     };

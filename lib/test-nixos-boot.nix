@@ -6,6 +6,16 @@
 }:
 lib.mapAttrs (
   name: hostDef:
+  let
+    # オンデマンド起動のproxyがlistenできたかを確認します。
+    # `sockets.target`はwants関係なので、
+    # ポートの衝突などでsocketユニットが起動に失敗してもtargetは到達してしまいます。
+    # ホストごとの分岐を書かずに済むように、
+    # 実際の設定から`-proxy`のsocketユニットを集めます。
+    proxySockets = lib.filter (lib.hasSuffix "-proxy") (
+      lib.attrNames hostDef.nixosSystem.config.systemd.sockets
+    );
+  in
   (importPkgsStable hostDef.system).testers.runNixOSTest {
     name = "test-nixos-boot-${name}";
     node = {
@@ -32,6 +42,9 @@ lib.mapAttrs (
     # multi-user.targetに到達すればひとまず成功とみなしています。
     testScript = ''
       machine.wait_for_unit("multi-user.target")
-    '';
+    ''
+    + lib.concatMapStrings (socket: ''
+      machine.wait_for_unit("${socket}.socket")
+    '') proxySockets;
   }
 ) (lib.filterAttrs (_: def: !(def.nixosSystem.config.wsl.enable or false)) hostDefs)

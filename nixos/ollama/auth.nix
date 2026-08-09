@@ -9,7 +9,7 @@
 let
   credentialName = "ollama-id-ed25519";
   systemCredential = "/run/credentials/@system/${credentialName}";
-  keyDir = "/var/lib/ollama/.ollama";
+  keyDir = "${config.local.ollama.dataDir}/.ollama";
   keyPath = "${keyDir}/id_ed25519";
 in
 {

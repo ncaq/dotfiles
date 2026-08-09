@@ -1,12 +1,7 @@
 # Ollamaに読み込ませるモデルの定義。
-{
-  lib,
-  pkgs,
-  hostName,
-  ...
-}:
+{ pkgs, config, ... }:
 let
-  enableCuda = hostName == "bullet";
+  enableCuda = config.local.ollama.enableCuda;
   fetchHuggingFace = import ../../lib/fetch-hugging-face.nix { inherit pkgs; };
   # ハードウェアの限界の範囲で汎用的に使えそうな知能のモデル。
   generalModels =
@@ -46,23 +41,8 @@ let
   };
 in
 {
-  options.local.ollama = {
-    loadModels = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
-      readOnly = true;
-      description = "Ollama registryからpullするモデル。";
-    };
-    freedomModels = lib.mkOption {
-      type = lib.types.attrsOf lib.types.package;
-      readOnly = true;
-      description = "GGUFから`ollama create`で登録する表現自由度重視モデル。";
-    };
-  };
-
-  config = {
-    local.ollama = {
-      loadModels = generalModels;
-      inherit freedomModels;
-    };
+  local.ollama = {
+    loadModels = generalModels;
+    inherit freedomModels;
   };
 }

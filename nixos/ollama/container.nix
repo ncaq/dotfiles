@@ -3,7 +3,6 @@
   lib,
   pkgs,
   config,
-  hostName,
   username,
   ...
 }:
@@ -13,8 +12,8 @@ let
   localAddress = "192.168.100.21";
   ollamaUid = 501;
   ollamaGid = ollamaUid;
-  dataDir = "/var/lib/ollama";
-  enableCuda = hostName == "bullet";
+  dataDir = config.local.ollama.dataDir;
+  enableCuda = config.local.ollama.enableCuda;
   package = if enableCuda then pkgs.ollama-cuda else pkgs.ollama-cpu;
   nvidiaDevices = [
     "/dev/nvidia-modeset"

@@ -8,7 +8,7 @@
 let
   ollama = config.containers.ollama.config.services.ollama;
   freedomModels = config.local.ollama.freedomModels;
-  markerDir = "/var/lib/ollama/freedom-models";
+  markerDir = "${config.local.ollama.dataDir}/freedom-models";
   modelfiles = lib.mapAttrs (
     name: gguf:
     pkgs.writeText "ollama-${lib.replaceStrings [ ":" ] [ "-" ] name}-Modelfile" ''

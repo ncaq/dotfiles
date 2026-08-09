@@ -8,7 +8,7 @@
 let
   openWebuiUid = 502;
   openWebuiGid = openWebuiUid;
-  stateDir = "/var/lib/open-webui";
+  stateDir = config.local.ollama.openWebuiStateDir;
   ollama = config.containers.ollama.config.services.ollama;
   package = pkgs.open-webui;
 in

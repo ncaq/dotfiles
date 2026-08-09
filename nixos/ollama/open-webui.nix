@@ -29,7 +29,12 @@ in
     # チャット履歴、設定、アップロードなどをコンテナの再作成後も保持する。
     extraFlags = [ "--bind=${stateDir}:${stateDir}:idmap" ];
     config =
-      { lib, pkgs, ... }:
+      {
+        lib,
+        pkgs,
+        options,
+        ...
+      }:
       {
         users = {
           users.open-webui = {
@@ -46,7 +51,10 @@ in
           port = 8080;
           # 認証を無効化するため、全接続元へfirewallを開かない。
           openFirewall = false;
-          environment = {
+          # `environment`を定義すると既定値は丸ごと置き換わり、
+          # 匿名の利用統計を外部送信しない設定が失われる。
+          # 値を書き写すと二重管理になるので、オプションの既定値からマージする。
+          environment = options.services.open-webui.environment.default // {
             # 所有する端末だけのtailnetとACLを認証境界にするsingle-user mode。
             WEBUI_AUTH = "False";
             # 接続先をUIのDBへ保存させず、常に宣言したOllamaだけを使う。

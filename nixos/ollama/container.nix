@@ -15,10 +15,12 @@ let
   dataDir = config.local.ollama.dataDir;
   enableCuda = config.local.ollama.enableCuda;
   package = if enableCuda then pkgs.ollama-cuda else pkgs.ollama-cpu;
+  # 推論に必要な最小限だけを渡す。
+  # NVIDIAのcharデバイスはioctl経由の攻撃面が広く、
+  # 同じコンテナで認証を無効化したUIも動いているため、
+  # モード設定用の`nvidia-modeset`とデバッグ用の`nvidia-uvm-tools`は渡さない。
   nvidiaDevices = [
-    "/dev/nvidia-modeset"
     "/dev/nvidia-uvm"
-    "/dev/nvidia-uvm-tools"
     "/dev/nvidia0"
     "/dev/nvidiactl"
   ];

@@ -14,6 +14,7 @@
     ../desktop
 
     ../gaming
+    ../ollama
 
     ./bullet
   ];

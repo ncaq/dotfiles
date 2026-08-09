@@ -35,7 +35,7 @@ in
   };
 
   sops.secrets.${credentialName} = {
-    sopsFile = ../../../secrets/ollama.yaml;
+    sopsFile = ../../secrets/ollama.yaml;
     key = "private_key";
     restartUnits = [ "container@ollama.service" ];
   };

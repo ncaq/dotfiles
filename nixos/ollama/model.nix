@@ -7,11 +7,7 @@
 }:
 let
   enableCuda = hostName == "bullet";
-  enableFreedomModels = builtins.elem hostName [
-    "bullet"
-    "seminar"
-  ];
-  fetchHuggingFace = import ../../../lib/fetch-hugging-face.nix { inherit pkgs; };
+  fetchHuggingFace = import ../../lib/fetch-hugging-face.nix { inherit pkgs; };
   # ハードウェアの限界の範囲で汎用的に使えそうな知能のモデル。
   generalModels =
     if enableCuda then
@@ -21,12 +17,11 @@ let
       ]
     else
       [
-        # CPUで推論するcreepとseminarは応答速度とMemoryMax内の余裕を両立する9Bモデルを使う。
+        # CPUで推論するホストは応答速度とMemoryMax内の余裕を両立する9Bモデルを使う。
         "qwen3.5:9b"
       ];
   # 表現の自由度を優先したモデル。
-  # 24B denseと30B MoEのQ4_K_Mはcreepには重いためbulletとseminarだけに導入する。
-  freedomModels = lib.optionalAttrs enableFreedomModels {
+  freedomModels = {
     "mistralprism-24b:q4_k_m" = fetchHuggingFace {
       owner = "Aratako";
       repo = "MistralPrism-24B-GGUF";

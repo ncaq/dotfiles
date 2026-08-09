@@ -20,27 +20,14 @@
 }:
 let
   dataDir = config.containers.comfyui.config.services.comfyui.dataDir;
-  # Hugging Faceからモデルファイルを取得するヘルパー。
-  # revにはリポジトリのcommit hashを指定する。
-  fetchHuggingface =
-    {
-      owner,
-      repo,
-      rev,
-      file,
-      hash,
-    }:
-    pkgs.fetchurl {
-      url = "https://huggingface.co/${owner}/${repo}/resolve/${rev}/${file}";
-      inherit hash;
-    };
+  fetchHuggingFace = import ../../../../lib/fetch-hugging-face.nix { inherit pkgs; };
   # 属性名は`models/`配下のディレクトリ名、
   # その中の属性名が配置するファイル名に対応する。
   models = {
     checkpoints = {
       # Illustrious-XLベースの人気マージモデル。日常使いの定番。
       # Civitaiオリジナルの非公式ミラーなので消失リスクがある。
-      "waiIllustriousSDXL_v170.safetensors" = fetchHuggingface {
+      "waiIllustriousSDXL_v170.safetensors" = fetchHuggingFace {
         owner = "LyliaEngine";
         repo = "waiIllustriousSDXL_v170";
         rev = "5ef4e2da7173a160ad04aebcaa2fdcd6d20ed792";
@@ -49,7 +36,7 @@ let
       };
       # SDXLをアニメ画像で再学習したモデル。
       # 通常版より人体、色、出力安定性を改善した公式Opt版を使う。
-      "animagine-xl-4.0-opt.safetensors" = fetchHuggingface {
+      "animagine-xl-4.0-opt.safetensors" = fetchHuggingFace {
         owner = "cagliostrolab";
         repo = "animagine-xl-4.0";
         rev = "2b7c1b397761bf5bd3cc42e5b39ec99314a75a96";
@@ -71,7 +58,7 @@ let
       # https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license/
 
       # 高品質と一貫性を優先した最新版。通常生成のデフォルトにする。
-      "anima-aesthetic-v1.1.safetensors" = fetchHuggingface {
+      "anima-aesthetic-v1.1.safetensors" = fetchHuggingFace {
         owner = "circlestone-labs";
         repo = "Anima";
         rev = "f7382c4bf9d7ffe4ceea593a0adbb470c56dd79b";
@@ -79,7 +66,7 @@ let
         hash = "sha256-PBhoOHo6H/UEu7h8M2eDIZZerTgfz4evvQJk2qYAwII=";
       };
       # 既定画風の影響が弱く、作風の多様性とLoRA適性が最も高い基礎モデル。
-      "anima-base-v1.0.safetensors" = fetchHuggingface {
+      "anima-base-v1.0.safetensors" = fetchHuggingFace {
         owner = "circlestone-labs";
         repo = "Anima";
         rev = "f7382c4bf9d7ffe4ceea593a0adbb470c56dd79b";
@@ -88,7 +75,7 @@ let
       };
       # 指示文で画像を編集するQwen-Image-Editの2025年11月版。
       # Comfy-Org公式の再パッケージ版。Apache 2.0ライセンス。
-      "qwen_image_edit_2511_fp8mixed.safetensors" = fetchHuggingface {
+      "qwen_image_edit_2511_fp8mixed.safetensors" = fetchHuggingFace {
         owner = "Comfy-Org";
         repo = "Qwen-Image-Edit_ComfyUI";
         rev = "e9e85de74a8f48c1e3e2656617626348675a2f21";
@@ -99,14 +86,14 @@ let
       # LoRA近似ではなく蒸留済みの全重みを使い、
       # サンプリング前半をhigh noise、後半をlow noiseが担当する。
       # Apache 2.0ライセンス。
-      "wan2.2_i2v_A14b_high_noise_lightx2v_4step_720p_260412.safetensors" = fetchHuggingface {
+      "wan2.2_i2v_A14b_high_noise_lightx2v_4step_720p_260412.safetensors" = fetchHuggingFace {
         owner = "lightx2v";
         repo = "Wan2.2-Distill-Models";
         rev = "db93455b9e85c4d8a3ff9297fcfa189d213cfe29";
         file = "wan2.2_i2v_A14b_high_noise_lightx2v_4step_720p_260412.safetensors";
         hash = "sha256-NfRDFHG0ueWS6ZQcH18v0eG/JuFAHISt/gHdIrWyuGQ=";
       };
-      "wan2.2_i2v_A14b_low_noise_lightx2v_4step_720p_260412.safetensors" = fetchHuggingface {
+      "wan2.2_i2v_A14b_low_noise_lightx2v_4step_720p_260412.safetensors" = fetchHuggingFace {
         owner = "lightx2v";
         repo = "Wan2.2-Distill-Models";
         rev = "db93455b9e85c4d8a3ff9297fcfa189d213cfe29";
@@ -116,7 +103,7 @@ let
     };
     text_encoders = {
       # Animaが使うQwen3 0.6Bベースのテキストエンコーダ。
-      "qwen_3_06b_base.safetensors" = fetchHuggingface {
+      "qwen_3_06b_base.safetensors" = fetchHuggingFace {
         owner = "circlestone-labs";
         repo = "Anima";
         rev = "f7382c4bf9d7ffe4ceea593a0adbb470c56dd79b";
@@ -125,7 +112,7 @@ let
       };
       # Qwen-Image-Editで編集指示と入力画像を解析するVLM。
       # 画像理解と複雑な指示の精度を優先してBF16版を使う。
-      "qwen_2.5_vl_7b.safetensors" = fetchHuggingface {
+      "qwen_2.5_vl_7b.safetensors" = fetchHuggingFace {
         owner = "Comfy-Org";
         repo = "Qwen-Image_ComfyUI";
         rev = "46839d338df81ce625d5fae27d7e370314c0fbc9";
@@ -134,7 +121,7 @@ let
       };
       # Wan系が使うテキストエンコーダ。
       # 複雑な動作やカメラ指示の追従精度を優先してFP16版を使う。
-      "umt5_xxl_fp16.safetensors" = fetchHuggingface {
+      "umt5_xxl_fp16.safetensors" = fetchHuggingFace {
         owner = "Comfy-Org";
         repo = "Wan_2.2_ComfyUI_Repackaged";
         rev = "fb1388adc906ab39ffc26ee40e96b22886b56bc4";
@@ -144,7 +131,7 @@ let
     };
     vae = {
       # Qwen-Image系のVAE。
-      "qwen_image_vae.safetensors" = fetchHuggingface {
+      "qwen_image_vae.safetensors" = fetchHuggingFace {
         owner = "Comfy-Org";
         repo = "Qwen-Image_ComfyUI";
         rev = "46839d338df81ce625d5fae27d7e370314c0fbc9";
@@ -152,7 +139,7 @@ let
         hash = "sha256-pwWA8CE+Z5Z+6clfBbtADo+wgwfgF6kkvzRBIj4CPR8=";
       };
       # Wan 2.2 14BはWan 2.1と共通のVAEを使う。
-      "wan_2.1_vae.safetensors" = fetchHuggingface {
+      "wan_2.1_vae.safetensors" = fetchHuggingFace {
         owner = "Comfy-Org";
         repo = "Wan_2.2_ComfyUI_Repackaged";
         rev = "fb1388adc906ab39ffc26ee40e96b22886b56bc4";
@@ -163,7 +150,7 @@ let
     controlnet = {
       # SDXL系全般で使えるControlNet統合モデル(ProMax版)。
       # openpose/lineart/tileなど複数のコントロールをこれ1つで扱える。
-      "controlnet-union-sdxl-promax.safetensors" = fetchHuggingface {
+      "controlnet-union-sdxl-promax.safetensors" = fetchHuggingFace {
         owner = "xinsir";
         repo = "controlnet-union-sdxl-1.0";
         rev = "801a4a3fa3d4c936f4feea95b98607bc6726f80c";
@@ -175,7 +162,7 @@ let
     "ultralytics/bbox" = {
       # FaceDetailerでの顔検出に使うYOLOモデル。
       # 同じ学習データのYOLOv8mよりmAPが高いYOLOv9cを使う。
-      "face_yolov9c.pt" = fetchHuggingface {
+      "face_yolov9c.pt" = fetchHuggingFace {
         owner = "Bingsu";
         repo = "adetailer";
         rev = "53cc19de382014514d9d4038601d261a7faa9b7b";
@@ -185,7 +172,7 @@ let
     };
     upscale_models = {
       # アニメ絵向けの定番アップスケーラ。
-      "4x-AnimeSharp.safetensors" = fetchHuggingface {
+      "4x-AnimeSharp.safetensors" = fetchHuggingFace {
         owner = "Kim2091";
         repo = "AnimeSharp";
         rev = "7696d95ced82b0c1f2a41f6ac73336133f0a90e1";
@@ -201,7 +188,7 @@ let
     # ComfyUI-SeedVR2_VideoUpscalerが登録する専用モデルディレクトリ。
     SEEDVR2 = {
       # 通常版はsharp版より線の過剰強調が少ないため、アニメ動画の標準にする。
-      "seedvr2_ema_7b_fp16.safetensors" = fetchHuggingface {
+      "seedvr2_ema_7b_fp16.safetensors" = fetchHuggingFace {
         owner = "numz";
         repo = "SeedVR2_comfyUI";
         rev = "09ced71023636e9bc8cdf9cdecfb2625d1e691e8";
@@ -210,14 +197,14 @@ let
       };
       # 強い復元や輪郭の明瞭化が必要な素材向けの公式sharp版。
       # 過剰なディテールを生成する場合があるため通常版も残す。
-      "seedvr2_ema_7b_sharp_fp16.safetensors" = fetchHuggingface {
+      "seedvr2_ema_7b_sharp_fp16.safetensors" = fetchHuggingFace {
         owner = "numz";
         repo = "SeedVR2_comfyUI";
         rev = "09ced71023636e9bc8cdf9cdecfb2625d1e691e8";
         file = "seedvr2_ema_7b_sharp_fp16.safetensors";
         hash = "sha256-IKk+Af8kvq7rxd5OTlvpJDWWBsNWycUVCfuiRb0td90=";
       };
-      "ema_vae_fp16.safetensors" = fetchHuggingface {
+      "ema_vae_fp16.safetensors" = fetchHuggingFace {
         owner = "numz";
         repo = "SeedVR2_comfyUI";
         rev = "09ced71023636e9bc8cdf9cdecfb2625d1e691e8";

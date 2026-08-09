@@ -35,6 +35,10 @@ in
           host = "192.168.100.10";
           guest = "192.168.100.11";
         };
+        ollama = {
+          host = "192.168.100.20";
+          guest = "192.168.100.21";
+        };
         mcp-nixos = {
           host = "192.168.100.30";
           guest = "192.168.100.31";
@@ -58,6 +62,10 @@ in
         niks3-private = {
           host = "192.168.100.80";
           guest = "192.168.100.81";
+        };
+        open-webui = {
+          host = "192.168.100.90";
+          guest = "192.168.100.91";
         };
       };
       description = "Network addresses for containers and microVMs";
@@ -95,6 +103,14 @@ in
         forgejo = {
           uid = 991;
           gid = 986;
+        };
+        ollama = {
+          uid = 501;
+          gid = 501;
+        };
+        open-webui = {
+          uid = 502;
+          gid = 502;
         };
       };
       description = "Service user/group IDs (must match between host and isolated environment)";

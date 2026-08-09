@@ -13,6 +13,8 @@
 
     ../server
 
+    ../ollama
+
     ./seminar
   ];
   local.cpuTarget = "AMD Ryzen 5 7600 6-Core Processor";

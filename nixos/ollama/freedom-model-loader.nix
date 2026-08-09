@@ -6,7 +6,6 @@
   ...
 }:
 let
-  ollama = config.containers.ollama.config.services.ollama;
   freedomModels = config.local.ollama.freedomModels;
   markerDir = "${config.local.ollama.dataDir}/freedom-models";
   modelfiles = lib.mapAttrs (
@@ -15,35 +14,41 @@ let
       FROM ${gguf}
     ''
   ) freedomModels;
-  loader = pkgs.writeShellApplication {
-    name = "ollama-freedom-model-loader";
-    runtimeInputs = [ ollama.package ];
-    text = ''
-      mkdir -p ${lib.escapeShellArg markerDir}
-      ${lib.concatStringsSep "\n" (
-        lib.mapAttrsToList (
-          name: gguf:
-          let
-            marker = "${markerDir}/${lib.replaceStrings [ ":" ] [ "-" ] name}";
-          in
-          ''
-            if [[ ! -f ${lib.escapeShellArg marker} ]] \
-              || [[ $(< ${lib.escapeShellArg marker}) != ${lib.escapeShellArg (toString gguf)} ]] \
-              || ! ollama show ${lib.escapeShellArg name} > /dev/null 2>&1; then
-              ollama create ${lib.escapeShellArg name} --file ${
-                lib.escapeShellArg (toString modelfiles.${name})
-              }
-              printf '%s\n' ${lib.escapeShellArg (toString gguf)} > ${lib.escapeShellArg marker}
-            fi
-          ''
-        ) freedomModels
-      )}
-    '';
-  };
 in
 {
   containers.ollama.config =
     { config, lib, ... }:
+    let
+      # loaderの生成はコンテナのモジュール内で完結させる。
+      # ホスト側のletから`containers.ollama.config`のパッケージを読んで、
+      # 結果を再び同じ`config`へ注入すると評価が往復し、
+      # 将来packageが他のコンテナ内オプションに依存したときに無限再帰になりうる。
+      loader = pkgs.writeShellApplication {
+        name = "ollama-freedom-model-loader";
+        runtimeInputs = [ config.services.ollama.package ];
+        text = ''
+          mkdir -p ${lib.escapeShellArg markerDir}
+          ${lib.concatStringsSep "\n" (
+            lib.mapAttrsToList (
+              name: gguf:
+              let
+                marker = "${markerDir}/${lib.replaceStrings [ ":" ] [ "-" ] name}";
+              in
+              ''
+                if [[ ! -f ${lib.escapeShellArg marker} ]] \
+                  || [[ $(< ${lib.escapeShellArg marker}) != ${lib.escapeShellArg (toString gguf)} ]] \
+                  || ! ollama show ${lib.escapeShellArg name} > /dev/null 2>&1; then
+                  ollama create ${lib.escapeShellArg name} --file ${
+                    lib.escapeShellArg (toString modelfiles.${name})
+                  }
+                  printf '%s\n' ${lib.escapeShellArg (toString gguf)} > ${lib.escapeShellArg marker}
+                fi
+              ''
+            ) freedomModels
+          )}
+        '';
+      };
+    in
     {
       systemd.services.ollama-freedom-model-loader = {
         description = "Register declarative GGUF models with Ollama";

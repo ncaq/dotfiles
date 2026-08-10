@@ -26,28 +26,53 @@ let
   # bulletのDP-0(Acer VG270K)で実測により確認されています。
   # 実測では復帰の数秒後に一時イベントが発生したため、
   # 余裕を持たせた値にしています。
-  grobiRestartDelay = "20";
+  grobiResumeDelay = "20";
+
+  # grobiの中断と再開にはサービスのstop/startではなくSIGSTOP/SIGCONTを使います。
+  # grobiは適用済みのルール名をプロセスのメモリ上にしか持たないため、
+  # プロセスを作り直すと現在の構成が既に正しくても初回のルール適用が必ず走ります。
+  # bulletのDP-0(Acer VG270K)は消灯からの復帰時に一度disconnectして、
+  # 物理サイズが暫定値に化けた状態で再接続されるため、
+  # ここでルールを適用するxrandrは全画面のモードセットを伴い、
+  # 実測で約2秒かけて画面が一度落ちてから復帰していました。
+  # 再開が遅延実行される仕組みの都合上、
+  # これは復帰してしばらく経ってから画面が落ちる形で体感されます。
+  # プロセスを凍らせるだけならば適用済みのルール名が保持されるので、
+  # 復帰後に構成が変わっていなければxrandrは一切実行されず画面も落ちません。
+  # 中断中に届いたRandRイベントは再開後にまとめて処理されますが、
+  # grobiはイベントごとに現在の出力構成を取り直して判定するため、
+  # 中断中の一時的な変化は無視され、
+  # 実際に構成が変わっていた場合のみ新しいルールが適用されます。
+  # 副作用として復帰後のDP-0は物理サイズの報告が暫定値のまま残りますが、
+  # DPIは`xrandr --dpi`とXft.dpiで固定しているため表示への影響はありません。
+  #
+  # `systemd-run`のコマンドとしても渡すためsystemctlはフルパスで指定します。
+  grobiSignal =
+    signal:
+    "${pkgs.systemd}/bin/systemctl --user kill --kill-whom=main --signal=${signal} grobi.service";
 
   # 猶予時間内の復帰でロックされていなければgrobiを再開します。
   # 猶予超過でロックに進んだ場合はロッカー側が解除後に再開するため、
   # ここでは再開しません。
-  grobiStartIfUnlocked = pkgs.writeShellApplication {
-    name = "grobi-start-if-unlocked";
+  grobiResumeIfUnlocked = pkgs.writeShellApplication {
+    name = "grobi-resume-if-unlocked";
     runtimeInputs = with pkgs; [
       procps
-      systemd
     ];
     text = ''
       if ! pgrep -x xsecurelock > /dev/null; then
-        systemctl --user start grobi.service
+        # 再開に失敗するとgrobiが中断したままになるため、
+        # 気付けるようにエラーログを残します。
+        ${grobiSignal "SIGCONT"} ||
+          echo "grobi-resume-if-unlocked: failed to resume grobi.service (exit=$?)" >&2
       fi
     '';
   };
 
   # 無操作による消灯時にxss-lockから起動されるnotifier。
-  # 消灯中と復帰直後のRandRイベントでレイアウトが崩れないようにgrobiを止めます。
+  # 消灯中と復帰直後のRandRイベントでレイアウトが崩れないようにgrobiを中断します。
   # 自身が殺される時に、
-  # 遅延起動のtransientユニットでgrobiの再開を予約します。
+  # 遅延実行のtransientユニットでgrobiの再開を予約します。
   # xss-lockに殺されてもgrobiの再開が実行されるように、
   # このプロセスの子ではなくsystemdのユニットとして予約します。
   screenBlankNotifier = pkgs.writeShellApplication {
@@ -57,18 +82,18 @@ let
       systemd
     ];
     text = ''
-      # grobiの停止に失敗しても本来の役目には支障がないので、
+      # grobiの中断に失敗しても本来の役目には支障がないので、
       # エラーログを残した上で続行します。
-      systemctl --user stop grobi.service ||
-        echo "screen-blank-notifier: failed to stop grobi.service (exit=$?)" >&2
+      ${grobiSignal "SIGSTOP"} ||
+        echo "screen-blank-notifier: failed to suspend grobi.service (exit=$?)" >&2
       sleep_pid=""
       on_term() {
         if [ -n "$sleep_pid" ]; then
           kill "$sleep_pid" 2> /dev/null || true
         fi
-        systemd-run --user --collect --on-active=${grobiRestartDelay} \
+        systemd-run --user --collect --on-active=${grobiResumeDelay} \
           --timer-property=AccuracySec=1s \
-          ${lib.getExe grobiStartIfUnlocked}
+          ${lib.getExe grobiResumeIfUnlocked}
         exit 0
       }
       trap on_term TERM INT
@@ -84,7 +109,7 @@ let
   # xsecurelockのラッパー。
   # 手動ロック(loginctl lock-session)やサスペンドでは、
   # notifierを経由せずlockerが直接起動されるため、
-  # ここでもgrobiを停止します。
+  # ここでもgrobiを中断します。
   xsecurelockGrobiPause = pkgs.writeShellApplication {
     name = "xsecurelock-grobi-pause";
     runtimeInputs = with pkgs; [
@@ -93,12 +118,12 @@ let
     ];
     text = ''
       # `writeShellApplication`はerrexitを注入するため、
-      # ここでgrobiの停止が失敗するとxsecurelockの起動前にラッパーが終了し、
+      # ここでgrobiの中断が失敗するとxsecurelockの起動前にラッパーが終了し、
       # 画面がロックされないまま放置されるfail-openになってしまいます。
       # ロックの起動を最優先するため、
-      # 停止の失敗はエラーログを残した上で続行します。
-      systemctl --user stop grobi.service ||
-        echo "xsecurelock-grobi-pause: failed to stop grobi.service (exit=$?)" >&2
+      # 中断の失敗はエラーログを残した上で続行します。
+      ${grobiSignal "SIGSTOP"} ||
+        echo "xsecurelock-grobi-pause: failed to suspend grobi.service (exit=$?)" >&2
       locker_pid=""
       on_term() {
         if [ -n "$locker_pid" ]; then
@@ -110,9 +135,9 @@ let
       locker_pid=$!
       wait "$locker_pid" || true
       # 解除後にモニタのEDIDが安定してからgrobiを再開します。
-      systemd-run --user --collect --on-active=${grobiRestartDelay} \
+      systemd-run --user --collect --on-active=${grobiResumeDelay} \
         --timer-property=AccuracySec=1s \
-        systemctl --user start grobi.service
+        ${grobiSignal "SIGCONT"}
     '';
   };
 in

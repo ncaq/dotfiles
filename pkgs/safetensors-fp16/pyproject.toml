@@ -1,0 +1,18 @@
+[project]
+name = "safetensors-fp16"
+version = "0.1.0"
+description = "safetensorsのF32テンソルだけをF16へ変換する"
+license = "Apache-2.0"
+requires-python = ">=3.12"
+dependencies = ["numpy", "tqdm"]
+
+[project.scripts]
+safetensors-fp16 = "safetensors_fp16.cli:main"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+# テスト用のディレクトリをパッケージとして拾わせない。
+[tool.setuptools]
+packages = ["safetensors_fp16"]

@@ -1,6 +1,7 @@
 # ComfyUI本体を隔離して動かすNixOS Containersの定義。
 {
   lib,
+  config,
   inputs,
   ...
 }:
@@ -151,6 +152,23 @@ in
     # NetworkManagerがコンテナのvethを管理しようとして競合するのを防ぐ。
     networkmanager.unmanaged = [ "interface-name:ve-*" ];
   };
-  # bind mountするデータディレクトリをホスト側で用意する。
-  systemd.tmpfiles.rules = [ "d ${dataDir} 0750 comfyui comfyui - -" ];
+  systemd = {
+    services."container@comfyui".serviceConfig = {
+      # OSや他の処理のために2スレッド分を残す既存のCPU予算を使う。
+      CPUQuota = "${toString (config.local.cpuBudgetThreads * 100)}%";
+      # VRAMだけでなくシステムRAMも大量に使うことがあり、
+      # モデルのロードやオフロードの挙動次第でホスト全体が応答しなくなるため上限を設ける。
+      #
+      # Wan 2.2の動画生成は実測でピーク67.9GiBを正当に必要とする。
+      # `MemoryHigh`をそれより下に置くと、
+      # 超過分を回収しようにも回収できるものがないため、
+      # プロセスを同期回収に付き合わせ続けて生成が進まなくなる。
+      # 実際に50%(46.8GiB)ではGPU使用率が0%のまま、
+      # `memory.pressure`のfullが69%に達して停止していた。
+      MemoryHigh = "85%"; # ソフトリミット。これを超えるとメモリを積極的に解放する。
+      MemoryMax = "90%"; # ハードリミット。超えたらホストを巻き添えにする前にOOM killする。
+    };
+    # bind mountするデータディレクトリをホスト側で用意する。
+    tmpfiles.rules = [ "d ${dataDir} 0750 comfyui comfyui - -" ];
+  };
 }

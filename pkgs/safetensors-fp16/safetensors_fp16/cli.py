@@ -1,7 +1,6 @@
 """safetensorsのF32テンソルだけをF16へ変換するCLIのエントリポイント。"""
 
 import argparse
-import sys
 
 from .convert import convert
 from .verify import verify
@@ -34,7 +33,3 @@ def main() -> int:
     else:
         verify(args.src, args.dst)
     return 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())

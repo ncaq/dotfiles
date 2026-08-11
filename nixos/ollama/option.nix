@@ -30,9 +30,29 @@
       '';
     };
 
+    generalModels = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      readOnly = true;
+      description = ''
+        ハードウェアの限界の範囲で汎用的に使えるモデル。
+        用途を絞らない既定の選択肢で、速度にも品質にも極端に寄せない。
+      '';
+    };
+
+    flashModels = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      readOnly = true;
+      description = ''
+        回答の質よりも即答性を優先したモデル。
+        短い質問や補完のように、待たされること自体が使い勝手を損なう用途に使う。
+      '';
+    };
+
     loadModels = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       readOnly = true;
+      default = config.local.ollama.generalModels ++ config.local.ollama.flashModels;
+      defaultText = lib.literalExpression "config.local.ollama.generalModels ++ config.local.ollama.flashModels";
       description = "Ollama registryからpullするモデル。";
     };
 

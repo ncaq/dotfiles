@@ -1,9 +1,9 @@
 """safetensorsのF32テンソルだけをF16へ変換する。
 
-ComfyUIのDynamicVRAMはモデルの重みをホストのpinned memoryへ置くが、
-そのサイズはmmapしたファイル上のdtypeを基準に決まる。
-計算dtypeがfp16でもファイルがfp32ならpinned memoryは倍必要になり、
-14.29Bパラメータのモデルではホストのメモリを食い尽くす。
+ComfyUIはモデルをmmapで読み、
+CPU側の重みをファイル上のdtypeのまま保持してキャストしない。
+計算dtypeがfp16でもファイルがfp32ならホストが抱える量は倍になり、
+14.29Bパラメータのモデルではメモリを食い尽くす。
 ファイル側を事前にfp16へ落とすことでこれを半分にする。
 
 fp32からfp16への丸めはIEEE 754のround-to-nearest-evenで、

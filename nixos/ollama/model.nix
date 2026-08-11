@@ -25,6 +25,25 @@ let
         # このactive 3BのMoEは約19トークン/秒だった。
         "qwen3.6:35b-a3b"
       ];
+  # 即答性を優先したモデル。
+  flashModels =
+    if enableCuda then
+      [
+        # GPUなら9Bのdenseでも体感は即答なので、
+        # 速度のために品質を落とし過ぎない範囲で汎用モデルより一段小さいものを選ぶ。
+        "qwen3.5:9b"
+      ]
+    else
+      [
+        # active 1BのMoE。
+        # generalModelsと同じくCPUではactive parameterの少なさがそのまま速度になる。
+        # seminarでの実測では同じ質問への応答完了まで、
+        # `qwen3.6:35b-a3b`が約18トークン/秒で46秒かかるのに対し、
+        # このモデルは約45トークン/秒で7秒だった。
+        # 同程度の規模でも`granite4.1:3b`のdenseは約24トークン/秒、
+        # `qwen3.5:4b`のdenseは約16トークン/秒しか出ない。
+        "lfm2.5:8b"
+      ];
   # 表現の自由度を優先したモデル。
   # CPUで推論するホストには置かない。
   # seminarでの実測では24Bのdenseは約4トークン/秒しか出ず、
@@ -56,7 +75,6 @@ let
 in
 {
   local.ollama = {
-    loadModels = generalModels;
-    inherit freedomModels;
+    inherit generalModels flashModels freedomModels;
   };
 }

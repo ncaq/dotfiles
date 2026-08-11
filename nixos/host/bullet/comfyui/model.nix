@@ -21,6 +21,7 @@
 let
   dataDir = config.containers.comfyui.config.services.comfyui.dataDir;
   fetchHuggingFace = import ../../../../lib/fetch-hugging-face.nix { inherit pkgs; };
+  convertSafetensorsFp16 = import ../../../../lib/convert-safetensors-fp16.nix { inherit pkgs; };
   # 属性名は`models/`配下のディレクトリ名、
   # その中の属性名が配置するファイル名に対応する。
   models = {
@@ -86,20 +87,35 @@ let
       # LoRA近似ではなく蒸留済みの全重みを使い、
       # サンプリング前半をhigh noise、後半をlow noiseが担当する。
       # Apache 2.0ライセンス。
-      "wan2.2_i2v_A14b_high_noise_lightx2v_4step_720p_260412.safetensors" = fetchHuggingFace {
-        owner = "lightx2v";
-        repo = "Wan2.2-Distill-Models";
-        rev = "db93455b9e85c4d8a3ff9297fcfa189d213cfe29";
-        file = "wan2.2_i2v_A14b_high_noise_lightx2v_4step_720p_260412.safetensors";
-        hash = "sha256-NfRDFHG0ueWS6ZQcH18v0eG/JuFAHISt/gHdIrWyuGQ=";
-      };
-      "wan2.2_i2v_A14b_low_noise_lightx2v_4step_720p_260412.safetensors" = fetchHuggingFace {
-        owner = "lightx2v";
-        repo = "Wan2.2-Distill-Models";
-        rev = "db93455b9e85c4d8a3ff9297fcfa189d213cfe29";
-        file = "wan2.2_i2v_A14b_low_noise_lightx2v_4step_720p_260412.safetensors";
-        hash = "sha256-kChH/FKj0w9naRXSrrhPwTxN+Sv2p5Q77uZprDTOPBU=";
-      };
+      #
+      # この720p版は配布ファイルが全テンソルF32で1つ57GBあり、
+      # high/lowの2つで114GBになる(非720p版はbf16で28GBだった)。
+      # ComfyUIの計算dtypeはfp16で確定しているのに、
+      # CPU側の重みはmmapしたファイル上のdtypeのまま保持され、
+      # DynamicVRAMのpinned memoryもそのサイズで確保されるため、
+      # 素のまま使うとシステムRAMを80GB以上消費してホストが応答しなくなる。
+      # 事前にfp16へ落として半分にする。
+      # 丸めはround-to-nearest-evenでランタイムのキャストとビット一致するので、
+      # 生成結果は変わらない。
+      # 重みの最大絶対値は4.44で、fp16の上限65504に対して十分な余裕がある。
+      "wan2.2_i2v_A14b_high_noise_lightx2v_4step_720p_260412.safetensors" =
+        convertSafetensorsFp16
+          (fetchHuggingFace {
+            owner = "lightx2v";
+            repo = "Wan2.2-Distill-Models";
+            rev = "db93455b9e85c4d8a3ff9297fcfa189d213cfe29";
+            file = "wan2.2_i2v_A14b_high_noise_lightx2v_4step_720p_260412.safetensors";
+            hash = "sha256-NfRDFHG0ueWS6ZQcH18v0eG/JuFAHISt/gHdIrWyuGQ=";
+          });
+      "wan2.2_i2v_A14b_low_noise_lightx2v_4step_720p_260412.safetensors" =
+        convertSafetensorsFp16
+          (fetchHuggingFace {
+            owner = "lightx2v";
+            repo = "Wan2.2-Distill-Models";
+            rev = "db93455b9e85c4d8a3ff9297fcfa189d213cfe29";
+            file = "wan2.2_i2v_A14b_low_noise_lightx2v_4step_720p_260412.safetensors";
+            hash = "sha256-kChH/FKj0w9naRXSrrhPwTxN+Sv2p5Q77uZprDTOPBU=";
+          });
     };
     text_encoders = {
       # Animaが使うQwen3 0.6Bベースのテキストエンコーダ。

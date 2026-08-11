@@ -370,6 +370,8 @@
             inherit git-repo-subscribe;
             # PRコメントにnvd diffを投稿するスクリプト。
             nvd-pr-diff = pkgs.callPackage ./pkgs/nvd-pr-diff { };
+            # safetensorsのF32テンソルをF16へ変換するコマンド。
+            safetensors-fp16 = pkgs.callPackage ./pkgs/safetensors-fp16 { };
           };
 
           devShells.default = pkgs.mkShell {

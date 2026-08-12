@@ -63,6 +63,10 @@ in
       shareEncode =
         writeCheckedModulePy "comfyui-share-encode" "share_encode.py"
           ./custom-node/share_encode.py;
+      # 保存したPNGを可逆再圧縮で縮める共有モジュール。
+      optimizePng =
+        writeCheckedModulePy "comfyui-optimize-png-module" "optimize_png.py"
+          ./custom-node/optimize_png.py;
       loraManager = pkgs.fetchFromGitHub {
         owner = "willmiao";
         repo = "ComfyUI-Lora-Manager";
@@ -193,6 +197,16 @@ in
             paths = [
               (writeCheckedInitPy "comfyui-anime-video-quick-init" ./custom-node/anime-video-quick/__init__.py)
               shareEncode
+              optimizePng
+            ];
+          };
+          # 本体のSaveImageが書き出したPNGを保存後に縮める自作ノード。
+          # ノードは提供せず、保存処理を包む副作用だけを持つ。
+          "ComfyUI-Optimize-Png" = pkgs.symlinkJoin {
+            name = "comfyui-optimize-png";
+            paths = [
+              (writeCheckedInitPy "comfyui-optimize-png-init" ./custom-node/optimize-png/__init__.py)
+              optimizePng
             ];
           };
           # danbooruタグのオートコンプリート。

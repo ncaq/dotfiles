@@ -22,6 +22,7 @@ import torch
 from comfy_extras.nodes_model_advanced import ModelSamplingSD3
 from PIL import Image
 
+from .optimize_png import start_optimize_png
 from .share_encode import start_share_encode
 
 
@@ -119,6 +120,9 @@ def save_image(image: torch.Tensor, path: Path) -> None:
     temporary = path.with_suffix(".partial.png")
     Image.fromarray(array, "RGB").save(temporary)
     os.replace(temporary, path)
+    # キーフレームは配布物ではないが、
+    # 縮めても画素は変わらないので動画の区間と違って除外する理由がない。
+    start_optimize_png(path)
 
 
 def load_image(path: Path) -> torch.Tensor:

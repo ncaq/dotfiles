@@ -140,7 +140,10 @@ in
         systemd.services.comfyui.environment.PYTHONPATH = lib.makeSearchPath comfyuiPython.sitePackages [
           sageattention
         ];
-        systemd.services.comfyui.path = with pkgs; [ ffmpeg ];
+        systemd.services.comfyui.path = with pkgs; [
+          ffmpeg
+          oxipng
+        ];
       };
   };
   networking = {

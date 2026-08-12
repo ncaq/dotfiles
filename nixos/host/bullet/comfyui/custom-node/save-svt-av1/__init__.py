@@ -13,6 +13,11 @@ from server import PromptServer
 
 logger = logging.getLogger(__name__)
 
+# 拡張子にロスレスかどうかとコーデック名も含めて、
+# メタデータを確認しなくてもファイル名だけで中身が分かるようにする。
+# このノードは常に10-bit SVT-AV1 losslessのWebMを書き出す。
+video_suffix = "lossless.av1.webm"
+
 
 def warn_video_only(error: object) -> None:
     detail = f"音声を保存できなかったため、映像のみ保存します: {error}"
@@ -72,10 +77,10 @@ class SaveSvtAv1:
             width,
             height,
         )
-        output_name = f"{filename}_{counter:05}_.webm"
+        output_name = f"{filename}_{counter:05}_.{video_suffix}"
         output_path = os.path.join(output_dir, output_name)
         partial_path = os.path.join(
-            output_dir, f"{filename}_{counter:05}_.partial.webm"
+            output_dir, f"{filename}_{counter:05}_.partial.{video_suffix}"
         )
         frame_rate = Fraction(fps).limit_denominator(1001)
 

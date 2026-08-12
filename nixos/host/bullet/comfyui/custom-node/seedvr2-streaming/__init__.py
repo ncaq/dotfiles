@@ -10,7 +10,7 @@
 #
 # OUTPUT_NODE = TrueかつRETURN_TYPES = ()で、出力は自身がファイルへ書き出す。
 # 出力は映像のみで元動画の音声や字幕は引き継がない。
-# `.partial.mp4`へ書いてから`os.replace`で確定させ、
+# `.partial`付きの名前へ書いてから`os.replace`で確定させ、
 # 中断時はCLIのプロセスグループごと終了させて中間ファイルも削除する。
 #
 # 汎用ノードGetVideoSize(VIDEOから幅と高さを取得)も同梱する。
@@ -192,9 +192,15 @@ class SeedVR2StreamingVideoUpscaler:
             output_width,
             output_height,
         )
-        output_name = f"{filename}_{counter:05}_.mp4"
+        # 拡張子にロスレスかどうかとコーデック名も含めて、
+        # メタデータを確認しなくてもファイル名だけで中身が分かるようにする。
+        # CLIへは常に`--10bit`を渡すのでコーデックはlibx265で固定される。
+        video_suffix = f"{'lossless.' if lossless else ''}hevc.mp4"
+        output_name = f"{filename}_{counter:05}_.{video_suffix}"
         output_path = Path(output_dir) / output_name
-        partial_path = Path(output_dir) / f"{filename}_{counter:05}_.partial.mp4"
+        partial_path = (
+            Path(output_dir) / f"{filename}_{counter:05}_.partial.{video_suffix}"
+        )
         model_dir = get_model_dir(dit["model"], cli_fixed_vae)
 
         command = [

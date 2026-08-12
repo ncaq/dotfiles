@@ -24,6 +24,10 @@ from PIL import Image
 
 
 anime_style_prefix = "Anime style, 2D cel animation, flat colors."
+# 拡張子にロスレスかどうかとコーデック名も含めて、
+# メタデータを確認しなくてもファイル名だけで中身が分かるようにする。
+# 区間も結合後も10-bit SVT-AV1 losslessのWebMで書き出す。
+video_suffix = ".lossless.av1.webm"
 wan_frame_count = 81
 wan_fps = 16.0
 wan_temporal_compression = 4
@@ -320,9 +324,20 @@ def generate_segment(
     return flatten_image_batch(vae.decode(low["samples"]))
 
 
+def partial_video_path(path: Path) -> Path:
+    """書き込み途中の動画パス。
+
+    ffmpegがコンテナを拡張子から推定できるように、
+    `.partial`は末尾ではなく`video_suffix`の手前へ入れる。
+    """
+    return path.with_name(
+        f"{path.name.removesuffix(video_suffix)}.partial{video_suffix}"
+    )
+
+
 def save_video(images: torch.Tensor, path: Path) -> None:
     height, width = images.shape[1:3]
-    temporary = path.with_suffix(".partial.webm")
+    temporary = partial_video_path(path)
     with av.open(temporary, mode="w") as container:
         stream = container.add_stream(
             "libsvtav1", rate=Fraction(wan_fps).limit_denominator(1001)
@@ -353,7 +368,7 @@ def save_video(images: torch.Tensor, path: Path) -> None:
 
 def concat_videos(paths: list[Path], output_path: Path) -> None:
     list_path = paths[0].parent / "concat.txt"
-    temporary = output_path.with_suffix(".partial.webm")
+    temporary = partial_video_path(output_path)
     list_path.write_text(
         "".join(f"file '{path.name}'\n" for path in paths), encoding="utf-8"
     )
@@ -456,10 +471,12 @@ class AnimeVideoQuick:
                 for index in range(1, segment_count + 1)
             ),
             *(
-                output_dir / "segments" / f"{filename_prefix}-segment-{index:03}.webm"
+                output_dir
+                / "segments"
+                / f"{filename_prefix}-segment-{index:03}{video_suffix}"
                 for index in range(segment_count)
             ),
-            output_dir / f"{filename_prefix}-final.webm",
+            output_dir / f"{filename_prefix}-final{video_suffix}",
         ]
         if any(not path.is_file() for path in expected_paths):
             return float("NaN")
@@ -546,9 +563,10 @@ class AnimeVideoQuick:
             if first_missing_keyframe is not None:
                 first_affected_segment = first_missing_keyframe - 1
                 for index in range(first_affected_segment, len(translated_segments)):
-                    (segment_dir / f"{filename_prefix}-segment-{index:03}.webm").unlink(
-                        missing_ok=True
-                    )
+                    (
+                        segment_dir
+                        / f"{filename_prefix}-segment-{index:03}{video_suffix}"
+                    ).unlink(missing_ok=True)
 
             if first_missing_keyframe is not None:
                 previous_path = (
@@ -579,7 +597,7 @@ class AnimeVideoQuick:
                 del current
 
             video_paths = [
-                segment_dir / f"{filename_prefix}-segment-{index:03}.webm"
+                segment_dir / f"{filename_prefix}-segment-{index:03}{video_suffix}"
                 for index in range(len(translated_segments))
             ]
             if any(not path.exists() for path in video_paths):
@@ -637,7 +655,7 @@ class AnimeVideoQuick:
                     del start, end, frames
                     comfy.model_management.soft_empty_cache()
 
-            final_name = f"{filename_prefix}-final.webm"
+            final_name = f"{filename_prefix}-final{video_suffix}"
             final_path = output_dir / final_name
             if not final_path.exists() or any(
                 final_path.stat().st_mtime_ns < path.stat().st_mtime_ns

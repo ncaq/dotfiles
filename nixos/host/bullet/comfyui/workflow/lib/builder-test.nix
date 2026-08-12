@@ -237,6 +237,23 @@ assert lib.assertMsg (
   && builder.stepsForDenoise 30 0.55 == 16
   && builder.stepsForDenoise 30 0.75 == 22
 ) "0.5の境界に乗るdenoiseの丸めが切り捨てになっていません";
+# 各ワークフローが実際に使っている組み合わせ。
+# ここが変わると生成されるステップ数が黙って変わる。
+assert lib.assertMsg (
+  builder.stepsForDenoise builder.baseSteps 0.45 == 12
+  && builder.stepsForDenoise builder.baseSteps 0.5 == 14
+  && builder.stepsForDenoise builder.animaBaseSteps 0.3 == 9
+) "実際に使っているdenoiseのステップ数が想定と違います";
+assert lib.assertMsg (
+  builder.startStepForDenoise builder.baseSteps 0.5 == 14
+  && builder.startStepForDenoise builder.animaBaseSteps 0.5 == 15
+) "実際に使っているdenoiseのstart_at_stepが想定と違います";
+assert lib.assertMsg (
+  builder.stepsForDenoise builder.baseSteps 1 == builder.baseSteps
+) "denoise 1なのに基準のステップ数と違います";
+# どのワークフローも通らない下限のクランプ。
+# 検証がなければ壊れても気付けない。
+assert lib.assertMsg (builder.stepsForDenoise builder.baseSteps 0.01 == 1) "ステップ数が1未満へ落ちています";
 assert lib.assertMsg (
   outputLinks extraNodes 16 0 == [
     1

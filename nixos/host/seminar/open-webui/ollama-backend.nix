@@ -26,8 +26,7 @@
 let
   addr = config.machineAddresses.open-webui;
   port = config.local.openWebui.ollamaPort;
-  # `tailscale status`で確認できるこのtailnetのMagicDNSのsuffix。
-  tailnet = "border-saurolophus.ts.net";
+  tailnet = config.local.tailscale.tailnet;
   ollamaService = import ../../../../lib/ollama-tailscale-service.nix;
   # 使いたい順のホスト名。
   # GPUのbulletを先に書き、落ちていればCPUのseminarへ回す。

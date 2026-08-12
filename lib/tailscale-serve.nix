@@ -176,10 +176,24 @@ in
       enable = true;
       virtualHosts.":${toString cfg.redirectPort}".extraConfig = ''
         bind 127.0.0.1
-        # 301ではなく308を返す。
-        # 301はリクエストメソッドの保存が保証されず、
-        # POSTがGETへ書き換えられてしまう。
-        redir https://{host}{uri} 308
+        # クライアントが送ったHostをそのままリダイレクト先に使うと、
+        # tailnet内の任意のプロセスから外部のホストへ誘導できるオープンリダイレクトになる。
+        # 正規のService名を起点にしたフィッシングの踏み台にされうるので、
+        # このtailnetのMagicDNS名だけを通す。
+        # `*`は1ラベルだけにマッチし、Service名はちょうど1ラベルなので過不足なく合う。
+        @service host *.${config.local.tailscale.tailnet}
+        handle @service {
+          # 301ではなく308を返す。
+          # 301はリクエストメソッドの保存が保証されず、
+          # POSTがGETへ書き換えられてしまう。
+          #
+          # `{host}`はHostヘッダからポートを除いた値なので、
+          # `Host: foo.example:80`で来ても`https://foo.example`になる。
+          redir https://{host}{uri} 308
+        }
+        handle {
+          respond "Unknown host" 400
+        }
       '';
     };
   };

@@ -50,6 +50,19 @@ in
           ${checkPythonSyntax source}
           install -D -m 0644 ${source} $out/__init__.py
         '';
+      # 複数の自作ノードで共有するPythonモジュールを構文検査してから配置する。
+      # symlinkJoinで各ノードのパッケージへ混ぜて相対importで読ませるため、
+      # `__init__.py`ではなくPythonのモジュール名になるファイル名で置く。
+      writeCheckedModulePy =
+        name: fileName: source:
+        pkgs.runCommand name { } ''
+          ${checkPythonSyntax source}
+          install -D -m 0644 ${source} $out/${fileName}
+        '';
+      # 保存したロスレス動画から配布向けの圧縮版を作る共有モジュール。
+      shareEncode =
+        writeCheckedModulePy "comfyui-share-encode" "share_encode.py"
+          ./custom-node/share_encode.py;
       loraManager = pkgs.fetchFromGitHub {
         owner = "willmiao";
         repo = "ComfyUI-Lora-Manager";
@@ -127,8 +140,13 @@ in
           };
           # SeedVR2 CLIのチャンク処理をComfyUIから起動し、長尺動画をRAM上限付きで処理する。
           # 解像度の自動計算に使う、VIDEOから幅と高さを取り出す汎用ノードGetVideoSizeも同梱する。
-          "ComfyUI-SeedVR2-Streaming" =
-            writeCheckedInitPy "comfyui-seedvr2-streaming" ./custom-node/seedvr2-streaming/__init__.py;
+          "ComfyUI-SeedVR2-Streaming" = pkgs.symlinkJoin {
+            name = "comfyui-seedvr2-streaming";
+            paths = [
+              (writeCheckedInitPy "comfyui-seedvr2-streaming-init" ./custom-node/seedvr2-streaming/__init__.py)
+              shareEncode
+            ];
+          };
           # UltralyticsDetectorProvider(YOLOによる顔検出)を提供する。
           # FaceDetailerに検出器を渡すために必要。
           "ComfyUI-Impact-Subpack" = pkgs.fetchFromGitHub {
@@ -164,13 +182,19 @@ in
               (pkgs.writeTextDir "web/notification.js" (
                 builtins.readFile ./custom-node/save-svt-av1/web/notification.js
               ))
+              shareEncode
             ];
           };
           # 複数行の指示からQwen編集画像を先に全て作り、
           # そのキーフレーム間をWan FLF2Vで順番に動画化する。
           # 各成果物を都度保存するため、長さに比例して画像テンソルをRAMへ蓄積しない。
-          "ComfyUI-Anime-Video-Quick" =
-            writeCheckedInitPy "comfyui-anime-video-quick" ./custom-node/anime-video-quick/__init__.py;
+          "ComfyUI-Anime-Video-Quick" = pkgs.symlinkJoin {
+            name = "comfyui-anime-video-quick";
+            paths = [
+              (writeCheckedInitPy "comfyui-anime-video-quick-init" ./custom-node/anime-video-quick/__init__.py)
+              shareEncode
+            ];
+          };
           # danbooruタグのオートコンプリート。
           # 日本語からの検索とpost count表示に対応していて、
           # メジャーなタグかどうかを確認しながら入力できる。

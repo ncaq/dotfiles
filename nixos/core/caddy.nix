@@ -19,6 +19,13 @@
   config = lib.mkIf config.services.caddy.enable {
     # `/run`直下はcaddyユーザに書けないのでsystemdにディレクトリを用意させる。
     systemd.services.caddy.serviceConfig.RuntimeDirectory = "caddy";
+    # スラッシュが2つ並ぶのはタイプミスではない。
+    # `unix/`がCaddyのネットワークアドレス記法のプレフィックスで、
+    # 続く`/run/caddy/admin.sock`が絶対パスなので重なる。
+    # 1つに減らすと`/run`が相対パス扱いになり待ち受け先が変わる。
+    #
+    # `globalConfig`は`types.lines`なので他のモジュールの定義と連結される。
+    # 他所でadminを書くとCaddyfileの中でadminが重複定義になる。
     services.caddy.globalConfig = ''
       admin unix//run/caddy/admin.sock
     '';

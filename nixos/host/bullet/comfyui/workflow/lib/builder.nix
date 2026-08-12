@@ -41,7 +41,13 @@ let
   # 刻み密度は常に素の生成と同じまま強さだけが変わる。
   # denoiseと違って強さとステップ数が構造的に連動するので、
   # 実行時に強さを変えてもステップ数の付け替えが要らない。
-  startStepForDenoise = base: denoise: base - (stepsForDenoise base denoise);
+  #
+  # denoiseが1以上だと0以下を返して全ステップ実行に戻ってしまうため、
+  # 呼び出し側の想定外の値を表明で弾く。
+  startStepForDenoise =
+    base: denoise:
+    assert lib.assertMsg (denoise < 1) "startStepForDenoiseはdenoiseが1未満の時にだけ意味を持ちます";
+    base - (stepsForDenoise base denoise);
   # seedウィジェットは値の直後に実行後の挙動(randomizeなど)が並ぶ。
   seedWidgets = [
     0

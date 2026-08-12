@@ -11,7 +11,7 @@
 #
 # 出力先のanime-video-quick/<job ID>/manifest.jsonに進捗を記録する。
 # 同じ入力とjob IDで再実行すると生成済みファイルを飛ばして途中から再開する。
-# 動画区間は0始まりで、N行目はsegments/*-segment-<N-1>.webmに対応する。
+# 動画区間は0始まりで、N行目はsegments/*-segment-<N-1>.lossless.av1.webmに対応する。
 # 破綻した動画区間を削除して再実行すると、その区間だけを作り直す。
 # 終了キーフレームは1始まりで、N行目はkeyframes/*-keyframe-<N>.pngに対応する。
 # 絵から作り直す場合は該当キーフレームを削除する。そこから後の画像と動画も再生成される。

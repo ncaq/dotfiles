@@ -29,5 +29,21 @@
     services.caddy.globalConfig = ''
       admin unix//run/caddy/admin.sock
     '';
+    # 死活監視用のエンドポイント。
+    # Caddyには`/health`のようなヘルスチェック専用のエンドポイントが公式には存在せず、
+    # admin APIの`/config/`を叩くのが慣習的な代用になっていますが、
+    # あれは設定を返すAPIであってHTTPリスナーが実際に応答できるかは分かりません。
+    # admin APIがUNIXソケットに移ってTCPから叩けなくなったこともあり、
+    # 公式ドキュメントが案内している`respond`で自前のエンドポイントを立てます。
+    # https://caddyserver.com/docs/caddyfile/directives/respond
+    #
+    # `:2020`はadmin APIの既定の`2019`の隣というだけの番号です。
+    # ホスト名を書くとlocal CAによる自動HTTPSの対象になってしまうため、
+    # ポートだけを書いて`bind`で127.0.0.1に限定し、
+    # 同じホストの監視エージェントからのみ届くようにします。
+    services.caddy.virtualHosts.":2020".extraConfig = ''
+      bind 127.0.0.1
+      respond /health 200
+    '';
   };
 }

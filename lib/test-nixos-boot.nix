@@ -47,6 +47,18 @@ lib.mapAttrs (
           machine.fail("${curl} --fail --silent --max-time 3 http://127.0.0.1:2019/config/")
         '';
 
+    # `nixos/core/caddy.nix`が立てる死活監視用のエンドポイントを確認します。
+    # 監視エージェントがここを叩いているので、
+    # パスやポートが変わると監視だけが静かに落ちます。
+    # 127.0.0.1に限定できているかも合わせて見ます。
+    caddyHealthTest =
+      lib.optionalString hostDef.nixosSystem.config.services.caddy.enable # python
+        ''
+          machine.wait_for_open_port(2020, "127.0.0.1")
+          machine.succeed("${curl} --fail --silent --max-time 3 http://127.0.0.1:2020/health")
+          machine.fail("${curl} --fail --silent --max-time 3 http://[::1]:2020/health")
+        '';
+
     redirectTest =
       # 文字列の中身は`runNixOSTest`のテストドライバが実行するPythonです。
       # 直前の`# python`はtree-sitterなどに埋め込み言語を伝えてハイライトさせる、
@@ -126,6 +138,7 @@ lib.mapAttrs (
       machine.wait_for_unit("${socket}.socket")
     '') proxySockets
     + caddyAdminTest
+    + caddyHealthTest
     + redirectTest;
   }
 ) (lib.filterAttrs (_: def: !(def.nixosSystem.config.wsl.enable or false)) hostDefs)

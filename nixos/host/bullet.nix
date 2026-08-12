@@ -15,6 +15,7 @@
 
     ../gaming
     ../ollama
+    ../tailscale-serve
 
     ./bullet
   ];

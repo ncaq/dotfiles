@@ -17,5 +17,6 @@
     label = "ComfyUI";
     port = config.containers.comfyui.config.services.comfyui.port;
     socket = "comfyui-proxy.socket";
+    inherit (config.local.tailscaleServe) redirectPort;
   };
 }

@@ -13,5 +13,6 @@
     label = "Ollama";
     port = config.containers.ollama.config.services.ollama.port;
     socket = "ollama-proxy.socket";
+    inherit (config.local.tailscaleServe) redirectPort;
   };
 }

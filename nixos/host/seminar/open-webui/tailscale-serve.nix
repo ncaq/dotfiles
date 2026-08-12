@@ -18,5 +18,6 @@
     label = "Open WebUI";
     port = config.containers.open-webui.config.services.open-webui.port;
     socket = "open-webui-proxy.socket";
+    inherit (config.local.tailscaleServe) redirectPort;
   };
 }

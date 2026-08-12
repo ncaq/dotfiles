@@ -14,6 +14,7 @@
     ../server
 
     ../ollama
+    ../tailscale-serve
 
     ./seminar
   ];

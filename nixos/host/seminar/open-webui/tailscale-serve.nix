@@ -4,20 +4,14 @@
 # 公開するホストはseminarだけなのでService名にホスト名は入れない。
 # 推論先の切り替えはOpen WebUIの内側で行うため、
 # 利用者から見えるURLはbulletの電源状態によらず変わらない。
+{ config, ... }:
 {
-  pkgs,
-  config,
-  hardening,
-  ...
-}:
-{
-  systemd.services.tailscale-serve-open-webui = import ../../../../lib/tailscale-serve.nix {
-    inherit pkgs hardening;
-    tailscale = config.services.tailscale.package;
+  imports = [ ../../../../lib/tailscale-serve.nix ];
+
+  local.tailscaleServe.services.open-webui = {
     service = "svc:open-webui";
     label = "Open WebUI";
     port = config.containers.open-webui.config.services.open-webui.port;
     socket = "open-webui-proxy.socket";
-    inherit (config.local.tailscaleServe) redirectPort;
   };
 }

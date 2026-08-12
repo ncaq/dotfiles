@@ -37,7 +37,13 @@ def save_images(self: nodes.SaveImage, *args: Any, **kwargs: Any) -> dict[str, A
     return result
 
 
-nodes.SaveImage.save_images = save_images
+setattr(save_images, "optimize_png_wrapped", True)
+
+# ComfyUI-Managerによる再読み込みなどでこのモジュールが二度読まれると、
+# 何もしなければ包んだ関数を更に包んで1枚のPNGへoxipngを二重に走らせてしまう。
+# 目印を見て、既に包んであれば差し替えない。
+if not getattr(nodes.SaveImage.save_images, "optimize_png_wrapped", False):
+    nodes.SaveImage.save_images = save_images
 
 # ノードを提供しないが、これがないとComfyUIが読み込み失敗として扱う。
 NODE_CLASS_MAPPINGS: dict[str, type] = {}

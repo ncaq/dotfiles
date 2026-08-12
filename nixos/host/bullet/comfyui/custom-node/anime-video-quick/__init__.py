@@ -414,9 +414,14 @@ def sanitize_job_id(job_id: str) -> str:
     return re.sub(r"[^A-Za-z0-9._-]+", "-", job_id.strip()).strip(".-")
 
 
-def file_fingerprint(path: Path, base: Path) -> tuple[str, int, int]:
+def file_fingerprint(path: Path, base: Path) -> tuple[str, int]:
+    # ファイルサイズは見ない。
+    # キーフレームは保存後にoxipngが縮めるため、
+    # 内容が同じままサイズだけ後から変わる。
+    # oxipngへは`--preserve`を渡していて更新日時は動かないので、
+    # 更新日時だけを見れば作り直しを検出できる。
     status = path.stat()
-    return path.relative_to(base).as_posix(), status.st_mtime_ns, status.st_size
+    return path.relative_to(base).as_posix(), status.st_mtime_ns
 
 
 class AnimeVideoQuick:

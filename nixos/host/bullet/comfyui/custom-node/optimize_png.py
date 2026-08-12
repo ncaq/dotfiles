@@ -15,7 +15,10 @@
 # 保存自体は既に成功しているので、
 # 縮めるのに失敗してもワークフローは成功のままにしてログだけ残す。
 # 書き込み途中のファイルを掴まれないよう、
-# `--out`で`.partial`付きの名前へ書いてから`os.replace`で差し替える。
+# `--out`で仮の名前へ書いてから`os.replace`で差し替える。
+# 仮の名前を`.oxipng-partial`にしているのは、
+# 保存側が使う`.partial`と名前空間を分けるためで、
+# 同じパスへの保存が最適化の最中に走っても互いの一時ファイルを奪わない。
 #
 # 動画の配布用エンコードと違って直列化はしない。
 # oxipngが1枚に使うCPUは`-o max`でも5コア程度で、
@@ -66,7 +69,10 @@ def optimize_png(path: Path) -> None:
     # niceはLinuxではスレッド単位の属性で、子プロセスは生成元スレッドの値を継ぐ。
     # このスレッドだけを譲る側へ回して、oxipngが生成のCPUを奪わないようにする。
     os.nice(19)
-    partial = path.with_suffix(".partial.png")
+    # 保存側の`.partial.png`とぶつからない名前にする。
+    # 同じパスへの保存がこのスレッドの生存中に走った場合、
+    # 名前を共有していると互いの一時ファイルを消し合ってしまう。
+    partial = path.with_suffix(".oxipng-partial.png")
     command = [
         "oxipng",
         "--opt",

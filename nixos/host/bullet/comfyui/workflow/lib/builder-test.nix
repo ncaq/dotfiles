@@ -230,6 +230,13 @@ assert lib.assertMsg (
 assert lib.assertMsg (
   (findNode (builder.promptNodes { }) 5).type == "KSampler"
 ) "denoise 1なのにKSamplerになっていません";
+# `基準のsteps * denoise`がちょうど0.5になる組み合わせ。
+# 切り捨てなので常に小さい側へ倒れ、doubleの表現誤差に結果が左右されない。
+assert lib.assertMsg (
+  builder.stepsForDenoise 30 0.35 == 10
+  && builder.stepsForDenoise 30 0.55 == 16
+  && builder.stepsForDenoise 30 0.75 == 22
+) "0.5の境界に乗るdenoiseの丸めが切り捨てになっていません";
 assert lib.assertMsg (
   outputLinks extraNodes 16 0 == [
     1

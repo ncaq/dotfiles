@@ -26,7 +26,13 @@ let
   # A1111のように実行回数が`steps * denoise`へ減ることはない。
   # そのためdenoiseを下げただけのつもりで素の生成より重い設定になりやすい。
   # sigmaの刻み密度を素の生成へ揃えるには`基準のsteps * denoise`にすれば良い。
-  stepsForDenoise = base: denoise: lib.max 1 (builtins.floor ((base * denoise) + 0.5));
+  #
+  # 四捨五入ではなく切り捨てるのは、
+  # 刻み密度を素の生成以下に保って実行コストの上限も同時に押さえるためと、
+  # 積がちょうど0.5になる組み合わせで結果をdoubleの転び方に委ねないためである。
+  # `30 * 0.35`のように実際に使う値がこの境界に乗っていて、
+  # 四捨五入では1ステップの差が浮動小数点の表現誤差次第になる。
+  stepsForDenoise = base: denoise: lib.max 1 (builtins.floor (base * denoise));
   # 強さを実行時に変えるワークフロー向けに、
   # 同じサンプリングをKSamplerAdvancedの`start_at_step`として表した値を求める。
   #

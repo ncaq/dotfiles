@@ -26,6 +26,8 @@ from typing import Any
 import folder_paths
 from comfy.model_management import throw_exception_if_processing_interrupted
 
+from .share_encode import start_share_encode
+
 logger = logging.getLogger(__name__)
 
 # custom_nodes配下のsymlinkのままのパスを保つため実体解決はしない。
@@ -195,11 +197,11 @@ class SeedVR2StreamingVideoUpscaler:
         # 拡張子にロスレスかどうかとコーデック名も含めて、
         # メタデータを確認しなくてもファイル名だけで中身が分かるようにする。
         # CLIへは常に`--10bit`を渡すのでコーデックはlibx265で固定される。
-        video_suffix = f"{'lossless.' if lossless else ''}hevc.mp4"
-        output_name = f"{filename}_{counter:05}_.{video_suffix}"
+        video_suffix = f".{'lossless.' if lossless else ''}hevc.mp4"
+        output_name = f"{filename}_{counter:05}_{video_suffix}"
         output_path = Path(output_dir) / output_name
         partial_path = (
-            Path(output_dir) / f"{filename}_{counter:05}_.partial.{video_suffix}"
+            Path(output_dir) / f"{filename}_{counter:05}_.partial{video_suffix}"
         )
         model_dir = get_model_dir(dit["model"], cli_fixed_vae)
 
@@ -319,6 +321,9 @@ class SeedVR2StreamingVideoUpscaler:
                     process.wait()
             partial_path.unlink(missing_ok=True)
             raise
+        # アップスケール結果はそのままでは公開用には大きすぎるので、
+        # 配布用の圧縮版も裏で作る。
+        start_share_encode(output_path, video_suffix)
 
         return {
             "ui": {

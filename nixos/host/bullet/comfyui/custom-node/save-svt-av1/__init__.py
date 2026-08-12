@@ -3,6 +3,7 @@ import logging
 import math
 import os
 from fractions import Fraction
+from pathlib import Path
 from typing import Any
 
 import av
@@ -11,12 +12,14 @@ import torch
 import folder_paths
 from server import PromptServer
 
+from .share_encode import start_share_encode
+
 logger = logging.getLogger(__name__)
 
 # 拡張子にロスレスかどうかとコーデック名も含めて、
 # メタデータを確認しなくてもファイル名だけで中身が分かるようにする。
 # このノードは常に10-bit SVT-AV1 losslessのWebMを書き出す。
-video_suffix = "lossless.av1.webm"
+video_suffix = ".lossless.av1.webm"
 
 
 def warn_video_only(error: object) -> None:
@@ -77,10 +80,10 @@ class SaveSvtAv1:
             width,
             height,
         )
-        output_name = f"{filename}_{counter:05}_.{video_suffix}"
+        output_name = f"{filename}_{counter:05}_{video_suffix}"
         output_path = os.path.join(output_dir, output_name)
         partial_path = os.path.join(
-            output_dir, f"{filename}_{counter:05}_.partial.{video_suffix}"
+            output_dir, f"{filename}_{counter:05}_.partial{video_suffix}"
         )
         frame_rate = Fraction(fps).limit_denominator(1001)
 
@@ -199,6 +202,8 @@ class SaveSvtAv1:
                     warn_video_only(error)
 
         os.replace(partial_path, output_path)
+        # ロスレスのままでは公開用には大きすぎるので、配布用の圧縮版も裏で作る。
+        start_share_encode(Path(output_path), video_suffix)
 
         return {
             "ui": {

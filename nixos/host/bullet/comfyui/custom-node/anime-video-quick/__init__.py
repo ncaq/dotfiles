@@ -22,6 +22,8 @@ import torch
 from comfy_extras.nodes_model_advanced import ModelSamplingSD3
 from PIL import Image
 
+from .share_encode import start_share_encode
+
 
 anime_style_prefix = "Anime style, 2D cel animation, flat colors."
 # 拡張子にロスレスかどうかとコーデック名も含めて、
@@ -662,6 +664,8 @@ class AnimeVideoQuick:
                 for path in video_paths
             ):
                 concat_videos(video_paths, final_path)
+            # 区間は途中経過で配布物ではないので、結合後の完成品だけ圧縮版を作る。
+            start_share_encode(final_path, video_suffix)
             manifest["status"] = "completed"
             manifest["video"] = str(final_path)
             manifest.pop("error", None)

@@ -22,6 +22,7 @@ import torch
 from comfy_extras.nodes_model_advanced import ModelSamplingSD3
 from PIL import Image
 
+from .optimize_png import start_optimize_png
 from .share_encode import start_share_encode
 
 
@@ -119,6 +120,9 @@ def save_image(image: torch.Tensor, path: Path) -> None:
     temporary = path.with_suffix(".partial.png")
     Image.fromarray(array, "RGB").save(temporary)
     os.replace(temporary, path)
+    # キーフレームは配布物ではないが、
+    # 縮めても画素は変わらないので動画の区間と違って除外する理由がない。
+    start_optimize_png(path)
 
 
 def load_image(path: Path) -> torch.Tensor:
@@ -410,9 +414,14 @@ def sanitize_job_id(job_id: str) -> str:
     return re.sub(r"[^A-Za-z0-9._-]+", "-", job_id.strip()).strip(".-")
 
 
-def file_fingerprint(path: Path, base: Path) -> tuple[str, int, int]:
+def file_fingerprint(path: Path, base: Path) -> tuple[str, int]:
+    # ファイルサイズは見ない。
+    # キーフレームは保存後にoxipngが縮めるため、
+    # 内容が同じままサイズだけ後から変わる。
+    # oxipngへは`--preserve`を渡していて更新日時は動かないので、
+    # 更新日時だけを見れば作り直しを検出できる。
     status = path.stat()
-    return path.relative_to(base).as_posix(), status.st_mtime_ns, status.st_size
+    return path.relative_to(base).as_posix(), status.st_mtime_ns
 
 
 class AnimeVideoQuick:

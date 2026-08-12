@@ -1,5 +1,5 @@
 # Animaによる通常のimg2img画像編集。
-# 入力画像をQwen-Image VAEでlatent化し、denoiseで元画像を残す強さを調整する。
+# 入力画像をQwen-Image VAEでlatent化し、start_at_stepで元画像を残す強さを調整する。
 # 入力画像はアスペクト比を維持して約1MPへスケールし、
 # Animaのlatent寸法制約を満たすように各辺を16の倍数へ揃える。
 # 目標画素数はApp Modeのmegapixels入力で変更できる。

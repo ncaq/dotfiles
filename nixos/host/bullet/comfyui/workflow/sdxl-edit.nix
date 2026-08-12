@@ -1,13 +1,19 @@
 # SDXL系モデルの通常のimg2imgによる画像編集。
 # Anima系モデルを使う場合はanima-editを使う。
 # 既存の画像を読み込んでVAEでlatentへ変換して、
-# 低めのdenoiseで再サンプリングすることで、
+# ノイズ除去の途中から再サンプリングすることで、
 # 元画像の構図を残したままプロンプトに沿って描き直す。
 #
-# denoiseの目安:
-# 0.3前後で色味や質感の微調整、
-# 0.5前後で描き込みの変更、
-# 0.7以上で構図だけ借りた大胆な変更。
+# 変える強さはKSamplerAdvancedの`start_at_step`で指定する。
+# 全28ステップのどこから流すかという指定なので、
+# 大きいほど元画像が残り、実行するステップ数もその分だけ減る。
+# denoiseと違って強さとステップ数が連動するため、
+# 強さを変えてもステップ数を付け替えずに済む。
+#
+# start_at_stepの目安(全28ステップ):
+# 20前後で色味や質感の微調整(denoise 0.3相当)、
+# 14前後で描き込みの変更(denoise 0.5相当)、
+# 9以下で構図だけ借りた大胆な変更(denoise 0.7以上相当)。
 { lib, ... }:
 let
   name = "sdxl-edit";
@@ -36,10 +42,10 @@ in
           height = 120;
           description = "画像に含めたくない内容";
         })
-        (mkAppInputWith 5 "denoise" {
-          description = "元画像を変える強さ。0.3で微調整、0.5で描き直し、0.7以上で大胆に変更";
+        (mkAppInputWith 5 "start_at_step" {
+          description = "全28ステップ中のどこから描き直すか。20で微調整、14で描き直し、8以下で大胆に変更";
         })
-        (mkAppInput 5 "seed")
+        (mkAppInput 5 "noise_seed")
       ];
       outputs = [ 7 ];
     };

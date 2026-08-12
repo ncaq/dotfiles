@@ -18,6 +18,8 @@ let
   orderTest = import ./lib/order-test.nix { inherit lib; };
   overlap = import ./lib/overlap.nix { inherit lib; };
   overlapTest = import ./lib/overlap-test.nix { inherit lib; };
+  widget = import ./lib/widget.nix { inherit lib; };
+  widgetTest = import ./lib/widget-test.nix { inherit lib; };
   describeOverlap =
     pair: "  ${toString pair.a.id}(${pair.a.label}) と ${toString pair.b.id}(${pair.b.label})";
   modelNames = lib.flatten (
@@ -41,6 +43,7 @@ assert duplicateTest;
 assert linkTest;
 assert orderTest;
 assert overlapTest;
+assert widgetTest;
 {
   config.assertions = lib.concatLists (
     lib.mapAttrsToList (
@@ -50,6 +53,7 @@ assert overlapTest;
         linkErrors = link.invalidReferences workflow;
         orderErrors = order.orderErrors workflow;
         overlappingNodePairs = overlap.overlappingNodePairs workflow.nodes;
+        appInputWidgetErrors = widget.appInputWidgetErrors workflow;
         nodeIds = map (node: node.id) workflow.nodes;
         appInputs = workflow.extra.linearData.inputs or [ ];
         appOutputs = workflow.extra.linearData.outputs or [ ];
@@ -97,6 +101,13 @@ assert overlapTest;
         {
           assertion = invalidAppInputIds == [ ];
           message = "ComfyUIワークフロー${name}のApp Mode入力が存在しないノードを参照しています: ${toString invalidAppInputIds}";
+        }
+        {
+          assertion = appInputWidgetErrors == [ ];
+          message = ''
+            ComfyUIワークフロー${name}のApp Mode入力が以下のウィジェットを指せません:
+            ${lib.concatStringsSep "\n" appInputWidgetErrors}
+          '';
         }
         {
           assertion = invalidAppOutputIds == [ ];

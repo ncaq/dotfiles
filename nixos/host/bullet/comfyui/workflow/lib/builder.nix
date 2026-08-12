@@ -15,6 +15,39 @@ let
   defaultHeight = 1216;
   # Qwen-Image VAEの8倍圧縮とAnimaのspatial patch size 2を掛けた画像寸法の整列単位。
   animaSizeMultiple = 16;
+  # denoise 1のtxt2imgで使うステップ数。
+  # SDXL(Illustrious系)とAnimaでそれぞれの推奨値が違う。
+  baseSteps = 28;
+  animaBaseSteps = 30;
+  # denoiseを下げた再サンプリングで使うステップ数を求める。
+  #
+  # ComfyUIのKSamplerはdenoiseを下げても`steps`の回数だけサンプリングする。
+  # `int(steps / denoise)`ステップ分のsigma列を作ってその末尾`steps`個を使う実装で、
+  # A1111のように実行回数が`steps * denoise`へ減ることはない。
+  # そのためdenoiseを下げただけのつもりで素の生成より重い設定になりやすい。
+  # sigmaの刻み密度を素の生成へ揃えるには`基準のsteps * denoise`にすれば良い。
+  #
+  # 四捨五入ではなく切り捨てるのは、
+  # 刻み密度を素の生成以下に保って実行コストの上限も同時に押さえるためと、
+  # 積がちょうど0.5になる組み合わせで結果をdoubleの転び方に委ねないためである。
+  # `30 * 0.35`のように実際に使う値がこの境界に乗っていて、
+  # 四捨五入では1ステップの差が浮動小数点の表現誤差次第になる。
+  stepsForDenoise = base: denoise: lib.max 1 (builtins.floor (base * denoise));
+  # 強さを実行時に変えるワークフロー向けに、
+  # 同じサンプリングをKSamplerAdvancedの`start_at_step`として表した値を求める。
+  #
+  # KSamplerAdvancedは`steps`本のsigma列の`start_at_step`番目から流すため、
+  # 実行回数が`steps - start_at_step`になり、
+  # 刻み密度は常に素の生成と同じまま強さだけが変わる。
+  # denoiseと違って強さとステップ数が構造的に連動するので、
+  # 実行時に強さを変えてもステップ数の付け替えが要らない。
+  #
+  # denoiseが1以上だと0以下を返して全ステップ実行に戻ってしまうため、
+  # 呼び出し側の想定外の値を表明で弾く。
+  startStepForDenoise =
+    base: denoise:
+    assert lib.assertMsg (denoise < 1) "startStepForDenoiseはdenoiseが1未満の時にだけ意味を持ちます";
+    base - (stepsForDenoise base denoise);
   # seedウィジェットは値の直後に実行後の挙動(randomizeなど)が並ぶ。
   seedWidgets = [
     0
@@ -209,6 +242,8 @@ let
       # falseにするとEmptyLatentImage(ノード4)を生成しない。
       withEmptyLatent ? true,
       # img2imgでは1未満にして元画像の構図を残す。
+      # 1未満ならKSamplerではなくKSamplerAdvancedを使い、
+      # 対応する`start_at_step`へ変換して配置する。
       denoise ? 1,
       # withEmptyLatent = falseで代替ノードを複数挟む場合に、
       # KSamplerのorderを後ろへずらすための値。
@@ -311,14 +346,15 @@ let
     ++ [
       (mkNode {
         id = 5;
-        type = "KSampler";
+        type = if denoise < 1 then "KSamplerAdvanced" else "KSampler";
         pos = [
           920
           200
         ];
+        # KSamplerAdvancedはウィジェットが3つ多い分だけ背が高い。
         size = [
           315
-          262
+          (if denoise < 1 then 334 else 262)
         ];
         order = samplerOrder;
         inputs = [
@@ -328,13 +364,28 @@ let
           (mkInput "latent_image" "LATENT" 6)
         ];
         outputs = [ (mkOutput "LATENT" "LATENT" [ 7 ]) ];
-        widgets = seedWidgets ++ [
-          28 # steps
-          5.5 # cfg
-          samplerName
-          schedulerName
-          denoise
-        ];
+        widgets =
+          if denoise < 1 then
+            [ "enable" ] # add_noise
+            ++ seedWidgets
+            ++ [
+              baseSteps # steps
+              5.5 # cfg
+              samplerName
+              schedulerName
+              (startStepForDenoise baseSteps denoise) # start_at_step
+              10000 # end_at_step(実際の終端はstepsで決まる)
+              "disable" # return_with_leftover_noise
+            ]
+          else
+            seedWidgets
+            ++ [
+              baseSteps # steps
+              5.5 # cfg
+              samplerName
+              schedulerName
+              denoise
+            ];
       })
     ];
   # EmptyLatentImage由来のリンク6を含まない共通リンク。
@@ -443,5 +494,9 @@ in
     samplerName
     schedulerName
     animaSizeMultiple
+    baseSteps
+    animaBaseSteps
+    stepsForDenoise
+    startStepForDenoise
     ;
 }

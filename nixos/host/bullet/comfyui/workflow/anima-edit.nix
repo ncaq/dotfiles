@@ -5,10 +5,16 @@
 # 目標画素数はApp Modeのmegapixels入力で変更できる。
 # 指示箇所だけを変更するqwen-editと違い、画像全体をプロンプトに沿って描き直す。
 #
-# denoiseの目安:
-# 0.2から0.35で色や線を維持した微調整、
-# 0.35から0.55で一般的な描き直し、
-# 0.55から0.75で大幅なスタイルや内容の変更。
+# 変える強さはKSamplerAdvancedの`start_at_step`で指定する。
+# 全30ステップのどこから流すかという指定なので、
+# 大きいほど元画像が残り、実行するステップ数もその分だけ減る。
+# denoiseと違って強さとステップ数が連動するため、
+# 強さを変えてもステップ数を付け替えずに済む。
+#
+# start_at_stepの目安(全30ステップ):
+# 20から24で色や線を維持した微調整(denoise 0.2から0.35相当)、
+# 14から20で一般的な描き直し(denoise 0.35から0.55相当)、
+# 8から14で大幅なスタイルや内容の変更(denoise 0.55から0.75相当)。
 { lib, ... }:
 let
   name = "anima-edit";
@@ -23,7 +29,12 @@ let
     mkFilenamePrefix
     seedWidgets
     animaSizeMultiple
+    animaBaseSteps
+    startStepForDenoise
     ;
+  # App Modeから変えられる強さのデフォルト値。
+  # denoise 0.5相当の位置から流す。
+  denoise = 0.5;
 in
 {
   local.comfyui.workflows.${name} = mkWorkflow {
@@ -39,10 +50,10 @@ in
           height = 140;
           description = "画像に含めたくない内容";
         })
-        (mkAppInputWith 9 "denoise" {
-          description = "元画像を変える強さ。0.3で微調整、0.5で描き直し、0.7で大幅に変更";
+        (mkAppInputWith 9 "start_at_step" {
+          description = "全30ステップ中のどこから描き直すか。21で微調整、15で描き直し、9で大幅に変更";
         })
-        (mkAppInput 9 "seed")
+        (mkAppInput 9 "noise_seed")
         (mkAppInput 7 "megapixels")
       ];
       outputs = [ 12 ];
@@ -224,14 +235,14 @@ in
       })
       (mkNode {
         id = 9;
-        type = "KSampler";
+        type = "KSamplerAdvanced";
         pos = [
           1460
           180
         ];
         size = [
           315
-          262
+          334
         ];
         order = 9;
         inputs = [
@@ -241,12 +252,18 @@ in
           (mkInput "latent_image" "LATENT" 11)
         ];
         outputs = [ (mkOutput "LATENT" "LATENT" [ 12 ]) ];
-        widgets = seedWidgets ++ [
-          40 # steps
+        widgets = [
+          "enable"
+        ] # add_noise
+        ++ seedWidgets
+        ++ [
+          animaBaseSteps # steps
           4 # cfg
           "euler" # sampler_name
           "simple" # scheduler
-          0.5 # denoise
+          (startStepForDenoise animaBaseSteps denoise) # start_at_step
+          10000 # end_at_step(実際の終端はstepsで決まる)
+          "disable" # return_with_leftover_noise
         ];
       })
       (mkNode {

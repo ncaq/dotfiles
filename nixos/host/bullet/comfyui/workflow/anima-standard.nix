@@ -17,7 +17,11 @@ let
     mkFilenamePrefix
     seedWidgets
     animaSizeMultiple
+    animaBaseSteps
+    stepsForDenoise
     ;
+  hiresDenoise = 0.3;
+  faceDenoise = 0.35;
 in
 {
   local.comfyui.workflows.${name} = mkWorkflow {
@@ -250,7 +254,7 @@ in
         ];
         order = 8;
         outputs = [ (mkOutput "UPSCALE_MODEL" "UPSCALE_MODEL" [ 9 ]) ];
-        widgets = [ "4x-AnimeSharp.safetensors" ];
+        widgets = [ "2x-AnimeSharpV4_Fast_RCAN_PU.safetensors" ];
       })
       (mkNode {
         id = 16;
@@ -290,7 +294,7 @@ in
         ];
         outputs = [ (mkOutput "LATENT" "LATENT" [ 7 ]) ];
         widgets = seedWidgets ++ [
-          30 # steps
+          animaBaseSteps # steps
           4 # cfg
           "euler" # sampler_name
           "simple" # scheduler
@@ -333,7 +337,8 @@ in
         ];
         outputs = [ (mkOutput "IMAGE" "IMAGE" [ 12 ]) ];
       })
-      # 4倍アップスケール後に0.375倍へ縮小し、全体で1.5倍にする。
+      # 2倍アップスケール後に0.75倍へ縮小し、全体で1.5倍にする。
+      # 縮小を挟むのはスーパーサンプリングになってエッジが整うため。
       (mkNode {
         id = 12;
         type = "ImageScaleBy";
@@ -350,7 +355,7 @@ in
         outputs = [ (mkOutput "IMAGE" "IMAGE" [ 29 ]) ];
         widgets = [
           "area" # upscale_method
-          0.375 # scale_by
+          0.75 # scale_by
         ];
       })
       # 1.5倍後の各辺を中央cropし、Animaが要求する16の倍数へ揃える。
@@ -408,13 +413,15 @@ in
           (mkInput "latent_image" "LATENT" 17)
         ];
         outputs = [ (mkOutput "LATENT" "LATENT" [ 18 ]) ];
+        # stepsは`stepsForDenoise`で素の生成と刻み密度を揃える。
+        # 1536x1536の1ステップは1024x1024の2.6倍かかるため、ここのstepsが最も効く。
         widgets = seedWidgets ++ [
-          18 # steps
+          (stepsForDenoise animaBaseSteps hiresDenoise) # steps
           4 # cfg
           "euler" # sampler_name
           "simple" # scheduler
           # 元の構図と顔を維持しながらアップスケーラの細部だけを再生成する。
-          0.3 # denoise
+          hiresDenoise
         ];
       })
       (mkNode {
@@ -471,11 +478,11 @@ in
         ]
         ++ seedWidgets
         ++ [
-          18 # steps
+          (stepsForDenoise animaBaseSteps faceDenoise) # steps
           4 # cfg
           "euler" # sampler_name
           "simple" # scheduler
-          0.35 # denoise
+          faceDenoise
           5 # feather
           true # noise_mask
           true # force_inpaint

@@ -3,7 +3,7 @@
 # 解像度と保存名を変えたワークフローを作るための共有部品で、
 # ワークフローとして直接は配置されない。
 #
-# hires fixは4倍アップスケール後に0.375倍へ縮小するので、
+# hires fixは2倍アップスケール後に0.75倍へ縮小するので、
 # 最終出力は生成解像度の1.5倍になる。
 #
 # FaceDetailerの`widgets_values`の並びは、
@@ -35,7 +35,11 @@ let
     seedWidgets
     samplerName
     schedulerName
+    baseSteps
+    stepsForDenoise
     ;
+  hiresDenoise = 0.45;
+  faceDenoise = 0.5;
 in
 mkWorkflow {
   app = {
@@ -110,7 +114,7 @@ mkWorkflow {
         ];
         order = 6;
         outputs = [ (mkOutput "UPSCALE_MODEL" "UPSCALE_MODEL" [ 9 ]) ];
-        widgets = [ "4x-AnimeSharp.safetensors" ];
+        widgets = [ "2x-AnimeSharpV4_Fast_RCAN_PU.safetensors" ];
       })
       (mkNode {
         id = 8;
@@ -130,8 +134,9 @@ mkWorkflow {
         ];
         outputs = [ (mkOutput "IMAGE" "IMAGE" [ 11 ]) ];
       })
-      # 4倍アップスケール後に0.375倍へ縮小して、
+      # 2倍アップスケール後に0.75倍へ縮小して、
       # 全体で1.5倍のhires fixにする。
+      # 縮小を挟むのはスーパーサンプリングになってエッジが整うため。
       (mkNode {
         id = 9;
         type = "ImageScaleBy";
@@ -148,7 +153,7 @@ mkWorkflow {
         outputs = [ (mkOutput "IMAGE" "IMAGE" [ 12 ]) ];
         widgets = [
           "area" # upscale_method
-          0.375 # scale_by
+          0.75 # scale_by
         ];
       })
       (mkNode {
@@ -170,6 +175,7 @@ mkWorkflow {
         outputs = [ (mkOutput "LATENT" "LATENT" [ 17 ]) ];
       })
       # 2パス目。低めのdenoiseで書き込みを増やす。
+      # stepsは`stepsForDenoise`で素の生成と刻み密度を揃える。
       (mkNode {
         id = 11;
         type = "KSampler";
@@ -190,11 +196,11 @@ mkWorkflow {
         ];
         outputs = [ (mkOutput "LATENT" "LATENT" [ 18 ]) ];
         widgets = seedWidgets ++ [
-          20 # steps
+          (stepsForDenoise baseSteps hiresDenoise) # steps
           5.5 # cfg
           samplerName
           schedulerName
-          0.45 # denoise
+          hiresDenoise
         ];
       })
       (mkNode {
@@ -269,11 +275,11 @@ mkWorkflow {
         ]
         ++ seedWidgets
         ++ [
-          20 # steps
+          (stepsForDenoise baseSteps faceDenoise) # steps
           5.5 # cfg
           samplerName
           schedulerName
-          0.5 # denoise
+          faceDenoise
           5 # feather
           true # noise_mask
           true # force_inpaint

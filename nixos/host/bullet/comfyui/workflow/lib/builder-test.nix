@@ -208,7 +208,28 @@ assert lib.assertMsg (lib.all (
   node: node.id != 4
 ) img2imgNodes) "withEmptyLatent = falseなのにEmptyLatentImageが生成されています";
 assert lib.assertMsg (img2imgSampler.order == 7) "samplerOrderがKSamplerへ反映されていません";
-assert lib.assertMsg (lib.last img2imgSampler.widgets_values == 0.5) "denoiseがKSamplerへ反映されていません";
+# denoise 1未満はKSamplerAdvancedになり、
+# 強さは実行ステップ数と連動する`start_at_step`として表される。
+assert lib.assertMsg (
+  img2imgSampler.type == "KSamplerAdvanced"
+) "denoise 1未満なのにKSamplerAdvancedになっていません";
+assert lib.assertMsg (
+  img2imgSampler.widgets_values == [
+    "enable"
+    0
+    "randomize"
+    28
+    5.5
+    "euler_ancestral"
+    "normal"
+    14
+    10000
+    "disable"
+  ]
+) "denoiseがstart_at_stepへ変換されていません";
+assert lib.assertMsg (
+  (findNode (builder.promptNodes { }) 5).type == "KSampler"
+) "denoise 1なのにKSamplerになっていません";
 assert lib.assertMsg (
   outputLinks extraNodes 16 0 == [
     1

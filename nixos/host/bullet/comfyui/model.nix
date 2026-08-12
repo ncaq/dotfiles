@@ -187,18 +187,17 @@ let
       };
     };
     upscale_models = {
-      # アニメ絵向けの定番アップスケーラ。
-      "4x-AnimeSharp.safetensors" = fetchHuggingFace {
+      # hires fixは1.5倍しか要らないため、
+      # 4倍モデルを通して0.375倍へ縮めるより2倍モデルを0.75倍へ縮める方が計算量が減る。
+      # RCAN PixelUnshuffle版は作者いわく通常のRCAN版の約95%の品質で大幅に速い。
+      # 実測では832x1216の入力に対して、
+      # 4x-AnimeSharpの1.44秒や通常のRCAN版の0.88秒に対して0.36秒で済む。
+      "2x-AnimeSharpV4_Fast_RCAN_PU.safetensors" = fetchHuggingFace {
         owner = "Kim2091";
-        repo = "AnimeSharp";
-        rev = "7696d95ced82b0c1f2a41f6ac73336133f0a90e1";
-        file = "4x-AnimeSharp.safetensors";
-        hash = "sha256-f8YAVNKRV5rKxPtTfv2RyAYRy9KB74uQ9DQEjMExOzk=";
-      };
-      # Real-ESRGANのアニメ特化軽量版。
-      "RealESRGAN_x4plus_anime_6B.pth" = pkgs.fetchurl {
-        url = "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.2.4/RealESRGAN_x4plus_anime_6B.pth";
-        hash = "sha256-+HLYN9PJDtLgUie+1xGvVnGm/RyffX6RyRGmHxVemdo=";
+        repo = "2x-AnimeSharpV4";
+        rev = "1a9339b5c308ab3990f6233be2c1169a75772878";
+        file = "2x-AnimeSharpV4_Fast_RCAN_PU.safetensors";
+        hash = "sha256-tkHJ6xC0PyZTgXeqjw/vi5/CoVOv0UMdCgYqhMSc5tA=";
       };
     };
     # ComfyUI-SeedVR2_VideoUpscalerが登録する専用モデルディレクトリ。

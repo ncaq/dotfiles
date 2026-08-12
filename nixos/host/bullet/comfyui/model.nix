@@ -192,6 +192,16 @@ let
       # RCAN PixelUnshuffle版は作者いわく通常のRCAN版の約95%の品質で大幅に速い。
       # 実測では832x1216の入力に対して、
       # 4x-AnimeSharpの1.44秒や通常のRCAN版の0.88秒に対して0.36秒で済む。
+      #
+      # ライセンスはCC BY-NC-SA 4.0。
+      # 表示と同一ライセンスでの継承を守れば非商用の範囲で再配布も改変もできて、
+      # 商用利用だけが別途許諾を要する。
+      # https://huggingface.co/Kim2091/2x-AnimeSharpV4
+      #
+      # RCAN PixelUnshuffleの読み込みにはspandrel 0.4.1以降が必要。
+      # spandrelはutensils-comfyui-nix経由の推移的依存でこちらでは固定しておらず、
+      # アーキテクチャの判定は評価時ではなくUpscaleModelLoaderの実行時に起きる。
+      # 4x-AnimeSharpはESRGAN系で古いspandrelでも読めたため、これは新しく生じた制約になる。
       "2x-AnimeSharpV4_Fast_RCAN_PU.safetensors" = fetchHuggingFace {
         owner = "Kim2091";
         repo = "2x-AnimeSharpV4";

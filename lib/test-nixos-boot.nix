@@ -32,6 +32,21 @@ lib.mapAttrs (
     # `or`で無いものとして扱います。
     tailscaleServe = hostDef.nixosSystem.config.local.tailscaleServe or null;
     curl = lib.getExe (importPkgsStable hostDef.system).curl;
+
+    # `nixos/core/caddy.nix`がadmin APIをUNIXソケットへ移せているかを確認します。
+    # 設定が外れてもCaddyは既定の`127.0.0.1:2019`で普通に起動してしまうので、
+    # 他のテストは全て通ったまま無言で退行します。
+    #
+    # 判定条件をTailscale Serviceの有無ではなくCaddyの有無にしているのは、
+    # `nixos/core/caddy.nix`がCaddyを有効にした全ホストに効くからです。
+    caddyAdminTest =
+      lib.optionalString hostDef.nixosSystem.config.services.caddy.enable # python
+        ''
+          machine.wait_for_unit("caddy.service")
+          machine.succeed("test -S /run/caddy/admin.sock")
+          machine.fail("${curl} --fail --silent --max-time 3 http://127.0.0.1:2019/config/")
+        '';
+
     redirectTest =
       # 文字列の中身は`runNixOSTest`のテストドライバが実行するPythonです。
       # 直前の`# python`はtree-sitterなどに埋め込み言語を伝えてハイライトさせる、
@@ -110,6 +125,7 @@ lib.mapAttrs (
     + lib.concatMapStrings (socket: ''
       machine.wait_for_unit("${socket}.socket")
     '') proxySockets
+    + caddyAdminTest
     + redirectTest;
   }
 ) (lib.filterAttrs (_: def: !(def.nixosSystem.config.wsl.enable or false)) hostDefs)

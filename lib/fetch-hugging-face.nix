@@ -13,6 +13,9 @@
 # 多数のモデルをまとめて取得すると429で待たされることがあるためです。
 # トークンが無い環境でも公開リポジトリなら取得できるので必須ではありません。
 { pkgs }:
+let
+  inherit (pkgs) lib;
+in
 {
   owner,
   repo,
@@ -29,7 +32,7 @@ pkgs.runCommand (builtins.baseNameOf file)
 
     # ビルド環境は隔離されているため、
     # 認証情報とプロキシ設定は明示的に持ち込む必要があります。
-    impureEnvVars = pkgs.lib.fetchers.proxyImpureEnvVars ++ [ "HF_TOKEN" ];
+    impureEnvVars = lib.fetchers.proxyImpureEnvVars ++ [ "HF_TOKEN" ];
 
     SSL_CERT_FILE = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
     # Xetの転送並列度を上げます。
@@ -52,6 +55,11 @@ pkgs.runCommand (builtins.baseNameOf file)
     export HOME="$PWD"
     export HF_HOME="$PWD/hf-home"
 
-    hf download ${owner}/${repo} ${file} --revision ${rev} --local-dir dl
-    mv dl/${file} "$out"
+    # 引数は`escapeShellArg`でクォートします。
+    # 呼び出し元はリポジトリ内の固定文字列ですが、
+    # Hugging Faceのリポジトリには空白やグロブ文字を含むパスが実在し得るため、
+    # 単語分割やパス名展開で別のファイルを取ってしまう事故を防ぎます。
+    hf download ${lib.escapeShellArg "${owner}/${repo}"} ${lib.escapeShellArg file} \
+      --revision ${lib.escapeShellArg rev} --local-dir dl
+    mv ${lib.escapeShellArg "dl/${file}"} "$out"
   ''

@@ -1,11 +1,28 @@
 {
+  lib,
   pkgs,
   config,
-  lib,
   ...
 }:
 let
   backlog-mcp-server = pkgs.callPackage ../../pkgs/backlog-mcp-server.nix { };
+  # Hugging FaceのMCPサーバはリモートのHTTPサーバなので、
+  # ファイルベースのシークレットを渡せる`env`が使えません。
+  # 代わりにClaude Codeの`headersHelper`から呼び出して、
+  # 接続時にsops-nixが復号したトークンを読み出しヘッダを組み立てます。
+  # トークンをプロセス環境や`.mcp.json`に置かずに済みます。
+  hf-mcp-server-auth-header = pkgs.writeShellApplication {
+    name = "hf-mcp-server-auth-header";
+    runtimeInputs = with pkgs; [ jq ];
+    text = ''
+      token_file=${lib.escapeShellArg config.sops.secrets."huggingface/read-only".path}
+      if ! token=$(<"$token_file"); then
+        printf 'hf-mcp-server-auth-header: %s を読み込めませんでした\n' "$token_file" >&2
+        exit 1
+      fi
+      jq -n --arg token "$token" '{ Authorization: "Bearer \($token)" }'
+    '';
+  };
 in
 {
   programs.mcp = {
@@ -30,6 +47,7 @@ in
       github = {
         # GitHub公式のローカル(stdio)MCPサーバを使用します。
         # リモートHTTPサーバ(url)ではenvが使えずファイルベースのシークレットを渡せないためです。
+        # nixpkgsにパッケージがあるので複雑なヘルパー認証ではなくローカル実行を選びます。
         command = lib.getExe pkgs.github-mcp-server;
         args = [ "stdio" ];
         env = {
@@ -37,7 +55,10 @@ in
         };
       };
       hf-mcp-server = {
-        url = "https://huggingface.co/mcp?login";
+        # `?login`を付けるとブラウザでのOAuth認証を要求されるため、
+        # 認証をヘッダで済ませられる素のエンドポイントを使います。
+        url = "https://huggingface.co/mcp";
+        headersHelper = lib.getExe hf-mcp-server-auth-header;
       };
       mdn = {
         url = "https://mcp.mdn.mozilla.net/";
@@ -78,6 +99,14 @@ in
     "github-mcp-server/pat" = {
       sopsFile = ../../secrets/github-mcp-server.yaml;
       key = "pat";
+      mode = "0400";
+    };
+    # Hugging Face MCP Serverにはread-onlyのトークンを渡します。
+    # エージェント経由の操作でHubに書き込んでしまう事故を防ぐためです。
+    # 書き込みも可能なトークンは`huggingface.nix`が`hf`コマンドにだけ渡します。
+    "huggingface/read-only" = {
+      sopsFile = ../../secrets/huggingface.yaml;
+      key = "token/read-only";
       mode = "0400";
     };
   };

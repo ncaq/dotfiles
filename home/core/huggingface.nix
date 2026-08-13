@@ -20,6 +20,10 @@
       # 旧来の`HF_HUB_ENABLE_HF_TRANSFER`はhf_transfer自体が使われなくなり、
       # こちらが後継として案内されています。
       HF_XET_HIGH_PERFORMANCE = "1";
+      # 起動のたびにPyPIへ新しいバージョンが無いか問い合わせるのを止めます。
+      # nixpkgsが固定したバージョンを使うため`hf update`は実行できず、
+      # 更新を促されても取れる行動がありません。
+      HF_HUB_DISABLE_UPDATE_CHECK = "1";
     };
   };
   # Hugging Faceのアクセストークンをsops-nixで管理します。

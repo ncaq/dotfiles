@@ -36,6 +36,9 @@ in
           GITHUB_PERSONAL_ACCESS_TOKEN.file = config.sops.secrets."github-mcp-server/pat".path;
         };
       };
+      hf-mcp-server = {
+        url = "https://huggingface.co/mcp?login";
+      };
       mdn = {
         url = "https://mcp.mdn.mozilla.net/";
       };

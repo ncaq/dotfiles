@@ -58,6 +58,24 @@
     '';
   };
 
+  # fixed-output derivationのビルド環境にHugging Faceのトークンを渡します。
+  # `lib/fetch-hugging-face.nix`が`impureEnvVars`で受け取ります。
+  # Hugging Faceのレート制限は匿名だとIPアドレス単位でしか枠が無いため、
+  # 多数のモデルをまとめて取得すると429で待たされます。
+  # 認証するとアカウント単位の枠になり、
+  # 制限の値自体も上がります。
+  # `-`を付けてシークレットがまだ配置されていなくても起動できるようにします。
+  # nix-daemonはブート直後から必要になる一方、
+  # sopsの復号はgpg-vaultの起動を待つためです。
+  # トークンが無くても公開リポジトリのダウンロードは成功します。
+  # なおトークンを更新した場合は、
+  # nix-daemonを再起動するまで古い値が使われ続けます。
+  # `restartUnits`で自動再起動させると、
+  # `nixos-rebuild`の最中にそれ自身が使っているdaemonを落としてしまうため設定しません。
+  systemd.services.nix-daemon.serviceConfig.EnvironmentFile = "-${
+    config.sops.templates."nix-daemon-huggingface-token.env".path
+  }";
+
   sops = {
     # nix.confのfragmentを生成することでクライアント側にも読める設定ファイルにします。
     # 自分のアカウントだけのFine-grained personal access tokensで、
@@ -72,6 +90,15 @@
       group = "wheel"; # 信頼できるとしたユーザも読めるようにしておきます。
       mode = "0440"; # グループ所属のユーザも読み取れます。
     };
+    # nix-daemonのsystemdサービスに読ませる環境変数ファイルです。
+    templates."nix-daemon-huggingface-token.env" = {
+      content = ''
+        HF_TOKEN=${config.sops.placeholder."huggingface-read-only"}
+      '';
+      owner = "root";
+      group = "root";
+      mode = "0400";
+    };
     secrets = {
       # 最小権限の権限で`access-tokens`を設定します。
       # こちらはtemplatesが作れれば良いため、
@@ -79,6 +106,16 @@
       "github-nix-avoid-rate-limit-token" = {
         sopsFile = ../../secrets/github-nix-avoid-rate-limit.yaml;
         key = "nix-avoid-rate-limit";
+        owner = "root";
+        group = "root";
+        mode = "0400";
+      };
+      # `impureEnvVars`で受け取ったトークンは、
+      # 同じ変数名を指定した任意のfixed-output derivationから読めます。
+      # ダウンロードにしか使わないのでread-onlyのトークンを渡します。
+      "huggingface-read-only" = {
+        sopsFile = ../../secrets/huggingface.yaml;
+        key = "token/read-only";
         owner = "root";
         group = "root";
         mode = "0400";

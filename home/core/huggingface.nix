@@ -13,7 +13,14 @@
     # パスだけを環境変数に置けばトークン自体をプロセス環境に晒さずに済みます。
     # 書き込み権限を持つトークンを使うのは対話的に操作する`hf`コマンドだけにして、
     # エージェント経由で動くMCPサーバには`mcp.nix`でread-onlyトークンを渡します。
-    sessionVariables.HF_TOKEN_PATH = config.sops.secrets."huggingface/dotfiles".path;
+    sessionVariables = {
+      HF_TOKEN_PATH = config.sops.secrets."huggingface/dotfiles".path;
+      # Xetストレージからの転送並列度を上げます。
+      # メモリと帯域を多く使う代わりに大きなファイルのダウンロードが速くなります。
+      # 旧来の`HF_HUB_ENABLE_HF_TRANSFER`はhf_transfer自体が使われなくなり、
+      # こちらが後継として案内されています。
+      HF_XET_HIGH_PERFORMANCE = "1";
+    };
   };
   # Hugging Faceのアクセストークンをsops-nixで管理します。
   # シークレットファイルは

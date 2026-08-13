@@ -11,7 +11,7 @@
 # 認証なしでも安定して取得できるHugging Faceのリポジトリのみを使う。
 # Civitaiからのオンデマンド取得はLoRA Manager(civitai.nix)が担う。
 # リポジトリの更新でハッシュがずれないように、
-# URLは`resolve/main`ではなくcommit hashで固定する。
+# リビジョンは`main`ではなくcommit hashで固定する。
 {
   lib,
   pkgs,

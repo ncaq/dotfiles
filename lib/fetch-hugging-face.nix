@@ -36,8 +36,11 @@ pkgs.runCommand (builtins.baseNameOf file)
 
     SSL_CERT_FILE = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
     # Xetの転送並列度を上げます。
-    # メモリと帯域を多く使いますが、
-    # ダウンロードしかしないビルドなので他の作業を圧迫しません。
+    # 同時接続数とワーカースレッド数と内部バッファが増えるため、
+    # `nixos/core/nix-daemon.nix`の`max-jobs = 3`の下では、
+    # コンパイルを含む他のderivationやモデル取得同士と帯域とメモリを奪い合います。
+    # それでもモデルの取得は数十GBに達してビルド時間の大半を占めるので、
+    # 待ち時間の短縮を優先します。
     HF_XET_HIGH_PERFORMANCE = "1";
     # プログレスバーは端末ではないビルドログでは更新のたびに行を増やすだけなので消します。
     HF_HUB_DISABLE_PROGRESS_BARS = "1";

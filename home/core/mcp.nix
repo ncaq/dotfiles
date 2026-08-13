@@ -11,11 +11,18 @@ let
   # 代わりにClaude Codeの`headersHelper`から呼び出して、
   # 接続時にsops-nixが復号したトークンを読み出しヘッダを組み立てます。
   # トークンをプロセス環境や`.mcp.json`に置かずに済みます。
+  #
+  # 渡すのは`huggingface.nix`と同じ書き込み可能なトークンです。
+  # 以前はエージェントの誤操作を防ぐためにread-onlyのトークンを分けていましたが、
+  # `HF_TOKEN_PATH`が`home.sessionVariables`にある以上、
+  # ログインセッション配下で動くエージェントは`hf`コマンド経由で書き込み可能なトークンに到達できます。
+  # MCPサーバだけをread-onlyにしても実効的な分離にならないため、
+  # 見かけ上の安全を作るのをやめて実態に揃えます。
   hf-mcp-server-auth-header = pkgs.writeShellApplication {
     name = "hf-mcp-server-auth-header";
     runtimeInputs = with pkgs; [ jq ];
     text = ''
-      token_file=${lib.escapeShellArg config.sops.secrets."huggingface/read-only".path}
+      token_file=${lib.escapeShellArg config.sops.secrets."huggingface/dotfiles".path}
       if ! token=$(<"$token_file"); then
         printf 'hf-mcp-server-auth-header: %s を読み込めませんでした\n' "$token_file" >&2
         exit 1
@@ -99,14 +106,6 @@ in
     "github-mcp-server/pat" = {
       sopsFile = ../../secrets/github-mcp-server.yaml;
       key = "pat";
-      mode = "0400";
-    };
-    # Hugging Face MCP Serverにはread-onlyのトークンを渡します。
-    # エージェント経由の操作でHubに書き込んでしまう事故を防ぐためです。
-    # 書き込みも可能なトークンは`huggingface.nix`が`hf`コマンドにだけ渡します。
-    "huggingface/read-only" = {
-      sopsFile = ../../secrets/huggingface.yaml;
-      key = "token/read-only";
       mode = "0400";
     };
   };

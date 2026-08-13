@@ -85,21 +85,8 @@ in
       {
         lib,
         pkgs,
-        config,
         ...
       }:
-      let
-        comfyuiPython = config.services.comfyui.package.pythonRuntime.python;
-        # python.pkgs.torchはoverride前なので、実行環境に含まれるCUDA wheel版を使う。
-        torch = lib.findFirst (
-          pkg: lib.getName pkg == "torch"
-        ) (throw "torch not found in comfyui heavyDeps") config.services.comfyui.package.heavyDeps;
-        sageattention = comfyuiPython.pkgs.callPackage ../../../../pkgs/sageattention.nix {
-          inherit torch;
-          # torchの全CUDA世代ではなく、RTX 5090向けのカーネルだけをビルドする。
-          cudaCapabilities = [ "12.0" ];
-        };
-      in
       {
         imports = [ inputs.utensils-comfyui-nix.nixosModules.default ];
         system.stateVersion = "26.05";
@@ -126,20 +113,35 @@ in
           extraArgs = [
             # WanのRoPEやFP8量子化処理をeager実装からTritonカーネルへ切り替える。
             "--enable-triton-backend"
+            "--fast"
             # FP16の行列積で低精度の累積を許可して、LoRAやFP16 fallbackを高速化する。
             # 丸め誤差が増えるため生成結果は変化する可能性がある。
-            "--fast"
             "fp16_accumulation"
+            # 重みがfp8_e4m3fnの層の行列積をTensor Coreのfp8演算で行う。
+            # 実測でbf16の0.622msに対しfp8は0.253msだった(4096角のGEMM)。
+            #
+            # 現在使っているモデルには効かない。
+            # 量子化済みモデルは各層に`comfy_quant`マーカーを持つため、
+            # `pick_operations`がこのフラグを見る前にmixed precision経路へ抜けて、
+            # 層ごとの量子化設定に従うためである。
+            # 効くのはマーカーを持たない素のfp8チェックポイントを足した時で、
+            # その時に指定し忘れないよう先に入れておく。
+            "fp8_matrix_mult"
             # xformers 0.0.30はBlackwell(sm_120)に対応していないため使わない。
-            # SageAttentionで動画生成の大半を占めるattentionを近似計算して高速化する。
-            "--use-sage-attention"
+            # comfy-kitchen同梱のINT8 attentionで、
+            # 動画生成の大半を占めるattentionを近似計算して高速化する。
+            #
+            # 自前ビルドのSageAttention 2.2.0から乗り換えた。
+            # (h=40, s=32760, d=128)のマイクロベンチではRTX 5090上で、
+            # PyTorch SDPAの99.12msに対しSageAttentionが37.65ms、こちらが39.75msで、
+            # ガウス乱数入力の相対誤差は前者0.0385に対しこちらが0.0160だった。
+            # 5%の速度差と引き換えにCUDAソースビルドを1つ丸ごと減らせる。
+            #
+            # 利用不可ならComfyUIは黙って別実装へ落ちずに起動時点で終了するので、
+            # 気付かないまま遅い実装で動き続けることはない。
+            "--use-ck-attention"
           ];
         };
-        # comfyui-nix同梱のSageAttention 1.0.6より新しい2.2.0を優先する。
-        # extraPythonPackagesでは同名パッケージが衝突するため、検索パスで差し替える。
-        systemd.services.comfyui.environment.PYTHONPATH = lib.makeSearchPath comfyuiPython.sitePackages [
-          sageattention
-        ];
         systemd.services.comfyui.path = with pkgs; [
           ffmpeg
           oxipng

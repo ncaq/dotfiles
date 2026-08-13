@@ -59,7 +59,7 @@ in
         order = 0;
         outputs = [ (mkOutput "MODEL" "MODEL" [ 21 ]) ];
         widgets = [
-          "qwen_image_edit_2511_fp8mixed.safetensors"
+          "qwen_image_edit_2511_int8_convrot.safetensors"
           "default" # weight_dtype
         ];
       })

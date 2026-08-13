@@ -706,11 +706,11 @@
         "nixpkgs": "nixpkgs_2"
       },
       "locked": {
-        "lastModified": 1785968480,
-        "narHash": "sha256-sCmqCPCXjFAo2oVxswnjdiOkS6bgpNVDogsEOK9cCRA=",
+        "lastModified": 1786584996,
+        "narHash": "sha256-2Zgg5vYChHvTE2bHIyTIST3omPdH01+WZ/gsl5Y+4Z4=",
         "owner": "utensils",
         "repo": "comfyui-nix",
-        "rev": "60cf396864c09e954f23b31c4637c2bb65ebe085",
+        "rev": "bbedf70a08ef2395da0a4b905e35a32e39bfd143",
         "type": "github"
       },
       "original": {

@@ -76,12 +76,26 @@ let
       };
       # 指示文で画像を編集するQwen-Image-Editの2025年11月版。
       # Comfy-Org公式の再パッケージ版。Apache 2.0ライセンス。
-      "qwen_image_edit_2511_fp8mixed.safetensors" = fetchHuggingFace {
+      #
+      # ConvRot INT8版を使う。
+      # 量子化の前に重みへ256要素グループ単位のアダマール回転をかけて、
+      # DiT特有の行方向の外れ値を分散させてからINT8にするQuaRot派生の方式で、
+      # 回転なしのINT8より誤差が1桁近く小さくなる。
+      # fp8mixed版は839層すべてのマーカーに`full_precision_matrix_mult`が立っていて、
+      # ファイルサイズが半分になるだけで行列積は逆量子化したbf16で走る。
+      # つまりこれはfp8からint8への乗り換えではなく、
+      # bf16計算からint8計算への乗り換えになる。
+      # RTX 5090の`4096x3072x3072`のlinearの実測では、
+      # bf16の0.353msに対しConvRot INT8は0.169msだった。
+      # 相対誤差はbf16の0.0017に対し0.0132で、
+      # 回転なしINT8の0.0596より大幅に良い。
+      # ファイルサイズはfp8mixedとほぼ同じなので保存側の増減はない。
+      "qwen_image_edit_2511_int8_convrot.safetensors" = fetchHuggingFace {
         owner = "Comfy-Org";
         repo = "Qwen-Image-Edit_ComfyUI";
         rev = "e9e85de74a8f48c1e3e2656617626348675a2f21";
-        file = "split_files/diffusion_models/qwen_image_edit_2511_fp8mixed.safetensors";
-        hash = "sha256-yf3BWORtO2HvdfIa6GbKL+gIv0pTZDEg0cHofBkoCk4=";
+        file = "split_files/diffusion_models/qwen_image_edit_2511_int8_convrot.safetensors";
+        hash = "sha256-EbWvWsYBgh1zkwyEhGyaFY5nF3NW2vknzhyNEPOWOCk=";
       };
       # Wan 2.2 I2V 14B MoEを高品質720pデータで4ステップ用に蒸留したfull expertモデル2つ。
       # LoRA近似ではなく蒸留済みの全重みを使い、

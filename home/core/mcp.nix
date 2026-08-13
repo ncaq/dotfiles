@@ -31,7 +31,17 @@ let
       # `--arg`はコマンドライン引数として渡すため、
       # jqの実行中は`/proc/<pid>/cmdline`から同一ホストの他プロセスに読めてしまいます。
       # ファイル末尾の改行はsopsが付けるので落とします。
-      jq -n --rawfile token "$token_file" '{ Authorization: "Bearer \($token | rtrimstr("\n"))" }'
+      #
+      # 空のトークンはjqの中で弾きます。
+      # そのまま通すと`Authorization: Bearer `という壊れたヘッダを出してしまい、
+      # Claude Code側では原因の分かりにくい401として現れるためです。
+      jq -n --rawfile token "$token_file" '
+        ($token | rtrimstr("\n")) as $trimmed
+        | if $trimmed == ""
+          then error("トークンが空です")
+          else { Authorization: "Bearer \($trimmed)" }
+          end
+      '
     '';
   };
 in

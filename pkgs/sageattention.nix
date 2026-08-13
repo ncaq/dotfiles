@@ -7,10 +7,14 @@
   triton,
   ninja,
   stdenv,
-  cudaPackages ? torch.cudaPackages,
   cudaCapabilities ? torch.cudaCapabilities,
 }:
 let
+  # CUDAパッケージセットは引数で受け取らずtorchが公開するものを必ず使う。
+  # 引数にするとcallPackageがスコープの`cudaPackages`を先に埋めてしまい、
+  # nixpkgs既定のCUDAとtorch wheelのCUDAがずれると、
+  # PyTorchのcpp_extensionがバージョン不一致でビルドを止める。
+  inherit (torch) cudaPackages;
   cudaNvcc = cudaPackages.cuda_nvcc;
 in
 buildPythonPackage rec {

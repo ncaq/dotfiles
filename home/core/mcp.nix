@@ -23,11 +23,15 @@ let
     runtimeInputs = with pkgs; [ jq ];
     text = ''
       token_file=${lib.escapeShellArg config.sops.secrets."huggingface/dotfiles".path}
-      if ! token=$(<"$token_file"); then
+      if [[ ! -r "$token_file" ]]; then
         printf 'hf-mcp-server-auth-header: %s を読み込めませんでした\n' "$token_file" >&2
         exit 1
       fi
-      jq -n --arg token "$token" '{ Authorization: "Bearer \($token)" }'
+      # トークンは`--rawfile`でjqに直接読ませます。
+      # `--arg`はコマンドライン引数として渡すため、
+      # jqの実行中は`/proc/<pid>/cmdline`から同一ホストの他プロセスに読めてしまいます。
+      # ファイル末尾の改行はsopsが付けるので落とします。
+      jq -n --rawfile token "$token_file" '{ Authorization: "Bearer \($token | rtrimstr("\n"))" }'
     '';
   };
 in

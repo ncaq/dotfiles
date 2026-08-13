@@ -58,6 +58,14 @@ pkgs.runCommand (builtins.baseNameOf file)
     export HOME="$PWD"
     export HF_HOME="$PWD/hf-home"
 
+    # `hf download`は出力ファイルのパスを直接指定できないので、
+    # `--local-dir`へ一度書いてから`mv`で`$out`へ移します。
+    # これはビルドディレクトリがstoreと同一ファイルシステムにあることを前提としています。
+    # 別のファイルシステムだと`mv`がrenameではなく全コピーに落ち、
+    # 57GB級のファイルでは一時的に2倍の空き容量とダウンロードに匹敵するI/Oが必要になります。
+    # nixの`build-dir`は既定で`/nix/var/nix/builds`なのでこの前提は満たされますが、
+    # tmpfsの`/tmp`などへ変えると成立しなくなります。
+    #
     # 引数は`escapeShellArg`でクォートします。
     # 呼び出し元はリポジトリ内の固定文字列ですが、
     # Hugging Faceのリポジトリには空白やグロブ文字を含むパスが実在し得るため、

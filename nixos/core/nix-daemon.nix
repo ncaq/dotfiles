@@ -93,7 +93,7 @@
     # nix-daemonのsystemdサービスに読ませる環境変数ファイルです。
     templates."nix-daemon-huggingface-token.env" = {
       content = ''
-        HF_TOKEN=${config.sops.placeholder."huggingface-read-only"}
+        HF_TOKEN=${config.sops.placeholder."huggingface/read-only"}
       '';
       owner = "root";
       group = "root";
@@ -113,7 +113,7 @@
       # `impureEnvVars`で受け取ったトークンは、
       # 同じ変数名を指定した任意のfixed-output derivationから読めます。
       # ダウンロードにしか使わないのでread-onlyのトークンを渡します。
-      "huggingface-read-only" = {
+      "huggingface/read-only" = {
         sopsFile = ../../secrets/huggingface.yaml;
         key = "token/read-only";
         owner = "root";

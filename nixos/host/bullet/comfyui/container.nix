@@ -111,6 +111,30 @@ in
           # コンテナ内のfirewallを開ける。到達できるのはvethを持つホストのみ。
           openFirewall = true;
           extraArgs = [
+            # モデルの重みをpinned memoryへコピーせず、
+            # mmapしたディスク上の重みからGPUへ転送する。
+            #
+            # ComfyUIはpinned memoryの上限を、
+            # `max(ram * 0.40, min(ram * 0.90, ram - 4GiB, ram + ディスクswap - 16GiB))`
+            # で決める。
+            # この計算はzramを意図的にディスクswapから除外する。
+            # pinned memoryはカーネルが回収もswap outもできないので、
+            # ホストの他のプロセスやページキャッシュの分が残らない。
+            #
+            # 実際にanime-videoでOOM killerが発動した。
+            # Wan 2.2のhigh/lowが27GiBずつとumt5_xxl_fp16の11GiBで、
+            # プロセスのanon-rssは65.0GiBに達していた。
+            # cgroupの`MemoryMax`(84.3GiB)には届いていないためそちらでは止まらず、
+            # 回収できないinactive_anonを47GiB抱えたままglobal OOMになった。
+            #
+            # このフラグを付けるとdynamic VRAMのsignatureを持つ層で、
+            # `pin_memory`を呼ばずにmmapから直接転送する経路を通るため、
+            # 重みのRAM常駐が消える。
+            # dynamic VRAMはNVIDIAかつtorch 2.8以上かつ非WSLで自動的に有効になり、
+            # このホストは条件を満たす。
+            # 重みの供給がディスク速度に律速するようになるが、
+            # モデルはNVMe(SN8100)上のNix storeにあるので許容できる。
+            "--fast-disk"
             # WanのRoPEやFP8量子化処理をeager実装からTritonカーネルへ切り替える。
             "--enable-triton-backend"
             "--fast"
@@ -164,14 +188,31 @@ in
       # VRAMだけでなくシステムRAMも大量に使うことがあり、
       # モデルのロードやオフロードの挙動次第でホスト全体が応答しなくなるため上限を設ける。
       #
-      # Wan 2.2の動画生成は実測でピーク67.9GiBを正当に必要とする。
-      # `MemoryHigh`をそれより下に置くと、
+      # `--fast-disk`を付ける前は重みがpinned memoryに常駐して、
+      # Wan 2.2の動画生成が実測でピーク67.9GiBを正当に必要としていた。
+      # 当時`MemoryHigh`をそれより下に置くと、
       # 超過分を回収しようにも回収できるものがないため、
-      # プロセスを同期回収に付き合わせ続けて生成が進まなくなる。
+      # プロセスを同期回収に付き合わせ続けて生成が進まなくなった。
       # 実際に50%(46.8GiB)ではGPU使用率が0%のまま、
       # `memory.pressure`のfullが69%に達して停止していた。
+      #
+      # 現在はanime-videoの実測でプロセスのピークRSSが23.2GiBに収まる。
+      # cgroupの`memory.peak`は66.5GiBまで伸びるが、
+      # その大半はmmapしたモデルファイルのページキャッシュなので、
+      # 圧力がかかればカーネルが回収でき、同期回収に張り付くことはない。
+      #
+      # 下げる余地はあるが下げない。
+      # `--fast-disk`はページキャッシュに重みが乗っていることで速度を保つ構造で、
+      # 締めるとディスクからの再読み込みが増えて生成が遅くなる。
+      # 回収可能なページキャッシュはホスト側が要求すればカーネルが取り返すため、
+      # 緩いままでもホストは困らない。
+      #
+      # ただしこの上限はホスト保護の保証にはならない。
+      # 回収できないメモリを抱えた場合は、
+      # `MemoryMax`へ達する前にホスト全体のRAMが尽きてglobal OOMになる。
+      # pinned memoryが常駐していた頃のOOMが実際にそうだった。
       MemoryHigh = "85%"; # ソフトリミット。これを超えるとメモリを積極的に解放する。
-      MemoryMax = "90%"; # ハードリミット。超えたらホストを巻き添えにする前にOOM killする。
+      MemoryMax = "90%"; # ハードリミット。超えたらcgroupの中でOOM killする。
     };
     # bind mountするデータディレクトリをホスト側で用意する。
     tmpfiles.rules = [ "d ${dataDir} 0750 comfyui comfyui - -" ];

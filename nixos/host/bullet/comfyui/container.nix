@@ -121,7 +121,7 @@ in
             # 実測でbf16の0.622msに対しfp8は0.253msだった(4096角のGEMM)。
             #
             # 現在使っているモデルには効かない。
-            # `comfy_quant`マーカーを持つqwen_image_edit_2511_fp8mixedは、
+            # 量子化済みモデルは各層に`comfy_quant`マーカーを持つため、
             # `pick_operations`がこのフラグを見る前にmixed precision経路へ抜けて、
             # 層ごとの量子化設定に従うためである。
             # 効くのはマーカーを持たない素のfp8チェックポイントを足した時で、

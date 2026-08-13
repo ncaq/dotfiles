@@ -113,10 +113,20 @@ in
           extraArgs = [
             # WanのRoPEやFP8量子化処理をeager実装からTritonカーネルへ切り替える。
             "--enable-triton-backend"
+            "--fast"
             # FP16の行列積で低精度の累積を許可して、LoRAやFP16 fallbackを高速化する。
             # 丸め誤差が増えるため生成結果は変化する可能性がある。
-            "--fast"
             "fp16_accumulation"
+            # 重みがfp8_e4m3fnの層の行列積をTensor Coreのfp8演算で行う。
+            # 実測でbf16の0.622msに対しfp8は0.253msだった(4096角のGEMM)。
+            #
+            # 現在使っているモデルには効かない。
+            # `comfy_quant`マーカーを持つqwen_image_edit_2511_fp8mixedは、
+            # `pick_operations`がこのフラグを見る前にmixed precision経路へ抜けて、
+            # 層ごとの量子化設定に従うためである。
+            # 効くのはマーカーを持たない素のfp8チェックポイントを足した時で、
+            # その時に指定し忘れないよう先に入れておく。
+            "fp8_matrix_mult"
             # xformers 0.0.30はBlackwell(sm_120)に対応していないため使わない。
             # comfy-kitchen同梱のINT8 attentionで、
             # 動画生成の大半を占めるattentionを近似計算して高速化する。

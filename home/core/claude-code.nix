@@ -94,6 +94,12 @@ in
             repo = "anthropics/claude-plugins-official";
           };
         };
+        huggingface = {
+          source = {
+            source = "github";
+            repo = "huggingface/skills";
+          };
+        };
       };
       # pluginを記述しておくことで起動時にインストールされていない場合自動でインストールされます。
       enabledPlugins = {
@@ -108,6 +114,8 @@ in
         "rust-analyzer-lsp@claude-plugins-official" = true;
         "swift-lsp@claude-plugins-official" = true;
         "typescript-lsp@claude-plugins-official" = true;
+        ## huggingface
+        "hf-cli@huggingface/skills" = true;
       };
       skipAutoPermissionPrompt = true; # auto modeをdefaultModeにしているので許可を求めない。
       permissions = {

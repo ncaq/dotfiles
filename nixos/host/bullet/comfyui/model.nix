@@ -1,17 +1,17 @@
 # ComfyUIの`models/`配下に宣言的に配置するモデルファイル群。
 #
-# モデルはNix storeへfetchurlで取得して、
+# モデルはNix storeへ`lib/fetch-hugging-face.nix`で取得して、
 # linkFarmでComfyUIのディレクトリ構造にまとめる。
 # ComfyUIには追加モデル検索パスとして渡し、
 # 書き込み可能なmodelsディレクトリはオンデマンド取得用に残す。
 # storeのパスはホストのシステムクロージャから参照されるのでGCされない。
 #
 # CivitaiのダウンロードURLはAPIキーが必要なことがあり、
-# fetchurlのビルド時にはsopsで管理するAPIキーを参照できないため、
-# 認証なしで安定して取得できるHugging FaceのURLのみを使う。
+# ビルド環境へAPIキーを持ち込む仕組みをCivitai向けには用意していないため、
+# 認証なしでも安定して取得できるHugging Faceのリポジトリのみを使う。
 # Civitaiからのオンデマンド取得はLoRA Manager(civitai.nix)が担う。
 # リポジトリの更新でハッシュがずれないように、
-# URLは`resolve/main`ではなくcommit hashで固定する。
+# リビジョンは`main`ではなくcommit hashで固定する。
 {
   lib,
   pkgs,

@@ -1,11 +1,49 @@
 {
+  lib,
   pkgs,
   config,
-  lib,
   ...
 }:
 let
   backlog-mcp-server = pkgs.callPackage ../../pkgs/backlog-mcp-server.nix { };
+  # Hugging FaceのMCPサーバはリモートのHTTPサーバなので、
+  # ファイルベースのシークレットを渡せる`env`が使えません。
+  # 代わりにClaude Codeの`headersHelper`から呼び出して、
+  # 接続時にsops-nixが復号したトークンを読み出しヘッダを組み立てます。
+  # トークンをプロセス環境や`.mcp.json`に置かずに済みます。
+  #
+  # 渡すのは`huggingface.nix`と同じ書き込み可能なトークンです。
+  # 以前はエージェントの誤操作を防ぐためにread-onlyのトークンを分けていましたが、
+  # `HF_TOKEN_PATH`が`home.sessionVariables`にある以上、
+  # ログインセッション配下で動くエージェントは`hf`コマンド経由で書き込み可能なトークンに到達できます。
+  # MCPサーバだけをread-onlyにしても実効的な分離にならないため、
+  # 見かけ上の安全を作るのをやめて実態に揃えます。
+  hf-mcp-server-auth-header = pkgs.writeShellApplication {
+    name = "hf-mcp-server-auth-header";
+    runtimeInputs = with pkgs; [ jq ];
+    text = ''
+      token_file=${lib.escapeShellArg config.sops.secrets."huggingface/dotfiles".path}
+      if [[ ! -r "$token_file" ]]; then
+        printf 'hf-mcp-server-auth-header: %s を読み込めませんでした\n' "$token_file" >&2
+        exit 1
+      fi
+      # トークンは`--rawfile`でjqに直接読ませます。
+      # `--arg`はコマンドライン引数として渡すため、
+      # jqの実行中は`/proc/<pid>/cmdline`から同一ホストの他プロセスに読めてしまいます。
+      # ファイル末尾の改行はsopsが付けるので落とします。
+      #
+      # 空のトークンはjqの中で弾きます。
+      # そのまま通すと`Authorization: Bearer `という壊れたヘッダを出してしまい、
+      # Claude Code側では原因の分かりにくい401として現れるためです。
+      jq -n --rawfile token "$token_file" '
+        ($token | rtrimstr("\n")) as $trimmed
+        | if $trimmed == ""
+          then error("トークンが空です")
+          else { Authorization: "Bearer \($trimmed)" }
+          end
+      '
+    '';
+  };
 in
 {
   programs.mcp = {
@@ -30,11 +68,18 @@ in
       github = {
         # GitHub公式のローカル(stdio)MCPサーバを使用します。
         # リモートHTTPサーバ(url)ではenvが使えずファイルベースのシークレットを渡せないためです。
+        # nixpkgsにパッケージがあるので複雑なヘルパー認証ではなくローカル実行を選びます。
         command = lib.getExe pkgs.github-mcp-server;
         args = [ "stdio" ];
         env = {
           GITHUB_PERSONAL_ACCESS_TOKEN.file = config.sops.secrets."github-mcp-server/pat".path;
         };
+      };
+      hf-mcp-server = {
+        # `?login`を付けるとブラウザでのOAuth認証を要求されるため、
+        # 認証をヘッダで済ませられる素のエンドポイントを使います。
+        url = "https://huggingface.co/mcp";
+        headersHelper = lib.getExe hf-mcp-server-auth-header;
       };
       mdn = {
         url = "https://mcp.mdn.mozilla.net/";

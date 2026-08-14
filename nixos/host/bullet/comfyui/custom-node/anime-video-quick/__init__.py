@@ -17,10 +17,11 @@ import os
 import re
 import subprocess
 import traceback
+from dataclasses import asdict, dataclass
 from datetime import datetime
 from fractions import Fraction
 from pathlib import Path
-from typing import Any, NotRequired, TypedDict, cast
+from typing import Any, Literal, TypedDict, cast
 
 import av
 import comfy.model_management
@@ -64,24 +65,23 @@ class TranslatedSegment(Segment):
     english: str
 
 
-class Manifest(TypedDict):
+@dataclass
+class Manifest:
     """job IDごとに出力ディレクトリへ置く進捗の記録。
 
     中断したジョブを同じjob IDで再開する時にどこまで終わっているかを見る。
-    キーが揃っていないと再開の判定を誤るので、
-    どのキーがいつ現れるのかを型に出しておく。
     """
 
     # 生成条件。異なる条件で同じjob IDを使い回していないかの照合に使う。
-    # キーを走査して比較するので、TypedDictにはせず素の辞書にする。
-    identity: dict[str, int | str]
+    # キーを走査して比較するだけなので値の型は問わない。
+    identity: dict[str, object]
     segments: list[TranslatedSegment]
-    status: str
-    # ここから下は処理が進むにつれて現れる。
-    completed_keyframes: NotRequired[int]
-    completed_segments: NotRequired[int]
-    video: NotRequired[str]
-    error: NotRequired[str]
+    # ここから下は処理が進むにつれて埋まる。
+    status: Literal["running", "completed", "failed"] = "running"
+    completed_keyframes: int | None = None
+    completed_segments: int | None = None
+    video: str | None = None
+    error: str | None = None
 
 
 def split_prompts(text: str) -> list[Segment]:
@@ -444,10 +444,39 @@ def concat_videos(paths: list[Path], output_path: Path) -> None:
         temporary.unlink(missing_ok=True)
 
 
+def read_manifest(path: Path) -> Manifest | None:
+    """manifest.jsonを読む。期待する形をしていなければNoneを返す。
+
+    旧スキーマや別プロセスが書いたファイルが置かれていることがあり、
+    型注釈だけでは実行時の形を保証できない。
+
+    読み戻すのは`identity`と`segments`だけで、
+    残りは人が経過を見るために書いているだけなので、
+    既定値のまま置いて続きの書き込みで埋め直させる。
+    `segments`は配列であることまでしか見ないので、
+    要素が壊れていれば区間を生成する時に落ちる。
+    """
+    try:
+        loaded = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(loaded, dict):
+        return None
+    fields = cast(dict[str, object], loaded)
+    identity = fields.get("identity")
+    segments = fields.get("segments")
+    if not isinstance(identity, dict) or not isinstance(segments, list):
+        return None
+    return Manifest(
+        identity=cast(dict[str, object], identity),
+        segments=cast(list[TranslatedSegment], segments),
+    )
+
+
 def write_manifest(path: Path, manifest: Manifest) -> None:
     temporary = path.with_suffix(".partial.json")
     temporary.write_text(
-        json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8"
+        json.dumps(asdict(manifest), ensure_ascii=False, indent=2), encoding="utf-8"
     )
     os.replace(temporary, path)
 
@@ -515,8 +544,11 @@ class AnimeVideoQuick:
         manifest_path = output_dir / "manifest.json"
         if not manifest_path.exists():
             return float("NaN")
-        manifest: Manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        segment_count = len(manifest["segments"])
+        manifest = read_manifest(manifest_path)
+        # 読めない記録は再開の判定に使えないので、作り直させる。
+        if manifest is None:
+            return float("NaN")
+        segment_count = len(manifest.segments)
         expected_paths = [
             output_dir / "keyframes" / f"{filename_prefix}-keyframe-000-start.png",
             *(
@@ -563,7 +595,7 @@ class AnimeVideoQuick:
         segment_dir.mkdir(parents=True, exist_ok=True)
         manifest_path = output_dir / "manifest.json"
 
-        identity: dict[str, int | str] = {
+        identity: dict[str, object] = {
             "schema": 1,
             "prompts": prompts,
             "image_sha256": image_hash(image),
@@ -576,19 +608,23 @@ class AnimeVideoQuick:
         manifest: Manifest
         translated_segments: list[TranslatedSegment]
         if manifest_path.exists():
-            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-            previous_identity = manifest.get("identity", {})
+            loaded_manifest = read_manifest(manifest_path)
+            # 黙って作り直すと生成条件の照合を飛ばすことになり、
+            # 別の条件で作られたキーフレームをそのまま再利用してしまう。
+            if loaded_manifest is None:
+                raise ValueError(f"進捗の記録を読めませんでした: {manifest_path}")
+            manifest = loaded_manifest
             differing_identity_keys = [
                 key
                 for key, value in identity.items()
-                if previous_identity.get(key) != value
+                if manifest.identity.get(key) != value
             ]
             if differing_identity_keys:
                 raise ValueError(
                     "同じjob IDに異なる生成条件が指定されています: "
                     + ", ".join(differing_identity_keys)
                 )
-            translated_segments = manifest["segments"]
+            translated_segments = manifest.segments
         else:
             translated_segments = [
                 TranslatedSegment(
@@ -598,11 +634,7 @@ class AnimeVideoQuick:
                 )
                 for segment in segments
             ]
-            manifest = {
-                "identity": identity,
-                "segments": translated_segments,
-                "status": "running",
-            }
+            manifest = Manifest(identity=identity, segments=translated_segments)
             write_manifest(manifest_path, manifest)
 
         try:
@@ -651,7 +683,7 @@ class AnimeVideoQuick:
                         (seed + retry_seed_offset + index - 1) & 0xFFFFFFFFFFFFFFFF,
                     )
                     save_image(current, keyframe_path)
-                    manifest["completed_keyframes"] = index
+                    manifest.completed_keyframes = index
                     write_manifest(manifest_path, manifest)
                 del current
 
@@ -709,7 +741,7 @@ class AnimeVideoQuick:
                         # 直前区間の終了フレームと同じ先頭フレームを重複させない。
                         frames = frames[1:]
                     save_video(frames, video_path)
-                    manifest["completed_segments"] = index + 1
+                    manifest.completed_segments = index + 1
                     write_manifest(manifest_path, manifest)
                     del start, end, frames
                     comfy.model_management.soft_empty_cache()
@@ -723,9 +755,9 @@ class AnimeVideoQuick:
                 concat_videos(video_paths, final_path)
             # 区間は途中経過で配布物ではないので、結合後の完成品だけ圧縮版を作る。
             start_share_encode(final_path, video_suffix)
-            manifest["status"] = "completed"
-            manifest["video"] = str(final_path)
-            manifest.pop("error", None)
+            manifest.status = "completed"
+            manifest.video = str(final_path)
+            manifest.error = None
             write_manifest(manifest_path, manifest)
             return {
                 "ui": {
@@ -741,8 +773,8 @@ class AnimeVideoQuick:
                 "result": (str(final_path),),
             }
         except Exception as error:
-            manifest["status"] = "failed"
-            manifest["error"] = f"{type(error).__name__}: {error}"
+            manifest.status = "failed"
+            manifest.error = f"{type(error).__name__}: {error}"
             write_manifest(manifest_path, manifest)
             raise
 

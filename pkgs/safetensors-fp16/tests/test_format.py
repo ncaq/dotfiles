@@ -12,9 +12,8 @@ safetensorsのヘッダはJSONなので、
 
 from pathlib import Path
 
-import numpy as np
 import pytest
-from conftest import save_raw_safetensors, write_header
+from conftest import write_header
 
 from safetensors_fp16.convert import convert
 from safetensors_fp16.format import parse_tensors, read_header
@@ -101,15 +100,59 @@ def test_rejects_non_array_shape() -> None:
         parse_tensors({"x.weight": entry}, 4)
 
 
-def test_rejects_non_integer_dimension() -> None:
-    """shapeの要素が整数でなければ拒否する。
+@pytest.mark.parametrize("dimension", ["4", 4.0, True, -2])
+def test_rejects_invalid_dimension(dimension: object) -> None:
+    """shapeの要素が非負整数でなければ拒否する。
 
-    以前は`int()`へ通していたので、
-    文字列や小数がそのまま受け入れられていた。
+    `bool`は`int`の派生なのでJSONの`true`が1として通り得る。
+    負の次元は偶数個あれば`math.prod`が正になり、
+    オフセットの整合検証も連続性の検証も素通りし得る。
     """
-    entry = {"dtype": "F32", "shape": ["4"], "data_offsets": [0, 16]}
-    with pytest.raises(ValueError, match="shape has a non-integer dimension"):
+    entry = {"dtype": "F32", "shape": [dimension], "data_offsets": [0, 16]}
+    with pytest.raises(ValueError, match="shape element is not a non-negative integer"):
         parse_tensors({"x.weight": entry}, 16)
+
+
+def test_rejects_negative_dimensions_that_multiply_to_positive() -> None:
+    """負の次元が偶数個でも拒否する。
+
+    -2が2つならmath.prodは4になり、
+    dtypeと合わせた16バイトがdata_offsetsと一致してしまうため、
+    次元単体を見ていないと最後まで通ってしまう組み合わせ。
+    """
+    entry = {"dtype": "F32", "shape": [-2, -2], "data_offsets": [0, 16]}
+    with pytest.raises(ValueError, match="shape element is not a non-negative integer"):
+        parse_tensors({"x.weight": entry}, 16)
+
+
+@pytest.mark.parametrize("key", ["dtype", "shape", "data_offsets"])
+def test_rejects_missing_entry_key(key: str) -> None:
+    """テンソルの記述にキーが欠けていれば、どのキーが無いか分かる形で拒否する。"""
+    entry: dict[str, object] = {
+        "dtype": "F32",
+        "shape": [1],
+        "data_offsets": [0, 4],
+    }
+    del entry[key]
+    with pytest.raises(ValueError, match=f"entry has no {key}"):
+        parse_tensors({"x.weight": entry}, 4)
+
+
+def test_rejects_invalid_json_header(tmp_path: Path) -> None:
+    """ヘッダがJSONとして壊れていれば、そうと分かる形で拒否する。
+
+    `JSONDecodeError`のままでは`Expecting value: line 1 column 1`となり、
+    safetensorsのヘッダの話だと読み取れない。
+    """
+    path = tmp_path / "broken-json.safetensors"
+    raw = b"not json"
+    raw += b" " * (-(8 + len(raw)) % 8)
+    path.write_bytes(len(raw).to_bytes(8, "little") + raw)
+    with (
+        path.open("rb") as file,
+        pytest.raises(ValueError, match="header is not valid JSON"),
+    ):
+        read_header(file)
 
 
 def test_rejects_non_array_offsets() -> None:
@@ -126,10 +169,13 @@ def test_rejects_wrong_offsets_length() -> None:
         parse_tensors({"x.weight": entry}, 4)
 
 
-def test_rejects_non_integer_offsets() -> None:
-    """data_offsetsの要素が整数でなければ拒否する。"""
-    entry = {"dtype": "F32", "shape": [1], "data_offsets": [0, "4"]}
-    with pytest.raises(ValueError, match="data_offsets has a non-integer value"):
+@pytest.mark.parametrize("offset", ["4", 4.0, True, -4])
+def test_rejects_invalid_offsets(offset: object) -> None:
+    """data_offsetsの要素が非負整数でなければ拒否する。"""
+    entry = {"dtype": "F32", "shape": [1], "data_offsets": [0, offset]}
+    with pytest.raises(
+        ValueError, match="data_offsets element is not a non-negative integer"
+    ):
         parse_tensors({"x.weight": entry}, 4)
 
 
@@ -153,12 +199,16 @@ def test_rejects_trailing_data() -> None:
 
 
 def test_reports_broken_header_through_convert(tmp_path: Path) -> None:
-    """コマンドの入口からでも同じ検証が効く。"""
+    """コマンドの入口からでも同じ検証が効く。
+
+    `test_convert.py`が見ているのはdtypeとオフセットの食い違いなので、
+    ここではそちらを通らないshapeの検証を選ぶ。
+    """
     src = tmp_path / "broken.safetensors"
-    save_raw_safetensors(
+    write_header(
         src,
-        {"x.weight": np.zeros(4, dtype="<f4")},
-        dtype_names={"x.weight": "F4_E2M1"},
+        {"x.weight": {"dtype": "F32", "shape": ["4"], "data_offsets": [0, 16]}},
+        b"\x00" * 16,
     )
-    with pytest.raises(ValueError, match="unknown dtype"):
+    with pytest.raises(ValueError, match="shape element is not a non-negative integer"):
         convert(str(src), str(tmp_path / "dst.safetensors"), allow_overflow=False)

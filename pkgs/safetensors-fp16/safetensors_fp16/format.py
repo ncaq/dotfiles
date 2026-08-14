@@ -158,16 +158,40 @@ def json_list(value: object, message: str) -> list[object]:
     return cast(list[object], value)
 
 
-def json_int(value: object, message: str) -> int:
-    """JSONの整数を取り出す。
+def json_field(entry: dict[str, object], key: str, message: str) -> object:
+    """JSONのオブジェクトから必須のキーを取り出す。
 
-    元は`int()`に通していたが、
-    それだと文字列や小数も黙って受け入れてしまう。
-    shapeとdata_offsetsは仕様上どちらも整数なので、
-    整数でなければ何が壊れているのか分かる形で落とす。
+    添字で読むと欠けている時に素の`KeyError`になり、
+    どのテンソルのどのキーが無いのか分からない。
+    型の誤りは名前付きの`ValueError`になるので、
+    キーの欠落だけメッセージの質が落ちないように揃える。
     """
-    if not isinstance(value, int):
+    if key not in entry:
         raise ValueError(message)
+    return entry[key]
+
+
+def json_size(value: object, label: str) -> int:
+    """JSONの非負整数を取り出す。
+
+    shapeもdata_offsetsも仕様上は非負整数なので、
+    それ以外を弾くところまでを1つの条件にまとめる。
+    `int()`へ通すだけでは文字列も小数も黙って受け入れてしまう。
+
+    `bool`は`int`の派生なので`isinstance`だけでは通ってしまう。
+    JSONの`true`は`json.loads`で`True`になり、
+    shapeへ書かれていれば1として扱われる。
+
+    符号も見る。
+    負の次元が偶数個あれば`math.prod`の結果が正になり、
+    オフセットの整合検証も連続性の検証も素通りする。
+    `build_header`は入力のshapeをそのまま書き写すので、
+    通してしまうと不正な形状が出力ファイルへ伝播する。
+    numpyの`reshape`は-1を推論指定として解釈するため、
+    読み込み側の解釈まで変わる。
+    """
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        raise ValueError(f"{label} is not a non-negative integer: {value!r}")
     return value
 
 
@@ -190,7 +214,13 @@ def read_header(file: BinaryIO) -> tuple[dict[str, object], int]:
     data_start = 8 + header_length
     if data_start % HEADER_ALIGN != 0:
         raise ValueError(f"data does not start at a {HEADER_ALIGN} byte boundary")
-    header = json_object(json.loads(raw_header), "header is not a JSON object")
+    # `json.loads`が投げる`JSONDecodeError`も`ValueError`の派生なので落ちはするが、
+    # `Expecting value: line 1 column 1`ではsafetensorsのヘッダの話だと読み取れない。
+    try:
+        parsed = json.loads(raw_header)
+    except json.JSONDecodeError as error:
+        raise ValueError(f"header is not valid JSON: {error}") from error
+    header = json_object(parsed, "header is not a JSON object")
     return header, data_start
 
 
@@ -214,20 +244,24 @@ def parse_tensors(
         if name == "__metadata__":
             continue
         entry = json_object(info, f"{name}: entry is not a JSON object")
-        dtype = entry["dtype"]
+        dtype = json_field(entry, "dtype", f"{name}: entry has no dtype")
         if not isinstance(dtype, str) or dtype not in DTYPE_SIZE:
             raise ValueError(f"{name}: unknown dtype {dtype}")
         shape = [
-            json_int(dimension, f"{name}: shape has a non-integer dimension")
-            for dimension in json_list(entry["shape"], f"{name}: shape is not an array")
+            json_size(dimension, f"{name}: shape element")
+            for dimension in json_list(
+                json_field(entry, "shape", f"{name}: entry has no shape"),
+                f"{name}: shape is not an array",
+            )
         ]
         offsets = json_list(
-            entry["data_offsets"], f"{name}: data_offsets is not an array"
+            json_field(entry, "data_offsets", f"{name}: entry has no data_offsets"),
+            f"{name}: data_offsets is not an array",
         )
         if len(offsets) != 2:
             raise ValueError(f"{name}: data_offsets does not have two elements")
-        begin = json_int(offsets[0], f"{name}: data_offsets has a non-integer value")
-        end = json_int(offsets[1], f"{name}: data_offsets has a non-integer value")
+        begin = json_size(offsets[0], f"{name}: data_offsets element")
+        end = json_size(offsets[1], f"{name}: data_offsets element")
         expected = math.prod(shape) * DTYPE_SIZE[dtype]
         if end - begin != expected:
             raise ValueError(

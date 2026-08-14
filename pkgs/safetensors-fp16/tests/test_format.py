@@ -11,13 +11,19 @@ safetensorsのヘッダはJSONなので、
 テンソルから組み立てる`save_raw_safetensors`では作れない形を見るためである。
 """
 
+import time
 from pathlib import Path
 
 import pytest
 from conftest import write_header
 
 from safetensors_fp16.convert import convert
-from safetensors_fp16.format import HEADER_MAX_BYTES, parse_tensors, read_header
+from safetensors_fp16.format import (
+    HEADER_MAX_BYTES,
+    element_count,
+    parse_tensors,
+    read_header,
+)
 
 
 def test_rejects_short_file(tmp_path: Path) -> None:
@@ -220,6 +226,75 @@ def test_rejects_invalid_offsets(index: int, offset: object) -> None:
         ValueError, match=rf"data_offsets\[{index}\] is not a non-negative integer"
     ):
         parse_tensors({"x.weight": entry}, 4)
+
+
+@pytest.mark.parametrize(
+    ("shape", "limit", "expected"),
+    [
+        ([2, 3], 6, 6),
+        ([2, 3], 5, None),
+        ([], 0, 1),
+        ([0], 0, 0),
+        # 0より前の次元だけで上限を超える形。
+        # 先に0を見ておかないと打ち切りが働いて、
+        # 要素数0の正当なテンソルを拒否してしまう。
+        ([3, 0], 0, 0),
+    ],
+)
+def test_element_count(shape: list[int], limit: int, expected: int | None) -> None:
+    """要素数は上限を超えた時点で打ち切り、0があれば0になる。"""
+    assert element_count(shape, limit) == expected
+
+
+def test_accepts_empty_tensor() -> None:
+    """要素数が0のテンソルを受け付ける。"""
+    entry = {"dtype": "F32", "shape": [3, 0], "data_offsets": [0, 0]}
+    metadata, tensors = parse_tensors({"x.weight": entry}, 0)
+    assert metadata is None
+    assert [tensor.name for tensor in tensors] == ["x.weight"]
+
+
+def test_rejects_reversed_offsets() -> None:
+    """data_offsetsが逆順であれば拒否する。
+
+    区間の長さが負になると要素数の上限が決まらず、
+    shapeの積を打ち切れなくなる。
+    """
+    entry = {"dtype": "F32", "shape": [1], "data_offsets": [8, 4]}
+    with pytest.raises(ValueError, match="end 4 is before begin 8"):
+        parse_tensors({"x.weight": entry}, 8)
+
+
+def test_rejects_offsets_past_data() -> None:
+    """data_offsetsがデータ領域を越えていれば拒否する。"""
+    entry = {"dtype": "F32", "shape": [1], "data_offsets": [0, 4]}
+    with pytest.raises(ValueError, match="end 4 is past the data region of 2 bytes"):
+        parse_tensors({"x.weight": entry}, 2)
+
+
+def test_rejects_huge_shape_without_computing_it() -> None:
+    """巨大な次元を並べたshapeを、その積を求めずに拒否する。
+
+    次元の値も個数も`json_size`は制限しないので、
+    ヘッダ長の上限に収まる範囲でも桁の大きい整数を大量に並べられる。
+    `math.prod`で素直に積を求めると、
+    桁の伸びた多倍長整数の積を繰り返すことになって実質二次のコストになり、
+    上限を通った1ファイルでビルドホストのCPUを占有できてしまう。
+
+    ここで使う1.2MB程度のヘッダでも`math.prod`なら数秒かかり、
+    100MBまで伸ばせば時間単位に届く。
+    要素数の上限で打ち切っていれば入力の大きさに関わらず即座に落ちるので、
+    経過時間で見分ける。
+    """
+    entry = {
+        "dtype": "F32",
+        "shape": [10**300] * 4000,
+        "data_offsets": [0, 16],
+    }
+    started = time.monotonic()
+    with pytest.raises(ValueError, match="need more than that"):
+        parse_tensors({"x.weight": entry}, 16)
+    assert time.monotonic() - started < 1.0
 
 
 def test_rejects_leading_gap() -> None:

@@ -7,7 +7,6 @@ Python APIは全テンソルの辞書をメモリに要求する設計で数十G
 """
 
 import json
-import math
 import os
 import struct
 from collections.abc import Buffer, Generator
@@ -198,7 +197,7 @@ def json_size(value: object, label: str) -> int:
     shapeへ書かれていれば1として扱われる。
 
     符号も見る。
-    負の次元が偶数個あれば`math.prod`の結果が正になり、
+    負の次元が偶数個あれば要素数の積が正になり、
     オフセットの整合検証も連続性の検証も素通りする。
     `build_header`は入力のshapeをそのまま書き写すので、
     通してしまうと不正な形状が出力ファイルへ伝播する。
@@ -208,6 +207,31 @@ def json_size(value: object, label: str) -> int:
     if isinstance(value, bool) or not isinstance(value, int) or value < 0:
         raise ValueError(f"{label} is not a non-negative integer: {value!r}")
     return value
+
+
+def element_count(shape: list[int], limit: int) -> int | None:
+    """shapeが表す要素数を数える。limitを超えると分かった時点で打ち切りNoneを返す。
+
+    `math.prod(shape)`で済ませると計算量が入力の言い値に引きずられる。
+    `json_size`は次元を非負整数としか見ないので、
+    ヘッダ長の上限に収まる範囲でも巨大な整数を大量に並べられる。
+    多倍長整数の積のコストは桁数に比例するため、
+    桁が伸び続ける積を要素の数だけ繰り返すと実質二次になり、
+    数十MBのファイル1つでビルドホストのCPUを占有できてしまう。
+
+    要素数が上限を超えた時点でヘッダの不整合は確定するので、
+    そこで打ち切れば桁数も繰り返し回数も入力に依らず抑えられる。
+    どこかに0があれば他の次元を見るまでもなく要素数は0なので、
+    打ち切りが誤って働かないように先に見る。
+    """
+    if 0 in shape:
+        return 0
+    count = 1
+    for dimension in shape:
+        count *= dimension
+        if limit < count:
+            return None
+    return count
 
 
 def read_header(file: BinaryIO) -> tuple[dict[str, object], int]:
@@ -273,10 +297,30 @@ def parse_tensors(
             raise ValueError(f"{name}: data_offsets does not have two elements")
         begin = json_size(offsets[0], f"{name}: data_offsets[0]")
         end = json_size(offsets[1], f"{name}: data_offsets[1]")
-        expected = math.prod(shape) * DTYPE_SIZE[dtype]
-        if end - begin != expected:
+        # 要素数を数える前に区間の方を確かめる。
+        # 区間の長さが決まっていれば要素数の上限も決まるので、
+        # shapeの積を途中で打ち切れる。
+        # 後段の連続性の検証でも同じ誤りは落ちるが、
+        # それは全テンソルの積を求めた後になる。
+        if end < begin:
+            raise ValueError(f"{name}: data_offsets end {end} is before begin {begin}")
+        if data_size < end:
             raise ValueError(
-                f"{name}: data_offsets span {end - begin} bytes"
+                f"{name}: data_offsets end {end} is past the data region of"
+                f" {data_size} bytes"
+            )
+        span = end - begin
+        item_size = DTYPE_SIZE[dtype]
+        count = element_count(shape, span // item_size)
+        if count is None:
+            raise ValueError(
+                f"{name}: data_offsets span {span} bytes"
+                f" but shape and dtype need more than that"
+            )
+        expected = count * item_size
+        if expected != span:
+            raise ValueError(
+                f"{name}: data_offsets span {span} bytes"
                 f" but shape and dtype need {expected}"
             )
         tensors.append(

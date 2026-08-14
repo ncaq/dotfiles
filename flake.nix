@@ -290,6 +290,9 @@
         }:
         let
           git-repo-subscribe = pkgs.callPackage ./pkgs/git-repo-subscribe { };
+          # ComfyUIの自作カスタムノードのうち、
+          # ComfyUI本体に触れない部分のpytest。
+          comfyui-custom-node-test = import ./lib/comfyui-custom-node-test.nix { inherit pkgs; };
           safetensors-fp16 = pkgs.callPackage ./pkgs/safetensors-fp16 { };
           # リポジトリ内のPythonをpyrightで型検査するためのderivation群。
           # ComfyUIのパッケージはoverlay経由でしか生えないが、
@@ -386,7 +389,7 @@
               # ビルドが通ることと、
               # derivationの中で走るテストが通ることをCIで保証したいパッケージは、
               # `packages`と両方に並べます。
-              inherit git-repo-subscribe safetensors-fp16;
+              inherit comfyui-custom-node-test git-repo-subscribe safetensors-fp16;
             }
             // lib.optionalAttrs hasComfyui {
               # リポジトリ内のPythonの型検査。

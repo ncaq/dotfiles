@@ -290,6 +290,7 @@
         }:
         let
           git-repo-subscribe = pkgs.callPackage ./pkgs/git-repo-subscribe { };
+          safetensors-fp16 = pkgs.callPackage ./pkgs/safetensors-fp16 { };
           # ComfyUIの自作カスタムノードをpyrightで型検査するためのderivation群。
           # comfyuiはoverlay経由でしか生えないが、
           # perSystemの`pkgs`にはoverlayが載っていないため、
@@ -371,7 +372,12 @@
             nixosEvalChecks
             // hmEvalChecks
             // {
-              inherit git-repo-subscribe;
+              # `nix-fast-build`が見るのは`.#checks`だけで、
+              # `packages`へ置いただけではCIでビルドされません。
+              # ビルドが通ることと、
+              # derivationの中で走るテストが通ることをCIで保証したいパッケージは、
+              # `packages`と両方に並べます。
+              inherit git-repo-subscribe safetensors-fp16;
             }
             // lib.optionalAttrs hasComfyui {
               # ComfyUIの自作カスタムノードの型検査。
@@ -392,7 +398,7 @@
             # PRコメントにnvd diffを投稿するスクリプト。
             nvd-pr-diff = pkgs.callPackage ./pkgs/nvd-pr-diff { };
             # safetensorsのF32テンソルをF16へ変換するコマンド。
-            safetensors-fp16 = pkgs.callPackage ./pkgs/safetensors-fp16 { };
+            inherit safetensors-fp16;
           }
           // lib.optionalAttrs hasComfyui {
             # pyrightがComfyUIのPython環境とソースを辿るためのディレクトリ。

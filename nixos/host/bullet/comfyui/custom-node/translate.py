@@ -15,6 +15,13 @@ from typing import cast
 
 import requests
 
+# 接続を使い回すためのセッション。
+# 呼び出しごとに`requests.get`するとTCP接続とTLSハンドシェイクをやり直すため、
+# 区間ごとに1回ずつ翻訳する使い方では、区間の数だけ往復が積み上がる。
+# セッションを1つ持てばkeep-aliveで繋ぎ直しは初回だけになる。
+# ComfyUIのプロセスは長く生きるので、モジュールに持たせたまま使い続けてよい。
+session = requests.Session()
+
 
 def non_empty_list(value: object, message: str) -> list[object]:
     """JSONの空でない配列を、要素の型が分かる形で取り出す。
@@ -53,8 +60,12 @@ def translate_to_english(text: str) -> str:
     """テキストを英語へ翻訳する。
 
     元の言語は自動判定なので、日本語でも英語の原文でもそのまま渡してよい。
+
+    `q`を複数回渡せば1リクエストで複数の文を訳せるが、
+    呼び出し側は失敗した文だけを原文へ倒すので、
+    1文ずつ投げて失敗の単位を揃える。
     """
-    response = requests.get(
+    response = session.get(
         "https://translate.googleapis.com/translate_a/single",
         params={
             "client": "gtx",

@@ -221,6 +221,17 @@ def test_rejects_invalid_offsets(index: int, offset: object) -> None:
         parse_tensors({"x.weight": entry}, 4)
 
 
+def test_rejects_leading_gap() -> None:
+    """最初のテンソルが0から始まっていなければ拒否する。
+
+    2番目以降の隙間とは`offset`の初期値と比べる別の入口で、
+    データ領域の先頭に検証されない範囲を作られる経路になる。
+    """
+    entry = {"dtype": "F32", "shape": [1], "data_offsets": [4, 8]}
+    with pytest.raises(ValueError, match="expected to start at 0"):
+        parse_tensors({"x.weight": entry}, 8)
+
+
 def test_rejects_gap_between_tensors() -> None:
     """テンソルの間に隙間があれば拒否する。
 

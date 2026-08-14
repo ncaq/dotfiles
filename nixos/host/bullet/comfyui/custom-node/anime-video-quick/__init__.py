@@ -4,7 +4,7 @@
 # UNETLoaderが返すモデルの`patch`や`sample`の型が決まらない。
 # torchの`from_numpy`や`movedim`とPyAVの`add_stream`のスタブにも不明な部分がある。
 # strictのUnknown系はこれらに触れる式を全て挙げてしまい、
-# このファイルだけで47件になって自分のコードの問題が埋もれる。
+# 指摘がファイル全体を埋め尽くして自分のコードの問題が埋もれる。
 # 上流に型が付くまではこのファイルでだけ落とす。
 # pyright: reportUnknownArgumentType=none
 # pyright: reportUnknownMemberType=none

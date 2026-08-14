@@ -21,7 +21,15 @@ python3Packages.buildPythonApplication {
     python3Packages.tqdm
   ];
 
-  nativeCheckInputs = [ python3Packages.pytestCheckHook ];
+  nativeCheckInputs = [
+    python3Packages.pytestCheckHook
+    # テストのリファレンス実装として本家のsafetensorsを使う。
+    # 上の理由でこのパッケージ本体は使わないが、
+    # テストが扱うのは数百バイトなのでメモリの制約は問題にならない。
+    # 自前で書いたヘルパーで読み書きすると、
+    # 実装と揃って同じ勘違いをしていても検出できない。
+    python3Packages.safetensors
+  ];
 
   pythonImportsCheck = [ "safetensors_fp16" ];
 

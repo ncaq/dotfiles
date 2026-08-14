@@ -5,7 +5,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from conftest import load_safetensors, save_safetensors
+from conftest import load_safetensors, save_raw_safetensors, save_safetensors
 
 from safetensors_fp16.convert import convert
 
@@ -49,8 +49,8 @@ def test_keeps_shapes(src: Path, dst: Path, tensors: dict[str, np.ndarray]) -> N
 def test_keeps_metadata(src: Path, dst: Path, metadata: dict[str, str]) -> None:
     """__metadata__はそのまま引き継がれる。"""
     convert(str(src), str(dst), allow_overflow=False)
-    header, _ = load_safetensors(dst)
-    assert header["__metadata__"] == metadata
+    converted_metadata, _ = load_safetensors(dst)
+    assert converted_metadata == metadata
 
 
 def test_rounds_to_nearest_even(src: Path, dst: Path) -> None:
@@ -98,7 +98,7 @@ def test_allows_overflow_when_requested(tmp_path: Path, dst: Path) -> None:
 def test_rejects_unknown_dtype(tmp_path: Path, dst: Path) -> None:
     """知らないdtypeは黙って素通しせずエラーにする。"""
     src = tmp_path / "unknown.safetensors"
-    save_safetensors(
+    save_raw_safetensors(
         src,
         {"x.weight": np.zeros(4, dtype="<f4")},
         dtype_names={"x.weight": "F4_E2M1"},
@@ -110,9 +110,8 @@ def test_rejects_unknown_dtype(tmp_path: Path, dst: Path) -> None:
 def test_rejects_inconsistent_offsets(tmp_path: Path, dst: Path) -> None:
     """shapeとdtypeから決まる長さに合わないヘッダは受け付けない。"""
     src = tmp_path / "broken.safetensors"
-    save_safetensors(src, {"x.weight": np.zeros(4, dtype="<f4")})
     # F32の16バイトをF16と偽ると、必要な長さが8バイトになって食い違う。
-    save_safetensors(
+    save_raw_safetensors(
         src,
         {"x.weight": np.zeros(4, dtype="<f4")},
         dtype_names={"x.weight": "F16"},

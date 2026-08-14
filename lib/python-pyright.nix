@@ -124,13 +124,18 @@ let
   # 検査対象はリポジトリ内の全Pythonファイル。
   # `pyrightconfig.json`の`include`が`.`なので、
   # ここも同じく全部を渡さないとエディタとCIで見る範囲がずれる。
-  # `.py`と設定ファイルだけに絞ることで、
+  # Pythonと設定ファイルだけに絞ることで、
   # 無関係なファイルの変更でこのcheckが作り直されないようにする。
+  #
+  # `.pyi`はスタブを自作した場合にimport解決へ影響するので、
+  # `include`を`.`にして漏れようがなくしたのと同じ理由で最初から拾っておく。
+  # `typings/`ディレクトリや`py.typed`のような、
+  # ここに挙がっていない種類のファイルを置く時はこのfilesetにも足すこと。
   source = lib.fileset.toSource {
     root = ../.;
     fileset = lib.fileset.unions [
       ../pyrightconfig.json
-      (lib.fileset.fileFilter (file: file.hasExt "py") ../.)
+      (lib.fileset.fileFilter (file: file.hasExt "py" || file.hasExt "pyi") ../.)
     ];
   };
 

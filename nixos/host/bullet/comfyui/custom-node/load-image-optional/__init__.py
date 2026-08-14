@@ -24,6 +24,8 @@ NONE_CHOICE = "(none)"
 
 
 class LoadImageOptional(nodes.LoadImage):
+    # 他の自作ノードは戻り値を`dict[str, object]`にしているが、
+    # ここは基底の戻り値を添字で辿って書き換えるので`object`へは狭められない。
     @classmethod
     def INPUT_TYPES(cls) -> dict[str, Any]:
         types = super().INPUT_TYPES()

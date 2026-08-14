@@ -6,6 +6,8 @@
   引数:
     pkgs - pyrightとlinkFarmを取るためのnixpkgs
     comfyui - `pythonRuntime`と`comfyuiSrc`と`withExtraPythonPackages`を持つcomfyui-nixのパッケージ
+              実際に動かしているホストと同じ変種を渡すこと。
+              違う変種を渡すと誰も実行しない環境の閉包を別に持つことになる。
 
   戻り値:
     typecheckDir - pyrightがimport解決に使う`env`と`src`を並べたディレクトリ

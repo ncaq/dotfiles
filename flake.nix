@@ -292,16 +292,23 @@
           git-repo-subscribe = pkgs.callPackage ./pkgs/git-repo-subscribe { };
           safetensors-fp16 = pkgs.callPackage ./pkgs/safetensors-fp16 { };
           # リポジトリ内のPythonをpyrightで型検査するためのderivation群。
-          # comfyuiはoverlay経由でしか生えないが、
+          # ComfyUIのパッケージはoverlay経由でしか生えないが、
           # perSystemの`pkgs`にはoverlayが載っていないため、
-          # NixOS構成と同じpkgsを作る`importPkgsStable`から取る。
-          # 型検査用のPython環境は検査専用の依存を足すので、
-          # bulletが使う環境そのものにはならないが、
-          # pkgsが同じなのでtorchなど大半の依存の閉包は、
-          # CIの`build-nixos`がビルドした結果と共有できる。
+          # overlayを載せる`importPkgsStable`から取る。
+          # overlayが返すのはcomfyui-nix自身が固定したnixpkgsで組んだ成果物で、
+          # 適用先の`pkgs`には依存しないため、どのpkgsから取っても結果は同じ。
+          #
+          # 取るのはCUDA版の`comfy-ui-cuda`にする。
+          # bulletの`services.comfyui.gpuSupport = "cuda"`がこれを選ぶので、
+          # 型検査が要求するtorchなどの依存の閉包が、
+          # 実際に動かしている環境のものと共有される。
+          # overlayの`comfyui`はCPUビルドで、
+          # そちらを取ると誰も実行しない環境の閉包を新たに取得することになる。
+          # 型検査用の環境は検査専用の依存を足すので、
+          # bulletが使う環境そのものにはならない。
           pythonPyright = import ./lib/python-pyright.nix {
             inherit pkgs;
-            inherit (importPkgsStable system) comfyui;
+            comfyui = (importPkgsStable system).comfy-ui-cuda;
           };
           # CUDA版torchを含むcomfyuiはaarch64では現実的にビルドできないため、
           # 型検査もx86_64-linuxでだけ提供します。

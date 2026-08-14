@@ -371,10 +371,47 @@ in
     };
   };
 
+  # 制限は持たせず、`systemd-cgls`や`systemctl --user status`で
+  # Claude Codeのセッション群をまとめて観察するためだけのsliceです。
+  # Termuxなどsystemdの無い環境では単にスキップされます。
+  systemd.user.slices.claude-code = {
+    Unit.Description = "Claude Code sessions";
+  };
+
   home = {
     # Claude Codeがnativeインストール時に`~/.local/bin/claude`が存在していないと警告を出すため、
     # シンボリックリンクを作成して警告を抑制します。
-    file.".local/bin/claude".source = "${config.programs.claude-code.finalPackage}/bin/claude";
+    # またその際に、暴走したセッションが他のアプリをOOM Killerに殺させないように、
+    # セッションごとのメモリ制限を付けて起動するラッパーを挟みます。
+    file.".local/bin/claude".source = lib.getExe (
+      pkgs.writeShellApplication {
+        name = "claude";
+        # `systemd-run`をPATH経由の偶然に頼らずNixの依存として明示します。
+        runtimeInputs = [ pkgs.systemd ];
+        text = ''
+          claude=${config.programs.claude-code.finalPackage}/bin/claude
+          # systemdがPID 1ではない環境(Termuxなど)ではそのまま起動します。
+          if [ -d /run/systemd/system ]; then
+            # `--scope`はサービスと違いsystemd-run自身の子プロセスとして実行されるため、
+            # TTY・環境変数・カレントディレクトリがそのまま使えて対話TUIも問題ありません。
+            # メモリ制限はセッション(scope)ごとに独立して付けます。
+            # 暴走した1セッションだけがcgroup内のOOM Killerで殺され、
+            # 他の正常なセッションや他のアプリは巻き添えを食いません。
+            # systemdの`%`は全て物理メモリに対する割合です。
+            # MemorySwapMaxはswap容量比ではないことに注意。
+            # zram(物理メモリの20%、16GiB上限)の約半分を意図して10%としています。
+            exec systemd-run --user --scope --quiet --collect \
+              --slice=claude-code.slice \
+              --same-dir \
+              -p MemoryHigh=75% \
+              -p MemoryMax=80% \
+              -p MemorySwapMax=10% \
+              -- "$claude" "$@"
+          fi
+          exec "$claude" "$@"
+        '';
+      }
+    );
 
     activation = {
       # `~/.claude.json`に書き込まれる設定をインストール時に設定。

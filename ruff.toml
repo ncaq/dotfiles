@@ -5,6 +5,17 @@
 # `pkgs/safetensors-fp16/pyproject.toml`には`[tool.ruff]`が無いので、
 # ruffは設定を上へ探しに来てここへ辿り着く。
 
+# 対象とするPythonのバージョン。
+#
+# ruffは設定を提供したファイルを基準に`requires-python`を探すので、
+# 設定がここにある限り`pkgs/safetensors-fp16/pyproject.toml`の宣言は使われず、
+# 書かなければruffの既定のバージョンで判定される。
+# 新しい構文への置き換えを勧める`UP`が本来の指摘を出さなくなるため明示する。
+#
+# ComfyUIのPython環境も`requires-python`もどちらも3.12なので、
+# 型検査と同じ下限で揃う。
+target-version = "py312"
+
 [lint]
 # 既定のE4/E7/E9/Fに加えて、実行しなくても分かる誤りを拾うルールを足す。
 # 選んだのは、現状のコードで指摘が出ないか、

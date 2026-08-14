@@ -54,8 +54,31 @@ in
       # 読み込み側から見た`custom_nodes/`配下の見え方は実体を並べた場合と変わらない。
       writeCheckedNode =
         dirName:
+        let
+          nodeDir = ./custom-node + "/${dirName}";
+          # このノードが使う共有モジュールをsymlinkから導出する。
+          # symlinkは`../share_encode.py`のように対象と同じ名前なので、
+          # ノードディレクトリ内のsymlinkの名前を`custom-node/`直下から拾えば揃う。
+          # 対応表を別に持たないことで、
+          # ディレクトリ構造を唯一の真実にした方針が保たれる。
+          # 拾い損ねた場合はsymlinkが宙に浮いて下のcpが落ちるので、
+          # 黙って壊れることはない。
+          sharedModules = lib.pipe (builtins.readDir nodeDir) [
+            (lib.filterAttrs (_: type: type == "symlink"))
+            builtins.attrNames
+            (map (name: ./custom-node + "/${name}"))
+          ];
+          # ディレクトリ全体をstoreへ取り込むと、
+          # 7つのノード全てが配下の全ファイルへ依存して、
+          # 1ノードの変更で無関係なノードまで再ビルドされてしまう。
+          # このノードのディレクトリと、使う共有モジュールだけを入力にする。
+          source = lib.fileset.toSource {
+            root = ./custom-node;
+            fileset = lib.fileset.unions ([ nodeDir ] ++ sharedModules);
+          };
+        in
         pkgs.runCommand "comfyui-${dirName}" { } ''
-          cp -rL ${./custom-node}/${dirName} $out
+          cp -rL ${source}/${dirName} $out
           for source in $(find $out -name '*.py'); do
             ${checkPythonSyntax "\"$source\""}
           done

@@ -58,18 +58,31 @@ def test_keeps_metadata(src: Path, dst: Path, metadata: dict[str, str]) -> None:
     assert converted_metadata == metadata
 
 
-def test_keeps_tensor_order(src: Path, dst: Path) -> None:
+def test_keeps_tensor_order(tmp_path: Path, dst: Path) -> None:
     """テンソルの並びは入力のデータ配置順のまま保たれる。
 
     名前で並べ直さないので出力は入力ファイルから一意に決まる、
     という`build_header`の契約を、
     ファイル上のヘッダのキーの並びで確かめる。
     ライブラリが返すヘッダは整理されているので生で読む。
+
+    本家の`save_file`はdtypeと名前でソートして書くため、
+    そちらで作った入力の並びは既にアルファベット順になっていて、
+    名前で並べ直す実装でも同じ並びになって通り得る。
+    アルファベット順とは違う配置順の入力を生で組み立てる。
     """
+    src = tmp_path / "unsorted.safetensors"
+    save_raw_safetensors(
+        src,
+        {
+            "z.weight": np.zeros(4, dtype="<f4"),
+            "a.weight": np.zeros(4, dtype="<f4"),
+        },
+    )
+    # 組み立てた入力自体がアルファベット順でないことを先に押さえる。
+    assert list(read_header(src)) == ["z.weight", "a.weight"]
     convert(str(src), str(dst), allow_overflow=False)
-    source_order = [name for name in read_header(src) if name != "__metadata__"]
-    converted_order = [name for name in read_header(dst) if name != "__metadata__"]
-    assert converted_order == source_order
+    assert list(read_header(dst)) == ["z.weight", "a.weight"]
 
 
 def test_omits_metadata_when_absent(tmp_path: Path, dst: Path) -> None:

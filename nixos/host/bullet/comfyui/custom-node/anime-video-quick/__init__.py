@@ -608,8 +608,14 @@ class AnimeVideoQuick:
             loaded_manifest = read_manifest(manifest_path)
             # 黙って作り直すと生成条件の照合を飛ばすことになり、
             # 別の条件で作られたキーフレームをそのまま再利用してしまう。
+            # 読めない記録は捨てるしかないが、
+            # どうすれば先へ進めるのかはログだけで分かるようにする。
             if loaded_manifest is None:
-                raise ValueError(f"進捗の記録を読めませんでした: {manifest_path}")
+                raise ValueError(
+                    f"進捗の記録を読めませんでした: {manifest_path}"
+                    " このファイルを削除して最初から作り直すか、"
+                    "別のjob IDを指定してください。"
+                )
             manifest = loaded_manifest
             differing_identity_keys = [
                 key

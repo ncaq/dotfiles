@@ -291,13 +291,13 @@
         let
           git-repo-subscribe = pkgs.callPackage ./pkgs/git-repo-subscribe { };
           safetensors-fp16 = pkgs.callPackage ./pkgs/safetensors-fp16 { };
-          # ComfyUIの自作カスタムノードをpyrightで型検査するためのderivation群。
+          # リポジトリ内のPythonをpyrightで型検査するためのderivation群。
           # comfyuiはoverlay経由でしか生えないが、
           # perSystemの`pkgs`にはoverlayが載っていないため、
           # NixOS構成と同じpkgsを作る`importPkgsStable`から取る。
           # bulletが使うものと同一の成果物を指すので、
           # CIの`build-nixos`がビルドした結果をそのまま再利用できる。
-          comfyuiCustomNodePyright = import ./lib/comfyui-custom-node-pyright.nix {
+          pythonPyright = import ./lib/python-pyright.nix {
             inherit pkgs;
             inherit (importPkgsStable system) comfyui;
           };
@@ -380,8 +380,8 @@
               inherit git-repo-subscribe safetensors-fp16;
             }
             // lib.optionalAttrs hasComfyui {
-              # ComfyUIの自作カスタムノードの型検査。
-              comfyui-custom-node-pyright = comfyuiCustomNodePyright.check;
+              # リポジトリ内のPythonの型検査。
+              pyright = pythonPyright.check;
             };
 
           packages = {
@@ -401,9 +401,9 @@
             inherit safetensors-fp16;
           }
           // lib.optionalAttrs hasComfyui {
-            # pyrightがComfyUIのPython環境とソースを辿るためのディレクトリ。
+            # pyrightがPython環境とComfyUIのソースを辿るためのディレクトリ。
             # `.envrc`が`.typecheck`という名前のout-linkを張ります。
-            comfyui-typecheck = comfyuiCustomNodePyright.typecheckDir;
+            typecheck = pythonPyright.typecheckDir;
           };
 
           devShells.default = pkgs.mkShell {

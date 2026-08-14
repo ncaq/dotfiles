@@ -58,7 +58,7 @@ def test_rejects_shifted_contents(tmp_path: Path, dst: Path) -> None:
 
 
 def test_rejects_missing_tensor(
-    src: Path, dst: Path, tensors: dict, metadata: dict
+    src: Path, dst: Path, tensors: dict[str, np.ndarray], metadata: dict[str, str]
 ) -> None:
     """テンソルが欠けていれば気付く。"""
     converted = {
@@ -72,7 +72,7 @@ def test_rejects_missing_tensor(
 
 
 def test_rejects_unconverted_dtype(
-    src: Path, dst: Path, tensors: dict, metadata: dict
+    src: Path, dst: Path, tensors: dict[str, np.ndarray], metadata: dict[str, str]
 ) -> None:
     """F32のまま残っていれば気付く。"""
     save_safetensors(dst, tensors, metadata)

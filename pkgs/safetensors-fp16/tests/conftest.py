@@ -54,7 +54,7 @@ def save_safetensors(
             file.write(array.tobytes())
 
 
-def load_safetensors(path: Path) -> tuple[dict, dict[str, np.ndarray]]:
+def load_safetensors(path: Path) -> tuple[dict[str, object], dict[str, np.ndarray]]:
     """safetensorsを読んでヘッダとテンソルを返す。"""
     with path.open("rb") as file:
         (header_length,) = struct.unpack("<Q", file.read(8))

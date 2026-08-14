@@ -127,7 +127,7 @@ class SyncedWriter:
         self.dropped = position
 
 
-def read_header(file: BinaryIO) -> tuple[dict, int]:
+def read_header(file: BinaryIO) -> tuple[dict[str, object], int]:
     """先頭のヘッダを読み、JSONとデータ領域の開始位置を返す。"""
     raw_length = file.read(8)
     if len(raw_length) != 8:
@@ -145,7 +145,9 @@ def read_header(file: BinaryIO) -> tuple[dict, int]:
     return header, data_start
 
 
-def parse_tensors(header: dict, data_size: int) -> tuple[dict | None, list[Tensor]]:
+def parse_tensors(
+    header: dict[str, object], data_size: int
+) -> tuple[dict[str, object] | None, list[Tensor]]:
     """ヘッダから__metadata__を分離し、テンソルをデータの配置順に検証しながら並べる。
 
     オフセットが0から隙間なく連続していることまで確認する。
@@ -190,7 +192,9 @@ def parse_tensors(header: dict, data_size: int) -> tuple[dict | None, list[Tenso
     return metadata, tensors
 
 
-def read_tensors(path: str, file: BinaryIO) -> tuple[dict | None, list[Tensor], int]:
+def read_tensors(
+    path: str, file: BinaryIO
+) -> tuple[dict[str, object] | None, list[Tensor], int]:
     """ヘッダを読んで__metadata__とテンソル列とデータ開始位置を返す。"""
     header, data_start = read_header(file)
     metadata, tensors = parse_tensors(header, os.path.getsize(path) - data_start)
@@ -203,7 +207,7 @@ def converted_dtype(dtype: str) -> str:
 
 
 def build_header(
-    metadata: dict | None, tensors: list[Tensor]
+    metadata: dict[str, object] | None, tensors: list[Tensor]
 ) -> tuple[bytes, list[Tensor]]:
     """F32をF16へ置き換えた出力用のヘッダと、新しいオフセットを持つテンソル列を返す。
 

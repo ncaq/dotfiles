@@ -10,7 +10,9 @@ from conftest import load_safetensors, save_safetensors
 from safetensors_fp16.convert import convert
 
 
-def test_converts_f32_to_f16(src: Path, dst: Path, tensors: dict) -> None:
+def test_converts_f32_to_f16(
+    src: Path, dst: Path, tensors: dict[str, np.ndarray]
+) -> None:
     """F32のテンソルがF16になり、値がnumpyのキャストと一致する。"""
     convert(str(src), str(dst), allow_overflow=False)
     _, converted = load_safetensors(dst)
@@ -22,7 +24,9 @@ def test_converts_f32_to_f16(src: Path, dst: Path, tensors: dict) -> None:
         assert np.array_equal(expected.view("<u2"), converted[name].view("<u2")), name
 
 
-def test_keeps_other_dtypes(src: Path, dst: Path, tensors: dict) -> None:
+def test_keeps_other_dtypes(
+    src: Path, dst: Path, tensors: dict[str, np.ndarray]
+) -> None:
     """F32以外のテンソルはdtypeも中身も変わらない。"""
     convert(str(src), str(dst), allow_overflow=False)
     _, converted = load_safetensors(dst)
@@ -33,7 +37,7 @@ def test_keeps_other_dtypes(src: Path, dst: Path, tensors: dict) -> None:
         assert np.array_equal(array.view("uint8"), converted[name].view("uint8")), name
 
 
-def test_keeps_shapes(src: Path, dst: Path, tensors: dict) -> None:
+def test_keeps_shapes(src: Path, dst: Path, tensors: dict[str, np.ndarray]) -> None:
     """shapeは空テンソルもスカラーも保たれる。"""
     convert(str(src), str(dst), allow_overflow=False)
     _, converted = load_safetensors(dst)
@@ -42,7 +46,7 @@ def test_keeps_shapes(src: Path, dst: Path, tensors: dict) -> None:
     }
 
 
-def test_keeps_metadata(src: Path, dst: Path, metadata: dict) -> None:
+def test_keeps_metadata(src: Path, dst: Path, metadata: dict[str, str]) -> None:
     """__metadata__はそのまま引き継がれる。"""
     convert(str(src), str(dst), allow_overflow=False)
     header, _ = load_safetensors(dst)

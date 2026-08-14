@@ -8,8 +8,8 @@ result*
 
 # Python
 
-# `nix build .#comfyui-typecheck --out-link .typecheck`が作るout-link。
-# pyrightはここ経由でComfyUIのPython環境とソースを相対パスで辿ります。
+# `nix build .#typecheck --out-link .typecheck`が作るout-link。
+# pyrightはここ経由でPython環境とComfyUIのソースを相対パスで辿ります。
 /.typecheck
 
 # グローバルのgitignoreで無視していてもNixのflakeソースには入ってしまい、

@@ -1,8 +1,15 @@
 {
-  "include": ["nixos/host/bullet/comfyui/custom-node"],
+  "include": ["nixos/host/bullet/comfyui/custom-node", "pkgs/safetensors-fp16"],
   "exclude": ["**/__pycache__"],
   "typeCheckingMode": "standard",
+  "reportMissingTypeArgument": "error",
   "venvPath": ".typecheck",
   "venv": "env",
-  "extraPaths": [".typecheck/src"]
+  "extraPaths": [".typecheck/src"],
+  "executionEnvironments": [
+    {
+      "root": "pkgs/safetensors-fp16",
+      "extraPaths": ["pkgs/safetensors-fp16", "pkgs/safetensors-fp16/tests"]
+    }
+  ]
 }

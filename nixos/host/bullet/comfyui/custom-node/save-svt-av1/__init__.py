@@ -1,3 +1,11 @@
+# PyAVの`add_stream`のスタブと、
+# ComfyUI本体の`server.PromptServer`の`send_sync`に型が付いておらず、
+# 呼ぶだけでstrictのUnknown系が出る。
+# 上流に型が付くまではこのファイルでだけ落とす。
+# pyright: reportUnknownArgumentType=none
+# pyright: reportUnknownMemberType=none
+# pyright: reportUnknownVariableType=none
+
 import json
 import logging
 import math

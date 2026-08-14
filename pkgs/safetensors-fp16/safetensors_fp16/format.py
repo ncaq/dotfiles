@@ -88,7 +88,9 @@ def open_tracked(path: str, label: str) -> Generator[BinaryIO]:
     """
     with (
         open(path, "rb") as raw,
-        tqdm.wrapattr(
+        # typeshedのtqdmスタブは`**tqdm_kwargs`を無注釈のまま受けるため、
+        # スタブを入れてもこの呼び出しの型は部分的に不明のままになる。
+        tqdm.wrapattr(  # pyright: ignore[reportUnknownMemberType]
             raw,
             "read",
             total=os.path.getsize(path),

@@ -6,6 +6,14 @@
 # WanFirstLastFrameToVideoのend_imageのような任意入力に対して、
 # ノードのバイパス操作なしで、
 # 「画像が指定してあれば有効、なければ無効」を実現するためのもの。
+#
+# 継承元の`nodes.LoadImage`はComfyUI本体のクラスで型注釈が無く、
+# `load_image`や`IS_CHANGED`を呼ぶだけでstrictのUnknown系が出る。
+# 上流に型が付くまではこのファイルでだけ落とす。
+# pyright: reportUnknownArgumentType=none
+# pyright: reportUnknownMemberType=none
+# pyright: reportUnknownVariableType=none
+
 from typing import Any, Literal
 
 import torch

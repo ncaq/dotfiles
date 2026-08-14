@@ -1,3 +1,15 @@
+# ComfyUI本体は型注釈をほとんど持たないので、
+# `comfy.utils.common_upscale`や`nodes.common_ksampler`、
+# `node_helpers.conditioning_set_values`、
+# UNETLoaderが返すモデルの`patch`や`sample`の型が決まらない。
+# torchの`from_numpy`や`movedim`とPyAVの`add_stream`のスタブにも不明な部分がある。
+# strictのUnknown系はこれらに触れる式を全て挙げてしまい、
+# このファイルだけで47件になって自分のコードの問題が埋もれる。
+# 上流に型が付くまではこのファイルでだけ落とす。
+# pyright: reportUnknownArgumentType=none
+# pyright: reportUnknownMemberType=none
+# pyright: reportUnknownVariableType=none
+
 import hashlib
 import json
 import math

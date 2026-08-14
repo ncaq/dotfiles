@@ -7,6 +7,14 @@
 # 本体へパッチを当てる方法もあるが、
 # 包むだけなら保存処理の中身が変わっても追随が要らず、
 # 万一戻り値の形が変わってもPNGが縮まなくなるだけで生成には影響しない。
+#
+# 包む対象の`nodes.SaveImage.save_images`はComfyUI本体の関数で型注釈が無く、
+# 参照するだけでstrictのUnknown系が出る。
+# 上流に型が付くまではこのファイルでだけ落とす。
+# pyright: reportUnknownArgumentType=none
+# pyright: reportUnknownMemberType=none
+# pyright: reportUnknownVariableType=none
+
 import logging
 from pathlib import Path
 from typing import Any

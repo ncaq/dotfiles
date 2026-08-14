@@ -42,10 +42,7 @@ in
       # 引数の全ファイルを1プロセスで検査する。
       # CUDA版torchを持つComfyUI環境のPythonは起動が軽くないので、
       # ファイルごとに起動し直さずまとめて渡す。
-      checkPythonSyntaxCommand = "${comfyuiPython}/bin/python -c 'import sys; [compile(open(path, \"rb\").read(), path, \"exec\") for path in sys.argv[1:]]'";
-      checkPythonSyntax = path: ''
-        ${checkPythonSyntaxCommand} ${path}
-      '';
+      checkPythonSyntax = "${comfyuiPython}/bin/python -c 'import sys; [compile(open(path, \"rb\").read(), path, \"exec\") for path in sys.argv[1:]]'";
       # 自作カスタムノードのディレクトリを丸ごと配置して、配置先を構文検査する。
       #
       # `share_encode.py`のような複数のノードで共有するモジュールは、
@@ -85,7 +82,7 @@ in
           # ComfyUIはこのファイルの有無でカスタムノードとして読み込むかを決める。
           # findが1件も見つけないまま成功する状態もこれで防ぐ。
           test -f $out/__init__.py
-          find $out -name '*.py' -exec ${checkPythonSyntaxCommand} {} +
+          find $out -name '*.py' -exec ${checkPythonSyntax} {} +
         '';
       loraManager = pkgs.fetchFromGitHub {
         owner = "willmiao";
@@ -133,7 +130,9 @@ in
               "-F0"
             ];
             # パッチのインデント崩れをComfyUI起動前のビルド時に検出する。
-            postPatch = (old.postPatch or "") + checkPythonSyntax "modules/impact/core.py";
+            postPatch = (old.postPatch or "") + ''
+              ${checkPythonSyntax} modules/impact/core.py
+            '';
           });
           # Power Lora Loaderなどワークフロー整理のノード群。
           # comfyui-nixがパッケージ済みのものを使う。

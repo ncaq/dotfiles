@@ -80,6 +80,24 @@ def test_rejects_non_object_metadata() -> None:
         parse_tensors({"__metadata__": "text"}, 0)
 
 
+def test_rejects_non_string_metadata_value() -> None:
+    """__metadata__の値が文字列でなければ拒否する。
+
+    仕様では`Map<String, String>`で、
+    `build_header`は入力をそのまま書き写すため、
+    通してしまうと本家のライブラリが読めない出力になる。
+    """
+    with pytest.raises(ValueError, match="__metadata__ value is not a string"):
+        parse_tensors({"__metadata__": {"format": 1}}, 0)
+
+
+def test_accepts_string_metadata() -> None:
+    """値が全て文字列の__metadata__はそのまま通る。"""
+    metadata, tensors = parse_tensors({"__metadata__": {"format": "pt"}}, 0)
+    assert metadata == {"format": "pt"}
+    assert tensors == []
+
+
 def test_rejects_non_object_entry() -> None:
     """テンソルの記述がオブジェクトでなければ拒否する。"""
     with pytest.raises(ValueError, match="entry is not a JSON object"):

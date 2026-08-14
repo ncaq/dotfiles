@@ -151,6 +151,21 @@ def json_object(value: object, message: str) -> dict[str, object]:
     return cast(dict[str, object], value)
 
 
+def json_metadata(value: object) -> dict[str, str]:
+    """__metadata__を取り出す。
+
+    safetensorsの仕様では`Map<String, String>`で、値も文字列に限られる。
+    `build_header`は入力の__metadata__をそのまま書き写すので、
+    数値やネストしたオブジェクトを通してしまうと、
+    本家のライブラリが読めない出力ファイルになる。
+    """
+    metadata = json_object(value, "__metadata__ is not a JSON object")
+    for key, item in metadata.items():
+        if not isinstance(item, str):
+            raise ValueError(f"__metadata__ value is not a string: {key}={item!r}")
+    return cast(dict[str, str], metadata)
+
+
 def json_list(value: object, message: str) -> list[object]:
     """JSONの配列を、要素の型が分かる形で取り出す。"""
     if not isinstance(value, list):
@@ -226,18 +241,14 @@ def read_header(file: BinaryIO) -> tuple[dict[str, object], int]:
 
 def parse_tensors(
     header: dict[str, object], data_size: int
-) -> tuple[dict[str, object] | None, list[Tensor]]:
+) -> tuple[dict[str, str] | None, list[Tensor]]:
     """ヘッダから__metadata__を分離し、テンソルをデータの配置順に検証しながら並べる。
 
     オフセットが0から隙間なく連続していることまで確認する。
     ここを通せば、後段は各テンソルを順に読むだけでファイル全体を舐めたことになる。
     """
     raw_metadata = header.get("__metadata__")
-    metadata = (
-        None
-        if raw_metadata is None
-        else json_object(raw_metadata, "__metadata__ is not a JSON object")
-    )
+    metadata = None if raw_metadata is None else json_metadata(raw_metadata)
 
     tensors: list[Tensor] = []
     for name, info in header.items():
@@ -288,7 +299,7 @@ def parse_tensors(
 
 def read_tensors(
     path: str, file: BinaryIO
-) -> tuple[dict[str, object] | None, list[Tensor], int]:
+) -> tuple[dict[str, str] | None, list[Tensor], int]:
     """ヘッダを読んで__metadata__とテンソル列とデータ開始位置を返す。"""
     header, data_start = read_header(file)
     metadata, tensors = parse_tensors(header, os.path.getsize(path) - data_start)
@@ -301,7 +312,7 @@ def converted_dtype(dtype: str) -> str:
 
 
 def build_header(
-    metadata: dict[str, object] | None, tensors: list[Tensor]
+    metadata: dict[str, str] | None, tensors: list[Tensor]
 ) -> tuple[bytes, list[Tensor]]:
     """F32をF16へ置き換えた出力用のヘッダと、新しいオフセットを持つテンソル列を返す。
 

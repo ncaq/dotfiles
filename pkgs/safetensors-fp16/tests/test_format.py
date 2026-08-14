@@ -7,7 +7,8 @@ safetensorsのヘッダはJSONなので、
 そして何が壊れているのか分かるメッセージが出ることを確かめる。
 
 正しいファイルでは通れない経路なので、
-ここだけはヘッダを生で組み立てる。
+このファイルでは`write_header`で任意のJSONを直接ヘッダへ置く。
+テンソルから組み立てる`save_raw_safetensors`では作れない形を見るためである。
 """
 
 from pathlib import Path

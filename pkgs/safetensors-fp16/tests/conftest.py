@@ -11,8 +11,9 @@ Python APIが全テンソルの辞書をメモリに要求する設計で、
 数十GBのファイルには使えないからである。
 テストが扱うのは数百バイトなので、この制約は問題にならない。
 
-壊れたファイルはライブラリでは作れないので、
-そちらだけ生のバイト列から組み立てる。
+ライブラリでは作れないファイルだけ、生のバイト列から組み立てる。
+壊れたヘッダと、
+ライブラリが並べ替えてしまうテンソルの配置順がこれに当たる。
 """
 
 # safetensorsのスタブは`safe_open.metadata`に戻り値の注釈が無く、
@@ -34,7 +35,7 @@ from safetensors import safe_open
 from safetensors.numpy import save_file
 
 # numpyのdtypeとsafetensorsのdtype名の対応。
-# 壊れたファイルを組み立てる時にだけ使う。
+# 生のバイト列からヘッダを組み立てる時にだけ使う。
 DTYPE_NAME: dict[np.dtype, str] = {
     np.dtype("<f4"): "F32",
     np.dtype("<f2"): "F16",
@@ -53,7 +54,11 @@ def save_safetensors(
 
 
 def load_safetensors(path: Path) -> tuple[dict[str, str], dict[str, np.ndarray]]:
-    """safetensorsを読んで__metadata__とテンソルを返す。"""
+    """safetensorsを読んで__metadata__とテンソルを返す。
+
+    `__metadata__`が無いファイルでも空の辞書を返すので、
+    有無そのものを見たい時は`read_header`を使う。
+    """
     with safe_open(str(path), framework="numpy") as file:
         metadata: dict[str, str] | None = file.metadata()
         # ruffは辞書に対する`.keys()`だと見て単純化を促すが、
@@ -99,8 +104,14 @@ def save_raw_safetensors(
 ) -> None:
     """テンソルからヘッダを組み立てて書き出す。
 
+    入力の辞書の順序をそのままヘッダのキー順として書く。
+    本家の`save_file`はdtypeと名前で並べ替えてしまうので、
+    並び順そのものを決めたい時はこちらを使う。
+
     dtype_namesでヘッダのdtype名だけを差し替えられる。
     実際のデータと食い違うdtypeを載せた壊れたファイルを作るために使う。
+
+    `__metadata__`は書かないので、必要な時は`save_safetensors`を使う。
     """
     header: dict[str, object] = {}
     offset = 0

@@ -26,6 +26,7 @@ Python APIが全テンソルの辞書をメモリに要求する設計で、
 import json
 import struct
 from pathlib import Path
+from typing import cast
 
 import numpy as np
 import pytest
@@ -57,6 +58,21 @@ def load_safetensors(path: Path) -> tuple[dict[str, str], dict[str, np.ndarray]]
         metadata: dict[str, str] | None = file.metadata()
     tensors: dict[str, np.ndarray] = load_file(str(path))
     return metadata or {}, tensors
+
+
+def read_header(path: Path) -> dict[str, object]:
+    """ヘッダのJSONをそのまま読み出す。
+
+    `write_header`の対。
+    ライブラリはヘッダを整理して返すので、
+    キーの並びや`__metadata__`の有無といった、
+    ファイル上の見た目そのものを見たい時に使う。
+    """
+    with path.open("rb") as file:
+        (header_length,) = struct.unpack("<Q", file.read(8))
+        parsed = json.loads(file.read(header_length))
+    assert isinstance(parsed, dict)
+    return cast(dict[str, object], parsed)
 
 
 def write_header(path: Path, header: object, data: bytes = b"") -> None:

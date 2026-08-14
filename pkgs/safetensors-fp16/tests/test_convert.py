@@ -5,7 +5,12 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from conftest import load_safetensors, save_raw_safetensors, save_safetensors
+from conftest import (
+    load_safetensors,
+    read_header,
+    save_raw_safetensors,
+    save_safetensors,
+)
 
 from safetensors_fp16.convert import convert
 
@@ -51,6 +56,32 @@ def test_keeps_metadata(src: Path, dst: Path, metadata: dict[str, str]) -> None:
     convert(str(src), str(dst), allow_overflow=False)
     converted_metadata, _ = load_safetensors(dst)
     assert converted_metadata == metadata
+
+
+def test_keeps_tensor_order(src: Path, dst: Path) -> None:
+    """テンソルの並びは入力のデータ配置順のまま保たれる。
+
+    名前で並べ直さないので出力は入力ファイルから一意に決まる、
+    という`build_header`の契約を、
+    ファイル上のヘッダのキーの並びで確かめる。
+    ライブラリが返すヘッダは整理されているので生で読む。
+    """
+    convert(str(src), str(dst), allow_overflow=False)
+    source_order = [name for name in read_header(src) if name != "__metadata__"]
+    converted_order = [name for name in read_header(dst) if name != "__metadata__"]
+    assert converted_order == source_order
+
+
+def test_omits_metadata_when_absent(tmp_path: Path, dst: Path) -> None:
+    """__metadata__の無い入力では、出力にもキーごと現れない。
+
+    空の`__metadata__`を書いてしまうと入力と別のファイルになる。
+    """
+    src = tmp_path / "no-metadata.safetensors"
+    save_safetensors(src, {"x.weight": np.zeros(4, dtype="<f4")})
+    assert "__metadata__" not in read_header(src)
+    convert(str(src), str(dst), allow_overflow=False)
+    assert "__metadata__" not in read_header(dst)
 
 
 def test_rounds_to_nearest_even(src: Path, dst: Path) -> None:

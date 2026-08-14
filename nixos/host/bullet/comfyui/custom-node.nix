@@ -38,12 +38,15 @@ in
       # テキストモードだとロケール未設定のビルド環境ではASCII扱いになり、
       # 日本語コメントで構文と無関係な復号エラーになる。
       # bytesならcompile()がPEP 263に従いUTF-8として解釈する。
+      #
+      # 引数の全ファイルを1プロセスで検査する。
+      # CUDA版torchを持つComfyUI環境のPythonは起動が軽くないので、
+      # ファイルごとに起動し直さずまとめて渡す。
+      checkPythonSyntaxCommand = "${comfyuiPython}/bin/python -c 'import sys; [compile(open(path, \"rb\").read(), path, \"exec\") for path in sys.argv[1:]]'";
       checkPythonSyntax = path: ''
-        ${comfyuiPython}/bin/python -c \
-          'import sys; compile(open(sys.argv[1], "rb").read(), sys.argv[1], "exec")' \
-          ${path}
+        ${checkPythonSyntaxCommand} ${path}
       '';
-      # 自作カスタムノードのディレクトリを構文検査してから丸ごと配置する。
+      # 自作カスタムノードのディレクトリを丸ごと配置して、配置先を構文検査する。
       #
       # `share_encode.py`のような複数のノードで共有するモジュールは、
       # 実体を`custom-node/`直下に置き、
@@ -79,9 +82,10 @@ in
         in
         pkgs.runCommand "comfyui-${dirName}" { } ''
           cp -rL ${source}/${dirName} $out
-          for source in $(find $out -name '*.py'); do
-            ${checkPythonSyntax "\"$source\""}
-          done
+          # ComfyUIはこのファイルの有無でカスタムノードとして読み込むかを決める。
+          # findが1件も見つけないまま成功する状態もこれで防ぐ。
+          test -f $out/__init__.py
+          find $out -name '*.py' -exec ${checkPythonSyntaxCommand} {} +
         '';
       loraManager = pkgs.fetchFromGitHub {
         owner = "willmiao";

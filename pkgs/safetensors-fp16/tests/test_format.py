@@ -16,7 +16,7 @@ import pytest
 from conftest import write_header
 
 from safetensors_fp16.convert import convert
-from safetensors_fp16.format import parse_tensors, read_header
+from safetensors_fp16.format import HEADER_MAX_BYTES, parse_tensors, read_header
 
 
 def test_rejects_short_file(tmp_path: Path) -> None:
@@ -38,17 +38,33 @@ def test_rejects_truncated_header(tmp_path: Path) -> None:
         read_header(file)
 
 
-def test_rejects_oversized_header(tmp_path: Path) -> None:
+@pytest.mark.parametrize("header_length", [HEADER_MAX_BYTES + 1, 2**64 - 1])
+def test_rejects_oversized_header(tmp_path: Path, header_length: int) -> None:
     """上限を超えるヘッダ長を、読み込む前に拒否する。
 
     u64をそのまま`read`へ渡すと巨大な確保が起きるので、
     切り詰めの判定へ到達する前に落とす必要がある。
     """
     path = tmp_path / "huge.safetensors"
-    path.write_bytes((2**64 - 1).to_bytes(8, "little") + b"{}")
+    path.write_bytes(header_length.to_bytes(8, "little") + b"{}")
     with (
         path.open("rb") as file,
-        pytest.raises(ValueError, match="at most 100000000 is accepted"),
+        pytest.raises(ValueError, match=f"at most {HEADER_MAX_BYTES} is accepted"),
+    ):
+        read_header(file)
+
+
+def test_accepts_header_length_at_limit(tmp_path: Path) -> None:
+    """上限ちょうどのヘッダ長は上限の判定を通る。
+
+    判定が`<=`になっていると上限ちょうどまで弾いてしまうので、
+    切り詰めの判定まで進むことで境界の側を固定する。
+    """
+    path = tmp_path / "limit.safetensors"
+    path.write_bytes(HEADER_MAX_BYTES.to_bytes(8, "little") + b"{}")
+    with (
+        path.open("rb") as file,
+        pytest.raises(ValueError, match="header is truncated"),
     ):
         read_header(file)
 

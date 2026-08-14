@@ -54,7 +54,10 @@ def save_images(self: nodes.SaveImage, *args: Any, **kwargs: Any) -> dict[str, A
     return result
 
 
-setattr(save_images, "optimize_png_wrapped", True)
+# ruffは`save_images.optimize_png_wrapped = True`と書けと言うが、
+# 関数オブジェクトへ後から属性を生やす代入はpyrightが型エラーにする。
+# `setattr`なら双方を通せるのでこちらを使う。
+setattr(save_images, "optimize_png_wrapped", True)  # noqa: B010
 
 # ComfyUI-Managerによる再読み込みなどでこのモジュールが二度読まれると、
 # 何もしなければ包んだ関数を更に包んで1枚のPNGへoxipngを二重に走らせてしまう。

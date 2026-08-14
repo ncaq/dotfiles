@@ -1,0 +1,49 @@
+# ruffのlintルール設定。
+#
+# treefmtの`ruff-check`とエディタと手元の`ruff check`が同じルールを見るように、
+# リポジトリのルートへ置く。
+# `pkgs/safetensors-fp16/pyproject.toml`には`[tool.ruff]`が無いので、
+# ruffは設定を上へ探しに来てここへ辿り着く。
+
+[lint]
+# 既定のE4/E7/E9/Fに加えて、実行しなくても分かる誤りを拾うルールを足す。
+# 選んだのは、現状のコードで指摘が出ないか、
+# 出ても意図を書けば済む程度に収まるものだけ。
+extend-select = [
+  "A",     # 組み込み名の隠蔽
+  "ASYNC", # asyncの誤用
+  "B",     # bugbear、可変デフォルト引数やループ変数の捕捉など
+  "C4",    # 内包表記で書けるもの
+  "EXE",   # shebangと実行ビットの不一致
+  "FURB",  # 古い書き方の置き換え
+  "G",     # loggingへ渡す文字列の組み立て方
+  "INT",   # gettextの誤用
+  "LOG",   # loggingの誤用
+  "PERF",  # 明らかに無駄なループ
+  "PIE",   # 冗長な記述
+  "RET",   # returnの流れ
+  "SIM",   # 単純化できる分岐や文
+  "SLOT",  # __slots__の付け忘れ
+  "TID",   # importの書き方
+  "UP",    # 新しい構文への更新
+]
+
+ignore = [
+  # `while 0 < remaining:`のような昇順の比較をyoda conditionとして書き換えさせる。
+  # 数直線と同じ並びで読める方を意図的に選んでいるので従わない。
+  "SIM300",
+]
+
+# 以下は検討した上で採らなかったもの。
+#
+# S: subprocessの呼び出しを全て警告するが、
+#    ffmpegやoxipngやSeedVR2 CLIの起動はこのリポジトリの目的そのもので、
+#    どれも配列で渡していてシェルを経由しない。
+#    テストの`assert`もpytestでは普通の書き方。
+# PL: 引数や分岐の数の上限を課すが、
+#     ComfyUIのノードは入力の数だけ引数が並ぶ作りなので21引数などが正常。
+# RUF001-003: 日本語のコメントと中国語のnegative promptを、
+#             紛らわしいUnicode文字として大量に報告する。
+# N: `INPUT_TYPES`や`IS_CHANGED`はComfyUIが要求する名前で、
+#    ハイフン入りのディレクトリ名もComfyUIの慣習。
+# E501: 行長は`.editorconfig`の100文字をeditorconfig-checkerが見ている。

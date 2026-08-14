@@ -290,6 +290,32 @@
         }:
         let
           git-repo-subscribe = pkgs.callPackage ./pkgs/git-repo-subscribe { };
+          # ComfyUIの自作カスタムノードのうち、
+          # ComfyUI本体に触れない部分のpytest。
+          comfyui-custom-node-test = import ./lib/comfyui-custom-node-test.nix { inherit pkgs; };
+          safetensors-fp16 = pkgs.callPackage ./pkgs/safetensors-fp16 { };
+          # リポジトリ内のPythonをpyrightで型検査するためのderivation群。
+          # ComfyUIのパッケージはoverlay経由でしか生えないが、
+          # perSystemの`pkgs`にはoverlayが載っていないため、
+          # overlayを載せる`importPkgsStable`から取る。
+          # overlayが返すのはcomfyui-nix自身が固定したnixpkgsで組んだ成果物で、
+          # 適用先の`pkgs`には依存しないため、どのpkgsから取っても結果は同じ。
+          #
+          # 取るのはCUDA版の`comfy-ui-cuda`にする。
+          # bulletの`services.comfyui.gpuSupport = "cuda"`がこれを選ぶので、
+          # 型検査が要求するtorchなどの依存の閉包が、
+          # 実際に動かしている環境のものと共有される。
+          # overlayの`comfyui`はCPUビルドで、
+          # そちらを取ると誰も実行しない環境の閉包を新たに取得することになる。
+          # 型検査用の環境は検査専用の依存を足すので、
+          # bulletが使う環境そのものにはならない。
+          pythonPyright = import ./lib/python-pyright.nix {
+            inherit pkgs;
+            comfyui = (importPkgsStable system).comfy-ui-cuda;
+          };
+          # CUDA版torchを含むcomfyuiはaarch64では現実的にビルドできないため、
+          # 型検査もx86_64-linuxでだけ提供します。
+          hasComfyui = system == "x86_64-linux";
         in
         {
           treefmt.config = {
@@ -355,7 +381,20 @@
                   } ''echo "$evaluated" > "$out"'';
                 };
             in
-            nixosEvalChecks // hmEvalChecks // { inherit git-repo-subscribe; };
+            nixosEvalChecks
+            // hmEvalChecks
+            // {
+              # `nix-fast-build`が見るのは`.#checks`だけで、
+              # `packages`へ置いただけではCIでビルドされません。
+              # ビルドが通ることと、
+              # derivationの中で走るテストが通ることをCIで保証したいパッケージは、
+              # `packages`と両方に並べます。
+              inherit comfyui-custom-node-test git-repo-subscribe safetensors-fp16;
+            }
+            // lib.optionalAttrs hasComfyui {
+              # リポジトリ内のPythonの型検査。
+              pyright = pythonPyright.check;
+            };
 
           packages = {
             # flake.lockの管理バージョンをre-exportすることで安定した利用を促進。
@@ -371,7 +410,12 @@
             # PRコメントにnvd diffを投稿するスクリプト。
             nvd-pr-diff = pkgs.callPackage ./pkgs/nvd-pr-diff { };
             # safetensorsのF32テンソルをF16へ変換するコマンド。
-            safetensors-fp16 = pkgs.callPackage ./pkgs/safetensors-fp16 { };
+            inherit safetensors-fp16;
+          }
+          // lib.optionalAttrs hasComfyui {
+            # pyrightがPython環境とComfyUIのソースを辿るためのディレクトリ。
+            # `.envrc`が`.typecheck`という名前のout-linkを張ります。
+            typecheck = pythonPyright.typecheckDir;
           };
 
           devShells.default = pkgs.mkShell {
@@ -388,6 +432,10 @@
               statix
               typos
               zizmor
+
+              # リポジトリ内のPythonの型検査。
+              # `.envrc`が用意する`.typecheck`と`pyrightconfig.json`を読みます。
+              pyright
 
               # nixの関連ツール。
               nil

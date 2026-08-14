@@ -7,6 +7,14 @@
 # 本体へパッチを当てる方法もあるが、
 # 包むだけなら保存処理の中身が変わっても追随が要らず、
 # 万一戻り値の形が変わってもPNGが縮まなくなるだけで生成には影響しない。
+#
+# 包む対象の`nodes.SaveImage.save_images`はComfyUI本体の関数で型注釈が無く、
+# 参照するだけでstrictのUnknown系が出る。
+# 上流に型が付くまではこのファイルでだけ落とす。
+# pyright: reportUnknownArgumentType=none
+# pyright: reportUnknownMemberType=none
+# pyright: reportUnknownVariableType=none
+
 import logging
 from pathlib import Path
 from typing import Any
@@ -21,7 +29,16 @@ original_save_images = nodes.SaveImage.save_images
 
 
 def save_images(self: nodes.SaveImage, *args: Any, **kwargs: Any) -> dict[str, Any]:
-    result = original_save_images(self, *args, **kwargs)
+    # 本体のSaveImage.save_imagesには型注釈が無く、
+    # 辞書リテラルからの推論のまま受けるとuiの中身を辿れない。
+    # ComfyUIの版によって返る形が変わり得るので、
+    # 形を決め打ちせず`Any`で受けて下のtryで守る。
+    #
+    # ここの`Any`は他の型に置き換えられない。
+    # 引数を`object`にすると本体の推論済みシグネチャへ渡せず、
+    # 戻り値をTypedDictにすると本体の推論結果から代入できないうえ、
+    # この関数を`nodes.SaveImage.save_images`へ差し戻す代入も通らなくなる。
+    result: dict[str, Any] = original_save_images(self, *args, **kwargs)
     # PreviewImageもSaveImageを継承していて、こちらは一時ディレクトリへ書く。
     # すぐ消える画像を縮めても仕方がないので、出力ディレクトリの分だけ扱う。
     if getattr(self, "type", None) != "output":
@@ -37,7 +54,12 @@ def save_images(self: nodes.SaveImage, *args: Any, **kwargs: Any) -> dict[str, A
     return result
 
 
-setattr(save_images, "optimize_png_wrapped", True)
+# ruffは`setattr`の第2引数が定数なら属性への代入で書けと言う(B010)が、
+# `save_images.optimize_png_wrapped = True`は、
+# 関数オブジェクトに無い属性への代入としてpyrightが型エラーにする。
+# 両方を満たす書き方が無いので、
+# 型検査を通る`setattr`を残してB010だけをこの行で抑制する。
+setattr(save_images, "optimize_png_wrapped", True)  # noqa: B010
 
 # ComfyUI-Managerによる再読み込みなどでこのモジュールが二度読まれると、
 # 何もしなければ包んだ関数を更に包んで1枚のPNGへoxipngを二重に走らせてしまう。

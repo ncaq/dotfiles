@@ -1,0 +1,26 @@
+{
+  "include": ["."],
+  "exclude": ["**/node_modules", "**/__pycache__", "**/.*", "result*"],
+  "typeCheckingMode": "strict",
+  "deprecateTypingAliases": true,
+  "reportCallInDefaultInitializer": "error",
+  "reportPropertyTypeMismatch": "error",
+  "reportUninitializedInstanceVariable": "error",
+  "reportUnnecessaryTypeIgnoreComment": "error",
+  "venvPath": ".typecheck",
+  "venv": "env",
+  "extraPaths": [".typecheck/src"],
+  "executionEnvironments": [
+    {
+      "root": "pkgs/safetensors-fp16",
+      "extraPaths": ["pkgs/safetensors-fp16", "pkgs/safetensors-fp16/tests"]
+    },
+    {
+      "root": "nixos/host/bullet/comfyui/custom-node/tests",
+      "extraPaths": [
+        "nixos/host/bullet/comfyui/custom-node",
+        "nixos/host/bullet/comfyui/custom-node/anime-video-quick"
+      ]
+    }
+  ]
+}

@@ -7,7 +7,6 @@ Python APIは全テンソルの辞書をメモリに要求する設計で数十G
 """
 
 import json
-import math
 import os
 import struct
 from collections.abc import Buffer, Generator
@@ -36,6 +35,15 @@ DTYPE_SIZE: dict[str, int] = {
     "U64": 8,
     "F64": 8,
 }
+
+# ヘッダとして受け付ける最大の長さ。
+#
+# ヘッダ長は先頭8バイトのu64をそのまま読むので、
+# 検証せずに`read`へ渡すと細工されたファイルで巨大な確保が起きる。
+# このコマンドは`lib/convert-safetensors-fp16.nix`から外部配布のモデルを処理するため、
+# 数十バイトのファイルだけでビルドホストのメモリを枯渇させられてしまう。
+# 本家のsafetensorsが同じ理由で設けている100MBに揃える。
+HEADER_MAX_BYTES = 100 * 1000 * 1000
 
 # ヘッダの直後からデータが8バイト境界で始まるようにするパディング単位。
 # 公式のシリアライザと同じ規約で、mmapしたテンソルのアライメントを保つ。
@@ -88,7 +96,9 @@ def open_tracked(path: str, label: str) -> Generator[BinaryIO]:
     """
     with (
         open(path, "rb") as raw,
-        tqdm.wrapattr(
+        # typeshedのtqdmスタブは`**tqdm_kwargs`を無注釈のまま受けるため、
+        # スタブを入れてもこの呼び出しの型は部分的に不明のままになる。
+        tqdm.wrapattr(  # pyright: ignore[reportUnknownMemberType]
             raw,
             "read",
             total=os.path.getsize(path),
@@ -127,49 +137,190 @@ class SyncedWriter:
         self.dropped = position
 
 
-def read_header(file: BinaryIO) -> tuple[dict, int]:
+def json_object(value: object, message: str) -> dict[str, object]:
+    """JSONのオブジェクトを、値の型が分かる形で取り出す。
+
+    `isinstance(value, dict)`だけでは要素の型が不明なままになり、
+    取り出した先を型検査が見てくれない。
+    JSONのオブジェクトはキーが文字列で値は何であってもよいので、
+    `dict[str, object]`へ寄せる。
+    """
+    if not isinstance(value, dict):
+        raise ValueError(message)
+    return cast(dict[str, object], value)
+
+
+def json_metadata(value: object) -> dict[str, str]:
+    """__metadata__を取り出す。
+
+    safetensorsの仕様では`Map<String, String>`で、値も文字列に限られる。
+    `build_header`は入力の__metadata__をそのまま書き写すので、
+    数値やネストしたオブジェクトを通してしまうと、
+    本家のライブラリが読めない出力ファイルになる。
+    """
+    metadata = json_object(value, "__metadata__ is not a JSON object")
+    for key, item in metadata.items():
+        if not isinstance(item, str):
+            raise ValueError(f"__metadata__ value is not a string: {key}={item!r}")
+    return cast(dict[str, str], metadata)
+
+
+def json_list(value: object, message: str) -> list[object]:
+    """JSONの配列を、要素の型が分かる形で取り出す。"""
+    if not isinstance(value, list):
+        raise ValueError(message)
+    return cast(list[object], value)
+
+
+def json_field(entry: dict[str, object], key: str, message: str) -> object:
+    """JSONのオブジェクトから必須のキーを取り出す。
+
+    添字で読むと欠けている時に素の`KeyError`になり、
+    どのテンソルのどのキーが無いのか分からない。
+    型の誤りは名前付きの`ValueError`になるので、
+    キーの欠落だけメッセージの質が落ちないように揃える。
+    """
+    if key not in entry:
+        raise ValueError(message)
+    return entry[key]
+
+
+def json_size(value: object, label: str) -> int:
+    """JSONの非負整数を取り出す。
+
+    shapeもdata_offsetsも仕様上は非負整数なので、
+    それ以外を弾くところまでを1つの条件にまとめる。
+    `int()`へ通すだけでは文字列も小数も黙って受け入れてしまう。
+
+    `bool`は`int`の派生なので`isinstance`だけでは通ってしまう。
+    JSONの`true`は`json.loads`で`True`になり、
+    shapeへ書かれていれば1として扱われる。
+
+    符号も見る。
+    負の次元が偶数個あれば要素数の積が正になり、
+    オフセットの整合検証も連続性の検証も素通りする。
+    `build_header`は入力のshapeをそのまま書き写すので、
+    通してしまうと不正な形状が出力ファイルへ伝播する。
+    numpyの`reshape`は-1を推論指定として解釈するため、
+    読み込み側の解釈まで変わる。
+    """
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        raise ValueError(f"{label} is not a non-negative integer: {value!r}")
+    return value
+
+
+def element_count(shape: list[int], limit: int) -> int | None:
+    """shapeが表す要素数を数える。limitを超えると分かった時点で打ち切りNoneを返す。
+
+    `math.prod(shape)`で済ませると計算量が入力の言い値に引きずられる。
+    `json_size`は次元を非負整数としか見ないので、
+    ヘッダ長の上限に収まる範囲でも巨大な整数を大量に並べられる。
+    多倍長整数の積のコストは桁数に比例するため、
+    桁が伸び続ける積を要素の数だけ繰り返すと実質二次になり、
+    数十MBのファイル1つでビルドホストのCPUを占有できてしまう。
+
+    要素数が上限を超えた時点でヘッダの不整合は確定するので、
+    そこで打ち切れば桁数も繰り返し回数も入力に依らず抑えられる。
+    どこかに0があれば他の次元を見るまでもなく要素数は0なので、
+    打ち切りが誤って働かないように先に見る。
+    """
+    if 0 in shape:
+        return 0
+    count = 1
+    for dimension in shape:
+        count *= dimension
+        if limit < count:
+            return None
+    return count
+
+
+def read_header(file: BinaryIO) -> tuple[dict[str, object], int]:
     """先頭のヘッダを読み、JSONとデータ領域の開始位置を返す。"""
     raw_length = file.read(8)
     if len(raw_length) != 8:
         raise ValueError("file is too short to contain a safetensors header")
-    (header_length,) = struct.unpack("<Q", raw_length)
+    # struct.unpackの戻り値は要素の型が決まらないので、u64だと分かっている型を宣言する。
+    header_length: int = struct.unpack("<Q", raw_length)[0]
+    # 確保する前に弾く。読んでから長さを確かめるのでは手遅れになる。
+    if HEADER_MAX_BYTES < header_length:
+        raise ValueError(
+            f"header claims {header_length} bytes"
+            f" but at most {HEADER_MAX_BYTES} is accepted"
+        )
     raw_header = file.read(header_length)
     if len(raw_header) != header_length:
         raise ValueError("header is truncated")
     data_start = 8 + header_length
     if data_start % HEADER_ALIGN != 0:
         raise ValueError(f"data does not start at a {HEADER_ALIGN} byte boundary")
-    header = json.loads(raw_header)
-    if not isinstance(header, dict):
-        raise ValueError("header is not a JSON object")
+    # `json.loads`が投げる`JSONDecodeError`も`ValueError`の派生なので落ちはするが、
+    # `Expecting value: line 1 column 1`ではsafetensorsのヘッダの話だと読み取れない。
+    try:
+        parsed = json.loads(raw_header)
+    except json.JSONDecodeError as error:
+        raise ValueError(f"header is not valid JSON: {error}") from error
+    header = json_object(parsed, "header is not a JSON object")
     return header, data_start
 
 
-def parse_tensors(header: dict, data_size: int) -> tuple[dict | None, list[Tensor]]:
+def parse_tensors(
+    header: dict[str, object], data_size: int
+) -> tuple[dict[str, str] | None, list[Tensor]]:
     """ヘッダから__metadata__を分離し、テンソルをデータの配置順に検証しながら並べる。
 
     オフセットが0から隙間なく連続していることまで確認する。
     ここを通せば、後段は各テンソルを順に読むだけでファイル全体を舐めたことになる。
     """
-    metadata = header.get("__metadata__")
-    if metadata is not None and not isinstance(metadata, dict):
-        raise ValueError("__metadata__ is not a JSON object")
+    raw_metadata = header.get("__metadata__")
+    metadata = None if raw_metadata is None else json_metadata(raw_metadata)
 
     tensors: list[Tensor] = []
     for name, info in header.items():
         if name == "__metadata__":
             continue
-        if not isinstance(info, dict):
-            raise ValueError(f"{name}: entry is not a JSON object")
-        dtype = info["dtype"]
-        if dtype not in DTYPE_SIZE:
+        entry = json_object(info, f"{name}: entry is not a JSON object")
+        dtype = json_field(entry, "dtype", f"{name}: entry has no dtype")
+        if not isinstance(dtype, str) or dtype not in DTYPE_SIZE:
             raise ValueError(f"{name}: unknown dtype {dtype}")
-        shape = [int(dimension) for dimension in info["shape"]]
-        begin, end = (int(value) for value in info["data_offsets"])
-        expected = math.prod(shape) * DTYPE_SIZE[dtype]
-        if end - begin != expected:
+        shape = [
+            json_size(dimension, f"{name}: shape element")
+            for dimension in json_list(
+                json_field(entry, "shape", f"{name}: entry has no shape"),
+                f"{name}: shape is not an array",
+            )
+        ]
+        offsets = json_list(
+            json_field(entry, "data_offsets", f"{name}: entry has no data_offsets"),
+            f"{name}: data_offsets is not an array",
+        )
+        if len(offsets) != 2:
+            raise ValueError(f"{name}: data_offsets does not have two elements")
+        begin = json_size(offsets[0], f"{name}: data_offsets[0]")
+        end = json_size(offsets[1], f"{name}: data_offsets[1]")
+        # 要素数を数える前に区間の方を確かめる。
+        # 区間の長さが決まっていれば要素数の上限も決まるので、
+        # shapeの積を途中で打ち切れる。
+        # 後段の連続性の検証でも同じ誤りは落ちるが、
+        # それは全テンソルの積を求めた後になる。
+        if end < begin:
+            raise ValueError(f"{name}: data_offsets end {end} is before begin {begin}")
+        if data_size < end:
             raise ValueError(
-                f"{name}: data_offsets span {end - begin} bytes"
+                f"{name}: data_offsets end {end} is past the data region of"
+                f" {data_size} bytes"
+            )
+        span = end - begin
+        item_size = DTYPE_SIZE[dtype]
+        count = element_count(shape, span // item_size)
+        if count is None:
+            raise ValueError(
+                f"{name}: data_offsets span {span} bytes"
+                f" but shape and dtype need more than that"
+            )
+        expected = count * item_size
+        if expected != span:
+            raise ValueError(
+                f"{name}: data_offsets span {span} bytes"
                 f" but shape and dtype need {expected}"
             )
         tensors.append(
@@ -190,7 +341,9 @@ def parse_tensors(header: dict, data_size: int) -> tuple[dict | None, list[Tenso
     return metadata, tensors
 
 
-def read_tensors(path: str, file: BinaryIO) -> tuple[dict | None, list[Tensor], int]:
+def read_tensors(
+    path: str, file: BinaryIO
+) -> tuple[dict[str, str] | None, list[Tensor], int]:
     """ヘッダを読んで__metadata__とテンソル列とデータ開始位置を返す。"""
     header, data_start = read_header(file)
     metadata, tensors = parse_tensors(header, os.path.getsize(path) - data_start)
@@ -203,7 +356,7 @@ def converted_dtype(dtype: str) -> str:
 
 
 def build_header(
-    metadata: dict | None, tensors: list[Tensor]
+    metadata: dict[str, str] | None, tensors: list[Tensor]
 ) -> tuple[bytes, list[Tensor]]:
     """F32をF16へ置き換えた出力用のヘッダと、新しいオフセットを持つテンソル列を返す。
 

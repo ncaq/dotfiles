@@ -1,41 +1,119 @@
 """テスト用にsafetensorsを読み書きするヘルパー。
 
-本体のformat.pyとは独立に実装する。
-本体の関数でテストデータを作ると、
-読み書きが揃って同じ勘違いをしていても検出できないからである。
+正しいファイルの読み書きはsafetensorsライブラリに任せる。
+本体のformat.pyでテストデータを作ると、
+読み書きが揃って同じ勘違いをしていても検出できない。
+本家の実装をリファレンスに置けば、
+本体が仕様から外れた時に食い違いとして現れる。
+
+本体がライブラリを使わないのは、
+Python APIが全テンソルの辞書をメモリに要求する設計で、
+数十GBのファイルには使えないからである。
+テストが扱うのは数百バイトなので、この制約は問題にならない。
+
+ライブラリでは作れないファイルだけ、生のバイト列から組み立てる。
+壊れたヘッダと、
+ライブラリが並べ替えてしまうテンソルの配置順がこれに当たる。
 """
+
+# safetensorsのスタブは`safe_open.metadata`に戻り値の注釈が無く、
+# `save_file`と`load_file`もPathLikeとndarrayの型引数が埋まっていない。
+# 上流に型が付くまではこのファイルでだけ落とす。
+# 下の関数は戻り値の型を宣言してあるので、
+# 不明な型がテスト本体へ漏れることはない。
+# pyright: reportUnknownMemberType=none
+# pyright: reportUnknownVariableType=none
 
 import json
 import struct
 from pathlib import Path
+from typing import cast
 
 import numpy as np
 import pytest
+from safetensors import safe_open
+from safetensors.numpy import save_file
 
-# numpyのdtypeとsafetensorsのdtype名の対応。テストで使う分だけ。
+# numpyのdtypeとsafetensorsのdtype名の対応。
+# 生のバイト列からヘッダを組み立てる時にだけ使う。
 DTYPE_NAME: dict[np.dtype, str] = {
     np.dtype("<f4"): "F32",
     np.dtype("<f2"): "F16",
     np.dtype("<i8"): "I64",
     np.dtype("uint8"): "U8",
 }
-NAME_DTYPE: dict[str, np.dtype] = {name: dtype for dtype, name in DTYPE_NAME.items()}
 
 
 def save_safetensors(
     path: Path,
     tensors: dict[str, np.ndarray],
     metadata: dict[str, str] | None = None,
+) -> None:
+    """テンソルをsafetensorsとして書き出す。"""
+    save_file(tensors, str(path), metadata=metadata)
+
+
+def load_safetensors(path: Path) -> tuple[dict[str, str], dict[str, np.ndarray]]:
+    """safetensorsを読んで__metadata__とテンソルを返す。
+
+    `__metadata__`が無いファイルでも空の辞書を返すので、
+    有無そのものを見たい時は`read_header`を使う。
+    """
+    with safe_open(str(path), framework="numpy") as file:
+        metadata: dict[str, str] | None = file.metadata()
+        # ruffは辞書に対する`.keys()`だと見て単純化を促すが、
+        # これはsafetensorsのハンドルのメソッドなので置き換えられない。
+        names: list[str] = file.keys()  # noqa: SIM118
+        tensors: dict[str, np.ndarray] = {name: file.get_tensor(name) for name in names}
+    return metadata or {}, tensors
+
+
+def read_header(path: Path) -> dict[str, object]:
+    """ヘッダのJSONをそのまま読み出す。
+
+    `write_header`の対。
+    ライブラリはヘッダを整理して返すので、
+    キーの並びや`__metadata__`の有無といった、
+    ファイル上の見た目そのものを見たい時に使う。
+    """
+    with path.open("rb") as file:
+        (header_length,) = struct.unpack("<Q", file.read(8))
+        parsed = json.loads(file.read(header_length))
+    assert isinstance(parsed, dict)
+    return cast(dict[str, object], parsed)
+
+
+def write_header(path: Path, header: object, data: bytes = b"") -> None:
+    """任意のJSONをヘッダとして持つファイルを書く。
+
+    ライブラリが作れない壊れ方を再現するためのもの。
+    ヘッダの妥当性は一切確かめない。
+    """
+    raw = json.dumps(header, separators=(",", ":")).encode("utf-8")
+    raw += b" " * (-(8 + len(raw)) % 8)
+    with path.open("wb") as file:
+        file.write(struct.pack("<Q", len(raw)))
+        file.write(raw)
+        file.write(data)
+
+
+def save_raw_safetensors(
+    path: Path,
+    tensors: dict[str, np.ndarray],
     dtype_names: dict[str, str] | None = None,
 ) -> None:
-    """テンソルをsafetensorsとして書き出す。
+    """テンソルからヘッダを組み立てて書き出す。
 
-    dtype_namesを渡すとヘッダのdtype名だけを差し替えられる。
-    未知のdtypeを載せた壊れたファイルを作るために使う。
+    入力の辞書の順序をそのままヘッダのキー順として書く。
+    本家の`save_file`はdtypeと名前で並べ替えてしまうので、
+    並び順そのものを決めたい時はこちらを使う。
+
+    dtype_namesでヘッダのdtype名だけを差し替えられる。
+    実際のデータと食い違うdtypeを載せた壊れたファイルを作るために使う。
+
+    `__metadata__`は書かないので、必要な時は`save_safetensors`を使う。
     """
     header: dict[str, object] = {}
-    if metadata is not None:
-        header["__metadata__"] = metadata
     offset = 0
     for name, array in tensors.items():
         size = array.nbytes
@@ -45,29 +123,7 @@ def save_safetensors(
             "data_offsets": [offset, offset + size],
         }
         offset += size
-    raw = json.dumps(header, separators=(",", ":")).encode("utf-8")
-    raw += b" " * (-(8 + len(raw)) % 8)
-    with path.open("wb") as file:
-        file.write(struct.pack("<Q", len(raw)))
-        file.write(raw)
-        for array in tensors.values():
-            file.write(array.tobytes())
-
-
-def load_safetensors(path: Path) -> tuple[dict, dict[str, np.ndarray]]:
-    """safetensorsを読んでヘッダとテンソルを返す。"""
-    with path.open("rb") as file:
-        (header_length,) = struct.unpack("<Q", file.read(8))
-        header = json.loads(file.read(header_length))
-        data = file.read()
-    tensors: dict[str, np.ndarray] = {}
-    for name, info in header.items():
-        if name == "__metadata__":
-            continue
-        begin, end = info["data_offsets"]
-        array = np.frombuffer(data[begin:end], dtype=NAME_DTYPE[info["dtype"]])
-        tensors[name] = array.reshape(info["shape"])
-    return header, tensors
+    write_header(path, header, b"".join(array.tobytes() for array in tensors.values()))
 
 
 @pytest.fixture

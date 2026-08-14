@@ -10,7 +10,8 @@
 # 完成前のファイルをSamba越しに掴まないよう、
 # `.partial`付きの名前へ書いてから`os.replace`で確定させる。
 #
-# 各カスタムノードのパッケージへsymlinkJoinで同じファイルを配り、
+# 使う側のノードディレクトリへ`../share_encode.py`へのsymlinkを置き、
+# ノードのderivationが`cp -rL`で実体化して配る。
 # `from .share_encode import start_share_encode`と相対importで使う。
 import logging
 import os

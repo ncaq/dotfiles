@@ -25,7 +25,8 @@
 # 生成中に遊んでいる32スレッドのごく一部で済むため、
 # 何枚か並んでも取り合いにはならない。
 #
-# 各カスタムノードのパッケージへsymlinkJoinで同じファイルを配り、
+# 使う側のノードディレクトリへ`../optimize_png.py`へのsymlinkを置き、
+# ノードのderivationが`cp -rL`で実体化して配る。
 # `from .optimize_png import start_optimize_png`と相対importで使う。
 import logging
 import os

@@ -6,7 +6,15 @@
 # WanFirstLastFrameToVideoのend_imageのような任意入力に対して、
 # ノードのバイパス操作なしで、
 # 「画像が指定してあれば有効、なければ無効」を実現するためのもの。
-from typing import Any
+#
+# 継承元の`nodes.LoadImage`はComfyUI本体のクラスで型注釈が無く、
+# `load_image`や`IS_CHANGED`を呼ぶだけでstrictのUnknown系が出る。
+# 上流に型が付くまではこのファイルでだけ落とす。
+# pyright: reportUnknownArgumentType=none
+# pyright: reportUnknownMemberType=none
+# pyright: reportUnknownVariableType=none
+
+from typing import Any, Literal
 
 import torch
 
@@ -16,6 +24,8 @@ NONE_CHOICE = "(none)"
 
 
 class LoadImageOptional(nodes.LoadImage):
+    # 他の自作ノードは戻り値を`dict[str, object]`にしているが、
+    # ここは基底の戻り値を添字で辿って書き換えるので`object`へは狭められない。
     @classmethod
     def INPUT_TYPES(cls) -> dict[str, Any]:
         types = super().INPUT_TYPES()
@@ -38,8 +48,11 @@ class LoadImageOptional(nodes.LoadImage):
             return NONE_CHOICE
         return super().IS_CHANGED(image)
 
+    # 戻り値の型は基底のLoadImage.VALIDATE_INPUTSに合わせる。
+    # 検証を通った場合はTrueだけを返す契約なので、
+    # boolまで広げるとオーバーライドとして基底より緩くなってしまう。
     @classmethod
-    def VALIDATE_INPUTS(cls, image: str) -> bool | str:
+    def VALIDATE_INPUTS(cls, image: str) -> str | Literal[True]:
         if image == NONE_CHOICE:
             return True
         return super().VALIDATE_INPUTS(image)

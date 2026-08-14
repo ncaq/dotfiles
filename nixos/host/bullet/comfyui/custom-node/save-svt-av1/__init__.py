@@ -1,10 +1,18 @@
+# PyAVの`add_stream`のスタブと、
+# ComfyUI本体の`server.PromptServer`の`send_sync`に型が付いておらず、
+# 呼ぶだけでstrictのUnknown系が出る。
+# 上流に型が付くまではこのファイルでだけ落とす。
+# pyright: reportUnknownArgumentType=none
+# pyright: reportUnknownMemberType=none
+# pyright: reportUnknownVariableType=none
+
 import json
 import logging
 import math
 import os
 from fractions import Fraction
 from pathlib import Path
-from typing import Any
+from typing import TypedDict
 
 import av
 import torch
@@ -15,6 +23,19 @@ from server import PromptServer
 from .share_encode import start_share_encode
 
 logger = logging.getLogger(__name__)
+
+
+class AudioInput(TypedDict):
+    """ComfyUIのAUDIO型。
+
+    本体には型注釈が無いので、
+    `comfy_extras`が組み立てているこの2つのキーをこちらで書き起こす。
+    形が違えば下のtryが受けて音声を諦めるだけで、映像の保存は続く。
+    """
+
+    waveform: torch.Tensor
+    sample_rate: int
+
 
 # 拡張子にロスレスかどうかとコーデック名も含めて、
 # メタデータを確認しなくてもファイル名だけで中身が分かるようにする。
@@ -43,7 +64,7 @@ def warn_video_only(error: object) -> None:
 
 class SaveSvtAv1:
     @classmethod
-    def INPUT_TYPES(cls) -> dict[str, Any]:
+    def INPUT_TYPES(cls) -> dict[str, object]:
         return {
             "required": {
                 "images": ("IMAGE",),
@@ -66,10 +87,10 @@ class SaveSvtAv1:
         filename_prefix: str,
         fps: float,
         preset: int,
-        audio: dict[str, Any] | None = None,
-        prompt: dict[str, Any] | None = None,
-        extra_pnginfo: dict[str, Any] | None = None,
-    ) -> dict[str, Any]:
+        audio: AudioInput | None = None,
+        prompt: dict[str, object] | None = None,
+        extra_pnginfo: dict[str, object] | None = None,
+    ) -> dict[str, object]:
         height, width = images.shape[1:3]
         if width % 2 != 0 or height % 2 != 0:
             raise ValueError(f"SVT-AV1 requires even dimensions, got {width}x{height}")
@@ -94,6 +115,13 @@ class SaveSvtAv1:
                 container.metadata["extra_pnginfo"] = json.dumps(extra_pnginfo)
 
             video_stream = container.add_stream("libsvtav1", rate=frame_rate)
+            # PyAVの型スタブはコーデック名のLiteral一覧にlibsvtav1を持たないため、
+            # 音声や字幕のストリームも含む共用体が返る扱いになる。
+            # 実際には映像ストリームなので絞ってから属性を設定する。
+            if not isinstance(video_stream, av.VideoStream):
+                raise TypeError(
+                    f"libsvtav1 stream is not a video stream: {type(video_stream)}"
+                )
             video_stream.width = width
             video_stream.height = height
             video_stream.pix_fmt = "yuv420p10le"

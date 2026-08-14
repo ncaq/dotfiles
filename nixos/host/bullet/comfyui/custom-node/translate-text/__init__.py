@@ -4,35 +4,15 @@
 # 言語は自動判定なので日本語でも英語原文の直接入力でも良い。
 # 英語で書いた場合は実質そのまま通過する。
 #
-# ComfyUIのPython環境に既に入っているrequestsだけで動くように、
-# Google翻訳の非公式gtxエンドポイントを使う。
 # 翻訳に失敗した場合はエラーをログに残した上で原文をそのまま返す。
 # Qwen2.5-VLは多言語対応なので原文でもある程度は機能するため。
 import traceback
 
-import requests
+from .translate import translate_to_english
 
 
 TextInputConfig = tuple[str, dict[str, bool | str]]
 InputTypes = dict[str, dict[str, TextInputConfig]]
-
-
-def translated_text(payload: object) -> str:
-    if not isinstance(payload, list) or not payload:
-        raise ValueError("Google Translate returned an invalid response")
-    segments = payload[0]
-    if not isinstance(segments, list) or not segments:
-        raise ValueError("Google Translate returned invalid segments")
-
-    translated_segments: list[str] = []
-    for segment in segments:
-        if not isinstance(segment, list) or not segment:
-            raise ValueError("Google Translate returned an invalid segment")
-        text = segment[0]
-        if not isinstance(text, str):
-            raise ValueError("Google Translate returned non-text translation data")
-        translated_segments.append(text)
-    return "".join(translated_segments)
 
 
 class TranslateTextToEnglish:
@@ -53,19 +33,7 @@ class TranslateTextToEnglish:
         if not text.strip():
             return ("",)
         try:
-            response = requests.get(
-                "https://translate.googleapis.com/translate_a/single",
-                params={
-                    "client": "gtx",
-                    "sl": "auto",
-                    "tl": "en",
-                    "dt": "t",
-                    "q": text,
-                },
-                timeout=10,
-            )
-            response.raise_for_status()
-            return (translated_text(response.json()),)
+            return (translate_to_english(text),)
         except Exception:
             print("[translate-text] translation failed, using original text")
             traceback.print_exc()

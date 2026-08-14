@@ -52,11 +52,18 @@
 
   なぜsafetensors-fp16も同じ環境で検査するか:
     このパッケージの依存は`numpy`と`tqdm`で、
-    どちらもComfyUIの環境が既に持っている。
-    足りないのはテストが使う`pytest`だけなので、
-    環境を分けずに`withExtraPythonPackages`で足す。
+    テストはさらに`pytest`と、
+    リファレンス実装としての`safetensors`を使う。
+    `numpy`と`tqdm`はComfyUIの環境が既に持っているのでそのまま解決できる。
+    残りを`withExtraPythonPackages`で足せば環境を分けずに済む。
     環境が1つなら`venvPath`と`venv`が1組で済み、
     Pythonのバージョン文字列をコミットするファイルへ書かずに済む。
+
+    `safetensors`はComfyUI本体も依存しているので足さなくても解決するが、
+    それはcomfyui-nix側の都合であって、
+    `pkgs/safetensors-fp16/default.nix`の`nativeCheckInputs`とは無関係である。
+    上流の依存が変われば`reportMissingImports`で落ちて原因が分かりにくくなるため、
+    このリポジトリが必要とするものは明示する。
 
     `numpy`と`tqdm`はcomfyui-nixが固定したバージョンで検査されることになるが、
     `pkgs/safetensors-fp16/pyproject.toml`の`requires-python`が`>=3.12`で、
@@ -128,7 +135,11 @@ let
   # pyrightがリポジトリルートの`.typecheck`から相対パスで辿る2つをまとめる。
   # `venvPath`が`.typecheck`で`venv`が`env`、`extraPaths`が`.typecheck/src`に対応する。
   typecheckDir = pkgs.linkFarm "typecheck" {
-    env = (comfyui.withExtraPythonPackages (pythonPkgs: [ pythonPkgs.pytest ])).pythonRuntime;
+    env =
+      (comfyui.withExtraPythonPackages (pythonPkgs: [
+        pythonPkgs.pytest
+        pythonPkgs.safetensors
+      ])).pythonRuntime;
     src = comfyui.comfyuiSrc;
   };
 in

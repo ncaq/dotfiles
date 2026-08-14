@@ -2,8 +2,6 @@
 # AlignImageSizeは画像を中央から最大multiple - 1pxだけcropし、
 # リサイズによる歪みやpadding追加を避けながら各辺を指定した倍数へ揃える。
 # AlignImageDimensionsはEmptyLatentImageへ渡す生成幅と高さを事前に切り下げる。
-from typing import Any
-
 import torch
 
 # この既定値はworkflow/lib/builder.nixのanimaSizeMultipleと同期する。
@@ -12,7 +10,7 @@ ANIMA_SIZE_MULTIPLE = 16
 
 class AlignImageSize:
     @classmethod
-    def INPUT_TYPES(cls) -> dict[str, Any]:
+    def INPUT_TYPES(cls) -> dict[str, object]:
         return {
             "required": {
                 "image": ("IMAGE",),
@@ -48,7 +46,7 @@ class AlignImageSize:
 
 class AlignImageDimensions:
     @classmethod
-    def INPUT_TYPES(cls) -> dict[str, Any]:
+    def INPUT_TYPES(cls) -> dict[str, object]:
         return {
             "required": {
                 "width": (

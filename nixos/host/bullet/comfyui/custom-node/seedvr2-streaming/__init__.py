@@ -21,7 +21,7 @@ import signal
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
 
 import folder_paths
 from comfy.model_management import throw_exception_if_processing_interrupted
@@ -52,9 +52,44 @@ def get_model_dir(*model_names: str) -> str:
     return os.fspath(model_dir)
 
 
+class DitArgs(TypedDict):
+    """上流のSeedVR2ノードが返すSEEDVR2_ARGSのうちDiT側。
+
+    上流には型注釈が無いので、
+    このノードが読むキーをこちらで書き起こす。
+    上流のrevは`custom-node.nix`で固定しているので形は動かない。
+    """
+
+    model: str
+    device: str
+    offload_device: str
+    torch_compile_args: object | None
+    blocks_to_swap: int
+    attention_mode: str
+    swap_io_components: bool
+    cache_model: bool
+
+
+class VaeArgs(TypedDict):
+    """上流のSeedVR2ノードが返すSEEDVR2_ARGSのうちVAE側。"""
+
+    model: str
+    device: str
+    offload_device: str
+    torch_compile_args: object | None
+    encode_tile_size: int
+    encode_tile_overlap: int
+    decode_tile_size: int
+    decode_tile_overlap: int
+    encode_tiled: bool
+    decode_tiled: bool
+    tile_debug: bool
+    cache_model: bool
+
+
 class GetVideoSize:
     @classmethod
-    def INPUT_TYPES(cls) -> dict[str, Any]:
+    def INPUT_TYPES(cls) -> dict[str, object]:
         return {"required": {"video": ("VIDEO",)}}
 
     RETURN_TYPES = ("INT", "INT")
@@ -68,7 +103,7 @@ class GetVideoSize:
 
 class SeedVR2StreamingVideoUpscaler:
     @classmethod
-    def INPUT_TYPES(cls) -> dict[str, Any]:
+    def INPUT_TYPES(cls) -> dict[str, object]:
         return {
             "required": {
                 "video": ("VIDEO",),
@@ -136,8 +171,8 @@ class SeedVR2StreamingVideoUpscaler:
     def upscale(
         self,
         video: Any,
-        dit: dict[str, Any],
-        vae: dict[str, Any],
+        dit: DitArgs,
+        vae: VaeArgs,
         seed: int,
         resolution: int,
         max_resolution: int,
@@ -156,7 +191,7 @@ class SeedVR2StreamingVideoUpscaler:
         crf: int,
         lossless: bool,
         enable_debug: bool,
-    ) -> dict[str, Any]:
+    ) -> dict[str, object]:
         source = video.get_stream_source()
         if not isinstance(source, (str, os.PathLike)):
             raise TypeError("SeedVR2 streaming requires a video backed by a file")
@@ -339,7 +374,7 @@ class SeedVR2StreamingVideoUpscaler:
         }
 
 
-NODE_CLASS_MAPPINGS: dict[str, type[Any]] = {
+NODE_CLASS_MAPPINGS: dict[str, type[GetVideoSize | SeedVR2StreamingVideoUpscaler]] = {
     "GetVideoSize": GetVideoSize,
     "SeedVR2StreamingVideoUpscaler": SeedVR2StreamingVideoUpscaler,
 }

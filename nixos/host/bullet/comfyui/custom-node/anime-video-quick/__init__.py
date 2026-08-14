@@ -74,7 +74,7 @@ class Manifest(TypedDict):
 
     # 生成条件。異なる条件で同じjob IDを使い回していないかの照合に使う。
     # キーを走査して比較するので、TypedDictにはせず素の辞書にする。
-    identity: dict[str, object]
+    identity: dict[str, int | str]
     segments: list[TranslatedSegment]
     status: str
     # ここから下は処理が進むにつれて現れる。
@@ -468,7 +468,7 @@ def file_fingerprint(path: Path, base: Path) -> tuple[str, int]:
 
 class AnimeVideoQuick:
     @classmethod
-    def INPUT_TYPES(cls) -> dict[str, Any]:
+    def INPUT_TYPES(cls) -> dict[str, object]:
         return {
             "required": {
                 "image": ("IMAGE",),
@@ -502,7 +502,7 @@ class AnimeVideoQuick:
     OUTPUT_NODE = True
 
     @classmethod
-    def IS_CHANGED(cls, job_id: str, **kwargs: Any) -> object:
+    def IS_CHANGED(cls, job_id: str, **kwargs: object) -> object:
         safe_job_id = sanitize_job_id(job_id)
         if not safe_job_id:
             return float("NaN")
@@ -549,7 +549,7 @@ class AnimeVideoQuick:
         seed: int,
         retry_seed_offset: int,
         job_id: str,
-    ) -> dict[str, Any]:
+    ) -> dict[str, object]:
         segments = split_prompts(prompts)
         safe_job_id = sanitize_job_id(job_id)
         if not safe_job_id:
@@ -563,7 +563,7 @@ class AnimeVideoQuick:
         segment_dir.mkdir(parents=True, exist_ok=True)
         manifest_path = output_dir / "manifest.json"
 
-        identity: dict[str, object] = {
+        identity: dict[str, int | str] = {
             "schema": 1,
             "prompts": prompts,
             "image_sha256": image_hash(image),

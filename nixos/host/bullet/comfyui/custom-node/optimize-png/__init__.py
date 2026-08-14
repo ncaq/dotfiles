@@ -33,6 +33,11 @@ def save_images(self: nodes.SaveImage, *args: Any, **kwargs: Any) -> dict[str, A
     # 辞書リテラルからの推論のまま受けるとuiの中身を辿れない。
     # ComfyUIの版によって返る形が変わり得るので、
     # 形を決め打ちせず`Any`で受けて下のtryで守る。
+    #
+    # ここの`Any`は他の型に置き換えられない。
+    # 引数を`object`にすると本体の推論済みシグネチャへ渡せず、
+    # 戻り値をTypedDictにすると本体の推論結果から代入できないうえ、
+    # この関数を`nodes.SaveImage.save_images`へ差し戻す代入も通らなくなる。
     result: dict[str, Any] = original_save_images(self, *args, **kwargs)
     # PreviewImageもSaveImageを継承していて、こちらは一時ディレクトリへ書く。
     # すぐ消える画像を縮めても仕方がないので、出力ディレクトリの分だけ扱う。

@@ -12,7 +12,7 @@ import math
 import os
 from fractions import Fraction
 from pathlib import Path
-from typing import Any
+from typing import TypedDict
 
 import av
 import torch
@@ -23,6 +23,19 @@ from server import PromptServer
 from .share_encode import start_share_encode
 
 logger = logging.getLogger(__name__)
+
+
+class AudioInput(TypedDict):
+    """ComfyUIのAUDIO型。
+
+    本体には型注釈が無いので、
+    `comfy_extras`が組み立てているこの2つのキーをこちらで書き起こす。
+    形が違えば下のtryが受けて音声を諦めるだけで、映像の保存は続く。
+    """
+
+    waveform: torch.Tensor
+    sample_rate: int
+
 
 # 拡張子にロスレスかどうかとコーデック名も含めて、
 # メタデータを確認しなくてもファイル名だけで中身が分かるようにする。
@@ -51,7 +64,7 @@ def warn_video_only(error: object) -> None:
 
 class SaveSvtAv1:
     @classmethod
-    def INPUT_TYPES(cls) -> dict[str, Any]:
+    def INPUT_TYPES(cls) -> dict[str, object]:
         return {
             "required": {
                 "images": ("IMAGE",),
@@ -74,10 +87,10 @@ class SaveSvtAv1:
         filename_prefix: str,
         fps: float,
         preset: int,
-        audio: dict[str, Any] | None = None,
-        prompt: dict[str, Any] | None = None,
-        extra_pnginfo: dict[str, Any] | None = None,
-    ) -> dict[str, Any]:
+        audio: AudioInput | None = None,
+        prompt: dict[str, object] | None = None,
+        extra_pnginfo: dict[str, object] | None = None,
+    ) -> dict[str, object]:
         height, width = images.shape[1:3]
         if width % 2 != 0 or height % 2 != 0:
             raise ValueError(f"SVT-AV1 requires even dimensions, got {width}x{height}")

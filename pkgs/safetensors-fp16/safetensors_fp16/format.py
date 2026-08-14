@@ -167,8 +167,8 @@ def read_header(file: BinaryIO) -> tuple[dict[str, object], int]:
     raw_length = file.read(8)
     if len(raw_length) != 8:
         raise ValueError("file is too short to contain a safetensors header")
-    # struct.unpackの戻り値は要素の型が決まらないので、u64として読んだことを型にも出す。
-    header_length = int(cast(int, struct.unpack("<Q", raw_length)[0]))
+    # struct.unpackの戻り値は要素の型が決まらないので、u64だと分かっている型を宣言する。
+    header_length: int = struct.unpack("<Q", raw_length)[0]
     raw_header = file.read(header_length)
     if len(raw_header) != header_length:
         raise ValueError("header is truncated")

@@ -414,21 +414,46 @@ def concat_videos(paths: list[Path], output_path: Path) -> None:
         temporary.unlink(missing_ok=True)
 
 
+def optional_count(value: object) -> int | None:
+    """進捗の件数として読み戻す。数として読めなければNoneにする。
+
+    表示のためだけの値なので、
+    壊れていても記録全体を捨てるほどのことではない。
+    `bool`は`int`の派生なので、JSONの`true`が件数として通らないよう外す。
+    """
+    if isinstance(value, bool) or not isinstance(value, int):
+        return None
+    return value
+
+
 def read_manifest(path: Path) -> Manifest | None:
     """manifest.jsonを読む。期待する形をしていなければNoneを返す。
 
     旧スキーマや別プロセスが書いたファイルが置かれていることがあり、
     型注釈だけでは実行時の形を保証できない。
+    JSONとして妥当とは限らないのと同じく、
+    UTF-8として妥当とも読める状態とも限らないので、
+    読み出しの失敗もまとめてNoneへ倒す。
+    `UnicodeDecodeError`と`JSONDecodeError`はどちらも`ValueError`の派生で、
+    権限や競合で読めない場合は`OSError`になる。
 
-    読み戻すのは`identity`と`segments`だけで、
-    残りは人が経過を見るために書いているだけなので、
-    既定値のまま置いて続きの書き込みで埋め直させる。
+    再開の判定に使うのは`identity`と`segments`で、
+    この2つが読めなければ記録として扱えないのでNoneを返す。
     `segments`は配列であることまでしか見ないので、
     要素が壊れていれば区間を生成する時に落ちる。
+
+    進捗の件数は人が経過を見るためだけのものだが、
+    既定値のまま置くと再開後の書き込みでnullへ潰れてしまう。
+    その相が既に終わっていれば埋め直す書き込みも起きないので、
+    完了しているのに記録の上では未完了に見える。
+    数として読めた分はそのまま持ち越す。
+
+    `status`と`video`と`error`は再開すれば必ず書き直されるので、
+    既定値のまま置く。
     """
     try:
         loaded = json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError:
+    except (OSError, ValueError):
         return None
     if not isinstance(loaded, dict):
         return None
@@ -440,6 +465,8 @@ def read_manifest(path: Path) -> Manifest | None:
     return Manifest(
         identity=cast(dict[str, object], identity),
         segments=cast(list[TranslatedSegment], segments),
+        completed_keyframes=optional_count(fields.get("completed_keyframes")),
+        completed_segments=optional_count(fields.get("completed_segments")),
     )
 
 

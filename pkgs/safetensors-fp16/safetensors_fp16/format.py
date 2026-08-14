@@ -271,8 +271,8 @@ def parse_tensors(
         )
         if len(offsets) != 2:
             raise ValueError(f"{name}: data_offsets does not have two elements")
-        begin = json_size(offsets[0], f"{name}: data_offsets element")
-        end = json_size(offsets[1], f"{name}: data_offsets element")
+        begin = json_size(offsets[0], f"{name}: data_offsets[0]")
+        end = json_size(offsets[1], f"{name}: data_offsets[1]")
         expected = math.prod(shape) * DTYPE_SIZE[dtype]
         if end - begin != expected:
             raise ValueError(

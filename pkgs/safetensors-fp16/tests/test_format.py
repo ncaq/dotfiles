@@ -187,12 +187,20 @@ def test_rejects_wrong_offsets_length() -> None:
         parse_tensors({"x.weight": entry}, 4)
 
 
+@pytest.mark.parametrize("index", [0, 1])
 @pytest.mark.parametrize("offset", ["4", 4.0, True, -4])
-def test_rejects_invalid_offsets(offset: object) -> None:
-    """data_offsetsの要素が非負整数でなければ拒否する。"""
-    entry = {"dtype": "F32", "shape": [1], "data_offsets": [0, offset]}
+def test_rejects_invalid_offsets(index: int, offset: object) -> None:
+    """data_offsetsの要素が非負整数でなければ、どちらの側かが分かる形で拒否する。
+
+    begin側とend側を両方通す。
+    片方だけだと、
+    もう片方の検証が抜けてもテストが気付けない。
+    """
+    offsets: list[object] = [0, 4]
+    offsets[index] = offset
+    entry = {"dtype": "F32", "shape": [1], "data_offsets": offsets}
     with pytest.raises(
-        ValueError, match="data_offsets element is not a non-negative integer"
+        ValueError, match=rf"data_offsets\[{index}\] is not a non-negative integer"
     ):
         parse_tensors({"x.weight": entry}, 4)
 

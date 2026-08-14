@@ -94,6 +94,13 @@ class SaveSvtAv1:
                 container.metadata["extra_pnginfo"] = json.dumps(extra_pnginfo)
 
             video_stream = container.add_stream("libsvtav1", rate=frame_rate)
+            # PyAVの型スタブはコーデック名のLiteral一覧にlibsvtav1を持たないため、
+            # 音声や字幕のストリームも含む共用体が返る扱いになる。
+            # 実際には映像ストリームなので絞ってから属性を設定する。
+            if not isinstance(video_stream, av.VideoStream):
+                raise TypeError(
+                    f"libsvtav1 stream is not a video stream: {type(video_stream)}"
+                )
             video_stream.width = width
             video_stream.height = height
             video_stream.pix_fmt = "yuv420p10le"

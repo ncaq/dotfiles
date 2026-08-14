@@ -348,6 +348,11 @@ def save_video(images: torch.Tensor, path: Path) -> None:
         stream = container.add_stream(
             "libsvtav1", rate=Fraction(wan_fps).limit_denominator(1001)
         )
+        # PyAVの型スタブはコーデック名のLiteral一覧にlibsvtav1を持たないため、
+        # 音声や字幕のストリームも含む共用体が返る扱いになる。
+        # 実際には映像ストリームなので絞ってから属性を設定する。
+        if not isinstance(stream, av.VideoStream):
+            raise TypeError(f"libsvtav1 stream is not a video stream: {type(stream)}")
         stream.width = width
         stream.height = height
         stream.pix_fmt = "yuv420p10le"

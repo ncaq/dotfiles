@@ -11,17 +11,15 @@
 # pyright: reportUnknownVariableType=none
 
 import hashlib
-import json
 import math
 import os
 import re
 import subprocess
 import traceback
-from dataclasses import asdict, dataclass
 from datetime import datetime
 from fractions import Fraction
 from pathlib import Path
-from typing import Any, Literal, TypedDict, cast
+from typing import Any
 
 import av
 import comfy.model_management
@@ -34,6 +32,13 @@ import torch
 from comfy_extras.nodes_model_advanced import ModelSamplingSD3
 from PIL import Image
 
+from .manifest import (
+    Manifest,
+    Segment,
+    TranslatedSegment,
+    read_manifest,
+    write_manifest,
+)
 from .optimize_png import start_optimize_png
 from .share_encode import start_share_encode
 from .translate import translate_to_english
@@ -54,34 +59,6 @@ negative_prompt = (
     "静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走，写实风格，照片级，"
     "3D渲染，真人"
 )
-
-
-class Segment(TypedDict):
-    scene: int
-    prompt: str
-
-
-class TranslatedSegment(Segment):
-    english: str
-
-
-@dataclass
-class Manifest:
-    """job IDごとに出力ディレクトリへ置く進捗の記録。
-
-    中断したジョブを同じjob IDで再開する時にどこまで終わっているかを見る。
-    """
-
-    # 生成条件。異なる条件で同じjob IDを使い回していないかの照合に使う。
-    # キーを走査して比較するだけなので値の型は問わない。
-    identity: dict[str, object]
-    segments: list[TranslatedSegment]
-    # ここから下は処理が進むにつれて埋まる。
-    status: Literal["running", "completed", "failed"] = "running"
-    completed_keyframes: int | None = None
-    completed_segments: int | None = None
-    video: str | None = None
-    error: str | None = None
 
 
 def split_prompts(text: str) -> list[Segment]:
@@ -412,70 +389,6 @@ def concat_videos(paths: list[Path], output_path: Path) -> None:
     finally:
         list_path.unlink(missing_ok=True)
         temporary.unlink(missing_ok=True)
-
-
-def optional_count(value: object) -> int | None:
-    """進捗の件数として読み戻す。数として読めなければNoneにする。
-
-    表示のためだけの値なので、
-    壊れていても記録全体を捨てるほどのことではない。
-    `bool`は`int`の派生なので、JSONの`true`が件数として通らないよう外す。
-    """
-    if isinstance(value, bool) or not isinstance(value, int):
-        return None
-    return value
-
-
-def read_manifest(path: Path) -> Manifest | None:
-    """manifest.jsonを読む。期待する形をしていなければNoneを返す。
-
-    旧スキーマや別プロセスが書いたファイルが置かれていることがあり、
-    型注釈だけでは実行時の形を保証できない。
-    JSONとして妥当とは限らないのと同じく、
-    UTF-8として妥当とも読める状態とも限らないので、
-    読み出しの失敗もまとめてNoneへ倒す。
-    `UnicodeDecodeError`と`JSONDecodeError`はどちらも`ValueError`の派生で、
-    権限や競合で読めない場合は`OSError`になる。
-
-    再開の判定に使うのは`identity`と`segments`で、
-    この2つが読めなければ記録として扱えないのでNoneを返す。
-    `segments`は配列であることまでしか見ないので、
-    要素が壊れていれば区間を生成する時に落ちる。
-
-    進捗の件数は人が経過を見るためだけのものだが、
-    既定値のまま置くと再開後の書き込みでnullへ潰れてしまう。
-    その相が既に終わっていれば埋め直す書き込みも起きないので、
-    完了しているのに記録の上では未完了に見える。
-    数として読めた分はそのまま持ち越す。
-
-    `status`と`video`と`error`は再開すれば必ず書き直されるので、
-    既定値のまま置く。
-    """
-    try:
-        loaded = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return None
-    if not isinstance(loaded, dict):
-        return None
-    fields = cast(dict[str, object], loaded)
-    identity = fields.get("identity")
-    segments = fields.get("segments")
-    if not isinstance(identity, dict) or not isinstance(segments, list):
-        return None
-    return Manifest(
-        identity=cast(dict[str, object], identity),
-        segments=cast(list[TranslatedSegment], segments),
-        completed_keyframes=optional_count(fields.get("completed_keyframes")),
-        completed_segments=optional_count(fields.get("completed_segments")),
-    )
-
-
-def write_manifest(path: Path, manifest: Manifest) -> None:
-    temporary = path.with_suffix(".partial.json")
-    temporary.write_text(
-        json.dumps(asdict(manifest), ensure_ascii=False, indent=2), encoding="utf-8"
-    )
-    os.replace(temporary, path)
 
 
 def sanitize_job_id(job_id: str) -> str:

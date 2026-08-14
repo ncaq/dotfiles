@@ -295,8 +295,10 @@
           # comfyuiはoverlay経由でしか生えないが、
           # perSystemの`pkgs`にはoverlayが載っていないため、
           # NixOS構成と同じpkgsを作る`importPkgsStable`から取る。
-          # bulletが使うものと同一の成果物を指すので、
-          # CIの`build-nixos`がビルドした結果をそのまま再利用できる。
+          # 型検査用のPython環境は検査専用の依存を足すので、
+          # bulletが使う環境そのものにはならないが、
+          # pkgsが同じなのでtorchなど大半の依存の閉包は、
+          # CIの`build-nixos`がビルドした結果と共有できる。
           pythonPyright = import ./lib/python-pyright.nix {
             inherit pkgs;
             inherit (importPkgsStable system) comfyui;

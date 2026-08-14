@@ -8,7 +8,7 @@ import traceback
 from datetime import datetime
 from fractions import Fraction
 from pathlib import Path
-from typing import Any, TypedDict
+from typing import Any, NotRequired, TypedDict, cast
 
 import av
 import comfy.model_management
@@ -52,6 +52,26 @@ class TranslatedSegment(Segment):
     english: str
 
 
+class Manifest(TypedDict):
+    """job IDごとに出力ディレクトリへ置く進捗の記録。
+
+    中断したジョブを同じjob IDで再開する時にどこまで終わっているかを見る。
+    キーが揃っていないと再開の判定を誤るので、
+    どのキーがいつ現れるのかを型に出しておく。
+    """
+
+    # 生成条件。異なる条件で同じjob IDを使い回していないかの照合に使う。
+    # キーを走査して比較するので、TypedDictにはせず素の辞書にする。
+    identity: dict[str, object]
+    segments: list[TranslatedSegment]
+    status: str
+    # ここから下は処理が進むにつれて現れる。
+    completed_keyframes: NotRequired[int]
+    completed_segments: NotRequired[int]
+    video: NotRequired[str]
+    error: NotRequired[str]
+
+
 def split_prompts(text: str) -> list[Segment]:
     scene = 0
     segments: list[Segment] = []
@@ -87,11 +107,16 @@ def translate(text: str) -> str:
             or not isinstance(payload[0], list)
         ):
             raise ValueError("Google Translate returned an invalid response")
-        translated = "".join(
-            segment[0]
-            for segment in payload[0]
-            if isinstance(segment, list) and segment and isinstance(segment[0], str)
-        )
+        # `isinstance`だけでは要素の型が不明なままになり、
+        # 取り出した先を型検査が見てくれないので`object`へ寄せる。
+        texts: list[str] = []
+        for segment in cast(list[object], payload[0]):
+            if not isinstance(segment, list):
+                continue
+            items = cast(list[object], segment)
+            if items and isinstance(items[0], str):
+                texts.append(items[0])
+        translated = "".join(texts)
         if not translated:
             raise ValueError("Google Translate returned an empty translation")
         return translated
@@ -407,7 +432,7 @@ def concat_videos(paths: list[Path], output_path: Path) -> None:
         temporary.unlink(missing_ok=True)
 
 
-def write_manifest(path: Path, manifest: dict[str, Any]) -> None:
+def write_manifest(path: Path, manifest: Manifest) -> None:
     temporary = path.with_suffix(".partial.json")
     temporary.write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8"
@@ -478,7 +503,7 @@ class AnimeVideoQuick:
         manifest_path = output_dir / "manifest.json"
         if not manifest_path.exists():
             return float("NaN")
-        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest: Manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         segment_count = len(manifest["segments"])
         expected_paths = [
             output_dir / "keyframes" / f"{filename_prefix}-keyframe-000-start.png",
@@ -526,7 +551,7 @@ class AnimeVideoQuick:
         segment_dir.mkdir(parents=True, exist_ok=True)
         manifest_path = output_dir / "manifest.json"
 
-        identity = {
+        identity: dict[str, object] = {
             "schema": 1,
             "prompts": prompts,
             "image_sha256": image_hash(image),
@@ -536,6 +561,8 @@ class AnimeVideoQuick:
             "wan_clip": wan_clip,
             "wan_vae": wan_vae,
         }
+        manifest: Manifest
+        translated_segments: list[TranslatedSegment]
         if manifest_path.exists():
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
             previous_identity = manifest.get("identity", {})
@@ -552,7 +579,11 @@ class AnimeVideoQuick:
             translated_segments = manifest["segments"]
         else:
             translated_segments = [
-                {**segment, "english": translate(segment["prompt"])}
+                TranslatedSegment(
+                    scene=segment["scene"],
+                    prompt=segment["prompt"],
+                    english=translate(segment["prompt"]),
+                )
                 for segment in segments
             ]
             manifest = {

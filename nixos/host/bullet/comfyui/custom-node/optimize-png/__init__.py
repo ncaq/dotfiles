@@ -21,7 +21,11 @@ original_save_images = nodes.SaveImage.save_images
 
 
 def save_images(self: nodes.SaveImage, *args: Any, **kwargs: Any) -> dict[str, Any]:
-    result = original_save_images(self, *args, **kwargs)
+    # 本体のSaveImage.save_imagesには型注釈が無く、
+    # 辞書リテラルからの推論のまま受けるとuiの中身を辿れない。
+    # ComfyUIの版によって返る形が変わり得るので、
+    # 形を決め打ちせず`Any`で受けて下のtryで守る。
+    result: dict[str, Any] = original_save_images(self, *args, **kwargs)
     # PreviewImageもSaveImageを継承していて、こちらは一時ディレクトリへ書く。
     # すぐ消える画像を縮めても仕方がないので、出力ディレクトリの分だけ扱う。
     if getattr(self, "type", None) != "output":

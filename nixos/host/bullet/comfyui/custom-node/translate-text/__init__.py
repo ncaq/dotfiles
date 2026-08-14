@@ -9,6 +9,7 @@
 # 翻訳に失敗した場合はエラーをログに残した上で原文をそのまま返す。
 # Qwen2.5-VLは多言語対応なので原文でもある程度は機能するため。
 import traceback
+from typing import cast
 
 import requests
 
@@ -17,18 +18,32 @@ TextInputConfig = tuple[str, dict[str, bool | str]]
 InputTypes = dict[str, dict[str, TextInputConfig]]
 
 
+def non_empty_list(value: object, message: str) -> list[object]:
+    """JSONの空でない配列を、要素の型が分かる形で取り出す。
+
+    `isinstance(value, list)`だけでは要素の型が不明なままになり、
+    取り出した先を型検査が見てくれない。
+    JSONの配列の要素は何であってもよいので`object`へ寄せる。
+    """
+    if not isinstance(value, list) or not value:
+        raise ValueError(message)
+    return cast(list[object], value)
+
+
 def translated_text(payload: object) -> str:
-    if not isinstance(payload, list) or not payload:
-        raise ValueError("Google Translate returned an invalid response")
-    segments = payload[0]
-    if not isinstance(segments, list) or not segments:
-        raise ValueError("Google Translate returned invalid segments")
+    response_items = non_empty_list(
+        payload, "Google Translate returned an invalid response"
+    )
+    segments = non_empty_list(
+        response_items[0], "Google Translate returned invalid segments"
+    )
 
     translated_segments: list[str] = []
     for segment in segments:
-        if not isinstance(segment, list) or not segment:
-            raise ValueError("Google Translate returned an invalid segment")
-        text = segment[0]
+        segment_items = non_empty_list(
+            segment, "Google Translate returned an invalid segment"
+        )
+        text = segment_items[0]
         if not isinstance(text, str):
             raise ValueError("Google Translate returned non-text translation data")
         translated_segments.append(text)

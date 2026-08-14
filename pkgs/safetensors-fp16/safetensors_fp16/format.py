@@ -127,21 +127,53 @@ class SyncedWriter:
         self.dropped = position
 
 
+def json_object(value: object, message: str) -> dict[str, object]:
+    """JSONのオブジェクトを、値の型が分かる形で取り出す。
+
+    `isinstance(value, dict)`だけでは要素の型が不明なままになり、
+    取り出した先を型検査が見てくれない。
+    JSONのオブジェクトはキーが文字列で値は何であってもよいので、
+    `dict[str, object]`へ寄せる。
+    """
+    if not isinstance(value, dict):
+        raise ValueError(message)
+    return cast(dict[str, object], value)
+
+
+def json_list(value: object, message: str) -> list[object]:
+    """JSONの配列を、要素の型が分かる形で取り出す。"""
+    if not isinstance(value, list):
+        raise ValueError(message)
+    return cast(list[object], value)
+
+
+def json_int(value: object, message: str) -> int:
+    """JSONの整数を取り出す。
+
+    元は`int()`に通していたが、
+    それだと文字列や小数も黙って受け入れてしまう。
+    shapeとdata_offsetsは仕様上どちらも整数なので、
+    整数でなければ何が壊れているのか分かる形で落とす。
+    """
+    if not isinstance(value, int):
+        raise ValueError(message)
+    return value
+
+
 def read_header(file: BinaryIO) -> tuple[dict[str, object], int]:
     """先頭のヘッダを読み、JSONとデータ領域の開始位置を返す。"""
     raw_length = file.read(8)
     if len(raw_length) != 8:
         raise ValueError("file is too short to contain a safetensors header")
-    (header_length,) = struct.unpack("<Q", raw_length)
+    # struct.unpackの戻り値は要素の型が決まらないので、u64として読んだことを型にも出す。
+    header_length = int(cast(int, struct.unpack("<Q", raw_length)[0]))
     raw_header = file.read(header_length)
     if len(raw_header) != header_length:
         raise ValueError("header is truncated")
     data_start = 8 + header_length
     if data_start % HEADER_ALIGN != 0:
         raise ValueError(f"data does not start at a {HEADER_ALIGN} byte boundary")
-    header = json.loads(raw_header)
-    if not isinstance(header, dict):
-        raise ValueError("header is not a JSON object")
+    header = json_object(json.loads(raw_header), "header is not a JSON object")
     return header, data_start
 
 
@@ -153,21 +185,32 @@ def parse_tensors(
     オフセットが0から隙間なく連続していることまで確認する。
     ここを通せば、後段は各テンソルを順に読むだけでファイル全体を舐めたことになる。
     """
-    metadata = header.get("__metadata__")
-    if metadata is not None and not isinstance(metadata, dict):
-        raise ValueError("__metadata__ is not a JSON object")
+    raw_metadata = header.get("__metadata__")
+    metadata = (
+        None
+        if raw_metadata is None
+        else json_object(raw_metadata, "__metadata__ is not a JSON object")
+    )
 
     tensors: list[Tensor] = []
     for name, info in header.items():
         if name == "__metadata__":
             continue
-        if not isinstance(info, dict):
-            raise ValueError(f"{name}: entry is not a JSON object")
-        dtype = info["dtype"]
-        if dtype not in DTYPE_SIZE:
+        entry = json_object(info, f"{name}: entry is not a JSON object")
+        dtype = entry["dtype"]
+        if not isinstance(dtype, str) or dtype not in DTYPE_SIZE:
             raise ValueError(f"{name}: unknown dtype {dtype}")
-        shape = [int(dimension) for dimension in info["shape"]]
-        begin, end = (int(value) for value in info["data_offsets"])
+        shape = [
+            json_int(dimension, f"{name}: shape has a non-integer dimension")
+            for dimension in json_list(entry["shape"], f"{name}: shape is not an array")
+        ]
+        offsets = json_list(
+            entry["data_offsets"], f"{name}: data_offsets is not an array"
+        )
+        if len(offsets) != 2:
+            raise ValueError(f"{name}: data_offsets does not have two elements")
+        begin = json_int(offsets[0], f"{name}: data_offsets has a non-integer value")
+        end = json_int(offsets[1], f"{name}: data_offsets has a non-integer value")
         expected = math.prod(shape) * DTYPE_SIZE[dtype]
         if end - begin != expected:
             raise ValueError(

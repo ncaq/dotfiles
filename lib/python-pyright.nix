@@ -12,12 +12,32 @@
     check - `pyrightconfig.json`をそのまま使ってpyrightを走らせるderivation
 
   検査する対象:
-    `nixos/host/bullet/comfyui/custom-node`のComfyUI自作カスタムノードと、
-    `pkgs/safetensors-fp16`。
-    どちらを検査するかは`pyrightconfig.json`の`include`が決める。
+    リポジトリ内の全てのPythonファイル。
+    `pyrightconfig.json`の`include`は`.`で、
+    検査しないものを`exclude`で挙げる形にしている。
+
+    検査する場所を`include`へ並べる形だと、
+    新しくPythonを置いた時に足し忘れると黙って未検査になる。
+    実際に`pkgs/safetensors-fp16`が長らく検査対象外だった。
+    pyrightは`include`の外を認識しないのでこの漏れを報告できないため、
+    そもそも漏れようがない形にする。
+
+  なぜ`exclude`に既定値を書き直すか:
+    pyrightの`exclude`の既定値は、
+    `node_modules`と`__pycache__`と、
+    ドットで始まる名前を落とす3つのglobになっている。
+    `exclude`を書くとこの既定値ごと上書きされるので、
+    落としたいものを1つ足すだけでも全部書き直す必要がある。
+    ドットで始まる名前が落ちなくなると`.direnv`の中まで走査してしまい、
+    検査が終わらなくなる。
+
+    `result*`は`nix build`のout-linkで、
+    Nix storeのシステム閉包を指している。
+    pyrightは`.gitignore`を見ないので、
+    ここを明示しないとstore内のPythonを数千ファイル検査してしまう。
 
   なぜ必要か:
-    どちらも型アノテーションが書かれているのに型検査が無かった。
+    型アノテーションが書かれているのに型検査が無かった。
     カスタムノードの誤りはComfyUIがノードを読み込む時まで表面化せず、
     treefmtのruffは既定ルールのlintだけで型は見ない。
 
@@ -80,6 +100,21 @@
 */
 { pkgs, comfyui }:
 let
+  inherit (pkgs) lib;
+
+  # 検査対象はリポジトリ内の全Pythonファイル。
+  # `pyrightconfig.json`の`include`が`.`なので、
+  # ここも同じく全部を渡さないとエディタとCIで見る範囲がずれる。
+  # `.py`と設定ファイルだけに絞ることで、
+  # 無関係なファイルの変更でこのcheckが作り直されないようにする。
+  source = lib.fileset.toSource {
+    root = ../.;
+    fileset = lib.fileset.unions [
+      ../pyrightconfig.json
+      (lib.fileset.fileFilter (file: file.hasExt "py") ../.)
+    ];
+  };
+
   # pyrightがリポジトリルートの`.typecheck`から相対パスで辿る2つをまとめる。
   # `venvPath`が`.typecheck`で`venv`が`env`、`extraPaths`が`.typecheck/src`に対応する。
   typecheckDir = pkgs.linkFarm "typecheck" {
@@ -104,10 +139,8 @@ in
         # そのまま解決できる必要がある。
         # カスタムノードの共有モジュールは`../share_encode.py`のようなsymlinkなので、
         # symlinkのまま複製すれば複製先でも同じように解決される。
-        mkdir -p work/nixos/host/bullet/comfyui work/pkgs
-        cp ${../pyrightconfig.json} work/pyrightconfig.json
-        cp -r ${../nixos/host/bullet/comfyui/custom-node} work/nixos/host/bullet/comfyui/custom-node
-        cp -r ${../pkgs/safetensors-fp16} work/pkgs/safetensors-fp16
+        cp -r ${source} work
+        chmod -R u+w work
         ln -s ${typecheckDir} work/.typecheck
 
         cd work

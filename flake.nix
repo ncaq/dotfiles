@@ -290,6 +290,19 @@
         }:
         let
           git-repo-subscribe = pkgs.callPackage ./pkgs/git-repo-subscribe { };
+          # ComfyUIの自作カスタムノードをpyrightで型検査するためのderivation群。
+          # comfyuiはoverlay経由でしか生えないが、
+          # perSystemの`pkgs`にはoverlayが載っていないため、
+          # NixOS構成と同じpkgsを作る`importPkgsStable`から取る。
+          # bulletが使うものと同一の成果物を指すので、
+          # CIの`build-nixos`がビルドした結果をそのまま再利用できる。
+          comfyuiCustomNodePyright = import ./lib/comfyui-custom-node-pyright.nix {
+            inherit pkgs;
+            inherit (importPkgsStable system) comfyui;
+          };
+          # CUDA版torchを含むcomfyuiはaarch64では現実的にビルドできないため、
+          # 型検査もx86_64-linuxでだけ提供します。
+          hasComfyui = system == "x86_64-linux";
         in
         {
           treefmt.config = {
@@ -355,7 +368,15 @@
                   } ''echo "$evaluated" > "$out"'';
                 };
             in
-            nixosEvalChecks // hmEvalChecks // { inherit git-repo-subscribe; };
+            nixosEvalChecks
+            // hmEvalChecks
+            // {
+              inherit git-repo-subscribe;
+            }
+            // lib.optionalAttrs hasComfyui {
+              # ComfyUIの自作カスタムノードの型検査。
+              comfyui-custom-node-pyright = comfyuiCustomNodePyright.check;
+            };
 
           packages = {
             # flake.lockの管理バージョンをre-exportすることで安定した利用を促進。
@@ -372,6 +393,11 @@
             nvd-pr-diff = pkgs.callPackage ./pkgs/nvd-pr-diff { };
             # safetensorsのF32テンソルをF16へ変換するコマンド。
             safetensors-fp16 = pkgs.callPackage ./pkgs/safetensors-fp16 { };
+          }
+          // lib.optionalAttrs hasComfyui {
+            # pyrightがComfyUIのPython環境とソースを辿るためのディレクトリ。
+            # `.envrc`が`.typecheck`という名前のout-linkを張ります。
+            comfyui-typecheck = comfyuiCustomNodePyright.typecheckDir;
           };
 
           devShells.default = pkgs.mkShell {
@@ -388,6 +414,10 @@
               statix
               typos
               zizmor
+
+              # ComfyUIの自作カスタムノードの型検査。
+              # `.envrc`が用意する`.typecheck`と`pyrightconfig.json`を読みます。
+              pyright
 
               # nixの関連ツール。
               nil

@@ -1,0 +1,8 @@
+{
+  "include": ["nixos/host/bullet/comfyui/custom-node"],
+  "exclude": ["**/__pycache__"],
+  "typeCheckingMode": "standard",
+  "venvPath": ".typecheck",
+  "venv": "env",
+  "extraPaths": [".typecheck/src"]
+}

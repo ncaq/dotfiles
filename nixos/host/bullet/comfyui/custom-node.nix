@@ -43,30 +43,23 @@ in
           'import sys; compile(open(sys.argv[1], "rb").read(), sys.argv[1], "exec")' \
           ${path}
       '';
-      # 自作カスタムノードの__init__.pyを構文検査してから配置する。
-      writeCheckedInitPy =
-        name: source:
-        pkgs.runCommand name { } ''
-          ${checkPythonSyntax source}
-          install -D -m 0644 ${source} $out/__init__.py
+      # 自作カスタムノードのディレクトリを構文検査してから丸ごと配置する。
+      #
+      # `share_encode.py`のような複数のノードで共有するモジュールは、
+      # 実体を`custom-node/`直下に置き、
+      # 使う側のノードディレクトリには`../share_encode.py`へのsymlinkを置いている。
+      # ディレクトリ構造がそのまま相対importの解決になるので、
+      # ComfyUIが読む配置とpyrightが見る配置を別々に組み立てずに済む。
+      # `cp -rL`でsymlinkを実体化して配置するため、
+      # 読み込み側から見た`custom_nodes/`配下の見え方は実体を並べた場合と変わらない。
+      writeCheckedNode =
+        dirName:
+        pkgs.runCommand "comfyui-${dirName}" { } ''
+          cp -rL ${./custom-node}/${dirName} $out
+          for source in $(find $out -name '*.py'); do
+            ${checkPythonSyntax "\"$source\""}
+          done
         '';
-      # 複数の自作ノードで共有するPythonモジュールを構文検査してから配置する。
-      # symlinkJoinで各ノードのパッケージへ混ぜて相対importで読ませるため、
-      # `__init__.py`ではなくPythonのモジュール名になるファイル名で置く。
-      writeCheckedModulePy =
-        name: fileName: source:
-        pkgs.runCommand name { } ''
-          ${checkPythonSyntax source}
-          install -D -m 0644 ${source} $out/${fileName}
-        '';
-      # 保存したロスレス動画から配布向けの圧縮版を作る共有モジュール。
-      shareEncode =
-        writeCheckedModulePy "comfyui-share-encode" "share_encode.py"
-          ./custom-node/share_encode.py;
-      # 保存したPNGを可逆再圧縮で縮める共有モジュール。
-      optimizePng =
-        writeCheckedModulePy "comfyui-optimize-png-module" "optimize_png.py"
-          ./custom-node/optimize_png.py;
       loraManager = pkgs.fetchFromGitHub {
         owner = "willmiao";
         repo = "ComfyUI-Lora-Manager";
@@ -144,13 +137,7 @@ in
           };
           # SeedVR2 CLIのチャンク処理をComfyUIから起動し、長尺動画をRAM上限付きで処理する。
           # 解像度の自動計算に使う、VIDEOから幅と高さを取り出す汎用ノードGetVideoSizeも同梱する。
-          "ComfyUI-SeedVR2-Streaming" = pkgs.symlinkJoin {
-            name = "comfyui-seedvr2-streaming";
-            paths = [
-              (writeCheckedInitPy "comfyui-seedvr2-streaming-init" ./custom-node/seedvr2-streaming/__init__.py)
-              shareEncode
-            ];
-          };
+          "ComfyUI-SeedVR2-Streaming" = writeCheckedNode "seedvr2-streaming";
           # UltralyticsDetectorProvider(YOLOによる顔検出)を提供する。
           # FaceDetailerに検出器を渡すために必要。
           "ComfyUI-Impact-Subpack" = pkgs.fetchFromGitHub {
@@ -165,50 +152,25 @@ in
           # 依存はComfyUI環境に同梱済みのrequestsのみ。
           # customNodesの型はpackageなのでプレーンなパスは渡せず、
           # derivationに包んで渡す。
-          "ComfyUI-Translate-Text" =
-            writeCheckedInitPy "comfyui-translate-text" ./custom-node/translate-text/__init__.py;
+          "ComfyUI-Translate-Text" = writeCheckedNode "translate-text";
           # 画像を選ばないことも許可する自作LoadImage。
           # (none)のままなら出力がNoneになり、optional入力が未接続扱いになる。
           # WanFirstLastFrameToVideoのend_imageなど任意入力の有効・無効を、
           # バイパス操作なしで画像指定の有無だけで切り替えるために使う。
-          "ComfyUI-Load-Image-Optional" =
-            writeCheckedInitPy "comfyui-load-image-optional" ./custom-node/load-image-optional/__init__.py;
+          "ComfyUI-Load-Image-Optional" = writeCheckedNode "load-image-optional";
           # Animaなどlatent寸法に制約があるモデル向けの自作ノード群。
           # 画像を指定した倍数へ中央cropするノードと、
           # EmptyLatentImageへ渡す幅と高さを指定した倍数へ切り下げるノードを提供する。
-          "ComfyUI-Align-Image-Size" =
-            writeCheckedInitPy "comfyui-align-image-size" ./custom-node/align-image-size/__init__.py;
+          "ComfyUI-Align-Image-Size" = writeCheckedNode "align-image-size";
           # 元fpsと音声を維持し、RGB48から10-bit SVT-AV1 losslessのWebMへ保存するノード。
-          "ComfyUI-Save-SVT-AV1" = pkgs.symlinkJoin {
-            name = "comfyui-save-svt-av1";
-            paths = [
-              (writeCheckedInitPy "comfyui-save-svt-av1-init" ./custom-node/save-svt-av1/__init__.py)
-              (pkgs.writeTextDir "web/notification.js" (
-                builtins.readFile ./custom-node/save-svt-av1/web/notification.js
-              ))
-              shareEncode
-            ];
-          };
+          "ComfyUI-Save-SVT-AV1" = writeCheckedNode "save-svt-av1";
           # 複数行の指示からQwen編集画像を先に全て作り、
           # そのキーフレーム間をWan FLF2Vで順番に動画化する。
           # 各成果物を都度保存するため、長さに比例して画像テンソルをRAMへ蓄積しない。
-          "ComfyUI-Anime-Video-Quick" = pkgs.symlinkJoin {
-            name = "comfyui-anime-video-quick";
-            paths = [
-              (writeCheckedInitPy "comfyui-anime-video-quick-init" ./custom-node/anime-video-quick/__init__.py)
-              shareEncode
-              optimizePng
-            ];
-          };
+          "ComfyUI-Anime-Video-Quick" = writeCheckedNode "anime-video-quick";
           # 本体のSaveImageが書き出したPNGを保存後に縮める自作ノード。
           # ノードは提供せず、保存処理を包む副作用だけを持つ。
-          "ComfyUI-Optimize-Png" = pkgs.symlinkJoin {
-            name = "comfyui-optimize-png";
-            paths = [
-              (writeCheckedInitPy "comfyui-optimize-png-init" ./custom-node/optimize-png/__init__.py)
-              optimizePng
-            ];
-          };
+          "ComfyUI-Optimize-Png" = writeCheckedNode "optimize-png";
           # danbooruタグのオートコンプリート。
           # 日本語からの検索とpost count表示に対応していて、
           # メジャーなタグかどうかを確認しながら入力できる。

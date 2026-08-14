@@ -6,6 +6,18 @@ result*
 
 .env*local
 
+# Python
+
+# `nix build .#comfyui-typecheck --out-link .typecheck`が作るout-link。
+# pyrightはここ経由でComfyUIのPython環境とソースを相対パスで辿ります。
+/.typecheck
+
+# グローバルのgitignoreで無視していてもNixのflakeソースには入ってしまい、
+# ローカルでPythonやruffを動かすたびにderivationの入力が変わるため、
+# リポジトリ側でも明示して除外します。
+__pycache__/
+.ruff_cache/
+
 # Project
 
 # `install.sh`がrebuild時に一時的にstagingするファイル。

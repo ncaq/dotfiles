@@ -31,7 +31,7 @@ from typing import cast
 import numpy as np
 import pytest
 from safetensors import safe_open
-from safetensors.numpy import load_file, save_file
+from safetensors.numpy import save_file
 
 # numpyのdtypeとsafetensorsのdtype名の対応。
 # 壊れたファイルを組み立てる時にだけ使う。
@@ -56,7 +56,10 @@ def load_safetensors(path: Path) -> tuple[dict[str, str], dict[str, np.ndarray]]
     """safetensorsを読んで__metadata__とテンソルを返す。"""
     with safe_open(str(path), framework="numpy") as file:
         metadata: dict[str, str] | None = file.metadata()
-    tensors: dict[str, np.ndarray] = load_file(str(path))
+        # ruffは辞書に対する`.keys()`だと見て単純化を促すが、
+        # これはsafetensorsのハンドルのメソッドなので置き換えられない。
+        names: list[str] = file.keys()  # noqa: SIM118
+        tensors: dict[str, np.ndarray] = {name: file.get_tensor(name) for name in names}
     return metadata or {}, tensors
 
 

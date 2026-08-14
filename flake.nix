@@ -423,7 +423,7 @@
               typos
               zizmor
 
-              # ComfyUIの自作カスタムノードの型検査。
+              # リポジトリ内のPythonの型検査。
               # `.envrc`が用意する`.typecheck`と`pyrightconfig.json`を読みます。
               pyright
 

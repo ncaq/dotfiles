@@ -39,6 +39,21 @@ def test_rejects_truncated_header(tmp_path: Path) -> None:
         read_header(file)
 
 
+def test_rejects_oversized_header(tmp_path: Path) -> None:
+    """上限を超えるヘッダ長を、読み込む前に拒否する。
+
+    u64をそのまま`read`へ渡すと巨大な確保が起きるので、
+    切り詰めの判定へ到達する前に落とす必要がある。
+    """
+    path = tmp_path / "huge.safetensors"
+    path.write_bytes((2**64 - 1).to_bytes(8, "little") + b"{}")
+    with (
+        path.open("rb") as file,
+        pytest.raises(ValueError, match="at most 100000000 is accepted"),
+    ):
+        read_header(file)
+
+
 def test_rejects_non_object_header(tmp_path: Path) -> None:
     """JSONではあるがオブジェクトでないヘッダを拒否する。"""
     path = tmp_path / "array.safetensors"

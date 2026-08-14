@@ -37,6 +37,15 @@ DTYPE_SIZE: dict[str, int] = {
     "F64": 8,
 }
 
+# ヘッダとして受け付ける最大の長さ。
+#
+# ヘッダ長は先頭8バイトのu64をそのまま読むので、
+# 検証せずに`read`へ渡すと細工されたファイルで巨大な確保が起きる。
+# このコマンドは`lib/convert-safetensors-fp16.nix`から外部配布のモデルを処理するため、
+# 数十バイトのファイルだけでビルドホストのメモリを枯渇させられてしまう。
+# 本家のsafetensorsが同じ理由で設けている100MBに揃える。
+HEADER_MAX_BYTES = 100 * 1000 * 1000
+
 # ヘッダの直後からデータが8バイト境界で始まるようにするパディング単位。
 # 公式のシリアライザと同じ規約で、mmapしたテンソルのアライメントを保つ。
 HEADER_ALIGN = 8
@@ -169,6 +178,12 @@ def read_header(file: BinaryIO) -> tuple[dict[str, object], int]:
         raise ValueError("file is too short to contain a safetensors header")
     # struct.unpackの戻り値は要素の型が決まらないので、u64だと分かっている型を宣言する。
     header_length: int = struct.unpack("<Q", raw_length)[0]
+    # 確保する前に弾く。読んでから長さを確かめるのでは手遅れになる。
+    if HEADER_MAX_BYTES < header_length:
+        raise ValueError(
+            f"header claims {header_length} bytes"
+            f" but at most {HEADER_MAX_BYTES} is accepted"
+        )
     raw_header = file.read(header_length)
     if len(raw_header) != header_length:
         raise ValueError("header is truncated")

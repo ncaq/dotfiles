@@ -22,6 +22,7 @@ extend-select = [
   "PERF",  # 明らかに無駄なループ
   "PIE",   # 冗長な記述
   "RET",   # returnの流れ
+  "S",     # bandit、資格情報の直書きや脆弱なハッシュやシェル経由の起動
   "SIM",   # 単純化できる分岐や文
   "SLOT",  # __slots__の付け忘れ
   "TID",   # importの書き方
@@ -29,6 +30,14 @@ extend-select = [
 ]
 
 ignore = [
+  # pytestは`assert`で書くのが普通のスタイル。
+  "S101",
+  # subprocessの呼び出しそのものを警告する。
+  # ffmpegやoxipngやSeedVR2 CLIの起動はこのリポジトリの目的そのもの。
+  "S603",
+  # 絶対パスでない実行ファイル名を警告する。
+  # 呼び出し先はNixが用意した環境のPATHから解決させたい。
+  "S607",
   # `while 0 < remaining:`のような昇順の比較をyoda conditionとして書き換えさせる。
   # 数直線と同じ並びで読める方を意図的に選んでいるので従わない。
   "SIM300",
@@ -36,10 +45,6 @@ ignore = [
 
 # 以下は検討した上で採らなかったもの。
 #
-# S: subprocessの呼び出しを全て警告するが、
-#    ffmpegやoxipngやSeedVR2 CLIの起動はこのリポジトリの目的そのもので、
-#    どれも配列で渡していてシェルを経由しない。
-#    テストの`assert`もpytestでは普通の書き方。
 # PL: 引数や分岐の数の上限を課すが、
 #     ComfyUIのノードは入力の数だけ引数が並ぶ作りなので21引数などが正常。
 # RUF001-003: 日本語のコメントと中国語のnegative promptを、

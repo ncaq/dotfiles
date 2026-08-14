@@ -54,9 +54,11 @@ def save_images(self: nodes.SaveImage, *args: Any, **kwargs: Any) -> dict[str, A
     return result
 
 
-# ruffは`save_images.optimize_png_wrapped = True`と書けと言うが、
-# 関数オブジェクトへ後から属性を生やす代入はpyrightが型エラーにする。
-# `setattr`なら双方を通せるのでこちらを使う。
+# ruffは`setattr`の第2引数が定数なら属性への代入で書けと言う(B010)が、
+# `save_images.optimize_png_wrapped = True`は、
+# 関数オブジェクトに無い属性への代入としてpyrightが型エラーにする。
+# 両方を満たす書き方が無いので、
+# 型検査を通る`setattr`を残してB010だけをこの行で抑制する。
 setattr(save_images, "optimize_png_wrapped", True)  # noqa: B010
 
 # ComfyUI-Managerによる再読み込みなどでこのモジュールが二度読まれると、

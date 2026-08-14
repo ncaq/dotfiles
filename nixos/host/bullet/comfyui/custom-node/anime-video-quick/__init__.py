@@ -30,13 +30,13 @@ import folder_paths
 import node_helpers
 import nodes
 import numpy as np
-import requests
 import torch
 from comfy_extras.nodes_model_advanced import ModelSamplingSD3
 from PIL import Image
 
 from .optimize_png import start_optimize_png
 from .share_encode import start_share_encode
+from .translate import translate_to_english
 
 
 anime_style_prefix = "Anime style, 2D cel animation, flat colors."
@@ -99,39 +99,9 @@ def split_prompts(text: str) -> list[Segment]:
 
 
 def translate(text: str) -> str:
+    """指示文を英語へ訳す。失敗した場合は原文をそのまま使う。"""
     try:
-        response = requests.get(
-            "https://translate.googleapis.com/translate_a/single",
-            params={
-                "client": "gtx",
-                "sl": "auto",
-                "tl": "en",
-                "dt": "t",
-                "q": text,
-            },
-            timeout=10,
-        )
-        response.raise_for_status()
-        payload = response.json()
-        if (
-            not isinstance(payload, list)
-            or not payload
-            or not isinstance(payload[0], list)
-        ):
-            raise ValueError("Google Translate returned an invalid response")
-        # `isinstance`だけでは要素の型が不明なままになり、
-        # 取り出した先を型検査が見てくれないので`object`へ寄せる。
-        texts: list[str] = []
-        for segment in cast(list[object], payload[0]):
-            if not isinstance(segment, list):
-                continue
-            items = cast(list[object], segment)
-            if items and isinstance(items[0], str):
-                texts.append(items[0])
-        translated = "".join(texts)
-        if not translated:
-            raise ValueError("Google Translate returned an empty translation")
-        return translated
+        return translate_to_english(text)
     except Exception:
         print("[anime-video-quick] translation failed, using original text")
         traceback.print_exc()

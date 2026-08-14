@@ -8,7 +8,7 @@
 # ここだけを素のPythonでテストできるようにする。
 import json
 import os
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal, TypedDict, cast
 
@@ -98,8 +98,16 @@ def read_manifest(path: Path) -> Manifest | None:
 
 
 def write_manifest(path: Path, manifest: Manifest) -> None:
+    """進捗の記録を書き出す。
+
+    `dataclasses.asdict`はdictやlistのフィールドを辿って作り直すため、
+    `identity`と`segments`が書き込みのたびに丸ごと複製される。
+    書き込みは区間ごとに起きるので、区間の数に対して二乗の複製になる。
+    全フィールドがそのままJSONへ渡せる値なので、
+    `vars`で属性の辞書を借りれば複製せずに同じJSONが得られる。
+    """
     temporary = path.with_suffix(".partial.json")
     temporary.write_text(
-        json.dumps(asdict(manifest), ensure_ascii=False, indent=2), encoding="utf-8"
+        json.dumps(vars(manifest), ensure_ascii=False, indent=2), encoding="utf-8"
     )
     os.replace(temporary, path)

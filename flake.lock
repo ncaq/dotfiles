@@ -222,11 +222,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1786510917,
-        "narHash": "sha256-Uzj3u0HMEwnO1J+GSerV9YlEaGXAPnlmIS7kUfuv02U=",
+        "lastModified": 1786670269,
+        "narHash": "sha256-KE/l1BZShbOKHve+2WbGkIBgV8JdB3c8qxDW7hriGOk=",
         "owner": "ncaq",
         "repo": "git-hooks",
-        "rev": "43a710de8812d3f1b8f187125b26395a01862849",
+        "rev": "54446f14f6c455cc41c833b7f08bc951cf6bac0d",
         "type": "github"
       },
       "original": {
@@ -289,11 +289,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1786791162,
-        "narHash": "sha256-yGl/gE8fLWJGeAFR0VtYxzCsHh6hG06JIluZCBMjkBk=",
+        "lastModified": 1786802089,
+        "narHash": "sha256-ZCmljrXwXqt8WoOYrCmHqagz3ULt9bHA1FavBe2Ps1A=",
         "owner": "ncaq",
         "repo": "konoka",
-        "rev": "9c46138e7f8f75795e0d21118f1d7012309cba20",
+        "rev": "caa8d2729d03282c235eab8a91ebd9c1a6846e04",
         "type": "github"
       },
       "original": {
@@ -404,11 +404,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1786528975,
-        "narHash": "sha256-8KuasCs+mVQ7WbLONUf/QB7NZeQvovyXRyxAj4nOOzY=",
+        "lastModified": 1786717298,
+        "narHash": "sha256-asdPlqtM0AweQ5YNLad6eY4tSYW55YNr1uyayf7mOMQ=",
         "owner": "NixOS",
         "repo": "nixos-hardware",
-        "rev": "3e7edd9afe17e45521300e041c65de3015f4a302",
+        "rev": "2dda192987ab6815e44df0130f03d6c907b79134",
         "type": "github"
       },
       "original": {
@@ -441,11 +441,11 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1786535285,
-        "narHash": "sha256-rG5HKMAgAhMgydvKGtco6rqTxRq4EDZQCx9USLvVqYw=",
+        "lastModified": 1786711500,
+        "narHash": "sha256-QvnceIGTBeDvDd9oCn+GvdsnkquliuwbVgpiRH68qaQ=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "9f78f44a87948854445dae0b6bf82b2e87e4efb5",
+        "rev": "02e08985a27c65ffd33d434eeb2e660a2e4dc84d",
         "type": "github"
       },
       "original": {

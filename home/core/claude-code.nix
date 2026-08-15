@@ -4,7 +4,6 @@
   pkgs-unstable,
   config,
   codingAgentWorkDirFullPath,
-  konoka,
   ...
 }:
 let
@@ -20,9 +19,6 @@ in
 
     # `mcp.nix`と連携します。
     enableMcpIntegration = true;
-
-    # ビルド済みのプラグインパッケージを直接リンクします。
-    plugins = map (n: konoka.plugins.${n}) konoka.allPluginNames;
 
     settings = {
       # 応答に使う自然言語です。

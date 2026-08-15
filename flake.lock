@@ -278,6 +278,9 @@
         "flake-parts": [
           "flake-parts"
         ],
+        "home-manager": [
+          "home-manager"
+        ],
         "nixpkgs": [
           "nixpkgs"
         ],
@@ -286,11 +289,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1786496021,
-        "narHash": "sha256-I7oH2sXUr2g3On5OqzDzqeLNdBTwfCPEd5Flf5CifNc=",
+        "lastModified": 1786791162,
+        "narHash": "sha256-yGl/gE8fLWJGeAFR0VtYxzCsHh6hG06JIluZCBMjkBk=",
         "owner": "ncaq",
         "repo": "konoka",
-        "rev": "5d696b26e90ad5a3ec56f5e0bf8293bbdbf523ad",
+        "rev": "9c46138e7f8f75795e0d21118f1d7012309cba20",
         "type": "github"
       },
       "original": {

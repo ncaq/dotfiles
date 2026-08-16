@@ -11,7 +11,7 @@
   };
   ```
 
-  設定を外す必要がある場合は`builtins.removeAttrs`で属性ごと外し、
+  設定を外す必要がある場合は`removeAttrs`で属性ごと外し、
   理由をコメントに残す。
 
   NixOSモジュールへは`flake.nix`の`specialArgs`経由で、

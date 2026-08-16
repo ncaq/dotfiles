@@ -48,7 +48,7 @@ let
   # storeパスを見ただけで変換済みだと分かるようにする。
   # ComfyUIから見えるファイル名はlinkFarmがmodel.nixの属性名で決めるので、
   # ここでの名前は配置されるファイル名には影響しない。
-  baseName = builtins.baseNameOf (src.name or src);
+  baseName = baseNameOf (src.name or src);
   name = "${pkgs.lib.removeSuffix ".safetensors" baseName}-fp16.safetensors";
 in
 pkgs.runCommand name

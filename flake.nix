@@ -324,6 +324,7 @@
             programs = {
               actionlint.enable = true;
               deadnix.enable = true;
+              nixf-diagnose.enable = true;
               nixfmt.enable = true;
               prettier.enable = true;
               ruff-check.enable = true;
@@ -425,6 +426,7 @@
               actionlint
               deadnix
               editorconfig-checker
+              nixf-diagnose
               nixfmt
               prettier
               ruff

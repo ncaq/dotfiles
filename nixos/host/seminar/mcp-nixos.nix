@@ -130,7 +130,7 @@ in
           wantedBy = [ "multi-user.target" ];
           # PythonはlibffiがW^X違反のメモリを使うことがあるため、
           # MemoryDenyWriteExecuteは設定しません。
-          serviceConfig = builtins.removeAttrs hardening.network [ "MemoryDenyWriteExecute" ] // {
+          serviceConfig = removeAttrs hardening.network [ "MemoryDenyWriteExecute" ] // {
             # mcp-nixosはHTTPトランスポートをネイティブにサポートしているので、
             # 環境変数で設定して直接起動します。
             # パスは未指定だとデフォルトの`/mcp`になり、前段Caddyの転送先と一致します。

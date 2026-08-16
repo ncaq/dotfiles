@@ -23,7 +23,7 @@ in
   file,
   hash,
 }:
-pkgs.runCommand (builtins.baseNameOf file)
+pkgs.runCommand (baseNameOf file)
   {
     nativeBuildInputs = with pkgs; [ python3Packages.huggingface-hub ];
 

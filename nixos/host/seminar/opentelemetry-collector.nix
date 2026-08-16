@@ -93,7 +93,7 @@ in
     # 上流モジュールがDynamicUser/ProtectSystem/DevicePolicy/NoNewPrivilegesを設定済みなので、
     # 上流と重複・衝突する属性は外してその上に締めます。
     serviceConfig =
-      builtins.removeAttrs hardening.network [
+      removeAttrs hardening.network [
         "NoNewPrivileges"
         "PrivateDevices"
         "PrivateTmp"

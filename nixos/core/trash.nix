@@ -3,7 +3,7 @@ let
   trashHardening =
     # 全ユーザーのホーム、全マウント先、ホストの/tmpにあるゴミ箱を掃除するため、
     # それらを不可視またはread-onlyにする隔離は適用できない。
-    builtins.removeAttrs hardening.isolated [
+    removeAttrs hardening.isolated [
       "PrivateTmp"
       "ProtectHome"
       "ProtectSystem"

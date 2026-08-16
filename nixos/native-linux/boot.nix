@@ -75,7 +75,7 @@
       };
       # efivarfsの変数を削除するだけでソケットは使わない。
       # /sysへの書き込みが必要なのでProtectKernelTunablesは設定できない。
-      serviceConfig = builtins.removeAttrs hardening.isolated [ "ProtectKernelTunables" ] // {
+      serviceConfig = removeAttrs hardening.isolated [ "ProtectKernelTunables" ] // {
         Type = "oneshot";
         # chattrによるimmutable属性の解除にCAP_LINUX_IMMUTABLEが必要。
         CapabilityBoundingSet = [ "CAP_LINUX_IMMUTABLE" ];

@@ -438,9 +438,6 @@
               # `.envrc`が用意する`.typecheck`と`pyrightconfig.json`を読みます。
               pyright
 
-              # nixの関連ツール。
-              nil
-
               # GitHub関連ツール。
               gh
             ];

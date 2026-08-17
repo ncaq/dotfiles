@@ -1,7 +1,7 @@
 # Ollamaを動かすNixOS Containerの定義。
 {
   lib,
-  pkgs,
+  pkgs-unstable,
   config,
   username,
   ...
@@ -14,7 +14,9 @@ let
   ollamaGid = ollamaUid;
   dataDir = config.local.ollama.dataDir;
   enableCuda = config.local.ollama.enableCuda;
-  package = if enableCuda then pkgs.ollama-cuda else pkgs.ollama-cpu;
+  # 古いOllamaでは`ollama pull`が412で拒否されることがあるため、
+  # unstableのOllamaを使う。
+  package = if enableCuda then pkgs-unstable.ollama-cuda else pkgs-unstable.ollama-cpu;
   # 推論に必要な最小限だけを渡す。
   # NVIDIAのcharデバイスはioctl経由の攻撃面が広く、
   # このコンテナは認証のないHTTP APIをtailnetへ公開しているため、
@@ -91,12 +93,20 @@ in
           loadModels = config.local.ollama.loadModels;
           syncModels = false; # オンデマンド追加したモデルを残す。
           environmentVariables = {
-            # GPUのホストではVRAMを他のオンデマンドコンテナと分け合うため短くする。
-            # 27BのQ4だけで17-18GiBを占め、
-            # 画像や動画の生成が同じGPUへ載らなくなる。
-            # CPUのホストはMemoryMax内に収まる上に、
-            # ディスクから読み直すと20秒近くかかるので長く保つ。
+            # GPUのホストはVRAMは貴重なので、
+            # 使わなくなったらすぐにVRAMを解放する。
+            # CPUのホストはメインメモリは大して貴重ではないので、
+            # ディスクから読み直すのが嫌なので長く保つ。
             OLLAMA_KEEP_ALIVE = if enableCuda then "5m" else "15m";
+          }
+          // lib.optionalAttrs enableCuda {
+            # 既定の32768では長い文書やコードを扱う時に足りない。
+            # KVキャッシュはnum_ctxの分を先に確保するので常にVRAMを消費するが、
+            # bulletでの実測では、
+            # `qwen3.8:27b-mtp-q4_K_M`が131072でも27GiBに収まって全層がGPUに載り、
+            # 生成速度は32768の時と変わらなかった。
+            # モデルの上限である262144まで伸ばすとVRAMから溢れて速度が1/4になる。
+            OLLAMA_CONTEXT_LENGTH = "131072";
           };
         };
         # nixpkgsのOllamaモジュールは固定ユーザを指定してもDynamicUserを有効にするため、

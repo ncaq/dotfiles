@@ -32,6 +32,16 @@ let
         # 同じ品質帯ならdenseよりMoEの方が圧倒的に速い。
         # seminarでの実測では9Bのdenseが約10トークン/秒に対し、
         # このactive 3BのMoEは約19トークン/秒だった。
+        # generalModelsをqwen3.8へ揃えられないのは、
+        # qwen3.8が27Bのdenseしか公開しておらずMoE版が存在しないためである。
+        # GPUで効いたmtpタグはCPUでは逆効果で、
+        # seminarでの実測では素のq4_K_Mの約18.9トークン/秒に対し、
+        # `qwen3.6:35b-a3b-mtp-q4_K_M`は約17.0トークン/秒しか出ない。
+        # 投機的デコーディングは余った演算能力を使って帯域を節約する手法だが、
+        # CPUにはその余りがないため検証のコストだけが乗る。
+        # 同じactive 3BのMoEである`nemotron-3.5-lightning:30b`も測ったが、
+        # 約18.2トークン/秒とほぼ同速なのに、
+        # Artificial Analysis Intelligence Indexは24でqwen3.6の32に届かない。
         "qwen3.6:35b-a3b"
       ];
   # 即答性を優先したモデル。
@@ -57,6 +67,10 @@ let
         # このモデルは約45トークン/秒で7秒だった。
         # 同程度の規模でも`granite4.1:3b`のdenseは約24トークン/秒、
         # `qwen3.5:4b`のdenseは約16トークン/秒しか出ない。
+        # bulletのflashModelsと違いq8_0を選ばないのは、
+        # CPUでは重みの読み出し量がそのまま速度になるためで、
+        # seminarでの実測では`lfm2.5:8b-a1b-q8_0`は約28トークン/秒まで落ちる。
+        # 即答性を捨てるならgeneralModelsを使えば済む。
         "lfm2.5:8b"
       ];
   # 表現の自由度を優先したモデル。

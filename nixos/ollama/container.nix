@@ -98,15 +98,20 @@ in
             # CPUのホストはメインメモリは大して貴重ではないので、
             # ディスクから読み直すのが嫌なので長く保つ。
             OLLAMA_KEEP_ALIVE = if enableCuda then "5m" else "15m";
-          }
-          // lib.optionalAttrs enableCuda {
-            # 既定の32768では長い文書やコードを扱う時に足りない。
-            # KVキャッシュはnum_ctxの分を先に確保するので常にVRAMを消費するが、
+            # Ollamaの既定は4096で、長い文書やコードを扱う時に足りない。
+            # KVキャッシュはnum_ctxの分を先に確保するので常にメモリを消費する。
             # bulletでの実測では、
             # `qwen3.8:27b-mtp-q4_K_M`が131072でも27GiBに収まって全層がGPUに載り、
             # 生成速度は32768の時と変わらなかった。
             # モデルの上限である262144まで伸ばすとVRAMから溢れて速度が1/4になる。
-            OLLAMA_CONTEXT_LENGTH = "131072";
+            # CPU推論のホストでは伸ばしても生成速度は落ちない。
+            # seminarでの実測では`qwen3.6:35b-a3b`が4096で21.4GiB、
+            # 262144でも27.5GiBで、生成速度はどちらも約18トークン/秒だった。
+            # 制約になるのはコンテナのMemoryHigh(全体の50%で約31GiB)の方で、
+            # generalModelsとflashModelsが同時に常駐しうることを考えると、
+            # 32768なら両方載せてcgroupの実測が約29GiBで収まるのに対し、
+            # 65536では約30GiBとMemoryHighに張り付いてしまう。
+            OLLAMA_CONTEXT_LENGTH = if enableCuda then "131072" else "32768";
           };
         };
         # nixpkgsのOllamaモジュールは固定ユーザを指定してもDynamicUserを有効にするため、

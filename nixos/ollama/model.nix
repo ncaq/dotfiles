@@ -12,8 +12,17 @@ let
   generalModels =
     if enableCuda then
       [
-        # bulletは32GiBのVRAMに収まる範囲で汎用品質を優先して27Bモデルを使う。
-        "qwen3.6:27b"
+        # bulletは32GiBのVRAMに収まる範囲で汎用品質を優先して27Bのdenseを使う。
+        # mtpタグはMulti-Token Predictionのヘッドを含み、
+        # GPUでは投機的デコーディングで生成速度が上がる。
+        # bulletでの実測ではmtpの付かないq4_K_Mが81トークン/秒に対し、
+        # mtp版は127トークン/秒で、
+        # VRAMの増加は1.3GiB程度に留まる。
+        # q8_0は品質では上だが30GiBを占めてcontextを32768より伸ばせず、
+        # 実測でも53トークン/秒とq4_K_Mの半分以下しか出ない。
+        # NVIDIAのBlackwell向けに見えるnvfp4やmxfp8のタグはApple MLXエンジン用で、
+        # pullしようとするとmacOSを要求されるためこの環境では選べない。
+        "qwen3.8:27b-mtp-q4_K_M"
       ]
     else
       [
@@ -23,6 +32,16 @@ let
         # 同じ品質帯ならdenseよりMoEの方が圧倒的に速い。
         # seminarでの実測では9Bのdenseが約10トークン/秒に対し、
         # このactive 3BのMoEは約19トークン/秒だった。
+        # generalModelsをqwen3.8へ揃えられないのは、
+        # qwen3.8が27Bのdenseしか公開しておらずMoE版が存在しないためである。
+        # GPUで効いたmtpタグはCPUでは逆効果で、
+        # seminarでの実測では素のq4_K_Mの約18.9トークン/秒に対し、
+        # `qwen3.6:35b-a3b-mtp-q4_K_M`は約17.0トークン/秒しか出ない。
+        # 投機的デコーディングは余った演算能力を使って帯域を節約する手法だが、
+        # CPUにはその余りがないため検証のコストだけが乗る。
+        # 同じactive 3BのMoEである`nemotron-3.5-lightning:30b`も測ったが、
+        # 約18.2トークン/秒とほぼ同速なのに、
+        # Artificial Analysis Intelligence Indexは24でqwen3.6の32に届かない。
         "qwen3.6:35b-a3b"
       ];
   # 即答性を優先したモデル。
@@ -31,7 +50,13 @@ let
       [
         # GPUなら9Bのdenseでも体感は即答なので、
         # 速度のために品質を落とし過ぎない範囲で汎用モデルより一段小さいものを選ぶ。
-        "qwen3.5:9b"
+        # 汎用モデルより世代が古いのは、
+        # qwen3.6以降が27B以上しか公開されておらず、
+        # この規模ではqwen3.5が最新だからである。
+        # 9B級は27B級より量子化の劣化が効きやすいのでq8_0を選ぶ。
+        # bulletでの実測ではq4_K_Mの201トークン/秒に対し143トークン/秒だが、
+        # 短い応答なら1秒未満で返るので即答性は損なわれない。
+        "qwen3.5:9b-q8_0"
       ]
     else
       [
@@ -42,6 +67,10 @@ let
         # このモデルは約45トークン/秒で7秒だった。
         # 同程度の規模でも`granite4.1:3b`のdenseは約24トークン/秒、
         # `qwen3.5:4b`のdenseは約16トークン/秒しか出ない。
+        # bulletのflashModelsと違いq8_0を選ばないのは、
+        # CPUでは重みの読み出し量がそのまま速度になるためで、
+        # seminarでの実測では`lfm2.5:8b-a1b-q8_0`は約28トークン/秒まで落ちる。
+        # 即答性を捨てるならgeneralModelsを使えば済む。
         "lfm2.5:8b"
       ];
   # 表現の自由度を優先したモデル。

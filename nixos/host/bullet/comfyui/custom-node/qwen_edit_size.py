@@ -3,7 +3,10 @@
 ComfyUIやtorchに触れないので、
 `custom-node/tests/`のpytestからそのままimportできる。
 
-なぜ専用の寸法計算が要るのかは`__init__.py`の冒頭に書いてある。
+なぜ専用の寸法計算が要るのかは、
+`custom-node/qwen-edit-scale/__init__.py`の冒頭に書いてある。
+このファイル自体はsymlinkで複数のノードのディレクトリに置かれるので、
+参照先はパスまで書いておく。
 """
 
 import math
@@ -31,8 +34,9 @@ MAX_ASPECT_RATIO = 3.0
 
 # 候補を探す幅。
 # `SIZE_MULTIPLE`単位で理想の寸法の周囲をこの数だけ試す。
-# 探索範囲を広げても候補が増えるだけで結果は変わらないが、
-# 0.25から4.0までのアスペクト比をこの範囲で網羅できることを確認している。
+# 0.25から4.0までのアスペクト比をこの範囲で網羅できる。
+# 広げても結果が変わらないことは、
+# `tests/test_qwen_edit_size.py`が探索ステップを4倍にして確かめている。
 WIDTH_SEARCH_STEPS = 12
 HEIGHT_SEARCH_STEPS = 6
 
@@ -65,10 +69,17 @@ def target_size(width: int, height: int) -> tuple[int, int]:
     """入力画像の寸法から、モデルへ渡すべき寸法を返す。
 
     以下を全て満たす寸法のうち、
-    元のアスペクト比に最も近く、総画素が`VAE_IMAGE_PIXELS`に近いものを選ぶ。
+    求めるアスペクト比に最も近く、総画素が`VAE_IMAGE_PIXELS`に近いものを選ぶ。
 
     - 幅も高さも`SIZE_MULTIPLE`の倍数
     - `is_stable`が成り立つ
+
+    求める比は元の比を`MAX_ASPECT_RATIO`の範囲へ丸めたものである。
+    3対1より極端な入力では返り値の比が元と一致しないので、
+    呼び出し側が中央cropで吸収する時に画像の端が落ちる。
+
+    総画素も`VAE_IMAGE_PIXELS`へ合わせるので、
+    約1MPより小さい画像は拡大される。
 
     候補が見つからない場合は例外にする。
     黙って条件を緩めると、

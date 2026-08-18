@@ -40,6 +40,7 @@ from .manifest import (
     write_manifest,
 )
 from .optimize_png import start_optimize_png
+from .qwen_edit_size import target_size
 from .share_encode import start_share_encode
 from .translate import translate_to_english
 
@@ -194,7 +195,20 @@ def generate_keyframe(
     prompt: str,
     seed: int,
 ) -> torch.Tensor:
-    source = scaled_image(image, 1.0, 8)
+    # Qwen-Image-Editの参照latentは`qwen_image_conditioning`が総画素1024*1024で
+    # 作り直すため、ここで渡す寸法がその再計算の不動点でないと、
+    # サンプリングするlatentと参照latentの寸法が食い違う。
+    # さらに寸法が16で割り切れないとpatch化のcircular paddingが入り、
+    # 出力の下端や右端が反対側の端のコピーで埋まる。
+    # 条件を満たす寸法を`qwen_edit_size`に選ばせる。
+    target_width, target_height = target_size(image.shape[2], image.shape[1])
+    source = comfy.utils.common_upscale(
+        image[..., :3].movedim(-1, 1),
+        target_width,
+        target_height,
+        "lanczos",
+        "center",
+    ).movedim(1, -1)
     vision_image, reference_latent = qwen_image_conditioning(vae, source)
     positive = qwen_conditioning(clip, vision_image, reference_latent, prompt)
     negative = qwen_conditioning(clip, vision_image, reference_latent, "")

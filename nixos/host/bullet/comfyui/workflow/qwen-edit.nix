@@ -218,9 +218,21 @@ in
         ];
       })
       # 入力画像をモデルに適した解像度へリサイズする。
+      #
+      # 公式テンプレートはFluxKontextImageScaleを使うが、
+      # あれが選ぶバケットには、
+      # TextEncodeQwenImageEditPlusが参照latentを作る時の再計算で、
+      # 寸法が動いてしまうものが混ざっている。
+      # 1328x800が1320x792になるように動くと、
+      # サンプリングするlatentと参照latentがずれた上に、
+      # latentの寸法が奇数になってpatch化のcircular paddingが入り、
+      # 出力の下端8pxが画像上端のコピーで埋まる。
+      # 詳しくは`custom-node/qwen-edit-scale/__init__.py`に書いてある。
+      #
+      # 自作のQwenImageEditScaleは再計算を受けても動かない寸法を選ぶ。
       (mkNode {
         id = 5;
-        type = "FluxKontextImageScale";
+        type = "QwenImageEditScale";
         pos = [
           420
           620

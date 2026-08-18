@@ -184,6 +184,11 @@ in
           # WanFirstLastFrameToVideoのend_imageなど任意入力の有効・無効を、
           # バイパス操作なしで画像指定の有無だけで切り替えるために使う。
           "ComfyUI-Load-Image-Optional" = writeCheckedNode "load-image-optional";
+          # Qwen-Image-Editの入力画像を、参照latentとずれない寸法へ揃えるノード。
+          # 公式テンプレートのFluxKontextImageScaleが選ぶバケットには、
+          # エンコード側の再計算で寸法が動いてしまうものが混ざっていて、
+          # そうなると出力の下端や右端に反対側の端が回り込む。
+          "ComfyUI-Qwen-Edit-Scale" = writeCheckedNode "qwen-edit-scale";
           # Animaなどlatent寸法に制約があるモデル向けの自作ノード群。
           # 画像を指定した倍数へ中央cropするノードと、
           # EmptyLatentImageへ渡す幅と高さを指定した倍数へ切り下げるノードを提供する。

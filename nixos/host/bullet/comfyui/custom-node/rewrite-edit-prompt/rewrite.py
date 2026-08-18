@@ -62,11 +62,17 @@ def rewritten_text(response: str) -> str:
     """
     stripped = response.strip()
     if stripped.startswith("```"):
-        # ```json のような言語指定の行と閉じの``` を落とす。
-        lines = stripped.splitlines()
-        if lines[-1].strip() == "```":
-            lines = lines[:-1]
-        stripped = "\n".join(lines[1:]).strip()
+        # ```json のような言語指定の行を落とし、
+        # 次のフェンスから後ろも落とす。
+        # 閉じフェンスは無いこともあり、その場合は残り全部が中身になる。
+        # 閉じた後ろに書き換えの意図を書き足してくることもあるので、
+        # そこで切らないとJSONとして読めなくなる。
+        lines = stripped.splitlines()[1:]
+        for index, line in enumerate(lines):
+            if line.strip().startswith("```"):
+                lines = lines[:index]
+                break
+        stripped = "\n".join(lines).strip()
     try:
         parsed: object = json.loads(stripped)
     except json.JSONDecodeError as error:

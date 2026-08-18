@@ -62,8 +62,22 @@ TIMEOUT_SECONDS = 120
 
 
 def encode_image(image: torch.Tensor) -> str:
-    """先頭の1枚をPNGのbase64にする。"""
-    array = image[0].detach().clamp(0, 1).mul(255).round().to(torch.uint8).cpu().numpy()
+    """先頭の1枚を最長辺`MAX_IMAGE_SIDE`まで縮めてPNGのbase64にする。
+
+    アルファは落とす。
+    IMAGEは4チャンネルのこともあり、
+    そのまま渡すとRGB指定の`Image.fromarray`が例外にする。
+    """
+    array = (
+        image[0, ..., :3]
+        .detach()
+        .clamp(0, 1)
+        .mul(255)
+        .round()
+        .to(torch.uint8)
+        .cpu()
+        .numpy()
+    )
     picture = Image.fromarray(array, "RGB")
     picture.thumbnail((MAX_IMAGE_SIDE, MAX_IMAGE_SIDE), Image.Resampling.LANCZOS)
     buffer = io.BytesIO()

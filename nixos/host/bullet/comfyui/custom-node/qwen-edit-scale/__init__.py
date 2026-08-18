@@ -74,8 +74,10 @@ class QwenImageEditScale:
         width, height = target_size(image.shape[2], image.shape[1])
         # 本家のFluxKontextImageScaleと同じく、
         # lanczosで縮めてアスペクト比の差は中央cropで吸収する。
+        # アルファは落とす。
+        # この先のVAEもVLもRGBしか見ないので、持ち回っても使われない。
         scaled = comfy.utils.common_upscale(
-            image.movedim(-1, 1), width, height, "lanczos", "center"
+            image[..., :3].movedim(-1, 1), width, height, "lanczos", "center"
         ).movedim(1, -1)
         return (scaled,)
 

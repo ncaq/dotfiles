@@ -23,6 +23,32 @@ def test_strips_code_fence() -> None:
     assert rewrite.rewritten_text(response) == "Make the keyboard red."
 
 
+def test_strips_code_fence_without_closing() -> None:
+    """閉じフェンスが無くても読む。生成が上限で切れると起きる。"""
+    response = '```json\n{"Rewritten": "Make the keyboard red."}'
+    assert rewrite.rewritten_text(response) == "Make the keyboard red."
+
+
+def test_ignores_text_after_code_fence() -> None:
+    """閉じフェンスより後ろの説明文は落とす。
+
+    JSONだけを返せと書いてあっても、
+    モデルは書き換えの意図を後ろに足してくることがある。
+    ここで弾くと使える書き換えを捨てて翻訳へ退避することになる。
+    """
+    response = (
+        '```json\n{"Rewritten": "Make the keyboard red."}\n```\n'
+        "This keeps the rest of the desk unchanged."
+    )
+    assert rewrite.rewritten_text(response) == "Make the keyboard red."
+
+
+def test_rejects_empty_code_fence() -> None:
+    """中身の無いコードブロックは拒否する。"""
+    with pytest.raises(ValueError, match="non-JSON rewrite"):
+        rewrite.rewritten_text("```\n```")
+
+
 def test_collapses_whitespace() -> None:
     """改行や連続する空白を1つに潰す。指示文は1行で渡すため。"""
     response = '{"Rewritten": "Make the\\nkeyboard   red."}'

@@ -40,7 +40,7 @@ from .manifest import (
     write_manifest,
 )
 from .optimize_png import start_optimize_png
-from .qwen_edit_size import reference_size, target_size
+from .qwen_edit_size import is_stable, target_size
 from .share_encode import start_share_encode
 from .translate import translate_to_english
 
@@ -154,11 +154,18 @@ def qwen_image_conditioning(
     # 参照latentの寸法の決め方は`TextEncodeQwenImageEditPlus`と同じである。
     # `generate_keyframe`が渡す寸法はこの再計算の不動点でなければならないので、
     # 同じ式を2箇所に書かず`qwen_edit_size`に一本化する。
-    latent_width, latent_height = reference_size(samples.shape[3], samples.shape[2])
-    latent_image = comfy.utils.common_upscale(
-        samples, latent_width, latent_height, "area", "disabled"
-    ).movedim(1, -1)
-    reference_latent = vae.encode(latent_image[..., :3])
+    #
+    # 不動点でない入力は受け付けない。
+    # 黙って参照latentの寸法で進めると、
+    # サンプリングするlatentとの食い違いとpatch化のcircular paddingが戻る。
+    # 呼び出し側が`target_size`を通していれば必ず成り立つ。
+    if not is_stable(samples.shape[3], samples.shape[2]):
+        raise ValueError(
+            f"Image size {samples.shape[3]}x{samples.shape[2]} is not a fixed point "
+            "of the reference latent size"
+        )
+    # 寸法が変わらないので参照latent用のリサイズは要らない。
+    reference_latent = vae.encode(image[..., :3])
     return vision_image, reference_latent
 
 
@@ -196,8 +203,8 @@ def generate_keyframe(
     prompt: str,
     seed: int,
 ) -> torch.Tensor:
-    # Qwen-Image-Editの参照latentは`qwen_image_conditioning`が総画素1024*1024で
-    # 作り直すため、ここで渡す寸法がその再計算の不動点でないと、
+    # Qwen-Image-Editの参照latentは総画素1024*1024で作り直されるため、
+    # ここで渡す寸法がその再計算の不動点でないと、
     # サンプリングするlatentと参照latentの寸法が食い違う。
     # さらに寸法が16で割り切れないとpatch化のcircular paddingが入り、
     # 出力の下端や右端が反対側の端のコピーで埋まる。
@@ -213,7 +220,11 @@ def generate_keyframe(
     vision_image, reference_latent = qwen_image_conditioning(vae, source)
     positive = qwen_conditioning(clip, vision_image, reference_latent, prompt)
     negative = qwen_conditioning(clip, vision_image, reference_latent, "")
-    latent = {"samples": vae.encode(source[..., :3])}
+    # 参照latentは`source`をそのままエンコードしたものなので、
+    # サンプリング用にもう一度encodeせず使い回す。
+    # `common_ksampler`は渡したテンソルを読むだけで書き換えないため、
+    # conditioningと同じものを共有しても壊れない。
+    latent = {"samples": reference_latent}
     sampled = nodes.common_ksampler(
         model, seed, 40, 4.0, "euler", "simple", positive, negative, latent, denoise=1.0
     )[0]

@@ -69,31 +69,46 @@ def build_messages(
     return messages
 
 
+def json_body(response: str) -> str:
+    """応答からJSONの本文らしき部分を切り出す。
+
+    JSONだけを返せと指示しても、モデルは周りに文章を足してくる。
+    フェンスで包む、その前に前置きを書く、後ろに意図の補足を書く、
+    のいずれも起きるので、包みの内側だけを取る。
+
+    切り出せなければ元の文字列をそのまま返す。
+    JSONとして読めるかどうかは呼び出し側が判断する。
+    """
+    stripped = response.strip()
+    lines = stripped.splitlines()
+    fences = [
+        index for index, line in enumerate(lines) if line.strip().startswith("```")
+    ]
+    if fences:
+        # 開きフェンスの次の行から、次のフェンスの手前まで。
+        # 閉じフェンスは無いこともあり、その場合は残り全部が中身になる。
+        end = fences[1] if 1 < len(fences) else len(lines)
+        return "\n".join(lines[fences[0] + 1 : end]).strip()
+    # フェンスが無ければ、最も外側の波括弧の対を取る。
+    start = stripped.find("{")
+    close = stripped.rfind("}")
+    if start != -1 and start < close:
+        return stripped[start : close + 1]
+    return stripped
+
+
 def rewritten_text(response: str) -> str:
     """モデルの応答から書き換え後の指示文を取り出す。
 
     公式は`{"Rewritten": "..."}`のJSONを期待する。
-    コードブロックで包んで返してくることがあるので剥がしてから読む。
+    周りに付いてくる文章は`json_body`が落とす。
 
     期待した形でなければ例外にする。
     呼び出し側が元の指示文へ倒すか翻訳へ回すかを決めるので、
     ここでは倒さずに落とす。
     """
-    stripped = response.strip()
-    if stripped.startswith("```"):
-        # ```json のような言語指定の行を落とし、
-        # 次のフェンスから後ろも落とす。
-        # 閉じフェンスは無いこともあり、その場合は残り全部が中身になる。
-        # 閉じた後ろに書き換えの意図を書き足してくることもあるので、
-        # そこで切らないとJSONとして読めなくなる。
-        lines = stripped.splitlines()[1:]
-        for index, line in enumerate(lines):
-            if line.strip().startswith("```"):
-                lines = lines[:index]
-                break
-        stripped = "\n".join(lines).strip()
     try:
-        parsed: object = json.loads(stripped)
+        parsed: object = json.loads(json_body(response))
     except json.JSONDecodeError as error:
         raise ValueError(f"Ollama returned a non-JSON rewrite: {error}") from error
     if not isinstance(parsed, dict):

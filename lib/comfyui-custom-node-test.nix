@@ -13,7 +13,8 @@
     検査したい処理はモジュールへ分けておく。
 
     今の対象は共有モジュールの`translate.py`と`qwen_edit_size.py`、
-    anime-video-quickの`manifest.py`である。
+    anime-video-quickの`manifest.py`、
+    rewrite-edit-promptの`rewrite.py`である。
     翻訳と記録はどちらも壊れた入力を受けた時の分岐が本体で、
     翻訳のレスポンスも中断したジョブの記録も、
     実際に壊れたものが来る経路でしか通らない。
@@ -45,6 +46,8 @@ let
       (customNode + "/translate.py")
       (customNode + "/anime-video-quick/manifest.py")
       (customNode + "/qwen_edit_size.py")
+      (customNode + "/rewrite-edit-prompt/rewrite.py")
+      (customNode + "/rewrite-edit-prompt/edit-system-prompt.md")
     ];
   };
 

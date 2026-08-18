@@ -13,5 +13,9 @@ import sys
 from pathlib import Path
 
 custom_node = Path(__file__).resolve().parent.parent
-for directory in [custom_node, custom_node / "anime-video-quick"]:
+for directory in [
+    custom_node,
+    custom_node / "anime-video-quick",
+    custom_node / "rewrite-edit-prompt",
+]:
     sys.path.insert(0, str(directory))

@@ -179,6 +179,10 @@ in
           # customNodesの型はpackageなのでプレーンなパスは渡せず、
           # derivationに包んで渡す。
           "ComfyUI-Translate-Text" = writeCheckedNode "translate-text";
+          # 日本語の編集指示をQwen公式の規則で英文の編集命令へ書き換える自作ノード。
+          # Ollamaへ画像も一緒に渡して、対象を特定した指示文にさせる。
+          # 接続先は`ollama.nix`が環境変数で渡す。
+          "ComfyUI-Rewrite-Edit-Prompt" = writeCheckedNode "rewrite-edit-prompt";
           # 画像を選ばないことも許可する自作LoadImage。
           # (none)のままなら出力がNoneになり、optional入力が未接続扱いになる。
           # WanFirstLastFrameToVideoのend_imageなど任意入力の有効・無効を、

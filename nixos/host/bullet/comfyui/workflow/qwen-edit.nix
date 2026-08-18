@@ -9,18 +9,25 @@
 # サンプリング設定はQwen公式推奨値(40 steps, CFG 4.0)。
 #
 # 指示文は公式には英語と中国語がサポート対象なので、
-# 自作カスタムノードのTranslate Text to Englishを前段に置いて、
-# 日本語で書いた指示を英語へ翻訳してから渡す。
-# 言語は自動判定なので英語原文を直接書いてもそのまま通る。
-# 翻訳に失敗した場合は原文がそのまま渡される。
+# 自作カスタムノードのRewrite Edit Promptを前段に置いて、
+# 日本語で書いた指示を英文の編集命令へ書き換えてから渡す。
+# 単なる翻訳ではなく、Qwen公式のリライト規則に沿って、
+# 対象と属性と位置を明示し、変えない部分まで書き下した英文になる。
+# 編集する画像も一緒にOllamaへ渡すので、
+# 「この子の服装を変えて」のような曖昧な指示でも対象を特定できる。
+# 書き換えに失敗した場合はGoogle翻訳へ、それも駄目なら原文へ倒れる。
 #
 # TextEncodeQwenImageEditPlusは参照画像を3枚まで受け取れる。
 # 1枚目が編集対象で、2枚目以降は任意の参照になる。
 # 生成解像度は1枚目から決まるので、
 # 2枚目以降を足しても出力サイズは変わらない。
-{ lib, ... }:
+{ lib, config, ... }:
 let
   name = "qwen-edit";
+  # 指示文のリライトに使うモデル。
+  # Ollamaへ載せるモデルの定義と二重に書かないよう、
+  # そのホストの汎用モデルの先頭をそのまま使う。
+  rewriteModel = lib.head config.local.ollama.generalModels;
   inherit (import ./lib/builder.nix { inherit lib; })
     mkNode
     mkInput
@@ -248,14 +255,22 @@ in
             9
             10
             11
+            26
           ])
         ];
       })
       # 編集指示をここに書く。
-      # 日本語で書けば英語へ翻訳され、英語で書けばほぼそのまま通る。
+      # 日本語で書けば英文の編集命令へ書き換えられ、英語で書いても整えられる。
+      #
+      # リライトに使うモデルはOllamaのgeneralModelsの先頭に揃える。
+      # 画像も渡すのでvisionを持つモデルである必要がある。
+      #
+      # free_comfyui_vramはリライトの前にComfyUIの重みを降ろす。
+      # VRAMを取り合うとリライトが実測で5倍以上遅くなるため、
+      # 降ろして載せ直す方が待ち時間の合計は短い。
       (mkNode {
         id = 14;
-        type = "TranslateTextToEnglish";
+        type = "RewriteEditPrompt";
         title = "編集指示(日本語でも英語でも可)";
         pos = [
           420
@@ -266,20 +281,25 @@ in
           200
         ];
         order = 8;
+        inputs = [ (mkInput "image" "IMAGE" 26) ];
         outputs = [
           (mkOutput "english_text" "STRING" [
             19
             20
           ])
         ];
-        widgets = [ "背景を星空に変えてください。" ];
+        widgets = [
+          "背景を星空に変えてください。"
+          rewriteModel
+          true # free_comfyui_vram
+        ];
       })
-      # 実行時に翻訳後の英文を表示する。
-      # 意図と違う訳になっていないか確認する用。
+      # 実行時に書き換え後の英文を表示する。
+      # 意図と違う指示になっていないか確認する用。
       (mkNode {
         id = 15;
         type = "PreviewAny";
-        title = "翻訳後の英文";
+        title = "書き換え後の英文";
         pos = [
           880
           (-200)
@@ -662,6 +682,14 @@ in
         0
         7
         4
+        "IMAGE"
+      ]
+      [
+        26
+        5
+        0
+        14
+        0
         "IMAGE"
       ]
     ];

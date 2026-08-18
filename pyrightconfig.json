@@ -19,7 +19,8 @@
       "root": "nixos/host/bullet/comfyui/custom-node/tests",
       "extraPaths": [
         "nixos/host/bullet/comfyui/custom-node",
-        "nixos/host/bullet/comfyui/custom-node/anime-video-quick"
+        "nixos/host/bullet/comfyui/custom-node/anime-video-quick",
+        "nixos/host/bullet/comfyui/custom-node/rewrite-edit-prompt"
       ]
     }
   ]

@@ -76,6 +76,12 @@ rec {
     # 動画を選ぶウィジェットは画像と違って`file`。
     LoadVideo = [ "file" ];
     PrimitiveInt = [ "value" ];
+    # 自作ノード。`custom-node/rewrite-edit-prompt/__init__.py`。
+    RewriteEditPrompt = [
+      "text"
+      "model"
+      "free_comfyui_vram"
+    ];
     # 自作ノード。`custom-node/translate-text/__init__.py`。
     TranslateTextToEnglish = [ "text" ];
     UNETLoader = [

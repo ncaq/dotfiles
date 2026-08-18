@@ -7,6 +7,9 @@ ComfyUIやtorchに触れないので、
 Qwen-ImageはApache License 2.0で公開されている。
 https://github.com/QwenLM/Qwen-Image/blob/main/src/examples/tools/prompt_utils.py
 
+取り込んだ時点のcommitを含む出典は`edit-system-prompt.md`の冒頭にある。
+上のリンクは追従して変わるので、差分を取り直す時はそちらを見る。
+
 公式の`polish_edit_prompt`は指示文と一緒に画像もVLへ渡す。
 指示文だけを整えるのではなく、画像を見て対象を特定して書き下すのが本来の使い方で、
 `TextEncodeQwenImageEditPlus`がVLへ渡す画像を総画素384*384まで落とすことへの、
@@ -17,13 +20,24 @@ import json
 from pathlib import Path
 from typing import cast
 
+
+def _load_system_prompt() -> str:
+    """取り込んだ規則を読む。先頭の出典のコメントは落とす。
+
+    ファイル単体で由来が追えるように出典とライセンスをHTMLコメントで置いているが、
+    本文はそのままモデルへ渡るので、ここでは読ませない。
+    """
+    text = (Path(__file__).with_name("edit-system-prompt.md")).read_text()
+    if text.lstrip().startswith("<!--"):
+        text = text.split("-->", 1)[1]
+    return text.strip()
+
+
 # 公式のリライト規則そのもの。
 # Markdownとして書かれているので別ファイルへ置く。
 # Pythonの文字列として埋めると、
 # Markdownの改行を表す行末の2スペースがformatterに落とされて意味が変わる。
-EDIT_SYSTEM_PROMPT = (
-    (Path(__file__).with_name("edit-system-prompt.md")).read_text().strip()
-)
+EDIT_SYSTEM_PROMPT = _load_system_prompt()
 
 
 def build_messages(

@@ -1,3 +1,17 @@
+<!--
+Qwen-Imageの`src/examples/tools/prompt_utils.py`にある`EDIT_SYSTEM_PROMPT`を、
+一字一句そのまま持ってきたものである。
+
+Copyright 2025 The Qwen Team, Alibaba Group
+SPDX-License-Identifier: Apache-2.0
+
+取り込み元:
+https://github.com/QwenLM/Qwen-Image/blob/3453042c9f35f284abce58c68302a1183f6b40f2/src/examples/tools/prompt_utils.py
+
+この本文はそのままモデルへ渡るので、
+このコメントは`rewrite.py`が読み込む時に落としている。
+-->
+
 # Edit Prompt Enhancer
 
 You are a professional edit prompt enhancer. Your task is to generate a direct and specific edit prompt based on the user-provided instruction and the image input conditions.  

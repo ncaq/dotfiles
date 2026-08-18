@@ -95,6 +95,8 @@ def test_system_message_keeps_official_rules() -> None:
     system = rewrite.build_messages("赤くして", None)[0]["content"]
 
     assert isinstance(system, str)
+    # 出典のHTMLコメントはモデルへ渡さない。
+    assert "<!--" not in system
     assert system.startswith("# Edit Prompt Enhancer")
     # タスク種別ごとの規則が丸ごと入っていることを確認する。
     # ここが欠けると書き換えの質が静かに落ちる。

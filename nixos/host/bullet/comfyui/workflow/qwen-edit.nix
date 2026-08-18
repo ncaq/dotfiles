@@ -14,8 +14,10 @@
 # 言語は自動判定なので英語原文を直接書いてもそのまま通る。
 # 翻訳に失敗した場合は原文がそのまま渡される。
 #
-# TextEncodeQwenImageEditPlusは参照画像を3枚まで受け取れるが、
-# この基本形では1枚だけ使う。
+# TextEncodeQwenImageEditPlusは参照画像を3枚まで受け取れる。
+# 1枚目が編集対象で、2枚目以降は任意の参照になる。
+# 生成解像度は1枚目から決まるので、
+# 2枚目以降を足しても出力サイズは変わらない。
 { lib, ... }:
 let
   name = "qwen-edit";
@@ -36,6 +38,12 @@ in
     app = {
       inputs = [
         (mkAppInput 4 "image")
+        (mkAppInputWith 17 "image" {
+          description = "任意。編集箇所の拡大や赤枠を描いた画像を渡すと対象を特定しやすい";
+        })
+        (mkAppInputWith 18 "image" {
+          description = "任意。さらに参照させたい画像";
+        })
         (mkAppInputWith 14 "text" {
           height = 160;
           description = "画像への編集指示。日本語でも英語でも入力可能";
@@ -143,19 +151,85 @@ in
           "image"
         ];
       })
+      # 編集する画像に加えて渡せる参照画像。
+      # 自作のLoadImageOptionalで、(none)のままなら未指定扱いになる。
+      #
+      # TextEncodeQwenImageEditPlusは参照画像をQwen2.5-VLへ渡す前に、
+      # 総画素384*384(長辺400px程度)まで縮小する。
+      # 指示文の対象を決めているのはこのVLなので、
+      # 画像全体を1枚渡すだけでは小さい対象がそもそも見えていない。
+      # 編集したい箇所を切り出した画像や、
+      # 対象を赤枠で囲んだ画像を追加で渡すと、
+      # その分だけVLから見た実効解像度が上がって対象を特定しやすくなる。
+      # 指示文では公式の例と同じく「image 2」のように番号で参照する。
+      #
+      # このノードはリサイズを挟まず直結する。
+      # エンコード側がVL用に384*384、参照latent用に1024*1024へ内部で縮小するため、
+      # 前段のリサイズは効果がなく、
+      # FluxKontextImageScaleは生成解像度を決める画像1にだけ必要になる。
+      (mkNode {
+        id = 17;
+        type = "LoadImageOptional";
+        title = "参照画像2(任意)";
+        pos = [
+          (-40)
+          1340
+        ];
+        size = [
+          340
+          314
+        ];
+        order = 5;
+        outputs = [
+          (mkOutput "IMAGE" "IMAGE" [
+            22
+            23
+          ])
+          (mkOutput "MASK" "MASK" [ ])
+        ];
+        widgets = [
+          "(none)"
+          "image"
+        ];
+      })
+      (mkNode {
+        id = 18;
+        type = "LoadImageOptional";
+        title = "参照画像3(任意)";
+        pos = [
+          (-40)
+          1700
+        ];
+        size = [
+          340
+          314
+        ];
+        order = 6;
+        outputs = [
+          (mkOutput "IMAGE" "IMAGE" [
+            24
+            25
+          ])
+          (mkOutput "MASK" "MASK" [ ])
+        ];
+        widgets = [
+          "(none)"
+          "image"
+        ];
+      })
       # 入力画像をモデルに適した解像度へリサイズする。
       (mkNode {
         id = 5;
         type = "FluxKontextImageScale";
         pos = [
           420
-          540
+          620
         ];
         size = [
           240
           46
         ];
-        order = 5;
+        order = 7;
         inputs = [ (mkInput "image" "IMAGE" 8) ];
         outputs = [
           (mkOutput "IMAGE" "IMAGE" [
@@ -179,7 +253,7 @@ in
           420
           200
         ];
-        order = 6;
+        order = 8;
         outputs = [
           (mkOutput "english_text" "STRING" [
             19
@@ -202,7 +276,7 @@ in
           340
           200
         ];
-        order = 7;
+        order = 9;
         inputs = [ (mkInput "source" "*" 20) ];
       })
       # 編集指示。画像を参照しながら指示文をエンコードする。
@@ -218,13 +292,15 @@ in
         ];
         size = [
           420
-          200
+          240
         ];
-        order = 8;
+        order = 10;
         inputs = [
           (mkInput "clip" "CLIP" 2)
           (mkInput "vae" "VAE" 4)
           (mkInput "image1" "IMAGE" 9)
+          (mkInput "image2" "IMAGE" 22)
+          (mkInput "image3" "IMAGE" 24)
           (
             mkInput "prompt" "STRING" 19
             // {
@@ -244,17 +320,19 @@ in
         title = "ネガティブ(空のまま)";
         pos = [
           420
-          320
+          360
         ];
         size = [
           420
-          160
+          200
         ];
-        order = 9;
+        order = 11;
         inputs = [
           (mkInput "clip" "CLIP" 3)
           (mkInput "vae" "VAE" 5)
           (mkInput "image1" "IMAGE" 10)
+          (mkInput "image2" "IMAGE" 23)
+          (mkInput "image3" "IMAGE" 25)
         ];
         outputs = [ (mkOutput "CONDITIONING" "CONDITIONING" [ 13 ]) ];
         widgets = [ "" ];
@@ -270,7 +348,7 @@ in
           315
           58
         ];
-        order = 10;
+        order = 12;
         inputs = [ (mkInput "model" "MODEL" 1) ];
         outputs = [ (mkOutput "MODEL" "MODEL" [ 14 ]) ];
         widgets = [ 3.1 ]; # shift
@@ -286,7 +364,7 @@ in
           315
           82
         ];
-        order = 11;
+        order = 13;
         inputs = [ (mkInput "model" "MODEL" 14) ];
         outputs = [ (mkOutput "patched_model" "MODEL" [ 15 ]) ];
         widgets = [
@@ -299,13 +377,13 @@ in
         type = "VAEEncode";
         pos = [
           420
-          640
+          720
         ];
         size = [
           210
           46
         ];
-        order = 12;
+        order = 14;
         inputs = [
           (mkInput "pixels" "IMAGE" 11)
           (mkInput "vae" "VAE" 6)
@@ -323,7 +401,7 @@ in
           315
           262
         ];
-        order = 13;
+        order = 15;
         inputs = [
           (mkInput "model" "MODEL" 15)
           (mkInput "positive" "CONDITIONING" 12)
@@ -350,7 +428,7 @@ in
           210
           46
         ];
-        order = 14;
+        order = 16;
         inputs = [
           (mkInput "samples" "LATENT" 17)
           (mkInput "vae" "VAE" 7)
@@ -368,7 +446,7 @@ in
           420
           470
         ];
-        order = 15;
+        order = 17;
         inputs = [ (mkInput "images" "IMAGE" 18) ];
         widgets = [ (mkFilenamePrefix name) ];
       })
@@ -531,7 +609,7 @@ in
         14
         0
         6
-        3
+        5
         "STRING"
       ]
       [
@@ -541,6 +619,38 @@ in
         15
         0
         "STRING"
+      ]
+      [
+        22
+        17
+        0
+        6
+        3
+        "IMAGE"
+      ]
+      [
+        23
+        17
+        0
+        7
+        3
+        "IMAGE"
+      ]
+      [
+        24
+        18
+        0
+        6
+        4
+        "IMAGE"
+      ]
+      [
+        25
+        18
+        0
+        7
+        4
+        "IMAGE"
       ]
     ];
   };

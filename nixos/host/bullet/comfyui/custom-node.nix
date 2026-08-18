@@ -179,11 +179,20 @@ in
           # customNodesの型はpackageなのでプレーンなパスは渡せず、
           # derivationに包んで渡す。
           "ComfyUI-Translate-Text" = writeCheckedNode "translate-text";
+          # 日本語の編集指示をQwen公式の規則で英文の編集命令へ書き換える自作ノード。
+          # Ollamaへ画像も一緒に渡して、対象を特定した指示文にさせる。
+          # 接続先は`ollama.nix`が環境変数で渡す。
+          "ComfyUI-Rewrite-Edit-Prompt" = writeCheckedNode "rewrite-edit-prompt";
           # 画像を選ばないことも許可する自作LoadImage。
           # (none)のままなら出力がNoneになり、optional入力が未接続扱いになる。
           # WanFirstLastFrameToVideoのend_imageなど任意入力の有効・無効を、
           # バイパス操作なしで画像指定の有無だけで切り替えるために使う。
           "ComfyUI-Load-Image-Optional" = writeCheckedNode "load-image-optional";
+          # Qwen-Image-Editの入力画像を、参照latentとずれない寸法へ揃えるノード。
+          # 公式テンプレートのFluxKontextImageScaleが選ぶバケットには、
+          # エンコード側の再計算で寸法が動いてしまうものが混ざっていて、
+          # そうなると出力の下端や右端に反対側の端が回り込む。
+          "ComfyUI-Qwen-Edit-Scale" = writeCheckedNode "qwen-edit-scale";
           # Animaなどlatent寸法に制約があるモデル向けの自作ノード群。
           # 画像を指定した倍数へ中央cropするノードと、
           # EmptyLatentImageへ渡す幅と高さを指定した倍数へ切り下げるノードを提供する。

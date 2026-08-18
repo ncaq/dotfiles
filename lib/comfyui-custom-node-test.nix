@@ -12,11 +12,14 @@
     読み込むだけでGPUを持つ実行環境が要り、テストからは触れない。
     検査したい処理はモジュールへ分けておく。
 
-    今の対象は共有モジュールの`translate.py`と、
-    anime-video-quickの`manifest.py`である。
-    どちらも壊れた入力を受けた時の分岐が本体で、
+    今の対象は共有モジュールの`translate.py`と`qwen_edit_size.py`、
+    anime-video-quickの`manifest.py`、
+    rewrite-edit-promptの`rewrite.py`である。
+    翻訳と記録はどちらも壊れた入力を受けた時の分岐が本体で、
     翻訳のレスポンスも中断したジョブの記録も、
     実際に壊れたものが来る経路でしか通らない。
+    寸法の計算は条件を満たさない値を返しても例外にならず、
+    生成してみるまで気付けないので、成り立つ範囲をテストで固定する。
 
   なぜComfyUIのPython環境を使わないか:
     `checks.pyright`はComfyUIの環境を使うが、
@@ -42,6 +45,9 @@ let
       (customNode + "/tests")
       (customNode + "/translate.py")
       (customNode + "/anime-video-quick/manifest.py")
+      (customNode + "/qwen_edit_size.py")
+      (customNode + "/rewrite-edit-prompt/rewrite.py")
+      (customNode + "/rewrite-edit-prompt/edit-system-prompt.md")
     ];
   };
 

@@ -43,6 +43,27 @@ def test_ignores_text_after_code_fence() -> None:
     assert rewrite.rewritten_text(response) == "Make the keyboard red."
 
 
+def test_ignores_text_before_code_fence() -> None:
+    """コードブロックの前に前置きが付いていても読む。
+
+    JSONだけを返せと書いてあっても、
+    モデルは「以下が書き換えた指示です」の類を先に書いてくることがある。
+    フェンスが先頭にある場合しか剥がさないと、
+    書き換えは成功しているのに翻訳へ退避することになる。
+    """
+    response = (
+        "Here is the rewritten prompt:\n"
+        '```json\n{"Rewritten": "Make the keyboard red."}\n```'
+    )
+    assert rewrite.rewritten_text(response) == "Make the keyboard red."
+
+
+def test_ignores_text_around_bare_json() -> None:
+    """フェンスが無くても前後の説明文を落として読む。"""
+    response = 'Sure. {"Rewritten": "Make the keyboard red."} Hope this helps.'
+    assert rewrite.rewritten_text(response) == "Make the keyboard red."
+
+
 def test_rejects_empty_code_fence() -> None:
     """中身の無いコードブロックは拒否する。"""
     with pytest.raises(ValueError, match="non-JSON rewrite"):

@@ -26,9 +26,28 @@ EDIT_SYSTEM_PROMPT = (
 )
 
 
-def build_prompt(instruction: str) -> str:
-    """公式と同じ組み立てで、システムプロンプトと指示文を1つの本文にする。"""
-    return f"{EDIT_SYSTEM_PROMPT}\n\nUser Input: {instruction}\n\nRewritten Prompt:"
+def build_messages(
+    instruction: str, image: str | None
+) -> list[dict[str, str | list[str]]]:
+    """`/api/chat`へ渡すメッセージを組み立てる。
+
+    公式の`edit_api`はsystemに汎用の一文しか置かず、
+    `EDIT_SYSTEM_PROMPT`をuserの本文へ連結している。
+    ここではそれを分けてsystemへ載せる。
+    チャットテンプレートのsystemスロットへ入る方が規則の遵守が安定し、
+    指示文の側から規則を上書きすることもできなくなる。
+
+    実測でも書き換えの質と所要時間は連結した場合と変わらなかった。
+    """
+    messages: list[dict[str, str | list[str]]] = [
+        {"role": "system", "content": EDIT_SYSTEM_PROMPT},
+        # 末尾の`Rewritten Prompt:`は公式の組み立てから引き継ぐ。
+        # 応答をJSONから書き出させる呼び水になっている。
+        {"role": "user", "content": f"User Input: {instruction}\n\nRewritten Prompt:"},
+    ]
+    if image is not None:
+        messages[-1]["images"] = [image]
+    return messages
 
 
 def rewritten_text(response: str) -> str:

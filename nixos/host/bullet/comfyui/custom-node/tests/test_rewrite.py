@@ -45,12 +45,31 @@ def test_rejects_broken_response(response: str, message: str) -> None:
         rewrite.rewritten_text(response)
 
 
-def test_prompt_keeps_official_layout() -> None:
-    """公式と同じ組み立てでシステムプロンプトと指示文を並べる。"""
-    prompt = rewrite.build_prompt("赤くして")
+def test_messages_split_system_and_user() -> None:
+    """規則はsystemへ、指示文はuserへ分けて載せる。"""
+    messages = rewrite.build_messages("赤くして", None)
 
-    assert prompt.startswith("# Edit Prompt Enhancer")
-    assert prompt.endswith("\n\nUser Input: 赤くして\n\nRewritten Prompt:")
+    assert [message["role"] for message in messages] == ["system", "user"]
+    assert messages[1]["content"] == "User Input: 赤くして\n\nRewritten Prompt:"
+    # 画像が無ければ`images`は付けない。
+    # 空のリストを送るとOllamaがマルチモーダルの経路へ入る。
+    assert "images" not in messages[1]
+
+
+def test_messages_carry_image() -> None:
+    """画像はuserのメッセージに付ける。"""
+    messages = rewrite.build_messages("赤くして", "BASE64")
+
+    assert messages[1]["images"] == ["BASE64"]
+    assert "images" not in messages[0]
+
+
+def test_system_message_keeps_official_rules() -> None:
+    """systemへ載せる規則が公式のまま欠けていない。"""
+    system = rewrite.build_messages("赤くして", None)[0]["content"]
+
+    assert isinstance(system, str)
+    assert system.startswith("# Edit Prompt Enhancer")
     # タスク種別ごとの規則が丸ごと入っていることを確認する。
     # ここが欠けると書き換えの質が静かに落ちる。
     for section in [
@@ -61,4 +80,4 @@ def test_prompt_keeps_official_layout() -> None:
         "Content Filling Tasks",
         "Multi-Image Tasks",
     ]:
-        assert section in prompt
+        assert section in system

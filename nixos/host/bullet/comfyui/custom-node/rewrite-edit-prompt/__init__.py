@@ -37,7 +37,7 @@ import requests
 import torch
 from PIL import Image
 
-from .rewrite import build_prompt, rewritten_text
+from .rewrite import build_messages, rewritten_text
 from .translate import translate_to_english
 
 # 接続先を渡す環境変数。`nixos/host/bullet/comfyui/ollama.nix`が設定する。
@@ -99,7 +99,7 @@ def request_rewrite(model: str, text: str, image: str | None) -> str:
         raise ValueError("No Ollama model specified")
     payload: dict[str, object] = {
         "model": model,
-        "prompt": build_prompt(text),
+        "messages": build_messages(text, image),
         "stream": False,
         # 思考させても書き換えの質は上がらず、待ち時間だけ伸びる。
         "think": False,
@@ -109,13 +109,9 @@ def request_rewrite(model: str, text: str, image: str | None) -> str:
         "keep_alive": 0,
         "options": {"num_ctx": 8192, "temperature": 0.2},
     }
-    if image is not None:
-        payload["images"] = [image]
-    response = requests.post(
-        f"{url}/api/generate", json=payload, timeout=TIMEOUT_SECONDS
-    )
+    response = requests.post(f"{url}/api/chat", json=payload, timeout=TIMEOUT_SECONDS)
     response.raise_for_status()
-    return rewritten_text(response.json()["response"])
+    return rewritten_text(response.json()["message"]["content"])
 
 
 class RewriteEditPrompt:

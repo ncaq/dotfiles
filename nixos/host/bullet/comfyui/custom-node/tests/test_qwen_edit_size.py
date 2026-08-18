@@ -47,6 +47,52 @@ def test_size_keeps_aspect_ratio_and_pixels(aspect_ratio: float) -> None:
     assert 0.9 < (target_width * target_height) / qwen_edit_size.VAE_IMAGE_PIXELS < 1.1
 
 
+@pytest.mark.parametrize("aspect_ratio", aspect_ratios())
+def test_size_is_idempotent(aspect_ratio: float) -> None:
+    """既に条件を満たした寸法を入れ直しても結果が変わらない。
+
+    このノードの出力は`TextEncodeQwenImageEditPlus`だけでなく、
+    `VAEEncode`やanime-video-quickの経路にも流れるので、
+    一度通した寸法が再び`target_size`へ入ることがある。
+    `is_stable`は不動点性の片側しか見ていないため、
+    スコアのtie-breakを触った時の揺れはここで検出する。
+    """
+    height = 2048
+    width = max(round(height * aspect_ratio), 1)
+    once = qwen_edit_size.target_size(width, height)
+
+    assert qwen_edit_size.target_size(*once) == once
+
+
+def test_small_image_is_enlarged() -> None:
+    """約1MPより小さい画像は拡大する。
+
+    参照latentは総画素`VAE_IMAGE_PIXELS`で作り直されるので、
+    小さいまま渡してもサンプリング側とずれるだけである。
+    元の画素数を保つ選択肢は無い。
+    """
+    assert qwen_edit_size.target_size(320, 240) == (1184, 880)
+
+
+@pytest.mark.parametrize("aspect_ratio", aspect_ratios())
+def test_search_range_does_not_change_result(
+    aspect_ratio: float, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """探索範囲を広げても選ばれる寸法が変わらない。
+
+    `qwen_edit_size.py`のコメントがそう断定しているので、
+    根拠をここに置く。
+    """
+    height = 2048
+    width = max(round(height * aspect_ratio), 1)
+    narrow = qwen_edit_size.target_size(width, height)
+
+    monkeypatch.setattr(qwen_edit_size, "WIDTH_SEARCH_STEPS", 48)
+    monkeypatch.setattr(qwen_edit_size, "HEIGHT_SEARCH_STEPS", 24)
+
+    assert qwen_edit_size.target_size(width, height) == narrow
+
+
 def test_reference_size_matches_comfyui() -> None:
     """参照latentの寸法の再現が、実際にずれる例で期待通りになる。
 

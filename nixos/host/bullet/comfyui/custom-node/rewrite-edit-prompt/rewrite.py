@@ -27,7 +27,12 @@ def _load_system_prompt() -> str:
     ファイル単体で由来が追えるように出典とライセンスをHTMLコメントで置いているが、
     本文はそのままモデルへ渡るので、ここでは読ませない。
     """
-    text = (Path(__file__).with_name("edit-system-prompt.md")).read_text()
+    # エンコーディングは明示する。
+    # 規則の本文はU+2019などの非ASCII文字を含むので、
+    # ロケール依存で読むとサービスの環境次第でimportごと失敗する。
+    text = (Path(__file__).with_name("edit-system-prompt.md")).read_text(
+        encoding="utf-8"
+    )
     if text.lstrip().startswith("<!--"):
         text = text.split("-->", 1)[1]
     return text.strip()

@@ -1,7 +1,9 @@
 # 日本語の編集指示を、Qwen-Image-Edit向けの英文の編集命令へ書き換えるノード。
 #
-# 以前ここに置いていたTranslateTextToEnglishはGoogle翻訳へ投げるだけで、
-# 訳文の構造は元の文のままだった。
+# qwen-editワークフローの前段には元々TranslateTextToEnglishを置いていた。
+# あれはGoogle翻訳へ投げるだけで、訳文の構造は元の文のままである。
+# ノード自体は`custom-node/translate-text/`に残っていて、
+# anime-videoとanime-video-extendのワークフローでは今も使っている。
 # Qwen公式は翻訳ではなくリライトを前段に置いていて、
 # タスク種別ごとの規則に沿って対象と属性と位置を明示した英文へ組み直す。
 # その規則そのものが`rewrite.py`の`EDIT_SYSTEM_PROMPT`である。

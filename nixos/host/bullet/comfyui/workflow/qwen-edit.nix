@@ -173,7 +173,7 @@ in
       # このノードはリサイズを挟まず直結する。
       # エンコード側がVL用に384*384、参照latent用に1024*1024へ内部で縮小するため、
       # 前段のリサイズは効果がなく、
-      # FluxKontextImageScaleは生成解像度を決める画像1にだけ必要になる。
+      # QwenImageEditScaleは生成解像度を決める画像1にだけ必要になる。
       (mkNode {
         id = 17;
         type = "LoadImageOptional";

@@ -40,7 +40,7 @@ from .manifest import (
     write_manifest,
 )
 from .optimize_png import start_optimize_png
-from .qwen_edit_size import target_size
+from .qwen_edit_size import reference_size, target_size
 from .share_encode import start_share_encode
 from .translate import translate_to_english
 
@@ -151,9 +151,10 @@ def qwen_image_conditioning(
         samples, vision_width, vision_height, "area", "disabled"
     ).movedim(1, -1)
 
-    latent_scale = math.sqrt(1024 * 1024 / (samples.shape[3] * samples.shape[2]))
-    latent_width = round(samples.shape[3] * latent_scale / 8) * 8
-    latent_height = round(samples.shape[2] * latent_scale / 8) * 8
+    # 参照latentの寸法の決め方は`TextEncodeQwenImageEditPlus`と同じである。
+    # `generate_keyframe`が渡す寸法はこの再計算の不動点でなければならないので、
+    # 同じ式を2箇所に書かず`qwen_edit_size`に一本化する。
+    latent_width, latent_height = reference_size(samples.shape[3], samples.shape[2])
     latent_image = comfy.utils.common_upscale(
         samples, latent_width, latent_height, "area", "disabled"
     ).movedim(1, -1)

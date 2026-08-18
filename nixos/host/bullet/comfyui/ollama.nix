@@ -12,10 +12,13 @@
 # MagicDNSの100.100.100.100もtailnetのULAへの経路も持たないため、
 # `ollama-bullet.<tailnet>`は名前解決もTCP接続もできないことを確認済み。
 #
-# そこでsocketの待ち受けにComfyUIコンテナ側のvethアドレスを足して、
+# そこでsocketの待ち受けに、
+# ComfyUIコンテナ用vethのホスト側のアドレス(`hostAddress`)を足して、
 # ホスト内で完結したままオンデマンド起動を効かせる。
+# コンテナ側の`localAddress`ではない。
+# 足すのはあくまでホストが待ち受けるアドレスである。
 #
-# 待ち受けアドレスを増減させた時は`nixos-rebuild switch`だけでは反映されない。
+# 待ち受けアドレスを増減させた時は`./install.sh`だけでは反映されない。
 # systemdは動作中のsocketユニットへ後からFDを足さず、
 # 「Unit configuration changed while unit was running」と警告して古い口のまま動き続ける。
 # しかも`ollama-proxy.service`が動いている間は、
@@ -35,6 +38,7 @@ in
 {
   systemd.sockets.ollama-proxy = {
     # `lib/container-socket-activation.nix`が置くループバックの待ち受けに足す。
+    # `hostAddress`はveth pairのホスト側なので、待ち受けるのはホスト自身である。
     listenStreams = [ "${hostAddress}:${toString port}" ];
     socketConfig = {
       # `ve-comfyui`はComfyUIのコンテナが動いている間しか存在しない。

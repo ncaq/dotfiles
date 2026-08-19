@@ -88,16 +88,20 @@ let
     # 汎用の受け答えの延長で自由度が欲しい場合に効く。
     # mtp版を選ぶのはgeneralModelsと同じ理由で、
     # MTPのドラフトヘッドを埋め込んだGGUFはGPUの投機的デコーディングで速度が上がる。
-    # 量子化は他のfreedomModelsのq4_k_mより上のq6_kにする。
-    # 配布元の計測ではmtpを付けるとQ6_Kは126トークン/秒、
-    # Q4_K_Mは122トークン/秒でほぼ同速なので、
-    # 22.5GBが32GiBのVRAMに収まる以上q4_k_mを選ぶ理由がない。
-    "qwen3.8-27b-heretic-rvn:q6_k" = fetchHuggingFace {
+    # 量子化は他のfreedomModelsと同じくq4_k_mにする。
+    # 配布元のREADMEは32GBのGPUにq6_kやq8_0を勧めているが、
+    # あれは実効contextを24Kから64K程度と想定した表で、
+    # bulletの`OLLAMA_CONTEXT_LENGTH`である131072では成立しない。
+    # このcontextではKV cacheと計算バッファだけで10GiB以上要る。
+    # bulletでの実測ではq4_k_mが100%GPUで80.3トークン/秒、
+    # VRAMの空きも5.6GiB残るのに対し、
+    # 本体が5.2GiB大きいq6_kは6%がCPUへ溢れて34.8トークン/秒まで落ちた。
+    "qwen3.8-27b-heretic-rvn:q4_k_m" = fetchHuggingFace {
       owner = "0bserverx";
       repo = "Qwen3.8-27B-Heretic-Abliterated-Uncensored-GGUF";
       rev = "2aff31a04896ab1f3716dde35f73d099ed0c08c5";
-      file = "RVN-Q6_K-mtp.gguf";
-      hash = "sha256-Z9nzqWLSVIn93JCnwMmU+F4WNunpiw+dnRJneg2Uc8k=";
+      file = "RVN-Q4_K_M-mtp.gguf";
+      hash = "sha256-N5dNFvyF66qh6v/ZIr+jAtGm1YccapLtBh5Hj7hKX1c=";
     };
     "mistralprism-24b:q4_k_m" = fetchHuggingFace {
       owner = "Aratako";

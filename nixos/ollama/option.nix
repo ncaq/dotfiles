@@ -57,9 +57,14 @@
     };
 
     freedomModels = lib.mkOption {
-      type = lib.types.attrsOf lib.types.package;
+      type = lib.types.attrsOf (lib.types.listOf lib.types.package);
       readOnly = true;
-      description = "GGUFから`ollama create`で登録する表現自由度重視モデル。";
+      description = ''
+        GGUFから`ollama create`で登録する表現自由度重視モデル。
+        値は1つのモデルを構成するGGUFのリストです。
+        visionを持つモデルは言語モデル本体とclipの投影器に分かれるため、
+        要素が2つになります。
+      '';
     };
   };
 }

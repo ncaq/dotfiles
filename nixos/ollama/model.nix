@@ -96,27 +96,52 @@ let
     # bulletでの実測ではq4_k_mが100%GPUで80.3トークン/秒、
     # VRAMの空きも5.6GiB残るのに対し、
     # 本体が5.2GiB大きいq6_kは6%がCPUへ溢れて34.8トークン/秒まで落ちた。
-    "qwen3.8-27b-heretic-rvn:q4_k_m" = fetchHuggingFace {
-      owner = "0bserverx";
-      repo = "Qwen3.8-27B-Heretic-Abliterated-Uncensored-GGUF";
-      rev = "2aff31a04896ab1f3716dde35f73d099ed0c08c5";
-      file = "RVN-Q4_K_M-mtp.gguf";
-      hash = "sha256-N5dNFvyF66qh6v/ZIr+jAtGm1YccapLtBh5Hj7hKX1c=";
-    };
-    "mistralprism-24b:q4_k_m" = fetchHuggingFace {
-      owner = "Aratako";
-      repo = "MistralPrism-24B-GGUF";
-      rev = "ef08191bef153caaa70e0720a8fcfa1cf11fb10b";
-      file = "MistralPrism-24B-Q4_K_M.gguf";
-      hash = "sha256-Tm9H9IXyhqSnPhzA0KZhwU8fNYWyK1XcdRKFGfB0Fdw=";
-    };
-    "ms3.2-24b-magnum-diamond:q4_k_m" = fetchHuggingFace {
-      owner = "Doctor-Shotgun";
-      repo = "MS3.2-24B-Magnum-Diamond-GGUF";
-      rev = "7422a3599b749c9efa003c53f3165adc71e1f2aa";
-      file = "MS3.2-24B-Magnum-Diamond-Q4_K_M.gguf";
-      hash = "sha256-MLwAq6iPY52EsZwZ2bxVaHHQBGbDJuyc9U7F+Y6PVsQ=";
-    };
+    # 言語モデル本体だけではvisionが付かないので、
+    # clipの投影器であるmmprojも一緒に渡す。
+    # registryの`qwen3.8:27b-mtp-q4_K_M`がpullしただけでvisionを持つのは、
+    # 同じ投影器をマニフェストの別レイヤーとして同梱しているからで、
+    # Hugging Faceから本体のGGUFを1ファイル取るだけでは付いてこない。
+    # 配布元は本体の量子化を変えた`-vision`付きのファイルも置いているが、
+    # あれは画像の埋め込みを受ける層をq8_0で保護しただけの言語モデルで、
+    # 使うにはどのみち投影器が要る上にmtp版が存在しない。
+    # 投影器は`ggml-org/Qwen3.8-27B-GGUF`にある公式のものと同一で、
+    # ARAは言語モデル側の層しか触っていないため素の投影器がそのまま噛み合う。
+    # bulletでの実測でも`ollama show`の`Projector`はregistry版と同じ、
+    # clipの460.73Mパラメータとして認識される。
+    "qwen3.8-27b-heretic-rvn:q4_k_m" = [
+      (fetchHuggingFace {
+        owner = "0bserverx";
+        repo = "Qwen3.8-27B-Heretic-Abliterated-Uncensored-GGUF";
+        rev = "2aff31a04896ab1f3716dde35f73d099ed0c08c5";
+        file = "RVN-Q4_K_M-mtp.gguf";
+        hash = "sha256-N5dNFvyF66qh6v/ZIr+jAtGm1YccapLtBh5Hj7hKX1c=";
+      })
+      (fetchHuggingFace {
+        owner = "0bserverx";
+        repo = "Qwen3.8-27B-Heretic-Abliterated-Uncensored-GGUF";
+        rev = "2aff31a04896ab1f3716dde35f73d099ed0c08c5";
+        file = "mmproj-Qwen3.8-27B-Q8_0.gguf";
+        hash = "sha256-LpaKavl8412JcYkLJXubftq/IK2RRQUB+lMWKhnuM+s=";
+      })
+    ];
+    "mistralprism-24b:q4_k_m" = [
+      (fetchHuggingFace {
+        owner = "Aratako";
+        repo = "MistralPrism-24B-GGUF";
+        rev = "ef08191bef153caaa70e0720a8fcfa1cf11fb10b";
+        file = "MistralPrism-24B-Q4_K_M.gguf";
+        hash = "sha256-Tm9H9IXyhqSnPhzA0KZhwU8fNYWyK1XcdRKFGfB0Fdw=";
+      })
+    ];
+    "ms3.2-24b-magnum-diamond:q4_k_m" = [
+      (fetchHuggingFace {
+        owner = "Doctor-Shotgun";
+        repo = "MS3.2-24B-Magnum-Diamond-GGUF";
+        rev = "7422a3599b749c9efa003c53f3165adc71e1f2aa";
+        file = "MS3.2-24B-Magnum-Diamond-Q4_K_M.gguf";
+        hash = "sha256-MLwAq6iPY52EsZwZ2bxVaHHQBGbDJuyc9U7F+Y6PVsQ=";
+      })
+    ];
   };
 in
 {

@@ -79,19 +79,32 @@ let
   # 対話を待っていられる速度ではないため、
   # ディスクとロード時間を消費するだけになる。
   freedomModels = lib.optionalAttrs enableCuda {
+    # Qwen3.8-27Bをheretic(ARA: Arbitrary-Rank Ablation)で拒否挙動だけ除去したもの。
+    # 単一の拒否方向を引き算する従来のabliterationと違い重み行列を直接最適化するため、
+    # 配布元の計測ではKL divergenceが基のQwen3.8-27Bに対して0.0085と小さく、
+    # 拒否率は99/100から0-1/100まで落ちている。
+    # 素の知能を保ったまま規制だけ外れるので、
+    # 創作用に別途finetuneされたモデルとは性格が違い、
+    # 汎用の受け答えの延長で自由度が欲しい場合に効く。
+    # mtp版を選ぶのはgeneralModelsと同じ理由で、
+    # MTPのドラフトヘッドを埋め込んだGGUFはGPUの投機的デコーディングで速度が上がる。
+    # 量子化は他のfreedomModelsのq4_k_mより上のq6_kにする。
+    # 配布元の計測ではmtpを付けるとQ6_Kは126トークン/秒、
+    # Q4_K_Mは122トークン/秒でほぼ同速なので、
+    # 22.5GBが32GiBのVRAMに収まる以上q4_k_mを選ぶ理由がない。
+    "qwen3.8-27b-heretic-rvn:q6_k" = fetchHuggingFace {
+      owner = "0bserverx";
+      repo = "Qwen3.8-27B-Heretic-Abliterated-Uncensored-GGUF";
+      rev = "2aff31a04896ab1f3716dde35f73d099ed0c08c5";
+      file = "RVN-Q6_K-mtp.gguf";
+      hash = "sha256-Z9nzqWLSVIn93JCnwMmU+F4WNunpiw+dnRJneg2Uc8k=";
+    };
     "mistralprism-24b:q4_k_m" = fetchHuggingFace {
       owner = "Aratako";
       repo = "MistralPrism-24B-GGUF";
       rev = "ef08191bef153caaa70e0720a8fcfa1cf11fb10b";
       file = "MistralPrism-24B-Q4_K_M.gguf";
       hash = "sha256-Tm9H9IXyhqSnPhzA0KZhwU8fNYWyK1XcdRKFGfB0Fdw=";
-    };
-    "qwen3-30b-a3b-erp-v0.1:q4_k_m" = fetchHuggingFace {
-      owner = "Aratako";
-      repo = "Qwen3-30B-A3B-ERP-v0.1-GGUF";
-      rev = "78221ae35684a78dec965c1041c0bf10e0ff16d9";
-      file = "Qwen3-30B-A3B-ERP-v0.1-Q4_K_M.gguf";
-      hash = "sha256-Tzvnhjb74SOYzBIGvG4XqcYUelcaDLb5dTH0UrGpSAM=";
     };
     "ms3.2-24b-magnum-diamond:q4_k_m" = fetchHuggingFace {
       owner = "Doctor-Shotgun";

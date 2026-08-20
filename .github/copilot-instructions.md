@@ -224,17 +224,19 @@ NixOSのシステム設定ディレクトリです。
 
 # Claude Code設定
 
-Claude Codeの設定は2箇所で管理されています。
-
 ## `home/core/claude-code.nix`
 
 home-managerの`programs.claude-code`モジュールで全ホスト共通の設定を宣言的に管理します。
-プラグイン、権限、フックなどの主要な設定はここで管理します。
+プラグイン、権限、フックなどの主要な設定を管理します。
 
 ビルド時にユーザの`~/.claude/settings.json`として展開されます。
 
 また、`.claude/settings.json`で管理できないタイプの設定は、
 home-managerによって生成されたラッパープログラムを通じて渡されます。
+
+## `home/core/llm-skill.nix`
+
+LLM向けのスキルに類するものを読み込みます。
 
 ## `.claude/settings.json`
 

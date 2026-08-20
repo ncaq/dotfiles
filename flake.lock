@@ -16,11 +16,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1787221904,
-        "narHash": "sha256-00HdM/57UdXP55cgBWPQyJ18Hh/OkEruI5mN3w277Qc=",
+        "lastModified": 1787234086,
+        "narHash": "sha256-XMJuXcTRb1+dPo+dguvvBeumMuR1/sNEenojfMcngfM=",
         "owner": "ncaq",
         "repo": "blue-prompt",
-        "rev": "5b69667a25cc1f9a51245522f8623694ee84876d",
+        "rev": "12770344de8cdab257f7ced94f29eb7f9c6e6930",
         "type": "github"
       },
       "original": {

@@ -126,6 +126,16 @@
       };
     };
 
+    blue-prompt = {
+      url = "github:ncaq/blue-prompt";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        home-manager.follows = "home-manager";
+        flake-parts.follows = "flake-parts";
+        treefmt-nix.follows = "treefmt-nix";
+      };
+    };
+
     claude-desktop = {
       url = "github:k3d3/claude-desktop-linux-flake";
       inputs = {

@@ -98,6 +98,7 @@ Custom Nix packages.
 - [ncaq/.emacs.d: My Emacs config](https://github.com/ncaq/.emacs.d)
 - [ncaq/.xmonad](https://github.com/ncaq/.xmonad)
 - [ncaq/.zsh.d](https://github.com/ncaq/.zsh.d)
+- [ncaq/blue-prompt: LLMにブルーアーカイブを扱わせる時に役に立つリポジトリ](https://github.com/ncaq/blue-prompt)
 - [ncaq/firge-nix: firgeフォントをnixで利用するためのリポジトリ](https://github.com/ncaq/firge-nix)
 - [ncaq/git-hooks: My Git global hooks](https://github.com/ncaq/git-hooks)
 - [ncaq/infra.ncaq.net: Infrastructure as Code for ncaq.net](https://github.com/ncaq/infra.ncaq.net)

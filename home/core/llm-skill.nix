@@ -4,9 +4,17 @@
 # 詳細はモジュール提供側の定義を参照してください。
 { inputs, ... }:
 {
-  imports = [ inputs.konoka.homeModules.default ];
+  imports = [
+    inputs.konoka.homeModules.default
+    inputs.blue-prompt.homeModules.default
+  ];
 
   konoka = {
+    claude-code.enable = true;
+    opencode.enable = true;
+  };
+
+  blue-prompt = {
     claude-code.enable = true;
     opencode.enable = true;
   };

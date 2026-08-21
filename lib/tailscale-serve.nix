@@ -40,8 +40,10 @@
 
   # 転送先
 
-  転送先はsocket activationのproxyを想定している。
-  tailnet経由の初回アクセスでもオンデマンド起動が機能する。
+  転送先はホストのloopbackで待ち受けるポート。
+  socket activationのproxyを指すこともでき、
+  その場合は`socket`にそのsocketユニットを渡すとtailnet経由の初回アクセスでも、
+  オンデマンド起動が機能する。
 
   HTTPSに加えて80番のHTTPリスナーも張り、
   HTTPSへリダイレクトを返すだけのCaddyへ転送する。
@@ -97,8 +99,12 @@ in
             };
 
             socket = lib.mkOption {
-              type = lib.types.str;
-              description = "転送先のsocketユニット名。";
+              type = lib.types.nullOr lib.types.str;
+              default = null;
+              description = ''
+                転送先をオンデマンド起動するsocketユニット名。
+                常時起動している転送先ならnullのままでよい。
+              '';
               example = "ollama-proxy.socket";
             };
           };
@@ -126,20 +132,24 @@ in
   config = lib.mkIf (cfg.services != { }) {
     systemd.services = lib.mapAttrs' (
       name: serveCfg:
+      let
+        # オンデマンド起動しない転送先にはsocketが無いので、依存に足す分だけを組み立てる。
+        socketUnits = lib.optional (serveCfg.socket != null) serveCfg.socket;
+      in
       lib.nameValuePair "tailscale-serve-${name}" {
         description = "Tailscale Serve for ${serveCfg.label}";
         requires = [ "tailscaled.service" ];
         wants = [
-          serveCfg.socket
           "caddy.service"
           "tailscale-online.service"
-        ];
+        ]
+        ++ socketUnits;
         after = [
-          serveCfg.socket
           "caddy.service"
           "tailscale-online.service"
           "tailscaled.service"
-        ];
+        ]
+        ++ socketUnits;
         wantedBy = [ "multi-user.target" ];
         serviceConfig = hardening.unixSocket // {
           Type = "oneshot";

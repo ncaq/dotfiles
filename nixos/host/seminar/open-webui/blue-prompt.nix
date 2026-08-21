@@ -14,7 +14,7 @@
 let
   serve = config.local.tailscaleServe.services.open-webui;
   # `tailscale-serve.nix`が公開しているのと同じ、人がブラウザで開くURL。
-  # Tailscale Serveの転送先はホスト側のsocket proxyなので、
+  # Tailscale Serveの転送先はホスト側のCaddyなので、
   # loopbackを直接叩くのと最終的な到達先もコンテナから見える送信元も変わらない。
   # 同じホストからの接続でも経路はtailscaledの中で完結する。
   url = "https://${lib.removePrefix "svc:" serve.service}.${config.local.tailscale.tailnet}";
@@ -36,7 +36,7 @@ in
   systemd.services.blue-prompt-open-webui-sync = {
     # Serviceがadvertiseされる前に同期が走ると名前を引けても接続先が居ない。
     # Serveの登録はRemainAfterExitのoneshotなので、
-    # afterで完了まで待てば初回アクセスでコンテナのsocket activationも発火する。
+    # afterで完了まで待てば登録の後に同期が走る。
     requires = [ "tailscale-serve-open-webui.service" ];
     after = [
       "tailscale-serve-open-webui.service"
@@ -53,18 +53,12 @@ in
     #
     # `partOf`ではなく`bindsTo`にするのは、
     # `partOf`がsystemdの明示的なstopやrestartのジョブでしか伝播しないため。
-    # コンテナが異常終了した場合や、
-    # ephemeralなコンテナが落ちた後にsocket activationから起動し直された場合には、
+    # コンテナが異常終了して起動し直された場合には、
     # 同期は`active (exited)`のまま残り、
     # `wantedBy`のWantsは既にactiveなユニットを再実行しない。
     # `bindsTo`なら予期しない停止でも同期がinactiveへ落ちて、
     # 次のコンテナ起動で確実に引き込み直される。
     # `mcp-nixos.nix`の`mcp-nixos-traffic-control`も同じ形で追従させている。
-    #
-    # `bindsTo`は起動側では`requires`と同じなので、
-    # コンテナは同期の依存として先に起動するようになる。
-    # 元々この同期自身のアクセスがsocket activationを発火させていて、
-    # boot毎にコンテナは起き上がっていたので実質の差は無い。
     wantedBy = [ "container@open-webui.service" ];
     bindsTo = [ "container@open-webui.service" ];
     # Knowledgeのアップロードでは1ファイルごとに埋め込みがコンテナ内で走る。
@@ -82,13 +76,14 @@ in
       TimeoutStartSec = "1h";
       # コンテナの起動が終わった時点では、
       # nspawnがbootしただけで中のOpen WebUIはまだlistenしていない。
-      # `container-socket-activation.nix`のproxyが疎通待ちに5分を見込むのに対して、
-      # 上流のヘルス待ちは5秒の試行と2秒の待機を30回で3分半しか無いため、
-      # 埋め込みモデルの取得やDB migrationを伴う寒い起動では同期の方が先に諦める。
-      # コンテナの起動ごとにこの経路を通るようになった分、露出も増えている。
+      # 上流のヘルス待ちは5秒の試行と2秒の待機を30回で打ち切るため、
+      # 猶予は3分半で、
+      # 埋め込みモデルの取得やDB migrationを伴う寒い起動では待ち切れずに諦める。
+      # 1試行が5秒を使い切るのは`tailscale-serve.nix`の中継が接続を再試行するからで、
+      # 即座に502を返す設定にするとこの猶予はもっと短くなる。
       #
       # 恒久的に起動できない状態で短い間隔の再試行を繰り返さないよう、
-      # そのproxyと同じ指数バックオフを使う。
+      # nixpkgsの`ollama-model-loader`と同じ指数バックオフを使う。
       Restart = "on-failure";
       RestartSec = "1s";
       RestartMaxDelaySec = "2h";

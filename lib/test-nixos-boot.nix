@@ -7,15 +7,6 @@
 lib.mapAttrs (
   name: hostDef:
   let
-    # オンデマンド起動のproxyがlistenできたかを確認します。
-    # `sockets.target`はwants関係なので、
-    # ポートの衝突などでsocketユニットが起動に失敗してもtargetは到達してしまいます。
-    # ホストごとの分岐を書かずに済むように、
-    # 実際の設定から`-proxy`のsocketユニットを集めます。
-    proxySockets = lib.filter (lib.hasSuffix "-proxy") (
-      lib.attrNames hostDef.nixosSystem.config.systemd.sockets
-    );
-
     # Tailscale Serviceを公開するホストだけで、
     # `lib/tailscale-serve.nix`が立てるHTTPSリダイレクタの振る舞いを確認します。
     # Hostを透過させてリダイレクト先を組み立てる、
@@ -32,6 +23,28 @@ lib.mapAttrs (
     # `or`で無いものとして扱います。
     tailscaleServe = hostDef.nixosSystem.config.local.tailscaleServe or null;
     curl = lib.getExe (importPkgsStable hostDef.system).curl;
+
+    # Tailscale Serveの転送先がホストのloopbackで待ち受けているかを確認します。
+    # 転送先はsocket activationのproxyだったり常時起動のCaddyのvhostだったりしますが、
+    # どちらもwants関係で引き込まれるだけなので、
+    # ポートの衝突やbindの書き間違いで上がらなくてもboot自体は成功してしまいます。
+    # 名前は引けるのに接続だけができない状態になり、
+    # tailnet経由でアクセスして初めて気付く壊れ方をします。
+    # ホストごとの分岐を書かずに済むように、実際の設定から転送先のポートを集めます。
+    #
+    # 判定に`wait_for_open_port`を使わないのは、
+    # あれがTCP接続で確かめるためです。
+    # 転送先がsocket activationのproxyだと接続がそのまま起動の引き金になり、
+    # テストVMの中でコンテナが起き上がってしまいます。
+    # 接続せずに待ち受けだけを見たいので`ss`で確かめます。
+    serveTargetTest = lib.concatMapStrings (
+      serveCfg: # python
+      ''
+        machine.wait_until_succeeds(
+            "ss -Hltn 'sport = :${toString serveCfg.port}'"
+            " | grep -qF '127.0.0.1:${toString serveCfg.port}'"
+        )
+      '') (if tailscaleServe == null then [ ] else lib.attrValues tailscaleServe.services);
 
     # `nixos/core/caddy.nix`がadmin APIをUNIXソケットへ移せているかを確認します。
     # 設定が外れてもCaddyは既定の`127.0.0.1:2019`で普通に起動してしまうので、
@@ -134,11 +147,9 @@ lib.mapAttrs (
     testScript = ''
       machine.wait_for_unit("multi-user.target")
     ''
-    + lib.concatMapStrings (socket: ''
-      machine.wait_for_unit("${socket}.socket")
-    '') proxySockets
     + caddyAdminTest
     + caddyHealthTest
-    + redirectTest;
+    + redirectTest
+    + serveTargetTest;
   }
 ) (lib.filterAttrs (_: def: !(def.nixosSystem.config.wsl.enable or false)) hostDefs)

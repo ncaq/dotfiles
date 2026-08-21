@@ -42,7 +42,14 @@ in
     # Knowledgeのアップロードでは1ファイルごとに埋め込みがコンテナ内で走る。
     # 断片の数だけ時間が積み上がるため、
     # oneshotの既定のタイムアウトで中断されて中途半端な状態が残るのを念のため避ける。
-    # 同期側はリクエストごとに打ち切りを持つので、待ち続けても止まらなくなることはない。
-    serviceConfig.TimeoutStartSec = "infinity";
+    #
+    # 上限を外さないのは、
+    # このユニットがoneshotでmulti-user.targetに紐付いているためで、
+    # 同期が詰まるとboot時のtarget到達と`./install.sh`のactivationが待ち続けてしまう。
+    # 同期側はリクエストごとに.NETの既定の100秒で打ち切るので、
+    # 断片の数から全体の上限も見積もれる。
+    # 余裕を持った有限値にしておけば、
+    # 想定を超えた時はfailとしてジャーナルに残って気付ける。
+    serviceConfig.TimeoutStartSec = "1h";
   };
 }

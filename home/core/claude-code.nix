@@ -269,6 +269,7 @@ in
           "Bash(true)"
           "Bash(update-nix-fetchgit:*)"
           "Bash(wc:*)"
+          "Bash(yq:*)"
           "WebFetch"
           "WebSearch"
           "mcp__plugin_claude-code-home-manager_backlog__count_issues"

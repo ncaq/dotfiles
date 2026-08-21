@@ -7,5 +7,6 @@
     parallel
     shellcheck
     xxd
+    yq-go
   ];
 }

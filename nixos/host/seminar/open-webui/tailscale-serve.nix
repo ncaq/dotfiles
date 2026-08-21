@@ -34,6 +34,16 @@ in
   # チャットのストリーミング表示のための追加設定は要らない。
   services.caddy.virtualHosts.":${toString port}".extraConfig = ''
     bind 127.0.0.1
-    reverse_proxy http://${addr.guest}:${toString port}
+    reverse_proxy http://${addr.guest}:${toString port} {
+      # コンテナのnspawnがbootを終えた時点では、
+      # 中のOpen WebUIはまだlistenしていないので接続は拒否される。
+      # 既定ではそれをそのまま502として返すため、
+      # 起動を待ちたい`blue-prompt.nix`の同期は1試行を0秒で使い潰してしまう。
+      # 接続できるまで再試行して、
+      # socket activationのsocketが疎通まで接続を保留していた頃の猶予へ戻す。
+      # 再試行が起きるのは転送先が居ない時だけなので定常状態のコストは無い。
+      lb_try_duration 5s
+      lb_try_interval 500ms
+    }
   '';
 }

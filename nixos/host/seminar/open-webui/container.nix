@@ -95,7 +95,7 @@ in
         services.resolved.enable = true;
         networking = {
           useHostResolvConf = lib.mkForce false;
-          # Tailscale Serveにつながるホスト側socket proxyからの接続だけを許可する。
+          # Tailscale Serveの転送先として中継する、ホスト側のCaddyからの接続だけを許可する。
           # ホストのFORWARDはACCEPTなので、
           # 他のコンテナからも自分のIPへ到達できてしまい、
           # 認証を無効化したUIには送信元の制限が必要になる。

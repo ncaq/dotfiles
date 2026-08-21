@@ -38,8 +38,7 @@ in
   };
 
   containers.open-webui = {
-    # ホスト側のsocketへの初回アクセスで起動する。
-    autoStart = false;
+    autoStart = true;
     ephemeral = true;
     privateNetwork = true;
     privateUsers = "pick";

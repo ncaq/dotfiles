@@ -128,7 +128,7 @@ let
 
     # Data Processing
     jq
-    yq
+    yq-go
 
     # Compression
     brotli

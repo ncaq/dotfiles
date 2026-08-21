@@ -78,6 +78,21 @@ in
     # 断片の数から全体の上限も見積もれる。
     # 余裕を持った有限値にしておけば、
     # 想定を超えた時はfailとしてジャーナルに残って気付ける。
-    serviceConfig.TimeoutStartSec = "1h";
+    serviceConfig = {
+      TimeoutStartSec = "1h";
+      # コンテナの起動が終わった時点では、
+      # nspawnがbootしただけで中のOpen WebUIはまだlistenしていない。
+      # `container-socket-activation.nix`のproxyが疎通待ちに5分を見込むのに対して、
+      # 上流のヘルス待ちは5秒の試行と2秒の待機を30回で3分半しか無いため、
+      # 埋め込みモデルの取得やDB migrationを伴う寒い起動では同期の方が先に諦める。
+      # コンテナの起動ごとにこの経路を通るようになった分、露出も増えている。
+      #
+      # 恒久的に起動できない状態で短い間隔の再試行を繰り返さないよう、
+      # そのproxyと同じ指数バックオフを使う。
+      Restart = "on-failure";
+      RestartSec = "1s";
+      RestartMaxDelaySec = "2h";
+      RestartSteps = 10;
+    };
   };
 }

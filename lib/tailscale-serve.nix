@@ -132,6 +132,10 @@ in
   config = lib.mkIf (cfg.services != { }) {
     systemd.services = lib.mapAttrs' (
       name: serveCfg:
+      let
+        # オンデマンド起動しない転送先にはsocketが無いので、依存に足す分だけを組み立てる。
+        socketUnits = lib.optional (serveCfg.socket != null) serveCfg.socket;
+      in
       lib.nameValuePair "tailscale-serve-${name}" {
         description = "Tailscale Serve for ${serveCfg.label}";
         requires = [ "tailscaled.service" ];
@@ -139,13 +143,13 @@ in
           "caddy.service"
           "tailscale-online.service"
         ]
-        ++ lib.optional (serveCfg.socket != null) serveCfg.socket;
+        ++ socketUnits;
         after = [
           "caddy.service"
           "tailscale-online.service"
           "tailscaled.service"
         ]
-        ++ lib.optional (serveCfg.socket != null) serveCfg.socket;
+        ++ socketUnits;
         wantedBy = [ "multi-user.target" ];
         serviceConfig = hardening.unixSocket // {
           Type = "oneshot";

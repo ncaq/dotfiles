@@ -1,8 +1,9 @@
-# blue-promptのスキルから生成したワークスペースModelをOpen WebUIへ登録する。
+# blue-promptのスキルから生成したワークスペースModelとKnowledgeをOpen WebUIへ登録する。
 #
 # Open WebUIにはスキルのオンデマンド読み込みが無いため、
-# スキルの内容をシステムプロンプトへ焼き込んだModelとして事前に登録しておく。
-# Modelは他のチャット履歴と同じくOpen WebUIのDBに持つ状態なので、
+# 人格を与えるスキルは内容をシステムプロンプトへ焼き込んだModelとして事前に登録し、
+# 事実を引くだけのスキルはModelから参照できるKnowledgeとして登録しておく。
+# どちらも他のチャット履歴と同じくOpen WebUIのDBに持つ状態なので、
 # Nixで宣言できるのは同期を行うサービスの側だけになる。
 {
   lib,
@@ -32,11 +33,16 @@ in
     # APIキーを渡さなくても書き込みできる。
   };
 
-  # Serviceがadvertiseされる前に同期が走ると名前を引けても接続先が居ない。
-  # Serveの登録はRemainAfterExitのoneshotなので、
-  # afterで完了まで待てば初回アクセスでコンテナのsocket activationも発火する。
-  systemd.services.blue-prompt-open-webui-model-sync = {
+  systemd.services.blue-prompt-open-webui-sync = {
+    # Serviceがadvertiseされる前に同期が走ると名前を引けても接続先が居ない。
+    # Serveの登録はRemainAfterExitのoneshotなので、
+    # afterで完了まで待てば初回アクセスでコンテナのsocket activationも発火する。
     requires = [ "tailscale-serve-open-webui.service" ];
     after = [ "tailscale-serve-open-webui.service" ];
+    # Knowledgeのアップロードでは1ファイルごとに埋め込みがコンテナ内で走る。
+    # 断片の数だけ時間が積み上がるため、
+    # oneshotの既定のタイムアウトで中断されて中途半端な状態が残るのを念のため避ける。
+    # 同期側はリクエストごとに打ち切りを持つので、待ち続けても止まらなくなることはない。
+    serviceConfig.TimeoutStartSec = "infinity";
   };
 }

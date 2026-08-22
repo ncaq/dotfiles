@@ -22,9 +22,13 @@
 let
   ggufModels = config.local.ollama.ggufModels;
   markerDir = "${config.local.ollama.dataDir}/gguf-models";
+  # モデル名の`:`はstoreの派生名にもパスにも使えないため潰します。
+  # derivation名とマーカーのパスの両方で使うので、
+  # 置換規則が片方だけ変わってマーカーが一致しなくなる事故を防ぐために括り出します。
+  sanitizeName = lib.replaceStrings [ ":" ] [ "-" ];
   modelfiles = lib.mapAttrs (
     name: model:
-    pkgs.writeText "ollama-${lib.replaceStrings [ ":" ] [ "-" ] name}-Modelfile" (
+    pkgs.writeText "ollama-${sanitizeName name}-Modelfile" (
       lib.concatMapStrings (source: "FROM ${source}\n") model.sources
       # 値は`toJSON`で書きます。
       # 数値はそのまま、文字列は引用符付きになり、
@@ -59,7 +63,7 @@ in
             lib.mapAttrsToList (
               name: _model:
               let
-                marker = "${markerDir}/${lib.replaceStrings [ ":" ] [ "-" ] name}";
+                marker = "${markerDir}/${sanitizeName name}";
                 # マーカーにはGGUFではなくModelfileのパスを記録します。
                 # Modelfileの内容は全てのGGUFのパスとパラメータを含むので、
                 # 構成が1つでも入れ替われば必ず値が変わります。

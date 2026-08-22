@@ -84,6 +84,20 @@ let
     # Jackrongのリポジトリはそれを捨てずに量子化したもので、
     # 素のQwen3.8に対する改変は入っていない。
     #
+    # 供給元がOllama公式のregistryから個人のリポジトリへ移るため、
+    # 登録した結果が公式のQwen3.8-27Bと噛み合うことを一度確認した。
+    # `ollama show`が返す値は`Qwen/Qwen3.8-27B`の`config.json`と以下の通り一致する。
+    #
+    # - context lengthの262144が`max_position_embeddings`
+    # - embedding lengthの5120が`text_config.hidden_size`
+    # - 投影器のembedding lengthの1152が`vision_config.hidden_size`
+    # - 投影器のdimensionsの5120が`vision_config.out_hidden_size`
+    #
+    # capabilitiesにもtoolsとthinkingとvisionが揃い、
+    # 投影器はregistry版と同じclipの460.73Mパラメータとして認識される。
+    # `rev`と`hash`で固定しているので、
+    # 配布元が後から差し替えた場合はビルドが壊れて気付ける。
+    #
     # unslothも同じ量子化を配っているが、
     # あちらはMTPのドラフトヘッドを`MTP/mtp-*.gguf`として別ファイルに切り出している。
     # 本体と一緒に`FROM`へ並べると`ollama create`は取り込みこそするものの、

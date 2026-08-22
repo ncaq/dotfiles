@@ -188,6 +188,13 @@ let
       ];
     };
   };
+  # 全てのアクセラレータの全ての役割に現れるモデル名。
+  declaredModels = lib.concatMap (models: models.general ++ models.freedom) [
+    cudaModels
+    cpuModels
+  ];
+  # 役割のリストに載っていない`ggufModels`の定義。
+  orphanGgufModels = lib.subtractLists declaredModels (lib.attrNames ggufModels);
 in
 {
   local.ollama = {
@@ -197,4 +204,21 @@ in
     };
     inherit ggufModels;
   };
+
+  # 役割のリストと`ggufModels`のキーは同じ文字列を二重に書くことになる。
+  # 型はどちらも文字列としか言わないので、
+  # 片方の量子化タグだけを書き換えても評価は成功してしまう。
+  # その場合`loadModels`の引き算が噛み合わず、
+  # registryに無い名前をpullしようとして失敗するか、
+  # 組み立てたモデルを誰も参照しないまま置くかのどちらかになり、
+  # 実機へ適用するまで気付けない。
+  assertions = [
+    {
+      assertion = orphanGgufModels == [ ];
+      message = ''
+        local.ollama.ggufModelsのキーはいずれかの役割のリストに載っている必要があります。
+        載っていないキー: ${lib.concatStringsSep ", " orphanGgufModels}
+      '';
+    }
+  ];
 }

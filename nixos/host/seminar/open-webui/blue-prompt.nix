@@ -22,6 +22,17 @@ in
 {
   imports = [ inputs.blue-prompt.nixosModules.default ];
 
+  # `lib.head`は空リストへ`head: empty list`としか言いません。
+  # 役割のリストは空を許す型で、
+  # 実際CPUで推論するホストの`freedom`は空にしてあります。
+  # CUDAのホストからも消した時に原因の分からないエラーで評価が落ちるのを防ぎます。
+  assertions = [
+    {
+      assertion = config.local.ollama.models.cuda.freedom != [ ];
+      message = "blue-promptのModelは表現の自由度を優先したモデルを上流に使うため、local.ollama.models.cuda.freedomが空であってはなりません。";
+    }
+  ];
+
   blue-prompt.open-webui = {
     enable = true;
     inherit url;

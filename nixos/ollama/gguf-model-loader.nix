@@ -38,8 +38,24 @@ let
       )
     )
   ) ggufModels;
+  sanitizedNames = map sanitizeName (lib.attrNames ggufModels);
 in
 {
+  # サニタイズは単射ではありません。
+  # `foo:q6_k`と`foo-q6_k`を同時に宣言すると同じマーカーを共有してしまい、
+  # 片方を更新してももう片方が登録済みと誤認されて反映されません。
+  # 衝突しても評価は通り、
+  # モデルが古いまま更新されないという分かりにくい形でしか現れないので検査します。
+  assertions = [
+    {
+      assertion = lib.length (lib.unique sanitizedNames) == lib.length sanitizedNames;
+      message = ''
+        local.ollama.ggufModelsのキーは`:`を`-`へ潰した後も一意である必要があります。
+        潰した後の名前: ${lib.concatStringsSep ", " sanitizedNames}
+      '';
+    }
+  ];
+
   containers.ollama.config =
     { config, lib, ... }:
     let

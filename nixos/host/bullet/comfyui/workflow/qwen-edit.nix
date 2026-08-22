@@ -41,6 +41,16 @@ let
     ;
 in
 {
+  # `lib.head`は空リストへ`head: empty list`としか言いません。
+  # 役割のリストは空を許す型なので、
+  # 汎用モデルを持たないホストが現れた時に原因の分からないエラーで評価が落ちます。
+  assertions = [
+    {
+      assertion = config.local.ollama.hostModels.general != [ ];
+      message = "ComfyUIの${name}は指示文のリライトにOllamaの汎用モデルを使うため、local.ollama.hostModels.generalが空であってはなりません。";
+    }
+  ];
+
   local.comfyui.workflows.${name} = mkWorkflow {
     app = {
       inputs = [

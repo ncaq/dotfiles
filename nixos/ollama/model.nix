@@ -15,8 +15,19 @@ let
   # bulletでの実測では、
   # 指定していなかった`qwen3.8-27b-heretic-rvn:q4_k_m`が80.4トークン/秒だったのに対し、
   # 同じGGUFにこれを足すだけで141.4トークン/秒まで上がった。
-  # 残りはQwen3.8公式の推奨サンプリングで、
+  #
+  # 値の4は配布元の推奨より長い。
+  # JackrongのREADMEは`--spec-draft-n-max 2`を勧めているが、
+  # bulletで同じ問いを2回ずつ測ると2が127.0と127.2、
+  # 4が133.6と134.2トークン/秒で4の方が速い。
+  # 投機的デコーディングはドラフトを伸ばすほど末尾の受理率が下がるものの、
+  # 実測の位置ごとの受理率は4本目でも0.369あり、
+  # 外した分の検証コストを補って余る。
+  #
+  # 残りはQwen3.8公式のThinking Mode向けの推奨サンプリングで、
   # Ollamaの既定値(temperature 0.8, top_k 40, top_p 0.9, repeat_penalty 1.1)とは異なる。
+  # 公式はthinkingを切る場合にtemperature 0.7とtop_p 0.80とpresence_penalty 1.5を勧めているので、
+  # 思考を止めて使いたい呼び出し側は自分で上書きする必要がある。
   qwenParameters = {
     draft_num_predict = 4;
     min_p = 0;

@@ -55,11 +55,27 @@ in
     };
 
     models = lib.mkOption {
-      type = lib.types.attrsOf roleType;
+      type = lib.types.submodule {
+        options = {
+          cuda = lib.mkOption {
+            type = roleType;
+            description = "NVIDIAのGPUで推論するホストのモデル。";
+          };
+
+          cpu = lib.mkOption {
+            type = roleType;
+            description = "CPUで推論するホストのモデル。";
+          };
+        };
+      };
       readOnly = true;
       description = ''
         アクセラレータごとに、役割から実際のモデル名を引く表。
-        キーは`cuda`と`cpu`。
+
+        `attrsOf`ではなく`submodule`にしてあるのは、
+        `hostModels`の既定値も`blue-prompt.nix`もキーを決め打ちで引くためである。
+        キーを打ち間違えても`attrsOf`では型検査を通ってしまい、
+        属性が無いというエラーで初めて露見する。
 
         自ホストで動かすモデルは`hostModels`から引く。
         こちらを直接引くのは他のホストのOllamaを指す場合に限る。

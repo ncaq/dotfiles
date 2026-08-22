@@ -27,7 +27,7 @@ let
   # 指示文のリライトに使うモデル。
   # Ollamaへ載せるモデルの定義と二重に書かないよう、
   # そのホストの汎用モデルの先頭をそのまま使う。
-  rewriteModel = lib.head config.local.ollama.generalModels;
+  rewriteModel = lib.head config.local.ollama.hostModels.general;
   inherit (import ./lib/builder.nix { inherit lib; })
     mkNode
     mkInput
@@ -41,6 +41,16 @@ let
     ;
 in
 {
+  # `lib.head`は空リストへ`head: empty list`としか言いません。
+  # 役割のリストは空を許す型なので、
+  # 汎用モデルを持たないホストが現れた時に原因の分からないエラーで評価が落ちます。
+  assertions = [
+    {
+      assertion = config.local.ollama.hostModels.general != [ ];
+      message = "ComfyUIの${name}は指示文のリライトにOllamaの汎用モデルを使うため、local.ollama.hostModels.generalが空であってはなりません。";
+    }
+  ];
+
   local.comfyui.workflows.${name} = mkWorkflow {
     app = {
       inputs = [
@@ -262,7 +272,7 @@ in
       # 編集指示をここに書く。
       # 日本語で書けば英文の編集命令へ書き換えられ、英語で書いても整えられる。
       #
-      # リライトに使うモデルはOllamaのgeneralModelsの先頭に揃える。
+      # リライトに使うモデルはOllamaの`hostModels.general`の先頭に揃える。
       # 画像も渡すのでvisionを持つモデルである必要がある。
       #
       # free_comfyui_vramはリライトの前にComfyUIの重みを降ろす。

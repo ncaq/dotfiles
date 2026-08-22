@@ -158,7 +158,7 @@ let
         (fetchHuggingFace {
           owner = "0bserverx";
           repo = "Qwen3.8-27B-Heretic-Abliterated-Uncensored-GGUF";
-          rev = "2aff31a04896ab1f3716dde35f73d099ed0c08c5";
+          rev = "20b94f0613b632b4848bbe3b1e05d9ee0c2b1608";
           file = "mmproj-Qwen3.8-27B-Q8_0.gguf";
           hash = "sha256-LpaKavl8412JcYkLJXubftq/IK2RRQUB+lMWKhnuM+s=";
         })

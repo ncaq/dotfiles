@@ -107,10 +107,14 @@ in
             # CPU推論のホストでは伸ばしても生成速度は落ちない。
             # seminarでの実測では`qwen3.6:35b-a3b`が4096で21.4GiB、
             # 262144でも27.5GiBで、生成速度はどちらも約18トークン/秒だった。
-            # 制約になるのはコンテナのMemoryHigh(全体の50%で約31GiB)の方で、
-            # generalModelsとflashModelsが同時に常駐しうることを考えると、
+            # 制約になるのはコンテナのMemoryHigh(全体の50%で約31GiB)の方である。
+            # 32768という値は、
+            # 汎用モデルと即答性を優先したモデルが同時に常駐しうる前提で決めた。
+            # 当時のseminarでの実測では、
             # 32768なら両方載せてcgroupの実測が約29GiBで収まるのに対し、
-            # 65536では約30GiBとMemoryHighに張り付いてしまう。
+            # 65536では約30GiBとMemoryHighに張り付いてしまった。
+            # 即答性を優先した役割は無くなって常駐は1モデルになったため、
+            # 現在は余裕が増えているはずだが測り直していない。
             OLLAMA_CONTEXT_LENGTH = if enableCuda then "131072" else "32768";
           }
           // lib.optionalAttrs enableCuda {

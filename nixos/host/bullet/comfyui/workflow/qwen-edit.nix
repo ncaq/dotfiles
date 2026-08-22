@@ -262,7 +262,7 @@ in
       # 編集指示をここに書く。
       # 日本語で書けば英文の編集命令へ書き換えられ、英語で書いても整えられる。
       #
-      # リライトに使うモデルはOllamaのgeneralModelsの先頭に揃える。
+      # リライトに使うモデルはOllamaの`hostModels.general`の先頭に揃える。
       # 画像も渡すのでvisionを持つモデルである必要がある。
       #
       # free_comfyui_vramはリライトの前にComfyUIの重みを降ろす。

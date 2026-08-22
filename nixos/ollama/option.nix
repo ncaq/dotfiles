@@ -129,6 +129,7 @@ in
             parameters = lib.mkOption {
               type = lib.types.attrsOf (
                 lib.types.oneOf [
+                  lib.types.bool
                   lib.types.str
                   lib.types.int
                   lib.types.float
@@ -139,6 +140,12 @@ in
                 Modelfileの`PARAMETER`に書く既定値。
                 registryのモデルはこれを同梱しているが、
                 GGUFから組み立てる場合は自分で指定しないとOllamaの既定値になる。
+
+                `use_mmap`や`low_vram`のような真偽値を取るPARAMETERがあるためboolも受ける。
+
+                属性集合なので同じキーを複数回書くPARAMETERは表現できない。
+                停止文字列を複数指定したい場合など、
+                `stop`を並べる必要が出たらこの型を見直す必要がある。
               '';
             };
           };

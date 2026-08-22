@@ -28,7 +28,13 @@ in
     # 推論に使う上流モデル。
     # 拒否挙動を除去してあるので、
     # キャラクターの人格を演じるスキルが安全側へ倒れて崩れることが少ない。
-    baseModelId = "qwen3.8-27b-heretic-rvn:q4_k_m";
+    #
+    # seminar自身ではなくCUDAのホストのモデルを指す。
+    # Open WebUIの上流は`ollama-backend.nix`のCaddyがbulletを優先して選ぶため、
+    # ここで要るのは接続先のハードウェアで選ばれた名前の方である。
+    # seminarのOllamaへフォールバックした場合は、
+    # CPUでは表現の自由度を優先したモデルを置いていないので、このModelは応答できない。
+    baseModelId = lib.head config.local.ollama.models.cuda.freedom;
     # コンテナのOpen WebUIは`WEBUI_AUTH = "False"`で動いているため、
     # APIキーを渡さなくても書き込みできる。
   };

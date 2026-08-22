@@ -6,6 +6,30 @@
   永続データ領域のパスはホストとコンテナの双方から参照されるため特に危ない。
 */
 { lib, config, ... }:
+let
+  # そのアクセラレータで使うモデルを役割ごとに並べたもの。
+  roleType = lib.types.submodule {
+    options = {
+      general = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        description = ''
+          ハードウェアの限界の範囲で汎用的に使えるモデル。
+          用途を絞らない既定の選択肢で、速度にも品質にも極端に寄せない。
+        '';
+      };
+
+      freedom = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ ];
+        description = ''
+          表現の自由度を優先したモデル。
+          規制の強いモデルが応答を拒否する種類の題材に使う。
+          待っていられる速度で動かせないハードウェアでは空にする。
+        '';
+      };
+    };
+  };
+in
 {
   options.local.ollama = {
     enableCuda = lib.mkOption {
@@ -30,40 +54,85 @@
       '';
     };
 
-    generalModels = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
+    models = lib.mkOption {
+      type = lib.types.attrsOf roleType;
       readOnly = true;
       description = ''
-        ハードウェアの限界の範囲で汎用的に使えるモデル。
-        用途を絞らない既定の選択肢で、速度にも品質にも極端に寄せない。
+        アクセラレータごとに、役割から実際のモデル名を引く表。
+        キーは`cuda`と`cpu`。
+
+        自ホストで動かすモデルは`hostModels`から引く。
+        こちらを直接引くのは他のホストのOllamaを指す場合に限る。
+        Open WebUIのようにtailnet越しに別のホストのOllamaを使う設定は、
+        自分のハードウェアではなく接続先のハードウェアでモデルが決まるため、
+        アクセラレータを名指しする必要がある。
       '';
     };
 
-    flashModels = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
+    hostModels = lib.mkOption {
+      type = roleType;
       readOnly = true;
+      default = config.local.ollama.models.${if config.local.ollama.enableCuda then "cuda" else "cpu"};
+      defaultText = lib.literalExpression ''config.local.ollama.models.''${if config.local.ollama.enableCuda then "cuda" else "cpu"}'';
       description = ''
-        回答の質よりも即答性を優先したモデル。
-        短い質問や補完のように、待たされること自体が使い勝手を損なう用途に使う。
+        このホストのハードウェアで実際に動かすモデル。
+        役割からモデル名を引きたい設定は基本的にこれを使う。
       '';
     };
 
     loadModels = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       readOnly = true;
-      default = config.local.ollama.generalModels ++ config.local.ollama.flashModels;
-      defaultText = lib.literalExpression "config.local.ollama.generalModels ++ config.local.ollama.flashModels";
-      description = "Ollama registryからpullするモデル。";
+      default =
+        with config.local.ollama;
+        lib.subtractLists (lib.attrNames ggufModels) (hostModels.general ++ hostModels.freedom);
+      defaultText = lib.literalExpression ''
+        lib.subtractLists (lib.attrNames ggufModels)
+          (hostModels.general ++ hostModels.freedom)
+      '';
+      description = ''
+        Ollama registryからpullするモデル。
+        役割のリストに書いた名前のうち、
+        `ggufModels`で自前に組み立てるものはpullできないので除く。
+      '';
     };
 
-    freedomModels = lib.mkOption {
-      type = lib.types.attrsOf (lib.types.listOf lib.types.package);
+    ggufModels = lib.mkOption {
+      type = lib.types.attrsOf (
+        lib.types.submodule {
+          options = {
+            sources = lib.mkOption {
+              type = lib.types.listOf lib.types.package;
+              description = ''
+                1つのモデルを構成するGGUFのリスト。
+                言語モデル本体に加えて、
+                visionを持つモデルはclipの投影器が要ります。
+                `model`と判定されるGGUFは1つでなければなりません。
+              '';
+            };
+            parameters = lib.mkOption {
+              type = lib.types.attrsOf (
+                lib.types.oneOf [
+                  lib.types.str
+                  lib.types.int
+                  lib.types.float
+                ]
+              );
+              default = { };
+              description = ''
+                Modelfileの`PARAMETER`に書く既定値。
+                registryのモデルはこれを同梱しているが、
+                GGUFから組み立てる場合は自分で指定しないとOllamaの既定値になる。
+              '';
+            };
+          };
+        }
+      );
       readOnly = true;
       description = ''
-        GGUFから`ollama create`で登録する表現自由度重視モデル。
-        値は1つのモデルを構成するGGUFのリストです。
-        visionを持つモデルは言語モデル本体とclipの投影器に分かれるため、
-        要素が2つになります。
+        GGUFから`ollama create`で登録するモデル。
+        registryに求める量子化のタグが無い場合や、
+        registryに存在しないモデルを使う場合に用いる。
       '';
     };
   };

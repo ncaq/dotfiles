@@ -27,7 +27,7 @@ let
   # 指示文のリライトに使うモデル。
   # Ollamaへ載せるモデルの定義と二重に書かないよう、
   # そのホストの汎用モデルの先頭をそのまま使う。
-  rewriteModel = lib.head config.local.ollama.generalModels;
+  rewriteModel = lib.head config.local.ollama.hostModels.general;
   inherit (import ./lib/builder.nix { inherit lib; })
     mkNode
     mkInput

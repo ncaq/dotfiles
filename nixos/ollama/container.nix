@@ -112,6 +112,23 @@ in
             # 32768なら両方載せてcgroupの実測が約29GiBで収まるのに対し、
             # 65536では約30GiBとMemoryHighに張り付いてしまう。
             OLLAMA_CONTEXT_LENGTH = if enableCuda then "131072" else "32768";
+          }
+          // lib.optionalAttrs enableCuda {
+            # KVキャッシュをq8_0で量子化して、
+            # 浮いたVRAMを重みの量子化を上げるのに回す。
+            # bulletでの実測(`qwen3.8:27b-mtp-q4_K_M`, context 131072)では、
+            # f16の27.1GiBに対しq8_0は23.8GiBで3.3GiB浮き、
+            # 生成速度の低下は147から136.8トークン/秒の7%に留まる。
+            # 同じ3.3GiBを重みに使うとq4_K_MをQ6_Kまで引き上げられるので、
+            # KVを8bitに落とす損失より重みの精度を上げる利得の方が大きい。
+            # 量子化にはflash attentionが要るが、
+            # Ollamaは対応するモデルとGPUなら自動で有効にする。
+            # q4_0まで落とすと更に2GiB浮くものの、
+            # 長い文脈での劣化が目に見えるようになるので選ばない。
+            # CPU推論のホストへは入れない。
+            # メインメモリは貴重ではなく、
+            # 量子化と復元の計算コストがそのまま生成速度に効いてしまう。
+            OLLAMA_KV_CACHE_TYPE = "q8_0";
           };
         };
         # nixpkgsのOllamaモジュールは固定ユーザを指定してもDynamicUserを有効にするため、

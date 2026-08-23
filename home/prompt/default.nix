@@ -50,7 +50,7 @@ let
         passAsFile = [ "text" ];
       }
       ''
-        chars=$(($(tr -d '\200-\277' < "$textPath" | wc -c)))
+        chars=$(tr -d '\200-\277' < "$textPath" | wc -c)
         if [ "$maxChars" -lt "$chars" ]; then
           echo "$name: $chars characters exceed the limit of $maxChars characters" >&2
           exit 1

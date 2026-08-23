@@ -18,6 +18,8 @@ let
   # コンテナのモジュールでは`config`がコンテナ自身のものになるため、
   # ホスト側のオプションはここで束縛しておく。
   ollamaPort = config.local.openWebui.ollamaPort;
+  # `environment.nix`が集めた設定。これもホスト側の`config`から取る。
+  extraEnvironment = config.local.openWebui.environment;
   # unfreeの許可はホスト側のnixpkgsの設定にしかないため、
   # コンテナ内のpkgsではなくホスト側から取る。
   package = pkgs.open-webui;
@@ -75,21 +77,22 @@ in
           # `environment`を定義すると既定値は丸ごと置き換わり、
           # 匿名の利用統計を外部送信しない設定が失われる。
           # 値を書き写すと二重管理になるので、オプションの既定値からマージする。
-          environment = options.services.open-webui.environment.default // {
-            # 所有する端末だけのtailnetとACLを認証境界にするsingle-user mode。
-            WEBUI_AUTH = "False";
-            # 接続先をUIのDBへ保存させず、常に宣言したOllamaだけを使う。
-            ENABLE_PERSISTENT_CONFIG = "False";
-            # ホスト側のCaddyがbullet優先でOllamaへ振り分ける。
-            OLLAMA_BASE_URL = "http://${addr.host}:${toString ollamaPort}";
-            # ノートやカレンダーなどの組み込みツールを既定で渡さない。
-            # Open WebUIはOllamaが申告するcapabilitiesを見ないため、
-            # tools非対応のモデルにもfunction callingを要求してしまい、
-            # `does not support tools`で会話そのものが失敗する。
-            # モデル個別の設定が優先されるので、
-            # 対応モデルだけUIから有効化できる。
-            DEFAULT_MODEL_METADATA = builtins.toJSON { capabilities.builtin_tools = false; };
-          };
+          #
+          # ここに直接書くのはコンテナの構造そのものを決める変数だけにして、
+          # 管理画面や設定画面から触る類の設定は`environment.nix`へ集める。
+          # あちらを先に重ねるのは、
+          # 認証や永続化の方針が設定の一項目として上書きされるのを防ぐためである。
+          environment =
+            options.services.open-webui.environment.default
+            // extraEnvironment
+            // {
+              # 所有する端末だけのtailnetとACLを認証境界にするsingle-user mode。
+              WEBUI_AUTH = "False";
+              # 接続先をUIのDBへ保存させず、常に宣言したOllamaだけを使う。
+              ENABLE_PERSISTENT_CONFIG = "False";
+              # ホスト側のCaddyがbullet優先でOllamaへ振り分ける。
+              OLLAMA_BASE_URL = "http://${addr.host}:${toString ollamaPort}";
+            };
         };
         # 埋め込みモデルの取得などで名前解決が必要になる。
         services.resolved.enable = true;

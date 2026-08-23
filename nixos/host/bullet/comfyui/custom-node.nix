@@ -203,6 +203,11 @@ in
           # そのキーフレーム間をWan FLF2Vで順番に動画化する。
           # 各成果物を都度保存するため、長さに比例して画像テンソルをRAMへ蓄積しない。
           "ComfyUI-Anime-Video-Quick" = writeCheckedNode "anime-video-quick";
+          # 生成が終わった後にComfyUIの重みをVRAMから降ろす自作ノード。
+          # 同じGPUでOllamaも動くため、掴んだままだと汎用モデルがCUDAのOOMで載らない。
+          # 連続生成では載せ直しが効いてくるのでトグルにしてあり、
+          # 生成のたびに人が戻ってこないOpen WebUI経由でだけ有効にする。
+          "ComfyUI-Free-Vram" = writeCheckedNode "free-vram";
           # 本体のSaveImageが書き出したPNGを保存後に縮める自作ノード。
           # ノードは提供せず、保存処理を包む副作用だけを持つ。
           "ComfyUI-Optimize-Png" = writeCheckedNode "optimize-png";

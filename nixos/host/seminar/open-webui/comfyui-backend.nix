@@ -28,6 +28,20 @@ in
   services.caddy.virtualHosts.":${toString port}".extraConfig = ''
     bind ${addr.host}
     reverse_proxy ${upstream} {
+      # connectに失敗した時に同じ上流へ張り直す猶予。
+      #
+      # `dial_timeout`を短くしただけだと、
+      # 1秒で返らなかった時点で502が確定してリクエストそのものを失う。
+      # 接続先はtailnetのVIPなので、
+      # bulletが稼働していても直接経路が落ちてDERP経由へ切り替わる瞬間など、
+      # 最初のTCP接続に1秒以上かかることは起こり得る。
+      # そこで数分かかる生成をやり直させるのは高くつく。
+      #
+      # `ollama-backend.nix`の`dial_timeout 1s`は、
+      # `lb_try_duration`の中で次の候補へ移るための値だった。
+      # あちらへ揃える時にその前提が落ちていたので、猶予の方も足す。
+      lb_try_duration 3s
+      lb_try_interval 250ms
       # ComfyUIはsocket activationで動いていて、
       # しばらく使っていない状態から最初のリクエストが届くと起動を待つことになる。
       # 実測では`/object_info`が返るまでに14秒かかった。

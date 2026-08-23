@@ -13,7 +13,7 @@
   `lib/ollama-tailscale-service.nix`のようにホスト名は取らない。
 
   ```nix
-  service = import ../../lib/comfyui-tailscale-service.nix;
+  service = import ../../../../lib/comfyui-tailscale-service.nix;
   ```
 */
 "svc:comfyui"

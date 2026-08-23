@@ -316,7 +316,13 @@ in
       assertion = config.local.ollama.models.cuda.general != [ ];
       message = "Open WebUIの画像編集は指示文のリライトにOllamaの汎用モデルを使うため、local.ollama.models.cuda.generalが空であってはなりません。";
     }
-  ];
+  ]
+  # 手で書き写した接続とUIの入力の対応を評価時に検査する。
+  # 画像生成と共有する定義で、検査の内容はそちらに書いてある。
+  ++ import ../../../../lib/comfyui-api-workflow.nix { inherit lib; } {
+    name = "Open WebUIの画像編集";
+    inherit workflow workflowNodes;
+  };
 
   local.openWebui.environment = {
     ENABLE_IMAGE_EDIT = "True";

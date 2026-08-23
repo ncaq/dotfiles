@@ -399,6 +399,13 @@ let
   ];
 in
 {
+  # 手で書き写した接続とUIの入力の対応を評価時に検査する。
+  # 検査の内容と、なぜ実行時では遅いのかは共有の定義に書いてある。
+  assertions = import ../../../../lib/comfyui-api-workflow.nix { inherit lib; } {
+    name = "Open WebUIの画像生成";
+    inherit workflow workflowNodes;
+  };
+
   local.openWebui.environment = {
     ENABLE_IMAGE_GENERATION = "True";
     IMAGE_GENERATION_ENGINE = "comfyui";

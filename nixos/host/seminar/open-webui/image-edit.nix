@@ -347,10 +347,12 @@ in
   # 手で書き写した接続とUIの入力の対応を評価時に検査する。
   # 画像生成と共有する定義で、検査の内容はそちらに書いてある。
   #
-  # `validTypes`が生成の側より狭いのは、
-  # `ComfyUIEditImageForm`が`negative_prompt`を持たず、
-  # `steps`と寸法には値を入れる設定が無いためである。
-  # 理由は`workflowNodes`の直前に書いてある。
+  # `validTypes`は生成の側と包含関係にない。
+  # `negative_prompt`と`width`/`height`/`steps`を含まないのは、
+  # `ComfyUIEditImageForm`が前者の属性を持たず、
+  # 後者には値を入れる設定が無いためである。
+  # 代わりに生成の側に無い`image`を持つ。
+  # それぞれの理由は`workflowNodes`の直前に書いてある。
   assertions = (import ../../../../lib/comfyui-api-workflow.nix { inherit lib; }).assertions {
     name = "Open WebUIの画像編集";
     inherit workflow workflowNodes;

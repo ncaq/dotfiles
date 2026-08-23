@@ -240,13 +240,29 @@ let
         ];
       };
     };
+    # 編集が終わったのでComfyUIの重みをVRAMから降ろす。
+    # 理由と挟む位置については`image-generation.nix`に書いてある。
+    #
+    # このワークフローは`RewriteEditPrompt`が`free_comfyui_vram`で一度降ろすが、
+    # あちらはリライトのためにOllamaを呼ぶ直前の話で、
+    # その後の編集で重みは載り直す。
+    "19" = {
+      class_type = "FreeVram";
+      inputs = {
+        enabled = true;
+        image = [
+          "12"
+          0
+        ];
+      };
+    };
     # `%`の二重化については`image-generation.nix`に理由を書いてある。
     "13" = {
       class_type = "SaveImage";
       inputs = {
         filename_prefix = "open-webui-edit/open-webui-edit-%%year%%-%%month%%-%%day%%-%%hour%%-%%minute%%-%%second%%";
         images = [
-          "12"
+          "19"
           0
         ];
       };

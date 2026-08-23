@@ -325,6 +325,27 @@ let
         ];
       };
     };
+    # 生成が終わったのでComfyUIの重みをVRAMから降ろす。
+    # 同じGPUでOllamaも動いていて、
+    # 汎用モデルは32GiBに対して28.8GiBあるため、
+    # 掴んだままだとチャットへ戻った時にCUDAのOOMで載らない。
+    #
+    # ComfyUIのコンテナは一度起動すると手で止めるまで動き続けるので、
+    # 放っておいて空くことは起こらない。
+    #
+    # `SaveImage`の手前へ挟むのは、
+    # ComfyUIが接続の順序でしか実行順を決められないためである。
+    # 降ろすのはモデルであって画像のテンソルではないので、この後も保存できる。
+    "21" = {
+      class_type = "FreeVram";
+      inputs = {
+        enabled = true;
+        image = [
+          "17"
+          0
+        ];
+      };
+    };
     # Open WebUIは`SaveImage`か`PreviewImage`の出力だけを画像として拾う。
     #
     # `%`を二重にするのはsystemdのspecifierから守るためである。
@@ -338,7 +359,7 @@ let
       inputs = {
         filename_prefix = "open-webui/open-webui-%%year%%-%%month%%-%%day%%-%%hour%%-%%minute%%-%%second%%";
         images = [
-          "17"
+          "21"
           0
         ];
       };

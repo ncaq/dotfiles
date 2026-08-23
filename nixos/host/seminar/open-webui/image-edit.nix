@@ -32,6 +32,27 @@
 let
   model = "qwen_image_edit_2511_int8_convrot.safetensors";
 
+  # 指示文のリライトを担う`RewriteEditPrompt`へ渡すOllamaのモデル名。
+  #
+  # ComfyUIが動くのはbulletなので、
+  # seminar自身の`hostModels`ではなくCUDAのホストの表から引く。
+  # 接続先のハードウェアでモデルが決まる関係は`blue-prompt.nix`と同じである。
+  #
+  # assertionではなく`throw`にするのは、
+  # `option.nix`の`%`の検査が`environment`の全ての値を強制評価するためである。
+  # そちらの評価はassertionの並び順と関係なく走るので、
+  # 空リストなら`lib.head`が先に`head: empty list`を投げて、
+  # 用意したメッセージは決して表示されない。
+  # 値そのものが理由を語る形にすれば、どの経路から評価されても同じ文章が出る。
+  rewriteModel =
+    let
+      generalModels = config.local.ollama.models.cuda.general;
+    in
+    if generalModels == [ ] then
+      throw "Open WebUIの画像編集は指示文のリライトにOllamaの汎用モデルを使うため、local.ollama.models.cuda.generalが空であってはなりません。"
+    else
+      lib.head generalModels;
+
   workflow = {
     "1" = {
       class_type = "UNETLoader";
@@ -87,14 +108,12 @@ let
       ];
     };
     # 指示文を画像ごとOllamaへ渡して、Qwen-Image-Editが前提とする形式へ書き直す。
-    # モデル名を直書きしないのは、
-    # `blue-prompt.nix`と同じくアクセラレータごとの表から引くためである。
-    # ComfyUIが動くのはbulletなので、seminar自身ではなくCUDAのホストの名前が要る。
+    # モデル名の由来は`rewriteModel`の束縛に書いてある。
     "14" = {
       class_type = "RewriteEditPrompt";
       inputs = {
         text = "";
-        model = lib.head config.local.ollama.models.cuda.general;
+        model = rewriteModel;
         free_comfyui_vram = true;
         image = [
           "5"
@@ -320,22 +339,9 @@ let
   ];
 in
 {
-  # `lib.head`は空リストへ`head: empty list`としか言いません。
-  # 役割のリストは空を許す型で、
-  # 実際CPUで推論するホストの`cpu.general`は別の値を持ちます。
-  # CUDAのホストから消した時に原因の分からないエラーで評価が落ちるのを防ぎます。
-  #
-  # `blue-prompt.nix`とbulletの`comfyui/workflow/qwen-edit.nix`が、
-  # 同じ理由で同じ形の検査を置いています。
-  assertions = [
-    {
-      assertion = config.local.ollama.models.cuda.general != [ ];
-      message = "Open WebUIの画像編集は指示文のリライトにOllamaの汎用モデルを使うため、local.ollama.models.cuda.generalが空であってはなりません。";
-    }
-  ]
   # 手で書き写した接続とUIの入力の対応を評価時に検査する。
   # 画像生成と共有する定義で、検査の内容はそちらに書いてある。
-  ++ import ../../../../lib/comfyui-api-workflow.nix { inherit lib; } {
+  assertions = import ../../../../lib/comfyui-api-workflow.nix { inherit lib; } {
     name = "Open WebUIの画像編集";
     inherit workflow workflowNodes;
   };

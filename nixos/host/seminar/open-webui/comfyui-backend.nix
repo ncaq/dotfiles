@@ -12,18 +12,22 @@
 # あちらと違って振り分け先はbulletだけなので、
 # フェイルオーバーもパッシブヘルスチェックも要らない。
 # bulletが落ちていれば画像は生成できない、というだけである。
-{ config, ... }:
+{ lib, config, ... }:
 let
   addr = config.machineAddresses.open-webui;
   port = config.local.openWebui.comfyuiPort;
   tailnet = config.local.tailscale.tailnet;
+  # 公開する側のbulletの`comfyui/tailscale-serve.nix`と同じ定義から名前を組み立てる。
+  # `ollama-backend.nix`が`lib/ollama-tailscale-service.nix`でしているのと同じである。
+  comfyuiService = import ../../../../lib/comfyui-tailscale-service.nix;
+  upstream = "https://${lib.removePrefix "svc:" comfyuiService}.${tailnet}";
 in
 {
   # `caddy.nix`の`:8081`と同じく、ホスト名なしのアドレスにしてHTTPだけで待ち受ける。
   # ホスト名を書くとCaddyが自動HTTPSを有効にしてしまう。
   services.caddy.virtualHosts.":${toString port}".extraConfig = ''
     bind ${addr.host}
-    reverse_proxy https://comfyui.${tailnet} {
+    reverse_proxy ${upstream} {
       # ComfyUIはsocket activationで動いていて、
       # しばらく使っていない状態から最初のリクエストが届くと起動を待つことになる。
       # 実測では`/object_info`が返るまでに14秒かかった。

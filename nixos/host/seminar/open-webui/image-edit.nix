@@ -264,6 +264,18 @@ let
   # そのtypeを書くと`_apply_workflow_nodes`が存在しない属性を読んで実行時に落ちる。
   # ノード`7`のpromptは空のままにする。
   #
+  # stepsも渡さない。
+  # フィールド自体はあるが既定が`None`で、
+  # 画像生成の`IMAGE_STEPS`にあたる設定が編集の側には無いため誰も値を入れない。
+  # そのまま流すとKSamplerが`steps`を`None`で受け取り、
+  # `SaveImage`へ至る経路だけがバリデーションで落ちる。
+  # `PreviewAny`はKSamplerを通らないので生き残り、
+  # 全体は`success`のまま画像が返らないという分かりにくい壊れ方をする。
+  # ワークフロー側の40をそのまま使う。
+  #
+  # seedは渡してよい。
+  # `_apply_workflow_nodes`が`None`の時に乱数へ倒す分岐を持っている。
+  #
   # 寸法は指定しない。
   # `QwenImageEditScale`が入力画像から必要な画素数と整列単位へ合わせるため、
   # UIから渡された値で上書きすると元画像との対応が崩れる。
@@ -286,11 +298,6 @@ let
         "17"
         "18"
       ];
-    }
-    {
-      type = "steps";
-      key = "steps";
-      node_ids = [ "11" ];
     }
     {
       type = "seed";

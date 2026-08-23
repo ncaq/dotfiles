@@ -35,6 +35,23 @@
     '';
   };
 
+  options.local.openWebui.comfyuiPort = lib.mkOption {
+    type = lib.types.port;
+    readOnly = true;
+    default = 8188;
+    description = ''
+      Open WebUIがComfyUIを探しに行くホスト側のポート。
+
+      コンテナのvethのhostAddressでCaddyが待ち受けて、
+      bulletのComfyUIへTailscale Service経由で中継する。
+      コンテナは自分のnetnsを持っていてtailnetへの経路を持たないため、
+      Service名を直接引くことはできない。
+
+      値はComfyUI自身の既定のポートに合わせてあるが、
+      待ち受けるのはseminarのホストなので衝突しない。
+    '';
+  };
+
   options.local.openWebui.environment = lib.mkOption {
     type = lib.types.attrsOf lib.types.str;
     default = { };

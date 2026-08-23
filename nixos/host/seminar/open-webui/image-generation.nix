@@ -422,9 +422,27 @@ in
 {
   # 手で書き写した接続とUIの入力の対応を評価時に検査する。
   # 検査の内容と、なぜ実行時では遅いのかは共有の定義に書いてある。
-  assertions = import ../../../../lib/comfyui-api-workflow.nix { inherit lib; } {
+  #
+  # `validTypes`はOpen WebUIの`ComfyUIGenerateImageForm`が持つフィールドで、
+  # `requiredTypes`はそのうち無いとUIの入力が黙って無視されるものである。
+  # 寸法とstepsは環境変数の側にも既定値があるので必須にはしない。
+  assertions = (import ../../../../lib/comfyui-api-workflow.nix { inherit lib; }).assertions {
     name = "Open WebUIの画像生成";
     inherit workflow workflowNodes;
+    validTypes = [
+      "model"
+      "prompt"
+      "negative_prompt"
+      "width"
+      "height"
+      "steps"
+      "seed"
+    ];
+    requiredTypes = [
+      "model"
+      "prompt"
+      "seed"
+    ];
   };
 
   local.openWebui.environment = {

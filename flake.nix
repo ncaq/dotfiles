@@ -324,6 +324,9 @@
           systemd-specifier-test = mkNixTest "systemd-specifier-test" (
             import ./lib/systemd-specifier-test.nix { inherit lib; }
           );
+          comfyui-api-workflow-test = mkNixTest "comfyui-api-workflow-test" (
+            import ./lib/comfyui-api-workflow-test.nix { inherit lib; }
+          );
           safetensors-fp16 = pkgs.callPackage ./pkgs/safetensors-fp16 { };
           # リポジトリ内のPythonをpyrightで型検査するためのderivation群。
           # ComfyUIのパッケージはoverlay経由でしか生えないが、
@@ -422,6 +425,7 @@
               # derivationの中で走るテストが通ることをCIで保証したいパッケージは、
               # `packages`と両方に並べます。
               inherit
+                comfyui-api-workflow-test
                 comfyui-custom-node-test
                 git-repo-subscribe
                 safetensors-fp16

@@ -60,16 +60,21 @@ class FreeVram:
 
     def free(self, image: torch.Tensor, enabled: bool) -> tuple[torch.Tensor]:
         if enabled:
-            # `unload_all_models`はComfyUIが管理する重みをGPUから外すだけで、
-            # PyTorchのcaching allocatorが確保済みのブロックは抱えたままになる。
-            # 他のプロセスから見た空きは`empty_cache`まで呼んで初めて増えるため、
-            # OOMを避けるにはこの2つが揃っている必要がある。
-            comfy.model_management.unload_all_models()
-            comfy.model_management.soft_empty_cache(force=True)
-            # 降ろしたことをログに残す。
-            # 次の生成が遅い時に、
-            # 載せ直しが理由なのかどうかをジャーナルから判断できるようにする。
-            print("[FreeVram] モデルをVRAMから降ろしました", file=sys.stderr)
+            try:
+                comfy.model_management.unload_all_models()
+                comfy.model_management.soft_empty_cache(force=True)
+                # 降ろしたことをログに残す。
+                # 次の生成が遅い時に、
+                # 載せ直しが理由なのかどうかをジャーナルから判断できるようにする。
+                print("[FreeVram] モデルをVRAMから降ろしました", file=sys.stderr)
+            except Exception as error:
+                # 空け損ねても画像は返す。
+                # このノードは保存ノードの手前に挟まるので、
+                # ここで例外を投げると数分かけた生成が保存されないまま失われる。
+                # VRAMの解放は生成結果に対して副次的な処理でしかなく、
+                # 失敗しても次にOllamaがOOMになるだけで、生成物を捨てる理由にはならない。
+                # 副次的な処理の失敗で本筋を止めない方針は`RewriteEditPrompt`と同じである。
+                print(f"[FreeVram] VRAMの解放に失敗しました: {error}", file=sys.stderr)
         return (image,)
 
 

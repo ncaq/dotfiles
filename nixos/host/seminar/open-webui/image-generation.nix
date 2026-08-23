@@ -402,5 +402,4 @@ in
     # 既定の50はこのワークフローには過剰である。
     IMAGE_STEPS = toString baseSteps;
   };
-
 }

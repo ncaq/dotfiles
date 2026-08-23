@@ -31,10 +31,20 @@ in
       # ComfyUIはsocket activationで動いていて、
       # しばらく使っていない状態から最初のリクエストが届くと起動を待つことになる。
       # 実測では`/object_info`が返るまでに14秒かかった。
-      # 既定のまま短い猶予で打ち切ると、
-      # 使っていない時ほど失敗するという最も困る挙動になる。
+      #
+      # ただしその14秒はconnectの後の区間なので、
+      # 受け持つのは`response_header_timeout`であって`dial_timeout`ではない。
+      # socket activationではsystemd側のsocketが常にlistenしているため、
+      # TCPのconnect自体は起動待ちと関係なく即座に完了する。
+      #
+      # `dial_timeout`はむしろ短くする。
+      # bulletの電源が入っていない時、
+      # tailnetのVIPへの接続はRSTを返さず無応答になるので、
+      # 長くするとその分だけ失敗の検知が遅れて画像1枚あたりの待ち損になる。
+      # 上流は1つでフェイルオーバー先も無いため、待っても得るものがない。
+      # `ollama-backend.nix`が同じ理由で同じ値を使っている。
       transport http {
-        dial_timeout 30s
+        dial_timeout 1s
         response_header_timeout 5m
         # アイドル接続を抱え続けると、bulletが落ちた後もプールに残った接続へ投げてしまう。
         # tailnetの経路が消えるだけでソケットは開いたままに見えるため、

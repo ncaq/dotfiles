@@ -161,6 +161,15 @@ let
       duplicateTypes = lib.unique (
         lib.filter (type: lib.count (other: other == type) declaredTypes > 1) declaredTypes
       );
+
+      # 引数同士の矛盾。
+      #
+      # `validTypes`に無い`type`を`requiredTypes`へ書くと、
+      # ワークフローに書けば`unknownTypes`で落ち、
+      # 書かなければ`absentTypes`で落ちる、どうやっても通らない設定になる。
+      # 2つの別々の項目として報告されるので、
+      # 原因が引数の側にあることに気付けない。
+      contradictoryTypes = lib.unique (lib.filter (type: !(lib.elem type validTypes)) requiredTypes);
     };
 
   assertions =
@@ -198,6 +207,7 @@ let
         unknownTypes = "workflowNodesがOpen WebUIのフォームに無いtypeを書いています";
         absentTypes = "workflowNodesに必要なtypeがありません";
         duplicateTypes = "workflowNodesが同じtypeを重複して書いています";
+        contradictoryTypes = "requiredTypesがvalidTypesに無いtypeを要求しています";
       };
     in
     lib.mapAttrsToList (key: items: {

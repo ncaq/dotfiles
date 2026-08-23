@@ -220,6 +220,14 @@ assert lib.assertMsg (
   }).duplicateTypes == [ "seed" ]
 ) "重複したtypeを見逃しました";
 
+# `requiredTypes`が`validTypes`に無い`type`を要求している場合。
+# 引数同士の矛盾なので、ワークフローの側をどう書いても通らない。
+assert lib.assertMsg (
+  (run {
+    required = requiredTypes ++ [ "nonexistent_type" ];
+  }).contradictoryTypes == [ "nonexistent_type" ]
+) "引数同士の矛盾を見逃しました";
+
 # ここから`assertions`の側。
 # `checks`だけを叩いていると、
 # 検査を足して対応表への配線を忘れた場合にテストが通り続けてしまう。

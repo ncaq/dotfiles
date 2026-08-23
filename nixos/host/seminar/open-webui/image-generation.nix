@@ -16,21 +16,33 @@
 # 全ノードのウィジェット名をNixの側へ持つ必要があり、
 # 実際に画像生成を使うかどうかも分からない段階で払う設計コストとしては重い。
 # bullet側の`anima-standard`を変更した場合は、ここも追随させること。
-{ config, ... }:
+{ lib, config, ... }:
 let
+  # 寸法の整列単位と素のstepsとその導出はbulletの定義をそのまま引く。
+  # ワークフローの構造と違ってこれらは式として共有できるので、写す理由がない。
+  #
+  # `builder.nix`はNixOSモジュールではなく`{ lib }`だけを取る純粋な関数なので、
+  # ホストのディレクトリを跨いでimportしても評価の文脈は持ち込まない。
+  inherit (import ../../bullet/comfyui/workflow/lib/builder.nix { inherit lib; })
+    animaSizeMultiple
+    animaBaseSteps
+    stepsForDenoise
+    ;
 
-  # `bullet/comfyui/workflow/lib/builder.nix`と同じ値を使う。
-  # あちらを変えた時に気付けるよう、由来の分かる名前で束縛しておく。
+  # モデルは`bullet/comfyui/model.nix`が配置して、
+  # `bullet/comfyui/workflow/anima-standard.nix`が選んでいるものと同じ。
   model = "anima-aesthetic-v1.1.safetensors";
-  sizeMultiple = 16;
-  baseSteps = 30;
+  # denoiseは`bullet/comfyui/workflow/anima-standard.nix`のlet束縛で、
+  # あちらが外へ公開していないため値だけを写している。
   hiresDenoise = 0.3;
   faceDenoise = 0.35;
-  # `stepsForDenoise`と同じ計算。
+  # denoiseを下げた再サンプリングで使うステップ数。
   # KSamplerはdenoiseを下げてもstepsの回数だけサンプリングするため、
   # sigmaの刻み密度を素の生成へ揃えるには`基準のsteps * denoise`にする。
-  hiresSteps = 9;
-  faceSteps = 10;
+  # 切り捨てなので`30 * 0.35`は11ではなく10になる。
+  # 切り捨てを選んだ理由は`stepsForDenoise`の定義に書いてある。
+  hiresSteps = stepsForDenoise animaBaseSteps hiresDenoise;
+  faceSteps = stepsForDenoise animaBaseSteps faceDenoise;
 
   # Open WebUIが上書きするので初期値そのものは使われないが、
   # ワークフロー単体をComfyUIへ投げた時にも成立する内容にしておく。
@@ -97,7 +109,7 @@ let
       inputs = {
         width = 1024;
         height = 1024;
-        multiple = sizeMultiple;
+        multiple = animaSizeMultiple;
       };
     };
     "6" = {
@@ -126,7 +138,7 @@ let
       class_type = "KSampler";
       inputs = {
         seed = 0;
-        steps = baseSteps;
+        steps = animaBaseSteps;
         cfg = 4;
         sampler_name = "euler";
         scheduler = "simple";
@@ -191,7 +203,7 @@ let
     "19" = {
       class_type = "AlignImageSize";
       inputs = {
-        multiple = sizeMultiple;
+        multiple = animaSizeMultiple;
         image = [
           "12"
           0
@@ -399,6 +411,6 @@ in
     # 既定の`512x512`はAnimaの学習解像度から外れる。
     IMAGE_SIZE = "1024x1024";
     # 既定の50はこのワークフローには過剰である。
-    IMAGE_STEPS = toString baseSteps;
+    IMAGE_STEPS = toString animaBaseSteps;
   };
 }

@@ -30,7 +30,7 @@
   こちらも弾く。
 
   ```nix
-  specifier = import ../../lib/systemd-specifier.nix { inherit lib; };
+  specifier = import ../../../../lib/systemd-specifier.nix { inherit lib; };
   broken = specifier.unsafeNames config.local.openWebui.environment;
   ```
 */

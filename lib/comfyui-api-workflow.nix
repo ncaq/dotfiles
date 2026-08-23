@@ -3,7 +3,7 @@
   評価時に検査する。
 
   ComfyUIのワークフローにはUI形式とAPI形式があり、
-  bulletが持つUI形式は`comfyui/workflow/lib/validate.nix`が、
+  bulletが持つUI形式は`comfyui/workflow/validate.nix`が、
   リンク切れやID重複やウィジェットの並びを機械的に弾いている。
   API形式は`inputs`へ名前付きで書く別の構造なのでその検査を流用できない。
 

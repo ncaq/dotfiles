@@ -1,7 +1,7 @@
 # `lib/comfyui-api-workflow.nix`の検査が、
 # 正常なワークフローを拒否せず、壊れたワークフローを見逃さないことを確かめる。
 #
-# この検査はbullet側の`comfyui/workflow/lib/validate.nix`にあたるもので、
+# この検査はbullet側の`comfyui/workflow/validate.nix`にあたるもので、
 # あちらの検査ロジックが`link-test.nix`のような対のテストで守られているのに対し、
 # こちらは「実際のワークフローで一度通した」だけだった。
 # 検査が緩んでも、緩んだこと自体は誰も検出できない状態になる。

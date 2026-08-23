@@ -28,12 +28,9 @@
 # 降ろすのはモデルであって画像のテンソルではないので、
 # 素通しした画像はこの後も保存できる。
 #
-# ComfyUI本体は型注釈をほとんど持たず、
-# `comfy.model_management`に触れる式がstrictのUnknown系を全て挙げてしまう。
-# 上流に型が付くまではこのファイルでだけ落とす。
-# pyright: reportUnknownArgumentType=none
-# pyright: reportUnknownMemberType=none
-# pyright: reportUnknownVariableType=none
+# ComfyUI本体は型注釈をほとんど持たないが、
+# このファイルが`comfy`へ触れるのは戻り値を使わない2つの呼び出しだけなので、
+# 他の自作ノードが置いている`# pyright:`によるUnknown系の抑制は要らない。
 
 import sys
 

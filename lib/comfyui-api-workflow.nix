@@ -17,10 +17,11 @@
   そこを通らないノードは生き残るため、
   全体の`status`は`success`のまま画像だけが返らない。
 
-  `checks`が検査そのもので、エラー文字列のリストを返す純粋な関数群である。
+  `checks`が検査そのもので、項目ごとにエラー文字列のリストを返す。
   `assertions`はそれをNixOSのassertionへ包む。
-  分けてあるのは`comfyui-api-workflow-test.nix`が`checks`だけを使うためで、
+  分けてあるのは`comfyui-api-workflow-test.nix`が項目ごとに表明できるようにするためで、
   `comfyui/workflow/lib/link.nix`と`link-test.nix`の関係に揃えている。
+  テストは配線の漏れを見るために`assertions`の側も通す。
 
   ```nix
   assertions = (import ../../../../lib/comfyui-api-workflow.nix { inherit lib; }).assertions {
@@ -179,46 +180,30 @@ let
           requiredTypes
           ;
       };
-      # 空なら通り、非空ならその一覧を添えて落とす項目の対応表。
-      report = [
-        {
-          items = result.malformedNodes;
-          text = "class_typeかinputsを持たないノードがあります";
-        }
-        {
-          items = result.danglingLinks;
-          text = "存在しないノードへ接続しています";
-        }
-        {
-          items = result.orphanNodes;
-          text = "出力ノードから到達できないノードがあります";
-        }
-        {
-          items = result.missingNodes;
-          text = "workflowNodesが存在しないノードを指しています";
-        }
-        {
-          items = result.missingKeys;
-          text = "workflowNodesが対象ノードの持たない入力を指しています";
-        }
-        {
-          items = result.unknownTypes;
-          text = "workflowNodesがOpen WebUIのフォームに無いtypeを書いています";
-        }
-        {
-          items = result.absentTypes;
-          text = "workflowNodesに必要なtypeがありません";
-        }
-        {
-          items = result.duplicateTypes;
-          text = "workflowNodesが同じtypeを重複して書いています";
-        }
-      ];
+      # 検査の項目名から、非空だった時に出す文章への対応表。
+      #
+      # `checks`の結果の側を`lib.mapAttrsToList`で走査するので、
+      # ここに無い項目を`checks`へ足すと`missing attribute`で即座に落ちる。
+      # リストを並べる形にすると、
+      # 検査を足して対応表への追加を忘れた時に、
+      # その検査が黙って発火しないまま残ってしまう。
+      # このモジュール自体が「緩んだこと自体を誰も検出できない」状態を無くすためのものなので、
+      # 対応の漏れも評価時に分かる形にしておく。
+      report = {
+        malformedNodes = "class_typeかinputsを持たないノードがあります";
+        danglingLinks = "存在しないノードへ接続しています";
+        orphanNodes = "出力ノードから到達できないノードがあります";
+        missingNodes = "workflowNodesが存在しないノードを指しています";
+        missingKeys = "workflowNodesが対象ノードの持たない入力を指しています";
+        unknownTypes = "workflowNodesがOpen WebUIのフォームに無いtypeを書いています";
+        absentTypes = "workflowNodesに必要なtypeがありません";
+        duplicateTypes = "workflowNodesが同じtypeを重複して書いています";
+      };
     in
-    map (entry: {
-      assertion = entry.items == [ ];
-      message = "${name}の${entry.text}: ${lib.concatStringsSep ", " entry.items}";
-    }) report;
+    lib.mapAttrsToList (key: items: {
+      assertion = items == [ ];
+      message = "${name}の${report.${key}}: ${lib.concatStringsSep ", " items}";
+    }) result;
 in
 {
   inherit checks assertions;

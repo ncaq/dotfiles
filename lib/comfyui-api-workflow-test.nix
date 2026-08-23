@@ -7,7 +7,7 @@
 # 検査が緩んでも、緩んだこと自体は誰も検出できない状態になる。
 { lib }:
 let
-  inherit (import ./comfyui-api-workflow.nix { inherit lib; }) checks;
+  inherit (import ./comfyui-api-workflow.nix { inherit lib; }) checks assertions;
 
   # 実際のワークフローの構造を最小限に写したもの。
   # ローダーからサンプラーを経て保存ノードへ至る、という骨格は同じにする。
@@ -72,6 +72,23 @@ let
 
   # 全ての検査項目が空であること。
   allEmpty = result: lib.all (items: items == [ ]) (lib.attrValues result);
+
+  # 呼び出し側が実際に使うのは`assertions`の方なので、そちらも通す。
+  runAssertions =
+    {
+      workflow ? validWorkflow,
+      workflowNodes ? validNodes,
+      types ? validTypes,
+      required ? requiredTypes,
+    }:
+    assertions {
+      name = "テスト";
+      inherit workflow workflowNodes;
+      validTypes = types;
+      requiredTypes = required;
+    };
+
+  failed = entries: lib.filter (entry: !entry.assertion) entries;
 in
 assert lib.assertMsg (allEmpty (run { })) "正常なワークフローを拒否しました";
 
@@ -202,4 +219,43 @@ assert lib.assertMsg (
     ];
   }).duplicateTypes == [ "seed" ]
 ) "重複したtypeを見逃しました";
+
+# ここから`assertions`の側。
+# `checks`だけを叩いていると、
+# 検査を足して対応表への配線を忘れた場合にテストが通り続けてしまう。
+assert lib.assertMsg (failed (runAssertions { }) == [ ]) "正常なワークフローでassertionが落ちました";
+
+# 全ての検査項目がassertionへ配線されていること。
+#
+# 数の一致だけでは足りない。
+# `assertions`は`checks`の結果の側を走査するので、
+# 対応表に無い項目があっても数は必ず一致する。
+# `message`は`assertion`が真の間は評価されないため、
+# ここで文字列として強制して初めて`missing attribute`が出る。
+assert lib.assertMsg (
+  lib.length (runAssertions { }) == lib.length (lib.attrNames (run { }))
+) "checksの項目数とassertionsの数が一致しません";
+assert lib.assertMsg (lib.all (entry: lib.isString entry.message) (
+  runAssertions { }
+)) "assertionのメッセージを組み立てられませんでした";
+
+# 壊した時にメッセージへ壊した箇所が載ること。
+#
+# 接続先を存在しないIDにすると、
+# そのノードが経路から外れるので到達性の側でも落ちる。
+# 件数は決め打ちにせず、
+# 接続の項目が壊した先を名指ししていることだけを見る。
+assert lib.assertMsg (
+  let
+    broken = failed (runAssertions {
+      workflow = lib.recursiveUpdate validWorkflow {
+        "3".inputs.images = [
+          "99"
+          0
+        ];
+      };
+    });
+  in
+  lib.any (entry: lib.hasInfix "3.images -> 99" entry.message) broken
+) "assertionのメッセージに壊した接続先が載りませんでした";
 true

@@ -93,24 +93,24 @@
 
   # 環境変数はユニットの`Environment=`に載るため、
   # 値の中の`%`はsystemdのspecifierとして展開される。
-  # `%y`はユニットファイルのパスへ、`%m`はマシンIDへ、`%s`はシェルのパスへ変わる。
-  #
   # 画像生成の`filename_prefix`に書いた`%year%`が実際にこれで壊れていて、
   # 出力されたファイル名を見るまで気付けなかった。
-  # リテラルの`%`を渡すには`%%`と二重にする必要がある。
+  # 判定の詳細は`lib/systemd-specifier.nix`に書いてある。
   #
-  # 全ての値を横断して検査することで、
-  # 今あるモジュールも将来足すモジュールも同じ保護を受けられる。
+  # 保護されるのはここへ書かれた値だけである。
+  # `container.nix`が`//`で最後に重ねるリテラルと、
+  # `options.services.open-webui.environment.default`由来の値は対象にならない。
+  # 前者はコンテナの構造を決める固定値で`%`を持たないため、
+  # 今のところ検査の対象へ含める必要がない。
   config.assertions =
     let
-      raw = lib.filterAttrs (
-        _: value: lib.hasInfix "%" (lib.replaceStrings [ "%%" ] [ "" ] value)
-      ) config.local.openWebui.environment;
+      specifier = import ../../../../lib/systemd-specifier.nix { inherit lib; };
+      broken = specifier.unsafeNames config.local.openWebui.environment;
     in
     [
       {
-        assertion = raw == { };
-        message = "local.openWebui.environmentの以下の値にsystemdのspecifierとして展開される`%`が含まれています。リテラルの`%`は`%%`と二重にしてください: ${lib.concatStringsSep ", " (lib.attrNames raw)}";
+        assertion = broken == [ ];
+        message = "local.openWebui.environmentの以下の値にsystemdのspecifierとして展開される`%`が含まれています。リテラルの`%`は`%%`と二重にしてください: ${lib.concatStringsSep ", " broken}";
       }
     ];
 }

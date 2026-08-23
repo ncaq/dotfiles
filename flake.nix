@@ -304,6 +304,26 @@
           # ComfyUIの自作カスタムノードのうち、
           # ComfyUI本体に触れない部分のpytest。
           comfyui-custom-node-test = import ./lib/comfyui-custom-node-test.nix { inherit pkgs; };
+          # 評価時にしか走らない純粋なNixのテストをderivationへ包む。
+          #
+          # `bullet/comfyui/workflow/lib/*-test.nix`は`validate.nix`が`assert`で走らせるが、
+          # `lib/`のこれらは検査を使う側がホストの構成の中にあるため、
+          # そのホストを評価しない限り走らない。
+          # CIで必ず走らせたいので`checks`へ載せる。
+          #
+          # テストは全ての表明を通ると`true`を返す。
+          # `builtins.seq`でその値を強制してからビルドを成功させる。
+          mkNixTest =
+            name: test:
+            pkgs.runCommand name {
+              passed = builtins.seq (
+                assert test;
+                test
+              ) name;
+            } ''echo "$passed" > "$out"'';
+          systemd-specifier-test = mkNixTest "systemd-specifier-test" (
+            import ./lib/systemd-specifier-test.nix { inherit lib; }
+          );
           safetensors-fp16 = pkgs.callPackage ./pkgs/safetensors-fp16 { };
           # リポジトリ内のPythonをpyrightで型検査するためのderivation群。
           # ComfyUIのパッケージはoverlay経由でしか生えないが、
@@ -401,7 +421,12 @@
               # ビルドが通ることと、
               # derivationの中で走るテストが通ることをCIで保証したいパッケージは、
               # `packages`と両方に並べます。
-              inherit comfyui-custom-node-test git-repo-subscribe safetensors-fp16;
+              inherit
+                comfyui-custom-node-test
+                git-repo-subscribe
+                safetensors-fp16
+                systemd-specifier-test
+                ;
             }
             // lib.optionalAttrs hasComfyui {
               # リポジトリ内のPythonの型検査。

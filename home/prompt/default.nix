@@ -68,7 +68,7 @@ in
     chatAssistantMini = lib.mkOption {
       type = lib.types.package;
       readOnly = true;
-      description = "通常のチャット向けだが入力できる内容が短い場合のテキストファイル、文字数上限を検査済み";
+      description = "カスタム指示の入力欄に文字数制限があるサービス向けの、上限を検査済みのプロンプトファイル";
     };
     codingAgent = lib.mkOption {
       type = lib.types.str;

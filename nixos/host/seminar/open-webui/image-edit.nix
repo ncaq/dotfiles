@@ -304,6 +304,20 @@ let
   ];
 in
 {
+  # `lib.head`は空リストへ`head: empty list`としか言いません。
+  # 役割のリストは空を許す型で、
+  # 実際CPUで推論するホストの`cpu.general`は別の値を持ちます。
+  # CUDAのホストから消した時に原因の分からないエラーで評価が落ちるのを防ぎます。
+  #
+  # `blue-prompt.nix`とbulletの`comfyui/workflow/qwen-edit.nix`が、
+  # 同じ理由で同じ形の検査を置いています。
+  assertions = [
+    {
+      assertion = config.local.ollama.models.cuda.general != [ ];
+      message = "Open WebUIの画像編集は指示文のリライトにOllamaの汎用モデルを使うため、local.ollama.models.cuda.generalが空であってはなりません。";
+    }
+  ];
+
   local.openWebui.environment = {
     ENABLE_IMAGE_EDIT = "True";
     IMAGE_EDIT_ENGINE = "comfyui";

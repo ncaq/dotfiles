@@ -149,7 +149,7 @@ let
       # `negative_prompt`は`ComfyUIEditImageForm`が属性を持たないため実行時に落ち、
       # `steps`はフィールドはあっても既定が`None`のまま誰も値を入れなかった。
       # 接続の整合性だけを見る検査では両方とも素通りする。
-      unknownTypes = lib.filter (type: !(lib.elem type validTypes)) declaredTypes;
+      unknownTypes = lib.unique (lib.filter (type: !(lib.elem type validTypes)) declaredTypes);
 
       # 書き忘れた`type`。
       # 例えば`prompt`の行が消えるとUIの入力が無視されて初期値で生成され、

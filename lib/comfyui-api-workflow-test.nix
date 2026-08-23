@@ -38,6 +38,43 @@ let
     };
   };
 
+  # 2つ目のサンプラー。
+  # `seed`のように1つの入力を複数のノードへ配る形を再現するために置く。
+  # 実際の`image-generation.nix`は`seed`を`[ "7" "14" "17" ]`の3つへ、
+  # `image-edit.nix`は`image`を`[ "4" "17" "18" ]`の3つへ配っている。
+  multiNodeWorkflow = lib.recursiveUpdate validWorkflow {
+    "4" = {
+      class_type = "KSampler";
+      inputs = {
+        seed = 0;
+        model = [
+          "2"
+          0
+        ];
+      };
+    };
+    "3".inputs.images = [
+      "4"
+      0
+    ];
+  };
+
+  multiNodes = [
+    {
+      type = "model";
+      key = "unet_name";
+      node_ids = [ "1" ];
+    }
+    {
+      type = "seed";
+      key = "seed";
+      node_ids = [
+        "2"
+        "4"
+      ];
+    }
+  ];
+
   validNodes = [
     {
       type = "model";
@@ -130,6 +167,37 @@ assert lib.assertMsg (
   }).danglingLinks == [ ]
 ) "3要素のリストを接続と誤認しました";
 
+# 第1要素が文字列でない2要素リストも接続ではない。
+# `lib.isString`のガードを外すと、
+# ノードIDとして文字列補間しようとして読めない型エラーになる。
+assert lib.assertMsg (
+  (run {
+    workflow = lib.recursiveUpdate validWorkflow {
+      "1".inputs.unet_name = [
+        0
+        0
+      ];
+    };
+  }).danglingLinks == [ ]
+) "第1要素が文字列でない値を接続と誤認しました";
+
+# スロット番号を文字列で書き間違えた場合。
+#
+# 接続とみなさないので`danglingLinks`には出ないが、
+# その分だけ依存が辿れなくなって参照先が経路から外れる。
+# `isLink`が第2要素の整数性を見る意味は、
+# 書き間違いをこの経路で捕まえることにある。
+assert lib.assertMsg (
+  (run {
+    workflow = lib.recursiveUpdate validWorkflow {
+      "2".inputs.model = [
+        "1"
+        "0"
+      ];
+    };
+  }).orphanNodes == [ "1" ]
+) "スロット番号の書き間違いが到達性の側で捕まりませんでした";
+
 # 保存ノードの入力を戻してしまい、間のノードが経路から外れた場合。
 assert lib.assertMsg (
   (run {
@@ -200,6 +268,24 @@ assert lib.assertMsg (
   }).unknownTypes == [ "negative_prompt" ]
 ) "フォームに無いtypeを見逃しました";
 
+# 同じ`type`を2行書いた場合も、報告は1度だけにする。
+assert lib.assertMsg (
+  (run {
+    workflowNodes = validNodes ++ [
+      {
+        type = "negative_prompt";
+        key = "seed";
+        node_ids = [ "2" ];
+      }
+      {
+        type = "negative_prompt";
+        key = "seed";
+        node_ids = [ "2" ];
+      }
+    ];
+  }).unknownTypes == [ "negative_prompt" ]
+) "フォームに無いtypeを重複して報告しました";
+
 # 必要な`type`の行を消した場合。
 assert lib.assertMsg (
   (run {
@@ -219,6 +305,49 @@ assert lib.assertMsg (
     ];
   }).duplicateTypes == [ "seed" ]
 ) "重複したtypeを見逃しました";
+
+# `node_ids`が複数ある場合に、2番目以降も見ていること。
+#
+# 実際のワークフローは`seed`も`image`も複数のノードへ配るので、
+# `lib.head entry.node_ids`のように先頭だけを見る実装へ退化すると、
+# production側の主要な形が丸ごと検査されなくなる。
+assert lib.assertMsg (allEmpty (run {
+  workflow = multiNodeWorkflow;
+  workflowNodes = multiNodes;
+})) "複数のnode_idsを持つ正常なワークフローを拒否しました";
+
+assert lib.assertMsg (
+  (run {
+    workflow = multiNodeWorkflow;
+    workflowNodes = [
+      {
+        type = "seed";
+        key = "seed";
+        node_ids = [
+          "2"
+          "97"
+        ];
+      }
+    ];
+  }).missingNodes == [ "seed -> 97" ]
+) "node_idsの2番目が存在しないことを見逃しました";
+
+assert lib.assertMsg (
+  (run {
+    # `1`はUNETLoaderで`seed`を持たない。
+    workflow = multiNodeWorkflow;
+    workflowNodes = [
+      {
+        type = "seed";
+        key = "seed";
+        node_ids = [
+          "2"
+          "1"
+        ];
+      }
+    ];
+  }).missingKeys == [ "seed -> 1.seed" ]
+) "node_idsの2番目だけがkeyを持たないことを見逃しました";
 
 # `requiredTypes`が`validTypes`に無い`type`を要求している場合。
 # 引数同士の矛盾なので、ワークフローの側をどう書いても通らない。

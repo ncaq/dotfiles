@@ -243,10 +243,11 @@ let
         ];
       };
     };
+    # `%`の二重化については`image-generation.nix`に理由を書いてある。
     "13" = {
       class_type = "SaveImage";
       inputs = {
-        filename_prefix = "open-webui-edit/open-webui-edit-%year%-%month%-%day%-%hour%-%minute%-%second%";
+        filename_prefix = "open-webui-edit/open-webui-edit-%%year%%-%%month%%-%%day%%-%%hour%%-%%minute%%-%%second%%";
         images = [
           "12"
           0

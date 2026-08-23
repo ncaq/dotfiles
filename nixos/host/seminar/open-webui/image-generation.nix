@@ -316,10 +316,17 @@ let
       };
     };
     # Open WebUIは`SaveImage`か`PreviewImage`の出力だけを画像として拾う。
+    #
+    # `%`を二重にするのはsystemdのspecifierから守るためである。
+    # ワークフローは環境変数としてユニットの`Environment=`に載るので、
+    # `%year%`をそのまま書くと`%y`がユニットファイルのパスへ、
+    # `%month%`の`%m`がマシンIDへ、
+    # `%second%`の`%s`がシェルのパスへ展開されて名前が壊れる。
+    # bulletはワークフローをJSONファイルとして配置するのでこの問題を踏まない。
     "18" = {
       class_type = "SaveImage";
       inputs = {
-        filename_prefix = "open-webui/open-webui-%year%-%month%-%day%-%hour%-%minute%-%second%";
+        filename_prefix = "open-webui/open-webui-%%year%%-%%month%%-%%day%%-%%hour%%-%%minute%%-%%second%%";
         images = [
           "17"
           0

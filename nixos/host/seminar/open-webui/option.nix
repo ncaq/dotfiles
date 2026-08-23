@@ -49,6 +49,27 @@
 
       値はComfyUI自身の既定のポートに合わせてあるが、
       待ち受けるのはseminarのホストなので衝突しない。
+
+      接続先として使うのは`comfyuiUrl`の方で、
+      こちらを直接引くのは待ち受けるCaddyとfirewallだけである。
+    '';
+  };
+
+  options.local.openWebui.comfyuiUrl = lib.mkOption {
+    type = lib.types.str;
+    readOnly = true;
+    default = "http://${config.machineAddresses.open-webui.host}:${toString config.local.openWebui.comfyuiPort}";
+    defaultText = lib.literalMD ''
+      コンテナのvethのhostAddressと`comfyuiPort`から組み立てたURL。
+    '';
+    description = ''
+      コンテナのOpen WebUIから見たComfyUIの接続先。
+
+      画像生成の`image-generation.nix`と画像編集の`image-edit.nix`が、
+      それぞれ別の環境変数へ同じ値を渡す。
+      `local.openWebui.url`と同じ理由でここに置く。
+      それぞれが組み立てると、
+      アドレスやポートを変えた時に片方だけ古い値を指したまま評価が通ってしまう。
     '';
   };
 

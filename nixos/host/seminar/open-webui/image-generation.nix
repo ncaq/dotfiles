@@ -18,8 +18,6 @@
 # bullet側の`anima-standard`を変更した場合は、ここも追随させること。
 { config, ... }:
 let
-  addr = config.machineAddresses.open-webui;
-  port = config.local.openWebui.comfyuiPort;
 
   # `bullet/comfyui/workflow/lib/builder.nix`と同じ値を使う。
   # あちらを変えた時に気付けるよう、由来の分かる名前で束縛しておく。
@@ -392,7 +390,8 @@ in
   local.openWebui.environment = {
     ENABLE_IMAGE_GENERATION = "True";
     IMAGE_GENERATION_ENGINE = "comfyui";
-    COMFYUI_BASE_URL = "http://${addr.host}:${toString port}";
+    # 転送先は`comfyui-backend.nix`が立てたCaddyで、画像編集と共有する。
+    COMFYUI_BASE_URL = config.local.openWebui.comfyuiUrl;
     COMFYUI_WORKFLOW = builtins.toJSON workflow;
     COMFYUI_WORKFLOW_NODES = builtins.toJSON workflowNodes;
 

@@ -30,9 +30,6 @@
 # 速度が要るほど使うなら直接ComfyUIを開けばよい、という判断で正確さを取る。
 { lib, config, ... }:
 let
-  addr = config.machineAddresses.open-webui;
-  port = config.local.openWebui.comfyuiPort;
-
   model = "qwen_image_edit_2511_int8_convrot.safetensors";
 
   workflow = {
@@ -313,7 +310,7 @@ in
     IMAGE_EDIT_MODEL = model;
 
     # 転送先は`comfyui-backend.nix`が立てたCaddyで、画像生成と共有する。
-    IMAGES_EDIT_COMFYUI_BASE_URL = "http://${addr.host}:${toString port}";
+    IMAGES_EDIT_COMFYUI_BASE_URL = config.local.openWebui.comfyuiUrl;
     IMAGES_EDIT_COMFYUI_WORKFLOW = builtins.toJSON workflow;
     IMAGES_EDIT_COMFYUI_WORKFLOW_NODES = builtins.toJSON workflowNodes;
   };

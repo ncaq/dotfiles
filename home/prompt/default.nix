@@ -1,6 +1,7 @@
 # LLMで利用するプロンプトを連結して提供するモジュール。
 {
   lib,
+  pkgs,
   inputs,
   ...
 }:
@@ -23,6 +24,29 @@ let
         map (name: builtins.readFile (lib.path.append dir name)) (lib.attrNames mdFiles);
     in
     lib.concatMap readOneDir dirs;
+  # 文字数の上限を検査した上でテキストをファイルにします。
+  # 上限を超えている場合はビルドを失敗させます。
+  #
+  # `builtins.stringLength`はバイト数を返すため、
+  # 日本語を含むテキストでは文字数と一致せず検査に使えません。
+  # UTF-8の継続バイト(0x80-0xBF)を取り除いてからバイト数を数えると、
+  # ロケール設定に依存せずにコードポイント数が得られます。
+  # `wc -m`はロケール依存でビルド環境では期待通りに動かないため使いません。
+  writeTextWithMaxChars =
+    name: maxChars: text:
+    pkgs.runCommand name
+      {
+        inherit text maxChars;
+        passAsFile = [ "text" ];
+      }
+      ''
+        chars=$(($(tr -d '\200-\277' < "$textPath" | wc -c)))
+        if [ "$maxChars" -lt "$chars" ]; then
+          echo "$name: $chars characters exceed the limit of $maxChars characters" >&2
+          exit 1
+        fi
+        cp "$textPath" "$out"
+      '';
 in
 {
   options.prompt = {
@@ -30,6 +54,11 @@ in
       type = lib.types.str;
       readOnly = true;
       description = "通常のチャット向けのカスタムプロンプトを連結したテキスト";
+    };
+    chatAssistantMini = lib.mkOption {
+      type = lib.types.package;
+      readOnly = true;
+      description = "通常のチャット向けだが入力できる内容が短い場合のテキストファイル、文字数上限を検査済み";
     };
     codingAgent = lib.mkOption {
       type = lib.types.str;
@@ -53,6 +82,18 @@ in
           # 現在の自分の決済方法。
           (builtins.readFile "${inputs.www-ncaq-net}/site/entry/2025-12-28-14-43-14.md")
         ]
+      );
+      # ミニ版は文字数制限の厳しいサービスに貼り付けるためのものなので、
+      # 上限を超えていないことをビルド時に保証します。
+      # Grokのカスタム指示自体は12000文字入りますが、
+      # Custom Agentsの指示欄は1つあたり4000文字であり、
+      # 過去には全体の上限が一時的に4000文字へ縮小されたこともあるため、
+      # 安全側に倒して4000文字を基準にします。
+      chatAssistantMini = writeTextWithMaxChars "chat-assistant-mini.md" 4000 (
+        lib.concatStringsSep "\n---\n\n" (readMdFiles [
+          ./assistant
+          ./output
+        ])
       );
       # codingAgentのcontextは貴重なので、
       # chatAssistantより厳選して少なめにします。

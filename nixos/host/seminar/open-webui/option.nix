@@ -100,8 +100,11 @@
   # 保護されるのはここへ書かれた値だけである。
   # `container.nix`が`//`で最後に重ねるリテラルと、
   # `options.services.open-webui.environment.default`由来の値は対象にならない。
-  # 前者はコンテナの構造を決める固定値で`%`を持たないため、
-  # 今のところ検査の対象へ含める必要がない。
+  #
+  # 前者はコンテナの構造を決める固定値で`%`を持たない。
+  # 後者はnixpkgsが管理する既定値で、
+  # こちらが書き換えるものではない上に同じく`%`を持たない。
+  # どちらも今のところ検査の対象へ含める必要がない。
   config.assertions =
     let
       specifier = import ../../../../lib/systemd-specifier.nix { inherit lib; };

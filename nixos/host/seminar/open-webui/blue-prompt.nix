@@ -12,12 +12,9 @@
   ...
 }:
 let
-  serve = config.local.tailscaleServe.services.open-webui;
-  # `tailscale-serve.nix`が公開しているのと同じ、人がブラウザで開くURL。
-  # Tailscale Serveの転送先はホスト側のCaddyなので、
-  # loopbackを直接叩くのと最終的な到達先もコンテナから見える送信元も変わらない。
-  # 同じホストからの接続でも経路はtailscaledの中で完結する。
-  url = "https://${lib.removePrefix "svc:" serve.service}.${config.local.tailscale.tailnet}";
+  # 人がブラウザで開くのと同じURL。
+  # Open WebUI自身へ渡す`WEBUI_URL`と同じ値を`option.nix`から引く。
+  url = config.local.openWebui.url;
 in
 {
   imports = [ inputs.blue-prompt.nixosModules.default ];

@@ -1,6 +1,28 @@
 # Open WebUIのモジュール同士が共有する値を宣言するオプション。
-{ lib, ... }:
+{ lib, config, ... }:
 {
+  options.local.openWebui.url = lib.mkOption {
+    type = lib.types.str;
+    readOnly = true;
+    default = "https://${lib.removePrefix "svc:" config.local.tailscaleServe.services.open-webui.service}.${config.local.tailscale.tailnet}";
+    defaultText = lib.literalMD ''
+      `tailscaleServe`のService名とtailnetのMagicDNSのsuffixから組み立てたURL。
+    '';
+    description = ''
+      人がブラウザで開くOpen WebUIのURL。
+
+      `tailscale-serve.nix`が公開しているのと同じ名前を指す。
+      Tailscale Serveの転送先はホスト側のCaddyなので、
+      loopbackを直接叩くのと最終的な到達先もコンテナから見える送信元も変わらない。
+      同じホストからの接続でも経路はtailscaledの中で完結する。
+
+      Open WebUI自身へ渡す`WEBUI_URL`と、
+      APIを叩きに行く同期の接続先の両方がこの値を必要とする。
+      それぞれが組み立てると、
+      Service名を変えた時に片方だけ古い名前を指したまま評価が通ってしまう。
+    '';
+  };
+
   options.local.openWebui.ollamaPort = lib.mkOption {
     type = lib.types.port;
     readOnly = true;

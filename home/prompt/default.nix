@@ -24,6 +24,16 @@ let
         map (name: builtins.readFile (lib.path.append dir name)) (lib.attrNames mdFiles);
     in
     lib.concatMap readOneDir dirs;
+  # 連結したプロンプト同士の境界に挟む区切り。
+  # 全ての用途で同じ区切りを使うため、
+  # 変更が一箇所で済むように束縛します。
+  promptSeparator = "\n---\n\n";
+  # AIの振る舞いそのものを決める部分で、
+  # チャット向けのプロンプトはフル版もミニ版もこれを土台にします。
+  assistantAndOutput = readMdFiles [
+    ./assistant
+    ./output
+  ];
   # 文字数の上限を検査した上でテキストをファイルにします。
   # 上限を超えている場合はビルドを失敗させます。
   #
@@ -69,10 +79,9 @@ in
 
   config = {
     prompt = {
-      chatAssistant = lib.concatStringsSep "\n---\n\n" (
-        readMdFiles [
-          ./assistant
-          ./output
+      chatAssistant = lib.concatStringsSep promptSeparator (
+        assistantAndOutput
+        ++ readMdFiles [
           ./environment
           ./user
         ]
@@ -90,15 +99,12 @@ in
       # 過去には全体の上限が一時的に4000文字へ縮小されたこともあるため、
       # 安全側に倒して4000文字を基準にします。
       chatAssistantMini = writeTextWithMaxChars "chat-assistant-mini.md" 4000 (
-        lib.concatStringsSep "\n---\n\n" (readMdFiles [
-          ./assistant
-          ./output
-        ])
+        lib.concatStringsSep promptSeparator assistantAndOutput
       );
       # codingAgentのcontextは貴重なので、
       # chatAssistantより厳選して少なめにします。
       # プログラミングに直接関係ない情報は省きます。
-      codingAgent = lib.concatStringsSep "\n---\n\n" (readMdFiles [
+      codingAgent = lib.concatStringsSep promptSeparator (readMdFiles [
         ./output
         ./environment
         ./coding-agent

@@ -44,7 +44,7 @@ let
   # denoiseを下げた再サンプリングで使うステップ数。
   # KSamplerはdenoiseを下げてもstepsの回数だけサンプリングするため、
   # sigmaの刻み密度を素の生成へ揃えるには`基準のsteps * denoise`にする。
-  # 切り捨てなので`30 * 0.35`は11ではなく10になる。
+  # 積は四捨五入ではなく切り捨てる。
   # 切り捨てを選んだ理由は`stepsForDenoise`の定義に書いてある。
   hiresSteps = stepsForDenoise animaBaseSteps hiresDenoise;
   faceSteps = stepsForDenoise animaBaseSteps faceDenoise;

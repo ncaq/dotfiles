@@ -15,6 +15,7 @@
 # `RewriteEditPrompt`の`free_comfyui_vram`はこの逆向きの経路で、
 # あちらはリライトのためにOllamaを呼ぶ直前に降ろす。
 # こちらは生成が終わった後に降ろして、次にOllamaを使う人のために空けておく。
+# あちらが降ろした重みは、その後の生成でどのみち載り直す。
 #
 # 降ろすかどうかはトグルにする。
 # 連続生成では毎回の載せ直しが効いてくるので、
@@ -61,6 +62,18 @@ class FreeVram:
     def free(self, image: torch.Tensor, enabled: bool) -> tuple[torch.Tensor]:
         if enabled:
             try:
+                # `unload_all_models`だけでも他のプロセスから見た空きは増える。
+                # bulletでAnimaを載せた直後に`/free`で測ると、
+                # 5788MiBがこれだけで1506MiBまで落ちた。
+                # `RewriteEditPrompt`が`unload_all_models`しか呼ばないのは、
+                # そのため片手落ちではない。
+                #
+                # それでも`soft_empty_cache`を続けて呼ぶのは、
+                # 同じ測定で1506MiBが1358MiBまで下がったからである。
+                # 差は148MiBしかないが、
+                # 次に載るOllamaの汎用モデルは32GiBに対して28.8GiBあり、
+                # 全層をGPUへ載せた状態でも空きは2GiB程度しか残らない。
+                # 返せるものは返しておく方が、部分オフロードへ落ちる余地が減る。
                 comfy.model_management.unload_all_models()
                 comfy.model_management.soft_empty_cache(force=True)
                 # 降ろしたことをログに残す。

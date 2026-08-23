@@ -32,6 +32,14 @@ in
       transport http {
         dial_timeout 30s
         response_header_timeout 5m
+        # アイドル接続を抱え続けると、bulletが落ちた後もプールに残った接続へ投げてしまう。
+        # tailnetの経路が消えるだけでソケットは開いたままに見えるため、
+        # 接続し直さない限り`dial_timeout`が効かず、
+        # 失敗を検知するまで`response_header_timeout`の5分を待つことになる。
+        # 既定の2分は長すぎるので、次のリクエストが繋ぎ直す程度まで縮める。
+        # `ollama-backend.nix`が同じ理由で同じ値を使っている。
+        # 生成にかかる時間の長さに比べれば接続確立のオーバーヘッドは誤差レベル。
+        keepalive 5s
       }
       # Tailscale Serviceは名前ごとに証明書とVIPを持つので、
       # Hostヘッダも転送先のものへ揃える。

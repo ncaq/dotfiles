@@ -33,6 +33,7 @@
 # 他の自作ノードが置いている`# pyright:`によるUnknown系の抑制は要らない。
 
 import sys
+import traceback
 
 import comfy.model_management
 import torch
@@ -77,14 +78,22 @@ class FreeVram:
                 # 次の生成が遅い時に、
                 # 載せ直しが理由なのかどうかをジャーナルから判断できるようにする。
                 print("[FreeVram] モデルをVRAMから降ろしました", file=sys.stderr)
-            except Exception as error:
+            except Exception:
                 # 空け損ねても画像は返す。
                 # このノードは保存ノードの手前に挟まるので、
                 # ここで例外を投げると数分かけた生成が保存されないまま失われる。
                 # VRAMの解放は生成結果に対して副次的な処理でしかなく、
                 # 失敗しても次にOllamaがOOMになるだけで、生成物を捨てる理由にはならない。
                 # 副次的な処理の失敗で本筋を止めない方針は`RewriteEditPrompt`と同じである。
-                print(f"[FreeVram] VRAMの解放に失敗しました: {error}", file=sys.stderr)
+                #
+                # 例外の文字列だけでは足りないのでtracebackごと残す。
+                # `CUDA error`系はメッセージを持つが、
+                # 上流のAPIが変わった時の`AttributeError`のように、
+                # どこで何を呼んで失敗したのかが要る場面ほど文字列が短くなる。
+                print(
+                    f"[FreeVram] VRAMの解放に失敗しました:\n{traceback.format_exc()}",
+                    file=sys.stderr,
+                )
         return (image,)
 
 

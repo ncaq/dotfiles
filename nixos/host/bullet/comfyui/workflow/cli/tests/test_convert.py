@@ -150,6 +150,26 @@ def test_unknown_node_type_is_an_error() -> None:
         to_api(graph({"id": 1, "type": "Nonexistent"}), {})
 
 
+def test_nameless_input_is_an_error() -> None:
+    # 名前が読めないまま進むと空文字列をキーにして書き込む。
+    # 本来繋がるべき入力は埋まらないので、
+    # `missing_required`の側でだけ、原因の分からない形で現れる。
+    with pytest.raises(ValueError):
+        to_api(
+            graph(
+                {
+                    "id": 1,
+                    "type": "Saver",
+                    "widgets_values": ["out"],
+                    "inputs": [{"link": 5}],
+                },
+                {"id": 2, "type": "Saver", "widgets_values": ["src"]},
+                links=[[5, 2, 0, 1, 0, "IMAGE"]],
+            ),
+            {"Saver": SAVER},
+        )
+
+
 def test_dangling_link_is_an_error() -> None:
     with pytest.raises(ValueError):
         to_api(

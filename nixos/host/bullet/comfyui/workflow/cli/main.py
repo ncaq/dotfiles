@@ -135,6 +135,20 @@ def post_prompt(authority: str, payload: dict[str, object]) -> object:
     return parsed
 
 
+def positive_int(text: str) -> int:
+    """`--repeat`が受け付ける値へ直す。
+
+    `argparse`の`type`へ渡す。
+    0以下を通すと`range`が空になり、
+    何も投げずに、何のメッセージも出さずに正常終了する。
+    利用者から見ると成功したのに結果が出ない状態と区別が付かない。
+    """
+    value = int(text)
+    if value < 1:
+        raise ValueError(f"1以上が要ります: {value}")
+    return value
+
+
 def parse_value(widget: Widget, text: str) -> object:
     """コマンドラインの文字列をウィジェットの型へ直す。"""
     if widget.kind == "INT":
@@ -171,7 +185,7 @@ def build_parser(name: str, params: list[Parameter]) -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--repeat",
-        type=int,
+        type=positive_int,
         default=1,
         help="同じ設定で投げる回数。seedは1ずつずらします。",
     )

@@ -16,6 +16,9 @@
 
   blue-prompt = {
     claude-code.enable = true;
-    opencode.enable = true;
+    # konokaのhaskell-tasuke:himariとrole-play:himariのスキル名が、
+    # OpenCodeのフラットなスキル名前空間で衝突してビルドが失敗するため、
+    # 応急処置として無効にしています。
+    opencode.enable = false;
   };
 }

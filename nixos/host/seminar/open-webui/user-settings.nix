@@ -65,7 +65,12 @@ let
   profileImage =
     let
       pointer = builtins.readFile "${inputs.www-ncaq-net}/site/favicon.webp";
-      oid = builtins.elemAt (builtins.match ".*oid sha256:([0-9a-f]+).*" pointer) 0;
+      match = builtins.match ".*oid sha256:([0-9a-f]+).*" pointer;
+      oid =
+        if match == null then
+          throw "favicon.webpがgit-lfsのポインタとして読み取れませんでした。git-lfs管理から外れたか、実体そのものに置き換わっています。"
+        else
+          builtins.elemAt match 0;
     in
     pkgs.fetchurl {
       url = "https://www.ncaq.net/favicon.webp";

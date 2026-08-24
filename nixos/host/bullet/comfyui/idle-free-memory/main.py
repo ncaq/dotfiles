@@ -72,6 +72,7 @@ Pythonのアロケータが確保済みの領域をOSへ返しきるとは限ら
 `while True`と`time.sleep`と同居していると回さずに試せないためである。
 """
 
+import http.client
 import json
 import os
 import sys
@@ -167,11 +168,19 @@ def main() -> None:
         try:
             busy = 0 < queue_remaining(get_json(authority, "/prompt"))
             latest = latest_activity(get_json(authority, "/history?max_items=1"))
-        except (OSError, ValueError) as error:
+        except (OSError, ValueError, http.client.HTTPException) as error:
             # ComfyUIの再起動中や、モデルの読み込みで応答が詰まっている間は届かない。
             # 次の周回で回復するので、記録だけ残して続ける。
+            #
             # `urllib`の投げる`URLError`はOSErrorの、
             # `json`の投げる`JSONDecodeError`はValueErrorの下位にある。
+            #
+            # `IncompleteRead`や`RemoteDisconnected`はそのどちらでもなく、
+            # `http.client.HTTPException`の下にいる。
+            # ComfyUIがモデルのロード中や再起動中に接続を途中で切ると起こりうる。
+            # `Restart = "always"`があるので恒久的な停止にはならないが、
+            # プロセスが落ちると`state`が起動時の値へ戻るので、
+            # 解放が最大で`IDLE_SECONDS`分だけ後ろへずれる。
             log(f"状態を取得できませんでした: {error}")
             continue
         now = time.time()
@@ -190,7 +199,8 @@ def main() -> None:
             continue
         try:
             post_json(authority, "/free", FREE_PAYLOAD)
-        except OSError as error:
+        except (OSError, http.client.HTTPException) as error:
+            # 捕捉する範囲を`get_json`側と揃える。理由はそちらのコメントにある。
             log(f"メモリの解放を要求できませんでした: {error}")
             continue
         # 要求が通ってから解放済みにする。

@@ -194,8 +194,14 @@ def to_api(workflow: object, node_defs: dict[str, NodeDef]) -> Prompt:
                 continue
             if link_id not in links:
                 raise ValueError(f"ノード{node_id}のリンク{link_id}が存在しません")
+            input_name = as_text(slot.get("name"))
+            # 名前が読めないまま進むと空文字列をキーにして書き込む。
+            # 本来繋がるべき入力は埋まらないので、
+            # `missing_required`の側でだけ、原因の分からない形で現れる。
+            if not input_name:
+                raise ValueError(f"ノード{node_id}の入力に名前がありません")
             origin, origin_slot = links[link_id]
-            inputs[as_text(slot.get("name"))] = [origin, origin_slot]
+            inputs[input_name] = [origin, origin_slot]
         nodes[node_id] = Node(
             class_type=class_type,
             title=as_text(node.get("title")) or class_type,

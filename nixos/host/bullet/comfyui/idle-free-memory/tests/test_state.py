@@ -62,6 +62,36 @@ def test_missing_history_does_not_move_the_clock() -> None:
     assert should_free is False
 
 
+def test_future_history_is_clamped_to_now() -> None:
+    # 履歴に未来の時刻が1件でも入ると、
+    # 素直に代入したら`now - last_activity`が負のままになり、
+    # しきい値を二度と超えられなくなって解放が永久に止まる。
+    # このプロセスはOllamaのCUDA OOMを防ぐための緩和策なので、
+    # 静かな無効化はGPUを共有する他のサービスへ直接効く。
+    state, should_free = next_state(
+        State(last_activity=0.0, freed=False),
+        now=1000.0,
+        busy=False,
+        latest=99999.0,
+        idle_seconds=IDLE,
+    )
+    assert state.last_activity == 1000.0
+    assert should_free is False
+
+
+def test_future_history_still_clears_freed() -> None:
+    # クランプしても「新しい活動があった」ことは事実なので、
+    # 解放済みのフラグは戻す。
+    state, _ = next_state(
+        State(last_activity=0.0, freed=True),
+        now=1000.0,
+        busy=False,
+        latest=99999.0,
+        idle_seconds=IDLE,
+    )
+    assert state == State(last_activity=1000.0, freed=False)
+
+
 def test_already_freed_does_not_request_again() -> None:
     # しきい値を超え続けている間、同じ要求を投げ続けないことを固定する。
     state, should_free = next_state(

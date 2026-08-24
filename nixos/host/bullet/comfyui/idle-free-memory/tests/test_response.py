@@ -49,6 +49,10 @@ BROKEN_QUEUE_RESPONSES: list[object] = [
     # `queue_remaining`が整数ではない。
     {"exec_info": {"queue_remaining": "3"}},
     {"exec_info": {"queue_remaining": None}},
+    # `bool`は`int`の派生なので素の`isinstance`を通ってしまう。
+    # 通すと`0 < True`が成立して常時busy扱いになり、解放が永久に止まる。
+    {"exec_info": {"queue_remaining": True}},
+    {"exec_info": {"queue_remaining": False}},
 ]
 
 
@@ -84,6 +88,9 @@ BROKEN_HISTORY_ENTRIES: list[object] = [
     {"status": {"messages": [["execution_start", {}]]}},
     # `timestamp`が整数ではない。
     {"status": {"messages": [["execution_start", {"timestamp": "1000"}]]}},
+    # `bool`は`int`の派生なので素の`isinstance`を通ってしまう。
+    # 通すと`True`が1ミリ秒の時刻として扱われる。
+    {"status": {"messages": [["execution_start", {"timestamp": True}]]}},
 ]
 
 

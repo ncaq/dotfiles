@@ -258,7 +258,7 @@ let
         jq --null-input \
           --argjson current "$current" \
           --argjson declared ${lib.escapeShellArg (builtins.toJSON declared)} \
-          --rawfile system ${systemPromptFile} \
+          --rawfile system ${lib.escapeShellArg systemPromptFile} \
           '(($current // {}).ui // {}) + $declared + { system: ($system | rtrimstr("\n")) }'
       )
 
@@ -280,7 +280,7 @@ let
       desiredProfile=$(
         jq --null-input \
           --argjson declared ${lib.escapeShellArg (builtins.toJSON profile)} \
-          --arg image "data:image/webp;base64,$(base64 --wrap 0 ${profileImage})" \
+          --arg image "data:image/webp;base64,$(base64 --wrap 0 ${lib.escapeShellArg profileImage})" \
           '$declared + { profile_image_url: $image }'
       )
 

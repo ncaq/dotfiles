@@ -16,6 +16,21 @@ ComfyUIのAPIには型が無いので、
 from typing import cast
 
 
+def _as_int(value: object) -> int | None:
+    """JSONの整数として読める場合だけ返す。
+
+    `isinstance(value, int)`だけでは`bool`も通る。
+    `bool`が`int`の派生だからである。
+    この関数群の存在意義は壊れた形を弾くことなので、
+    `true`が0や1として流れ込む経路を先に塞ぐ。
+    """
+    if isinstance(value, bool):
+        return None
+    if not isinstance(value, int):
+        return None
+    return value
+
+
 def queue_remaining(parsed: object) -> int:
     """`/prompt`の応答からキューに残っている数を取り出す。
 
@@ -28,8 +43,8 @@ def queue_remaining(parsed: object) -> int:
     exec_info = cast(dict[str, object], parsed).get("exec_info")
     if not isinstance(exec_info, dict):
         raise ValueError("/promptの応答にexec_infoがありませんでした")
-    remaining = cast(dict[str, object], exec_info).get("queue_remaining")
-    if not isinstance(remaining, int):
+    remaining = _as_int(cast(dict[str, object], exec_info).get("queue_remaining"))
+    if remaining is None:
         raise ValueError("/promptのqueue_remainingが整数ではありませんでした")
     return remaining
 
@@ -60,8 +75,8 @@ def message_timestamps(entry: object) -> list[int]:
         data = pair[1]
         if not isinstance(data, dict):
             continue
-        timestamp = cast(dict[str, object], data).get("timestamp")
-        if isinstance(timestamp, int):
+        timestamp = _as_int(cast(dict[str, object], data).get("timestamp"))
+        if timestamp is not None:
             timestamps.append(timestamp)
     return timestamps
 

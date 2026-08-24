@@ -58,8 +58,20 @@
           ExecStart = "${pkgs.python3}/bin/python3 ${./idle-free-memory.py}";
           DynamicUser = true;
           # 待ち続けるのが仕事なので、終了は全て異常である。
+          #
+          # HTTPの失敗はPython側が周回の中で吸収するので、
+          # ここまで来る終了は環境変数の欠落やスクリプト自体の不具合など、
+          # 待っても直らないものが基本になる。
+          # 10秒固定のままだと、
+          # systemdの既定の起動レート制限(10秒に5回)に掛からないため、
+          # 直らない状態で10秒間隔の再起動を永久に繰り返す。
+          #
+          # `lib/container-socket-activation.nix`が`comfyui-proxy`へ入れているものと同じ、
+          # nixpkgsの`ollama-model-loader`由来の指数バックオフで抑える。
           Restart = "always";
           RestartSec = "10s";
+          RestartMaxDelaySec = "2h";
+          RestartSteps = 10;
         };
       };
     };

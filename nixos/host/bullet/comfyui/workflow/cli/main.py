@@ -9,6 +9,7 @@
 
 - UI形式のワークフローをAPI形式へ直す(`convert.py`)
 - App Modeの入力定義をコマンドラインのオプションにする(`params.py`)
+- `{a|b|c}`から1つ選ぶ(`dynamic.py`)
 - `POST /prompt`へ投げて、結果のファイルが出るまで待つ
 
 # なぜ変換を実行時にやるか
@@ -50,6 +51,7 @@ import urllib.request
 from pathlib import Path
 
 import convert
+import dynamic
 import nodedef
 from convert import Prompt
 from jsonutil import as_array, as_object, as_text
@@ -154,7 +156,10 @@ def build_parser(name: str, params: list[Parameter]) -> argparse.ArgumentParser:
     """ワークフロー1つ分のコマンドラインを組み立てる。"""
     parser = argparse.ArgumentParser(
         prog=f"comfy-{name}",
-        description=f"ComfyUIのワークフロー{name}を実行します。",
+        description=(
+            f"ComfyUIのワークフロー{name}を実行します。"
+            "プロンプトには`{a|b|c}`と書けます。投げるたびに1つが選ばれます。"
+        ),
         # 既定値は`--help`の中に自分で書く。
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -239,11 +244,17 @@ def run(
     prompt: Prompt,
     seed: int,
     wait: bool,
+    dynamic_sources: dict[tuple[str, str], str],
 ) -> None:
     """1回分を投げて、待つなら結果を出す。"""
     applied = apply_seed(prompt, seed)
     if applied:
         print(f"seed {seed} を {', '.join(applied)} へ配りました")
+    # 選び直すのは投げる直前である。
+    # `--repeat`で複数回投げる時に、
+    # 毎回違う組み合わせを引かせるためにここへ置く。
+    for target, text in dynamic.expand_into(prompt, dynamic_sources, seed).items():
+        print(f"{target}: {text}")
     response = post_prompt(authority, {"prompt": prompt.api()})
     prompt_id = as_text(as_object(response).get("prompt_id"))
     if not prompt_id:
@@ -293,7 +304,12 @@ def main() -> None:
         args.seed if args.seed is not None else secrets.randbelow(0xFFFF_FFFF_FFFF)
     )
     repeat: int = args.repeat
+    # パラメータを反映した後で集める。
+    # `--positive-prompt`で選択肢を渡す使い方が主なので、
+    # ワークフローに書かれている値だけを見ても足りない。
+    dynamic_sources = dynamic.sources(prompt, node_defs)
     if args.dry_run:
+        dynamic.expand_into(prompt, dynamic_sources, seed)
         json.dump(prompt.api(), sys.stdout, ensure_ascii=False, indent=1)
         print()
         return
@@ -304,6 +320,7 @@ def main() -> None:
             prompt,
             seed=seed + index,
             wait=not args.no_wait,
+            dynamic_sources=dynamic_sources,
         )
 
 

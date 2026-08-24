@@ -75,6 +75,10 @@ class Widget:
     kind: str
     # COMBOの選択肢。それ以外はNone。
     choices: tuple[str, ...] | None
+    # `{a|b|c}`の展開の対象かどうか。
+    # UIではフロントエンドがこの旗を見て値を差し替える。
+    # 詳細は`dynamic.py`にある。
+    dynamic: bool = False
 
 
 @dataclass(frozen=True)
@@ -121,12 +125,36 @@ def _widget_of(name: str, spec: object) -> tuple[Widget | None, dict[str, object
         # `isinstance`が返す`list`は要素の型が不明なままで、
         # そのまま渡すとpyrightがstrictで通さない。
         choices = tuple(as_text(choice) for choice in as_array(entry[0]))
-        return (Widget(name=name, kind="COMBO", choices=choices), options)
+        return (
+            Widget(
+                name=name,
+                kind="COMBO",
+                choices=choices,
+                dynamic=bool(options.get("dynamicPrompts")),
+            ),
+            options,
+        )
     if kind == "COMBO":
         choices = tuple(as_text(choice) for choice in as_array(options.get("options")))
-        return (Widget(name=name, kind="COMBO", choices=choices), options)
+        return (
+            Widget(
+                name=name,
+                kind="COMBO",
+                choices=choices,
+                dynamic=bool(options.get("dynamicPrompts")),
+            ),
+            options,
+        )
     if isinstance(kind, str) and kind in WIDGET_SCALAR_TYPES:
-        return (Widget(name=name, kind=kind, choices=None), options)
+        return (
+            Widget(
+                name=name,
+                kind=kind,
+                choices=None,
+                dynamic=bool(options.get("dynamicPrompts")),
+            ),
+            options,
+        )
     return (None, options)
 
 

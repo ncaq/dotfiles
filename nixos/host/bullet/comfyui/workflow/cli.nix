@@ -26,6 +26,7 @@ let
     root = ./cli;
     fileset = lib.fileset.unions [
       ./cli/convert.py
+      ./cli/dynamic.py
       ./cli/jsonutil.py
       ./cli/main.py
       ./cli/nodedef.py

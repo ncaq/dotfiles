@@ -39,6 +39,22 @@ def test_control_slot_is_kept_out_of_the_inputs() -> None:
     assert controls == {"seed": "randomize"}
 
 
+def test_missing_control_slot_leaves_the_controls_empty() -> None:
+    # 制御ウィジェットの値が書かれていないワークフローでは、
+    # `inputs`は正しく埋まるのに`controls`だけが空になる。
+    # その結果`apply_seed`がこのノードへ届かず、
+    # `--seed`を渡しても同じ画像が出続ける。
+    # 例外は出ないので実機でも気付けない。
+    #
+    # `builder.nix`が必ず値を並べるので、
+    # このリポジトリのワークフローでは起きない。
+    # 手書きのワークフローを足した時に何が起きるかを、
+    # 挙動として固定しておく。
+    inputs, controls = assign_widgets(SAMPLER.slots, [7, 20])
+    assert inputs == {"seed": 7, "steps": 20}
+    assert controls == {}
+
+
 def test_missing_frontend_slot_is_skipped() -> None:
     # `LoadVideo`のアップロードボタンの値は、書かれていないワークフローがある。
     # 素直に前から突き合わせると、以降の名前が全て1つずれる。

@@ -90,7 +90,8 @@ def log(message: str) -> None:
     """journalへ残す。
 
     systemdはstderrをそのままjournaldへ流すので、
-    ロギングの設定を持たずに`journalctl -M comfyui -u`で読める。
+    ロギングの設定を持たずに、
+    `journalctl -M comfyui -u comfyui-idle-free-memory`でそのまま読める。
     バッファに溜めたまま次の確認まで出てこないと追いにくいので毎回流す。
     """
     print(f"[idle-free-memory] {message}", file=sys.stderr, flush=True)

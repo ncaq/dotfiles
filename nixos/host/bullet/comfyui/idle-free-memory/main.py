@@ -35,7 +35,7 @@ ComfyUIはSQLiteへ保存した状態の一部をローカル版では復元で�
 
 `/free`へ`unload_models`と`free_memory`を立てて投げる。
 前者がVRAMの重みを降ろし、後者が実行結果のキャッシュを捨ててRAMを返す。
-`main.py`の`prompt_worker`はキューが空でもフラグを読みに行くので、
+ComfyUI本体の`main.py`の`prompt_worker`はキューが空でもフラグを読みに行くので、
 何も実行していない待機中でもこの要求は効く。
 降ろした後の`gc.collect`と`soft_empty_cache`も本体がやる。
 
@@ -90,7 +90,7 @@ from state import State, next_state
 REQUEST_TIMEOUT_SECONDS = 30
 
 # 解放を指示する本文。
-# `main.py`は`flags.get("unload_models", free_memory)`の形で、
+# ComfyUI本体の`main.py`は`flags.get("unload_models", free_memory)`の形で、
 # `free_memory`を`unload_models`の既定値として読む。
 # つまり`free_memory`だけでも同じ結果になるが、
 # どちらを意図したのかが読めなくなるので両方書く。

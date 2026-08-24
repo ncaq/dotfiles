@@ -53,7 +53,7 @@ in
           # `http://`をこちらで足して完全なURLにすると、
           # Python側で`urlopen`へ渡るのが変数になり、
           # ruffがS310でスキームを確定できないと警告する。
-          # 理由の詳細は`idle-free-memory.py`の冒頭にある。
+          # 理由の詳細は`idle-free-memory/main.py`の冒頭にある。
           COMFYUI_AUTHORITY = "127.0.0.1:${toString config.services.comfyui.port}";
           # 確認の間隔。
           # 活動時刻はComfyUI自身の記録から取るので、

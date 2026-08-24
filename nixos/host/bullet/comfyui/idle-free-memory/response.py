@@ -13,20 +13,37 @@ ComfyUIのAPIには型が無いので、
 壊れた入力を並べたpytestで分岐を固定できる。
 """
 
+import math
 from typing import cast
 
 
-def _as_int(value: object) -> int | None:
-    """JSONの整数として読める場合だけ返す。
+def _as_number(value: object) -> float | None:
+    """JSONの数値として読める場合だけ返す。
 
-    `isinstance(value, int)`だけでは`bool`も通る。
-    `bool`が`int`の派生だからである。
+    `bool`は弾く。
+    `isinstance(value, int)`だけでは`bool`も通ってしまうためである。
+    `bool`が`int`の派生だからで、
     この関数群の存在意義は壊れた形を弾くことなので、
     `true`が0や1として流れ込む経路を先に塞ぐ。
+
+    `float`は受け入れる。
+    上流が浮動小数点数で返すようになった時に、
+    弾くと全件が飛んで`latest_activity`がValueErrorを投げ、
+    呼び出し側が周回を飛ばし続けて解放が二度と走らなくなる。
+    このプロセスが防ごうとしているOOMがそのまま再発するので、
+    厳格に弾くより受け入れて動き続ける方が結果として良い。
+    値はどのみち`/ 1000`して秒にするだけで、
+    キューの残数も`0 <`で比べるだけなので、浮動小数点数でも壊れない。
+
+    有限でない値は弾く。
+    `nan`は比較が常に偽になり、
+    `inf`は`max`を占有してしまうので、どちらも判定の意味を失わせる。
     """
     if isinstance(value, bool):
         return None
-    if not isinstance(value, int):
+    if not isinstance(value, int | float):
+        return None
+    if not math.isfinite(value):
         return None
     return value
 
@@ -49,13 +66,14 @@ def queue_remaining(parsed: object) -> int:
     exec_info = cast(dict[str, object], parsed).get("exec_info")
     if not isinstance(exec_info, dict):
         raise ValueError("/promptの応答にexec_infoがありませんでした")
-    remaining = _as_int(cast(dict[str, object], exec_info).get("queue_remaining"))
+    remaining = _as_number(cast(dict[str, object], exec_info).get("queue_remaining"))
     if remaining is None:
-        raise ValueError("/promptのqueue_remainingが整数ではありませんでした")
-    return remaining
+        raise ValueError("/promptのqueue_remainingが数値ではありませんでした")
+    # 件数なので整数へ落とす。呼び出し側は`0 <`で比べるだけである。
+    return int(remaining)
 
 
-def message_timestamps(entry: object) -> list[int]:
+def message_timestamps(entry: object) -> list[float]:
     """履歴1件が持つ状態メッセージの時刻をミリ秒で集める。
 
     要素は`("execution_start", {...})`のタプルがJSONの配列になったものである。
@@ -71,7 +89,7 @@ def message_timestamps(entry: object) -> list[int]:
     messages = cast(dict[str, object], status).get("messages")
     if not isinstance(messages, list):
         return []
-    timestamps: list[int] = []
+    timestamps: list[float] = []
     for message in cast(list[object], messages):
         if not isinstance(message, list):
             continue
@@ -81,7 +99,7 @@ def message_timestamps(entry: object) -> list[int]:
         data = pair[1]
         if not isinstance(data, dict):
             continue
-        timestamp = _as_int(cast(dict[str, object], data).get("timestamp"))
+        timestamp = _as_number(cast(dict[str, object], data).get("timestamp"))
         if timestamp is not None:
             timestamps.append(timestamp)
     return timestamps

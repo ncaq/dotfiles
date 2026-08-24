@@ -5,7 +5,7 @@
 
     comfy-anima-standard --positive-prompt "1girl, blue hair" --seed 314
 
-やっていることは3つしかない。
+やっていることは以下だけである。
 
 - UI形式のワークフローをAPI形式へ直す(`convert.py`)
 - App Modeの入力定義をコマンドラインのオプションにする(`params.py`)

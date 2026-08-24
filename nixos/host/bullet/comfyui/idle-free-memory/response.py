@@ -86,16 +86,28 @@ def latest_activity(parsed: object) -> float | None:
 
     一度も実行していない場合はNoneを返す。
 
+    件はあるのに時刻が1つも取れなかった場合はValueErrorを投げる。
+    `message_timestamps`は形の合わないものを黙って飛ばすので、
+    ComfyUIが`status.messages`の形やキー名を変えると全件が飛ばされる。
+    ここでNoneを返すと呼び出し側は「一度も実行していない」とみなし、
+    自分の観測だけでアイドルを判定する状態へ静かに退行する。
+    それはこのプロセスが避けようとしている、
+    生成の直後に降ろす動作そのものである。
+    件が0件の場合と区別して、上流の変化に気付けるようにする。
+
     `/history?max_items=1`は`offset`の既定値の-1と組み合わさって、
     `len(history) - max_items`がoffsetになるため新しい方の1件を返す。
     """
     if not isinstance(parsed, dict):
         raise ValueError("/historyがオブジェクトを返しませんでした")
+    entries = cast(dict[str, object], parsed)
     timestamps = [
         timestamp
-        for entry in cast(dict[str, object], parsed).values()
+        for entry in entries.values()
         for timestamp in message_timestamps(entry)
     ]
-    if not timestamps:
-        return None
-    return max(timestamps) / 1000
+    if timestamps:
+        return max(timestamps) / 1000
+    if entries:
+        raise ValueError(f"/historyの{len(entries)}件から時刻を1つも取れませんでした")
+    return None

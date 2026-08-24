@@ -214,6 +214,10 @@ def _overridden_slots(
             found = as_object(spec.get(group)).get(name)
             if found is not None:
                 entry = found
+                # 見つかった時点で打ち切って`required`を優先する。
+                # 続けると同じ名前が両方にある時に`optional`が勝ってしまい、
+                # 両方を別のスロットとして扱う`_declared_slots`と解釈が食い違う。
+                break
         widget, _ = _widget_of(name, entry)
         slots.append(
             Slot(

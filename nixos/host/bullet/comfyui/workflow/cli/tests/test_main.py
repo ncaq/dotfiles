@@ -5,6 +5,7 @@
 
 - `parse_value`: コマンドラインの文字列をウィジェットの型へ直す
 - `collect_outputs`: 履歴から保存されたファイルを拾う
+- `failure_of`: 履歴が失敗を表しているかどうか
 - `positive_int`: `--repeat`が受け付ける範囲
 
 どれもimportして呼ぶだけで確かめられる。
@@ -14,7 +15,7 @@
 """
 
 import pytest
-from main import collect_outputs, parse_value, positive_int
+from main import collect_outputs, failure_of, parse_value, positive_int
 from nodedef import Widget
 
 
@@ -133,6 +134,38 @@ def test_escaping_the_output_directory_is_an_error(item: dict[str, object]) -> N
     # 後からこの結果を開く処理を足した時にパストラバーサルへ育つ。
     with pytest.raises(ValueError):
         collect_outputs(history(item))
+
+
+def test_a_successful_history_is_not_a_failure() -> None:
+    assert failure_of({"status": {"status_str": "success"}}) is None
+
+
+def test_a_history_without_a_status_is_not_a_failure() -> None:
+    # 上流が形を変えた時に、成功した生成を失敗として報告するのは避ける。
+    # 出力が0件かどうかは呼び出し側が別に見る。
+    assert failure_of({}) is None
+
+
+def test_a_failed_history_is_reported() -> None:
+    # ComfyUIは失敗時も履歴を作る。
+    # 見ないと`collect_outputs`が空を返し、
+    # 何も表示せずに終了コード0で終わるので、
+    # 成功したが出力が0件の場合と区別が付かない。
+    assert failure_of({"status": {"status_str": "error"}}) is not None
+
+
+def test_the_failure_carries_the_messages() -> None:
+    # どのノードで何が起きたのかは`messages`にしか無い。
+    reported = failure_of(
+        {
+            "status": {
+                "status_str": "error",
+                "messages": [["execution_error", {"node_type": "KSampler"}]],
+            }
+        }
+    )
+    assert reported is not None
+    assert "KSampler" in reported
 
 
 def test_positive_int_accepts_one() -> None:

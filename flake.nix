@@ -304,6 +304,11 @@
           # ComfyUIの自作カスタムノードのうち、
           # ComfyUI本体に触れない部分のpytest。
           comfyui-custom-node-test = import ./lib/comfyui-custom-node-test.nix { inherit pkgs; };
+          # Open WebUIの利用者ごとの設定を合成するjqのフィルタが、
+          # 意図した通りに合成することを検査するderivation。
+          open-webui-user-settings-merge-test =
+            import ./nixos/host/seminar/open-webui/lib/user-settings-merge-test.nix
+              { inherit pkgs; };
           # 評価時にしか走らない純粋なNixのテストをderivationへ包む。
           #
           # `bullet/comfyui/workflow/lib/*-test.nix`は`validate.nix`が`assert`で走らせるが、
@@ -428,6 +433,7 @@
                 comfyui-api-workflow-test
                 comfyui-custom-node-test
                 git-repo-subscribe
+                open-webui-user-settings-merge-test
                 safetensors-fp16
                 systemd-specifier-test
                 ;

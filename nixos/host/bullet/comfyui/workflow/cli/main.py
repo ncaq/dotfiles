@@ -266,9 +266,7 @@ def collect_outputs(entry: object) -> list[str]:
                 filename = as_text(item.get("filename"))
                 if not filename or as_text(item.get("type")) != "output":
                     continue
-                files.append(
-                    relative_output(as_text(item.get("subfolder")), filename)
-                )
+                files.append(relative_output(as_text(item.get("subfolder")), filename))
     return files
 
 

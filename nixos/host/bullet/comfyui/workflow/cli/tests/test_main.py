@@ -86,9 +86,7 @@ def test_temporary_files_are_skipped() -> None:
     # 入力として置き直しただけのものは`type`が`output`にならない。
     # 拾うと、利用者へ存在しない出力を見せることになる。
     assert (
-        collect_outputs(
-            history({"filename": "a.png", "subfolder": "", "type": "temp"})
-        )
+        collect_outputs(history({"filename": "a.png", "subfolder": "", "type": "temp"}))
         == []
     )
 

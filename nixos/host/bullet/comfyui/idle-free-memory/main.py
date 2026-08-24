@@ -143,6 +143,34 @@ def post_json(authority: str, path: str, payload: dict[str, bool]) -> None:
         response.read()
 
 
+def initial_activity(authority: str) -> float:
+    """ループへ入る前の`last_activity`を決める。
+
+    現在時刻から始めると、
+    このプロセスだけが再起動した時に困る。
+    ComfyUIが何時間も前から放置されていても、
+    履歴の時刻は初期値より古いので拾い直されず、
+    解放まで改めて`IDLE_SECONDS`待つことになる。
+    載ったままのモデルを取りこぼさないという意図が半分しか効かない。
+
+    履歴が取れたらそれを使う。
+    一度も実行していない場合と、
+    ComfyUIがまだ起動しきっていない場合は現在時刻へ倒す。
+    その場合に待つ時間は、
+    どのみち何も載っていないか、これから載るところなので惜しくない。
+    """
+    now = time.time()
+    try:
+        latest = latest_activity(get_json(authority, "/history?max_items=1"))
+    except (OSError, ValueError, http.client.HTTPException) as error:
+        log(f"起動時の履歴を取得できませんでした: {error}")
+        return now
+    if latest is None:
+        return now
+    # 未来の時刻はループの中と同じく現在時刻へ倒す。
+    return min(latest, now)
+
+
 def main() -> None:
     # 受け取るのはホストとポートだけで、スキームはこのファイルが決める。
     authority = os.environ["COMFYUI_AUTHORITY"]
@@ -155,7 +183,7 @@ def main() -> None:
     # 載っていなければ`unload_all_models`は何もしないので害は無い。
     # そのかわり、このプロセスだけが再起動した場合に、
     # 載ったままのモデルを取りこぼさずに済む。
-    state = State(last_activity=time.time(), freed=False)
+    state = State(last_activity=initial_activity(authority), freed=False)
 
     log(
         f"{interval_seconds:.0f}秒ごとに確認し、{idle_seconds:.0f}秒のアイドルで解放します"

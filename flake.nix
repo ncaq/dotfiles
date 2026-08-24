@@ -307,6 +307,9 @@
           # アイドル解放の常駐プロセスのうち、
           # 応答の解釈とアイドルの判定のpytest。
           comfyui-idle-free-memory-test = import ./lib/comfyui-idle-free-memory-test.nix { inherit pkgs; };
+          # ワークフローを名前で呼ぶコマンドのうち、
+          # ノード定義の読み取りと変換とフラグ名の決め方のpytest。
+          comfyui-workflow-cli-test = import ./lib/comfyui-workflow-cli-test.nix { inherit pkgs; };
           # Open WebUIの利用者ごとの設定を合成するjqのフィルタが、
           # 意図した通りに合成することを検査するderivation。
           open-webui-user-settings-merge-test =
@@ -436,6 +439,7 @@
                 comfyui-api-workflow-test
                 comfyui-custom-node-test
                 comfyui-idle-free-memory-test
+                comfyui-workflow-cli-test
                 git-repo-subscribe
                 open-webui-user-settings-merge-test
                 safetensors-fp16

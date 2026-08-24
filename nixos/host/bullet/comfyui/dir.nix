@@ -29,9 +29,7 @@
   ...
 }:
 let
-  # コンテナ内から見える出力ディレクトリ。
-  # ncaqがseminar上で見るパスと揃えて分かりやすくする。
-  outputDir = "/mnt/chihiro/comfyui-output";
+  inherit (config.local.comfyui) outputDir;
   # コンテナ専用CIFSマウントのホスト側パス。
   # 親ディレクトリを0700にしてホストの一般ユーザから隠す。
   hostMountParent = "/run/comfyui-cifs";
@@ -43,7 +41,21 @@ let
     ;
 in
 {
-  containers.comfyui = {
+  options.local.comfyui.outputDir = lib.mkOption {
+    type = lib.types.str;
+    default = "/mnt/chihiro/comfyui-output";
+    description = ''
+      ComfyUIが画像や動画を書き出すディレクトリ。
+
+      コンテナ内から見えるパスだが、
+      ホストからも`/mnt/chihiro`のCIFSマウント越しに同じパスで見える。
+      そのため`workflow/cli.nix`のコマンドは、
+      この値をそのまま利用者へ見せるパスとして使える。
+
+      ncaqがseminar上で見るパスとも揃えてある。
+    '';
+  };
+  config.containers.comfyui = {
     config = {
       services.comfyui.extraArgs = [
         "--output-directory"
@@ -56,7 +68,7 @@ in
     # 誰でも書けるモードのマウントなのでidmapは不要。
     extraFlags = [ "--bind=${hostMountPoint}:${outputDir}" ];
   };
-  systemd = {
+  config.systemd = {
     mounts = [
       {
         # 資格情報が展開されてからマウントする。

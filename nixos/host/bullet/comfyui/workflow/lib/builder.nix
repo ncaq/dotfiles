@@ -294,6 +294,12 @@ let
       (mkNode {
         id = 2;
         type = "CLIPTextEncode";
+        # ポジティブとネガティブはどちらも`CLIPTextEncode`の`text`なので、
+        # 名前で区別できるのはこのタイトルだけである。
+        # `workflow/cli.nix`のコマンドは衝突したウィジェット名をタイトルへ譲るので、
+        # ここが無いと`--node2-text`のようなフラグになる。
+        # `anima-standard`が自前で置いている同じ役割のノードと文言も揃える。
+        title = "Positive Prompt";
         pos = [
           420
           60
@@ -310,6 +316,7 @@ let
       (mkNode {
         id = 3;
         type = "CLIPTextEncode";
+        title = "Negative Prompt";
         pos = [
           420
           280

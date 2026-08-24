@@ -167,7 +167,16 @@ def main() -> None:
         time.sleep(interval_seconds)
         try:
             busy = 0 < queue_remaining(get_json(authority, "/prompt"))
-            latest = latest_activity(get_json(authority, "/history?max_items=1"))
+            # busyなら`next_state`は履歴を見ずに現在時刻で上書きするので、
+            # 引いても結果に影響しない。
+            # 300秒に1回のループバックHTTPで絶対量は小さいが、
+            # 相手はComfyUIのメインループと同じプロセスのハンドラなので、
+            # 生成中に余計な仕事をさせない。
+            latest = (
+                None
+                if busy
+                else latest_activity(get_json(authority, "/history?max_items=1"))
+            )
         except (OSError, ValueError, http.client.HTTPException) as error:
             # ComfyUIの再起動中や、モデルの読み込みで応答が詰まっている間は届かない。
             # 次の周回で回復するので、記録だけ残して続ける。

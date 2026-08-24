@@ -24,6 +24,26 @@ def test_busy_resets_the_clock() -> None:
     assert should_free is False
 
 
+def test_busy_ignores_history() -> None:
+    # busyなら履歴は結果に影響しない。
+    # 影響しないものを引かずに済ませられることを、呼び出し側の根拠として固定する。
+    with_history, _ = next_state(
+        State(last_activity=0.0, freed=True),
+        now=1000.0,
+        busy=True,
+        latest=500.0,
+        idle_seconds=IDLE,
+    )
+    without_history, _ = next_state(
+        State(last_activity=0.0, freed=True),
+        now=1000.0,
+        busy=True,
+        latest=None,
+        idle_seconds=IDLE,
+    )
+    assert with_history == without_history
+
+
 def test_newer_history_is_picked_up() -> None:
     # 確認と確認の間に始まって終わった生成を拾い直す経路。
     # 拾ったら解放済みのフラグも戻す。

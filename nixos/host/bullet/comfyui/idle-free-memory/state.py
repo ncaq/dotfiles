@@ -50,9 +50,20 @@ def next_state(
     """
     if busy:
         return (State(last_activity=now, freed=False), False)
-    if latest is not None and state.last_activity < latest:
-        # 確認と確認の間に始まって終わった生成をここで拾う。
-        state = State(last_activity=latest, freed=False)
+    if latest is not None:
+        # 未来の時刻は現在時刻へ倒す。
+        # コンテナ内の時刻ずれや、
+        # 履歴を書ける立場が未来のタイムスタンプを1件でも記録した場合に、
+        # そのまま代入すると`now - last_activity`が負のままになる。
+        # しきい値を二度と超えられなくなって解放が永久に止まり、
+        # GPUを共有する他のサービスへ直接効いてしまう。
+        #
+        # 無視せず倒すのは、
+        # 未来を指していても「新しい活動があった」ことは事実だからである。
+        activity = min(latest, now)
+        if state.last_activity < activity:
+            # 確認と確認の間に始まって終わった生成をここで拾う。
+            state = State(last_activity=activity, freed=False)
     if state.freed:
         return (state, False)
     if now - state.last_activity < idle_seconds:

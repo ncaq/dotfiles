@@ -174,9 +174,14 @@ def main() -> None:
             # `json`の投げる`JSONDecodeError`はValueErrorの下位にある。
             log(f"状態を取得できませんでした: {error}")
             continue
+        now = time.time()
+        if latest is not None and now < latest:
+            # `next_state`が現在時刻へ倒すので判定は狂わないが、
+            # 倒したこと自体は時刻ずれの兆候なので記録しておく。
+            log(f"履歴の時刻が{latest - now:.0f}秒だけ未来を指しています")
         state, should_free = next_state(
             state,
-            now=time.time(),
+            now=now,
             busy=busy,
             latest=latest,
             idle_seconds=idle_seconds,

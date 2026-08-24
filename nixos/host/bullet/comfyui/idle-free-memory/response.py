@@ -35,6 +35,12 @@ def queue_remaining(parsed: object) -> int:
     """`/prompt`の応答からキューに残っている数を取り出す。
 
     実行中のものも含まれるので、0でなければ何かしら動いている。
+
+    形が合わない場合はValueErrorを投げる。
+    応答がオブジェクトでない、
+    `exec_info`が無いかオブジェクトでない、
+    `queue_remaining`が数値でない、の3経路がある。
+    呼び出し側はこれを捕まえてその周回を飛ばす。
     """
     if not isinstance(parsed, dict):
         raise ValueError("/promptがオブジェクトを返しませんでした")

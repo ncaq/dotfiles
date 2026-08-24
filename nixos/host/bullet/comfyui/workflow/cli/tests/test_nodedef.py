@@ -137,6 +137,27 @@ def test_frontend_widget_slots_override_the_definition() -> None:
     assert node_def.widget("text") == Widget(name="text", kind="STRING", choices=None)
 
 
+def test_frontend_widget_slots_prefer_the_required_definition() -> None:
+    # 同じ名前が`required`と`optional`の両方にある時の解釈を固定する。
+    # `_declared_slots`は両方を別のスロットとして扱うので、
+    # 書き写した側だけが後から見た方で上書きすると、
+    # 同じモジュールの中で解釈が食い違う。
+    node_def = parse(
+        {
+            "Lora Loader (LoraManager)": {
+                "input": {
+                    "required": {"text": spec("STRING")},
+                    "optional": {"text": spec("COMBO", options=["a", "b"])},
+                },
+                "input_order": {"required": ["text"], "optional": ["text"]},
+            }
+        }
+    )["Lora Loader (LoraManager)"]
+    assert node_def.widget("text") == Widget(
+        name="text", kind="STRING", choices=None, dynamic=False
+    )
+
+
 def test_required_names_are_kept() -> None:
     node_def = parse(
         {"Example": definition(("model", spec("MODEL")), ("steps", spec("INT")))}

@@ -15,6 +15,7 @@
 #
 # 宛先がループバックになるので、
 # vethのアドレスもコンテナのfirewallも関係しなくなる。
+{ hardening, ... }:
 {
   containers.comfyui.config =
     {
@@ -48,19 +49,18 @@
           # 短くすると、少し考えてから次の生成を回す間に降ろされて載せ直しになる。
           IDLE_SECONDS = "600";
         };
-        serviceConfig =
-          # `hardening`は`flake.nix`のspecialArgs経由でホストのモジュールへ配られるが、
-          # コンテナの中のモジュールへは伝播しない。
-          # 引数を取らない素のimportなので、ここで直接読む。
-          (import ../../../../lib/systemd-hardening.nix).network // {
-            # ループバックへHTTPを投げるだけなので、
-            # 標準ライブラリしか使わないPythonをそのまま動かせる。
-            ExecStart = "${pkgs.python3}/bin/python3 ${./idle-free-memory.py}";
-            DynamicUser = true;
-            # 待ち続けるのが仕事なので、終了は全て異常である。
-            Restart = "always";
-            RestartSec = "10s";
-          };
+        # `hardening`はこのファイル自身がホスト側のモジュールとして受け取ったものである。
+        # コンテナの中のモジュールへはモジュール引数としては渡らないが、
+        # ここはクロージャの内側なのでそのまま参照できる。
+        serviceConfig = hardening.network // {
+          # ループバックへHTTPを投げるだけなので、
+          # 標準ライブラリしか使わないPythonをそのまま動かせる。
+          ExecStart = "${pkgs.python3}/bin/python3 ${./idle-free-memory.py}";
+          DynamicUser = true;
+          # 待ち続けるのが仕事なので、終了は全て異常である。
+          Restart = "always";
+          RestartSec = "10s";
+        };
       };
     };
 }

@@ -2,10 +2,17 @@
 #
 # `environment.nix`が扱うインスタンス全体の設定は`config`表に入り、
 # 0.11.0ではその鍵の全てに対応する環境変数がある。
-# 対してここで扱うのは`user`表の`settings`列に入るJSONで、
+# 対してここで扱うのは`user`表に入る利用者ごとのデータで、
 # 環境変数からは一切届かず、HTTP APIで書き込むしかない。
 # 認証を無効にしていて利用者は一人しかいないが、
 # 置き場としては利用者ごとのデータのままである。
+#
+# 扱うのは2種類ある。
+# `settings`列に入るUIの挙動のJSONと、
+# `name`や`profile_image_url`のようなプロフィールの列である。
+# 受け口のAPIは別々だが、
+# どちらもUIの設定画面から触る同じ性質のものなので1つの同期にまとめる。
+# サインインで得たトークンも共有できる。
 #
 # `ENABLE_PERSISTENT_CONFIG`が効くのは`config`表だけなので、
 # こちらはDBへそのまま永続する。
@@ -16,12 +23,54 @@
   lib,
   pkgs,
   config,
+  inputs,
   username,
   hardening,
   ...
 }:
 let
   url = config.local.openWebui.url;
+
+  # プロフィールの列のうち画像以外の宣言。
+  #
+  # `UpdateProfileForm`の任意の列は送らなくても`None`として書かれるため、
+  # 書かないことがそのまま空にするという宣言になる。
+  # `bio`を省いているのは空のままにしたいからで、書き忘れではない。
+  #
+  # `gender`はUIのSettingsSelectが持つ選択肢から取る。
+  # 空と`male`と`female`と、自由入力の`custom`がある。
+  profile = {
+    name = "エヌユル";
+    gender = "male";
+    date_of_birth = "1996-01-25";
+  };
+
+  # プロフィールのアイコン。
+  #
+  # www.ncaq.netのfaviconと同じ絵にする。
+  # 寸法は470x470で、
+  # UIから上げた時に縮む版とは大きさが違うが元は同じである。
+  #
+  # 実体はinputsの中に無い。
+  # あちらはgit-lfsで管理されていて、
+  # flakeが取得するのはoidとサイズだけを書いたポインタである。
+  # `git+https`の`lfs=1`はNixが持っている機能だが、
+  # GitHubのbatch APIが422を返すため今のところ使えない。
+  #
+  # そこで本番のサイトから取る。
+  # ハッシュはポインタに書かれたoidをそのまま使えるので、
+  # 手で書き写す必要も、inputsの更新に合わせて直す必要も無い。
+  # サイトのデプロイがinputsのリビジョンへ追い付いていなければ、
+  # ハッシュが合わずにビルドが落ちて気付ける。
+  profileImage =
+    let
+      pointer = builtins.readFile "${inputs.www-ncaq-net}/site/favicon.webp";
+      oid = builtins.elemAt (builtins.match ".*oid sha256:([0-9a-f]+).*" pointer) 0;
+    in
+    pkgs.fetchurl {
+      url = "https://www.ncaq.net/favicon.webp";
+      sha256 = oid;
+    };
 
   # 人がブラウザで新しい会話を始めた時に既定で効くシステムプロンプト。
   #
@@ -151,6 +200,8 @@ let
   sync = pkgs.writeShellApplication {
     name = "open-webui-user-settings-sync";
     runtimeInputs = [
+      # `base64`のために要る。
+      pkgs.coreutils
       pkgs.curl
       pkgs.jq
     ];
@@ -208,16 +259,45 @@ let
       # コンテナが起動するたびに`updated_at`だけが進むのを避けるためである。
       if [ "$(jq --compact-output --sort-keys '(. // {}).ui // {}' <<<"$current")" = "$(jq --compact-output --sort-keys . <<<"$next")" ]; then
         echo "利用者の設定は宣言と一致しています"
-        exit 0
+      else
+        jq --null-input --argjson ui "$next" '{ ui: $ui }' |
+          curl --fail --silent --show-error --max-time 30 --output /dev/null \
+            --request POST "$url/api/v1/users/user/settings/update" \
+            --header "Authorization: Bearer $token" \
+            --header 'Content-Type: application/json' \
+            --data @-
+        echo "利用者の設定を宣言の内容へ更新しました"
       fi
 
-      jq --null-input --argjson ui "$next" '{ ui: $ui }' |
+      # ここからはプロフィールで、受け口も表の列も設定とは別になる。
+      desiredProfile=$(
+        jq --null-input \
+          --argjson declared ${lib.escapeShellArg (builtins.toJSON profile)} \
+          --arg image "data:image/webp;base64,$(base64 --wrap 0 ${profileImage})" \
+          '$declared + { profile_image_url: $image }'
+      )
+
+      # 比較する列を宣言の側から導く。
+      # 応答には`email`や`role`のようにこちらが決めない列も並ぶので、
+      # 固定で書くと宣言を増やした時に比較へ足し忘れる。
+      currentProfile=$(
+        curl --fail --silent --show-error --max-time 30 \
+          --header "Authorization: Bearer $token" \
+          "$url/api/v1/auths/" |
+          jq --argjson desired "$desiredProfile" \
+            '. as $current | $desired | keys | map({ key: ., value: $current[.] }) | from_entries'
+      )
+
+      if [ "$(jq --compact-output --sort-keys . <<<"$currentProfile")" = "$(jq --compact-output --sort-keys . <<<"$desiredProfile")" ]; then
+        echo "プロフィールは宣言と一致しています"
+      else
         curl --fail --silent --show-error --max-time 30 --output /dev/null \
-          --request POST "$url/api/v1/users/user/settings/update" \
+          --request POST "$url/api/v1/auths/update/profile" \
           --header "Authorization: Bearer $token" \
           --header 'Content-Type: application/json' \
-          --data @-
-      echo "利用者の設定を宣言の内容へ更新しました"
+          --data @- <<<"$desiredProfile"
+        echo "プロフィールを宣言の内容へ更新しました"
+      fi
     '';
   };
 in

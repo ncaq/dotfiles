@@ -1,6 +1,6 @@
 # アイドル中のComfyUIにメモリを解放させる常駐プロセスを、コンテナの中で動かす。
 #
-# 何をどう判断して解放するかは`idle-free-memory.py`の先頭に書いてある。
+# 何をどう判断して解放するかは`idle-free-memory/main.py`の先頭に書いてある。
 #
 # ホスト側のサービスにしない理由は寿命の管理である。
 # ComfyUIのコンテナはソケットアクティベーションで起きるので、
@@ -15,7 +15,23 @@
 #
 # 宛先がループバックになるので、
 # vethのアドレスもコンテナのfirewallも関係しなくなる。
-{ hardening, ... }:
+{
+  lib,
+  hardening,
+  ...
+}:
+let
+  # コンテナのstoreへ持ち込むのは動かすものだけにする。
+  # ディレクトリをそのまま渡すとテストまで付いてくる。
+  source = lib.fileset.toSource {
+    root = ./idle-free-memory;
+    fileset = lib.fileset.unions [
+      ./idle-free-memory/main.py
+      ./idle-free-memory/response.py
+      ./idle-free-memory/state.py
+    ];
+  };
+in
 {
   containers.comfyui.config =
     {
@@ -55,7 +71,11 @@
         serviceConfig = hardening.network // {
           # ループバックへHTTPを投げるだけなので、
           # 標準ライブラリしか使わないPythonをそのまま動かせる。
-          ExecStart = "${pkgs.python3}/bin/python3 ${./idle-free-memory.py}";
+          #
+          # `main.py`を直接指すと、
+          # Pythonが置かれたディレクトリをsys.pathの先頭へ入れるので、
+          # 隣の`response.py`と`state.py`が素のモジュールとして解決される。
+          ExecStart = "${pkgs.python3}/bin/python3 ${source}/main.py";
           DynamicUser = true;
           # 待ち続けるのが仕事なので、終了は全て異常である。
           #

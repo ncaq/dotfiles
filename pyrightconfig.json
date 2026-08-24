@@ -16,6 +16,10 @@
       "extraPaths": ["pkgs/safetensors-fp16", "pkgs/safetensors-fp16/tests"]
     },
     {
+      "root": "nixos/host/bullet/comfyui/idle-free-memory",
+      "extraPaths": ["nixos/host/bullet/comfyui/idle-free-memory"]
+    },
+    {
       "root": "nixos/host/bullet/comfyui/custom-node/tests",
       "extraPaths": [
         "nixos/host/bullet/comfyui/custom-node",

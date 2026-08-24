@@ -9,7 +9,8 @@
   何を検査するか:
     `nodedef.py`のノード定義の読み取りと、
     `convert.py`のUI形式からAPI形式への変換と、
-    `params.py`のフラグ名の決め方を対象にする。
+    `params.py`のフラグ名の決め方と、
+    `dynamic.py`の`{a|b|c}`の展開を対象にする。
 
     どれも実機で確かめにくい。
     変換の結果が1つずれていても、
@@ -40,6 +41,7 @@ let
     fileset = lib.fileset.unions [
       (cli + "/tests")
       (cli + "/convert.py")
+      (cli + "/dynamic.py")
       (cli + "/jsonutil.py")
       (cli + "/nodedef.py")
       (cli + "/params.py")

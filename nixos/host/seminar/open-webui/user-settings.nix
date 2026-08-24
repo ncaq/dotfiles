@@ -271,15 +271,23 @@ let
 
       # 利用者の設定が一度も書かれていなければ応答はnullになる。
       #
-      # ファイルの末尾の改行を落とすのは、
-      # UIのテキストエリアが持つ値と揃えるためである。
-      # 人が入力欄で書いた場合は末尾に改行が付かない。
+      # マージのフィルタは`lib/user-settings-merge.jq`にあり、
+      # `lib/user-settings-merge-test.nix`が同じファイルを検査する。
+      # `nixos/host/seminar/open-webui/`直下ではなく`lib/`に置くのは、
+      # このディレクトリの`default.nix`が`importDirModules`で直下の`.nix`ファイルを
+      # 全てNixOSモジュールとして取り込むため、
+      # モジュールではないテストのderivationを直下に置くと巻き込まれてしまうからである。
+      #
+      # フィルタはパスのまま渡さず`builtins.readFile`で文字列として埋める。
+      # このファイルはflakeの自己ソースの中にあるので、
+      # パスのまま文字列補間してもストアへのコンテキストが付かない。
+      # 実機のクロージャに含まれない参照になり、GCで消えても気付けなくなる。
       next=$(
         jq --null-input \
           --argjson current "$current" \
           --argjson declared ${lib.escapeShellArg (builtins.toJSON declared)} \
           --rawfile system ${lib.escapeShellArg systemPromptFile} \
-          '(($current // {}).ui // {}) + $declared + { system: ($system | rtrimstr("\n")) }'
+          ${lib.escapeShellArg (builtins.readFile ./lib/user-settings-merge.jq)}
       )
 
       # 差分が無い時に書きに行かないのは、

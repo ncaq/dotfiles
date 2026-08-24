@@ -20,17 +20,24 @@ def spec(kind: object, **options: object) -> list[object]:
     return [kind, options]
 
 
-def definition(*inputs: tuple[str, object]) -> dict[str, object]:
-    """`/object_info`のノード定義1つ分を、必須入力の並びから組み立てる。"""
+def definition(
+    *inputs: tuple[str, object], optional: tuple[tuple[str, object], ...] = ()
+) -> dict[str, object]:
+    """`/object_info`のノード定義1つ分を、入力の並びから組み立てる。"""
     return {
-        "input": {"required": dict(inputs), "optional": {}},
-        "input_order": {"required": [name for name, _ in inputs], "optional": []},
+        "input": {"required": dict(inputs), "optional": dict(optional)},
+        "input_order": {
+            "required": [name for name, _ in inputs],
+            "optional": [name for name, _ in optional],
+        },
     }
 
 
-def slots(*inputs: tuple[str, object]) -> list[str | None]:
+def slots(
+    *inputs: tuple[str, object], optional: tuple[tuple[str, object], ...] = ()
+) -> list[str | None]:
     """組み立てたスロットの名前だけを並べる。Noneはフロントエンドだけのもの。"""
-    node_def = parse({"Example": definition(*inputs)})["Example"]
+    node_def = parse({"Example": definition(*inputs, optional=optional)})["Example"]
     return [
         slot.widget.name if slot.widget is not None else None for slot in node_def.slots
     ]
@@ -47,6 +54,26 @@ def test_force_input_does_not_take_a_slot() -> None:
     assert slots(("steps", spec("INT", forceInput=True)), ("cfg", spec("FLOAT"))) == [
         "cfg"
     ]
+
+
+def test_optional_widgets_come_after_the_required_ones() -> None:
+    # `optional`のウィジェットも`widgets_values`の位置を占める。
+    # `FaceDetailer`の`inpaint_model`から後ろがこれに当たる。
+    # required→optionalという並びの仮定はここでしか表現されていないので、
+    # ずれると全ての名前が1つずれる。
+    assert slots(
+        ("steps", spec("INT")),
+        optional=(("cycle", spec("INT")), ("tiled_encode", spec("BOOLEAN"))),
+    ) == ["steps", "cycle", "tiled_encode"]
+
+
+def test_optional_sockets_do_not_take_a_slot() -> None:
+    # `optional`の側にもソケットでしか繋げない入力が混ざる。
+    # `FaceDetailer`の`sam_model_opt`がこれで、飛ばさないと以降がずれる。
+    assert slots(
+        ("steps", spec("INT")),
+        optional=(("sam_model_opt", spec("SAM_MODEL")), ("cycle", spec("INT"))),
+    ) == ["steps", "cycle"]
 
 
 def test_seed_gets_an_implicit_control_slot() -> None:

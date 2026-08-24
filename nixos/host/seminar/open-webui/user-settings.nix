@@ -211,8 +211,15 @@ let
       # コンテナがbootした時点ではまだOpen WebUIはlistenしていない。
       # 埋め込みモデルの取得やDB migrationを伴う起動では待ち時間が長くなるため、
       # 接続が拒否される間も再試行して起動を待つ。
+      #
+      # 猶予は回数ではなく`--retry-max-time`で決める。
+      # 接続を拒否される間は1回の試行が即座に返るため、
+      # 回数で数えると猶予がそのまま`--retry-delay`の累計になり、
+      # 30回では1分にしかならない。
+      # `blue-prompt.nix`が上流のヘルス待ちに見積もる3分半にも届かず、
+      # 寒い起動では待ち切る前に諦めてしまう。
       curl --fail --silent --show-error --output /dev/null \
-        --retry 30 --retry-delay 2 --retry-connrefused --max-time 10 \
+        --retry 300 --retry-delay 2 --retry-max-time 600 --retry-connrefused --max-time 10 \
         "$url/health"
 
       # `WEBUI_AUTH`を無効にしたインスタンスのadminとしてサインインする。
@@ -325,6 +332,14 @@ in
       RemainAfterExit = true;
       ExecStart = lib.getExe sync;
       DynamicUser = true;
+
+      # ヘルス待ちだけで最大10分を使うため、
+      # oneshotの既定の90秒では待ち切る前に殺される。
+      # 待った後のAPIの呼び出しも合わせて余裕を持たせる。
+      #
+      # 上限を外さないのは`blue-prompt.nix`と同じ理由で、
+      # 想定を超えた時にfailとしてジャーナルに残って気付けるようにするためである。
+      TimeoutStartSec = "15m";
 
       # 恒久的に起動できない状態で短い間隔の再試行を繰り返さないよう、
       # `blue-prompt.nix`と同じ指数バックオフを使う。

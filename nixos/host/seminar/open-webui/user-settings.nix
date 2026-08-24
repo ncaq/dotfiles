@@ -225,6 +225,12 @@ let
       # `WEBUI_AUTH`を無効にしたインスタンスのadminとしてサインインする。
       # この組は`routers/auths.py`のsigninが無効時に使う定数そのもので、
       # 秘密ではなく、認証が無効である以上これ以外の資格情報は存在しない。
+      #
+      # 得たトークンは以降の`Authorization`ヘッダとしてcurlの引数に載るため、
+      # 実行中は同じホストの他の利用者から`/proc`で読める。
+      # それでも隠さないのは隠しても何も守れないからで、
+      # このスクリプト自体が誰でも読めるストアにあり、
+      # 上の資格情報を読めば同じトークンをいつでも取り直せる。
       token=$(
         curl --fail --silent --show-error --max-time 30 \
           --request POST "$url/api/v1/auths/signin" \

@@ -192,7 +192,9 @@ def build_parser(name: str, params: list[Parameter]) -> argparse.ArgumentParser:
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="投げずにAPI形式のプロンプトを表示します。",
+        help="投げずにAPI形式のプロンプトを表示します。"
+        "seedの配布も選択肢の展開も済ませた、実際に投げる内容です。"
+        "`--repeat`を付けても最初の1回分だけを表示します。",
     )
     parser.add_argument(
         "--no-wait",
@@ -346,6 +348,10 @@ def main() -> None:
     # ワークフローに書かれている値だけを見ても足りない。
     dynamic_sources = dynamic.sources(prompt, node_defs)
     if args.dry_run:
+        # `run`と同じ順で同じものを通す。
+        # ここは「何が投げられるのか」を確かめるための出口なので、
+        # 実際に投げる内容と食い違っていては用を成さない。
+        apply_seed(prompt, seed)
         dynamic.expand_into(prompt, dynamic_sources, seed)
         json.dump(prompt.api(), sys.stdout, ensure_ascii=False, indent=1)
         print()

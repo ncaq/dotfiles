@@ -36,6 +36,12 @@ def test_queue_remaining_accepts_zero() -> None:
     assert queue_remaining({"exec_info": {"queue_remaining": 0}}) == 0
 
 
+def test_queue_remaining_accepts_float() -> None:
+    # 上流が数値を浮動小数点数で返すようになっても止まらないようにする。
+    # 弾くと`0 <`の比較ができずに毎周回が例外になり、解放が二度と走らない。
+    assert queue_remaining({"exec_info": {"queue_remaining": 3.0}}) == 3
+
+
 # 型を明示しないと、`{}`の要素の型が不明なまま`parametrize`へ渡ることになる。
 BROKEN_QUEUE_RESPONSES: list[object] = [
     # オブジェクトですらない。
@@ -96,6 +102,20 @@ BROKEN_HISTORY_ENTRIES: list[object] = [
 
 @pytest.mark.parametrize("entry", BROKEN_HISTORY_ENTRIES)
 def test_message_timestamps_skips_broken_shape(entry: object) -> None:
+    assert message_timestamps(entry) == []
+
+
+def test_message_timestamps_accepts_float() -> None:
+    # 時刻も同じ。弾くと全件が飛んで`latest_activity`がValueErrorを投げ続ける。
+    # 症状は5分おきのログ1行だけで、防ごうとしていたOOMがそのまま再発する。
+    entry = history(1000.5)["8f0e"]
+    assert message_timestamps(entry) == [1000.5]
+
+
+@pytest.mark.parametrize("timestamp", [float("nan"), float("inf"), float("-inf")])
+def test_message_timestamps_skips_non_finite(timestamp: float) -> None:
+    # 有限でない値は比較も`max`も意味を持たないので受け入れない。
+    entry = history(timestamp)["8f0e"]
     assert message_timestamps(entry) == []
 
 

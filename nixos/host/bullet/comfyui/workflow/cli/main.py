@@ -201,6 +201,28 @@ def build_parser(name: str, params: list[Parameter]) -> argparse.ArgumentParser:
     return parser
 
 
+def relative_output(subfolder: str, filename: str) -> str:
+    """出力ディレクトリからの相対パスとして安全な形だけを返す。
+
+    サーバの応答をそのまま連結して`Path(output_dir) / file`へ渡すと、
+    `filename`が絶対パスだった場合に`Path`が左辺を捨てる。
+    出力先の外のパスが、
+    そこに保存されたかのように表示されることになる。
+    `subfolder`に`..`が入っても同じである。
+
+    今は表示するだけなので実害は限られるが、
+    後からこの結果を開く処理を足した時にパストラバーサルへ育つ。
+
+    弾くのは経路としての`..`だけにする。
+    `a..b.png`のように名前の一部として現れる`..`まで弾くと、
+    普通に保存できるファイルが表示できなくなる。
+    """
+    path = Path(subfolder) / filename if subfolder else Path(filename)
+    if path.is_absolute() or ".." in path.parts:
+        raise ValueError(f"出力先の外を指すパスが返りました: {subfolder}/{filename}")
+    return str(path)
+
+
 def collect_outputs(entry: object) -> list[str]:
     """履歴1件から、保存されたファイルのパスを集める。
 
@@ -217,8 +239,9 @@ def collect_outputs(entry: object) -> list[str]:
                 filename = as_text(item.get("filename"))
                 if not filename or as_text(item.get("type")) != "output":
                     continue
-                subfolder = as_text(item.get("subfolder"))
-                files.append(f"{subfolder}/{filename}" if subfolder else filename)
+                files.append(
+                    relative_output(as_text(item.get("subfolder")), filename)
+                )
     return files
 
 

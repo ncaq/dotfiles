@@ -10,7 +10,8 @@
     `nodedef.py`のノード定義の読み取りと、
     `convert.py`のUI形式からAPI形式への変換と、
     `params.py`のフラグ名の決め方と、
-    `dynamic.py`の`{a|b|c}`の展開を対象にする。
+    `dynamic.py`の`{a|b|c}`の展開と、
+    `main.py`が持つ外部I/Oを踏まない判断を対象にする。
 
     どれも実機で確かめにくい。
     変換の結果が1つずれていても、
@@ -20,9 +21,14 @@
     どういう時にウィジェット名から離れるのかは、
     ワークフローを1つ見ても読み取れない。
 
-    `main.py`は対象にしない。
-    HTTPと`argparse`と待ちの繰り返しだけを持っていて、
-    判断は全て上の3つへ寄せてある。
+    `main.py`はHTTPと`argparse`と待ちの繰り返しが本体だが、
+    その中に混ざる判断だけは対象にする。
+    値の解釈と、履歴から保存されたファイルを拾う部分がそれで、
+    どちらも外部I/Oを踏まないのでimportして呼べる。
+    後者は間違えても例外にならず、
+    表示されるパスが違うだけの壊れ方をする。
+
+    HTTPを踏む関数と`main`自体は対象にしない。
 
   なぜComfyUIのPython環境を使わないか:
     `lib/comfyui-idle-free-memory-test.nix`と同じ理由による。
@@ -43,6 +49,7 @@ let
       (cli + "/convert.py")
       (cli + "/dynamic.py")
       (cli + "/jsonutil.py")
+      (cli + "/main.py")
       (cli + "/nodedef.py")
       (cli + "/params.py")
     ];

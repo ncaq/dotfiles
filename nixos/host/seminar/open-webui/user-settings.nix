@@ -307,13 +307,17 @@ let
       # 比較する列を宣言の側から導く。
       # 応答には`email`や`role`のようにこちらが決めない列も並ぶので、
       # 固定で書くと宣言を増やした時に比較へ足し忘れる。
-      currentProfile=$(
+      #
+      # POSTの前後の両方で同じ形を取るため関数にする。
+      fetchCurrentProfile() {
         curl --fail --silent --show-error --max-time 30 \
           --header "Authorization: Bearer $token" \
           "$url/api/v1/auths/" |
           jq --argjson desired "$desiredProfile" \
             '. as $current | $desired | keys | map({ key: ., value: $current[.] }) | from_entries'
-      )
+      }
+
+      currentProfile=$(fetchCurrentProfile)
 
       if [ "$(jq --compact-output --sort-keys . <<<"$currentProfile")" = "$(jq --compact-output --sort-keys . <<<"$desiredProfile")" ]; then
         echo "プロフィールは宣言と一致しています"
@@ -323,7 +327,20 @@ let
           --header "Authorization: Bearer $token" \
           --header 'Content-Type: application/json' \
           --data @- <<<"$desiredProfile"
-        echo "プロフィールを宣言の内容へ更新しました"
+
+        # `UpdateProfileForm`はPydanticのモデルなので、
+        # 宣言に上流が持たない列(将来の削除や綴り間違いを含む)が混ざると、
+        # curlは2xxを受け取ったまま値は黙って捨てられる。
+        # それに気付かないと差分は解消されず、
+        # コンテナが起動するたびに同じPOSTが繰り返される。
+        # 書き込み後にもう一度取得して、収束したことまで確かめる。
+        afterProfile=$(fetchCurrentProfile)
+        if [ "$(jq --compact-output --sort-keys . <<<"$afterProfile")" = "$(jq --compact-output --sort-keys . <<<"$desiredProfile")" ]; then
+          echo "プロフィールを宣言の内容へ更新しました"
+        else
+          echo "プロフィールを更新しても宣言と一致しませんでした。宣言に上流が受け付けない列が含まれている可能性があります" >&2
+          exit 1
+        fi
       fi
     '';
   };

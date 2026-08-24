@@ -69,6 +69,17 @@ REQUEST_TIMEOUT_SECONDS = 300
 # 終わってから気付くまでの遅れが目立たない程度にする。
 POLL_INTERVAL_SECONDS = 1.0
 
+# 連続で失敗している間に伸ばす間隔の上限。
+# 相手が落ちている間も固定のレートで叩き続けないためで、
+# 1回でも応答が返れば`POLL_INTERVAL_SECONDS`へ戻す。
+MAX_POLL_INTERVAL_SECONDS = 30.0
+
+# 結果を待つ上限。
+# 動画のワークフローは1本に数十分かかることがあるので長めに取る。
+# ここで待つのを止めても生成そのものは続いているので、
+# 出力はComfyUIの画面か出力ディレクトリで確かめられる。
+WAIT_DEADLINE_SECONDS = 3600.0
+
 # 全体のオプションが使う名前。
 # パラメータ側には譲らせる。
 RESERVED_FLAGS = frozenset(
@@ -261,20 +272,66 @@ def collect_outputs(entry: object) -> list[str]:
     return files
 
 
+def failure_of(entry: object) -> str | None:
+    """履歴1件が失敗を表しているなら、その説明を返す。
+
+    ComfyUIはノードの実行エラーでも履歴を作る。
+    見ないと`collect_outputs`が空を返し、
+    何も表示せずに終了コード0で終わるので、
+    成功したが出力が0件の場合と区別が付かない。
+
+    `status`が読めない時は失敗と報告しない。
+    上流が形を変えた時に、
+    成功した生成が失敗するようになる方が困る。
+    出力が0件かどうかは呼び出し側が別に見る。
+    """
+    status = as_object(as_object(entry).get("status"))
+    status_str = as_text(status.get("status_str"))
+    if not status_str or status_str == "success":
+        return None
+    # どのノードで何が起きたのかは`messages`にしか無い。
+    return f"{status_str}: {as_array(status.get('messages'))}"
+
+
 def wait_for(authority: str, prompt_id: str) -> list[str]:
-    """履歴に現れるまで待って、保存されたファイルのパスを返す。"""
-    while True:
-        time.sleep(POLL_INTERVAL_SECONDS)
+    """履歴に現れるまで待って、保存されたファイルのパスを返す。
+
+    待ち続けない。
+    ComfyUIが投入後に落ちた、
+    キューを外部から消された、
+    ネットワークが切れた、
+    のいずれでも`/history`へ二度と到達できなくなる。
+    上限が無いと1秒ごとの問い合わせを永久に繰り返す。
+
+    連続で失敗している間は間隔を伸ばす。
+    接続を拒否され続ける状況で固定のレートで叩き続けないためで、
+    1回でも応答が返れば元の間隔へ戻す。
+    """
+    deadline = time.monotonic() + WAIT_DEADLINE_SECONDS
+    interval = POLL_INTERVAL_SECONDS
+    while time.monotonic() < deadline:
         try:
             history = as_object(get_json(authority, f"/history/{prompt_id}"))
         except (OSError, ValueError, http.client.HTTPException) as error:
             # 生成中のComfyUIは重い。
             # 応答が返らなかったくらいで諦めずに次の周回で聞き直す。
             print(f"状態を取得できませんでした: {error}", file=sys.stderr)
+            time.sleep(interval)
+            interval = min(interval * 2, MAX_POLL_INTERVAL_SECONDS)
             continue
+        interval = POLL_INTERVAL_SECONDS
         entry = history.get(prompt_id)
         if entry is not None:
+            failure = failure_of(entry)
+            if failure is not None:
+                raise SystemExit(f"生成が失敗しました: {failure}")
             return collect_outputs(entry)
+        # 待つのは確認の後にする。
+        # 先に待つと、既に履歴へ載っている場合でも必ず1回分待たされる。
+        time.sleep(interval)
+    raise SystemExit(
+        f"{WAIT_DEADLINE_SECONDS:.0f}秒待っても{prompt_id}が履歴に現れませんでした"
+    )
 
 
 def run(

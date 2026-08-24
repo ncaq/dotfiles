@@ -79,8 +79,9 @@ from typing import cast
 REQUEST_TIMEOUT_SECONDS = 30
 
 # 解放を指示する本文。
-# `main.py`は`free_memory`が立っていれば`unload_models`も立っているとみなすので、
-# 後者だけでも同じ結果になるが、
+# `main.py`は`flags.get("unload_models", free_memory)`の形で、
+# `free_memory`を`unload_models`の既定値として読む。
+# つまり`free_memory`だけでも同じ結果になるが、
 # どちらを意図したのかが読めなくなるので両方書く。
 FREE_PAYLOAD = {"unload_models": True, "free_memory": True}
 

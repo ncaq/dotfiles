@@ -330,8 +330,15 @@ in
       "container@open-webui.service"
     ];
 
-    # `blue-prompt.nix`と同じ理由でコンテナの起動と停止に追従させる。
-    # `partOf`は明示的なstopやrestartのジョブでしか伝播しないため、
+    # コンテナの起動と停止に追従させる。
+    #
+    # `blue-prompt.nix`の追従は`ENABLE_PERSISTENT_CONFIG = "False"`による揮発が理由だが、
+    # こちらの`user`表はDBへそのまま永続するので揮発しない。
+    # ここでの理由は冒頭のコメントの通り、
+    # UIから書き換えられた値を次のコンテナ起動で宣言へ戻すことである。
+    #
+    # `partOf`ではなく`bindsTo`を選ぶ機構の理由は`blue-prompt.nix`と共通で、
+    # `partOf`が明示的なstopやrestartのジョブでしか伝播しないため、
     # 異常終了して起動し直された場合に同期が`active (exited)`のまま取り残される。
     # `bindsTo`なら予期しない停止でも一度inactiveへ落ちて、
     # 次のコンテナ起動で確実に引き込み直される。

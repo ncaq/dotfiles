@@ -106,3 +106,38 @@ def test_every_output_key_is_read() -> None:
 
 def test_a_broken_history_yields_nothing() -> None:
     assert collect_outputs([]) == []
+
+
+def test_an_absolute_filename_is_an_error() -> None:
+    # `Path(output_dir) / "/etc/passwd"`は左辺を捨てる。
+    # 出力先の外を指すパスが、
+    # そこに保存されたかのように表示される。
+    with pytest.raises(ValueError):
+        collect_outputs(
+            history({"filename": "/etc/passwd", "subfolder": "", "type": "output"})
+        )
+
+
+@pytest.mark.parametrize(
+    "item",
+    [
+        {"filename": "../a.png", "subfolder": "", "type": "output"},
+        {"filename": "a.png", "subfolder": "..", "type": "output"},
+        {"filename": "a.png", "subfolder": "anima/../../etc", "type": "output"},
+        {"filename": "a.png", "subfolder": "/etc", "type": "output"},
+    ],
+)
+def test_escaping_the_output_directory_is_an_error(item: dict[str, object]) -> None:
+    # 今は表示するだけなので実害は限られるが、
+    # 後からこの結果を開く処理を足した時にパストラバーサルへ育つ。
+    with pytest.raises(ValueError):
+        collect_outputs(history(item))
+
+
+def test_a_dot_dot_inside_a_name_is_allowed() -> None:
+    # 弾くのは経路としての`..`だけである。
+    # 名前の一部として現れる`..`まで弾くと、
+    # 普通に保存できるファイルが表示できなくなる。
+    assert collect_outputs(
+        history({"filename": "a..b.png", "subfolder": "", "type": "output"})
+    ) == ["a..b.png"]

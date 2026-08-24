@@ -304,6 +304,9 @@
           # ComfyUIの自作カスタムノードのうち、
           # ComfyUI本体に触れない部分のpytest。
           comfyui-custom-node-test = import ./lib/comfyui-custom-node-test.nix { inherit pkgs; };
+          # アイドル解放の常駐プロセスのうち、
+          # 応答の解釈とアイドルの判定のpytest。
+          comfyui-idle-free-memory-test = import ./lib/comfyui-idle-free-memory-test.nix { inherit pkgs; };
           # Open WebUIの利用者ごとの設定を合成するjqのフィルタが、
           # 意図した通りに合成することを検査するderivation。
           open-webui-user-settings-merge-test =
@@ -432,6 +435,7 @@
               inherit
                 comfyui-api-workflow-test
                 comfyui-custom-node-test
+                comfyui-idle-free-memory-test
                 git-repo-subscribe
                 open-webui-user-settings-merge-test
                 safetensors-fp16

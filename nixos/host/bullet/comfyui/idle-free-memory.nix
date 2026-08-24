@@ -1,0 +1,98 @@
+# アイドル中のComfyUIにメモリを解放させる常駐プロセスを、コンテナの中で動かす。
+#
+# 何をどう判断して解放するかは`idle-free-memory/main.py`の先頭に書いてある。
+#
+# ホスト側のサービスにしない理由は寿命の管理である。
+# ComfyUIのコンテナはソケットアクティベーションで起きるので、
+# ホストに置くと`container@comfyui.service`への`bindsTo`と`after`と`wantedBy`で、
+# 起動と停止を追従させる配線が要る。
+# コンテナの中のサービスなら、コンテナが消える時に一緒に消える。
+#
+# 隔離の観点でも中に置いて構わない。
+# 外部由来のコードと同じ空間へ自分のコードを入れることになるが、
+# このプロセスが持つ権限はComfyUIのAPIを叩けることだけで、
+# それは同じ空間にいるComfyUI自身が最初からできることである。
+#
+# 宛先がループバックになるので、
+# vethのアドレスもコンテナのfirewallも関係しなくなる。
+{
+  lib,
+  hardening,
+  ...
+}:
+let
+  # コンテナのstoreへ持ち込むのは動かすものだけにする。
+  # ディレクトリをそのまま渡すとテストまで付いてくる。
+  source = lib.fileset.toSource {
+    root = ./idle-free-memory;
+    fileset = lib.fileset.unions [
+      ./idle-free-memory/main.py
+      ./idle-free-memory/response.py
+      ./idle-free-memory/state.py
+    ];
+  };
+in
+{
+  containers.comfyui.config =
+    {
+      pkgs,
+      config,
+      ...
+    }:
+    {
+      systemd.services.comfyui-idle-free-memory = {
+        description = "Free ComfyUI memory while idle";
+        wantedBy = [ "multi-user.target" ];
+        after = [ "comfyui.service" ];
+        # 依存関係で縛らない。
+        # ComfyUIが落ちている間はHTTPが失敗するだけで、
+        # スクリプトはそれを記録して次の周回へ進む。
+        # 縛って止めるより、動いていない相手を叩き続けて勝手に復帰する方が単純である。
+        environment = {
+          # 渡すのはホストとポートだけにする。
+          # `http://`をこちらで足して完全なURLにすると、
+          # Python側で`urlopen`へ渡るのが変数になり、
+          # ruffがS310でスキームを確定できないと警告する。
+          # 理由の詳細は`idle-free-memory/main.py`の冒頭にある。
+          COMFYUI_AUTHORITY = "127.0.0.1:${toString config.services.comfyui.port}";
+          # 確認の間隔。
+          # 活動時刻はComfyUI自身の記録から取るので、
+          # 間隔を詰めても取りこぼしは減らない。
+          # 解放が実際に走るのが最後の活動から`IDLE_SECONDS`後ちょうどではなく、
+          # そこから最大でこの秒数だけ遅れる、という意味しか持たない。
+          POLL_INTERVAL_SECONDS = "300";
+          # これだけ何もしていなければ解放する。
+          # 短くすると、少し考えてから次の生成を回す間に降ろされて載せ直しになる。
+          IDLE_SECONDS = "600";
+        };
+        # `hardening`はこのファイル自身がホスト側のモジュールとして受け取ったものである。
+        # コンテナの中のモジュールへはモジュール引数としては渡らないが、
+        # ここはクロージャの内側なのでそのまま参照できる。
+        serviceConfig = hardening.network // {
+          # ループバックへHTTPを投げるだけなので、
+          # 標準ライブラリしか使わないPythonをそのまま動かせる。
+          #
+          # `main.py`を直接指すと、
+          # Pythonが置かれたディレクトリをsys.pathの先頭へ入れるので、
+          # 隣の`response.py`と`state.py`が素のモジュールとして解決される。
+          ExecStart = "${pkgs.python3}/bin/python3 ${source}/main.py";
+          DynamicUser = true;
+          # 待ち続けるのが仕事なので、終了は全て異常である。
+          #
+          # HTTPの失敗はPython側が周回の中で吸収するので、
+          # ここまで来る終了は環境変数の欠落やスクリプト自体の不具合など、
+          # 待っても直らないものが基本になる。
+          # 10秒固定のままだと、
+          # systemdの既定の起動レート制限(10秒に5回)に掛からないため、
+          # 直らない状態で10秒間隔の再起動を永久に繰り返す。
+          #
+          # `lib/container-socket-activation.nix`が`comfyui-proxy`へ入れているものと同じ、
+          # nixpkgsの`ollama-model-loader`由来の指数バックオフで抑える。
+          Restart = "always";
+          RestartSec = "10s";
+          RestartMaxDelaySec = "2h";
+          RestartSteps = 10;
+        };
+      };
+    };
+}

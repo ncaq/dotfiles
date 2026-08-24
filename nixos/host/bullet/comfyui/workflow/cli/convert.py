@@ -23,6 +23,10 @@ ComfyUIのサーバ側に変換は無く、
 フロントエンドでは`isVirtualNode`が真のもので、
 `class_type`に対応する実装がサーバ側に無い。
 
+ただし同じ`isVirtualNode`でも`Reroute`のように値を通すものは落とせない。
+繋ぎ直しが要るので、こちらは未対応として止める。
+どちらに当たるかは`DROPPABLE_NODE_TYPES`と`PASSTHROUGH_NODE_TYPES`で分ける。
+
 `control_after_generate`のようにフロントエンドが足したウィジェットも落とす。
 判断は`nodedef.py`が持っていて、
 ここは`Slot.widget`がNoneかどうかだけを見る。
@@ -43,11 +47,30 @@ from dataclasses import dataclass, field
 from jsonutil import as_array, as_node_id, as_object, as_text
 from nodedef import NodeDef, Slot
 
-# 画面にしか存在せず、サーバ側に実装を持たないノード型。
-VIRTUAL_NODE_TYPES = frozenset(
+# 画面にしか存在せず、落として構わないノード型。
+# 覚え書きを書くためだけのもので、何にも繋がらない。
+DROPPABLE_NODE_TYPES = frozenset(
     {
         "Note",
         "MarkdownNote",
+    }
+)
+
+# 画面にしか存在しないが、値を通すノード型。
+#
+# フロントエンドの`graphToPrompt`は、
+# これらを落とす前に前後のリンクや値を繋ぎ直す。
+# 落とすだけだと、消えたノードIDを指す参照が残り、
+# `missing_required`も入力が埋まっているとみなして素通りする。
+#
+# 繋ぎ直しは実装していない。
+# `local.comfyui.workflows`のワークフローが1つも使っていないためで、
+# 使う時が来たら実装するか、
+# `workflow/lib/builder.nix`の側で使わない方針を続けるかを選ぶことになる。
+# `mode != 0`のミュートやバイパスと同じく、
+# 黙って通さずに気付ける形で止める。
+PASSTHROUGH_NODE_TYPES = frozenset(
+    {
         "Reroute",
         "PrimitiveNode",
     }
@@ -167,8 +190,12 @@ def to_api(workflow: object, node_defs: dict[str, NodeDef]) -> Prompt:
         node_id = as_node_id(node.get("id"))
         if not class_type or not node_id:
             raise ValueError(f"ノードの形が読めません: {node}")
-        if class_type in VIRTUAL_NODE_TYPES:
+        if class_type in DROPPABLE_NODE_TYPES:
             continue
+        if class_type in PASSTHROUGH_NODE_TYPES:
+            raise ValueError(
+                f"ノード{node_id}({class_type})は繋ぎ直しが要るので未対応です"
+            )
         # 0以外はミュートかバイパスで、
         # バイパスは前後を繋ぎ直す処理が要る。
         # このリポジトリのワークフローは全て0なので、

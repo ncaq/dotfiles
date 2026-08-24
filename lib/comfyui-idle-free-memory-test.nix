@@ -8,9 +8,14 @@
 
   何を検査するか:
     `response.py`のComfyUIの応答の解釈と、
-    `state.py`のアイドルの判定だけを対象にする。
-    `main.py`は環境変数とHTTPと`while True`を持つので、
-    ここからは触らない。
+    `state.py`のアイドルの判定と、
+    `main.py`の`free_if_needed`を対象にする。
+
+    `main.py`は環境変数とHTTPと`while True`を持つが、
+    それらを実行するのは`main()`の中だけで、
+    importしただけでは何も起きない。
+    `free_if_needed`は解放の要求をcallableで受け取るので、
+    HTTPを踏まずにダブルで固定できる。
 
     解釈の方は正常系より異常系が本体である。
     ComfyUIのAPIには型が無く、
@@ -32,9 +37,10 @@
     素の`python3`で足りるなら、
     CUDA版torchを含む閉包を持たないaarch64でもそのまま走らせられる。
 
-  なぜ`main.py`を入力へ入れないか:
-    テストが読まないファイルの変更でこのcheckが作り直されるのを避ける。
-    `main.py`の側は`checks.pyright`が見る。
+  なぜ`main.py`も入力へ入れるか:
+    `free_if_needed`がテストの対象になったためである。
+    以前はここに入れず「テストが読まないファイルの変更で作り直さない」と書いていたが、
+    読むようになった以上その理由は当てはまらない。
 */
 { pkgs }:
 let
@@ -46,6 +52,7 @@ let
     root = idleFreeMemory;
     fileset = lib.fileset.unions [
       (idleFreeMemory + "/tests")
+      (idleFreeMemory + "/main.py")
       (idleFreeMemory + "/response.py")
       (idleFreeMemory + "/state.py")
     ];

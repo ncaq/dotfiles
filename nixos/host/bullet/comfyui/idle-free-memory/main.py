@@ -78,6 +78,8 @@ import os
 import sys
 import time
 import urllib.request
+from collections.abc import Callable
+from dataclasses import replace
 
 from response import latest_activity, queue_remaining
 from state import State, next_state
@@ -141,6 +143,35 @@ def post_json(authority: str, path: str, payload: dict[str, bool]) -> None:
         # 本文は空なので捨てる。
         # それでも読むのは、応答を受け取りきってから接続を閉じるためである。
         response.read()
+
+
+def free_if_needed(
+    state: State,
+    should_free: bool,
+    request_free: Callable[[], None],
+) -> State:
+    """必要なら解放を要求して、通った時だけ`freed`を立てる。
+
+    要求そのものをcallableで受け取るのは、
+    ここが`next_state`と対になる不変条件を持つからである。
+    あちらは`freed`を立てず、立てるのはこちらで、
+    しかも要求が実際に通った後に限る。
+    失敗した周回でフラグだけ進めると、
+    次の活動があるまで再試行できなくなる。
+
+    HTTPの失敗だけを吸収する。
+    それ以外の例外はこちらの不具合なので、握り潰さずに上へ通す。
+    """
+    if not should_free:
+        return state
+    try:
+        request_free()
+    except (OSError, http.client.HTTPException) as error:
+        # 捕捉する範囲を`get_json`側と揃える。理由はそちらのコメントにある。
+        log(f"メモリの解放を要求できませんでした: {error}")
+        return state
+    log("アイドルが続いているのでメモリの解放を要求しました")
+    return replace(state, freed=True)
 
 
 def initial_activity(authority: str) -> float:
@@ -232,19 +263,11 @@ def main() -> None:
             latest=latest,
             idle_seconds=idle_seconds,
         )
-        if not should_free:
-            continue
-        try:
-            post_json(authority, "/free", FREE_PAYLOAD)
-        except (OSError, http.client.HTTPException) as error:
-            # 捕捉する範囲を`get_json`側と揃える。理由はそちらのコメントにある。
-            log(f"メモリの解放を要求できませんでした: {error}")
-            continue
-        # 要求が通ってから解放済みにする。
-        # `next_state`がここを立てないのは、
-        # 失敗した周回でフラグだけ進めて再試行できなくならないようにするためである。
-        state = State(last_activity=state.last_activity, freed=True)
-        log("アイドルが続いているのでメモリの解放を要求しました")
+        state = free_if_needed(
+            state,
+            should_free=should_free,
+            request_free=lambda: post_json(authority, "/free", FREE_PAYLOAD),
+        )
 
 
 if __name__ == "__main__":

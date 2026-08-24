@@ -135,6 +135,28 @@ def test_virtual_nodes_are_dropped() -> None:
     assert list(prompt.nodes) == ["1"]
 
 
+def test_passthrough_node_is_an_error() -> None:
+    # `Reroute`は落とすだけでは済まない。
+    # フロントエンドは前後を繋ぎ直してから消すので、
+    # 落とすだけだと消えたノードIDを指す参照が残る。
+    # `missing_required`は入力が埋まっているとみなすので素通りし、
+    # ComfyUIの検証で初めて落ちる。
+    with pytest.raises(ValueError):
+        to_api(
+            graph(
+                {"id": 1, "type": "Reroute"},
+                {
+                    "id": 2,
+                    "type": "Saver",
+                    "widgets_values": ["out"],
+                    "inputs": [{"name": "images", "link": 5}],
+                },
+                links=[[5, 1, 0, 2, 0, "IMAGE"]],
+            ),
+            {"Saver": SAVER},
+        )
+
+
 def test_muted_node_is_an_error() -> None:
     # ミュートとバイパスは前後を繋ぎ直す処理が要る。
     # 実装していないので、黙って通さずに気付ける形で止める。

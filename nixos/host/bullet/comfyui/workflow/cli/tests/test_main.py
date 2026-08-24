@@ -5,15 +5,16 @@
 
 - `parse_value`: コマンドラインの文字列をウィジェットの型へ直す
 - `collect_outputs`: 履歴から保存されたファイルを拾う
+- `positive_int`: `--repeat`が受け付ける範囲
 
-どちらもimportして呼ぶだけで確かめられる。
+どれもimportして呼ぶだけで確かめられる。
 特に`collect_outputs`は、
 間違えても例外にならず「表示されるパスが違う」だけの壊れ方をするので、
 他のモジュールと同じく実機では気付けない性質を持つ。
 """
 
 import pytest
-from main import collect_outputs, parse_value
+from main import collect_outputs, parse_value, positive_int
 from nodedef import Widget
 
 
@@ -132,6 +133,23 @@ def test_escaping_the_output_directory_is_an_error(item: dict[str, object]) -> N
     # 後からこの結果を開く処理を足した時にパストラバーサルへ育つ。
     with pytest.raises(ValueError):
         collect_outputs(history(item))
+
+
+def test_positive_int_accepts_one() -> None:
+    assert positive_int("1") == 1
+
+
+@pytest.mark.parametrize("text", ["0", "-1"])
+def test_positive_int_rejects_zero_and_below(text: str) -> None:
+    # `range(0)`は空になるので、何も投げずに、何も言わずに正常終了する。
+    # 利用者からは成功したのに結果が出ない状態と区別が付かない。
+    with pytest.raises(ValueError):
+        positive_int(text)
+
+
+def test_positive_int_rejects_words() -> None:
+    with pytest.raises(ValueError):
+        positive_int("many")
 
 
 def test_a_dot_dot_inside_a_name_is_allowed() -> None:

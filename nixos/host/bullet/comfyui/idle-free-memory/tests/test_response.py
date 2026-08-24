@@ -111,3 +111,13 @@ def test_latest_activity_returns_none_for_empty_history() -> None:
 def test_latest_activity_rejects_non_object() -> None:
     with pytest.raises(ValueError):
         latest_activity([])
+
+
+def test_latest_activity_reports_entries_without_timestamps() -> None:
+    # 件はあるのに時刻が1つも取れないのは、上流が形を変えた時の症状である。
+    # ここで黙ってNoneを返すと、
+    # 呼び出し側は「一度も実行していない」とみなして、
+    # 自分の観測だけでアイドルを判定する状態へ静かに退行する。
+    # それは生成の直後に降ろす動作そのものなので、例外にして気付けるようにする。
+    with pytest.raises(ValueError):
+        latest_activity(history("1000"))

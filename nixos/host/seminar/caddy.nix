@@ -1,6 +1,7 @@
 { config, ... }:
 let
   garageAddr = config.machineAddresses.garage.guest;
+  garageHostAddr = config.machineAddresses.garage.host;
   niks3PublicAddr = config.machineAddresses.niks3-public.guest;
   niks3PublicHostAddr = config.machineAddresses.niks3-public.host;
   niks3PrivateAddr = config.machineAddresses.niks3-private.guest;
@@ -22,7 +23,7 @@ in
     virtualHosts."garage.ncaq.net" = {
       useACMEHost = "garage.ncaq.net";
       extraConfig = ''
-        bind ${niks3PublicHostAddr} ${niks3PrivateHostAddr}
+        bind ${garageHostAddr} ${niks3PublicHostAddr} ${niks3PrivateHostAddr}
         reverse_proxy http://${garageAddr}:3900
       '';
     };
@@ -59,10 +60,12 @@ in
     # これによりCIのキャッシュ取得がCloudflare Tunnelを経由しなくなります。
     # garage.ncaq.netはniks3が発行するpresigned URLのアップロード先なので、
     # キャッシュへのアップロードもマシン内で完結します。
-    hosts.${niks3PublicHostAddr} = [
-      "niks3-public.ncaq.net"
-      "garage.ncaq.net"
-    ];
+    # 向き先はそれぞれの用途に対応するコンテナ側のvethにして、
+    # 障害の切り分けが素直になるようにします。
+    hosts = {
+      ${garageHostAddr} = [ "garage.ncaq.net" ];
+      ${niks3PublicHostAddr} = [ "niks3-public.ncaq.net" ];
+    };
     # コンテナのvethインターフェースからCaddyの443への接続を許可する。
     firewall.interfaces."ve-+".allowedTCPPorts = [ 443 ];
   };

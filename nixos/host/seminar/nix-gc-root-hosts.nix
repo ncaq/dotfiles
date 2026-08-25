@@ -33,15 +33,12 @@ let
     ];
     text = ''
       failed=0
-      roots=()
+      names=()
+      installables=()
 
-      build() {
-        local name="$1" installable="$2"
-        roots+=("$name")
-        if ! nix build "$installable" --out-link "$STATE_DIRECTORY/$name"; then
-          echo "failed to build $installable" >&2
-          failed=1
-        fi
+      add() {
+        names+=("$1")
+        installables+=("$2")
       }
 
       # 一覧の取得に失敗した場合はここで中断します。
@@ -50,11 +47,27 @@ let
       homeSystems=$(nix eval --json /etc/nixos-flake#homeConfigurations --apply builtins.attrNames | jq -r '.[]')
 
       while IFS= read -r host; do
-        build "nixos-$host" "/etc/nixos-flake#nixosConfigurations.$host.config.system.build.toplevel"
+        add "nixos-$host" "/etc/nixos-flake#nixosConfigurations.$host.config.system.build.toplevel"
       done <<<"$hostNames"
       while IFS= read -r system; do
-        build "home-manager-$system" "/etc/nixos-flake#homeConfigurations.$system.activationPackage"
+        add "home-manager-$system" "/etc/nixos-flake#homeConfigurations.$system.activationPackage"
       done <<<"$homeSystems"
+
+      # 先に全installableを1回のnix buildへまとめて渡してウォームアップします。
+      # 1つずつビルドすると評価プロセスがその都度立ち上がる上に、
+      # ダウンロードとビルドが構成間で全く重なりません。
+      # まとめて渡せばNixのスケジューラが構成横断で並列に処理します。
+      # 失敗の検知は後段のout-linkで個別に行うため、ここでは失敗を無視します。
+      nix build --keep-going --no-link "''${installables[@]}" || true
+
+      # ウォームアップでストアに成果物が揃っているため、
+      # ここの個別ビルドはout-linkを張るだけでほぼ即座に終わります。
+      for i in "''${!names[@]}"; do
+        if ! nix build "''${installables[$i]}" --out-link "$STATE_DIRECTORY/''${names[$i]}"; then
+          echo "failed to build ''${installables[$i]}" >&2
+          failed=1
+        fi
+      done
 
       # flakeから消えた構成のrootを削除して、
       # 不要になった閉包をいつまでも保持し続けないようにします。
@@ -62,7 +75,7 @@ let
       for link in "$STATE_DIRECTORY"/*; do
         name=$(basename "$link")
         keep=0
-        for root in "''${roots[@]}"; do
+        for root in "''${names[@]}"; do
           if [[ "$name" == "$root" ]]; then
             keep=1
             break

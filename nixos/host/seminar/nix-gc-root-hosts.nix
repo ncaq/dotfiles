@@ -1,6 +1,11 @@
-{ config, pkgs, ... }:
 {
-  # CIで構築される全ホストの閉包をGCから保護するGC rootを登録します。
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+let
+  # CIで構築される全ホストの閉包をGCから保護するGC rootを登録するスクリプト。
   #
   # セルフホストランナーはこのホストのnix storeを共有していますが、
   # `nix build`のresultリンクはephemeralなランナーコンテナ内にあるため、
@@ -15,15 +20,14 @@
   # デプロイ済みのflakeを参照するため作業ツリーには依存しません。
   # nix-on-droid(aarch64-linux)はQEMUエミュレーション経由のビルドが遅く、
   # モデルファイルのような巨大なパスも含まれないため対象外にします。
-  systemd.services.nix-gc-root-hosts = {
-    description = "Register Nix GC roots for all hosts' closures";
-    path = [
+  nix-gc-root-hosts = pkgs.writeShellApplication {
+    name = "nix-gc-root-hosts";
+    runtimeInputs = [
       config.nix.package
+      pkgs.coreutils
       pkgs.jq
     ];
-    script = ''
-      set -euo pipefail
-
+    text = ''
       failed=0
       roots=()
 
@@ -40,9 +44,9 @@
       # 誤って後段のクリーンアップで既存のrootを消してしまわないようにするためです。
       hostNames=$(nix eval --json /etc/nixos-flake#nixosConfigurations --apply builtins.attrNames | jq -r '.[]')
 
-      for host in $hostNames; do
+      while IFS= read -r host; do
         build "nixos-$host" "/etc/nixos-flake#nixosConfigurations.$host.config.system.build.toplevel"
-      done
+      done <<<"$hostNames"
       build home-manager-x86_64-linux /etc/nixos-flake#homeConfigurations.x86_64-linux.activationPackage
 
       # flakeから消えた構成のrootを削除して、
@@ -64,8 +68,14 @@
 
       exit "$failed"
     '';
+  };
+in
+{
+  systemd.services.nix-gc-root-hosts = {
+    description = "Register Nix GC roots for all hosts' closures";
     serviceConfig = {
       Type = "oneshot";
+      ExecStart = lib.getExe nix-gc-root-hosts;
       StateDirectory = "nix-gc-root-hosts";
       # キャッシュが切れているとビルドに長時間かかることがあります。
       TimeoutStartSec = "8h";

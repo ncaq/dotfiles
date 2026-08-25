@@ -71,18 +71,17 @@ let
 
       # flakeから消えた構成のrootを削除して、
       # 不要になった閉包をいつまでも保持し続けないようにします。
+      # `nix build`の中断などでシンボリックリンク以外の残骸が紛れ込んでいても、
+      # 削除に失敗して途中終了しないよう`rm -rf`で消します。
+      declare -A keep=()
+      for name in "''${names[@]}"; do
+        keep[$name]=1
+      done
       shopt -s nullglob
       for link in "$STATE_DIRECTORY"/*; do
-        name=$(basename "$link")
-        keep=0
-        for root in "''${names[@]}"; do
-          if [[ "$name" == "$root" ]]; then
-            keep=1
-            break
-          fi
-        done
-        if [[ "$keep" == 0 ]]; then
-          rm -- "$link"
+        name=''${link##*/}
+        if [[ -z "''${keep[$name]:-}" ]]; then
+          rm -rf -- "$link"
         fi
       done
 

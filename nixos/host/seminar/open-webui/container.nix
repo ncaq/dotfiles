@@ -62,8 +62,9 @@ in
     hostAddress = addr.host;
     localAddress = addr.guest;
     bindMounts = {
-      # チャット履歴のDBはPostgreSQLへ移したが、
-      # アップロードやベクトルDBなどのファイルはコンテナの再作成後も保持する。
+      # DBとベクトルはPostgreSQLへ移したため、
+      # ここに残るのはアップロードされたファイルや埋め込みモデルのキャッシュなどで、
+      # それらをコンテナの再作成後も保持する。
       "${stateDir}" = {
         hostPath = stateDir;
         isReadOnly = false;

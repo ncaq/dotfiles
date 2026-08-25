@@ -28,7 +28,7 @@ let
   # nixpkgsはpsycopg2-binaryとpgvectorを`optional-dependencies.postgres`へ
   # 分離しているため、依存へ加えて構築する。
   package = pkgs.open-webui.overridePythonAttrs (old: {
-    dependencies = old.dependencies ++ pkgs.open-webui.optional-dependencies.postgres;
+    dependencies = old.dependencies ++ old.optional-dependencies.postgres;
   });
 in
 {

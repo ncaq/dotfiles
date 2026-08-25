@@ -140,6 +140,21 @@ in
               # 後から方式を変えるには手動での索引の削除も要求される。
               # 逐次の追記に強くパラメータ調整も不要なHNSWを最初から選ぶ。
               PGVECTOR_INDEX_METHOD = "hnsw";
+              # プールサイズが未設定だとNullPoolになり、
+              # セッション取得のたびにPostgreSQLバックエンドのfork+認証が走る。
+              # SQLiteではファイルアクセスで実質ゼロだった接続コストが、
+              # 短いクエリを多数投げる経路で支配的になるため、
+              # 正の整数を与えてpool_pre_ping付きのQueuePoolへ切り替える。
+              #
+              # 数値は必要量と上限の挟み撃ちで決めた推定値である。
+              # UIのページロード時に並列で飛ぶAPI(10本前後)をプールで吸収し、
+              # Knowledge同期の書き込みと重なるバーストをオーバーフローで逃がす。
+              # 上限側はPostgreSQLのmax_connections(既定100)を全クライアントで共有するが、
+              # ここの最悪合計(10+20+5と僅かな同期エンジン分)では圧迫しない。
+              DATABASE_POOL_SIZE = "10";
+              DATABASE_POOL_MAX_OVERFLOW = "20";
+              # RAG検索が使うpgvector側のエンジンは別プール。
+              PGVECTOR_POOL_SIZE = "5";
               # ホスト側のCaddyがbullet優先でOllamaへ振り分ける。
               OLLAMA_BASE_URL = "http://${addr.host}:${toString ollamaPort}";
             };

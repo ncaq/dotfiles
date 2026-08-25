@@ -187,7 +187,11 @@ in
       ];
     };
 
-    # postgresClientに定義されているクライアントユーザ名がserviceUserに定義されていることを検査。
+    # 名前の参照先が定義済みであることを検査。
+    #
+    # - postgresClientのユーザ名がserviceUserに定義されていること
+    # - postgresExtensionのデータベース名がpostgresClientに定義されていること
+    # - postgresExtensionの拡張名がextensionPackageNamesに定義されていること
     assertions =
       let
         serviceUserNames = lib.attrNames config.serviceUser;

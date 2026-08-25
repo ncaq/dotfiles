@@ -49,6 +49,9 @@ in
   # PostgreSQLコンテナ側にデータベースとpeer認証のユーザを用意させる。
   postgresClient = [ "open-webui" ];
 
+  # ベクトル検索に使うpgvector拡張をデータベースへ有効化させる。
+  postgresExtension.open-webui = [ "vector" ];
+
   containers.open-webui = {
     autoStart = true;
     ephemeral = true;
@@ -122,6 +125,21 @@ in
               # `postgresql.nix`のコンテナへUnixソケット経由のpeer認証で接続する。
               # sameuserルールに合わせてユーザ名とデータベース名を一致させる。
               DATABASE_URL = "postgresql://open-webui@/open-webui?host=/run/postgresql";
+              # RAGのベクトルも既定のchroma(コンテナ内のSQLite)ではなく、
+              # 本体と同じデータベースのpgvector拡張に置く。
+              # `PGVECTOR_DB_URL`は未指定なら`DATABASE_URL`を使う。
+              #
+              # 公式が継続メンテナンスするエンジンはchromaとpgvectorだけで、
+              # chromaはfork-safeではなく並行アップロードでワーカーが落ちる問題も知られている。
+              # ref https://github.com/ncaq/blue-prompt/issues/183
+              VECTOR_DB = "pgvector";
+              # pgvector拡張はtrustedではなくアプリのユーザでは作成できないため、
+              # `postgresql.nix`のsetupサービスがsuperuserで作成する。
+              PGVECTOR_CREATE_EXTENSION = "False";
+              # 既定のivfflatは空のテーブルへ索引を作るとリストの割り当てが偏り、
+              # 後から方式を変えるには手動での索引の削除も要求される。
+              # 逐次の追記に強くパラメータ調整も不要なHNSWを最初から選ぶ。
+              PGVECTOR_INDEX_METHOD = "hnsw";
               # ホスト側のCaddyがbullet優先でOllamaへ振り分ける。
               OLLAMA_BASE_URL = "http://${addr.host}:${toString ollamaPort}";
             };

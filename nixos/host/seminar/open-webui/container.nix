@@ -150,11 +150,20 @@ in
               # 数値は必要量と上限の挟み撃ちで決めた推定値である。
               # UIのページロード時に並列で飛ぶAPI(10本前後)をプールで吸収し、
               # Knowledge同期の書き込みと重なるバーストをオーバーフローで逃がす。
-              # 上限側はPostgreSQLのmax_connections(既定100)を全クライアントで共有するが、
-              # ここの最悪合計(10+20+5と僅かな同期エンジン分)では圧迫しない。
+              #
+              # この2つの値は実行時のasyncエンジンだけでなく、
+              # 起動時の処理が使うsyncエンジンにも同じ値が適用される。
+              # そのため理論上の最悪合計は(10+20)x2にpgvectorの5を足した65で、
+              # PostgreSQLのmax_connections(既定100)を全クライアントで共有しても収まる。
+              # QueuePoolの接続は遅延生成なので、
+              # 実行時に育つのはasync側だけでsyncエンジンは起動時の数本で止まり、
+              # 定常の実接続数は最悪合計よりずっと少ない。
               DATABASE_POOL_SIZE = "10";
               DATABASE_POOL_MAX_OVERFLOW = "20";
               # RAG検索が使うpgvector側のエンジンは別プール。
+              # `PGVECTOR_DB_URL`は未指定でも`DATABASE_URL`へフォールバックして真になるため、
+              # 本体のセッションを使い回す分岐には入らず独立エンジンが作られ、
+              # この値が実際に効く。
               PGVECTOR_POOL_SIZE = "5";
               # ホスト側のCaddyがbullet優先でOllamaへ振り分ける。
               OLLAMA_BASE_URL = "http://${addr.host}:${toString ollamaPort}";

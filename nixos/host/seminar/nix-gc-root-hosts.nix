@@ -5,7 +5,8 @@
   ...
 }:
 let
-  # CIで構築される全ホストの閉包をGCから保護するGC rootを登録するスクリプト。
+  # flakeに定義された全nixosConfigurationsとhomeConfigurationsの閉包を、
+  # GCから保護するGC rootを登録するスクリプト。
   #
   # セルフホストランナーはこのホストのnix storeを共有していますが、
   # `nix build`のresultリンクはephemeralなランナーコンテナ内にあるため、
@@ -18,8 +19,11 @@ let
   # 全nixosConfigurationsのtoplevelとhome-managerの閉包をビルドして、
   # `--out-link`でGC rootとして保持します。
   # デプロイ済みのflakeを参照するため作業ツリーには依存しません。
-  # nix-on-droid(aarch64-linux)はQEMUエミュレーション経由のビルドが遅く、
-  # モデルファイルのような巨大なパスも含まれないため対象外にします。
+  # どちらの属性集合も動的に列挙するため、
+  # flakeへ構成を追加するとこのスクリプトも自動で追従します。
+  # `nixOnDroidConfigurations`は列挙の対象に含めていません。
+  # QEMUエミュレーション経由のビルドが遅く、
+  # モデルファイルのような巨大なパスも含まれないためです。
   nix-gc-root-hosts = pkgs.writeShellApplication {
     name = "nix-gc-root-hosts";
     runtimeInputs = [
@@ -40,14 +44,17 @@ let
         fi
       }
 
-      # ホスト一覧の取得に失敗した場合はここで中断します。
+      # 一覧の取得に失敗した場合はここで中断します。
       # 誤って後段のクリーンアップで既存のrootを消してしまわないようにするためです。
       hostNames=$(nix eval --json /etc/nixos-flake#nixosConfigurations --apply builtins.attrNames | jq -r '.[]')
+      homeSystems=$(nix eval --json /etc/nixos-flake#homeConfigurations --apply builtins.attrNames | jq -r '.[]')
 
       while IFS= read -r host; do
         build "nixos-$host" "/etc/nixos-flake#nixosConfigurations.$host.config.system.build.toplevel"
       done <<<"$hostNames"
-      build home-manager-x86_64-linux /etc/nixos-flake#homeConfigurations.x86_64-linux.activationPackage
+      while IFS= read -r system; do
+        build "home-manager-$system" "/etc/nixos-flake#homeConfigurations.$system.activationPackage"
+      done <<<"$homeSystems"
 
       # flakeから消えた構成のrootを削除して、
       # 不要になった閉包をいつまでも保持し続けないようにします。

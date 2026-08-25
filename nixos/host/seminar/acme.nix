@@ -11,7 +11,7 @@ in
   security.acme.certs = {
     # garage.ncaq.netのLet's Encrypt証明書をDNS-01チャレンジで取得。
     # Cloudflare Tunnelの接続先は変更せず(Garage直接のまま)、
-    # niks3-publicコンテナからの内部アクセスのみCaddy HTTPS経由にする。
+    # niks3コンテナおよびホスト自身からの内部アクセスをCaddy HTTPS経由にする。
     "garage.ncaq.net" = dns01Cert;
     # niks3-public.ncaq.netも同様に、
     # ホスト内部からのアクセスをCaddy HTTPS経由でバイパスするために取得する。

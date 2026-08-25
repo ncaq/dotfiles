@@ -14,12 +14,26 @@ let
   postgresql = pkgs.postgresql_18_jit;
   postgresUser = config.serviceUser.postgres;
   clientNames = config.postgresClient;
+  clientExtensions = config.postgresExtension;
+  # `CREATE EXTENSION`に使う拡張名と`postgresql.pkgs`の属性名は一致しないため、
+  # 対応表で変換する。
+  extensionPackageNames = {
+    vector = "pgvector";
+  };
+  extensionNames = lib.unique (lib.concatLists (lib.attrValues clientExtensions));
 in
 {
-  options.postgresClient = lib.mkOption {
-    type = lib.types.listOf lib.types.str;
-    default = [ ];
-    description = "PostgreSQLへpeer認証で接続するクライアントユーザー名のリスト";
+  options = {
+    postgresClient = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = "PostgreSQLへpeer認証で接続するクライアントユーザー名のリスト";
+    };
+    postgresExtension = lib.mkOption {
+      type = lib.types.attrsOf (lib.types.listOf lib.types.str);
+      default = { };
+      description = "データベース名から、そのデータベースでCREATE EXTENSIONする拡張名リストへのマップ";
+    };
   };
 
   config = {
@@ -101,7 +115,21 @@ in
               inherit name;
               ensureDBOwnership = true;
             }) clientNames;
+            extensions = ps: map (ext: ps.${extensionPackageNames.${ext}}) extensionNames;
           };
+          # ensureDatabasesに拡張を有効化する仕組みはまだ無いため、
+          # ensure系と同じsetupサービスへ追記してsuperuserで作成する。
+          # trustedではない拡張はデータベースの所有者では作成できない。
+          systemd.services.postgresql-setup.script = lib.mkAfter (
+            lib.concatStrings (
+              lib.mapAttrsToList (
+                db:
+                lib.concatMapStrings (ext: ''
+                  psql -d '${db}' -tAc 'CREATE EXTENSION IF NOT EXISTS "${ext}"'
+                '')
+              ) clientExtensions
+            )
+          );
         };
     };
 
@@ -159,11 +187,17 @@ in
       ];
     };
 
-    # postgresClientに定義されているクライアントユーザ名がserviceUserに定義されていることを検査。
+    # 名前の参照先が定義済みであることを検査。
+    #
+    # - postgresClientのユーザ名がserviceUserに定義されていること
+    # - postgresExtensionのデータベース名がpostgresClientに定義されていること
+    # - postgresExtensionの拡張名がextensionPackageNamesに定義されていること
     assertions =
       let
         serviceUserNames = lib.attrNames config.serviceUser;
         unknownClient = lib.filter (name: !(lib.elem name serviceUserNames)) clientNames;
+        unknownExtensionDb = lib.filter (db: !(lib.elem db clientNames)) (lib.attrNames clientExtensions);
+        unknownExtension = lib.filter (ext: !(extensionPackageNames ? ${ext})) extensionNames;
       in
       [
         {
@@ -171,6 +205,18 @@ in
           message =
             "postgresClient contains names not defined in serviceUser: "
             + lib.concatStringsSep ", " unknownClient;
+        }
+        {
+          assertion = unknownExtensionDb == [ ];
+          message =
+            "postgresExtension contains databases not defined in postgresClient: "
+            + lib.concatStringsSep ", " unknownExtensionDb;
+        }
+        {
+          assertion = unknownExtension == [ ];
+          message =
+            "postgresExtension contains extensions not defined in extensionPackageNames: "
+            + lib.concatStringsSep ", " unknownExtension;
         }
       ];
   };

@@ -13,6 +13,7 @@
 let
   addr = config.machineAddresses.open-webui;
   user = config.serviceUser.open-webui;
+  postgresGid = config.serviceUser.postgres.gid;
   stateDir = "/var/lib/open-webui";
   port = 8080;
   # コンテナのモジュールでは`config`がコンテナ自身のものになるため、
@@ -22,7 +23,13 @@ let
   extraEnvironment = config.local.openWebui.environment;
   # unfreeの許可はホスト側のnixpkgsの設定にしかないため、
   # コンテナ内のpkgsではなくホスト側から取る。
-  package = pkgs.open-webui;
+  #
+  # 上流はPostgreSQL接続の同期エンジンにpsycopg2を使うが、
+  # nixpkgsはpsycopg2-binaryとpgvectorを`optional-dependencies.postgres`へ
+  # 分離しているため、依存へ加えて構築する。
+  package = pkgs.open-webui.overridePythonAttrs (old: {
+    dependencies = old.dependencies ++ old.optional-dependencies.postgres;
+  });
 in
 {
   # コンテナ内と同じIDでホスト側にもユーザとグループを作る。
@@ -39,16 +46,35 @@ in
     groups.open-webui.gid = user.gid;
   };
 
+  # PostgreSQLコンテナ側にデータベースとpeer認証のユーザを用意させる。
+  postgresClient = [ "open-webui" ];
+
+  # ベクトル検索に使うpgvector拡張をデータベースへ有効化させる。
+  postgresExtension.open-webui = [ "vector" ];
+
   containers.open-webui = {
     autoStart = true;
     ephemeral = true;
     privateNetwork = true;
-    privateUsers = "pick";
+    # PostgreSQLのpeer認証がホストと同一のUIDでの接続を要求するため、
+    # pickにはできずidentity(UID分離なし、capability分離のみ)にする。
+    privateUsers = "identity";
     hostAddress = addr.host;
     localAddress = addr.guest;
-    # チャット履歴、設定、アップロードなどをコンテナの再作成後も保持する。
-    # privateUsersによるUID変換後も固定UIDで読み書きできるようにidmapを付ける。
-    extraFlags = [ "--bind=${stateDir}:${stateDir}:idmap" ];
+    bindMounts = {
+      # DBとベクトルはPostgreSQLへ移したため、
+      # ここに残るのはアップロードされたファイルや埋め込みモデルのキャッシュなどで、
+      # それらをコンテナの再作成後も保持する。
+      "${stateDir}" = {
+        hostPath = stateDir;
+        isReadOnly = false;
+      };
+      # PostgreSQLコンテナとのUnixソケット共有。
+      "/run/postgresql" = {
+        hostPath = "/run/postgresql";
+        isReadOnly = true;
+      };
+    };
     config =
       {
         lib,
@@ -65,8 +91,14 @@ in
             inherit (user) uid;
             group = "open-webui";
             isSystemUser = true;
+            # `/run/postgresql`が0750 postgres:postgresのため、
+            # ソケットへ到達するにはpostgresグループへの所属が必要。
+            extraGroups = [ "postgres" ];
           };
-          groups.open-webui.gid = user.gid;
+          groups = {
+            open-webui.gid = user.gid;
+            postgres.gid = postgresGid;
+          };
         };
         services.open-webui = {
           enable = true;
@@ -90,6 +122,57 @@ in
               WEBUI_AUTH = "False";
               # 接続先をUIのDBへ保存させず、常に宣言したOllamaだけを使う。
               ENABLE_PERSISTENT_CONFIG = "False";
+              # チャット履歴などのDBを既定のSQLiteではなくPostgreSQLに置く。
+              # `postgresql.nix`のコンテナへUnixソケット経由のpeer認証で接続する。
+              # sameuserルールに合わせてユーザ名とデータベース名を一致させる。
+              DATABASE_URL = "postgresql://open-webui@/open-webui?host=/run/postgresql";
+              # RAGのベクトルも既定のchroma(コンテナ内のSQLite)ではなく、
+              # 本体と同じデータベースのpgvector拡張に置く。
+              # `PGVECTOR_DB_URL`は未指定なら`DATABASE_URL`を使う。
+              #
+              # 公式が継続メンテナンスするエンジンはchromaとpgvectorだけで、
+              # chromaはfork-safeではなく並行アップロードでワーカーが落ちる問題も知られている。
+              # ref https://github.com/ncaq/blue-prompt/issues/183
+              VECTOR_DB = "pgvector";
+              # pgvector拡張はtrustedではなくアプリのユーザでは作成できないため、
+              # `postgresql.nix`のsetupサービスがsuperuserで作成する。
+              PGVECTOR_CREATE_EXTENSION = "False";
+              # 既定のivfflatは空のテーブルへ索引を作るとリストの割り当てが偏り、
+              # 後から方式を変えるには手動での索引の削除も要求される。
+              # 逐次の追記に強くパラメータ調整も不要なHNSWを最初から選ぶ。
+              PGVECTOR_INDEX_METHOD = "hnsw";
+              # DB接続のプール設定。
+              # 未設定でもSQLAlchemy既定のQueuePool(プール5+オーバーフロー10)で動くため、
+              # この宣言の目的は既定プールの明示的な拡大と、
+              # 接続数の予算をこの場で見える化することである。
+              #
+              # 数値は必要量と上限の挟み撃ちで決めた推定値である。
+              # UIのページロード時に並列で飛ぶAPI(10本前後)をプールで吸収し、
+              # Knowledge同期の書き込みと重なるバーストをオーバーフローで逃がす。
+              #
+              # `DATABASE_POOL_*`は実行時のasyncエンジンだけでなく、
+              # 起動時の処理が使うsyncエンジンにも同じ値が適用される。
+              # そのため理論上の最悪合計は(10+20)x2に、
+              # 後述のpgvector側の(5+10)を足した75で、
+              # PostgreSQLのmax_connections(既定100)を全クライアントで共有しても収まる。
+              # QueuePoolの接続は遅延生成なので、
+              # 実行時に育つのはasync側だけでsyncエンジンは起動時の数本で止まり、
+              # 定常の実接続数は最悪合計よりずっと少ない。
+              DATABASE_POOL_SIZE = "10";
+              DATABASE_POOL_MAX_OVERFLOW = "20";
+              # RAG検索が使うpgvector側のエンジンは別プール。
+              # `PGVECTOR_DB_URL`は未指定でも`DATABASE_URL`へフォールバックして真になるため、
+              # 本体のセッションを使い回す分岐には入らず独立エンジンが作られ、
+              # この値が実際に効く。
+              #
+              # オーバーフローの既定は本体側の10と違い0で、
+              # サイズだけを設定するとバーストの逃げ道が無いハードキャップになる。
+              # RAG検索はクエリ数xコレクション数をスレッドでファンアウトするため、
+              # 複数Knowledgeを紐付けたチャットで容易に5本を超え、
+              # 超過分がPGVECTOR_POOL_TIMEOUT(既定30秒)まで待たされてしまう。
+              # SQLAlchemy既定と同じ10を明示してバーストを吸収させる。
+              PGVECTOR_POOL_SIZE = "5";
+              PGVECTOR_POOL_MAX_OVERFLOW = "10";
               # ホスト側のCaddyがbullet優先でOllamaへ振り分ける。
               OLLAMA_BASE_URL = "http://${addr.host}:${toString ollamaPort}";
             };
@@ -140,16 +223,22 @@ in
       inherit addr;
     })
     {
-      services."container@open-webui".serviceConfig = {
-        # RAGの文書取り込みでは埋め込みモデルがプロセス内で動き、
-        # torchがコア数分のスレッドを立てて数GiB規模のRSSが数分続く。
-        # 常時起動のホストで他のワークロードを巻き添えにしないよう上限を設ける。
-        # OSや他の処理のために2スレッド分を残す既存のCPU予算を使う。
-        CPUQuota = "${toString (config.local.cpuBudgetThreads * 100)}%";
-        MemoryHigh = "8G"; # ソフトリミット。これを超えるとメモリを積極的に解放する。
-        MemoryMax = "16G"; # ハードリミット。大きな文書の取り込みでも足りるだろうという推定値。
+      services."container@open-webui" = {
+        # DBが接続を受け付けてから起動しないと、
+        # 起動時のマイグレーションが失敗する。
+        requires = [ "postgresql-ready.service" ];
+        after = [ "postgresql-ready.service" ];
+        serviceConfig = {
+          # RAGの文書取り込みでは埋め込みモデルがプロセス内で動き、
+          # torchがコア数分のスレッドを立てて数GiB規模のRSSが数分続く。
+          # 常時起動のホストで他のワークロードを巻き添えにしないよう上限を設ける。
+          # OSや他の処理のために2スレッド分を残す既存のCPU予算を使う。
+          CPUQuota = "${toString (config.local.cpuBudgetThreads * 100)}%";
+          MemoryHigh = "8G"; # ソフトリミット。これを超えるとメモリを積極的に解放する。
+          MemoryMax = "16G"; # ハードリミット。大きな文書の取り込みでも足りるだろうという推定値。
+        };
       };
-      # コンテナへidmap bindする永続データ領域をホスト側に用意する。
+      # コンテナへbind mountする永続データ領域をホスト側に用意する。
       tmpfiles.rules = [ "d ${stateDir} 0750 open-webui open-webui - -" ];
     }
   ];

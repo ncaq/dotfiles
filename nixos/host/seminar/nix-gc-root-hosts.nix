@@ -1,5 +1,6 @@
 {
   config,
+  hardening,
   lib,
   pkgs,
   ...
@@ -92,12 +93,27 @@ in
 {
   systemd.services.nix-gc-root-hosts = {
     description = "Register Nix GC roots for all hosts' closures";
-    serviceConfig = {
+    environment = {
+      # `ProtectSystem = "strict"`下ではnixクライアントがstoreへ直接書けないため、
+      # rootでもnix-daemon経由で操作するように固定します。
+      NIX_REMOTE = "daemon";
+      # `ProtectHome`でrootのホームへ書けないため、
+      # nixの評価キャッシュの書き先をCacheDirectoryへ向けます。
+      XDG_CACHE_HOME = "/var/cache/nix-gc-root-hosts";
+    };
+    # ネットワークからflake inputsとキャッシュを取得するためnetworkプロファイルを使います。
+    serviceConfig = hardening.network // {
       Type = "oneshot";
       ExecStart = lib.getExe nix-gc-root-hosts;
       StateDirectory = "nix-gc-root-hosts";
+      CacheDirectory = "nix-gc-root-hosts";
       # キャッシュが切れているとビルドに長時間かかることがあります。
       TimeoutStartSec = "8h";
+      # 週次のウォームアップに緊急性はないため、
+      # 同居するCIや公開サービスへリソースを譲ります。
+      Nice = 19;
+      CPUSchedulingPolicy = "idle";
+      IOSchedulingClass = "idle";
     };
   };
 

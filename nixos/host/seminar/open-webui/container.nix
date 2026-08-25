@@ -13,6 +13,7 @@
 let
   addr = config.machineAddresses.open-webui;
   user = config.serviceUser.open-webui;
+  postgresGid = config.serviceUser.postgres.gid;
   stateDir = "/var/lib/open-webui";
   port = 8080;
   # コンテナのモジュールでは`config`がコンテナ自身のものになるため、
@@ -22,7 +23,13 @@ let
   extraEnvironment = config.local.openWebui.environment;
   # unfreeの許可はホスト側のnixpkgsの設定にしかないため、
   # コンテナ内のpkgsではなくホスト側から取る。
-  package = pkgs.open-webui;
+  #
+  # 上流はPostgreSQL接続の同期エンジンにpsycopg2を使うが、
+  # nixpkgsはpsycopg2-binaryとpgvectorを`optional-dependencies.postgres`へ
+  # 分離しているため、依存へ加えて構築する。
+  package = pkgs.open-webui.overridePythonAttrs (old: {
+    dependencies = old.dependencies ++ pkgs.open-webui.optional-dependencies.postgres;
+  });
 in
 {
   # コンテナ内と同じIDでホスト側にもユーザとグループを作る。
@@ -39,16 +46,31 @@ in
     groups.open-webui.gid = user.gid;
   };
 
+  # PostgreSQLコンテナ側にデータベースとpeer認証のユーザを用意させる。
+  postgresClient = [ "open-webui" ];
+
   containers.open-webui = {
     autoStart = true;
     ephemeral = true;
     privateNetwork = true;
-    privateUsers = "pick";
+    # PostgreSQLのpeer認証がホストと同一のUIDでの接続を要求するため、
+    # pickにはできずidentity(UID分離なし、capability分離のみ)にする。
+    privateUsers = "identity";
     hostAddress = addr.host;
     localAddress = addr.guest;
-    # チャット履歴、設定、アップロードなどをコンテナの再作成後も保持する。
-    # privateUsersによるUID変換後も固定UIDで読み書きできるようにidmapを付ける。
-    extraFlags = [ "--bind=${stateDir}:${stateDir}:idmap" ];
+    bindMounts = {
+      # チャット履歴のDBはPostgreSQLへ移したが、
+      # アップロードやベクトルDBなどのファイルはコンテナの再作成後も保持する。
+      "${stateDir}" = {
+        hostPath = stateDir;
+        isReadOnly = false;
+      };
+      # PostgreSQLコンテナとのUnixソケット共有。
+      "/run/postgresql" = {
+        hostPath = "/run/postgresql";
+        isReadOnly = true;
+      };
+    };
     config =
       {
         lib,
@@ -65,8 +87,14 @@ in
             inherit (user) uid;
             group = "open-webui";
             isSystemUser = true;
+            # `/run/postgresql`が0750 postgres:postgresのため、
+            # ソケットへ到達するにはpostgresグループへの所属が必要。
+            extraGroups = [ "postgres" ];
           };
-          groups.open-webui.gid = user.gid;
+          groups = {
+            open-webui.gid = user.gid;
+            postgres.gid = postgresGid;
+          };
         };
         services.open-webui = {
           enable = true;
@@ -90,6 +118,10 @@ in
               WEBUI_AUTH = "False";
               # 接続先をUIのDBへ保存させず、常に宣言したOllamaだけを使う。
               ENABLE_PERSISTENT_CONFIG = "False";
+              # チャット履歴などのDBを既定のSQLiteではなくPostgreSQLに置く。
+              # `postgresql.nix`のコンテナへUnixソケット経由のpeer認証で接続する。
+              # sameuserルールに合わせてユーザ名とデータベース名を一致させる。
+              DATABASE_URL = "postgresql://open-webui@/open-webui?host=/run/postgresql";
               # ホスト側のCaddyがbullet優先でOllamaへ振り分ける。
               OLLAMA_BASE_URL = "http://${addr.host}:${toString ollamaPort}";
             };
@@ -140,16 +172,22 @@ in
       inherit addr;
     })
     {
-      services."container@open-webui".serviceConfig = {
-        # RAGの文書取り込みでは埋め込みモデルがプロセス内で動き、
-        # torchがコア数分のスレッドを立てて数GiB規模のRSSが数分続く。
-        # 常時起動のホストで他のワークロードを巻き添えにしないよう上限を設ける。
-        # OSや他の処理のために2スレッド分を残す既存のCPU予算を使う。
-        CPUQuota = "${toString (config.local.cpuBudgetThreads * 100)}%";
-        MemoryHigh = "8G"; # ソフトリミット。これを超えるとメモリを積極的に解放する。
-        MemoryMax = "16G"; # ハードリミット。大きな文書の取り込みでも足りるだろうという推定値。
+      services."container@open-webui" = {
+        # DBが接続を受け付けてから起動しないと、
+        # 起動時のマイグレーションが失敗する。
+        requires = [ "postgresql-ready.service" ];
+        after = [ "postgresql-ready.service" ];
+        serviceConfig = {
+          # RAGの文書取り込みでは埋め込みモデルがプロセス内で動き、
+          # torchがコア数分のスレッドを立てて数GiB規模のRSSが数分続く。
+          # 常時起動のホストで他のワークロードを巻き添えにしないよう上限を設ける。
+          # OSや他の処理のために2スレッド分を残す既存のCPU予算を使う。
+          CPUQuota = "${toString (config.local.cpuBudgetThreads * 100)}%";
+          MemoryHigh = "8G"; # ソフトリミット。これを超えるとメモリを積極的に解放する。
+          MemoryMax = "16G"; # ハードリミット。大きな文書の取り込みでも足りるだろうという推定値。
+        };
       };
-      # コンテナへidmap bindする永続データ領域をホスト側に用意する。
+      # コンテナへbind mountする永続データ領域をホスト側に用意する。
       tmpfiles.rules = [ "d ${stateDir} 0750 open-webui open-webui - -" ];
     }
   ];

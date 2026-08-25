@@ -11,15 +11,15 @@ in
   services.caddy = {
     enable = true;
     email = "ncaq@ncaq.net";
-    # niks3コンテナからGarageへのTLS termination proxy。
+    # niks3コンテナとホスト自身からGarageへのTLS termination proxy。
     # 同じサーバ上の通信なのにいちいちCloudflare Tunnelを経由すると無駄なので、
     # ローカルのCaddyで通信を橋渡しします。
-    # コンテナ内のhostsでgarage.ncaq.netをhostAddressに向け、
+    # niks3コンテナ内のhostsとホストのnetworking.hostsでgarage.ncaq.netをここへ向け、
     # Caddy(Let's Encrypt証明書)経由でGarageに直接HTTP接続することでバイパスします。
     # それによりpresigned URLはhttps://garage.ncaq.net/...のまま維持されます。
     # 外部クライアント(GitHub Actionsなど)はCloudflare Tunnel経由でアクセスします。
     # ホストの443を完全に占有してしまわないように、
-    # niks3コンテナのhostAddress側vethのみにバインドします。
+    # garageとniks3各コンテナのvethのホスト側アドレスのみにバインドします。
     virtualHosts."garage.ncaq.net" = {
       useACMEHost = "garage.ncaq.net";
       extraConfig = ''
@@ -60,7 +60,7 @@ in
     # これによりCIのキャッシュ取得がCloudflare Tunnelを経由しなくなります。
     # garage.ncaq.netはniks3が発行するpresigned URLのアップロード先なので、
     # キャッシュへのアップロードもマシン内で完結します。
-    # 向き先はそれぞれの用途に対応するコンテナ側のvethにして、
+    # 向き先はそれぞれの用途に対応するvethのホスト側アドレスにして、
     # 障害の切り分けが素直になるようにします。
     hosts = {
       ${garageHostAddr} = [ "garage.ncaq.net" ];

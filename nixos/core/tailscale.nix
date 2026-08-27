@@ -9,7 +9,7 @@
   options.local.tailscale.tailnet = lib.mkOption {
     type = lib.types.str;
     readOnly = true;
-    default = "border-saurolophus.ts.net";
+    default = import ../../lib/tailnet.nix;
     description = ''
       `tailscale status`で確認できるこのtailnetのMagicDNSのsuffix。
       ホスト名やService名にこれを付けたものが、tailnet内で引ける名前になる。

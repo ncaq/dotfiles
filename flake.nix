@@ -310,6 +310,11 @@
           # ワークフローを名前で呼ぶコマンドのうち、
           # ノード定義の読み取りと変換とフラグ名の決め方のpytest。
           comfyui-workflow-cli-test = import ./lib/comfyui-workflow-cli-test.nix { inherit pkgs; };
+          # GGUFのチャットテンプレートの出し入れのうち、
+          # メタデータの走査とバイト長を保った書き戻しのpytest。
+          patch-gguf-chat-template-test = import ./lib/patch-gguf-chat-template-test.nix {
+            inherit pkgs;
+          };
           # Open WebUIの利用者ごとの設定を合成するjqのフィルタが、
           # 意図した通りに合成することを検査するderivation。
           open-webui-user-settings-merge-test =
@@ -442,6 +447,7 @@
                 comfyui-workflow-cli-test
                 git-repo-subscribe
                 open-webui-user-settings-merge-test
+                patch-gguf-chat-template-test
                 safetensors-fp16
                 systemd-specifier-test
                 ;

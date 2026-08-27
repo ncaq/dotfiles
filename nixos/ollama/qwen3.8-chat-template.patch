@@ -1,0 +1,92 @@
+Qwen3.8のチャットテンプレートをコーディングエージェント向けに緩和する。
+
+配布元のテンプレートは入力の形を`raise_exception`で厳しく検査していて、
+そのままではollamaが以下の入力に500を返す。
+
+- reasoning effortのxhigh/medium/low以外の値。
+  ollamaのAnthropic互換アダプタは`output_config.effort`のxhighをhighへ正規化するため、
+  Claude Codeの通常のリクエストが全て失敗し、
+  `settings.json`のfallbackModelに指定された存在しないモデルへ落ちて止まる。
+  受け取れるmediumへ倒す。
+
+  xhighではなくmediumなのは、
+  このテンプレートでreasoning_instructionsを注入するのがxhighとlowだけだからである。
+  xhighは「前提を検証し代替案を検討して答えろ」という指示を足すので思考が長くなる。
+  Claude Codeの`max_tokens`はollamaが`num_predict`へそのまま渡すため、
+  伸びた思考は生成の打ち切りとして跳ね返ってくる。
+  未知のモデル名に対するClaude Codeの既定は32000で、
+  xhighではそこへ頻繁に到達していた。
+  mediumはどちらの指示も足さない素の状態なので、
+  思考は残したまま長さだけが戻る。
+  それでも足りなければlowにすると簡潔に答えるよう指示が入る。
+- userメッセージを1つも含まないリクエスト。
+  OpenCodeがタイトル生成や要約で送ってくる。
+  `ns.last_query_index`は「この位置より後ろのassistantの思考を残す」境界で、
+  -1にすると全て残す側になる。
+  ただしこの境界を読むのは`preserve_thinking`がfalseの時だけで、
+  ollamaのソースにはこれをテンプレートへ渡すコードが無い。
+  つまりollama経由では値が何であっても結果は変わらない。
+  意味があるのは例外を投げなくなることだけである。
+- 会話途中のsystemメッセージ。
+  Claude Codeがsystem-reminderとして送ってくる。
+  先頭のsystemメッセージと同じ形のブロックとして描画する。
+
+  これは信頼境界を緩める変更である。
+  元のテンプレートには「systemは先頭だけ」という構造的なガードがあり、
+  それを外すと会話の任意の位置へ、
+  モデルが最上位の信頼度で解釈するsystemブロックを差し込めるようになる。
+  ハーネスはツール出力や取得したWebページのように、
+  人が書いたとは限らない内容をメッセージ列へ載せる。
+  それらが`role: system`として届く経路があれば、
+  間接プロンプトインジェクションによる指示の上書きが成立しやすくなる。
+  `content`はチャットマーカーをエスケープしないので、
+  userメッセージからマーカーを文字列として送る経路も同じ場所へ届く。
+  こちらはテンプレート由来の元からの性質だが、
+  systemブロックを合法な出力にしたことで実害が上がる。
+
+  信頼度の低いラベル付きブロックとして描画する案は採らない。
+  Claude Codeのsystem-reminderは本文がそのまま指示として効くことを前提にしており、
+  信頼度を下げて描画すると500で止まる問題は消えても中身が効かなくなる。
+
+  このモデルへ流すのはtailnet内の入力だけであることを前提とする。
+  tailnetに参加しているデバイスは全て自分の所有物である。
+  外部から来た内容をそのまま`role: system`へ載せるハーネスを繋ぐ場合は、
+  この前提が崩れるので緩和を見直すこと。
+
+置換後のテンプレートは元と同じ長さか、
+4バイト以上短くなければならない。
+GGUFのメタデータ文字列は長さを変えられないので、
+`lib/patch_gguf_chat_template.py`が余りをJinjaのコメントで埋める。
+そのコメントは`{#`と`#}`だけで4バイト使うため、
+1から3バイトだけ短い差分は埋めようがなくビルドが失敗する。
+
+jinja2で元と適用後のテンプレートを描画して、
+上の3つが元では例外になり、適用後は通ることを確認した。
+
+--- a/chat_template.jinja
++++ b/chat_template.jinja
+@@ -46,7 +46,7 @@
+ {%- if enable_thinking is undefined or enable_thinking is true %}
+     {%- set resolved_reasoning_effort = reasoning_effort|default('xhigh') %}
+     {%- if resolved_reasoning_effort not in ('xhigh', 'medium', 'low') %}
+-        {{- raise_exception('Unexpected reasoning effort ' ~ reasoning_effort ~ '. Supported types are xhigh (default), medium, and low.') }}
++        {%- set resolved_reasoning_effort = 'medium' %}
+     {%- endif %}
+     {%- if resolved_reasoning_effort == 'xhigh' %}
+         {%- set reasoning_instructions = 'Reasoning effort is set to xhigh. Please think carefully through the task, validate key assumptions, consider plausible alternatives, and prioritize correctness, consistency, and clarity in the final answer.' %}
+@@ -97,13 +97,13 @@
+     {%- endif %}
+ {%- endfor %}
+ {%- if ns.multi_step_tool %}
+-    {{- raise_exception('No user query found in messages.') }}
++    {%- set ns.last_query_index = -1 %}
+ {%- endif %}
+ {%- for message in messages %}
+     {%- set content = render_content(message.content, true)|trim %}
+     {%- if message.role == "system" %}
+         {%- if not loop.first %}
+-            {{- raise_exception('System message must be at the beginning.') }}
++            {{- '<|im_start|>system\n' + content + '<|im_end|>\n' }}
+         {%- endif %}
+     {%- elif message.role == "user" %}
+         {{- '<|im_start|>' + message.role + '\n' + content + '<|im_end|>' + '\n' }}

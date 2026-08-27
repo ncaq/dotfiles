@@ -1,9 +1,50 @@
 {
+  lib,
   pkgs-unstable,
   config,
   codingAgentWorkDirFullPath,
   ...
 }:
+let
+  # 接続するOllamaのホストと、そのホストのアクセラレータ。
+  # bulletを名指しするのはGPU推論を使いたいためで、
+  # 他のホストのOllamaはコーディングに使える速度が出ない。
+  #
+  # 2つを組にして置くのは、
+  # contextの長さもモデルの一覧もアクセラレータから引くためです。
+  # ホスト名の隣で決めておかないと、
+  # 接続先を変えた時に片方だけが古いまま残り、
+  # CPUのホストへCUDAの前提を宣言したproviderが静かに生まれます。
+  ollamaHostName = "bullet";
+  ollamaAccelerator = "cuda";
+
+  # OllamaのTailscale Service経由のURL。
+  ollamaBaseUrl = import ../../lib/ollama-tailscale-url.nix { inherit lib; } {
+    hostName = ollamaHostName;
+    tailnet = import ../../lib/tailnet.nix;
+  };
+  # providerへ載せるモデル。
+  # 接続先のgeneralに定義しているものだけを載せます。
+  # freedom側のモデルはコーディング向きではないためです。
+  #
+  # `limit`を書かないとOpenCodeは接続先が扱える長さを知りません。
+  # models.devに載っていない素のproviderなので、
+  # 他所から引いてくる当てもありません。
+  # `context`はモデルが一度に保持できるトークンの総数で、
+  # `output`は1回の応答の上限です。
+  # 配分の考え方は`lib/ollama-context.nix`にあります。
+  ollamaModels =
+    let
+      ollamaContext = import ../../lib/ollama-context.nix;
+      budget = ollamaContext.budget ollamaContext.length.${ollamaAccelerator};
+      modelNames = import ../../lib/ollama-model-names.nix;
+    in
+    lib.genAttrs modelNames.${ollamaAccelerator}.general (_: {
+      limit = {
+        inherit (budget) context output;
+      };
+    });
+in
 {
   programs.opencode = {
     enable = true;
@@ -21,6 +62,15 @@
       model = "github-copilot/gpt-5.6-sol";
       small_model = "github-copilot/gpt-5-mini";
       lsp = true;
+      # bulletのOllamaをOpenAI互換APIの素のproviderとして登録します。
+      # `ollama launch opencode`のハーネス経由ではなく通常のAPI呼び出しで利用します。
+      # Tailscale ServiceのURLを使うことでbullet以外のクライアントからも同じ設定で使えます。
+      provider.ollama = {
+        npm = "@ai-sdk/openai-compatible";
+        name = "Ollama (bullet)";
+        options.baseURL = "${ollamaBaseUrl}/v1";
+        models = ollamaModels;
+      };
       permission.external_directory = {
         # Claude Codeと同じ追加ディレクトリを許可します。
         "${codingAgentWorkDirFullPath}**" = "allow";

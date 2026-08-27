@@ -8,6 +8,7 @@
 let
   enableCuda = config.local.ollama.enableCuda;
   fetchHuggingFace = import ../../lib/fetch-hugging-face.nix { inherit pkgs; };
+  patchGgufChatTemplate = import ../../lib/patch-gguf-chat-template.nix { inherit pkgs; };
   # registryのQwen3.8が同梱しているパラメータ。
   # GGUFから自前で組み立てるとparamsレイヤーが付いてこないので明示する。
   # `draft_num_predict`が特に重要で、
@@ -37,56 +38,10 @@ let
     top_k = 20;
     top_p = 0.95;
   };
-  cudaModels = {
-    general = [
-      # bulletは32GiBのVRAMに収まる範囲で汎用品質を優先して27Bのdenseを使う。
-      # registryの`qwen3.8:27b-mtp-q4_K_M`ではなくHugging FaceのGGUFを自前で組むのは、
-      # registryのmtp付きタグがq4_K_Mとq8_0とbf16しか無く、
-      # q8_0は27GiBあってKVキャッシュを載せる余地が無いためである。
-      # bulletでの実測(KVキャッシュq8_0, context 131072)では、
-      # registryのq4_K_Mが23.8GiBで136.8トークン/秒に対し、
-      # このq6_kは28.8GiBで106.2トークン/秒で、
-      # 全層がGPUに載ったままVRAMの空きも2.5GiB残る。
-      # q6_kは量子化としては事実上無損失の領域なので、
-      # これ以上重みに割いても品質はほとんど変わらない。
-      # 実際、一段上のq8_0は本体だけで27GiBあり、
-      # contextを32768まで削ってKVを3.2GiB浮かせても載らない。
-      # 逆に少しでも溢れると代償が大きく、
-      # 8%がCPUへ出ただけの構成では53.5トークン/秒まで落ちた。
-      "qwen3.8-27b-mtp:q6_k"
-    ];
-    freedom = [
-      "qwen3.8-27b-heretic-rvn:q6_k"
-      "mistralprism-24b:q4_k_m"
-      "ms3.2-24b-magnum-diamond:q4_k_m"
-    ];
-  };
-  cpuModels = {
-    general = [
-      # CPUの推論はメモリ帯域で頭打ちになり、
-      # 1トークンごとに読み出す重みの量がそのまま速度を決める。
-      # 総パラメータではなくactive parameterが効くため、
-      # 同じ品質帯ならdenseよりMoEの方が圧倒的に速い。
-      # seminarでの実測では9Bのdenseが約10トークン/秒に対し、
-      # このactive 3BのMoEは約19トークン/秒だった。
-      # CUDAのホストとqwen3.8へ揃えられないのは、
-      # qwen3.8が27Bのdenseしか公開しておらずMoE版が存在しないためである。
-      # GPUで効いたmtpタグはCPUでは逆効果で、
-      # seminarでの実測では素のq4_K_Mの約18.9トークン/秒に対し、
-      # `qwen3.6:35b-a3b-mtp-q4_K_M`は約17.0トークン/秒しか出ない。
-      # 投機的デコーディングは余った演算能力を使って帯域を節約する手法だが、
-      # CPUにはその余りがないため検証のコストだけが乗る。
-      # 同じactive 3BのMoEである`nemotron-3.5-lightning:30b`も測ったが、
-      # 約18.2トークン/秒とほぼ同速なのに、
-      # Artificial Analysis Intelligence Indexは24でqwen3.6の32に届かない。
-      "qwen3.6:35b-a3b"
-    ];
-    # 表現の自由度を優先したモデルはCPUで推論するホストには置かない。
-    # seminarでの実測では24Bのdenseは約4トークン/秒しか出ず、
-    # 対話を待っていられる速度ではないため、
-    # ディスクとロード時間を消費するだけになる。
-    freedom = [ ];
-  };
+  # アクセラレータごとに、役割から実際のモデル名を引く表。
+  # home-managerの設定もこれを読むため、実体は`lib/`に置いている。
+  # 理由はそのファイルの先頭に書いてある。
+  modelNames = import ../../lib/ollama-model-names.nix;
   ggufModels = lib.optionalAttrs enableCuda {
     # registryに無い量子化でQwen3.8-27Bを使うための自前ビルド。
     # MTPのドラフトヘッドはQwen3.8の公式の重みに元から入っており、
@@ -125,14 +80,21 @@ let
     # 投影器はunslothのF16を使う。
     # registry版の投影器も888MiBでF16相当であり、
     # Jackrongが置いているF32は1.72GiBと倍を占める割に得るものが無い。
+    #
+    # チャットテンプレートはそのままではコーディングエージェントからの入力を弾くので、
+    # `qwen3.8-chat-template.patch`を当てて緩和したものを登録する。
+    # 弾かれる入力と緩和の内容はそのパッチファイルの先頭に書いてある。
     "qwen3.8-27b-mtp:q6_k" = {
       sources = [
-        (fetchHuggingFace {
-          owner = "Jackrong";
-          repo = "Qwen3.8-27B-MTP-GGUF";
-          rev = "422451108d80df4a55ebd66c3416af42a0ce0b0c";
-          file = "Qwen3.8-27B-MTP-Q6_K.gguf";
-          hash = "sha256-0PqUrycPPeQmll8fn29hQKrp9arZuIu0ZkUkknSNUm4=";
+        (patchGgufChatTemplate {
+          gguf = fetchHuggingFace {
+            owner = "Jackrong";
+            repo = "Qwen3.8-27B-MTP-GGUF";
+            rev = "422451108d80df4a55ebd66c3416af42a0ce0b0c";
+            file = "Qwen3.8-27B-MTP-Q6_K.gguf";
+            hash = "sha256-0PqUrycPPeQmll8fn29hQKrp9arZuIu0ZkUkknSNUm4=";
+          };
+          patch = ./qwen3.8-chat-template.patch;
         })
         (fetchHuggingFace {
           owner = "unsloth";
@@ -171,14 +133,25 @@ let
     # clipの投影器であるmmprojも一緒に渡す。
     # 投影器は`ggml-org/Qwen3.8-27B-GGUF`にある公式のものと同一で、
     # ARAは言語モデル側の層しか触っていないため素の投影器がそのまま噛み合う。
+    #
+    # チャットテンプレートは汎用モデルのものとバイト単位で同一なので、
+    # 同じ`qwen3.8-chat-template.patch`を当てる。
+    # ARAは重みしか触っておらずテンプレートは素のQwen3.8のままだからである。
+    # 今の呼び出し側であるOpen WebUIが弾かれる形を送っているわけではないが、
+    # reasoning effortを明示する経路があれば同じ500に当たる。
+    # 片方だけ緩和されている状態は、
+    # 役割を入れ替えた時に理由の分からない失敗として現れる。
     "qwen3.8-27b-heretic-rvn:q6_k" = {
       sources = [
-        (fetchHuggingFace {
-          owner = "0bserverx";
-          repo = "Qwen3.8-27B-Heretic-Abliterated-Uncensored-GGUF";
-          rev = "20b94f0613b632b4848bbe3b1e05d9ee0c2b1608";
-          file = "RVN-Q6_K-multilingual-mtp.gguf";
-          hash = "sha256-E0TQdCXXPw0bjzYhORDq6P7CEGGxqQg1kn6EhSOPk6Q=";
+        (patchGgufChatTemplate {
+          gguf = fetchHuggingFace {
+            owner = "0bserverx";
+            repo = "Qwen3.8-27B-Heretic-Abliterated-Uncensored-GGUF";
+            rev = "20b94f0613b632b4848bbe3b1e05d9ee0c2b1608";
+            file = "RVN-Q6_K-multilingual-mtp.gguf";
+            hash = "sha256-E0TQdCXXPw0bjzYhORDq6P7CEGGxqQg1kn6EhSOPk6Q=";
+          };
+          patch = ./qwen3.8-chat-template.patch;
         })
         (fetchHuggingFace {
           owner = "0bserverx";
@@ -231,19 +204,15 @@ let
     };
   };
   # 全てのアクセラレータの全ての役割に現れるモデル名。
-  declaredModels = lib.concatMap (models: models.general ++ models.freedom) [
-    cudaModels
-    cpuModels
-  ];
+  declaredModels = lib.concatMap (models: models.general ++ models.freedom) (
+    lib.attrValues modelNames
+  );
   # 役割のリストに載っていない`ggufModels`の定義。
   orphanGgufModels = lib.subtractLists declaredModels (lib.attrNames ggufModels);
 in
 {
   local.ollama = {
-    models = {
-      cuda = cudaModels;
-      cpu = cpuModels;
-    };
+    models = modelNames;
     inherit ggufModels;
   };
 

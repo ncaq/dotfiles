@@ -27,7 +27,7 @@ let
   addr = config.machineAddresses.open-webui;
   port = config.local.openWebui.ollamaPort;
   tailnet = config.local.tailscale.tailnet;
-  ollamaService = import ../../../../lib/ollama-tailscale-service.nix;
+  ollamaUrl = import ../../../../lib/ollama-tailscale-url.nix { inherit lib; };
   # 使いたい順のホスト名。
   # GPUのbulletを先に書き、落ちていればCPUのseminarへ回す。
   hosts = [
@@ -37,7 +37,13 @@ let
   # 1つの`reverse_proxy`の中でhttpとhttpsのupstreamは混在できないため、
   # seminar自身のOllamaにもHTTPSのTailscale Service経由で繋ぐ。
   # 自分のServiceへの経路はtailscaledの中で完結する。
-  upstreams = map (host: "https://${lib.removePrefix "svc:" (ollamaService host)}.${tailnet}") hosts;
+  upstreams = map (
+    host:
+    ollamaUrl {
+      hostName = host;
+      inherit tailnet;
+    }
+  ) hosts;
 in
 {
   # `caddy.nix`の`:8081`と同じく、ホスト名なしのアドレスにしてHTTPだけで待ち受ける。

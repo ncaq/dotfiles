@@ -56,12 +56,15 @@ pkgs.runCommand "${gguf.name}-patched-template"
     allowSubstitutes = false;
   }
   ''
+    # 差分が当たるかどうかを、コピーより先に確かめる。
+    # 元のGGUFは読み取り専用のまま取り出せるので、
+    # 配布元がテンプレートを変えていた場合はメタデータの読み取りだけで止まる。
+    # 逆にすると、失敗が確定した後で数十GBを書いたことになる。
+    python3 ${./patch_gguf_chat_template.py} extract ${gguf} chat_template.jinja
+    # `--fuzz=0`でコンテキスト行の不一致を許さない。
+    patch --fuzz=0 chat_template.jinja ${patch}
+
     cp --reflink=auto ${gguf} "$out"
     chmod +w "$out"
-
-    python3 ${./patch_gguf_chat_template.py} extract "$out" chat_template.jinja
-    # `--fuzz=0`でコンテキスト行の不一致を許さない。
-    # 配布元がテンプレートを変えたらここで失敗する。
-    patch --fuzz=0 chat_template.jinja ${patch}
     python3 ${./patch_gguf_chat_template.py} embed "$out" chat_template.jinja
   ''

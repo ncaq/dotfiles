@@ -23,7 +23,10 @@ Qwen3.8のチャットテンプレートをコーディングエージェント�
   OpenCodeがタイトル生成や要約で送ってくる。
   `ns.last_query_index`は「この位置より後ろのassistantの思考を残す」境界で、
   -1にすると全て残す側になる。
-  `preserve_thinking`を渡さない呼び出しではどちらでも結果は変わらない。
+  ただしこの境界を読むのは`preserve_thinking`がfalseの時だけで、
+  ollamaのソースにはこれをテンプレートへ渡すコードが無い。
+  つまりollama経由では値が何であっても結果は変わらない。
+  意味があるのは例外を投げなくなることだけである。
 - 会話途中のsystemメッセージ。
   Claude Codeがsystem-reminderとして送ってくる。
   先頭のsystemメッセージと同じ形のブロックとして描画する。

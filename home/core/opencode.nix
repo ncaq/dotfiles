@@ -13,6 +13,11 @@ let
     hostName = "bullet";
     tailnet = import ../../lib/tailnet.nix;
   };
+  # providerへ載せるモデル。
+  # CUDAホストのgeneralに定義しているものだけを載せます。
+  # freedom側のモデルはコーディング向きではないためです。
+  # モデルごとの設定は無いので値は空の属性集合です。
+  ollamaModels = lib.genAttrs (import ../../lib/ollama-model-names.nix).cuda.general (_: { });
 in
 {
   programs.opencode = {
@@ -34,15 +39,11 @@ in
       # bulletのOllamaをOpenAI互換APIの素のproviderとして登録します。
       # `ollama launch opencode`のハーネス経由ではなく通常のAPI呼び出しで利用します。
       # Tailscale ServiceのURLを使うことでbullet以外のクライアントからも同じ設定で使えます。
-      # モデルは`nixos/ollama/model.nix`でCUDAホストのgeneralに定義しているものだけを載せます。
-      # freedom側のモデルはコーディング向きではないためです。
       provider.ollama = {
         npm = "@ai-sdk/openai-compatible";
         name = "Ollama (bullet)";
         options.baseURL = "${ollamaBaseUrl}/v1";
-        models = {
-          "qwen3.8-27b-mtp:q6_k" = { };
-        };
+        models = ollamaModels;
       };
       permission.external_directory = {
         # Claude Codeと同じ追加ディレクトリを許可します。

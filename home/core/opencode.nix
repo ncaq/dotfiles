@@ -16,8 +16,23 @@ let
   # providerへ載せるモデル。
   # CUDAホストのgeneralに定義しているものだけを載せます。
   # freedom側のモデルはコーディング向きではないためです。
-  # モデルごとの設定は無いので値は空の属性集合です。
-  ollamaModels = lib.genAttrs (import ../../lib/ollama-model-names.nix).cuda.general (_: { });
+  #
+  # `limit`を書かないとOpenCodeは接続先が扱える長さを知りません。
+  # models.devに載っていない素のproviderなので、
+  # 他所から引いてくる当てもありません。
+  # `context`はモデルが一度に保持できるトークンの総数で、
+  # `output`は1回の応答の上限です。
+  # 配分の考え方は`lib/ollama-context.nix`にあります。
+  ollamaModels =
+    let
+      ollamaContext = import ../../lib/ollama-context.nix;
+      budget = ollamaContext.budget ollamaContext.length.cuda;
+    in
+    lib.genAttrs (import ../../lib/ollama-model-names.nix).cuda.general (_: {
+      limit = {
+        inherit (budget) context output;
+      };
+    });
 in
 {
   programs.opencode = {

@@ -7,6 +7,7 @@
 */
 { lib, config, ... }:
 let
+  contextLength = (import ../../lib/ollama-context.nix).length;
   # そのアクセラレータで使うモデルを役割ごとに並べたもの。
   roleType = lib.types.submodule {
     options = {
@@ -47,8 +48,10 @@ in
     contextLength = lib.mkOption {
       type = lib.types.int;
       readOnly = true;
-      default = if config.local.ollama.enableCuda then 131072 else 32768;
-      defaultText = lib.literalExpression "if config.local.ollama.enableCuda then 131072 else 32768";
+      default = if config.local.ollama.enableCuda then contextLength.cuda else contextLength.cpu;
+      defaultText = lib.literalExpression ''
+        if config.local.ollama.enableCuda then contextLength.cuda else contextLength.cpu
+      '';
       description = ''
         Ollamaが既定で使うcontextの長さ。
         `container.nix`が`OLLAMA_CONTEXT_LENGTH`へ設定する。
@@ -58,6 +61,9 @@ in
         接続先が実際に扱える長さを知らないハーネスは、
         それより長いプロンプトを組み立ててしまい、
         Ollamaが黙って先頭を切り捨てる形で壊れるためである。
+
+        値そのものは`lib/ollama-context.nix`が持っている。
+        home-managerの設定もこの値を必要とするためである。
       '';
     };
 

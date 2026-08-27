@@ -15,10 +15,21 @@
   片方をcontextそのものにしてしまうと、
   長い会話で長い応答を生成した瞬間に合計が溢れる。
 
-  `output`をcontextの1/4にしているのは、
-  Claude Codeが未知のモデルに使う既定の32000を下回らせないためである。
-  CUDAのホストの131072に対して32768になり、
-  残りの98304を会話の履歴に使える。
+  比率の1/4はCUDAのホストを基準に選んだ。
+  `length.cuda`の131072に対して`output`が32768になり、
+  Claude Codeが未知のモデルに使う既定の32000をわずかに上回る。
+  思考を出力するモデルでも1回の応答が収まる大きさとして、
+  既定を下回らせない範囲で最も履歴へ回せる比率である。
+
+  CPUのホストではこの説明は成り立たない。
+  `length.cpu`の32768に対して`output`は8192で、
+  既定の32000を大きく下回る。
+  これは意図した結果である。
+  contextが小さいホストで応答へ既定分を確保すると履歴がほとんど残らず、
+  会話が数往復で圧縮に入ってしまう。
+  1回の応答の長さより会話の長さを優先する。
+  そもそもCPU推論は毎秒20トークン程度なので、
+  8192トークンでも書き切るのに数分かかる。
 
   home-managerの設定もこれらを必要とするため実体をここへ置く。
   home-managerからNixOSの`config`を引けない理由は、
@@ -30,13 +41,20 @@
     cpu = 32768;
   };
 
-  budget = contextLength: {
-    # モデルが一度に保持できるトークンの総数。
-    context = contextLength;
-    # 1回の応答に使ってよい上限。
-    output = contextLength / 4;
-    # 会話の履歴に使ってよい上限。
-    # 応答の分を引いてあるので、生成しきってもcontextに収まる。
-    history = contextLength - contextLength / 4;
-  };
+  budget =
+    contextLength:
+    let
+      # 1回の応答に使ってよい上限。
+      output = contextLength / 4;
+    in
+    {
+      # モデルが一度に保持できるトークンの総数。
+      context = contextLength;
+      inherit output;
+      # 会話の履歴に使ってよい上限。
+      # 応答の分を引いてあるので、生成しきってもcontextに収まる。
+      # この引き算で導くことが`output + history == context`の保証である。
+      # 両方に比率を書くと、片方だけ直した時に合計が溢れる。
+      history = contextLength - output;
+    };
 }

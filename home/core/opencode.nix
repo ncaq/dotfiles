@@ -6,15 +6,25 @@
   ...
 }:
 let
-  # bulletのOllamaのTailscale Service経由のURL。
+  # 接続するOllamaのホストと、そのホストのアクセラレータ。
   # bulletを名指しするのはGPU推論を使いたいためで、
   # 他のホストのOllamaはコーディングに使える速度が出ない。
+  #
+  # 2つを組にして置くのは、
+  # contextの長さもモデルの一覧もアクセラレータから引くためです。
+  # ホスト名の隣で決めておかないと、
+  # 接続先を変えた時に片方だけが古いまま残り、
+  # CPUのホストへCUDAの前提を宣言したproviderが静かに生まれます。
+  ollamaHostName = "bullet";
+  ollamaAccelerator = "cuda";
+
+  # OllamaのTailscale Service経由のURL。
   ollamaBaseUrl = import ../../lib/ollama-tailscale-url.nix { inherit lib; } {
-    hostName = "bullet";
+    hostName = ollamaHostName;
     tailnet = import ../../lib/tailnet.nix;
   };
   # providerへ載せるモデル。
-  # CUDAホストのgeneralに定義しているものだけを載せます。
+  # 接続先のgeneralに定義しているものだけを載せます。
   # freedom側のモデルはコーディング向きではないためです。
   #
   # `limit`を書かないとOpenCodeは接続先が扱える長さを知りません。
@@ -26,9 +36,10 @@ let
   ollamaModels =
     let
       ollamaContext = import ../../lib/ollama-context.nix;
-      budget = ollamaContext.budget ollamaContext.length.cuda;
+      budget = ollamaContext.budget ollamaContext.length.${ollamaAccelerator};
+      modelNames = import ../../lib/ollama-model-names.nix;
     in
-    lib.genAttrs (import ../../lib/ollama-model-names.nix).cuda.general (_: {
+    lib.genAttrs modelNames.${ollamaAccelerator}.general (_: {
       limit = {
         inherit (budget) context output;
       };

@@ -133,14 +133,25 @@ let
     # clipの投影器であるmmprojも一緒に渡す。
     # 投影器は`ggml-org/Qwen3.8-27B-GGUF`にある公式のものと同一で、
     # ARAは言語モデル側の層しか触っていないため素の投影器がそのまま噛み合う。
+    #
+    # チャットテンプレートは汎用モデルのものとバイト単位で同一なので、
+    # 同じ`qwen3.8-chat-template.patch`を当てる。
+    # ARAは重みしか触っておらずテンプレートは素のQwen3.8のままだからである。
+    # 今の呼び出し側であるOpen WebUIが弾かれる形を送っているわけではないが、
+    # reasoning effortを明示する経路があれば同じ500に当たる。
+    # 片方だけ緩和されている状態は、
+    # 役割を入れ替えた時に理由の分からない失敗として現れる。
     "qwen3.8-27b-heretic-rvn:q6_k" = {
       sources = [
-        (fetchHuggingFace {
-          owner = "0bserverx";
-          repo = "Qwen3.8-27B-Heretic-Abliterated-Uncensored-GGUF";
-          rev = "20b94f0613b632b4848bbe3b1e05d9ee0c2b1608";
-          file = "RVN-Q6_K-multilingual-mtp.gguf";
-          hash = "sha256-E0TQdCXXPw0bjzYhORDq6P7CEGGxqQg1kn6EhSOPk6Q=";
+        (patchGgufChatTemplate {
+          gguf = fetchHuggingFace {
+            owner = "0bserverx";
+            repo = "Qwen3.8-27B-Heretic-Abliterated-Uncensored-GGUF";
+            rev = "20b94f0613b632b4848bbe3b1e05d9ee0c2b1608";
+            file = "RVN-Q6_K-multilingual-mtp.gguf";
+            hash = "sha256-E0TQdCXXPw0bjzYhORDq6P7CEGGxqQg1kn6EhSOPk6Q=";
+          };
+          patch = ./qwen3.8-chat-template.patch;
         })
         (fetchHuggingFace {
           owner = "0bserverx";

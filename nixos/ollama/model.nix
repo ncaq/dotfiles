@@ -126,23 +126,10 @@ let
     # 投影器はunslothのF16を使う。
     # registry版の投影器も888MiBでF16相当であり、
     # Jackrongが置いているF32は1.72GiBと倍を占める割に得るものが無い。
-    # チャットテンプレートはコーディングエージェント向けに緩和する。
-    # Qwen3.8のテンプレートは入力の形を`raise_exception`で厳しく検査していて、
-    # そのままではollamaが以下の入力に500を返す。
     #
-    # - reasoning effortのxhigh/medium/low以外の値。
-    #   ollamaのAnthropic互換アダプタはClaude Codeのthinkingをhighへ変換するため、
-    #   Claude Codeの通常のリクエストが全て失敗し、
-    #   settings.jsonのfallbackModelに指定された存在しないモデルへ落ちて止まる。
-    # - userメッセージを1つも含まないリクエスト。
-    #   OpenCodeがタイトル生成や要約で送ってくる。
-    # - 会話途中のsystemメッセージ。
-    #   Claude Codeがsystem-reminderとして送ってくる。
-    #
-    # それぞれ例外を投げる代わりに、
-    # 未知のeffortは既定のxhigh扱い、
-    # userメッセージ無しは思考保持の判定だけ無効化、
-    # 途中のsystemメッセージは普通のsystemブロックとして描画するよう置換する。
+    # チャットテンプレートはそのままではコーディングエージェントからの入力を弾くので、
+    # `qwen3.8-chat-template.patch`を当てて緩和したものを登録する。
+    # 弾かれる入力と緩和の内容はそのパッチファイルの先頭に書いてある。
     "qwen3.8-27b-mtp:q6_k" = {
       sources = [
         (patchGgufChatTemplate {
@@ -153,41 +140,7 @@ let
             file = "Qwen3.8-27B-MTP-Q6_K.gguf";
             hash = "sha256-0PqUrycPPeQmll8fn29hQKrp9arZuIu0ZkUkknSNUm4=";
           };
-          replacements = [
-            {
-              # 各行の先頭の空白はテンプレート内の絶対インデントから、
-              # 1行目の分を引いた相対量で書く。
-              # 置換は部分文字列の完全一致で行われるためである。
-              from = ''
-                {%- if resolved_reasoning_effort not in ('xhigh', 'medium', 'low') %}
-                        {{- raise_exception('Unexpected reasoning effort ' ~ reasoning_effort ~ '. Supported types are xhigh (default), medium, and low.') }}
-                    {%- endif %}'';
-              to = ''
-                {%- if resolved_reasoning_effort not in ('xhigh', 'medium', 'low') %}
-                        {%- set resolved_reasoning_effort = 'xhigh' %}
-                    {%- endif %}'';
-            }
-            {
-              from = ''
-                {%- if ns.multi_step_tool %}
-                    {{- raise_exception('No user query found in messages.') }}
-                {%- endif %}'';
-              to = ''
-                {%- if ns.multi_step_tool %}
-                    {%- set ns.last_query_index = -1 %}
-                {%- endif %}'';
-            }
-            {
-              from = ''
-                {%- if not loop.first %}
-                            {{- raise_exception('System message must be at the beginning.') }}
-                        {%- endif %}'';
-              to = ''
-                {%- if not loop.first %}
-                            {{- '<|im_start|>system\n' + content + '<|im_end|>\n' }}
-                        {%- endif %}'';
-            }
-          ];
+          patch = ./qwen3.8-chat-template.patch;
         })
         (fetchHuggingFace {
           owner = "unsloth";

@@ -1,0 +1,53 @@
+Qwen3.8のチャットテンプレートをコーディングエージェント向けに緩和する。
+
+配布元のテンプレートは入力の形を`raise_exception`で厳しく検査していて、
+そのままではollamaが以下の入力に500を返す。
+
+- reasoning effortのxhigh/medium/low以外の値。
+  ollamaのAnthropic互換アダプタはClaude Codeのthinkingをhighへ変換するため、
+  Claude Codeの通常のリクエストが全て失敗し、
+  `settings.json`のfallbackModelに指定された存在しないモデルへ落ちて止まる。
+  既定と同じxhighへ倒す。
+- userメッセージを1つも含まないリクエスト。
+  OpenCodeがタイトル生成や要約で送ってくる。
+  `ns.last_query_index`は「この位置より後ろのassistantの思考を残す」境界で、
+  -1にすると全て残す側になる。
+  `preserve_thinking`を渡さない呼び出しではどちらでも結果は変わらない。
+- 会話途中のsystemメッセージ。
+  Claude Codeがsystem-reminderとして送ってくる。
+  先頭のsystemメッセージと同じ形のブロックとして描画する。
+
+置換後のテンプレートは元より短くなければならない。
+GGUFのメタデータ文字列は長さを変えられず、
+`lib/patch_gguf_chat_template.py`が余りをJinjaのコメントで埋めるためである。
+
+jinja2で元と適用後のテンプレートを描画して、
+上の3つが元では例外になり、適用後は通ることを確認した。
+
+--- a/chat_template.jinja
++++ b/chat_template.jinja
+@@ -46,7 +46,7 @@
+ {%- if enable_thinking is undefined or enable_thinking is true %}
+     {%- set resolved_reasoning_effort = reasoning_effort|default('xhigh') %}
+     {%- if resolved_reasoning_effort not in ('xhigh', 'medium', 'low') %}
+-        {{- raise_exception('Unexpected reasoning effort ' ~ reasoning_effort ~ '. Supported types are xhigh (default), medium, and low.') }}
++        {%- set resolved_reasoning_effort = 'xhigh' %}
+     {%- endif %}
+     {%- if resolved_reasoning_effort == 'xhigh' %}
+         {%- set reasoning_instructions = 'Reasoning effort is set to xhigh. Please think carefully through the task, validate key assumptions, consider plausible alternatives, and prioritize correctness, consistency, and clarity in the final answer.' %}
+@@ -97,13 +97,13 @@
+     {%- endif %}
+ {%- endfor %}
+ {%- if ns.multi_step_tool %}
+-    {{- raise_exception('No user query found in messages.') }}
++    {%- set ns.last_query_index = -1 %}
+ {%- endif %}
+ {%- for message in messages %}
+     {%- set content = render_content(message.content, true)|trim %}
+     {%- if message.role == "system" %}
+         {%- if not loop.first %}
+-            {{- raise_exception('System message must be at the beginning.') }}
++            {{- '<|im_start|>system\n' + content + '<|im_end|>\n' }}
+         {%- endif %}
+     {%- elif message.role == "user" %}
+         {{- '<|im_start|>' + message.role + '\n' + content + '<|im_end|>' + '\n' }}

@@ -12,6 +12,10 @@
   "extraPaths": [".typecheck/src"],
   "executionEnvironments": [
     {
+      "root": "lib/tests",
+      "extraPaths": ["lib"]
+    },
+    {
       "root": "pkgs/safetensors-fp16",
       "extraPaths": ["pkgs/safetensors-fp16", "pkgs/safetensors-fp16/tests"]
     },

@@ -1,9 +1,19 @@
 {
+  lib,
   pkgs-unstable,
   config,
   codingAgentWorkDirFullPath,
   ...
 }:
+let
+  # bulletのOllamaのTailscale Service経由のURL。
+  # bulletを名指しするのはGPU推論を使いたいためで、
+  # 他のホストのOllamaはコーディングに使える速度が出ない。
+  ollamaBaseUrl = import ../../lib/ollama-tailscale-url.nix { inherit lib; } {
+    hostName = "bullet";
+    tailnet = import ../../lib/tailnet.nix;
+  };
+in
 {
   programs.opencode = {
     enable = true;
@@ -24,13 +34,12 @@
       # bulletのOllamaをOpenAI互換APIの素のproviderとして登録します。
       # `ollama launch opencode`のハーネス経由ではなく通常のAPI呼び出しで利用します。
       # Tailscale ServiceのURLを使うことでbullet以外のクライアントからも同じ設定で使えます。
-      # URLの規則は`lib/ollama-tailscale-service.nix`と`nixos/core/tailscale.nix`が持っています。
       # モデルは`nixos/ollama/model.nix`でCUDAホストのgeneralに定義しているものだけを載せます。
       # freedom側のモデルはコーディング向きではないためです。
       provider.ollama = {
         npm = "@ai-sdk/openai-compatible";
         name = "Ollama (bullet)";
-        options.baseURL = "https://ollama-bullet.border-saurolophus.ts.net/v1";
+        options.baseURL = "${ollamaBaseUrl}/v1";
         models = {
           "qwen3.8-27b-mtp:q6_k" = { };
         };

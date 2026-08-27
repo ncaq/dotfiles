@@ -4,10 +4,21 @@ Qwen3.8のチャットテンプレートをコーディングエージェント�
 そのままではollamaが以下の入力に500を返す。
 
 - reasoning effortのxhigh/medium/low以外の値。
-  ollamaのAnthropic互換アダプタはClaude Codeのthinkingをhighへ変換するため、
+  ollamaのAnthropic互換アダプタは`output_config.effort`のxhighをhighへ正規化するため、
   Claude Codeの通常のリクエストが全て失敗し、
   `settings.json`のfallbackModelに指定された存在しないモデルへ落ちて止まる。
-  既定と同じxhighへ倒す。
+  受け取れるmediumへ倒す。
+
+  xhighではなくmediumなのは、
+  このテンプレートでreasoning_instructionsを注入するのがxhighとlowだけだからである。
+  xhighは「前提を検証し代替案を検討して答えろ」という指示を足すので思考が長くなる。
+  Claude Codeの`max_tokens`はollamaが`num_predict`へそのまま渡すため、
+  伸びた思考は生成の打ち切りとして跳ね返ってくる。
+  未知のモデル名に対するClaude Codeの既定は32000で、
+  xhighではそこへ頻繁に到達していた。
+  mediumはどちらの指示も足さない素の状態なので、
+  思考は残したまま長さだけが戻る。
+  それでも足りなければlowにすると簡潔に答えるよう指示が入る。
 - userメッセージを1つも含まないリクエスト。
   OpenCodeがタイトル生成や要約で送ってくる。
   `ns.last_query_index`は「この位置より後ろのassistantの思考を残す」境界で、
@@ -31,7 +42,7 @@ jinja2で元と適用後のテンプレートを描画して、
      {%- set resolved_reasoning_effort = reasoning_effort|default('xhigh') %}
      {%- if resolved_reasoning_effort not in ('xhigh', 'medium', 'low') %}
 -        {{- raise_exception('Unexpected reasoning effort ' ~ reasoning_effort ~ '. Supported types are xhigh (default), medium, and low.') }}
-+        {%- set resolved_reasoning_effort = 'xhigh' %}
++        {%- set resolved_reasoning_effort = 'medium' %}
      {%- endif %}
      {%- if resolved_reasoning_effort == 'xhigh' %}
          {%- set reasoning_instructions = 'Reasoning effort is set to xhigh. Please think carefully through the task, validate key assumptions, consider plausible alternatives, and prioritize correctness, consistency, and clarity in the final answer.' %}

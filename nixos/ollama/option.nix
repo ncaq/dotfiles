@@ -44,6 +44,23 @@ in
       '';
     };
 
+    contextLength = lib.mkOption {
+      type = lib.types.int;
+      readOnly = true;
+      default = if config.local.ollama.enableCuda then 131072 else 32768;
+      defaultText = lib.literalExpression "if config.local.ollama.enableCuda then 131072 else 32768";
+      description = ''
+        Ollamaが既定で使うcontextの長さ。
+        `container.nix`が`OLLAMA_CONTEXT_LENGTH`へ設定する。
+        この大きさにした根拠の実測はそちらのコメントにある。
+
+        クライアント側も同じ値を必要とする。
+        接続先が実際に扱える長さを知らないハーネスは、
+        それより長いプロンプトを組み立ててしまい、
+        Ollamaが黙って先頭を切り捨てる形で壊れるためである。
+      '';
+    };
+
     dataDir = lib.mkOption {
       type = lib.types.str;
       readOnly = true;

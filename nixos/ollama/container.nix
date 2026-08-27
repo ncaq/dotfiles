@@ -115,7 +115,8 @@ in
             # 65536では約30GiBとMemoryHighに張り付いてしまった。
             # 即答性を優先した役割は無くなって常駐は1モデルになったため、
             # 現在は余裕が増えているはずだが測り直していない。
-            OLLAMA_CONTEXT_LENGTH = if enableCuda then "131072" else "32768";
+            # 値そのものはクライアント側も必要とするのでオプションが持っている。
+            OLLAMA_CONTEXT_LENGTH = toString config.local.ollama.contextLength;
           }
           // lib.optionalAttrs enableCuda {
             # KVキャッシュをq8_0で量子化して、

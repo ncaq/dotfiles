@@ -181,3 +181,59 @@ def test_non_gguf_is_reported(tmp_path: Path) -> None:
     gguf = write_gguf(tmp_path, b"NOTGGUF" + build_gguf(b"{{- 'ok' }}"))
     with pytest.raises(SystemExit):
         target.extract(str(gguf), str(tmp_path / "chat_template.jinja"))
+
+
+def test_string_longer_than_the_file_is_reported(tmp_path: Path) -> None:
+    """ファイル末尾を超える長さの文字列は読まずに落ちる。
+
+    長さプレフィックスをそのまま信じると、
+    `read`が短く返った分だけ以降のオフセットがずれる。
+    目的のキーへ辿り着けないまま別の位置を書き換えるのが最悪の壊れ方なので、
+    走査を続けずに止める。
+    """
+    # テンプレートより手前の項目の長さだけを、ファイル全体より大きい値へ差し替える。
+    entry = encode_kv(
+        "general.architecture", target.TYPE_STRING, encode_string(b"qwen3")
+    )
+    broken = entry.replace(
+        encode_string(b"qwen3"), struct.pack("<Q", 1 << 40) + b"qwen3", 1
+    )
+    gguf = write_gguf(tmp_path, build_gguf(b"{{- 'ok' }}").replace(entry, broken, 1))
+
+    with pytest.raises(SystemExit):
+        target.extract(str(gguf), str(tmp_path / "chat_template.jinja"))
+
+
+def test_array_longer_than_the_file_is_reported(tmp_path: Path) -> None:
+    """固定長配列の要素数がファイル末尾を超えていたら落ちる。
+
+    固定長の要素はまとめて読み飛ばすので、
+    `seek`は末尾を越えても成功してしまう。
+    要素数の側で止めないと気付けない。
+    """
+    entry = encode_kv(
+        "tokenizer.ggml.token_type",
+        target.TYPE_ARRAY,
+        struct.pack("<IQ", 5, len(TOKENS)) + struct.pack("<iii", 1, 1, 1),
+    )
+    broken = encode_kv(
+        "tokenizer.ggml.token_type",
+        target.TYPE_ARRAY,
+        struct.pack("<IQ", 5, 1 << 40) + struct.pack("<iii", 1, 1, 1),
+    )
+    gguf = write_gguf(tmp_path, build_gguf(b"{{- 'ok' }}").replace(entry, broken, 1))
+
+    with pytest.raises(SystemExit):
+        target.extract(str(gguf), str(tmp_path / "chat_template.jinja"))
+
+
+def test_truncated_file_is_reported(tmp_path: Path) -> None:
+    """途中で切れたファイルは`struct.error`ではなく説明を出して落ちる。
+
+    22GBのファイルを相手にした時に、
+    tracebackだけでは何が起きたのか切り分けられない。
+    他の異常系と同じ扱いに揃える。
+    """
+    gguf = write_gguf(tmp_path, build_gguf(b"{{- 'ok' }}")[:40])
+    with pytest.raises(SystemExit):
+        target.extract(str(gguf), str(tmp_path / "chat_template.jinja"))

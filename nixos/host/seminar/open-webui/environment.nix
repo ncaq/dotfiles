@@ -10,7 +10,7 @@
 # それは`blue-prompt.nix`のようにコンテナへ追従する同期の側の仕事になる。
 # 環境変数で書けるものをここで押さえておけば、
 # 状態を持つ同期に頼る範囲をその分だけ狭められる。
-{ config, ... }:
+{ lib, config, ... }:
 {
   local.openWebui.environment = {
     # nixpkgsのモジュールが`http://localhost:8080`を渡すため、
@@ -116,39 +116,53 @@
     # 新しい版が出ていると知らされても通知から動けることはない。
     #
     # 同じ効果は`OFFLINE_MODE`でも得られるが、そちらは使わない。
-    # あちらは`HF_HUB_OFFLINE`も立てるため、
-    # 後述の埋め込みモデルをHugging Faceから取得できなくなる。
+    # あちらは`HF_HUB_OFFLINE`も立てる。
+    # 埋め込みをOllamaへ移した今のコンテナはHugging Faceから何も取得しないが、
+    # コンテナ内で推論する設定へ戻した時に離れた場所で壊れて原因を探すことになるので、
+    # 止めたい挙動だけを狙えるこちらを使い続ける。
     ENABLE_VERSION_UPDATE_CHECK = "False";
+
+    # 埋め込みはコンテナ内のsentence-transformersではなくOllamaで行う。
+    #
+    # 接続先の`RAG_OLLAMA_BASE_URL`は未指定なら`OLLAMA_BASE_URL`を使うので、
+    # チャットと同じCaddyのフェイルオーバー(bullet優先、seminarへ退避)をそのまま通る。
+    # モデルはGGUFに`num_gpu 0`を焼き込んで登録しているため、
+    # bulletで受けてもGPUには載らず、デスクトップ用途とVRAMを取り合わない。
+    #
+    # 同じモデルならエンジンを変えても検索精度は変わらないことと、
+    # GGUFのCPU推論がtorchのfp32よりbulletで約2.5倍、seminarでも約1.8倍速いことは、
+    # blue-promptのKnowledge 10011チャンクと20問の実測で確認した。
+    # ref https://github.com/ncaq/blue-prompt/issues/171
+    RAG_EMBEDDING_ENGINE = "ollama";
 
     # 既定の`sentence-transformers/all-MiniLM-L6-v2`は英語専用の小型モデルで、
     # `blue-prompt.nix`が登録する日本語のKnowledgeをほとんど引けない。
+    # 上記の実測ではmultilingual-e5-largeがtop3命中率0.70/MRR 0.605で、
+    # 測った中のMRR首位はbge-m3の0.640だった。
+    # 差は20問では統計的に語れないため、
+    # 実測済みで現行と埋め込みが変わらないe5-largeを維持して、
+    # モデルの乗り換えはblue-prompt#196の決着に任せる。
     #
-    # 実際のKnowledgeの134ファイルを`CHUNK_SIZE`と`CHUNK_OVERLAP`の既定値で分割し、
-    # 日本語の質問を10問引かせて比較した結果は以下の通りだった。
-    # 並べたのは`RAG_TOP_K`の既定値である上位3件に正解が入った問題数とMRRである。
-    #
-    # - all-MiniLM-L6-v2: 5問, 0.314
-    # - multilingual-e5-small: 8問, 0.670
-    # - ruri-v3-70m: 8問, 0.768
-    # - multilingual-e5-large: 9問, 0.764
-    # - ruri-v3-310m: 9問, 0.858
-    #
-    # 日本語特化のruri-v3-310mが最も強いが、
-    # 他の言語の文書を入れる可能性と利用実績の多さを取ってe5-largeにする。
-    # 本格的な選定は別途行う。
-    RAG_EMBEDDING_MODEL = "intfloat/multilingual-e5-large";
+    # 名前の実体は`lib/ollama-model-names.nix`にあり、
+    # GGUFの登録は`nixos/ollama/model.nix`が行う。
+    RAG_EMBEDDING_MODEL = lib.head config.local.ollama.models.embedding;
 
     # e5系はクエリと文書を別のprefixで区別する前提で学習されている。
     # 付けないと質問と文書が同じ空間の同じ扱いになり、
     # 短い質問から長い文書を引く非対称な検索の精度が落ちる。
+    #
+    # Ollamaエンジンではprefixは本文の先頭へ文字列として連結される。
+    # `RAG_EMBEDDING_PREFIX_FIELD_NAME`は設定してはいけない。
+    # 設定するとprefixがリクエストJSONの別フィールドへ移るが、
+    # Ollamaの`/api/embed`に受け皿が無く未知フィールドとして黙って捨てられるため、
+    # prefixがどこにも付かないままエラーにもならない。
     RAG_EMBEDDING_QUERY_PREFIX = "query: ";
     RAG_EMBEDDING_CONTENT_PREFIX = "passage: ";
 
     # 既定値は1で、chunkを1件ずつ埋め込む。
-    # Knowledgeの取り込みはchunkの数だけモデルの呼び出しを繰り返すため、
-    # 行列演算をまとめられない分がそのまま待ち時間になる。
-    # コンテナのメモリ上限に対してe5-largeの重みは小さく、
-    # この程度のバッチなら同時に載せても余裕がある。
+    # Knowledgeの取り込みはchunkの数だけ呼び出しを繰り返すため、
+    # Ollamaエンジンでは1回の`/api/embed`へまとめて渡す件数がこれになる。
+    # バッチにできない分がそのまま往復と起動の待ち時間になる。
     RAG_EMBEDDING_BATCH_SIZE = "32";
 
     # ノートやカレンダーなどの組み込みツールを既定で渡さない。

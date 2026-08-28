@@ -1,7 +1,7 @@
 /**
   アクセラレータごとに、役割から実際のモデル名を引く表。
 
-  型: { cuda = { general, freedom }; cpu = { general, freedom }; }
+  型: { cuda = { general, freedom }; cpu = { general, freedom }; embedding; }
 
   NixOSモジュールからはこのファイルを直接importせず、
   `nixos/ollama/model.nix`がここから設定する`local.ollama.models`を参照すること。
@@ -75,4 +75,15 @@
     # ディスクとロード時間を消費するだけになる。
     freedom = [ ];
   };
+  # RAGの埋め込みに使うモデル。
+  # アクセラレータ別にしない理由は`nixos/ollama/option.nix`のオプションの説明にある。
+  #
+  # モデルの選定はblue-promptのKnowledge 10011チャンクと20問での実測に基づく。
+  # multilingual-e5-largeはtop3命中率0.70/MRR 0.605で、
+  # sentence-transformersのfp32とGGUFのq8_0で精度は変わらない。
+  # 量子化をq8_0にするのは、f16との精度差が無い一方で、
+  # 帯域で頭打ちになる6コアのseminarではq8_0の方が速いため。
+  # bge-m3などへの乗り換えの検討はblue-prompt#196で継続している。
+  # ref https://github.com/ncaq/blue-prompt/issues/171
+  embedding = [ "multilingual-e5-large:q8_0" ];
 }

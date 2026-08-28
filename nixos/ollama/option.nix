@@ -89,6 +89,21 @@ in
             type = roleType;
             description = "CPUで推論するホストのモデル。";
           };
+
+          embedding = lib.mkOption {
+            type = lib.types.listOf lib.types.str;
+            description = ''
+              RAGの埋め込みに使うモデル。
+
+              アクセラレータ別にしないのは、
+              Open WebUIの`RAG_EMBEDDING_MODEL`が1つの固定文字列で、
+              リクエストを受けるホストはCaddyのフェイルオーバーが実行時に決めるためである。
+              ホストごとにモデルが違うと、
+              フォールバックした瞬間にモデル不明で失敗するか、
+              埋め込みの空間がずれて検索が壊れる。
+              全ホストで同じ一覧を共有することでこの食い違いを型の上で塞ぐ。
+            '';
+          };
         };
       };
       readOnly = true;
@@ -124,10 +139,12 @@ in
       readOnly = true;
       default =
         with config.local.ollama;
-        lib.subtractLists (lib.attrNames ggufModels) (hostModels.general ++ hostModels.freedom);
+        lib.subtractLists (lib.attrNames ggufModels) (
+          hostModels.general ++ hostModels.freedom ++ models.embedding
+        );
       defaultText = lib.literalExpression ''
         lib.subtractLists (lib.attrNames ggufModels)
-          (hostModels.general ++ hostModels.freedom)
+          (hostModels.general ++ hostModels.freedom ++ models.embedding)
       '';
       description = ''
         Ollama registryからpullするモデル。

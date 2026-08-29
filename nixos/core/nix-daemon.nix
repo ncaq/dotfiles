@@ -12,11 +12,9 @@
       substituters = [
         "https://cache.nixos.org/"
         "https://niks3-public.ncaq.net/"
-        # niks3はnix-cache-infoにPriority 30をハードコードしており、
-        # niks3-publicと同値で優先順位が決まりません。
         # tailnet経由のniks3-privateの方が高速なため、
-        # `?priority`で明示的にpublicより高優先(数値が小さいほど高優先)にします。
-        "https://seminar.border-saurolophus.ts.net:8443/niks3/private/?priority=20"
+        # `services.niks3.priority`でniks3-publicより高優先にしています。
+        "https://seminar.border-saurolophus.ts.net:8443/niks3/private/"
         "https://ncaq.cachix.org/"
         "https://nix-community.cachix.org/"
       ];

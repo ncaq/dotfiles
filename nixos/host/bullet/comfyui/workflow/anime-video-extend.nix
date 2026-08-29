@@ -257,7 +257,8 @@ in
           ])
           (mkOutput "audio" "AUDIO" [ ])
           (mkOutput "fps" "FLOAT" [ ])
-          (mkOutput "bit_depth" "INT" [ ])
+          (mkOutput "bit_depth" "COMBO" [ ])
+          (mkOutput "color_space" "COMBO" [ ])
         ];
       })
       # batch_index -1は末尾からの参照。

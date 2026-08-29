@@ -96,6 +96,10 @@ in
             cacheUrl = "https://seminar.border-saurolophus.ts.net:8443/niks3/private/";
             # readはTailscaleネットワーク認証、writeはAPIトークン認証。
             readProxy.enable = true;
+            # nix-cache-infoで広告する優先順位(数値が小さいほど高優先)。
+            # tailnet経由のこちらの方がniks3-public(デフォルトの30)より高速なため、
+            # クライアント側でsubstituterの順序に依存せず選ばれるようにします。
+            priority = 20;
           };
         };
       };

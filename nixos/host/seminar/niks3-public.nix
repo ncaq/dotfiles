@@ -93,15 +93,28 @@ in
             apiTokenFile = "/run/niks3-public/api-token";
             signKeyFiles = [ "/run/niks3-public/sign-key" ];
             cacheUrl = "https://niks3-public.ncaq.net";
-            # publicバケットですがGarage S3 APIが匿名読み取りを未サポートのため、
-            # niks3のread proxy経由で配信しています。
-            # Garage v3.0で匿名アクセスが実装予定のようです。
-            # [Allow anonymous access on the S3 endpoint](https://git.deuxfleurs.fr/Deuxfleurs/garage/issues/263)
-            # よって実装されたらS3直接読み取りを有効化して性能を改善する予定です。
-            # 互換性のためread proxyは残したままにするかもしれませんが。
-            # 今でもweb endpointを使えば匿名アクセスは可能かもしれませんが、
-            # 正規の方法で匿名アクセスが実装予定なのにそういったトリッキーなことはしたくありません。
-            readProxy.enable = true;
+            readProxy = {
+              # publicバケットですがGarage S3 APIが匿名読み取りを未サポートのため、
+              # niks3のread proxy経由で配信しています。
+              # Garage v3.0で匿名アクセスが実装予定のようです。
+              # [Allow anonymous access on the S3 endpoint](https://git.deuxfleurs.fr/Deuxfleurs/garage/issues/263)
+              # よって実装されたらS3直接読み取りを有効化して性能を改善する予定です。
+              # 互換性のためread proxyは残したままにするかもしれませんが。
+              # 今でもweb endpointを使えば匿名アクセスは可能かもしれませんが、
+              # 正規の方法で匿名アクセスが実装予定なのにそういったトリッキーなことはしたくありません。
+              enable = true;
+              # NARの実バイトをniks3でストリーミングせず、
+              # presigned S3 URLへの307リダイレクトで返します。
+              # narinfoなどのメタデータは従来通りread proxyを経由します。
+              # publicバケットなので、
+              # presigned URLが第三者に渡っても隠すべき内容はありません。
+              # niks3-public.ncaq.netもgarage.ncaq.netも同じCloudflare Tunnel経由のため、
+              # リダイレクト分の往復が増える代わりにniks3のストリーミング処理が省けます。
+              # どちらが速いかは経路の性質上読めないので、
+              # 実際のsubstituteの速度を見て継続するか判断します。
+              # niks3-private側はtailnet直結が失われるため有効にしていません。
+              redirectTTL = "15m";
+            };
             oidc.providers.github = {
               issuer = "https://token.actions.githubusercontent.com";
               audience = "https://niks3-public.ncaq.net";

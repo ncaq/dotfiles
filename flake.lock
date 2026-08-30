@@ -31,24 +31,21 @@
     },
     "claude-desktop": {
       "inputs": {
-        "flake-utils": [
-          "flake-utils"
-        ],
         "nixpkgs": [
           "nixpkgs"
         ]
       },
       "locked": {
-        "lastModified": 1764098187,
-        "narHash": "sha256-H6JjWXhKqxZ8QLMoqndZx9e5x0Sv5AiipSmqvIxIbgo=",
-        "owner": "k3d3",
-        "repo": "claude-desktop-linux-flake",
-        "rev": "b2b040cb68231d2118906507d9cc8fd181ca6308",
+        "lastModified": 1787939817,
+        "narHash": "sha256-f/k8WzFPh/GF13xMxad3v6TEFvm0x7oL91Ud081jPFc=",
+        "owner": "nmcbride",
+        "repo": "claude-desktop-nix",
+        "rev": "64b7a59ee916b1051672bd785cdde8ffed4ae2d1",
         "type": "github"
       },
       "original": {
-        "owner": "k3d3",
-        "repo": "claude-desktop-linux-flake",
+        "owner": "nmcbride",
+        "repo": "claude-desktop-nix",
         "type": "github"
       }
     },

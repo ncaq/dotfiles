@@ -137,11 +137,8 @@
     };
 
     claude-desktop = {
-      url = "github:k3d3/claude-desktop-linux-flake";
-      inputs = {
-        nixpkgs.follows = "nixpkgs";
-        flake-utils.follows = "flake-utils";
-      };
+      url = "github:nmcbride/claude-desktop-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     firge-nix = {

@@ -99,7 +99,7 @@ def request_rewrite(model: str, text: str, image: str | None) -> str:
         raise ValueError(f"{URL_VARIABLE} is not set")
     if not model:
         raise ValueError("No Ollama model specified")
-    payload: dict[str, object] = {
+    payload = {
         "model": model,
         "messages": build_messages(text, image),
         "stream": False,

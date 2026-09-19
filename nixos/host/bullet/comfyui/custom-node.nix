@@ -114,6 +114,19 @@ in
       services.comfyui = {
         extraPythonPackages =
           pythonPkgs: [ pythonPkgs.rotary-embedding-torch ] ++ loraManagerPythonPackages pythonPkgs;
+        # comfyui-nixが同梱するサードパーティのカスタムノードは配置しない。
+        # ランチャーはExecStartで同梱ノードを`ln -sfn`するため、
+        # preStartが張る`customNodes`のリンクを名前の衝突した分だけ上書きする。
+        # 実際にbulletの`ComfyUI-Impact-Pack`は同梱版を指していて、
+        # 下で当てているAnima補正パッチが効いていなかった。
+        #
+        # 宣言的ワークフローが使う同梱ノードはImpact PackのFaceDetailerだけで、
+        # KJNodesやWanVideoWrapperなど残りはどのワークフローも参照していない。
+        # 必要なものはこの`customNodes`で宣言する方に寄せる。
+        #
+        # `model_downloader`はcomfyui-nix自身のAPIルートを提供するため、
+        # この設定に関わらず常に配置される。
+        bundledCustomNodes = false;
         customNodes = {
           # FaceDetailerなどディテール修復ノード群。ADetailer相当。
           # comfyui-nixがパッケージ済みのものを使う。
@@ -134,9 +147,6 @@ in
               ${checkPythonSyntax} modules/impact/core.py
             '';
           });
-          # Power Lora Loaderなどワークフロー整理のノード群。
-          # comfyui-nixがパッケージ済みのものを使う。
-          "rgthree-comfy" = pkgs.comfyui-custom-nodes.rgthree-comfy;
           # Civitaiからの取得、プレビュー、トリガーワード、レシピを一元管理する。
           # Civitaiにはpickle形式(.pt/.ckpt)のモデルもあり読み込み時の任意コード実行が懸念されるが、
           # ComfyUI本体は非safetensorsも`torch.load(weights_only=True)`固定で読むことと、

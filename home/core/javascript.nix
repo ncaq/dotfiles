@@ -12,10 +12,9 @@ in
   # 各PMで設定キー名・単位が異なる点に注意。
 
   # Denoはユーザグローバルの設定ファイルを公式にはサポートしていませんが、
-  # 既に`.npmrc`の設定を読み込むPRがマージされています。
+  # `.npmrc`の`min-release-age`はDeno 2.8.0から読むようになったので、
+  # 下の`~/.npmrc`でDenoもカバーされます。
   # [feat(npmrc): support min-release-age by dsherret](https://github.com/denoland/deno/pull/33983)
-  # それがリリースされれば既存のnpmrcの設定でDenoもカバーできます。
-  # 特にこちら側での対応は不要です。
 
   # npm CLIの`min-release-age`(単位: 日)。
   # home-managerには`programs.npm`がないため`home.file`で直接生成します。

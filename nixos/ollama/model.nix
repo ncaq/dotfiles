@@ -148,7 +148,7 @@ let
             gguf = fetchHuggingFace {
               owner = "0bserverx";
               repo = "Qwen3.8-27B-Heretic-Abliterated-Uncensored-GGUF";
-              rev = "20b94f0613b632b4848bbe3b1e05d9ee0c2b1608";
+              rev = "ab8d7bd81d03117501e4da60cccdff4c80f0eea0";
               file = "RVN-Q6_K-multilingual-mtp.gguf";
               hash = "sha256-E0TQdCXXPw0bjzYhORDq6P7CEGGxqQg1kn6EhSOPk6Q=";
             };
@@ -157,7 +157,7 @@ let
           (fetchHuggingFace {
             owner = "0bserverx";
             repo = "Qwen3.8-27B-Heretic-Abliterated-Uncensored-GGUF";
-            rev = "20b94f0613b632b4848bbe3b1e05d9ee0c2b1608";
+            rev = "ab8d7bd81d03117501e4da60cccdff4c80f0eea0";
             file = "mmproj-Qwen3.8-27B-Q8_0.gguf";
             hash = "sha256-LpaKavl8412JcYkLJXubftq/IK2RRQUB+lMWKhnuM+s=";
           })

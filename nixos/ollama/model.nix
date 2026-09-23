@@ -148,7 +148,7 @@ let
             gguf = fetchHuggingFace {
               owner = "0bserverx";
               repo = "Qwen3.8-27B-Heretic-Abliterated-Uncensored-GGUF";
-              rev = "20b94f0613b632b4848bbe3b1e05d9ee0c2b1608";
+              rev = "ab8d7bd81d03117501e4da60cccdff4c80f0eea0";
               file = "RVN-Q6_K-multilingual-mtp.gguf";
               hash = "sha256-E0TQdCXXPw0bjzYhORDq6P7CEGGxqQg1kn6EhSOPk6Q=";
             };
@@ -157,51 +157,12 @@ let
           (fetchHuggingFace {
             owner = "0bserverx";
             repo = "Qwen3.8-27B-Heretic-Abliterated-Uncensored-GGUF";
-            rev = "20b94f0613b632b4848bbe3b1e05d9ee0c2b1608";
+            rev = "ab8d7bd81d03117501e4da60cccdff4c80f0eea0";
             file = "mmproj-Qwen3.8-27B-Q8_0.gguf";
             hash = "sha256-LpaKavl8412JcYkLJXubftq/IK2RRQUB+lMWKhnuM+s=";
           })
         ];
         parameters = qwenParameters;
-      };
-      # Mistral Small系は配布元の推奨がQwenと大きく違うので個別に書く。
-      # 配布元のREADMEがollamaとvLLMの実行例で使っている値をそのまま採る。
-      # 学習元のMistral-Small-3.1が低いtemperatureを勧めているためで、
-      # 配布元自身は「そうかもしれないが詳しくは未検証」と断っている。
-      # 創作用途には低すぎると感じたら上げて構わない。
-      "mistralprism-24b:q4_k_m" = {
-        sources = [
-          (fetchHuggingFace {
-            owner = "Aratako";
-            repo = "MistralPrism-24B-GGUF";
-            rev = "ef08191bef153caaa70e0720a8fcfa1cf11fb10b";
-            file = "MistralPrism-24B-Q4_K_M.gguf";
-            hash = "sha256-Tm9H9IXyhqSnPhzA0KZhwU8fNYWyK1XcdRKFGfB0Fdw=";
-          })
-        ];
-        parameters = {
-          min_p = 0.05;
-          temperature = 0.15;
-          top_k = 40;
-          top_p = 0.9;
-        };
-      };
-      # 配布元は`temperature = 1.0`と`min_p = 0.1`から始めることを勧めている。
-      # 他は好みで動かせという書き方なので、この2つだけ指定する。
-      "ms3.2-24b-magnum-diamond:q4_k_m" = {
-        sources = [
-          (fetchHuggingFace {
-            owner = "Doctor-Shotgun";
-            repo = "MS3.2-24B-Magnum-Diamond-GGUF";
-            rev = "7422a3599b749c9efa003c53f3165adc71e1f2aa";
-            file = "MS3.2-24B-Magnum-Diamond-Q4_K_M.gguf";
-            hash = "sha256-MLwAq6iPY52EsZwZ2bxVaHHQBGbDJuyc9U7F+Y6PVsQ=";
-          })
-        ];
-        parameters = {
-          min_p = 0.1;
-          temperature = 1.0;
-        };
       };
     }
     // {

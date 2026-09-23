@@ -112,24 +112,29 @@ let
       # 丸めはround-to-nearest-evenでランタイムのキャストとビット一致するので、
       # 生成結果は変わらない。
       # 重みの最大絶対値は4.44で、fp16の上限65504に対して十分な余裕がある。
-      "wan2.2_i2v_A14b_high_noise_lightx2v_4step_720p_260412.safetensors" =
-        convertSafetensorsFp16
-          (fetchHuggingFace {
-            owner = "lightx2v";
-            repo = "Wan2.2-Distill-Models";
-            rev = "db93455b9e85c4d8a3ff9297fcfa189d213cfe29";
-            file = "wan2.2_i2v_A14b_high_noise_lightx2v_4step_720p_260412.safetensors";
-            hash = "sha256-NfRDFHG0ueWS6ZQcH18v0eG/JuFAHISt/gHdIrWyuGQ=";
-          });
-      "wan2.2_i2v_A14b_low_noise_lightx2v_4step_720p_260412.safetensors" =
-        convertSafetensorsFp16
-          (fetchHuggingFace {
-            owner = "lightx2v";
-            repo = "Wan2.2-Distill-Models";
-            rev = "db93455b9e85c4d8a3ff9297fcfa189d213cfe29";
-            file = "wan2.2_i2v_A14b_low_noise_lightx2v_4step_720p_260412.safetensors";
-            hash = "sha256-kChH/FKj0w9naRXSrrhPwTxN+Sv2p5Q77uZprDTOPBU=";
-          });
+      #
+      # 変換後のhashで出力パスを固定するfixed-output derivationなので、
+      # 変換ツールやPythonが更新されても再変換と原本の再取得は走らない。
+      "wan2.2_i2v_A14b_high_noise_lightx2v_4step_720p_260412.safetensors" = convertSafetensorsFp16 {
+        src = fetchHuggingFace {
+          owner = "lightx2v";
+          repo = "Wan2.2-Distill-Models";
+          rev = "db93455b9e85c4d8a3ff9297fcfa189d213cfe29";
+          file = "wan2.2_i2v_A14b_high_noise_lightx2v_4step_720p_260412.safetensors";
+          hash = "sha256-NfRDFHG0ueWS6ZQcH18v0eG/JuFAHISt/gHdIrWyuGQ=";
+        };
+        hash = "sha256-nXzTJqI2bQI91BEfAqvlgPwJ31UBqnbNgmSv3OEUnvQ=";
+      };
+      "wan2.2_i2v_A14b_low_noise_lightx2v_4step_720p_260412.safetensors" = convertSafetensorsFp16 {
+        src = fetchHuggingFace {
+          owner = "lightx2v";
+          repo = "Wan2.2-Distill-Models";
+          rev = "db93455b9e85c4d8a3ff9297fcfa189d213cfe29";
+          file = "wan2.2_i2v_A14b_low_noise_lightx2v_4step_720p_260412.safetensors";
+          hash = "sha256-kChH/FKj0w9naRXSrrhPwTxN+Sv2p5Q77uZprDTOPBU=";
+        };
+        hash = "sha256-rRVdtZzj/Eays5/iG+8vDG+hwYkysw4Cn327hS8veKU=";
+      };
     };
     text_encoders = {
       # Animaが使うQwen3 0.6Bベースのテキストエンコーダ。

@@ -43,11 +43,7 @@
       # 8%がCPUへ出ただけの構成では53.5トークン/秒まで落ちた。
       "qwen3.8-27b-mtp:q6_k"
     ];
-    freedom = [
-      "qwen3.8-27b-heretic-rvn:q6_k"
-      "mistralprism-24b:q4_k_m"
-      "ms3.2-24b-magnum-diamond:q4_k_m"
-    ];
+    freedom = [ "qwen3.8-27b-heretic-rvn:q6_k" ];
   };
   cpu = {
     general = [

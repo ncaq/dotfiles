@@ -125,11 +125,15 @@ in
       # sops側の`wants`に頼らず自身も`sysinit.target`から引き込んで順序付けし、
       # ユーザセッションがソケットを参照する前に起動を完了させます。
       # GNUPGHOMEの設定ファイルはtmpfilesで配置されるためその後に起動します。
+      # 秘密鍵を扱うプロセスなので、
+      # 保存済みエントロピーの投入とsysctlによるカーネル側の保護の適用も待ちます。
       unitConfig.DefaultDependencies = false;
       wantedBy = [ "sysinit.target" ];
       after = [
         "local-fs.target"
         "systemd-tmpfiles-setup.service"
+        "systemd-random-seed.service"
+        "systemd-sysctl.service"
       ];
       # 既定の依存関係を外すと停止時の`shutdown.target`との衝突と順序も失われるため、
       # シャットダウン時に確実に停止するよう明示的に復元します。

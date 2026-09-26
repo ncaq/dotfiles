@@ -131,6 +131,8 @@ in
         "local-fs.target"
         "systemd-tmpfiles-setup.service"
       ];
+      # 既定の依存関係を外すと停止時の`shutdown.target`との衝突と順序も失われるため、
+      # シャットダウン時に確実に停止するよう明示的に復元します。
       before = [
         "sysinit.target"
         "shutdown.target"

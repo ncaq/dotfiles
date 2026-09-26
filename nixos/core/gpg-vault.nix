@@ -117,6 +117,20 @@ in
     gpg-vault-agent = {
       description = "gpg-agent holding secret keys isolated from normal users";
       wantedBy = [ "multi-user.target" ];
+      # sops-install-secretsは`sysinit.target`より前に走り、
+      # このサービスの後に順序付けされています。
+      # 既定の依存関係(`After=basic.target`など)が残っていると、
+      # 順序が循環してsystemdがsops-install-secretsのジョブを削除してしまい、
+      # シークレットが展開されなくなります。
+      # 既定の依存関係を外してsysinit段階から起動できるようにします。
+      # GNUPGHOMEの設定ファイルはtmpfilesで配置されるためその後に起動します。
+      unitConfig.DefaultDependencies = false;
+      after = [
+        "local-fs.target"
+        "systemd-tmpfiles-setup.service"
+      ];
+      conflicts = [ "shutdown.target" ];
+      before = [ "shutdown.target" ];
       # agentが読む設定はtmpfilesで配置されていてunit定義に含まれないため、
       # 内容が変わってもそのままではサービスが再起動されません。
       # 設定変更時に確実に再起動させます。

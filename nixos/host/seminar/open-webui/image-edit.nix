@@ -14,7 +14,7 @@
 # Open WebUIにも`ENABLE_IMAGE_PROMPT_GENERATION`があるが、代わりにはならない。
 # あちらの`image_prompt_generation_template`はmessagesから組み立てるので、
 # 見るのはテキストの会話履歴だけで画像そのものは見ない。
-# `RewriteEditPrompt`は画像ごとQwen-Image-2.1公式のPE-I2Iへ渡すため、
+# `RewriteEditPrompt`は画像ごとQwen-Image-2.1公式のPE-I2I(のheretic版)へ渡すため、
 # 「髪をポニーテールにして」から、
 # 「元はツーサイドアップで、服装は変えずに」といった具体化ができる。
 # PE-I2IはQwen-Image-2.1が前提とする指示文の書式と、
@@ -63,7 +63,7 @@ let
     "19" = {
       class_type = "CLIPLoader";
       inputs = {
-        clip_name = "qwen3.5_9b_qwen_image_2.1_pe_i2i.int8_convrot.safetensors";
+        clip_name = "qwen3.5_9b_qwen_image_2.1_pe_i2i_heretic.int8_convrot.safetensors";
         type = "qwen_image";
         device = "default";
       };

@@ -224,8 +224,10 @@ pub struct CommitId(ObjectId);
 
 impl CommitId {
     /// Parses a full hexadecimal Git object ID.
-    pub fn parse(value: &str) -> Result<Self, gix_hash::decode::Error> {
-        ObjectId::from_hex(value.as_bytes()).map(Self)
+    pub fn parse(value: &str) -> Result<Self, gix_error::Error> {
+        ObjectId::from_hex(value.as_bytes())
+            .map(Self)
+            .map_err(Into::into)
     }
 }
 

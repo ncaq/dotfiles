@@ -232,7 +232,7 @@ pub enum SubscribeError {
     InvalidBranch(#[from] domain::BranchNameError),
     /// Git returned an invalid full object ID.
     #[error("Git returned an invalid commit ID: {0}")]
-    InvalidCommitId(#[from] gix_hash::decode::Error),
+    InvalidCommitId(#[from] gix_error::Error),
 }
 
 impl SubscribeError {

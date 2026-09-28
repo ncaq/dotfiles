@@ -19,6 +19,18 @@ let
   # SDXL(Illustrious系)とAnimaでそれぞれの推奨値が違う。
   baseSteps = 28;
   animaBaseSteps = 30;
+  # Qwen-Image-2.1の編集で参照画像と出力を揃える総画素の平方根。
+  # 各画像はアスペクト比を保ったまま約2048*2048画素の32の倍数へ揃えられる。
+  # 公式の解像度プリセットは全て約4MPのネイティブ2Kなので、
+  # それに合わせるのがモデルの得意な範囲になる。
+  # 公式テンプレートの0は元の寸法を32の倍数へ丸めるだけで、
+  # 写真のような大きな画像がそのまま入って重くなる。
+  #
+  # 公式のdiffusersパイプラインも参照画像は全て1つの`output_resolution`へ揃え、
+  # 出力の寸法だけを別に決める。
+  # エンコードと書き換えの両方へ同じ値を渡して、
+  # 1枚目に従う時に出力と1枚目の寸法が一致するようにする。
+  qwenImageEditResolution = 2048;
   # denoiseを下げた再サンプリングで使うステップ数を求める。
   #
   # ComfyUIのKSamplerはdenoiseを下げても`steps`の回数だけサンプリングする。
@@ -503,6 +515,7 @@ in
     animaSizeMultiple
     baseSteps
     animaBaseSteps
+    qwenImageEditResolution
     stepsForDenoise
     startStepForDenoise
     ;

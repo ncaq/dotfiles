@@ -14,5 +14,7 @@ HSA = "HSA"
 Hashi = "Hashi"
 # Immediately Invoked Function Expression (IIFE)の略語。camelCase分割で"IIF"をtypoと判定する。
 IIF = "IIF"
+# Qwen-Image-2.1公式のPE-I2Iが一部の学習データで出す綴り違いのJSONキー`rewrited_prompt`
+rewrited = "rewrited"
 # `gst-thumbnailers`はGStreamerベースのサムネイラ
 thumbnailers = "thumbnailers"

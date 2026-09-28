@@ -4,7 +4,7 @@
 # 書き写しの経緯と二重管理についての注意は`image-generation.nix`に書いてある。
 # ComfyUIへの経路は`comfyui-backend.nix`の中継を画像生成と共有する。
 #
-# Qwen-Image-Edit 2511は指示ベースの編集で、
+# Qwen-Image-2.1は参照画像を渡すと指示ベースの編集になり、
 # 「テーブルの上の物を消して」のような自然言語の指示で元画像の同一性を保ったまま変更する。
 # 画像全体を描き直す`anima-edit`や`sdxl-edit`のimg2imgとは性質が違う。
 # チャットから画像を渡して指示を書く、というOpen WebUIの操作に合うのはこちらである。
@@ -14,49 +14,25 @@
 # Open WebUIにも`ENABLE_IMAGE_PROMPT_GENERATION`があるが、代わりにはならない。
 # あちらの`image_prompt_generation_template`はmessagesから組み立てるので、
 # 見るのはテキストの会話履歴だけで画像そのものは見ない。
-# `RewriteEditPrompt`は`QwenImageEditScale`の出力を受け取ってVLMへ画像を見せるため、
+# `RewriteEditPrompt`は画像ごとQwen-Image-2.1公式のPE-I2Iへ渡すため、
 # 「髪をポニーテールにして」から、
 # 「元はツーサイドアップで、服装は変えずに」といった具体化ができる。
-#
-# システムプロンプトもQwen-Image公式の`EDIT_SYSTEM_PROMPT`をそのまま使っていて、
-# テキスト編集は英語の二重引用符で囲むとか、
-# colorizationは固定の文へ倒すといった、
-# Qwen-Image-Editが前提とする形式への正規化まで含んでいる。
+# PE-I2IはQwen-Image-2.1が前提とする指示文の書式と、
+# 出力のキャンバスの比率の決め方まで学習している。
 # チャットのモデルに書かせてこの規則を守らせる手段は用意されていない。
 #
-# 代償は`free_comfyui_vram`によるVRAMの往復である。
-# リライトのたびに編集モデルを退かしてOllamaを読み、
-# 書き直してから編集モデルを読み直すことになる。
-# 速度が要るほど使うなら直接ComfyUIを開けばよい、という判断で正確さを取る。
-#
-# 末尾の`FreeVram`のノード`19`でもう一度降ろすので、出入りはこれより1回多い。
-# あちらはbulletの`qwen-edit`には無い意図的な差分で、
+# 末尾の`FreeVram`のノード`21`はbulletの`qwen-edit`には無い意図的な差分で、
 # 生成が終わった後に次のOllamaのために空けておくためのものである。
 # 同期する時に写し漏れと誤解して消さないこと。
 { lib, config, ... }:
 let
-  model = "qwen_image_edit_2511_int8_convrot.safetensors";
+  # 参照画像と出力を揃える解像度はbulletの定義をそのまま引く。
+  # 理由は`image-generation.nix`が寸法の整列単位を引いているのと同じである。
+  inherit (import ../../bullet/comfyui/workflow/lib/builder.nix { inherit lib; })
+    qwenImageEditResolution
+    ;
 
-  # 指示文のリライトを担う`RewriteEditPrompt`へ渡すOllamaのモデル名。
-  #
-  # ComfyUIが動くのはbulletなので、
-  # seminar自身の`hostModels`ではなくCUDAのホストの表から引く。
-  # 接続先のハードウェアでモデルが決まる関係は`blue-prompt.nix`と同じである。
-  #
-  # assertionではなく`throw`にするのは、
-  # `option.nix`の`%`の検査が`environment`の全ての値を強制評価するためである。
-  # そちらの評価はassertionの並び順と関係なく走るので、
-  # 空リストなら`lib.head`が先に`head: empty list`を投げて、
-  # 用意したメッセージは決して表示されない。
-  # 値そのものが理由を語る形にすれば、どの経路から評価されても同じ文章が出る。
-  rewriteModel =
-    let
-      generalModels = config.local.ollama.models.cuda.general;
-    in
-    if generalModels == [ ] then
-      throw "Open WebUIの画像編集は指示文のリライトにOllamaの汎用モデルを使うため、local.ollama.models.cuda.generalが空であってはなりません。"
-    else
-      lib.head generalModels;
+  model = "qwen_image_2.1_int8_convrot.safetensors";
 
   workflow = {
     "1" = {
@@ -79,14 +55,22 @@ let
     "2" = {
       class_type = "CLIPLoader";
       inputs = {
-        clip_name = "qwen_2.5_vl_7b.safetensors";
+        clip_name = "qwen3vl_8b_bf16.safetensors";
+        type = "qwen_image";
+        device = "default";
+      };
+    };
+    "19" = {
+      class_type = "CLIPLoader";
+      inputs = {
+        clip_name = "qwen3.5_9b_qwen_image_2.1_pe_i2i.int8_convrot.safetensors";
         type = "qwen_image";
         device = "default";
       };
     };
     "3" = {
       class_type = "VAELoader";
-      inputs.vae_name = "qwen_image_vae.safetensors";
+      inputs.vae_name = "qwen_image_2.1_vae_bf16.safetensors";
     };
     # 編集の対象。
     # Open WebUIがComfyUIの`/api/upload/image`へ上げた後のファイル名で差し替わる。
@@ -104,24 +88,28 @@ let
       class_type = "LoadImageOptional";
       inputs.image = "(none)";
     };
-    # Qwen-Image-Editが前提とする画素数と整列単位へ入力画像を合わせる。
-    "5" = {
-      class_type = "QwenImageEditScale";
-      inputs.image = [
-        "4"
-        0
-      ];
-    };
-    # 指示文を画像ごとOllamaへ渡して、Qwen-Image-Editが前提とする形式へ書き直す。
-    # モデル名の由来は`rewriteModel`の束縛に書いてある。
+    # 指示文を画像ごとPE-I2Iへ渡して、Qwen-Image-2.1が前提とする形式へ書き直す。
+    # 出力のキャンバスの幅と高さもここで決まる。
     "14" = {
       class_type = "RewriteEditPrompt";
       inputs = {
         text = "";
-        model = rewriteModel;
-        free_comfyui_vram = true;
-        image = [
-          "5"
+        seed = 0;
+        resolution = qwenImageEditResolution;
+        clip = [
+          "19"
+          0
+        ];
+        image1 = [
+          "4"
+          0
+        ];
+        image2 = [
+          "17"
+          0
+        ];
+        image3 = [
+          "18"
           0
         ];
       };
@@ -135,13 +123,17 @@ let
         0
       ];
     };
+    # 参照画像の入力は数が増えていく入力なので、
+    # API形式では`images.image_1`のようにグループ名で修飾した名前で渡す。
     "6" = {
-      class_type = "TextEncodeQwenImageEditPlus";
+      class_type = "TextEncodeQwenImage21";
       inputs = {
         prompt = [
           "14"
           0
         ];
+        negative_prompt = "";
+        resolution = qwenImageEditResolution;
         clip = [
           "2"
           0
@@ -150,78 +142,32 @@ let
           "3"
           0
         ];
-        image1 = [
-          "5"
+        "images.image_1" = [
+          "4"
           0
         ];
-        image2 = [
+        "images.image_2" = [
           "17"
           0
         ];
-        image3 = [
+        "images.image_3" = [
           "18"
           0
         ];
       };
     };
-    "7" = {
-      class_type = "TextEncodeQwenImageEditPlus";
+    "20" = {
+      class_type = "EmptyLatentImage";
       inputs = {
-        prompt = "";
-        clip = [
-          "2"
-          0
+        width = [
+          "14"
+          1
         ];
-        vae = [
-          "3"
-          0
+        height = [
+          "14"
+          2
         ];
-        image1 = [
-          "5"
-          0
-        ];
-        image2 = [
-          "17"
-          0
-        ];
-        image3 = [
-          "18"
-          0
-        ];
-      };
-    };
-    "8" = {
-      class_type = "ModelSamplingAuraFlow";
-      inputs = {
-        shift = 3.1;
-        model = [
-          "16"
-          0
-        ];
-      };
-    };
-    "9" = {
-      class_type = "CFGNorm";
-      inputs = {
-        strength = 1;
-        pre_cfg = false;
-        model = [
-          "8"
-          0
-        ];
-      };
-    };
-    "10" = {
-      class_type = "VAEEncode";
-      inputs = {
-        pixels = [
-          "5"
-          0
-        ];
-        vae = [
-          "3"
-          0
-        ];
+        batch_size = 1;
       };
     };
     "11" = {
@@ -229,12 +175,12 @@ let
       inputs = {
         seed = 0;
         steps = 40;
-        cfg = 4;
+        cfg = 1;
         sampler_name = "euler";
         scheduler = "simple";
         denoise = 1;
         model = [
-          "9"
+          "16"
           0
         ];
         positive = [
@@ -242,11 +188,11 @@ let
           0
         ];
         negative = [
-          "7"
-          0
+          "6"
+          1
         ];
         latent_image = [
-          "10"
+          "20"
           0
         ];
       };
@@ -266,11 +212,7 @@ let
     };
     # 編集が終わったのでComfyUIの重みをVRAMから降ろす。
     # 理由と挟む位置については`image-generation.nix`に書いてある。
-    #
-    # このワークフローは`RewriteEditPrompt`が`free_comfyui_vram`で一度降ろすが、
-    # あちらはリライトのためにOllamaを呼ぶ直前の話で、
-    # その後の編集で重みは載り直す。
-    "19" = {
+    "21" = {
       class_type = "FreeVram";
       inputs = {
         enabled = true;
@@ -286,7 +228,7 @@ let
       inputs = {
         filename_prefix = "open-webui-edit/open-webui-edit-%%year%%-%%month%%-%%day%%-%%hour%%-%%minute%%-%%second%%";
         images = [
-          "19"
+          "21"
           0
         ];
       };
@@ -299,7 +241,7 @@ let
   # negative promptは渡さない。
   # `ComfyUIEditImageForm`は画像生成の側と違って`negative_prompt`を持たないため、
   # そのtypeを書くと`_apply_workflow_nodes`が存在しない属性を読んで実行時に落ちる。
-  # ノード`7`のpromptは空のままにする。
+  # ノード`6`のnegative_promptは空のままにする。
   #
   # stepsも渡さない。
   # フィールド自体はあるが既定が`None`で、
@@ -312,9 +254,10 @@ let
   #
   # seedは渡してよい。
   # `_apply_workflow_nodes`が`None`の時に乱数へ倒す分岐を持っている。
+  # 渡すのは生成のKSamplerだけで、書き換えのseedは固定のままにする。
   #
   # 寸法は指定しない。
-  # `QwenImageEditScale`が入力画像から必要な画素数と整列単位へ合わせるため、
+  # 出力の寸法は`RewriteEditPrompt`が指示と入力画像から決めるため、
   # UIから渡された値で上書きすると元画像との対応が崩れる。
   workflowNodes = [
     {

@@ -183,26 +183,38 @@ in
             hash = "sha256-BHtfkaqCPf/YXfGbF/xyryjt+M8izkdoUAKNJLfyvqI=";
           };
           # 指示文を英語へ翻訳する自作ノード。
-          # Qwen-Image-Editなど指示文の公式サポートが英語と中国語のみのモデルに対して、
+          # Wanなど指示文の公式サポートが英語と中国語のみのモデルに対して、
           # 日本語で指示を書けるようにする。
           # 依存はComfyUI環境に同梱済みのrequestsのみ。
           # customNodesの型はpackageなのでプレーンなパスは渡せず、
           # derivationに包んで渡す。
           "ComfyUI-Translate-Text" = writeCheckedNode "translate-text";
-          # 日本語の編集指示をQwen公式の規則で英文の編集命令へ書き換える自作ノード。
-          # Ollamaへ画像も一緒に渡して、対象を特定した指示文にさせる。
-          # 接続先は`ollama.nix`が環境変数で渡す。
-          "ComfyUI-Rewrite-Edit-Prompt" = writeCheckedNode "rewrite-edit-prompt";
+          # 日本語の編集指示をQwen-Image-2.1公式のPE-I2Iで英文の編集命令へ書き換える自作ノード。
+          # 画像も一緒に渡して、対象を特定した指示文にさせる。
+          #
+          # PE-I2Iは公式のシステムプロンプトと組で学習されているので、
+          # そのファイルを公式リポジトリから取ってノードの隣へ置く。
+          # Qwen Research Licenseのファイルなので、
+          # 本文をこのリポジトリへ取り込んで再配布することはしない。
+          "ComfyUI-Rewrite-Edit-Prompt" =
+            let
+              qwenImage21 = pkgs.fetchFromGitHub {
+                owner = "QwenLM";
+                repo = "Qwen-Image-2.1";
+                rev = "fb7ae1d1f9611cd91524d03c53c5246b36ac8577";
+                hash = "sha256-iXaBv6x0cDooNBRBemGQbrChZ96xLgYjgxThTYBmtKU=";
+              };
+            in
+            pkgs.runCommand "comfyui-rewrite-edit-prompt" { } ''
+              cp -r ${writeCheckedNode "rewrite-edit-prompt"} $out
+              chmod u+w $out
+              cp ${qwenImage21}/prompt_rewrite/prompts/system_prompt_edit.txt $out/system_prompt_edit.txt
+            '';
           # 画像を選ばないことも許可する自作LoadImage。
           # (none)のままなら出力がNoneになり、optional入力が未接続扱いになる。
           # WanFirstLastFrameToVideoのend_imageなど任意入力の有効・無効を、
           # バイパス操作なしで画像指定の有無だけで切り替えるために使う。
           "ComfyUI-Load-Image-Optional" = writeCheckedNode "load-image-optional";
-          # Qwen-Image-Editの入力画像を、参照latentとずれない寸法へ揃えるノード。
-          # 公式テンプレートのFluxKontextImageScaleが選ぶバケットには、
-          # エンコード側の再計算で寸法が動いてしまうものが混ざっていて、
-          # そうなると出力の下端や右端に反対側の端が回り込む。
-          "ComfyUI-Qwen-Edit-Scale" = writeCheckedNode "qwen-edit-scale";
           # Animaなどlatent寸法に制約があるモデル向けの自作ノード群。
           # 画像を指定した倍数へ中央cropするノードと、
           # EmptyLatentImageへ渡す幅と高さを指定した倍数へ切り下げるノードを提供する。

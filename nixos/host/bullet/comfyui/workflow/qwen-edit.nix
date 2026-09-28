@@ -79,6 +79,8 @@ in
     };
     nodes = [
       # 指示文のリライトに使うPE-I2I。
+      # 公式版は指示によって拒否するので、拒否の方向を取り除いたheretic版を使う。
+      # 理由は`model.nix`に書いてある。
       # テキストエンコーダではなく文章生成に使うが、読み込みはCLIPLoaderで行う。
       # ComfyUIは重みの中身からQwen3.5 9Bと判定するのでtypeは何でもよく、
       # 他のQwen-Image-2.1のファイルと揃えておく。
@@ -97,7 +99,7 @@ in
         order = 0;
         outputs = [ (mkOutput "CLIP" "CLIP" [ 12 ]) ];
         widgets = [
-          "qwen3.5_9b_qwen_image_2.1_pe_i2i.int8_convrot.safetensors"
+          "qwen3.5_9b_qwen_image_2.1_pe_i2i_heretic.int8_convrot.safetensors"
           "qwen_image" # type
           "default" # device
         ];

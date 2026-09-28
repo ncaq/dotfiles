@@ -164,18 +164,33 @@ let
         file = "text_encoders/qwen3vl_8b_bf16.safetensors";
         hash = "sha256-aL3IK8G2aFEWKuZWIl5+IGgWa2A9sZvV1aO5DrEmaak=";
       };
-      # Qwen-Image-2.1公式の編集指示リライト用モデルPE-I2I。
-      # Qwen3.5 9Bを2.1の指示文の書式へ合わせてfine-tuneしたもので、
+      # Qwen-Image-2.1公式の編集指示リライト用モデルPE-I2Iから、
+      # hereticで拒否の方向を取り除いた版。
+      # PE-I2IはQwen3.5 9Bを2.1の指示文の書式へ合わせてfine-tuneしたもので、
       # 日本語の指示と参照画像から英文の編集命令を書き下す。
-      # ライセンスは拡散モデル本体の所に書いたQwen Research License。
       # テキストエンコーダとしてではなく`RewriteEditPrompt`が文章生成に使う。
-      # Comfy-Orgの配布はConvRot INT8版だけなのでそれを使う。
-      "qwen3.5_9b_qwen_image_2.1_pe_i2i.int8_convrot.safetensors" = fetchHuggingFace {
-        owner = "Comfy-Org";
-        repo = "Qwen-Image-2.1";
-        rev = "9a44dbdb47cefd046be9c0a13476192f34c8db8e";
-        file = "text_encoders/qwen3.5_9b_qwen_image_2.1_pe_i2i.int8_convrot.safetensors";
-        hash = "sha256-MnB9AbQn5IivJSuVxVGYmq1Z+f7GEaaU9dtr3n8PH2w=";
+      #
+      # 公式のPE-I2Iは指示によっては拒否して、
+      # 編集せず元画像をそのまま出す指示へ書き換えてしまう。
+      # 公式のシステムプロンプトには安全に関する記述が無く、
+      # 規制は重みに学習されているので、プロンプトの側では外せない。
+      # 自分のGPUで動かすローカルモデルなので、
+      # 指示どおりに書き換えさせるためにheretic版を使う。
+      #
+      # hereticは拒否率と元のモデルからの出力分布のずれを同時に最小化するので、
+      # 書式や回答形式への追従は保たれやすい。
+      # 拒否の方向を取り除いたのは`darrellbest/Qwen-Image-2.1-PE-I2I-Heretic`で、
+      # このリポジトリはそれをComfy-Orgの`comfy-model-tools`でConvRot INT8へ変換したもの。
+      # テンソルの構成と量子化のメタデータはComfy-Org公式のPE-I2Iと一致する。
+      # 同梱のシステムプロンプトも公式と同一なので、
+      # `custom-node.nix`が公式リポジトリから配置するものをそのまま使える。
+      # ライセンスは元と同じく拡散モデル本体の所に書いたQwen Research License。
+      "qwen3.5_9b_qwen_image_2.1_pe_i2i_heretic.int8_convrot.safetensors" = fetchHuggingFace {
+        owner = "Adahm";
+        repo = "PE-Heretic-INT8-ConvRot-for-Qwen-Image-2.1";
+        rev = "afc1c843a7e549574e8e8186bb383b17d8072e12";
+        file = "qwen3.5_9b_qwen_image_2.1_pe_i2i_heretic.int8_convrot.safetensors";
+        hash = "sha256-l5uQY90WZF8Bkcn/VapQWRBb/oQJbZaoF6hd7tIiMfA=";
       };
       # Wan系が使うテキストエンコーダ。
       # 複雑な動作やカメラ指示の追従精度を優先してFP16版を使う。

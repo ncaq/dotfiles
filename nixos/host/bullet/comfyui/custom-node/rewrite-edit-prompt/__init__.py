@@ -1,119 +1,109 @@
-# 日本語の編集指示を、Qwen-Image-Edit向けの英文の編集命令へ書き換えるノード。
+# 日本語の編集指示を、Qwen-Image-2.1向けの英文の編集命令へ書き換えるノード。
 #
 # qwen-editワークフローの前段には元々TranslateTextToEnglishを置いていた。
 # あれはGoogle翻訳へ投げるだけで、訳文の構造は元の文のままである。
 # ノード自体は`custom-node/translate-text/`に残っていて、
 # anime-videoとanime-video-extendのワークフローでは今も使っている。
 # Qwen公式は翻訳ではなくリライトを前段に置いていて、
-# タスク種別ごとの規則に沿って対象と属性と位置を明示した英文へ組み直す。
-# その規則そのものが`rewrite.py`の`EDIT_SYSTEM_PROMPT`である。
+# 対象と属性と位置を明示し、変えない部分まで書き下した英文へ組み直す。
 #
-# 公式は画像も一緒に渡すので、ここでも渡す。
-# `TextEncodeQwenImageEditPlus`がVLへ渡す画像は総画素384*384まで縮むため、
-# 小さい対象や複数ある対象を指示文の側で特定しておく意味が大きい。
-# 実測でも「この子の服装を変えて」に対して、
-# 画像なしは一般論へ流れたのに対し、
-# 画像ありは実際に着ている紺のパーカーを指して書き換えた。
+# Qwen-Image-Edit 2511の頃はOllamaの汎用モデルへ公式の規則を渡して書き換えていた。
+# 2.1では公式がその役割のためにQwen3.5 9Bをfine-tuneしたPE-I2Iを配布しているので、
+# それをComfyUIの中でCLIPとして読み、文章生成させる。
+# 指示文での画像の呼び方が`<image1>`に変わったので、
+# 2511向けの規則をそのまま使い続けることはできない。
+# ComfyUIの外へ出ないので、
+# 以前のようにComfyUIの重みを全て降ろしてOllamaの27Bを読み直す往復も無くなった。
+#
+# 画像も一緒に渡す。
+# 「この子の服装を変えて」のような曖昧な指示でも、
+# 画像を見て実際に着ている服を指した指示文に書き下せる。
 #
 # 失敗しても生成そのものは続けたいので、2段階で退避する。
-# Ollamaへ届かなければ従来どおりGoogle翻訳で英語にし、
+# 書き換えに失敗すればGoogle翻訳で英語にし、
 # それも駄目なら原文をそのまま通す。
 # どちらもstderrへ理由を残す。
 #
 # ComfyUI本体は型注釈をほとんど持たないので、
-# `comfy.model_management.unload_all_models`の型が決まらず、
-# torchやPillowのスタブにも不明な部分がある。
+# CLIPのメソッドの型が決まらず、torchのスタブにも不明な部分がある。
 # strictのUnknown系はこれらに触れる式を全て挙げてしまう。
 # 上流に型が付くまではこのファイルでだけ落とす。
 # pyright: reportUnknownArgumentType=none
 # pyright: reportUnknownMemberType=none
 # pyright: reportUnknownVariableType=none
 
-import base64
-import io
-import os
+import math
 import sys
+import traceback
+from pathlib import Path
+from typing import Any
 
-import comfy.model_management
-import requests
+import comfy.utils
 import torch
-from PIL import Image
 
-from .rewrite import build_messages, rewritten_text
+from .rewrite import Rewrite, build_prompt, canvas_size, parse_rewrite
 from .translate import translate_to_english
 
-# 接続先を渡す環境変数。`nixos/host/bullet/comfyui/ollama.nix`が設定する。
-# Ollamaのコンテナへ直接繋ぐのではなくホスト側のsocketへ繋ぐので、
-# 止まっていればオンデマンドで起動する。
-#
-# 既定値は置かない。
-# コンテナの中で127.0.0.1を叩いても何も居らず、
-# 設定が届いていないことを接続失敗として遅れて知るだけになる。
-URL_VARIABLE = "COMFYUI_OLLAMA_URL"
+# 公式のシステムプロンプト。
+# Qwen Research Licenseなのでリポジトリには置かず、
+# ノードのderivationがビルド時に公式リポジトリから配置する(`custom-node.nix`)。
+SYSTEM_PROMPT_PATH = Path(__file__).with_name("system_prompt_edit.txt")
 
-# VLへ渡す画像の最長辺。
-# 大きいほどprefillのトークンが増えるが、
-# 1280程度なら実測で生成時間はほぼ変わらず、対象の判別には十分だった。
-MAX_IMAGE_SIDE = 1280
+# 1枚あたりの画素数の上限。
+# 公式の`pe_core.py`が学習時に合わせて入力画像を縮める上限と同じ値にする。
+MAX_IMAGE_PIXELS = 1024 * 1024
 
-# モデルのロードと生成を待つ上限。
-# 実測ではVRAMが空いていれば27Bで5秒、
-# ComfyUIと取り合って層がCPUへ溢れた最悪の場合で30秒だった。
-# 桁で外れたら待ち続けるより翻訳へ退避した方がよい。
-TIMEOUT_SECONDS = 120
+# 生成するトークン数の上限。
+# 公式の`pe_core.py`の編集用の既定値に揃える。
+# 思考が上限で切れると回答が無くなり翻訳へ退避することになるので、
+# テキストの生成でしかない分を削って公式から外れる理由は無い。
+MAX_NEW_TOKENS = 24000
 
 
-def encode_image(image: torch.Tensor) -> str:
-    """先頭の1枚を最長辺`MAX_IMAGE_SIDE`まで縮めてPNGのbase64にする。
+def prepare_image(image: torch.Tensor) -> torch.Tensor:
+    """先頭の1枚をRGBにして、総画素が`MAX_IMAGE_PIXELS`を超えれば縮める。
 
-    アルファは落とす。
-    IMAGEは4チャンネルのこともあり、
-    そのまま渡すとRGB指定の`Image.fromarray`が例外にする。
+    IMAGEは4チャンネルのこともあるのでアルファは落とす。
+    公式もPillowで`convert("RGB")`してから渡している。
     """
-    array = (
-        image[0, ..., :3]
-        .detach()
-        .clamp(0, 1)
-        .mul(255)
-        .round()
-        .to(torch.uint8)
-        .cpu()
-        .numpy()
+    picture = image[:1, ..., :3]
+    height, width = picture.shape[1], picture.shape[2]
+    if height * width <= MAX_IMAGE_PIXELS:
+        return picture
+    scale = math.sqrt(MAX_IMAGE_PIXELS / (height * width))
+    resized = comfy.utils.common_upscale(
+        picture.movedim(-1, 1),
+        max(1, int(width * scale)),
+        max(1, int(height * scale)),
+        "lanczos",
+        "disabled",
     )
-    picture = Image.fromarray(array, "RGB")
-    picture.thumbnail((MAX_IMAGE_SIDE, MAX_IMAGE_SIDE), Image.Resampling.LANCZOS)
-    buffer = io.BytesIO()
-    picture.save(buffer, format="PNG")
-    return base64.b64encode(buffer.getvalue()).decode()
+    return resized.movedim(1, -1)
 
 
-def request_rewrite(model: str, text: str, image: str | None) -> str:
-    """Ollamaへ問い合わせて書き換え後の指示文を返す。
-
-    接続先もモデル名も外から与えられるものなので、
-    欠けていれば何が足りないのか分かる形で落とす。
-    呼び出し側がそれを見て翻訳へ退避する。
-    """
-    url = os.environ.get(URL_VARIABLE)
-    if not url:
-        raise ValueError(f"{URL_VARIABLE} is not set")
-    if not model:
-        raise ValueError("No Ollama model specified")
-    payload = {
-        "model": model,
-        "messages": build_messages(text, image),
-        "stream": False,
-        # 思考させても書き換えの質は上がらず、待ち時間だけ伸びる。
-        "think": False,
-        # 応答を返した直後にモデルを降ろす。
-        # `OLLAMA_KEEP_ALIVE`はCUDAのホストで5分なので、
-        # 指定しないとその間VRAMを掴んだままComfyUIを圧迫する。
-        "keep_alive": 0,
-        "options": {"num_ctx": 8192, "temperature": 0.2},
-    }
-    response = requests.post(f"{url}/api/chat", json=payload, timeout=TIMEOUT_SECONDS)
-    response.raise_for_status()
-    return rewritten_text(response.json()["message"]["content"])
+def request_rewrite(
+    clip: Any, text: str, images: list[torch.Tensor], seed: int
+) -> Rewrite:
+    """PE-I2Iで書き換えた回答を返す。"""
+    system_prompt = SYSTEM_PROMPT_PATH.read_text(encoding="utf-8").strip()
+    prompt = build_prompt(system_prompt, text, len(images))
+    tokens = clip.tokenize(prompt, images=images, min_length=1)
+    # サンプリングの設定は公式の`pe_core.py`の編集用の値そのままである。
+    # 公式は用途ごとに値が違う点を強調していて、
+    # 特にpresence_penaltyは生成用の1.5に対して編集用は0になる。
+    generated_ids = clip.generate(
+        tokens,
+        do_sample=True,
+        max_length=MAX_NEW_TOKENS,
+        temperature=1.0,
+        top_k=20,
+        top_p=0.95,
+        min_p=0.0,
+        repetition_penalty=1.0,
+        presence_penalty=0.0,
+        seed=seed,
+    )
+    return parse_rewrite(clip.decode(generated_ids))
 
 
 class RewriteEditPrompt:
@@ -122,52 +112,83 @@ class RewriteEditPrompt:
         return {
             "required": {
                 "text": ("STRING", {"multiline": True, "default": ""}),
-                # モデル名の既定値は置かない。
-                # ワークフローがOllamaへ載せるモデルの定義から渡すので、
-                # ここにも書くと二重の情報源になって片方が黙って古くなる。
-                "model": ("STRING", {"default": ""}),
-                "free_comfyui_vram": ("BOOLEAN", {"default": True}),
+                # PE-I2IのファイルをCLIPLoaderで読んだもの。
+                "clip": ("CLIP",),
+                # 公式どおりtemperature 1.0でサンプリングするので、
+                # 同じ指示でも書き換えは毎回揺れる。
+                # 生成のseedとは分けて固定値にしておくと、
+                # 生成のseedだけ変える連打で書き換えまでやり直さずに済む。
+                "seed": (
+                    "INT",
+                    {"default": 0, "min": 0, "max": 0xFFFFFFFFFFFFFFFF},
+                ),
+                # 出力の寸法を揃える総画素の平方根。
+                # `TextEncodeQwenImage21`のresolutionと同じ値を渡す。
+                # 1枚目に従う時にあちらが作るlatentと同じ寸法になる。
+                "resolution": (
+                    "INT",
+                    {"default": 2048, "min": 32, "max": 4096, "step": 32},
+                ),
             },
-            "optional": {"image": ("IMAGE",)},
+            # 番号は指示文の`<image1>`、`<image2>`に対応する。
+            # 繋がっていない枠は詰めて数えるので、
+            # 3枚目だけ繋ぐとそれが`<image2>`になる。
+            # エンコード側の`TextEncodeQwenImage21`も同じ数え方をする。
+            "optional": {
+                "image1": ("IMAGE",),
+                "image2": ("IMAGE",),
+                "image3": ("IMAGE",),
+            },
         }
 
-    RETURN_TYPES: tuple[str] = ("STRING",)
-    RETURN_NAMES: tuple[str] = ("english_text",)
+    # 指示文に加えて、PE-I2Iが決めた出力のキャンバスの寸法を返す。
+    # 空のlatentをこの寸法で作ってサンプリングする。
+    RETURN_TYPES: tuple[str, str, str] = ("STRING", "INT", "INT")
+    RETURN_NAMES: tuple[str, str, str] = ("english_text", "width", "height")
     FUNCTION: str = "rewrite"
     CATEGORY: str = "utils"
 
     def rewrite(
         self,
         text: str,
-        model: str,
-        free_comfyui_vram: bool,
-        image: torch.Tensor | None = None,
-    ) -> tuple[str]:
+        clip: Any,
+        seed: int,
+        resolution: int,
+        image1: torch.Tensor | None = None,
+        image2: torch.Tensor | None = None,
+        image3: torch.Tensor | None = None,
+    ) -> tuple[str, int, int]:
+        images = [image for image in (image1, image2, image3) if image is not None]
+        image_sizes = [(int(image.shape[2]), int(image.shape[1])) for image in images]
         if not text.strip():
-            return ("",)
-        if free_comfyui_vram:
-            # ComfyUIが載せたままの重みとリライトのモデルがVRAMを取り合うと、
-            # 層がCPUへ溢れて実測で5倍以上遅くなる。
-            # 降ろす分の載せ直しは実測8秒程度で、待たされる合計はそれでも短い。
-            # このノードは指示文が変わった時しか再実行されないので、
-            # seedだけ変える連打ではここも通らない。
-            comfy.model_management.unload_all_models()
+            return ("", *canvas_size(None, image_sizes, resolution))
         try:
-            encoded = encode_image(image) if image is not None else None
-            return (request_rewrite(model, text, encoded),)
-        except Exception as error:
+            rewrite = request_rewrite(
+                clip, text, [prepare_image(image) for image in images], seed
+            )
+            width, height = canvas_size(rewrite, image_sizes, resolution)
+            # キャンバスの決め方は指示によって変わるので、何に従ったのかを残す。
+            # 出力の寸法が編集する画像と違う時に、理由をジャーナルから追えるようにする。
             print(
-                f"[RewriteEditPrompt] Ollamaでのリライトに失敗したので翻訳へ退避します: {error}",
+                f"[RewriteEditPrompt] ratio_follow={rewrite.ratio_follow!r}"
+                f" wh_ratio={rewrite.wh_ratio!r} -> {width}x{height}",
                 file=sys.stderr,
             )
+            return (rewrite.prompt, width, height)
+        except Exception:
+            print(
+                f"[RewriteEditPrompt] PE-I2Iでのリライトに失敗したので翻訳へ退避します:\n{traceback.format_exc()}",
+                file=sys.stderr,
+            )
+        size = canvas_size(None, image_sizes, resolution)
         try:
-            return (translate_to_english(text),)
+            return (translate_to_english(text), *size)
         except Exception as error:
             print(
                 f"[RewriteEditPrompt] 翻訳にも失敗したので原文をそのまま使います: {error}",
                 file=sys.stderr,
             )
-        return (text,)
+        return (text, *size)
 
 
 NODE_CLASS_MAPPINGS: dict[str, type[RewriteEditPrompt]] = {

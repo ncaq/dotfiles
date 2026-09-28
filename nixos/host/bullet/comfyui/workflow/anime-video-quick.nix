@@ -2,7 +2,7 @@
 #
 # 空行で指示を場面単位にまとめ、空行でない各行は1動画区間として分割する。
 # 場面が変わっても生成は連続し、直前行の終了キーフレームを次の場面の開始に使う。
-# 各行を個別に英訳し、同じ英文をQwen-Image-Editの終了キーフレーム生成と、
+# 各行を個別に英訳し、同じ英文をQwen-Image-2.1の終了キーフレーム生成と、
 # Wan 2.2 FLF2Vの動画生成へ渡す。
 #
 # Qwenで全キーフレームを先に生成してからWanの全区間を生成するため、
@@ -55,7 +55,7 @@ in
       (mkNode {
         id = 1;
         type = "UNETLoader";
-        title = "Qwen-Image-Editモデル";
+        title = "Qwen-Image-2.1モデル";
         pos = [
           (-40)
           40
@@ -67,7 +67,7 @@ in
         order = 0;
         outputs = [ (mkOutput "MODEL" "MODEL" [ 1 ]) ];
         widgets = [
-          "qwen_image_edit_2511_int8_convrot.safetensors"
+          "qwen_image_2.1_int8_convrot.safetensors"
           "default"
         ];
       })
@@ -86,7 +86,7 @@ in
         order = 1;
         outputs = [ (mkOutput "CLIP" "CLIP" [ 3 ]) ];
         widgets = [
-          "qwen_2.5_vl_7b.safetensors"
+          "qwen3vl_8b_bf16.safetensors"
           "qwen_image"
           "default"
         ];
@@ -105,7 +105,7 @@ in
         ];
         order = 2;
         outputs = [ (mkOutput "VAE" "VAE" [ 4 ]) ];
-        widgets = [ "qwen_image_vae.safetensors" ];
+        widgets = [ "qwen_image_2.1_vae_bf16.safetensors" ];
       })
       (mkNode {
         id = 4;
@@ -129,59 +129,22 @@ in
           "image"
         ];
       })
-      (mkNode {
-        id = 5;
-        type = "ModelSamplingAuraFlow";
-        title = "Qwen shift";
-        pos = [
-          420
-          40
-        ];
-        size = [
-          315
-          58
-        ];
-        order = 4;
-        inputs = [ (mkInput "model" "MODEL" 1) ];
-        outputs = [ (mkOutput "MODEL" "MODEL" [ 2 ]) ];
-        widgets = [
-          3.1
-          "flow"
-        ];
-      })
-      (mkNode {
-        id = 6;
-        type = "CFGNorm";
-        title = "Qwen CFG正規化";
-        pos = [
-          420
-          160
-        ];
-        size = [
-          315
-          82
-        ];
-        order = 5;
-        inputs = [ (mkInput "model" "MODEL" 2) ];
-        outputs = [ (mkOutput "patched_model" "MODEL" [ 6 ]) ];
-        widgets = [
-          1
-          false
-        ];
-      })
+      # Qwen-Image-2.1はshiftもCFGもモデル側の既定値で使う。
+      # 公式テンプレートもModelSamplingAuraFlowやCFGNormを挟まず、
+      # UNETLoaderのMODELをそのままサンプラーへ渡している。
       (mkNode {
         id = 12;
         type = "AnimeVideoQuick";
         title = "Qwen全画像生成 → Wan全動画生成 → 結合";
         pos = [
-          1260
+          420
           40
         ];
         size = [
           520
           620
         ];
-        order = 6;
+        order = 4;
         inputs = [
           (mkInput "image" "IMAGE" 5)
           {
@@ -192,7 +155,7 @@ in
             };
             link = null;
           }
-          (mkInput "qwen_model" "MODEL" 6)
+          (mkInput "qwen_model" "MODEL" 1)
           (mkInput "qwen_clip" "CLIP" 3)
           (mkInput "qwen_vae" "VAE" 4)
           {
@@ -277,16 +240,8 @@ in
         1
         1
         0
-        5
-        0
-        "MODEL"
-      ]
-      [
+        12
         2
-        5
-        0
-        6
-        0
         "MODEL"
       ]
       [
@@ -312,14 +267,6 @@ in
         12
         0
         "IMAGE"
-      ]
-      [
-        6
-        6
-        0
-        12
-        2
-        "MODEL"
       ]
     ];
   };

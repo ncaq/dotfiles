@@ -79,8 +79,8 @@ rec {
     # 自作ノード。`custom-node/rewrite-edit-prompt/__init__.py`。
     RewriteEditPrompt = [
       "text"
-      "model"
-      "free_comfyui_vram"
+      "seed"
+      "resolution"
     ];
     # 自作ノード。`custom-node/translate-text/__init__.py`。
     TranslateTextToEnglish = [ "text" ];

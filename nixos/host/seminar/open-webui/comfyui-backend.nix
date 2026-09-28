@@ -6,7 +6,6 @@
 # MagicDNSの100.100.100.100もtailnetのULAへの経路も持たない。
 # そのためTailscale Serviceの名前を直接引くことはできず、
 # ホスト側のCaddyで中継する必要がある。
-# `bullet/comfyui/ollama.nix`が同じ制約を逆向きに確認している。
 #
 # `ollama-backend.nix`と同じ構図だが、
 # あちらと違って振り分け先はbulletだけなので、

@@ -74,28 +74,36 @@ let
         file = "split_files/diffusion_models/anima-base-v1.0.safetensors";
         hash = "sha256-vUO3z/4e0RU9nEHnvrLxjLEnPq+6o68+3WoXPckKAG4=";
       };
-      # 指示文で画像を編集するQwen-Image-Editの2025年11月版。
-      # Comfy-Org公式の再パッケージ版。Apache 2.0ライセンス。
+      # Qwen-Image-2.1はQwen Research License Agreement。
+      # 本体、テキストエンコーダ、VAE、プロンプトリライト用のPEモデルのすべてが対象で、
+      # 利用、複製、改変、派生物の作成は研究または評価目的の非商用に限られる。
+      # 商用利用には別途Alibabaからの商用ライセンスが必要。
+      # Animaと違い生成画像を商用利用してよいという明示的な許可は無く、
+      # 商用目的で生成すること自体がMaterialsの商用利用に当たると読める。
+      # 生成物を使ってAIモデルを学習し配布する場合は「Built with Qwen」の表示も要る。
+      # https://huggingface.co/Qwen/Qwen-Image-2.1/blob/790c92633540aa0cb11d9abf19eb46d861714758/LICENSE
+      # 以前のQwen-Image-Edit 2511はApache 2.0だったので、
+      # 2.1への乗り換えで制約が強まっている。
+      #
+      # 生成と指示ベースの編集を1つの7Bモデルで行う。
+      # Comfy-Org公式の再パッケージ版。
       #
       # ConvRot INT8版を使う。
       # 量子化の前に重みへ256要素グループ単位のアダマール回転をかけて、
       # DiT特有の行方向の外れ値を分散させてからINT8にするQuaRot派生の方式で、
       # 回転なしのINT8より誤差が1桁近く小さくなる。
-      # fp8mixed版は839層すべてのマーカーに`full_precision_matrix_mult`が立っていて、
-      # ファイルサイズが半分になるだけで行列積は逆量子化したbf16で走る。
-      # つまりこれはfp8からint8への乗り換えではなく、
-      # bf16計算からint8計算への乗り換えになる。
+      # 行列積もINT8のまま走るので、bf16版より計算そのものが速い。
       # RTX 5090の`4096x3072x3072`のlinearの実測では、
       # bf16の0.353msに対しConvRot INT8は0.169msだった。
       # 相対誤差はbf16の0.0017に対し0.0132で、
       # 回転なしINT8の0.0596より大幅に良い。
-      # ファイルサイズはfp8mixedとほぼ同じなので保存側の増減はない。
-      "qwen_image_edit_2511_int8_convrot.safetensors" = fetchHuggingFace {
+      # サンプリングで毎ステップ回るのがこのモデルなので、ここは速度を取る。
+      "qwen_image_2.1_int8_convrot.safetensors" = fetchHuggingFace {
         owner = "Comfy-Org";
-        repo = "Qwen-Image-Edit_ComfyUI";
-        rev = "7d41107b653d3039be20972fb82398b01b3213eb";
-        file = "split_files/diffusion_models/qwen_image_edit_2511_int8_convrot.safetensors";
-        hash = "sha256-EbWvWsYBgh1zkwyEhGyaFY5nF3NW2vknzhyNEPOWOCk=";
+        repo = "Qwen-Image-2.1";
+        rev = "9a44dbdb47cefd046be9c0a13476192f34c8db8e";
+        file = "diffusion_models/qwen_image_2.1_int8_convrot.safetensors";
+        hash = "sha256-y3QRPLA/rs15YRsB/X/WQvCqYNbwuVCGq+4hTXXqpX0=";
       };
       # Wan 2.2 I2V 14B MoEを高品質720pデータで4ステップ用に蒸留したfull expertモデル2つ。
       # LoRA近似ではなく蒸留済みの全重みを使い、
@@ -145,14 +153,29 @@ let
         file = "split_files/text_encoders/qwen_3_06b_base.safetensors";
         hash = "sha256-zSpRIAPi+fPNPDKpw1c/gguyjJQPc8V7Hdqpg9kiPro=";
       };
-      # Qwen-Image-Editで編集指示と入力画像を解析するVLM。
+      # Qwen-Image-2.1で指示文と参照画像を解析するQwen3-VL 8B。
+      # ライセンスは拡散モデル本体の所に書いたQwen Research License。
+      # 1回の実行で1度しか回らず速度の寄与が小さいので、
       # 画像理解と複雑な指示の精度を優先してBF16版を使う。
-      "qwen_2.5_vl_7b.safetensors" = fetchHuggingFace {
+      "qwen3vl_8b_bf16.safetensors" = fetchHuggingFace {
         owner = "Comfy-Org";
-        repo = "Qwen-Image_ComfyUI";
-        rev = "6469d02bfbf02a049223ba3ae3497ef9ae8220b9";
-        file = "split_files/text_encoders/qwen_2.5_vl_7b.safetensors";
-        hash = "sha256-z6/XOUWbyGJXOXJZ9hKpruiOW5joW1wNDRcX6JizRjo=";
+        repo = "Qwen-Image-2.1";
+        rev = "9a44dbdb47cefd046be9c0a13476192f34c8db8e";
+        file = "text_encoders/qwen3vl_8b_bf16.safetensors";
+        hash = "sha256-aL3IK8G2aFEWKuZWIl5+IGgWa2A9sZvV1aO5DrEmaak=";
+      };
+      # Qwen-Image-2.1公式の編集指示リライト用モデルPE-I2I。
+      # Qwen3.5 9Bを2.1の指示文の書式へ合わせてfine-tuneしたもので、
+      # 日本語の指示と参照画像から英文の編集命令を書き下す。
+      # ライセンスは拡散モデル本体の所に書いたQwen Research License。
+      # テキストエンコーダとしてではなく`RewriteEditPrompt`が文章生成に使う。
+      # Comfy-Orgの配布はConvRot INT8版だけなのでそれを使う。
+      "qwen3.5_9b_qwen_image_2.1_pe_i2i.int8_convrot.safetensors" = fetchHuggingFace {
+        owner = "Comfy-Org";
+        repo = "Qwen-Image-2.1";
+        rev = "9a44dbdb47cefd046be9c0a13476192f34c8db8e";
+        file = "text_encoders/qwen3.5_9b_qwen_image_2.1_pe_i2i.int8_convrot.safetensors";
+        hash = "sha256-MnB9AbQn5IivJSuVxVGYmq1Z+f7GEaaU9dtr3n8PH2w=";
       };
       # Wan系が使うテキストエンコーダ。
       # 複雑な動作やカメラ指示の追従精度を優先してFP16版を使う。
@@ -166,12 +189,23 @@ let
     };
     vae = {
       # Qwen-Image系のVAE。
+      # Qwen-Image-2.1とは互換性が無く、Animaが使う。
       "qwen_image_vae.safetensors" = fetchHuggingFace {
         owner = "Comfy-Org";
         repo = "Qwen-Image_ComfyUI";
         rev = "6469d02bfbf02a049223ba3ae3497ef9ae8220b9";
         file = "split_files/vae/qwen_image_vae.safetensors";
         hash = "sha256-pwWA8CE+Z5Z+6clfBbtADo+wgwfgF6kkvzRBIj4CPR8=";
+      };
+      # Qwen-Image-2.1専用のVAE。
+      # 64チャンネルで空間16倍縮小の新しい構造で、RGBAも扱える。
+      # ライセンスは拡散モデル本体の所に書いたQwen Research License。
+      "qwen_image_2.1_vae_bf16.safetensors" = fetchHuggingFace {
+        owner = "Comfy-Org";
+        repo = "Qwen-Image-2.1";
+        rev = "9a44dbdb47cefd046be9c0a13476192f34c8db8e";
+        file = "vae/qwen_image_2.1_vae_bf16.safetensors";
+        hash = "sha256-uyH3RzBR4aw2hRXdPy4VzUTXoRdI7ogj4d3KPkh2t8k=";
       };
       # Wan 2.2 14BはWan 2.1と共通のVAEを使う。
       "wan_2.1_vae.safetensors" = fetchHuggingFace {

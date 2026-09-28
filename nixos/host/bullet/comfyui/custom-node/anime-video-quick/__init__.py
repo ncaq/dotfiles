@@ -30,6 +30,7 @@ import nodes
 import numpy as np
 import torch
 from comfy_extras.nodes_model_advanced import ModelSamplingSD3
+from comfy_extras.nodes_qwen import TextEncodeQwenImage21
 from PIL import Image
 
 from .manifest import (
@@ -40,7 +41,6 @@ from .manifest import (
     write_manifest,
 )
 from .optimize_png import start_optimize_png
-from .qwen_edit_size import is_stable, target_size
 from .share_encode import start_share_encode
 from .translate import translate_to_english
 
@@ -53,6 +53,11 @@ video_suffix = ".lossless.av1.webm"
 wan_frame_count = 81
 wan_fps = 16.0
 wan_temporal_compression = 4
+# キーフレームを生成するQwen-Image-2.1の解像度。
+# 画像はこの値の2乗の総画素へアスペクト比を保って揃えられる。
+# キーフレームはこの後Wanへ0.9MPに縮めて渡すだけなので、
+# qwen-editの2048よりずっと小さい1024で足りる。
+qwen_resolution = 1024
 negative_prompt = (
     "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，"
     "整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，"
@@ -140,61 +145,6 @@ def scaled_image(image: torch.Tensor, megapixels: float, multiple: int) -> torch
     ).movedim(1, -1)
 
 
-def qwen_image_conditioning(
-    vae: Any, image: torch.Tensor
-) -> tuple[torch.Tensor, torch.Tensor]:
-    samples = image.movedim(-1, 1)
-    vision_scale = math.sqrt(384 * 384 / (samples.shape[3] * samples.shape[2]))
-    vision_width = round(samples.shape[3] * vision_scale)
-    vision_height = round(samples.shape[2] * vision_scale)
-    vision_image = comfy.utils.common_upscale(
-        samples, vision_width, vision_height, "area", "disabled"
-    ).movedim(1, -1)
-
-    # 参照latentの寸法の決め方は`TextEncodeQwenImageEditPlus`と同じである。
-    # `generate_keyframe`が渡す寸法はこの再計算の不動点でなければならないので、
-    # 同じ式を2箇所に書かず`qwen_edit_size`に一本化する。
-    #
-    # 不動点でない入力は受け付けない。
-    # 黙って参照latentの寸法で進めると、
-    # サンプリングするlatentとの食い違いとpatch化のcircular paddingが戻る。
-    # 呼び出し側が`target_size`を通していれば必ず成り立つ。
-    if not is_stable(samples.shape[3], samples.shape[2]):
-        raise ValueError(
-            f"Image size {samples.shape[3]}x{samples.shape[2]} is not a fixed point "
-            "of the reference latent size"
-        )
-    # 寸法が変わらないので参照latent用のリサイズは要らない。
-    reference_latent = vae.encode(image[..., :3])
-    return vision_image, reference_latent
-
-
-def qwen_conditioning(
-    clip: Any,
-    vision_image: torch.Tensor,
-    reference_latent: torch.Tensor,
-    prompt: str,
-) -> Any:
-
-    template = (
-        "<|im_start|>system\nDescribe the key features of the input image "
-        "(color, shape, size, texture, objects, background), then explain how the user's text "
-        "instruction should alter or modify the image. Generate a new image that meets the "
-        "user's requirements while maintaining consistency with the original input where "
-        "appropriate.<|im_end|>\n<|im_start|>user\n{}<|im_end|>\n"
-        "<|im_start|>assistant\n"
-    )
-    tokens = clip.tokenize(
-        "Picture 1: <|vision_start|><|image_pad|><|vision_end|>" + prompt,
-        images=[vision_image],
-        llama_template=template,
-    )
-    conditioning = clip.encode_from_tokens_scheduled(tokens)
-    return node_helpers.conditioning_set_values(
-        conditioning, {"reference_latents": [reference_latent]}, append=True
-    )
-
-
 def generate_keyframe(
     model: Any,
     clip: Any,
@@ -203,32 +153,21 @@ def generate_keyframe(
     prompt: str,
     seed: int,
 ) -> torch.Tensor:
-    # Qwen-Image-Editの参照latentは総画素1024*1024で作り直されるため、
-    # ここで渡す寸法がその再計算の不動点でないと、
-    # サンプリングするlatentと参照latentの寸法が食い違う。
-    # さらに寸法が16で割り切れないとpatch化のcircular paddingが入り、
-    # 出力の下端や右端が反対側の端のコピーで埋まる。
-    # 条件を満たす寸法を`qwen_edit_size`に選ばせる。
-    target_width, target_height = target_size(image.shape[2], image.shape[1])
-    source = comfy.utils.common_upscale(
-        image[..., :3].movedim(-1, 1),
-        target_width,
-        target_height,
-        "lanczos",
-        "center",
-    ).movedim(1, -1)
-    vision_image, reference_latent = qwen_image_conditioning(vae, source)
-    positive = qwen_conditioning(clip, vision_image, reference_latent, prompt)
-    negative = qwen_conditioning(clip, vision_image, reference_latent, "")
-    # 参照latentは`source`をそのままエンコードしたものなので、
-    # サンプリング用にもう一度encodeせず使い回す。
-    # `common_ksampler`は渡したテンソルを読むだけで書き換えないため、
-    # conditioningと同じものを共有しても壊れない。
-    latent = {"samples": reference_latent}
+    # 条件付けは本体の`TextEncodeQwenImage21`にそのまま任せる。
+    # 参照画像のリサイズ、テキストエンコーダとVAEへの受け渡し、
+    # 画像1枚目の寸法に合わせた空のlatentまでを1つのノードが担っていて、
+    # 同じ処理をここへ書き写すと上流の変更に追従できなくなる。
+    positive, negative, latent = TextEncodeQwenImage21.execute(
+        clip, prompt, "", vae, qwen_resolution, {"image_1": image}
+    ).args
+    # 公式の推奨どおりCFGは1で、negative promptは使わない。
+    # CFGが1ならnegativeは評価されないが、サンプラーの引数としては要る。
     sampled = nodes.common_ksampler(
-        model, seed, 40, 4.0, "euler", "simple", positive, negative, latent, denoise=1.0
+        model, seed, 40, 1.0, "euler", "simple", positive, negative, latent, denoise=1.0
     )[0]
-    return flatten_image_batch(vae.decode(sampled["samples"]))[:1]
+    # Qwen-Image-2.1のVAEはRGBAを出すことがあるが、
+    # キーフレームは不透明な画像として保存してWanへ渡すのでRGBだけを残す。
+    return flatten_image_batch(vae.decode(sampled["samples"]))[:1, ..., :3]
 
 
 def wan_conditioning(

@@ -1,11 +1,15 @@
 # ComfyUI本体を隔離して動かすNixOS Containersの定義。
 {
   lib,
+  pkgs,
   config,
   inputs,
   ...
 }:
 let
+  # unfreeの許可はホスト側のnixpkgsの設定にしかないため、
+  # コンテナ内のpkgsではなくホスト側から取る。
+  cudaNvcc = pkgs.cudaPackages_13.cuda_nvcc;
   # ComfyUIがlistenするポート。
   # ホスト側では`comfyui-proxy.socket`が同じ番号でlistenし、
   # コンテナ内のComfyUIへ転送する。
@@ -166,10 +170,19 @@ in
             "--use-ck-attention"
           ];
         };
-        systemd.services.comfyui.path = with pkgs; [
-          ffmpeg
-          oxipng
-        ];
+        systemd.services.comfyui = {
+          path = with pkgs; [
+            ffmpeg
+            oxipng
+          ];
+          # Tritonはsm_100以上へのコンパイルに`ptxas`ではなく`ptxas-blackwell`を探す。
+          # comfyui-nixのランチャーは`TRITON_PTXAS_PATH`しか設定しないため、
+          # RTX 5090(sm_120)では`Cannot find ptxas-blackwell`で止まる。
+          # ComfyUI v0.37.0ではAnimaのテキストエンコーダのRoPEがTritonカーネルを通るので、
+          # 動画だけでなく画像のワークフローも失敗する。
+          # CUDA 13の`ptxas`はsm_120に対応しているのでそれを指す。
+          environment.TRITON_PTXAS_BLACKWELL_PATH = "${cudaNvcc}/bin/ptxas";
+        };
       };
   };
   networking = {

@@ -144,7 +144,10 @@ in
         order = 4;
         inputs = [ (mkInput "model" "MODEL" 1) ];
         outputs = [ (mkOutput "MODEL" "MODEL" [ 2 ]) ];
-        widgets = [ 3.1 ];
+        widgets = [
+          3.1
+          "flow"
+        ];
       })
       (mkNode {
         id = 6;

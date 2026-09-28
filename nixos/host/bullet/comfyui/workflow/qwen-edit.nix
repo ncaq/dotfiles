@@ -393,7 +393,10 @@ in
         order = 12;
         inputs = [ (mkInput "model" "MODEL" 1) ];
         outputs = [ (mkOutput "MODEL" "MODEL" [ 14 ]) ];
-        widgets = [ 3.1 ]; # shift
+        widgets = [
+          3.1 # shift
+          "flow" # sampling
+        ];
       })
       (mkNode {
         id = 9;

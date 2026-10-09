@@ -312,7 +312,7 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "env_logger",
- "gix-error",
+ "gix-error 0.5.0",
  "gix-hash",
  "gix-validate",
  "log",
@@ -329,6 +329,12 @@ checksum = "2c4a5c4cd326ddfe7f046ad9eed05461c59af6ea98b681648bac73954317addd"
 dependencies = [
  "bstr",
 ]
+
+[[package]]
+name = "gix-error"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "aef6406003c4117d640329fe2c35386f4e137a628bb28d3f50209db159b48bc4"
 
 [[package]]
 name = "gix-features"
@@ -348,7 +354,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7a22b6febaaee8546eb0c9dd21ecdd93aca269a6cb3897e1250f0f60933c0174"
 dependencies = [
  "faster-hex",
- "gix-error",
+ "gix-error 0.4.0",
  "gix-features",
  "sha1dc",
  "sha2",
@@ -367,7 +373,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "30574f81fc41b2ca3582ece2bdf8696bdfe9c170aa7e8bcafb81199c86b1ceea"
 dependencies = [
  "bstr",
- "gix-error",
+ "gix-error 0.4.0",
 ]
 
 [[package]]

@@ -1,0 +1,4 @@
+rules:
+  # actionlintが`$/`記法にまだ対応していないため無効化します。
+  self-repository:
+    disable: true

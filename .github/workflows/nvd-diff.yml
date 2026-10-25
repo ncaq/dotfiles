@@ -28,7 +28,7 @@ jobs:
           # そこまで重いリポジトリでもないのでフルに要求しても問題はありません。
           fetch-depth: 0
           persist-credentials: false
-      - uses: ./.github/actions/setup-nix
+      - uses: $/.github/actions/setup-nix
       - name: Run nvd-pr-diff
         env:
           BASE_REF: ${{ github.event.pull_request.base.ref }}

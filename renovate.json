@@ -5,5 +5,14 @@
   "lockFileMaintenance": {
     "enabled": true,
     "schedule": ["before 7am"]
-  }
+  },
+  "packageRules": [
+    {
+      "description": [
+        "gitoxideはgix-*クレート群を1つのリポジトリで管理するモノレポで、クレート間で型を共有しているためバージョンを揃えて更新する必要があります。しかしRenovate本体のmonorepo定義には含まれていないため、クレートごとに別々のPRが作られてしまいます。sourceUrlでマッチさせて1つのグループとして更新します。"
+      ],
+      "groupName": "gitoxide monorepo",
+      "matchSourceUrls": ["https://github.com/GitoxideLabs/gitoxide"]
+    }
+  ]
 }

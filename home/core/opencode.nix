@@ -59,8 +59,8 @@ in
     settings = {
       # パッケージはNixで管理しているため自己アップデートは無効にします。
       autoupdate = false;
-      model = "github-copilot/gpt-5.6-sol";
-      small_model = "github-copilot/gpt-5-mini";
+      model = "github-copilot/gpt-6.1-sol";
+      small_model = "github-copilot/gpt-6-luna";
       lsp = true;
       # bulletのOllamaをOpenAI互換APIの素のproviderとして登録します。
       # `ollama launch opencode`のハーネス経由ではなく通常のAPI呼び出しで利用します。

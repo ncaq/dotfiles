@@ -46,6 +46,16 @@ let
       };
     };
     # UNETLoaderが読むcheckpoint非統合の拡散モデル。
+    #
+    # 速度と品質の兼ね合いは画像と動画で判断を分ける。
+    #
+    # 画像は1枚の生成が待てる時間で終わるので、品質を優先する。
+    # ステップ数を減らすturboなどの蒸留版は、
+    # 速くなる代わりに細部や文字の描画が目に見えて落ちるので使わない。
+    # 量子化は誤差が十分小さく品質をほぼ保ったまま速くなる場合に限って使う。
+    #
+    # 動画は蒸留しないと1本の生成に時間がかかりすぎて実用にならないので、
+    # 品質を多少落としても蒸留版を使う。
     diffusion_models = {
       # AnimaはCircleStone Labs Non-Commercial License v1.2。
       # モデル本体とfine-tune、merge、LoRAなどの派生モデルは、
@@ -57,6 +67,8 @@ let
       # https://huggingface.co/circlestone-labs/Anima/blob/f973fc41ec7545364ac9776c2440285f43ff2a30/LICENSE.md
       # NVIDIA Cosmosの派生モデルでもあるため、NVIDIA Open Model Licenseも適用される。
       # https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license/
+      #
+      # 同じリポジトリのturbo版は蒸留版なので使わない。
 
       # 高品質と一貫性を優先した最新版。通常生成のデフォルトにする。
       "anima-aesthetic-v1.1.safetensors" = fetchHuggingFace {
@@ -88,7 +100,10 @@ let
       # 生成と指示ベースの編集を1つの7Bモデルで行う。
       # Comfy-Org公式の再パッケージ版。
       #
-      # ConvRot INT8版を使う。
+      # 通常版の編集は遅いが品質もまだ満足できる水準ではないので、
+      # 8ステップに蒸留した公式のTurbo版は使わず40ステップの通常版を使う。
+      #
+      # 通常版の中ではConvRot INT8版を使う。
       # 量子化の前に重みへ256要素グループ単位のアダマール回転をかけて、
       # DiT特有の行方向の外れ値を分散させてからINT8にするQuaRot派生の方式で、
       # 回転なしのINT8より誤差が1桁近く小さくなる。
@@ -97,7 +112,8 @@ let
       # bf16の0.353msに対しConvRot INT8は0.169msだった。
       # 相対誤差はbf16の0.0017に対し0.0132で、
       # 回転なしINT8の0.0596より大幅に良い。
-      # サンプリングで毎ステップ回るのがこのモデルなので、ここは速度を取る。
+      # 品質をほぼ保ったまま、
+      # サンプリングで毎ステップ回るこのモデルの計算を半分程度にできる。
       "qwen_image_2.1_int8_convrot.safetensors" = fetchHuggingFace {
         owner = "Comfy-Org";
         repo = "Qwen-Image-2.1";

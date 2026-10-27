@@ -117,7 +117,7 @@ let
       "qwen_image_2.1_int8_convrot.safetensors" = fetchHuggingFace {
         owner = "Comfy-Org";
         repo = "Qwen-Image-2.1";
-        rev = "9a44dbdb47cefd046be9c0a13476192f34c8db8e";
+        rev = "0217efd1d9c9452e84f6448903d6e21bfa171ffd";
         file = "diffusion_models/qwen_image_2.1_int8_convrot.safetensors";
         hash = "sha256-y3QRPLA/rs15YRsB/X/WQvCqYNbwuVCGq+4hTXXqpX0=";
       };
@@ -143,7 +143,7 @@ let
         src = fetchHuggingFace {
           owner = "lightx2v";
           repo = "Wan2.2-Distill-Models";
-          rev = "db93455b9e85c4d8a3ff9297fcfa189d213cfe29";
+          rev = "52699089e1dac804cbedd2400d0d2aea969577de";
           file = "wan2.2_i2v_A14b_high_noise_lightx2v_4step_720p_260412.safetensors";
           hash = "sha256-NfRDFHG0ueWS6ZQcH18v0eG/JuFAHISt/gHdIrWyuGQ=";
         };
@@ -153,7 +153,7 @@ let
         src = fetchHuggingFace {
           owner = "lightx2v";
           repo = "Wan2.2-Distill-Models";
-          rev = "db93455b9e85c4d8a3ff9297fcfa189d213cfe29";
+          rev = "52699089e1dac804cbedd2400d0d2aea969577de";
           file = "wan2.2_i2v_A14b_low_noise_lightx2v_4step_720p_260412.safetensors";
           hash = "sha256-kChH/FKj0w9naRXSrrhPwTxN+Sv2p5Q77uZprDTOPBU=";
         };
@@ -176,7 +176,7 @@ let
       "qwen3vl_8b_bf16.safetensors" = fetchHuggingFace {
         owner = "Comfy-Org";
         repo = "Qwen-Image-2.1";
-        rev = "9a44dbdb47cefd046be9c0a13476192f34c8db8e";
+        rev = "0217efd1d9c9452e84f6448903d6e21bfa171ffd";
         file = "text_encoders/qwen3vl_8b_bf16.safetensors";
         hash = "sha256-aL3IK8G2aFEWKuZWIl5+IGgWa2A9sZvV1aO5DrEmaak=";
       };
@@ -212,7 +212,7 @@ let
       # 複雑な動作やカメラ指示の追従精度を優先してFP16版を使う。
       "umt5_xxl_fp16.safetensors" = fetchHuggingFace {
         owner = "Comfy-Org";
-        repo = "Wan_2.2_ComfyUI_Repackaged";
+        repo = "Wan-2.2";
         rev = "ee6f4a40737a995bf5818954cfce6d59443b0f04";
         file = "split_files/text_encoders/umt5_xxl_fp16.safetensors";
         hash = "sha256-e4hQ8ZYeHPinfMpMlko1jTA/SQgzxsCH0M/0svmdsq8=";
@@ -223,8 +223,8 @@ let
       # Qwen-Image-2.1とは互換性が無く、Animaが使う。
       "qwen_image_vae.safetensors" = fetchHuggingFace {
         owner = "Comfy-Org";
-        repo = "Qwen-Image_ComfyUI";
-        rev = "6469d02bfbf02a049223ba3ae3497ef9ae8220b9";
+        repo = "Qwen-Image";
+        rev = "1f12b17be14c89b026c51a91d67c32f84bb047bc";
         file = "split_files/vae/qwen_image_vae.safetensors";
         hash = "sha256-pwWA8CE+Z5Z+6clfBbtADo+wgwfgF6kkvzRBIj4CPR8=";
       };
@@ -234,14 +234,14 @@ let
       "qwen_image_2.1_vae_bf16.safetensors" = fetchHuggingFace {
         owner = "Comfy-Org";
         repo = "Qwen-Image-2.1";
-        rev = "9a44dbdb47cefd046be9c0a13476192f34c8db8e";
+        rev = "0217efd1d9c9452e84f6448903d6e21bfa171ffd";
         file = "vae/qwen_image_2.1_vae_bf16.safetensors";
         hash = "sha256-uyH3RzBR4aw2hRXdPy4VzUTXoRdI7ogj4d3KPkh2t8k=";
       };
       # Wan 2.2 14BはWan 2.1と共通のVAEを使う。
       "wan_2.1_vae.safetensors" = fetchHuggingFace {
         owner = "Comfy-Org";
-        repo = "Wan_2.2_ComfyUI_Repackaged";
+        repo = "Wan-2.2";
         rev = "ee6f4a40737a995bf5818954cfce6d59443b0f04";
         file = "split_files/vae/wan_2.1_vae.safetensors";
         hash = "sha256-L8OdMTWaSwpk9Vh22P9/qNeAlWriyxNGOwIj4VFIl2s=";

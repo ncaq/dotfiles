@@ -1,4 +1,9 @@
-{ config, inputs, ... }:
+{
+  lib,
+  config,
+  inputs,
+  ...
+}:
 {
   # 現在デプロイされている構成を、編集可能な作業ツリーに依存せず再評価できるようにします。
   environment.etc."nixos-flake".source = inputs.self.outPath;
@@ -14,7 +19,11 @@
         "https://niks3-public.ncaq.net/"
         # tailnet経由のniks3-privateの方が高速なため、
         # `services.niks3.priority`でniks3-publicより高優先にしています。
-        "https://seminar.border-saurolophus.ts.net:8443/niks3/private/"
+        # 公開する側の`nixos/host/seminar/niks3-private.nix`と同じ定義からURLを組み立てます。
+        (import ../../lib/niks3-private-tailscale-url.nix {
+          inherit lib;
+          tailnet = config.local.tailscale.tailnet;
+        })
         "https://ncaq.cachix.org/"
         "https://nix-community.cachix.org/"
       ];

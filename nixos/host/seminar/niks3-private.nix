@@ -1,5 +1,6 @@
 {
   pkgs,
+  lib,
   config,
   inputs,
   ...
@@ -13,8 +14,39 @@ let
     group = "niks3-private";
     isSystemUser = true;
   };
+  # コンテナ内のniks3が待ち受けるポート。
+  # ホスト側の中継Caddyも同じ番号のloopbackで待ち受ける。
+  # niks3-publicのコンテナも同じ番号を使うが、あちらは自分のnetnsの中なので衝突しない。
+  port = 5751;
+  # substituterやアップロード先として接続する側と同じ定義からURLを組み立てる。
+  cacheUrl = import ../../../lib/niks3-private-tailscale-url.nix {
+    inherit lib;
+    tailnet = config.local.tailscale.tailnet;
+  };
 in
 {
+  imports = [ ../../../lib/tailscale-serve.nix ];
+
+  # tailnet専用のバイナリキャッシュとしてTailscale Serviceで公開する。
+  # Funnelではないのでインターネットには公開されない。
+  # readはTailscaleネットワーク認証、writeはAPIトークン認証。
+  local.tailscaleServe.services.niks3-private = {
+    service = import ../../../lib/niks3-private-tailscale-service.nix;
+    label = "niks3 private";
+    inherit port;
+  };
+
+  # privateNetworkのコンテナへはホストのCaddyで中継する。
+  # `open-webui/tailscale-serve.nix`と同じ構成で、
+  # `tailscale serve`の転送先をリモートのアドレスにするのを避けている。
+  #
+  # ホスト名なしのアドレスにしてHTTPだけで待ち受ける。
+  # ホスト名を書くとCaddyが自動HTTPSを有効にしてしまう。
+  services.caddy.virtualHosts.":${toString port}".extraConfig = ''
+    bind 127.0.0.1
+    reverse_proxy http://${addr.guest}:${toString port}
+  '';
+
   containers.niks3-private = {
     autoStart = true;
     ephemeral = true;
@@ -53,7 +85,7 @@ in
         system.stateVersion = "26.05";
         networking = {
           useHostResolvConf = lib.mkForce false;
-          firewall.allowedTCPPorts = [ 5751 ];
+          firewall.allowedTCPPorts = [ port ];
           # 同じサーバ上にあるのにわざわざCloudflare Tunnelを経由すると無駄なので、
           # 同じサーバ上のCaddy経由でGarageコンテナに接続します。
           # CaddyがLet's Encrypt証明書(DNS-01)でTLS terminationし、
@@ -77,7 +109,7 @@ in
             enable = true;
             user = "niks3-private";
             group = "niks3-private";
-            httpAddr = "[::]:5751";
+            httpAddr = "[::]:${toString port}";
             database = {
               createLocally = false;
               connectionString = "postgres:///niks3-private?host=/run/postgresql";
@@ -92,8 +124,9 @@ in
             };
             apiTokenFile = "/run/niks3-private/api-token";
             signKeyFiles = [ "/run/niks3-private/sign-key" ];
-            # Tailscale Serve経由でHTTPSアクセスされるURL。
-            cacheUrl = "https://seminar.border-saurolophus.ts.net:8443/niks3/private/";
+            # Tailscale Service経由でHTTPSアクセスされるURL。
+            # landing pageと`/api/cache-config`でsubstituterとして案内される。
+            inherit cacheUrl;
             # readはTailscaleネットワーク認証、writeはAPIトークン認証。
             readProxy.enable = true;
             # nix-cache-infoで広告する優先順位(数値が小さいほど高優先)。

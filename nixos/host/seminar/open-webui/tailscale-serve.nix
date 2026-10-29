@@ -26,7 +26,7 @@ in
   # `ollama-backend.nix`でもコンテナとの間に立っているので、
   # 中継を1つ挟んでも増える部品は無い。
   #
-  # `caddy.nix`の`:8081`と同じく、ホスト名なしのアドレスにしてHTTPだけで待ち受ける。
+  # `lib/tailscale-serve.nix`のリダイレクタと同じく、ホスト名なしのアドレスにしてHTTPだけで待ち受ける。
   # ホスト名を書くとCaddyが自動HTTPSを有効にしてしまう。
   #
   # Caddyの`reverse_proxy`はWebSocketのUpgradeをそのまま通し、

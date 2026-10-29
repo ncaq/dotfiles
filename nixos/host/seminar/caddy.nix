@@ -4,7 +4,6 @@ let
   garageHostAddr = config.machineAddresses.garage.host;
   niks3PublicAddr = config.machineAddresses.niks3-public.guest;
   niks3PublicHostAddr = config.machineAddresses.niks3-public.host;
-  niks3PrivateAddr = config.machineAddresses.niks3-private.guest;
   niks3PrivateHostAddr = config.machineAddresses.niks3-private.host;
 in
 {
@@ -41,18 +40,6 @@ in
         reverse_proxy http://${niks3PublicAddr}:5751
       '';
     };
-    # Tailscale Serve(tailnet専用)からのリクエストを受けるリバースプロキシ。
-    # Tailscale ServeがTLS終端し、ここにHTTPで転送する。
-    # Caddy v2では`localhost`はlocal CAによる自動HTTPSの対象になるため、
-    # `localhost:8081`だとHTTPSが有効化され、Tailscale ServeからのHTTPプロキシが失敗する。
-    # `:8081`(ホスト名なし)にしてbind 127.0.0.1でHTTPのみに限定する。
-    virtualHosts.":8081".extraConfig = ''
-      bind 127.0.0.1
-      handle_path /niks3/private/* {
-        reverse_proxy http://${niks3PrivateAddr}:5751
-      }
-      redir /niks3/private /niks3/private/
-    '';
   };
   networking = {
     # ホスト上でniks3-public.ncaq.netとgarage.ncaq.netをローカルのCaddyへ向けます。

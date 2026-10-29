@@ -46,7 +46,7 @@ let
   ) hosts;
 in
 {
-  # `caddy.nix`の`:8081`と同じく、ホスト名なしのアドレスにしてHTTPだけで待ち受ける。
+  # `lib/tailscale-serve.nix`のリダイレクタと同じく、ホスト名なしのアドレスにしてHTTPだけで待ち受ける。
   # ホスト名を書くとCaddyが自動HTTPSを有効にしてしまう。
   services.caddy.virtualHosts.":${toString port}".extraConfig = ''
     bind ${addr.host}

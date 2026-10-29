@@ -179,9 +179,9 @@ in
     # 実際にServe経由のリクエストで`Host: comfyui.border-saurolophus.ts.net`が、
     # そのまま届くことをbullet上で確認済み。
     #
-    # `nixos/host/seminar/caddy.nix`の`:8081`と同じく、
     # ホスト名なしのアドレスにしてHTTPだけで待ち受ける。
-    # ホスト名を書くとCaddyが自動HTTPSを有効にしてしまう。
+    # Caddy v2では`localhost`もlocal CAによる自動HTTPSの対象になるため、
+    # ホスト名を書くとHTTPSが有効化されてServeからのHTTP転送が失敗する。
     services.caddy = {
       enable = true;
       virtualHosts.":${toString cfg.redirectPort}".extraConfig = ''

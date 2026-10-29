@@ -1,6 +1,6 @@
 let
   # cloudflaredからCaddyへ内部ルーティングするためのポート。
-  # 8081はTailscale Serve用(caddy.nix)に使っているので8082。
+  # 以前は8081をTailscale Serve用の中継に使っていたため、それを避けて8082にした名残。
   cdnPort = 8082;
   # 配信コンテンツの置き場所。
   # 速度をあまり求めないデータの集積場なので/mnt/noa以下に置きます。

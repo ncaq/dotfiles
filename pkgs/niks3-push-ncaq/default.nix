@@ -20,7 +20,12 @@ let
     };
     private = {
       defaultSecretsFile = privateSecretsFile;
-      defaultServerUrl = "https://seminar.border-saurolophus.ts.net:8443/niks3/private/";
+      # home-managerからcallPackageされるためNixOSの`config`は読めない。
+      # `lib/tailnet.nix`の案内通りtailnet名を直接importして渡す。
+      defaultServerUrl = import ../../lib/niks3-private-tailscale-url.nix {
+        inherit lib;
+        tailnet = import ../../lib/tailnet.nix;
+      };
     };
   };
   runtimePath = lib.makeBinPath [

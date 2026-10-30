@@ -4,13 +4,186 @@
   ...
 }:
 let
-  # certspotterのhookが検知したイベントを1行ずつ追記するログ。
-  # `$CERTSPOTTER_STATE_DIR`は`/var/lib/certspotter`で、
-  # hookはcertspotterの環境変数を引き継ぐのでhook側はそちらで参照します。
+  # certspotterのhookが検知したイベントを1行のJSONとして追記するログ。
+  # hookとチェックの両方へここから埋め込み、パスの定義はこの1箇所だけにします。
   eventsLog = "/var/lib/certspotter/events.log";
   # この時間以内のイベントがあればMackerelのチェックをCRITICALにします。
   # アラートが一定期間開いたままになることで見落としを防ぎます。
   alertWindowSeconds = 24 * 60 * 60;
+
+  # hookとチェックはシェルではなくHaskellで書きます。
+  # `SUMMARY`や`ISSUER_DN`やSANはCA/CTログ由来の信頼できない値で、
+  # シェルで制御文字を潰すだけでは漏れが出やすいためです。
+  # aesonに記録と読み取りの両方を任せれば、
+  # 改行やタブが入っても列ずれや偽の行は構造的に起きません。
+  haskellLibraries = hpkgs: [ hpkgs.aeson ];
+  ghcArgs = [
+    "-Wall"
+    "-Werror"
+  ];
+
+  # 環境変数の仕様は`man 8 certspotter-script`を参照。
+  # `discovered_cert`以外(`malformed_cert`, `error`)も監視自体の異常なので記録します。
+  mkHook =
+    { eventsLog }:
+    pkgs.writers.writeHaskellBin "certspotter-hook"
+      {
+        libraries = haskellLibraries;
+        inherit ghcArgs;
+      }
+      ''
+        {-# LANGUAGE GHC2024 #-}
+        {-# LANGUAGE OverloadedStrings #-}
+        module Main (main) where
+
+        import Data.Aeson (Value, eitherDecodeFileStrict', encode, object, withObject, (.!=), (.:?), (.=))
+        import Data.Aeson.Types (parseEither)
+        import Data.ByteString.Lazy qualified as BL
+        import Data.Maybe (fromMaybe)
+        import Data.Text (Text)
+        import Data.Text qualified as T
+        import Data.Time.Clock.POSIX (getPOSIXTime)
+        import System.Environment (lookupEnv)
+        import System.IO (IOMode (AppendMode), withBinaryFile)
+
+        eventsLog :: FilePath
+        eventsLog = "${eventsLog}"
+
+        -- 証明書のJSONから`dns_names`だけを取り出す。
+        -- 取り出せない時は空にして、イベント自体の記録は止めない。
+        dnsNamesOf :: FilePath -> IO [Text]
+        dnsNamesOf path = do
+          decoded <- eitherDecodeFileStrict' path :: IO (Either String Value)
+          pure $ case decoded >>= parseEither (withObject "cert" (\o -> o .:? "dns_names" .!= [])) of
+            Left _ -> []
+            Right names -> names
+
+        main :: IO ()
+        main = do
+          event <- fromMaybe "unknown" <$> lookupEnv "EVENT"
+          summary <- fromMaybe "" <$> lookupEnv "SUMMARY"
+          issuer <- fromMaybe "" <$> lookupEnv "ISSUER_DN"
+          jsonFile <- lookupEnv "JSON_FILENAME"
+          dnsNames <- case jsonFile of
+            Just path | event == "discovered_cert" -> dnsNamesOf path
+            _ -> pure []
+          now <- round <$> getPOSIXTime :: IO Integer
+          let record =
+                object
+                  [ "time" .= now
+                  , "event" .= T.pack event
+                  , "summary" .= T.pack summary
+                  , "dns_names" .= dnsNames
+                  , "issuer" .= T.pack issuer
+                  ]
+          withBinaryFile eventsLog AppendMode $ \h -> BL.hPut h (encode record <> "\n")
+      '';
+
+  # `checkService`を偽にするとsystemdの状態確認を省きます。
+  # ビルドサンドボックス内のテストで使うためです。
+  mkCheck =
+    {
+      eventsLog,
+      checkService,
+    }:
+    pkgs.writers.writeHaskellBin "check-certspotter"
+      {
+        libraries = haskellLibraries;
+        inherit ghcArgs;
+      }
+      ''
+        {-# LANGUAGE GHC2024 #-}
+        {-# LANGUAGE OverloadedStrings #-}
+        module Main (main) where
+
+        import Control.Monad (unless, when)
+        import Data.Aeson (FromJSON (parseJSON), decodeStrict, withObject, (.!=), (.:), (.:?))
+        import Data.ByteString.Char8 qualified as BS
+        import Data.Char (isControl)
+        import Data.Maybe (mapMaybe)
+        import Data.Text (Text)
+        import Data.Text qualified as T
+        import Data.Text.IO qualified as T
+        import Data.Time.Clock.POSIX (getPOSIXTime, posixSecondsToUTCTime)
+        import Data.Time.Format (defaultTimeLocale, formatTime)
+        import System.Directory (doesFileExist)
+        import System.Exit (ExitCode (ExitFailure, ExitSuccess), exitWith)
+        import System.IO (hSetEncoding, stdout, utf8)
+        import System.Process (readProcessWithExitCode)
+
+        eventsLog :: FilePath
+        eventsLog = "${eventsLog}"
+
+        alertWindowSeconds :: Integer
+        alertWindowSeconds = ${toString alertWindowSeconds}
+
+        checkService :: Bool
+        checkService = ${if checkService then "True" else "False"}
+
+        data Event = Event
+          { time :: Integer
+          , event :: Text
+          , summary :: Text
+          , dnsNames :: [Text]
+          , issuer :: Text
+          }
+
+        instance FromJSON Event where
+          parseJSON = withObject "Event" $ \o ->
+            Event
+              <$> o .: "time"
+              <*> o .:? "event" .!= ""
+              <*> o .:? "summary" .!= ""
+              <*> o .:? "dns_names" .!= []
+              <*> o .:? "issuer" .!= ""
+
+        -- 外部由来の文字列から制御文字を除いて、Mackerelへ渡す1行に収める。
+        sanitize :: Text -> Text
+        sanitize = T.map (\c -> if isControl c then ' ' else c)
+
+        render :: Event -> Text
+        render e =
+          T.unwords
+            [ timestamp
+            , event e <> ":"
+            , sanitize (summary e)
+            , "(" <> sanitize (T.intercalate "," (dnsNames e)) <> ")"
+            , "issuer=" <> sanitize (issuer e)
+            ]
+          where
+            timestamp = T.pack (formatTime defaultTimeLocale "%FT%TZ" (posixSecondsToUTCTime (fromInteger (time e))))
+
+        critical :: [Text] -> IO ()
+        critical messages = do
+          mapM_ T.putStrLn messages
+          exitWith (ExitFailure 2)
+
+        main :: IO ()
+        main = do
+          hSetEncoding stdout utf8
+          when checkService $ do
+            (code, _, _) <- readProcessWithExitCode "${pkgs.systemd}/bin/systemctl" ["is-active", "--quiet", "certspotter.service"] ""
+            unless (code == ExitSuccess) $ critical ["certspotter CRITICAL: service not running"]
+          exists <- doesFileExist eventsLog
+          if not exists
+            then T.putStrLn "certspotter OK (no events yet)"
+            else do
+              now <- round <$> getPOSIXTime
+              contents <- BS.readFile eventsLog
+              -- 壊れた行は黙って飛ばす。
+              -- 1行壊れているだけで監視全体が止まるよりは、残りの行を見られるほうが良い。
+              let events = mapMaybe decodeStrict (BS.lines contents)
+                  recent = filter (\e -> time e >= now - alertWindowSeconds) events
+              if null recent
+                then T.putStrLn "certspotter OK"
+                else critical ("certspotter CRITICAL: new certificate transparency events" : map render recent)
+      '';
+
+  hook = mkHook { inherit eventsLog; };
+  check = mkCheck {
+    inherit eventsLog;
+    checkService = true;
+  };
 in
 {
   # Certificate Transparencyログを監視して、
@@ -28,70 +201,13 @@ in
     enable = true;
     # 先頭の`.`でncaq.net自身と全てのサブドメインを対象にします。
     watchlist = [ ".ncaq.net" ];
-    hooks = [
-      (lib.getExe (
-        pkgs.writeShellApplication {
-          name = "certspotter-hook";
-          runtimeInputs = [
-            pkgs.coreutils
-            pkgs.jq
-          ];
-          # 環境変数の仕様は`man 8 certspotter-script`を参照。
-          # `discovered_cert`以外(`malformed_cert`, `error`)も監視自体の異常なので記録します。
-          text = ''
-            dns_names=""
-            if [[ "''${EVENT:-}" == "discovered_cert" && -n "''${JSON_FILENAME:-}" ]]; then
-              dns_names=$(jq -r '.dns_names | join(",")' "$JSON_FILENAME")
-            fi
-            printf '%s\t%s\t%s\t%s\t%s\n' \
-              "$(date +%s)" \
-              "''${EVENT:-unknown}" \
-              "''${SUMMARY:-}" \
-              "$dns_names" \
-              "''${ISSUER_DN:-}" \
-              >>"$CERTSPOTTER_STATE_DIR/events.log"
-          '';
-        }
-      ))
-    ];
+    hooks = [ (lib.getExe hook) ];
   };
 
   # 検知したイベントは既存のMackerelの通知経路に乗せます。
   # mackerel-agentはrootで動くのでcertspotterのstateディレクトリを直接読めます。
   services.mackerel-agent.settings.plugin.checks.certspotter = {
-    command = lib.getExe (
-      pkgs.writeShellApplication {
-        name = "check-certspotter";
-        runtimeInputs = [
-          pkgs.coreutils
-          pkgs.gawk
-          pkgs.systemd
-        ];
-        text = ''
-          if ! systemctl is-active --quiet certspotter.service; then
-            echo "certspotter CRITICAL: service not running"
-            exit 2
-          fi
-          if [[ ! -f ${eventsLog} ]]; then
-            echo "certspotter OK (no events yet)"
-            exit 0
-          fi
-          threshold=$(( $(date +%s) - ${toString alertWindowSeconds} ))
-          recent=$(awk -F '\t' -v threshold="$threshold" '
-            $1 >= threshold {
-              printf "%s %s: %s (%s) issuer=%s\n", strftime("%Y-%m-%dT%H:%M:%S%z", $1), $2, $3, $4, $5
-            }
-          ' ${eventsLog})
-          if [[ -n "$recent" ]]; then
-            echo "certspotter CRITICAL: new certificate transparency events"
-            echo "$recent"
-            exit 2
-          fi
-          echo "certspotter OK"
-          exit 0
-        '';
-      }
-    );
+    command = lib.getExe check;
     check_interval = 3;
     # イベントは一定期間残るので連続失敗の判定を待つ意味がなく、
     # すぐに通知を出します。

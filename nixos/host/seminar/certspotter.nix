@@ -184,6 +184,89 @@ let
     inherit eventsLog;
     checkService = true;
   };
+
+  # hookが書いた行をチェックがそのまま読めることを、
+  # 本物と同じソースから組んだ2つのプログラムで検査します。
+  # ログはビルドディレクトリ相対のパスにして、systemdの状態確認は省きます。
+  #
+  # 検査するのは以下です。
+  #
+  # - ログが無ければOK
+  # - タブや改行を含むイベントを記録しても、ログの行数とチェック出力の行数がイベント数と一致してCRITICAL
+  # - 出力にタブや改行が漏れない
+  # - 24時間より古いイベントだけならOK
+  # - 壊れた行が混ざっても落ちない
+  test =
+    let
+      testHook = lib.getExe (mkHook {
+        eventsLog = "events.log";
+      });
+      testCheck = lib.getExe (mkCheck {
+        eventsLog = "events.log";
+        checkService = false;
+      });
+    in
+    pkgs.runCommand "certspotter-hook-check-test" { } ''
+      # チェックの終了コードと出力を取る。
+      # `set -e`の下で非0を扱うため`if`で受ける。
+      run_check() {
+        if output=$(${testCheck}); then
+          code=0
+        else
+          code=$?
+        fi
+      }
+
+      run_check
+      if [ "$code" -ne 0 ] || [ "$output" != "certspotter OK (no events yet)" ]; then
+        echo "no-log: 期待 exit 0 'certspotter OK (no events yet)' 実際 exit $code '$output'" >&2
+        exit 1
+      fi
+
+      echo '{"dns_names":["ncaq.net","*.ncaq.net"]}' > cert.json
+      env EVENT=discovered_cert \
+        SUMMARY=$'cert\tdiscovered\nfor ncaq.net' \
+        ISSUER_DN=$'CN=R12\tO=Evil' \
+        JSON_FILENAME="$PWD/cert.json" \
+        ${testHook}
+      env EVENT=error SUMMARY="log unreachable" ${testHook}
+
+      lines=$(wc -l < events.log)
+      if [ "$lines" -ne 2 ]; then
+        echo "record: 期待 2行 実際 ''${lines}行" >&2
+        cat events.log >&2
+        exit 1
+      fi
+
+      run_check
+      output_lines=$(printf '%s\n' "$output" | wc -l)
+      if [ "$code" -ne 2 ] || [ "$output_lines" -ne 3 ]; then
+        echo "recent: 期待 exit 2 3行 実際 exit $code ''${output_lines}行" >&2
+        printf '%s\n' "$output" >&2
+        exit 1
+      fi
+      if printf '%s' "$output" | grep -q $'\t'; then
+        echo "recent: 出力にタブが漏れています" >&2
+        printf '%s\n' "$output" >&2
+        exit 1
+      fi
+      if ! printf '%s' "$output" | grep -q 'ncaq.net,\*.ncaq.net'; then
+        echo "recent: dns_namesが出力に含まれていません" >&2
+        printf '%s\n' "$output" >&2
+        exit 1
+      fi
+
+      old=$(( $(date +%s) - 2 * 24 * 60 * 60 ))
+      printf '{"time":%d,"event":"discovered_cert","summary":"old","dns_names":[],"issuer":""}\n' "$old" > events.log
+      echo 'not json' >> events.log
+      run_check
+      if [ "$code" -ne 0 ] || [ "$output" != "certspotter OK" ]; then
+        echo "old-only: 期待 exit 0 'certspotter OK' 実際 exit $code '$output'" >&2
+        exit 1
+      fi
+
+      touch "$out"
+    '';
 in
 {
   # Certificate Transparencyログを監視して、
@@ -213,4 +296,7 @@ in
     # すぐに通知を出します。
     max_check_attempts = 1;
   };
+
+  # seminarのtoplevelをビルドする時に必ずテストも走らせます。
+  system.checks = [ test ];
 }

@@ -16,9 +16,19 @@ let
   # シェルで制御文字を潰すだけでは漏れが出やすいためです。
   # aesonに記録と読み取りの両方を任せれば、
   # 改行やタブが入っても列ずれや偽の行は構造的に起きません。
-  haskellLibraries = hpkgs: [ hpkgs.aeson ];
+  # unliftioは`IO`を直接書かずに`MonadIO`と`MonadUnliftIO`で抽象化するために使います。
+  haskellLibraries = hpkgs: [
+    hpkgs.aeson
+    hpkgs.unliftio
+  ];
   ghcArgs = [
     "-Wall"
+    "-Wcompat"
+    "-Widentities"
+    "-Wincomplete-record-updates"
+    "-Wincomplete-uni-patterns"
+    "-Wpartial-fields"
+    "-Wredundant-constraints"
     "-Werror"
   ];
 
@@ -36,52 +46,56 @@ let
         {-# LANGUAGE OverloadedStrings #-}
         module Main (main) where
 
-        import Control.Exception (IOException, try)
-        import Data.Aeson (Value, eitherDecodeFileStrict', encode, object, withObject, (.!=), (.:?), (.=))
-        import Data.Aeson.Types (parseEither)
+        import Data.Aeson (eitherDecodeFileStrict', encode, object, withObject, (.!=), (.:?), (.=))
+        import Data.Aeson.Types (Pair, parseEither)
         import Data.ByteString.Lazy qualified as BL
-        import Data.Maybe (fromMaybe)
         import Data.Text (Text)
         import Data.Text qualified as T
         import Data.Time.Clock.POSIX (getPOSIXTime)
-        import System.Environment (lookupEnv)
-        import System.IO (IOMode (AppendMode), withBinaryFile)
+        import UnliftIO (IOMode (AppendMode), MonadUnliftIO, displayException, liftIO, tryIO, withBinaryFile)
+        import UnliftIO.Environment (lookupEnv)
 
         eventsLog :: FilePath
         eventsLog = "${eventsLog}"
 
         -- 証明書のJSONから`dns_names`だけを取り出す。
-        -- ファイルが読めない時も、JSONやフィールドの形が違う時も空にして、
-        -- イベント自体の記録は止めない。
-        dnsNamesOf :: FilePath -> IO [Text]
+        -- 読めなかった時はその理由を`Left`で返す。
+        -- certspotterはhookが正常終了するとstderrを捨てるので、
+        -- 理由は呼び出し側でログの行に残して、イベント自体の記録は止めない。
+        dnsNamesOf :: (MonadUnliftIO m) => FilePath -> m (Either Text [Text])
         dnsNamesOf path = do
           -- `eitherDecodeFileStrict'`が`Left`にするのはパースの失敗だけで、
           -- ファイルが無いなどの読み取りの失敗はIOExceptionとして投げる。
-          result <- try (eitherDecodeFileStrict' path) :: IO (Either IOException (Either String Value))
+          result <- tryIO (liftIO (eitherDecodeFileStrict' path))
           pure $ case result of
-            Left _ -> []
-            Right decoded -> case decoded >>= parseEither (withObject "cert" (\o -> o .:? "dns_names" .!= [])) of
-              Left _ -> []
-              Right names -> names
+            Left exception -> Left (T.pack (displayException exception))
+            Right decoded ->
+              either (Left . T.pack) Right $
+                decoded >>= parseEither (withObject "cert" (\o -> o .:? "dns_names" .!= []))
 
         main :: IO ()
         main = do
-          event <- fromMaybe "unknown" <$> lookupEnv "EVENT"
-          summary <- fromMaybe "" <$> lookupEnv "SUMMARY"
-          issuer <- fromMaybe "" <$> lookupEnv "ISSUER_DN"
+          event <- maybe "unknown" T.pack <$> lookupEnv "EVENT"
+          summary <- maybe "" T.pack <$> lookupEnv "SUMMARY"
+          issuer <- maybe "" T.pack <$> lookupEnv "ISSUER_DN"
           jsonFile <- lookupEnv "JSON_FILENAME"
-          dnsNames <- case jsonFile of
+          dnsNamesResult <- case jsonFile of
             Just path | event == "discovered_cert" -> dnsNamesOf path
-            _ -> pure []
+            _ -> pure (Right [])
           now <- round <$> getPOSIXTime :: IO Integer
-          let record =
-                object
+          -- 読めなかった理由は握り潰さずに`dns_names_error`として同じ行に残す。
+          let (dnsNames, dnsNamesError) = case dnsNamesResult of
+                Right names -> (names, [])
+                Left reason -> ([], ["dns_names_error" .= reason] :: [Pair])
+              record =
+                object $
                   [ "time" .= now
-                  , "event" .= T.pack event
-                  , "summary" .= T.pack summary
+                  , "event" .= event
+                  , "summary" .= summary
                   , "dns_names" .= dnsNames
-                  , "issuer" .= T.pack issuer
+                  , "issuer" .= issuer
                   ]
+                    ++ dnsNamesError
           withBinaryFile eventsLog AppendMode $ \h -> BL.hPut h (encode record <> "\n")
       '';
 
@@ -112,10 +126,11 @@ let
         import Data.Text.IO qualified as T
         import Data.Time.Clock.POSIX (getPOSIXTime, posixSecondsToUTCTime)
         import Data.Time.Format (defaultTimeLocale, formatTime)
-        import System.Directory (doesFileExist)
         import System.Exit (ExitCode (ExitFailure, ExitSuccess), exitWith)
-        import System.IO (hSetEncoding, stdout, utf8)
-        import System.Process (readProcessWithExitCode)
+        import System.IO (hSetEncoding, utf8)
+        import UnliftIO (MonadIO, liftIO, stdout)
+        import UnliftIO.Directory (doesFileExist)
+        import UnliftIO.Process (readProcessWithExitCode)
 
         eventsLog :: FilePath
         eventsLog = "${eventsLog}"
@@ -132,6 +147,8 @@ let
           , summary :: Text
           , dnsNames :: [Text]
           , issuer :: Text
+          , -- hookが証明書のJSONを読めなかった時の理由。
+            dnsNamesError :: Maybe Text
           }
 
         instance FromJSON Event where
@@ -142,6 +159,7 @@ let
               <*> o .:? "summary" .!= ""
               <*> o .:? "dns_names" .!= []
               <*> o .:? "issuer" .!= ""
+              <*> o .:? "dns_names_error"
 
         -- 外部由来の文字列から行や見え方を崩す文字を除いて、Mackerelへ渡す1行に収める。
         -- Cc(制御文字)だけでなく、
@@ -160,18 +178,21 @@ let
         -- `event`はcertspotterが決める値だが、ログが壊れていた時のために同じ方針で扱う。
         render :: Event -> Text
         render e =
-          T.unwords
+          T.unwords $
             [ timestamp
             , sanitize (event e) <> ":"
             , sanitize (summary e)
             , "(" <> sanitize (T.intercalate "," (dnsNames e)) <> ")"
             , "issuer=" <> sanitize (issuer e)
             ]
+              ++ maybe [] (\reason -> ["dns_names_error=" <> sanitize reason]) (dnsNamesError e)
           where
             timestamp = T.pack (formatTime defaultTimeLocale "%FT%TZ" (posixSecondsToUTCTime (fromInteger (time e))))
 
-        critical :: [Text] -> IO ()
-        critical messages = do
+        -- Mackerelの規約どおり、メッセージを出してからexit 2で終わる。
+        -- 戻ってこないので任意の`m a`として呼べる。
+        critical :: (MonadIO m) => [Text] -> m a
+        critical messages = liftIO $ do
           mapM_ T.putStrLn messages
           exitWith (ExitFailure 2)
 
@@ -213,7 +234,8 @@ let
   #   ログの行数はイベント数と一致し、
   #   チェック出力は見出し1行とイベントごとに1行でCRITICAL
   # - 出力にタブや行区切りや双方向制御やゼロ幅文字が漏れない
-  # - 証明書のJSONが読めなくてもhookは落ちず、`dns_names`を空にして記録する
+  # - 証明書のJSONが読めなくてもhookは落ちず、
+  #   `dns_names`を空にして理由を`dns_names_error`に残し、チェックの出力にも出る
   # - アラート期間(`alertWindowSeconds`)より古いイベントだけならOK
   # - 壊れた行が混ざっても落ちない
   # - 古いイベントと新しいイベントが混ざっていたら新しいものだけを出してCRITICAL
@@ -297,9 +319,16 @@ let
       done
       lines=$(wc -l < events.log)
       empty_lines=$(grep -c -F '"dns_names":[]' events.log || true)
-      if [ "$lines" -ne 3 ] || [ "$empty_lines" -ne 3 ]; then
-        echo "unreadable-json: 期待 3行とも dns_names が空 実際 ''${lines}行中''${empty_lines}行" >&2
+      error_lines=$(grep -c -F '"dns_names_error":' events.log || true)
+      if [ "$lines" -ne 3 ] || [ "$empty_lines" -ne 3 ] || [ "$error_lines" -ne 3 ]; then
+        echo "unreadable-json: 期待 3行とも dns_names が空で dns_names_error あり 実際 ''${lines}行中 空''${empty_lines}行 理由''${error_lines}行" >&2
         cat events.log >&2
+        exit 1
+      fi
+      run_check
+      if [ "$code" -ne 2 ] || ! printf '%s' "$output" | grep -q -F 'dns_names_error='; then
+        echo "unreadable-json: 期待 exit 2 で出力に dns_names_error= を含む 実際 exit $code" >&2
+        printf '%s\n' "$output" >&2
         exit 1
       fi
 

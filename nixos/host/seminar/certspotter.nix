@@ -274,12 +274,47 @@ let
         exit 1
       fi
 
-      old=$(( $(date +%s) - 2 * 24 * 60 * 60 ))
+      # `dnsNamesOf`が証明書のJSONを読めない時に、
+      # `dns_names`を空にしてイベント自体は記録することを見る。
+      echo 'not json' > broken.json
+      echo '{"dns_names":"ncaq.net"}' > not-array.json
+      : > events.log
+      for json in "$PWD/missing.json" "$PWD/broken.json" "$PWD/not-array.json"; do
+        if ! env EVENT=discovered_cert SUMMARY="unreadable cert json" JSON_FILENAME="$json" ${testHook}; then
+          echo "unreadable-json: hookが非0で終了しました: $json" >&2
+          exit 1
+        fi
+      done
+      lines=$(wc -l < events.log)
+      empty_lines=$(grep -c -F '"dns_names":[]' events.log || true)
+      if [ "$lines" -ne 3 ] || [ "$empty_lines" -ne 3 ]; then
+        echo "unreadable-json: 期待 3行とも dns_names が空 実際 ''${lines}行中''${empty_lines}行" >&2
+        cat events.log >&2
+        exit 1
+      fi
+
+      # アラート期間より古い行と壊れた行だけなら、黙ってOKになることを見る。
+      old=$(( $(date +%s) - 2 * ${toString alertWindowSeconds} ))
       printf '{"time":%d,"event":"discovered_cert","summary":"old","dns_names":[],"issuer":""}\n' "$old" > events.log
       echo 'not json' >> events.log
       run_check
       if [ "$code" -ne 0 ] || [ "$output" != "certspotter OK" ]; then
         echo "old-only: 期待 exit 0 'certspotter OK' 実際 exit $code '$output'" >&2
+        exit 1
+      fi
+
+      # 古い行と新しい行が混ざっている時に、新しい行だけを出すことを見る。
+      printf '{"time":%d,"event":"discovered_cert","summary":"fresh","dns_names":[],"issuer":""}\n' "$(date +%s)" >> events.log
+      run_check
+      output_lines=$(printf '%s\n' "$output" | wc -l)
+      if [ "$code" -ne 2 ] || [ "$output_lines" -ne 2 ]; then
+        echo "mixed: 期待 exit 2 2行 実際 exit $code ''${output_lines}行" >&2
+        printf '%s\n' "$output" >&2
+        exit 1
+      fi
+      if printf '%s' "$output" | grep -q -F 'old' || ! printf '%s' "$output" | grep -q -F 'fresh'; then
+        echo "mixed: 古いイベントが混ざっているか、新しいイベントが欠けています" >&2
+        printf '%s\n' "$output" >&2
         exit 1
       fi
 

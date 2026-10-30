@@ -223,33 +223,40 @@ let
         exit 1
       fi
 
+      # タブと改行に加えて、行区切り(U+2028)と双方向制御(U+202E)とゼロ幅空白(U+200B)も混ぜる。
+      # UTF-8のバイト列で書いているのは、
+      # bashの`$' '`がロケールに依存するため。
       echo '{"dns_names":["ncaq.net","*.ncaq.net"]}' > cert.json
       env EVENT=discovered_cert \
-        SUMMARY=$'cert\tdiscovered\nfor ncaq.net' \
-        ISSUER_DN=$'CN=R12\tO=Evil' \
+        SUMMARY=$'cert\tdiscovered\nfor\xe2\x80\xa8ncaq.net\xe2\x80\xae' \
+        ISSUER_DN=$'CN=R12\tO=Evil\xe2\x80\x8b' \
         JSON_FILENAME="$PWD/cert.json" \
         ${testHook}
       env EVENT=error SUMMARY="log unreachable" ${testHook}
+      # `event`はcertspotterが決める値だが、ログが壊れた時にも1行に収まることを見る。
+      printf '{"time":%d,"event":"evil\\nevent","summary":"","dns_names":[],"issuer":""}\n' "$(date +%s)" >> events.log
 
       lines=$(wc -l < events.log)
-      if [ "$lines" -ne 2 ]; then
-        echo "record: 期待 2行 実際 ''${lines}行" >&2
+      if [ "$lines" -ne 3 ]; then
+        echo "record: 期待 3行 実際 ''${lines}行" >&2
         cat events.log >&2
         exit 1
       fi
 
       run_check
       output_lines=$(printf '%s\n' "$output" | wc -l)
-      if [ "$code" -ne 2 ] || [ "$output_lines" -ne 3 ]; then
-        echo "recent: 期待 exit 2 3行 実際 exit $code ''${output_lines}行" >&2
+      if [ "$code" -ne 2 ] || [ "$output_lines" -ne 4 ]; then
+        echo "recent: 期待 exit 2 4行 実際 exit $code ''${output_lines}行" >&2
         printf '%s\n' "$output" >&2
         exit 1
       fi
-      if printf '%s' "$output" | grep -q $'\t'; then
-        echo "recent: 出力にタブが漏れています" >&2
-        printf '%s\n' "$output" >&2
-        exit 1
-      fi
+      for forbidden in $'\t' $'\xe2\x80\xa8' $'\xe2\x80\xae' $'\xe2\x80\x8b'; do
+        if printf '%s' "$output" | LC_ALL=C grep -q -F "$forbidden"; then
+          echo "recent: 出力に制御文字が漏れています: $(printf '%s' "$forbidden" | od -An -tx1)" >&2
+          printf '%s\n' "$output" >&2
+          exit 1
+        fi
+      done
       if ! printf '%s' "$output" | grep -q 'ncaq.net,\*.ncaq.net'; then
         echo "recent: dns_namesが出力に含まれていません" >&2
         printf '%s\n' "$output" >&2

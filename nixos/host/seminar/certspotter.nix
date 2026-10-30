@@ -99,7 +99,7 @@ let
         import Control.Monad (unless, when)
         import Data.Aeson (FromJSON (parseJSON), decodeStrict, withObject, (.!=), (.:), (.:?))
         import Data.ByteString.Char8 qualified as BS
-        import Data.Char (isControl)
+        import Data.Char (GeneralCategory (Control, Format, LineSeparator, ParagraphSeparator), generalCategory)
         import Data.Maybe (mapMaybe)
         import Data.Text (Text)
         import Data.Text qualified as T
@@ -137,15 +137,26 @@ let
               <*> o .:? "dns_names" .!= []
               <*> o .:? "issuer" .!= ""
 
-        -- 外部由来の文字列から制御文字を除いて、Mackerelへ渡す1行に収める。
+        -- 外部由来の文字列から行や見え方を崩す文字を除いて、Mackerelへ渡す1行に収める。
+        -- Cc(制御文字)だけでなく、
+        -- Cf(U+202Eのような双方向制御やゼロ幅文字)とU+2028/U+2029(行区切りと段落区切り)も、
+        -- 通知上でドメイン名や発行者の見え方を偽装できるので空白にする。
         sanitize :: Text -> Text
-        sanitize = T.map (\c -> if isControl c then ' ' else c)
+        sanitize = T.map (\c -> if isUnsafe c then ' ' else c)
+          where
+            isUnsafe c = case generalCategory c of
+              Control -> True
+              Format -> True
+              LineSeparator -> True
+              ParagraphSeparator -> True
+              _ -> False
 
+        -- `event`はcertspotterが決める値だが、ログが壊れていた時のために同じ方針で扱う。
         render :: Event -> Text
         render e =
           T.unwords
             [ timestamp
-            , event e <> ":"
+            , sanitize (event e) <> ":"
             , sanitize (summary e)
             , "(" <> sanitize (T.intercalate "," (dnsNames e)) <> ")"
             , "issuer=" <> sanitize (issuer e)

@@ -36,6 +36,7 @@ let
         {-# LANGUAGE OverloadedStrings #-}
         module Main (main) where
 
+        import Control.Exception (IOException, try)
         import Data.Aeson (Value, eitherDecodeFileStrict', encode, object, withObject, (.!=), (.:?), (.=))
         import Data.Aeson.Types (parseEither)
         import Data.ByteString.Lazy qualified as BL
@@ -50,13 +51,18 @@ let
         eventsLog = "${eventsLog}"
 
         -- 証明書のJSONから`dns_names`だけを取り出す。
-        -- 取り出せない時は空にして、イベント自体の記録は止めない。
+        -- ファイルが読めない時も、JSONやフィールドの形が違う時も空にして、
+        -- イベント自体の記録は止めない。
         dnsNamesOf :: FilePath -> IO [Text]
         dnsNamesOf path = do
-          decoded <- eitherDecodeFileStrict' path :: IO (Either String Value)
-          pure $ case decoded >>= parseEither (withObject "cert" (\o -> o .:? "dns_names" .!= [])) of
+          -- `eitherDecodeFileStrict'`が`Left`にするのはパースの失敗だけで、
+          -- ファイルが無いなどの読み取りの失敗はIOExceptionとして投げる。
+          result <- try (eitherDecodeFileStrict' path) :: IO (Either IOException (Either String Value))
+          pure $ case result of
             Left _ -> []
-            Right names -> names
+            Right decoded -> case decoded >>= parseEither (withObject "cert" (\o -> o .:? "dns_names" .!= [])) of
+              Left _ -> []
+              Right names -> names
 
         main :: IO ()
         main = do

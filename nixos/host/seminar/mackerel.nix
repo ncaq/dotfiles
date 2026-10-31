@@ -158,8 +158,9 @@ in
               name = "check-postgresql";
               runtimeInputs = [
                 # サーバはコンテナ内で動いているので、
-                # psqlもそのコンテナと同じバージョンのパッケージから取る。
-                config.containers.postgresql.config.services.postgresql.package
+                # psqlもそのコンテナで拡張込みで実際に起動しているパッケージから取る。
+                # `lib/test-nixos-boot.nix`と同じ参照先。
+                config.containers.postgresql.config.services.postgresql.finalPackage
                 pkgs.util-linux
               ];
               text = ''

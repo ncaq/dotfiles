@@ -38,8 +38,8 @@ in
           pkgs.writeShellApplication {
             name = "lid-close-lock-and-suspend";
             runtimeInputs = [
-              pkgs.coreutils
               config.systemd.package
+              pkgs.coreutils
             ];
             # xss-lockがsleep inhibitor lockを取得するため、
             # ロッカーが起動するまでsuspendはブロックされます。

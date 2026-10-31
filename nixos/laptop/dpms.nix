@@ -16,8 +16,8 @@ in
         pkgs.writeShellApplication {
           name = "dpms-timeout";
           runtimeInputs = [
-            pkgs.gnugrep
             config.services.upower.package
+            pkgs.gnugrep
             pkgs.xset
           ];
           text = ''

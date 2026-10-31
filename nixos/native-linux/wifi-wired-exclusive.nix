@@ -18,8 +18,8 @@ let
   wifiWiredExclusive = pkgs.writeShellApplication {
     name = "wifi-wired-exclusive";
     runtimeInputs = [
-      pkgs.gnugrep
       config.networking.networkmanager.package
+      pkgs.gnugrep
     ];
     text = ''
       action="''${2:-}"

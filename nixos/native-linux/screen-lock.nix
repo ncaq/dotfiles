@@ -83,8 +83,8 @@ let
   screenBlankNotifier = pkgs.writeShellApplication {
     name = "screen-blank-notifier";
     runtimeInputs = [
-      pkgs.coreutils
       config.systemd.package
+      pkgs.coreutils
     ];
     text = ''
       # grobiの中断に失敗しても本来の役目には支障がないので、

@@ -43,9 +43,9 @@ let
     pkgs.writeShellApplication {
       name = "mnt-${name}";
       runtimeInputs = [
+        config.systemd.package
         pkgs.btrfs-progs
         pkgs.snapper
-        config.systemd.package
         pkgs.util-linux
       ];
       text = ''
@@ -118,8 +118,8 @@ let
     pkgs.writeShellApplication {
       name = "umnt-${name}";
       runtimeInputs = [
-        pkgs.snapper
         config.systemd.package
+        pkgs.snapper
         pkgs.util-linux
       ];
       text = ''

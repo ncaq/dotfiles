@@ -64,8 +64,8 @@ in
             pkgs.writeShellApplication {
               name = "check-tailscale";
               runtimeInputs = [
-                pkgs.jq
                 config.services.tailscale.package
+                pkgs.jq
               ];
               text = ''
                 # BackendStateがRunningかつSelf.OnlineがtrueであればOK

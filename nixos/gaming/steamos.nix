@@ -36,7 +36,8 @@
       # `steam-gamescope`は`programs.steam.gamescopeSession`が`environment.systemPackages`へ入れる、
       # モジュール内部のスクリプトでオプションからは参照できない。
       # `/run/current-system/sw`を直接書くと起動中の世代に依存してクロージャにも残らないので、
-      # その実体であるシステムプロファイル`config.system.path`経由で参照する。
+      # その実体であるシステム環境(`environment.systemPackages`をまとめた`config.system.path`)経由で参照する。
+      # NixOSでシステムプロファイルと呼ばれる`/nix/var/nix/profiles/system`とは別物。
       ExecStart = "${config.system.path}/bin/steam-gamescope";
       User = username;
       IgnoreSIGPIPE = "no";

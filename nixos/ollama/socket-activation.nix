@@ -8,6 +8,7 @@
 {
   systemd = import ../../lib/container-socket-activation.nix {
     inherit pkgs hardening;
+    systemd = config.systemd.package;
     container = "ollama";
     label = "Ollama";
     localAddress = config.containers.ollama.localAddress;

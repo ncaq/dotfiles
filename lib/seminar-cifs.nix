@@ -4,8 +4,15 @@
   `nixos/native-linux/cifs.nix`(/mnt/chihiroの常用マウント)と、
   `nixos/host/bullet/comfyui/dir.nix`(ComfyUIコンテナ専用マウント)で共用して、
   片方だけ更新される事故を防ぐ。
+
+  # 引数
+
+  - `pkgs`: スクリプトの実行に使うパッケージの供給元
+  - `systemd`: 稼働中のsystemdと同じパッケージ。
+    `systemctl`がPID 1と別ビルドにならないように、
+    呼び出し元は`config.systemd.package`を渡す
 */
-{ pkgs }:
+{ pkgs, systemd }:
 let
   hardening = import ./systemd-hardening.nix;
   # seminarのSMBポートへ実際にTCP接続できるまで待つスクリプト。
@@ -72,8 +79,8 @@ in
         ExecStart = pkgs.lib.getExe (
           pkgs.writeShellApplication {
             name = "retry-${name}";
-            runtimeInputs = with pkgs; [
-              coreutils
+            runtimeInputs = [
+              pkgs.coreutils
               systemd
               waitForSeminar
             ];

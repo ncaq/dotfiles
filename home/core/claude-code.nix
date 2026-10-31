@@ -4,10 +4,15 @@
   pkgs-unstable,
   config,
   codingAgentWorkDirFullPath,
+  osConfig ? null,
   ...
 }:
 let
   ccstatusline = pkgs.callPackage ../../pkgs/ccstatusline.nix { };
+  # `systemd-run`は稼働中のsystemdと同じビルドから取る。
+  # NixOSではシステム側の`systemd.package`に揃え、
+  # standalone home-managerやTermuxでは`pkgs.systemd`にフォールバックする。
+  systemd = if osConfig != null then osConfig.systemd.package else pkgs.systemd;
 in
 {
   programs.claude-code = {
@@ -57,7 +62,7 @@ in
                   特に一行目のユーザ名の`@`の右に書いてあるhostnameと、
                   OSの情報を覚えてください。
                   EOS
-                  ${pkgs.fastfetch}/bin/fastfetch
+                  ${lib.getExe config.programs.fastfetch.package}
                 '';
               }
             ];
@@ -403,7 +408,7 @@ in
       pkgs.writeShellApplication {
         name = "claude";
         # `systemd-run`をPATH経由の偶然に頼らずNixの依存として明示します。
-        runtimeInputs = [ pkgs.systemd ];
+        runtimeInputs = [ systemd ];
         text = ''
           claude=${config.programs.claude-code.finalPackage}/bin/claude
           # systemdがPID 1ではない環境(Termuxなど)ではそのまま起動します。

@@ -1,6 +1,7 @@
 {
   pkgs,
   lib,
+  config,
   ...
 }:
 let
@@ -200,7 +201,7 @@ let
         main = do
           hSetEncoding stdout utf8
           when checkService $ do
-            (code, _, _) <- readProcessWithExitCode "${pkgs.systemd}/bin/systemctl" ["is-active", "--quiet", "certspotter.service"] ""
+            (code, _, _) <- readProcessWithExitCode "${lib.getExe' config.systemd.package "systemctl"}" ["is-active", "--quiet", "certspotter.service"] ""
             unless (code == ExitSuccess) $ critical ["certspotter CRITICAL: service not running"]
           exists <- doesFileExist eventsLog
           if not exists

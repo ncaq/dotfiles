@@ -1,4 +1,9 @@
-{ pkgs, lib, ... }:
+{
+  pkgs,
+  lib,
+  config,
+  ...
+}:
 let
   # 共通originで登録するクレデンシャル。
   # 自分の所有するマシンを自分の所有するYubiKeyでロック解除できても何も困らないため、
@@ -49,7 +54,7 @@ let
   # `systemd-run`のコマンドとしても渡すためsystemctlはフルパスで指定します。
   grobiSignal =
     signal:
-    "${pkgs.systemd}/bin/systemctl --user kill --kill-whom=main --signal=${signal} grobi.service";
+    "${lib.getExe' config.systemd.package "systemctl"} --user kill --kill-whom=main --signal=${signal} grobi.service";
 
   # 猶予時間内の復帰でロックされていなければgrobiを再開します。
   # 猶予超過でロックに進んだ場合はロッカー側が解除後に再開するため、
@@ -77,9 +82,9 @@ let
   # このプロセスの子ではなくsystemdのユニットとして予約します。
   screenBlankNotifier = pkgs.writeShellApplication {
     name = "screen-blank-notifier";
-    runtimeInputs = with pkgs; [
-      coreutils
-      systemd
+    runtimeInputs = [
+      pkgs.coreutils
+      config.systemd.package
     ];
     text = ''
       # grobiの中断に失敗しても本来の役目には支障がないので、
@@ -112,9 +117,9 @@ let
   # ここでもgrobiを中断します。
   xsecurelockGrobiPause = pkgs.writeShellApplication {
     name = "xsecurelock-grobi-pause";
-    runtimeInputs = with pkgs; [
-      systemd
-      xsecurelock
+    runtimeInputs = [
+      config.systemd.package
+      pkgs.xsecurelock
     ];
     text = ''
       # `writeShellApplication`はerrexitを注入するため、

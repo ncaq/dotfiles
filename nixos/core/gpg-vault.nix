@@ -21,12 +21,17 @@
 */
 {
   pkgs,
+  lib,
+  config,
   username,
   hardening,
   ...
 }:
 let
   keyConfig = import ../../key;
+  # クライアント側(home-managerの`programs.gpg`)と同じ既定のgnupgに揃えるため、
+  # `pkgs.gnupg`を直接参照せずNixOSの`programs.gnupg.package`を経由する。
+  gnupg = config.programs.gnupg.package;
   vaultHome = "/var/lib/gpg-vault";
   gnupgHome = "${vaultHome}/.gnupg";
   socketDir = "/run/gpg-vault";
@@ -158,7 +163,7 @@ in
       # ExecStartPreは`User=`で指定したgpg-vaultユーザで実行されます。
       preStart = ''
         umask 077
-        ${pkgs.gnupg}/bin/gpg --batch --no-autostart --quiet --import ${keyConfig.publicKeyFile}
+        ${lib.getExe' gnupg "gpg"} --batch --no-autostart --quiet --import ${keyConfig.publicKeyFile}
       '';
       # 秘密鍵を扱うプロセスなので、
       # 不要な場所を見せず不要な特権と通信経路を断ちます。
@@ -169,7 +174,7 @@ in
         # gpg-agentはソケットを作り終えてからforkするため、
         # forkingなら起動完了時点でソケットが利用可能です。
         Type = "forking";
-        ExecStart = "${pkgs.gnupg}/bin/gpg-agent --daemon";
+        ExecStart = "${lib.getExe' gnupg "gpg-agent"} --daemon";
         # gpg-agentはumaskに関係なくソケットを0700で生成することを検証済みなので、
         # このchmodによるグループ書き込み(=接続)許可は必須です。
         # ExecStartPostの完了までunitはstartedにならないため、

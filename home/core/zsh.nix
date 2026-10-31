@@ -1,5 +1,4 @@
 {
-  pkgs,
   config,
   lib,
   ...
@@ -15,12 +14,12 @@ in
 
       # Nixの自動生成するものではないユーザのzshrcを読み込む。
       initContent = ''
-        if [[ -x "$(command -v ${lib.getExe pkgs.tmux})" ]] \
+        if [[ -x "$(command -v ${lib.getExe config.programs.tmux.package})" ]] \
           && [[ -z "$TMUX" ]] && [[ $- == *i* ]]; then
           # tmuxがインストールされていて、
           # 現在tmuxセッション内でなく、
           # かつ対話型シェルの場合にtmuxセッションを開始します。
-          if ${lib.getExe pkgs.tmux} new -A -s master; then
+          if ${lib.getExe config.programs.tmux.package} new -A -s master; then
             # tmuxセッションが正常終了した場合、zshシェルも終了します。
             exit
           else

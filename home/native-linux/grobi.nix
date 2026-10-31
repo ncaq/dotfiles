@@ -2,7 +2,7 @@
 let
   xrandr = "${pkgs.xrandr}/bin/xrandr";
   xset = "${pkgs.xset}/bin/xset";
-  systemctl = "${pkgs.systemd}/bin/systemctl";
+  systemctl = config.systemd.user.systemctlPath;
   # xrandrとxftの範囲でDPIを設定します。
   dpiIs144 = [
     (xrandr + " --dpi 144")

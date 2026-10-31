@@ -1,6 +1,7 @@
-{ pkgs, ... }:
+{ lib, config, ... }:
 let
   beesUnit = "beesd@root.service";
+  systemctl = lib.getExe' config.systemd.package "systemctl";
 in
 {
   # btrfsの重複排除デーモン。
@@ -30,9 +31,9 @@ in
   systemd.services."beesd@root".unitConfig.ConditionACPower = true;
   services.acpid.acEventCommands = ''
     if [ "$(< /sys/class/power_supply/AC/online)" = 1 ]; then
-      ${pkgs.systemd}/bin/systemctl start ${beesUnit}
+      ${systemctl} start ${beesUnit}
     else
-      ${pkgs.systemd}/bin/systemctl stop ${beesUnit}
+      ${systemctl} stop ${beesUnit}
     fi
   '';
 }

@@ -42,11 +42,11 @@ let
     name: device:
     pkgs.writeShellApplication {
       name = "mnt-${name}";
-      runtimeInputs = with pkgs; [
-        btrfs-progs
-        snapper
-        systemd
-        util-linux
+      runtimeInputs = [
+        pkgs.btrfs-progs
+        pkgs.snapper
+        config.systemd.package
+        pkgs.util-linux
       ];
       text = ''
         if [[ ! -w /dev/mapper/control ]]; then
@@ -117,10 +117,10 @@ let
     name: _device:
     pkgs.writeShellApplication {
       name = "umnt-${name}";
-      runtimeInputs = with pkgs; [
-        snapper
-        systemd
-        util-linux
+      runtimeInputs = [
+        pkgs.snapper
+        config.systemd.package
+        pkgs.util-linux
       ];
       text = ''
         if [[ ! -w /dev/mapper/control ]]; then

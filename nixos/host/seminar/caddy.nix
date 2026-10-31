@@ -53,8 +53,31 @@ in
       ${garageHostAddr} = [ "garage.ncaq.net" ];
       ${niks3PublicHostAddr} = [ "niks3-public.ncaq.net" ];
     };
-    # コンテナのvethインターフェースからCaddyの443への接続を許可する。
-    firewall.interfaces."ve-+".allowedTCPPorts = [ 443 ];
+    firewall.interfaces = {
+      # コンテナのvethインターフェースからCaddyの443への接続を許可する。
+      "ve-+".allowedTCPPorts = [ 443 ];
+      # seminarをexit nodeにしているtailnetの端末からも、
+      # 上の`hosts`で向けた先のCaddyへ届くようにする。
+      #
+      # exit nodeを使う端末は全てのDNSクエリをexit node側のtailscaledへ送り、
+      # exit node側のtailscaledは`/etc/resolv.conf`の先頭のnameserverへ問い合わせる。
+      # seminarではそれがsystemd-resolvedのstubで、
+      # systemd-resolvedは`/etc/hosts`の内容も答えに使うため、
+      # 上の`hosts`に書いた名前はexit node経由の端末にも内部アドレスとして見える。
+      # その端末はexit node経由で内部アドレスへ繋ぎに来るので、
+      # ここを閉じたままだとタイムアウトしてキャッシュが使えない。
+      #
+      # 名前が漏れること自体は塞がずに、
+      # 漏れた先がCloudflare Tunnel経由と同じ内容を返すCaddyであるようにして帳尻を合わせている。
+      # なので`hosts`へCaddyが受けない名前を足すと、
+      # exit node経由の端末からその名前へ繋げなくなる。
+      #
+      # カーネル側で443を待ち受けているのはvethのホスト側アドレスにbindしたCaddyだけで、
+      # Tailscale IPの443はtailscaledがnetstackで処理するためここの許可とは無関係。
+      # tailnetの端末は全て自分のものなので、
+      # 宛先アドレスを絞らずインターフェース単位で開ける。
+      ${config.services.tailscale.interfaceName}.allowedTCPPorts = [ 443 ];
+    };
   };
   # vethインターフェースはコンテナ起動時に作成されるため、
   # Caddy起動時にはまだバインド先IPが存在しない場合がある。

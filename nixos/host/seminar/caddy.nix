@@ -1,4 +1,4 @@
-{ config, ... }:
+{ lib, config, ... }:
 let
   garageAddr = config.machineAddresses.garage.guest;
   garageHostAddr = config.machineAddresses.garage.host;
@@ -7,57 +7,95 @@ let
   niks3PrivateHostAddr = config.machineAddresses.niks3-private.host;
 in
 {
-  services.caddy = {
-    enable = true;
-    email = "ncaq@ncaq.net";
-    # niks3コンテナとホスト自身からGarageへのTLS termination proxy。
-    # 同じサーバ上の通信なのにいちいちCloudflare Tunnelを経由すると無駄なので、
-    # ローカルのCaddyで通信を橋渡しします。
-    # niks3コンテナ内のhostsとホストのnetworking.hostsでgarage.ncaq.netをここへ向け、
-    # Caddy(Let's Encrypt証明書)経由でGarageに直接HTTP接続することでバイパスします。
-    # それによりpresigned URLはhttps://garage.ncaq.net/...のまま維持されます。
-    # 外部クライアント(GitHub Actionsなど)はCloudflare Tunnel経由でアクセスします。
-    # ホストの443を完全に占有してしまわないように、
-    # garageとniks3各コンテナのvethのホスト側アドレスのみにバインドします。
-    virtualHosts."garage.ncaq.net" = {
-      useACMEHost = "garage.ncaq.net";
-      extraConfig = ''
-        bind ${garageHostAddr} ${niks3PublicHostAddr} ${niks3PrivateHostAddr}
-        reverse_proxy http://${garageAddr}:3900
-      '';
-    };
-    # ホスト自身からniks3-publicへのアクセスをマシン内で完結させるproxy。
-    # niks3-public.ncaq.netの公開経路はCloudflare Tunnelのみなので、
-    # そのままだと同じマシン上のキャッシュへCloudflareを往復して到達することになります。
-    # substituteやpost-build-hookはホストのnix-daemonが実行するため、
-    # ホストのnetworking.hostsで名前をこのバインド先へ向けることで、
-    # CIランナーのキャッシュ入出力もマシン内で完結します。
-    # https://github.com/ncaq/dotfiles/issues/1535
-    virtualHosts."niks3-public.ncaq.net" = {
-      useACMEHost = "niks3-public.ncaq.net";
-      extraConfig = ''
-        bind ${niks3PublicHostAddr}
-        reverse_proxy http://${niks3PublicAddr}:5751
-      '';
-    };
-  };
-  networking = {
-    # ホスト上でniks3-public.ncaq.netとgarage.ncaq.netをローカルのCaddyへ向けます。
-    # substituteはホストのnix-daemonが行うため、
-    # これによりCIのキャッシュ取得がCloudflare Tunnelを経由しなくなります。
-    # garage.ncaq.netはniks3が発行するpresigned URLのアップロード先なので、
-    # キャッシュへのアップロードもマシン内で完結します。
-    # 向き先はそれぞれの用途に対応するvethのホスト側アドレスにして、
-    # 障害の切り分けが素直になるようにします。
-    hosts = {
+  # ホスト上でniks3-public.ncaq.netとgarage.ncaq.netをローカルのCaddyへ向けます。
+  # substituteはホストのnix-daemonが行うため、
+  # これによりCIのキャッシュ取得がCloudflare Tunnelを経由しなくなります。
+  # garage.ncaq.netはniks3が発行するpresigned URLのアップロード先なので、
+  # キャッシュへのアップロードもマシン内で完結します。
+  # 向き先はそれぞれの用途に対応するvethのホスト側アドレスにして、
+  # 障害の切り分けが素直になるようにします。
+  #
+  # ここに書いた名前は、seminarをexit nodeにしている端末にも内部アドレスとして見えます。
+  # exit nodeを使う端末は全てのDNSクエリをexit node側のtailscaledへ送り、
+  # exit node側のtailscaledは`/etc/resolv.conf`の先頭のnameserverへ問い合わせます。
+  # seminarではそれがsystemd-resolvedのstubで、
+  # systemd-resolvedは`/etc/hosts`の内容も答えに使うためです。
+  # その端末が内部アドレスへ辿り着けるようにする経路広告は`tailscale-exit-node.nix`にあり、
+  # このオプションのアドレスをそのまま広告します。
+  # `networking.hosts`に直接書かずオプションにしているのは、
+  # 名前の向き先と経路広告を手で揃える必要を無くすためです。
+  # 片方だけ変えると名前は引けるのに経路が無い状態になり、
+  # エラーも出ずに繋がらなくなります。
+  #
+  # ただしinfra.ncaq.net側の経路の承認とACLまでは追従しません。
+  # ここへ名前を足す時は、Caddyがその名前のvhostを受けることと、
+  # infra.ncaq.netの`tailscale/subnet-route.tf`と`tailscale/access-policy.tf`に、
+  # 同じアドレスを足すことの両方が要ります。
+  options.local.caddyInternalHosts = lib.mkOption {
+    type = lib.types.attrsOf (lib.types.listOf lib.types.str);
+    readOnly = true;
+    default = {
       ${garageHostAddr} = [ "garage.ncaq.net" ];
       ${niks3PublicHostAddr} = [ "niks3-public.ncaq.net" ];
     };
-    # コンテナのvethインターフェースからCaddyの443への接続を許可する。
-    firewall.interfaces."ve-+".allowedTCPPorts = [ 443 ];
+    description = ''
+      ホスト上のCaddyへ向ける名前の、vethのホスト側アドレスから名前のリストへの対応。
+      `networking.hosts`と`tailscale-exit-node.nix`の経路広告の両方がここから組み立てる。
+    '';
   };
-  # vethインターフェースはコンテナ起動時に作成されるため、
-  # Caddy起動時にはまだバインド先IPが存在しない場合がある。
-  # ip_nonlocal_bindを有効にして未割当アドレスへのバインドを許可する。
-  boot.kernel.sysctl."net.ipv4.ip_nonlocal_bind" = 1;
+
+  config = {
+    services.caddy = {
+      enable = true;
+      email = "ncaq@ncaq.net";
+      # niks3コンテナとホスト自身からGarageへのTLS termination proxy。
+      # 同じサーバ上の通信なのにいちいちCloudflare Tunnelを経由すると無駄なので、
+      # ローカルのCaddyで通信を橋渡しします。
+      # niks3コンテナ内のhostsとホストのnetworking.hostsでgarage.ncaq.netをここへ向け、
+      # Caddy(Let's Encrypt証明書)経由でGarageに直接HTTP接続することでバイパスします。
+      # それによりpresigned URLはhttps://garage.ncaq.net/...のまま維持されます。
+      # 外部クライアント(GitHub Actionsなど)はCloudflare Tunnel経由でアクセスします。
+      # ホストの443を完全に占有してしまわないように、
+      # garageとniks3各コンテナのvethのホスト側アドレスのみにバインドします。
+      virtualHosts."garage.ncaq.net" = {
+        useACMEHost = "garage.ncaq.net";
+        extraConfig = ''
+          bind ${garageHostAddr} ${niks3PublicHostAddr} ${niks3PrivateHostAddr}
+          reverse_proxy http://${garageAddr}:3900
+        '';
+      };
+      # ホスト自身からniks3-publicへのアクセスをマシン内で完結させるproxy。
+      # niks3-public.ncaq.netの公開経路はCloudflare Tunnelのみなので、
+      # そのままだと同じマシン上のキャッシュへCloudflareを往復して到達することになります。
+      # substituteやpost-build-hookはホストのnix-daemonが実行するため、
+      # ホストのnetworking.hostsで名前をこのバインド先へ向けることで、
+      # CIランナーのキャッシュ入出力もマシン内で完結します。
+      # https://github.com/ncaq/dotfiles/issues/1535
+      virtualHosts."niks3-public.ncaq.net" = {
+        useACMEHost = "niks3-public.ncaq.net";
+        extraConfig = ''
+          bind ${niks3PublicHostAddr}
+          reverse_proxy http://${niks3PublicAddr}:5751
+        '';
+      };
+    };
+    networking = {
+      # 名前の向き先は`local.caddyInternalHosts`を参照。
+      hosts = config.local.caddyInternalHosts;
+      # コンテナのvethインターフェースからCaddyの443への接続を許可する。
+      #
+      # Tailscale経由の接続はここでは開けない。
+      # tailscaledが`INPUT`の先頭に挿す`ts-input`チェインが、
+      # Tailscaleインターフェースから入る全パケットを先にACCEPTするので、
+      # NixOSのfirewallはそもそも評価されない。
+      # exit node経由の端末からこのアドレスへ届くかどうかは、
+      # tailscaledのパケットフィルタとtailnetのACLで決まる。
+      # `tailscale-exit-node.nix`を参照。
+      firewall.interfaces."ve-+".allowedTCPPorts = [ 443 ];
+    };
+    # vethインターフェースはコンテナ起動時に作成されるため、
+    # Caddy起動時にはまだバインド先IPが存在しない場合がある。
+    # ip_nonlocal_bindを有効にして未割当アドレスへのバインドを許可する。
+    boot.kernel.sysctl."net.ipv4.ip_nonlocal_bind" = 1;
+  };
 }

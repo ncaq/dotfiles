@@ -40,6 +40,12 @@ in
     containers.postgresql = {
       autoStart = true;
       ephemeral = true;
+      # nixpkgsのデフォルトは1分ですが、
+      # ホストの負荷が高いとコンテナ内のsystemdがreadyを通知するまでに1分を超える事があります。
+      # CIのブートテストで初回起動が64秒で殺されて失敗し、
+      # Restartで上がり直したものの`postgresql-ready.service`が依存失敗のまま放置される事がありました。
+      # 起動が遅いだけでコンテナを殺されないように余裕を持たせます。
+      timeoutStartSec = "5min";
       # ネットワークを有効化するためではなく、
       # ホストのネットワークスタックから隔離してTCP接続を遮断するために有効化している。
       # hostAddress/localAddressを意図的に設定せず、IPアドレスを持たない状態にしている。
@@ -156,6 +162,15 @@ in
     };
 
     systemd = {
+      # `postgresql-ready.service`はoneshotなので、
+      # コンテナの初回起動が失敗して依存失敗で止まると、
+      # コンテナがRestartで上がり直しても誰も起動し直さず、
+      # これに依存するサービスが全て止まったままになります。
+      # コンテナが動いている間は`postgresql-ready.service`を起動し続けるようにします。
+      # `RemainAfterExit = true`なので成功後はactiveのままとなり、
+      # 起動のループにはなりません。
+      services."container@postgresql".upholds = [ "postgresql-ready.service" ];
+
       # コンテナの起動とPostgreSQLの接続受付開始にはタイムラグがあるため、
       # `pg_isready`で実際に接続可能になるまで待機するサービスを用意する。
       # 依存サービスは`container@postgresql.service`ではなくこのサービスをafterに指定する。

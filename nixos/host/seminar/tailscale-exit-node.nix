@@ -1,7 +1,8 @@
-{ config, ... }:
+{ lib, config, ... }:
 let
-  garageHostAddr = config.machineAddresses.garage.host;
-  niks3PublicHostAddr = config.machineAddresses.niks3-public.host;
+  # 経路は`caddy.nix`の`local.caddyInternalHosts`のアドレスから組み立てる。
+  # 名前の向き先と経路広告を手で揃える必要を無くすため。
+  internalRoutes = map (addr: "${addr}/32") (lib.attrNames config.local.caddyInternalHosts);
 in
 {
   # seminarをexit nodeとして広告する。
@@ -31,13 +32,13 @@ in
   # 承認とACLはinfra.ncaq.netの`tailscale/subnet-route.tf`と`tailscale/access-policy.tf`にあり、
   # そちらのアドレスはここと同じ値を手で揃えている。
   #
-  # 経路は`networking.hosts`で名前を向けているアドレスだけを`/32`で広告する。
+  # 経路は`local.caddyInternalHosts`で名前を向けているアドレスだけを`/32`で広告する。
   # Caddyはniks3-privateのホスト側アドレスにもbindしているが、
   # そこへ向けている名前は無いので広告しない。
   # `/24`で広告すると承認した途端にコンテナ側のアドレスまでexit node経由の端末から見えるようになるので、
-  # 必要な2つに絞る。
+  # 必要なものに絞る。
   services.tailscale.extraSetFlags = [
     "--advertise-exit-node"
-    "--advertise-routes=${garageHostAddr}/32,${niks3PublicHostAddr}/32"
+    "--advertise-routes=${lib.concatStringsSep "," internalRoutes}"
   ];
 }

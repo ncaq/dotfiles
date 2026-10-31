@@ -10,6 +10,7 @@
   ```nix
   systemd = import ../../lib/container-socket-activation.nix {
     inherit pkgs hardening;
+    systemd = config.systemd.package;
     container = "ollama";
     label = "Ollama";
     localAddress = config.containers.ollama.localAddress;
@@ -23,6 +24,9 @@
   - `pkgs`: proxyの実行に使うパッケージの供給元
   - `hardening`: `lib/systemd-hardening.nix`の設定集。
     NixOSモジュールへは`flake.nix`の`specialArgs`経由で配布されるものをそのまま渡す
+  - `systemd`: 稼働中のsystemdと同じパッケージ。
+    `systemd-socket-proxyd`がPID 1と別ビルドにならないように、
+    呼び出し元は`config.systemd.package`を渡す
   - `container`: 対象のコンテナ名。
     `container@<container>.service`への依存と、
     `<container>-proxy`というユニット名の両方に使う
@@ -37,6 +41,7 @@
 {
   pkgs,
   hardening,
+  systemd,
   container,
   label,
   localAddress,
@@ -62,7 +67,7 @@ in
     serviceConfig = hardening.network // {
       # systemd-socket-proxydは`bin/`ではなく`lib/systemd/`に配置されるため、
       # `lib.getExe'`は使えない。
-      ExecStart = "${pkgs.systemd}/lib/systemd/systemd-socket-proxyd ${localAddress}:${toString port}";
+      ExecStart = "${systemd}/lib/systemd/systemd-socket-proxyd ${localAddress}:${toString port}";
       DynamicUser = true;
       # 初回のDB migrationや埋め込みモデル取得を許容しつつ、疎通待ちに上限を設ける。
       TimeoutStartSec = "5min";

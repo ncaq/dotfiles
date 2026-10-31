@@ -9,6 +9,7 @@
 {
   systemd = import ../../../../lib/container-socket-activation.nix {
     inherit pkgs hardening;
+    systemd = config.systemd.package;
     container = "comfyui";
     label = "ComfyUI";
     localAddress = config.containers.comfyui.localAddress;

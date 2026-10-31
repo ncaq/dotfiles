@@ -8,7 +8,11 @@
 }:
 let
   userConfig = config.users.users.${username};
-  inherit (import ../../lib/seminar-cifs.nix { inherit pkgs; })
+  inherit
+    (import ../../lib/seminar-cifs.nix {
+      inherit pkgs;
+      systemd = config.systemd.package;
+    })
     baseMountOptions
     mkRetryService
     waitForSeminar

@@ -35,7 +35,11 @@ let
   hostMountParent = "/run/comfyui-cifs";
   hostMountPoint = "${hostMountParent}/output";
   mountUnit = "${utils.escapeSystemdPath hostMountPoint}.mount";
-  inherit (import ../../../../lib/seminar-cifs.nix { inherit pkgs; })
+  inherit
+    (import ../../../../lib/seminar-cifs.nix {
+      inherit pkgs;
+      systemd = config.systemd.package;
+    })
     baseMountOptions
     mkRetryService
     ;

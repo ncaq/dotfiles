@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 let
   # AC電源時: 30.5分。
   # スクリーンセーバーのタイムアウト(screen-lock-time.nixで30分)より後にすることで、
@@ -15,10 +15,10 @@ in
       ExecStart = pkgs.lib.getExe (
         pkgs.writeShellApplication {
           name = "dpms-timeout";
-          runtimeInputs = with pkgs; [
-            gnugrep
-            upower
-            xset
+          runtimeInputs = [
+            config.services.upower.package
+            pkgs.gnugrep
+            pkgs.xset
           ];
           text = ''
             # 頻繁なxset呼び出しを避けるため、状態が変わったときのみDPMSを更新する。

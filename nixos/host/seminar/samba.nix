@@ -1,5 +1,4 @@
 {
-  pkgs,
   lib,
   config,
   hardening,
@@ -85,7 +84,7 @@
       set -euo pipefail
       PASSWORD=$(cat ${config.sops.secrets."samba-password".path})
       # smbpasswdはパスワードを2回(確認用)読み取る
-      (echo "$PASSWORD"; echo "$PASSWORD") | ${lib.getExe' pkgs.samba "smbpasswd"} -a -s ncaq
+      (echo "$PASSWORD"; echo "$PASSWORD") | ${lib.getExe' config.services.samba.package "smbpasswd"} -a -s ncaq
     '';
   };
 

@@ -1,4 +1,9 @@
-{ lib, pkgs, ... }:
+{
+  lib,
+  pkgs,
+  config,
+  ...
+}:
 let
   # 他のSSDに入っているWindows環境の一覧。
   # Limineのメニューエントリ名とESPパーティションのGPT PARTUUIDの対応。
@@ -21,9 +26,7 @@ let
     { entryName, ... }:
     pkgs.writeShellApplication {
       name = "reb-windows-${name}";
-      runtimeInputs = with pkgs; [
-        systemd
-      ];
+      runtimeInputs = [ config.systemd.package ];
       text = ''
         bootctl set-oneshot ${lib.escapeShellArg entryName}
         systemctl reboot

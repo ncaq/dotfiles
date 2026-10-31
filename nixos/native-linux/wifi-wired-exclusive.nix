@@ -1,4 +1,9 @@
-{ pkgs, lib, ... }:
+{
+  pkgs,
+  lib,
+  config,
+  ...
+}:
 let
   # 有線(Ethernet)接続中はWiFiの接続だけを切り、
   # WiFiラジオはオンのまま維持する。
@@ -12,9 +17,9 @@ let
   # `$1`がインターフェース名、`$2`がアクション。
   wifiWiredExclusive = pkgs.writeShellApplication {
     name = "wifi-wired-exclusive";
-    runtimeInputs = with pkgs; [
-      gnugrep
-      networkmanager
+    runtimeInputs = [
+      config.networking.networkmanager.package
+      pkgs.gnugrep
     ];
     text = ''
       action="''${2:-}"

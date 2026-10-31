@@ -41,7 +41,7 @@ in
           command = lib.getExe (
             pkgs.writeShellApplication {
               name = "check-ssh";
-              runtimeInputs = [ pkgs.systemd ];
+              runtimeInputs = [ config.systemd.package ];
               text = ''
                 # sshdサービスがactiveであればOK
                 if systemctl is-active --quiet sshd.service; then
@@ -64,8 +64,8 @@ in
             pkgs.writeShellApplication {
               name = "check-tailscale";
               runtimeInputs = [
+                config.services.tailscale.package
                 pkgs.jq
-                pkgs.tailscale
               ];
               text = ''
                 # BackendStateがRunningかつSelf.OnlineがtrueであればOK
@@ -92,7 +92,7 @@ in
           command = lib.getExe (
             pkgs.writeShellApplication {
               name = "check-cloudflared";
-              runtimeInputs = [ pkgs.systemd ];
+              runtimeInputs = [ config.systemd.package ];
               text = ''
                 if systemctl is-active --quiet cloudflared-tunnel-seminar.service; then
                   echo "Cloudflared OK"
@@ -135,7 +135,7 @@ in
           command = lib.getExe (
             pkgs.writeShellApplication {
               name = "check-samba";
-              runtimeInputs = [ pkgs.systemd ];
+              runtimeInputs = [ config.systemd.package ];
               text = ''
                 if systemctl is-active --quiet samba-smbd.service; then
                   echo "Samba OK"
@@ -157,7 +157,10 @@ in
             pkgs.writeShellApplication {
               name = "check-postgresql";
               runtimeInputs = [
-                pkgs.postgresql
+                # サーバはコンテナ内で動いているので、
+                # psqlもそのコンテナで拡張込みで実際に起動しているパッケージから取る。
+                # `lib/test-nixos-boot.nix`と同じ参照先。
+                config.containers.postgresql.config.services.postgresql.finalPackage
                 pkgs.util-linux
               ];
               text = ''

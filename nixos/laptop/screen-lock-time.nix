@@ -1,4 +1,12 @@
-{ pkgs, lib, ... }:
+{
+  pkgs,
+  lib,
+  config,
+  ...
+}:
+let
+  systemctl = lib.getExe' config.systemd.package "systemctl";
+in
 {
   systemd = {
     # 画面消灯までの時間を30分に設定。
@@ -29,9 +37,9 @@
         ExecStart = lib.getExe (
           pkgs.writeShellApplication {
             name = "lid-close-lock-and-suspend";
-            runtimeInputs = with pkgs; [
-              coreutils
-              systemd
+            runtimeInputs = [
+              config.systemd.package
+              pkgs.coreutils
             ];
             # xss-lockがsleep inhibitor lockを取得するため、
             # ロッカーが起動するまでsuspendはブロックされます。
@@ -61,10 +69,10 @@
       lidEventCommands = ''
         case "$1" in
           *close)
-            ${pkgs.systemd}/bin/systemctl start lid-close-lock.timer
+            ${systemctl} start lid-close-lock.timer
             ;;
           *open)
-            ${pkgs.systemd}/bin/systemctl stop lid-close-lock.timer 2>/dev/null || true
+            ${systemctl} stop lid-close-lock.timer 2>/dev/null || true
             ;;
         esac
       '';

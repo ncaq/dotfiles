@@ -1,4 +1,9 @@
-{ pkgs, username, ... }:
+{
+  pkgs,
+  config,
+  username,
+  ...
+}:
 {
   # LightDMはWaylandセッションを起動できず、
   # X11上のネスト起動ではHDRなどを通せないため、
@@ -28,7 +33,12 @@
     serviceConfig = {
       # `+`プレフィックスでroot権限でVTを切り替えてから起動する。
       ExecStartPre = "+${pkgs.kbd}/bin/chvt 4";
-      ExecStart = "/run/current-system/sw/bin/steam-gamescope";
+      # `steam-gamescope`は`programs.steam.gamescopeSession`が`environment.systemPackages`へ入れる、
+      # モジュール内部のスクリプトでオプションからは参照できない。
+      # `/run/current-system/sw`を直接書くと起動中の世代に依存してクロージャにも残らないので、
+      # その実体であるシステム環境(`environment.systemPackages`をまとめた`config.system.path`)経由で参照する。
+      # NixOSでシステムプロファイルと呼ばれる`/nix/var/nix/profiles/system`とは別物。
+      ExecStart = "${config.system.path}/bin/steam-gamescope";
       User = username;
       IgnoreSIGPIPE = "no";
       # (a)gettyを置き換えるためutmpにセッションを記録する。
@@ -67,10 +77,14 @@
     });
   '';
 
-  environment.systemPackages = with pkgs; [
+  environment.systemPackages = [
     # gamescopeセッションを起動する短縮コマンド。
-    (writeShellScriptBin "steamos" ''
-      exec systemctl start steam-gamescope.service
-    '')
+    (pkgs.writeShellApplication {
+      name = "steamos";
+      runtimeInputs = [ config.systemd.package ];
+      text = ''
+        exec systemctl start steam-gamescope.service
+      '';
+    })
   ];
 }

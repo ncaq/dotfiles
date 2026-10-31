@@ -1,4 +1,9 @@
-{ pkgs, ... }:
+{
+  lib,
+  pkgs,
+  config,
+  ...
+}:
 {
   # テキストの容量は現代では大したことがないと考えているため、
   # 履歴は大きめに取る設定にしています。
@@ -16,7 +21,7 @@
       mouse = true;
       prefix = "C-M-z";
       terminal = "tmux-256color";
-      shell = "${pkgs.zsh}/bin/zsh";
+      shell = lib.getExe config.programs.zsh.package;
 
       plugins = with pkgs.tmuxPlugins; [
         continuum

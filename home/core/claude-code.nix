@@ -4,6 +4,7 @@
   pkgs-unstable,
   config,
   codingAgentWorkDirFullPath,
+  systemdPackage,
   ...
 }:
 let
@@ -57,7 +58,7 @@ in
                   特に一行目のユーザ名の`@`の右に書いてあるhostnameと、
                   OSの情報を覚えてください。
                   EOS
-                  ${pkgs.fastfetch}/bin/fastfetch
+                  ${lib.getExe config.programs.fastfetch.package}
                 '';
               }
             ];
@@ -403,7 +404,8 @@ in
       pkgs.writeShellApplication {
         name = "claude";
         # `systemd-run`をPATH経由の偶然に頼らずNixの依存として明示します。
-        runtimeInputs = [ pkgs.systemd ];
+        # パッケージは`home/core/systemd.nix`が稼働中のsystemdに揃えて配布しています。
+        runtimeInputs = [ systemdPackage ];
         text = ''
           claude=${config.programs.claude-code.finalPackage}/bin/claude
           # systemdがPID 1ではない環境(Termuxなど)ではそのまま起動します。

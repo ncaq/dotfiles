@@ -8,8 +8,10 @@ in
   #
   # exit nodeとしての広告は以前は`tailscale set --advertise-exit-node`で手で設定していた。
   # サブネットルートを足す必要が出たので、
-  # `tailscale set`は広告する経路を丸ごと置き換える仕様に合わせて、
   # exit nodeの広告も含めてここで宣言する。
+  # `--advertise-routes`は広告する経路を丸ごと置き換えるフラグで、
+  # exit nodeの広告も内部的には`0.0.0.0/0`と`::/0`の経路として同じリストに入るため、
+  # `--advertise-exit-node`を一緒に指定しないとexit nodeの広告が消える。
   #
   # exit node経由の端末がseminarのCaddyへ届くための経路も一緒に広告する。
   # `caddy.nix`の`networking.hosts`で`niks3-public.ncaq.net`と`garage.ncaq.net`を、
@@ -29,7 +31,9 @@ in
   # 承認とACLはinfra.ncaq.netの`tailscale/subnet-route.tf`と`tailscale/access-policy.tf`にあり、
   # そちらのアドレスはここと同じ値を手で揃えている。
   #
-  # 経路はCaddyがbindしているアドレスだけを`/32`で広告する。
+  # 経路は`networking.hosts`で名前を向けているアドレスだけを`/32`で広告する。
+  # Caddyはniks3-privateのホスト側アドレスにもbindしているが、
+  # そこへ向けている名前は無いので広告しない。
   # `/24`で広告すると承認した途端にコンテナ側のアドレスまでexit node経由の端末から見えるようになるので、
   # 必要な2つに絞る。
   services.tailscale.extraSetFlags = [

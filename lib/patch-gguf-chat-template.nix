@@ -1,7 +1,7 @@
 /**
   patchGgufChatTemplate: GGUFの`tokenizer.chat_template`へ差分を当てた派生GGUFを作る関数。
 
-  型: { pkgs } -> { gguf, patch } -> derivation
+  型: { pkgs } -> { gguf, patch, hash } -> derivation
 
   引数:
     pkgs  - `runCommand`とPythonを取るためのnixpkgs
@@ -9,6 +9,7 @@
     patch - チャットテンプレートに当てるunified diffのファイル。
             `patch`コマンドがヘッダより前の文章を読み飛ばすので、
             差分の意図はファイルの先頭に書いておける。
+    hash  - 差分を当てた後のファイルのSRI形式sha256ハッシュ
 
   なぜ必要か:
     Hugging Faceで配布されるGGUFのチャットテンプレートには、
@@ -40,15 +41,42 @@
     storeがbtrfsのようなreflink対応ファイルシステムなら、
     実際に書き込まれるのは書き換えたメタデータのブロックだけで済む。
     22GB級のGGUFを丸ごと複製せずに派生を作れる。
+
+  なぜfixed-output derivationにするか:
+    通常のderivationだと出力パスがPythonやstdenvのstoreパスから決まるため、
+    flake.lockの更新のたびに中身が同じまま別のパスになる。
+    `allowSubstitutes = false`はこのderivationをビルドする時の判定にしか効かず、
+    参照元のパスをキャッシュから取得するとクロージャの一部として一緒に取得される。
+    そのため更新のたびにGGUF全体の再取得が走っていた。
+    差分の適用は決定的でビット単位で同じ出力が得られるので、
+    適用後のhashで出力パスを固定すれば、
+    ツールが更新されても再ビルドと再取得は走らない。
+
+    fixed-output derivationにはネットワークアクセスが許されるが、
+    この処理はネットワークを使わないので実質的な差はない。
+
+  hashの更新を忘れると古い出力が使われ続ける:
+    出力パスは名前とhashだけで決まるので、
+    `gguf`や`patch`を変えてもhashがそのままなら、
+    既にある出力が再ビルドされずにそのまま使われてエラーにもならない。
+    `gguf`や`patch`を変えた時は必ずhashも更新する。
+    `hash = ""`で一度ビルドして、
+    hash mismatchのエラーに出る実際の値を書き写す。
 */
 { pkgs }:
 {
   gguf,
   patch,
+  hash,
 }:
 pkgs.runCommand "${gguf.name}-patched-template"
   {
     nativeBuildInputs = [ pkgs.python3 ];
+
+    outputHashMode = "flat";
+    outputHashAlgo = "sha256";
+    outputHash = hash;
+
     # ネットワークもコンパイルも無いのでリモートビルダーに投げる意味がない。
     preferLocalBuild = true;
     # 出力は数十GBある。

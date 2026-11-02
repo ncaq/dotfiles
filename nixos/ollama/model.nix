@@ -96,6 +96,7 @@ let
               hash = "sha256-0PqUrycPPeQmll8fn29hQKrp9arZuIu0ZkUkknSNUm4=";
             };
             patch = ./qwen3.8-chat-template.patch;
+            hash = "sha256-hNa87dUY35OHeEY34ey9ld0obztOuCy0us4lmgNs6/w=";
           })
           (fetchHuggingFace {
             owner = "unsloth";
@@ -153,6 +154,7 @@ let
               hash = "sha256-E0TQdCXXPw0bjzYhORDq6P7CEGGxqQg1kn6EhSOPk6Q=";
             };
             patch = ./qwen3.8-chat-template.patch;
+            hash = "sha256-hzzpKJupdhn7aQhIWzP8t/lLkfQ5YUSFojOHPORu5ro=";
           })
           (fetchHuggingFace {
             owner = "0bserverx";

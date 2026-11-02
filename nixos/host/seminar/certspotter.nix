@@ -380,6 +380,21 @@ in
     hooks = [ (lib.getExe hook) ];
   };
 
+  # certspotterは起動時にログリストを取得して、
+  # 名前解決に失敗するとすぐ終了します。
+  # nixpkgsのモジュールは`network.target`しか待たないので、
+  # ブート時に回線が繋がる前に起動して失敗してしまいます。
+  # 監視が止まったままだと気づけないので、
+  # DNSの一時的な障害に備えて再起動もさせます。
+  systemd.services.certspotter = {
+    wants = [ "network-online.target" ];
+    after = [ "network-online.target" ];
+    serviceConfig = {
+      Restart = "on-failure";
+      RestartSec = "30s";
+    };
+  };
+
   # 検知したイベントは既存のMackerelの通知経路に乗せます。
   # mackerel-agentはrootで動くのでcertspotterのstateディレクトリを直接読めます。
   services.mackerel-agent.settings.plugin.checks.certspotter = {

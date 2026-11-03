@@ -13,7 +13,19 @@ in
 {
   programs.claude-code = {
     enable = true;
-    package = pkgs-unstable.claude-code;
+    # nixpkgsはネイティブバイナリを`wrapProgram`で包んで環境変数を設定しています。
+    # home-managerはさらにその上を`--plugin-dir`を付けるシェルスクリプトで包み、
+    # `exec -a "$0"`でargv[0]を引き継ごうとしますが、
+    # exec先がシェルスクリプトだとカーネルがargv[0]をスクリプトのパスに置き換えるため、
+    # 本体に届くargv[0]は`.claude-wrapped`になってしまいます。
+    # tmuxの`pane_current_command`などはargv[0]を見るのでウィンドウ名が`.claude-wrapped`と表示されます。
+    # nixpkgs側のラッパーをバイナリラッパーに差し替えると、
+    # `wrapProgram`が付ける`--inherit-argv0`が実際に効いてargv[0]が本体まで届きます。
+    # home-manager masterは`--plugin-dir`ラッパー自体を廃止済みなので、
+    # そちらが安定版に降りてきたらこの差し替えは不要になります。
+    package = pkgs-unstable.claude-code.override {
+      makeShellWrapper = pkgs-unstable.makeBinaryWrapper;
+    };
 
     # `CLAUDE.md`と同等です。
     context = config.prompt.codingAgent;

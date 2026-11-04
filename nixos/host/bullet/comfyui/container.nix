@@ -172,7 +172,7 @@ in
         };
         systemd.services.comfyui = {
           path = with pkgs; [
-            ffmpeg
+            ffmpeg-headless
             oxipng
           ];
           # Tritonはsm_100以上へのコンパイルに`ptxas`ではなく`ptxas-blackwell`を探す。

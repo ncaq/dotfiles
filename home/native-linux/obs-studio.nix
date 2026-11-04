@@ -9,6 +9,9 @@ in
 {
   programs.obs-studio = {
     enable = true;
+    # `browserSupport`は既定のtrueのままにしている。
+    # cef-binaryが閉包に入るだけなので、
+    # わざわざ外すほどではないと判断している。
     package = pkgs.obs-studio.override {
       cudaSupport = hasNvidia;
     };

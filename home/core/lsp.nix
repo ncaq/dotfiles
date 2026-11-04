@@ -35,7 +35,6 @@
     nil # Nix
     nixd # Nix、評価や補完機能が豊富な実装
     ocamlPackages.ocaml-lsp # OCaml
-    omnisharp-roslyn # C#向けのOmniSharp
     oxlint # JavaScriptやTypeScript向けの高速LSPとlinter
     prisma_7 # Prisma CLI内蔵のLanguage Server
     pyright # Pythonの型検査と補完

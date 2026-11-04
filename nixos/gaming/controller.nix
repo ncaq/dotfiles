@@ -1,5 +1,4 @@
 { pkgs, ... }: {
-  hardware.xpadneo.enable = true;
   environment.systemPackages = with pkgs; [
     dualsensectl
   ];

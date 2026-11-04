@@ -5,8 +5,12 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
 
-    flake-parts.url = "github:hercules-ci/flake-parts";
-    flake-utils.url = "github:numtide/flake-utils";
+    flake-parts = {
+      url = "github:hercules-ci/flake-parts";
+      # flake-partsは`lib`だけを切り出した`nixpkgs.lib`リポジトリを別に持つが、
+      # こちらのnixpkgsの`lib`で足りるので取得を重複させない。
+      inputs.nixpkgs-lib.follows = "nixpkgs";
+    };
 
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";
@@ -20,7 +24,12 @@
 
     nixos-wsl = {
       url = "github:nix-community/NixOS-WSL/main";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        # 上流の`default.nix`がflakeを使わない呼び出しに応えるための互換シム。
+        # flakeとして使うこちらには不要なので、rootを指させて取得させない。
+        flake-compat.follows = "";
+      };
     };
 
     nix-on-droid = {
@@ -28,6 +37,15 @@
       inputs = {
         nixpkgs.follows = "nixpkgs";
         home-manager.follows = "home-manager";
+        # 以下は上流のbootstrap zipの生成とドキュメントの生成とフォーマッタのためだけの入力で、
+        # こちらが使う`lib.nixOnDroidConfiguration`と`overlays.default`は触らない。
+        # nixpkgsの形をしたものはこちらのnixpkgsへ向けて、
+        # 取得するnixpkgsの一式が増えないようにする。
+        # 他は使い道がないのでrootを指させて取得させない。
+        nixpkgs-for-bootstrap.follows = "nixpkgs";
+        nixpkgs-docs.follows = "nixpkgs";
+        nix-formatter-pack.follows = "";
+        nmd.follows = "";
       };
     };
 
@@ -43,7 +61,12 @@
 
     microvm = {
       url = "github:microvm-nix/microvm.nix";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        # GPUを通すcloud-hypervisorを組むためだけに上流がgit cloneしているSpectrum OSのソース。
+        # こちらのVMは使わないので、rootを指させて取得させない。
+        spectrum.follows = "";
+      };
     };
 
     sops-nix = {

@@ -22,7 +22,6 @@
     ++ lib.optionals stdenv.hostPlatform.isx86_64 [
       discord
       slack
-      virtualbox
       zoom-us
     ];
 }

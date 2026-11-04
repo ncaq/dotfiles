@@ -29,6 +29,9 @@ in
       # 宣言的に書いたプロファイル以外がランタイムに出現するのを防ぐ。
       settings.main.no-auto-default = "*";
     };
+    # NetworkManagerが既定で有効にするが、
+    # モデムを持つホストは無いので動かさない。
+    modemmanager.enable = false;
     nameservers = encryptedDns;
   };
 

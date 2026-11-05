@@ -91,8 +91,6 @@ in
       # exit node経由の端末からこのアドレスへ届くかどうかは、
       # tailscaledのパケットフィルタとtailnetのACLで決まる。
       # `tailscale-exit-node.nix`を参照。
-      #
-      # ワイルドカードはnftablesの記法(`machine-mapping.nix`の`internalInterfaces`を参照)。
       firewall.interfaces."ve-*".allowedTCPPorts = [ 443 ];
     };
     # vethインターフェースはコンテナ起動時に作成されるため、

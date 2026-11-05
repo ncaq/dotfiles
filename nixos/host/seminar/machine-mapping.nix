@@ -141,10 +141,6 @@ in
   config = {
     networking.nat = {
       enable = true;
-      # インターフェイス名のワイルドカードはfirewallのバックエンドで記法が違う。
-      # iptablesは`ve-+`、nftablesは`ve-*`で、
-      # nftablesに`ve-+`を渡すと`ve-+`という名前そのものへの一致になって何にも合わない。
-      # seminarはnftablesなので`*`で書く(`nftables.nix`を参照)。
       internalInterfaces = [
         "ve-*" # container veth interfaces
         "vm-*" # microVM TAP interfaces

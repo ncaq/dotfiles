@@ -21,6 +21,9 @@
 }:
 let
   addr = config.machineAddresses.mcp-nixos;
+  # ホスト側のTAPインターフェイス名。
+  # VMの定義とsystemd-networkdと帯域制限と出口の制限が同じ名前を使うので1箇所に置く。
+  tap = "vm-mcp-nixos";
   # mcp-nixosリポジトリのwebサイトで使われているfaviconです。
   # コミットをpinして取得の再現性を保証します。
   favicon = pkgs.fetchurl {
@@ -69,7 +72,7 @@ in
         interfaces = [
           {
             type = "tap";
-            id = "vm-mcp-nixos";
+            id = tap;
             mac = "02:00:00:00:00:31"; # 末尾バイトはゲストIPアドレスに対応
           }
         ];
@@ -149,6 +152,16 @@ in
       };
     };
   };
+  # mcp-nixosの出口はインターネットだけ。
+  # search.nixos.orgやGitHubやcache.nixos.orgのような公開APIへ問い合わせる読み取り専用のサーバで、
+  # 名前解決も上の`DNS`の通り公開DNSへ投げる。
+  # 自宅LANやtailnetや他のコンテナへ出る理由は無い。
+  # TAPはコンテナのvethと違って名前を導けないので、VMの定義と同じ名前を明示する。
+  local.machineEgress.mcp-nixos = {
+    interface = tap;
+    internet = true;
+  };
+
   systemd = {
     network = {
       enable = true;
@@ -156,8 +169,8 @@ in
       # networking.interfacesが生成するnetwork-addresses-*サービスは、
       # network.targetより前に順序付けられるため、
       # network.targetより後に作成されるTAPインターフェースと相性が悪いです。
-      networks."20-vm-mcp-nixos" = {
-        matchConfig.Name = "vm-mcp-nixos";
+      networks."20-${tap}" = {
+        matchConfig.Name = tap;
         addresses = [
           { Address = "${addr.host}/32"; }
         ];
@@ -178,7 +191,7 @@ in
         Type = "oneshot";
         RemainAfterExit = true;
         ExecStart =
-          "${pkgs.iproute2}/bin/tc qdisc replace dev vm-mcp-nixos root tbf"
+          "${pkgs.iproute2}/bin/tc qdisc replace dev ${tap} root tbf"
           + " rate 100mbit burst 10mbit latency 400ms";
         # tcはnetlink経由でqdiscを設定するだけなので、
         # CAP_NET_ADMINとAF_NETLINKだけ許可する。

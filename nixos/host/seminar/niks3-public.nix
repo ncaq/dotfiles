@@ -119,6 +119,13 @@ in
     groups.niks3-public.gid = user.gid;
   };
 
+  # niks3-publicの出口。
+  # GitHub ActionsからのOIDC認証で、
+  # issuerのdiscoveryとJWKSをtoken.actions.githubusercontent.comから取るのでインターネットが要る。
+  # garageへは上の`hosts`の通りホストのCaddyへ繋ぐので転送ではなくinputで届き、
+  # それは`caddy.nix`が開けている。
+  local.machineEgress.niks3-public.internet = true;
+
   postgresClient = [ "niks3-public" ];
 
   systemd.services = {

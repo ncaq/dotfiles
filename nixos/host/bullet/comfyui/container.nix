@@ -227,6 +227,12 @@ in
     # NetworkManagerがコンテナのvethを管理しようとして競合するのを防ぐ。
     networkmanager.unmanaged = [ "interface-name:ve-*" ];
   };
+  # ComfyUIの出口はインターネットだけ。
+  # モデルやカスタムノードの取得に要る。
+  # 利用者はTailscale Serviceからホストの中継を経て繋ぎに来る側なので、
+  # 自宅LANやtailnetや他のコンテナへ出る理由は無い。
+  # カスタムノードは任意のPythonコードなので、出口を絞る価値はCIランナーと変わらない。
+  local.machineEgress.comfyui.internet = true;
   systemd = {
     services."container@comfyui".serviceConfig = {
       # OSや他の処理のために2スレッド分を残す既存のCPU予算を使う。

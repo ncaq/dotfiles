@@ -123,6 +123,12 @@ in
     groups.garage.gid = user.gid;
   };
 
+  # garageは外へ出ない。
+  # `replication_factor = 1`の単一ノードで同期する相手が無く、
+  # S3とAdmin APIのクライアントは全てこちらへ繋ぎに来る側なので、
+  # 転送を1つも許さない。
+  local.machineEgress.garage = { };
+
   systemd = {
     services."container@garage" = {
       requires = [ "sops-install-secrets.service" ];

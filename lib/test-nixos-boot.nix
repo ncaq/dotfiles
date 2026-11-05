@@ -109,47 +109,60 @@ lib.mapAttrs (
       )
     );
 
-    # CIランナーのコンテナからの転送を落とす専用テーブル
-    # (`nixos/host/seminar/github-runner/egress-filter.nix`)が、
-    # 実際に読み込まれていて、落とすべき宛先を落としていることを確認します。
-    # この境界はファイルがimportから外れたりテーブル名が変わったりしても、
-    # 残りのルールセットは問題なく読み込まれるので静かに消えます。
+    # コンテナとmicroVMからの転送の許可リスト(`nixos/native-linux/machine-egress.nix`)が、
+    # 実際に読み込まれていて、宣言した通りの形になっていることを確認します。
+    # この境界はテーブルが消えても残りのルールセットは問題なく読み込まれるので静かに消えます。
     #
-    # 発火条件は守りたいもの(CIランナーのコンテナがある)にして、
+    # 発火条件は守りたいもの(出口を絞るべきマシンがある)にして、
     # 守り方(テーブルの有無)には連動させません。
     # テーブル名は設定から直接参照するので、
     # テーブルが消えればこの検査ごと消えるのではなく、
     # 属性が無いという評価エラーで止まります。
     #
     # 独立したベースチェインなので他のチェインとの並び順は関係ありません。
-    # 代わりに宛先の集合にLANとDNAT後のコンテナを含む`192.168.0.0/16`と、
-    # tailnetの範囲が入っていることを見ます。
-    # IPv6はnftが`fd7a:115c:a1e0::/48`をULA全体の`fc00::/7`に併合して表示するので、
-    # 併合後の`fc00::/7`で見ます。
+    # 代わりに以下を見ます。
+    #
+    # - NATが転送を通すインターフェイスからのパケットが許可リストのチェインへ飛ぶこと
+    # - `internet`から除く集合に、LANとDNAT後のコンテナを含む`192.168.0.0/16`とtailnetの範囲が入っていること
+    # - 各マシンのacceptが宣言した宛先の数だけあり、`internet`は除く集合の否定で書かれていること
+    # - 各マシンのルールの末尾と、チェイン全体の末尾がdropであること
     nft = lib.getExe' (importPkgsStable hostDef.system).nftables "nft";
-    hasRunnerContainer = lib.any (lib.hasPrefix "github-runner") (
-      lib.attrNames hostDef.nixosSystem.config.containers
-    );
-    runnerEgressTest =
-      lib.optionalString hasRunnerContainer # python
+    machineEgress = hostDef.nixosSystem.config.local.machineEgress or { };
+    machineEgressTest =
+      lib.optionalString (machineEgress != { }) # python
         ''
           machine.wait_for_unit("nftables.service")
-          egress = machine.succeed(
-              "${nft} list chain inet"
-              " ${hostDef.nixosSystem.config.networking.nftables.tables.runner-egress.name} forward"
-          )
-          drops = [
-              line
-              for line in egress.splitlines()
-              if 'iifname "ve-github-*"' in line and "drop" in line.split()
-          ]
-          assert len(drops) == 2, egress
-          (ipv4_drop,) = [line for line in drops if " ip daddr " in line]
-          (ipv6_drop,) = [line for line in drops if " ip6 daddr " in line]
+          egress_table = "${hostDef.nixosSystem.config.networking.nftables.tables.machine-egress.name}"
+
+          egress_forward = machine.succeed(f"${nft} list chain inet {egress_table} forward")
+          assert "jump egress" in egress_forward, egress_forward
+
+          private_networks = machine.succeed(f"${nft} list set inet {egress_table} private-networks")
           for prefix in ["192.168.0.0/16", "${hostDef.nixosSystem.config.local.tailscale.ipv4Range}"]:
-              assert prefix in ipv4_drop, ipv4_drop
-          assert "fc00::/7" in ipv6_drop, ipv6_drop
-        '';
+              assert prefix in private_networks, private_networks
+
+          egress = machine.succeed(f"${nft} list chain inet {egress_table} egress")
+          # テーブルとチェインの枠を除いたルールの行だけにします。
+          egress_rules = [
+              line.strip()
+              for line in egress.splitlines()
+              if line.strip() and not line.strip().startswith(("table ", "chain ", "}"))
+          ]
+          assert "drop" in egress_rules[-1].split(), egress
+        ''
+      + lib.concatMapStrings (
+        m: # python
+        ''
+          machine_rules = [r for r in egress_rules if 'iifname "${m.interface}"' in r]
+          machine_accepts = [r for r in machine_rules if "accept" in r.split()]
+          assert len(machine_accepts) == ${
+            toString (lib.length m.destinations + (if m.internet then 1 else 0))
+          }, machine_rules
+          assert ${if m.internet then "" else "not "}any(
+              "!= @private-networks" in r for r in machine_accepts
+          ), machine_rules
+          assert "drop" in machine_rules[-1].split(), machine_rules
+        '') (lib.attrValues machineEgress);
 
     redirectTest =
       # 文字列の中身は`runNixOSTest`のテストドライバが実行するPythonです。
@@ -231,6 +244,6 @@ lib.mapAttrs (
     + redirectTest
     + serveTargetTest
     + postgresExtensionTest
-    + runnerEgressTest;
+    + machineEgressTest;
   }
 ) (lib.filterAttrs (_: def: !(def.nixosSystem.config.wsl.enable or false)) hostDefs)

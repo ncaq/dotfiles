@@ -176,7 +176,10 @@ in
   networking = {
     nat = {
       enable = true;
-      internalInterfaces = [ "ve-+" ];
+      # このモジュールはbullet(iptables)とseminar(nftables)の両方で使うので、
+      # vethのワイルドカードはバックエンドに合わせて切り替える。
+      # nftablesに`ve-+`を渡すとその名前そのものへの一致になって何にも合わない。
+      internalInterfaces = [ (if config.networking.nftables.enable then "ve-*" else "ve-+") ];
     };
     networkmanager.unmanaged = [ "interface-name:ve-*" ];
   };

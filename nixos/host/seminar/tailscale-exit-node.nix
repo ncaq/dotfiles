@@ -41,4 +41,14 @@ in
     "--advertise-exit-node"
     "--advertise-routes=${lib.concatStringsSep "," internalRoutes}"
   ];
+
+  # exit nodeとして使う端末のパケットはtailscale0から入ってenp7s0へ転送される。
+  # `filterForward`でforwardチェインのpolicyがdropになっているので、
+  # tailscale0からの転送を明示的に許可しないと端末がインターネットへ出られない。
+  # tailscaledも自前のテーブルで同じ転送を許可しているが、
+  # nftablesでは同じフックの全てのベースチェインを通る必要があり、
+  # こちらで落とすとそちらの許可は意味を持たない。
+  networking.firewall.extraForwardRules = ''
+    iifname "${config.services.tailscale.interfaceName}" accept comment "exit node traffic from tailnet"
+  '';
 }

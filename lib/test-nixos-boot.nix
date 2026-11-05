@@ -124,7 +124,8 @@ lib.mapAttrs (
     #
     # - NATが転送を通すインターフェイスからのパケットが許可リストのチェインへ飛ぶこと
     # - `internet`から除く集合に、LANとDNAT後のコンテナを含む`192.168.0.0/16`とtailnetの範囲が入っていること
-    # - 各マシンのacceptが宣言した宛先の数だけあり、`internet`は除く集合の否定で書かれていること
+    # - IPv6で`internet`から除く集合に、tailnetと他のコンテナを含むULA全体とリンクローカルが入っていること
+    # - 各マシンのacceptが宣言した宛先の数だけあり、`internet`はIPv4とIPv6の1つずつで除く集合の否定で書かれていること
     # - 各マシンのルールの末尾と、チェイン全体の末尾がdropであること
     nft = lib.getExe' (importPkgsStable hostDef.system).nftables "nft";
     machineEgress = hostDef.nixosSystem.config.local.machineEgress or { };
@@ -141,6 +142,10 @@ lib.mapAttrs (
           for prefix in ["192.168.0.0/16", "${hostDef.nixosSystem.config.local.tailscale.ipv4Range}"]:
               assert prefix in private_networks, private_networks
 
+          private_networks6 = machine.succeed(f"${nft} list set inet {egress_table} private-networks6")
+          for prefix in ["fc00::/7", "fe80::/10"]:
+              assert prefix in private_networks6, private_networks6
+
           egress = machine.succeed(f"${nft} list chain inet {egress_table} egress")
           # テーブルとチェインの枠を除いたルールの行だけにします。
           egress_rules = [
@@ -156,10 +161,13 @@ lib.mapAttrs (
           machine_rules = [r for r in egress_rules if 'iifname "${m.interface}"' in r]
           machine_accepts = [r for r in machine_rules if "accept" in r.split()]
           assert len(machine_accepts) == ${
-            toString (lib.length m.destinations + (if m.internet then 1 else 0))
+            toString (lib.length m.destinations + (if m.internet then 2 else 0))
           }, machine_rules
           assert ${if m.internet then "" else "not "}any(
-              "!= @private-networks" in r for r in machine_accepts
+              "!= @private-networks " in r for r in machine_accepts
+          ), machine_rules
+          assert ${if m.internet then "" else "not "}any(
+              "!= @private-networks6 " in r and "nexthop fe80::/10" in r for r in machine_accepts
           ), machine_rules
           assert "drop" in machine_rules[-1].split(), machine_rules
         '') (lib.attrValues machineEgress);

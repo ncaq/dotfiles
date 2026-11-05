@@ -10,6 +10,14 @@ let
   port = 11434;
   hostAddress = "192.168.100.20";
   localAddress = "192.168.100.21";
+  hostAddress6 = import ../../lib/machine-address6.nix {
+    inherit lib;
+    ipv4 = hostAddress;
+  };
+  localAddress6 = import ../../lib/machine-address6.nix {
+    inherit lib;
+    ipv4 = localAddress;
+  };
   ollamaUid = 501;
   ollamaGid = ollamaUid;
   dataDir = config.local.ollama.dataDir;
@@ -46,7 +54,12 @@ in
     ephemeral = true;
     privateNetwork = true;
     privateUsers = "pick";
-    inherit hostAddress localAddress;
+    inherit
+      hostAddress
+      localAddress
+      hostAddress6
+      localAddress6
+      ;
     allowedDevices = lib.optionals enableCuda (
       map (node: {
         inherit node;
@@ -177,6 +190,8 @@ in
   networking = {
     nat = {
       enable = true;
+      # ULAを持つコンテナをIPv6でも外へ出す(`lib/machine-address6.nix`)。
+      enableIPv6 = true;
       internalInterfaces = [ "ve-*" ];
     };
     networkmanager.unmanaged = [ "interface-name:ve-*" ];

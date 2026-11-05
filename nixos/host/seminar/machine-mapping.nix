@@ -1,17 +1,40 @@
 { lib, config, ... }:
 let
-  addressType = lib.types.submodule {
-    options = {
-      host = lib.mkOption {
-        type = lib.types.str;
-        description = "Host-side IP address";
+  addressType = lib.types.submodule (
+    { config, ... }:
+    {
+      options = {
+        host = lib.mkOption {
+          type = lib.types.str;
+          description = "Host-side IP address";
+        };
+        guest = lib.mkOption {
+          type = lib.types.str;
+          description = "Guest-side IP address (container or microVM)";
+        };
+        # IPv6はIPv4から導くので宣言しない。
+        # 導き方と、ULAにしている理由は`lib/machine-address6.nix`に書いてある。
+        host6 = lib.mkOption {
+          type = lib.types.str;
+          default = import ../../../lib/machine-address6.nix {
+            inherit lib;
+            ipv4 = config.host;
+          };
+          defaultText = lib.literalMD "`lib/machine-address6.nix`で`host`から導いたULA";
+          description = "Host-side IPv6 address (ULA derived from `host`)";
+        };
+        guest6 = lib.mkOption {
+          type = lib.types.str;
+          default = import ../../../lib/machine-address6.nix {
+            inherit lib;
+            ipv4 = config.guest;
+          };
+          defaultText = lib.literalMD "`lib/machine-address6.nix`で`guest`から導いたULA";
+          description = "Guest-side IPv6 address (ULA derived from `guest`)";
+        };
       };
-      guest = lib.mkOption {
-        type = lib.types.str;
-        description = "Guest-side IP address (container or microVM)";
-      };
-    };
-  };
+    }
+  );
   userType = lib.types.submodule {
     options = {
       uid = lib.mkOption {
@@ -141,6 +164,10 @@ in
   config = {
     networking.nat = {
       enable = true;
+      # ULAを持つコンテナとmicroVMをIPv6でも外へ出す。
+      # ホストにはLANの/64しか無くprefix delegationも無いので、
+      # IPv4と同じくmasqueradeで出すしかない(`lib/machine-address6.nix`)。
+      enableIPv6 = true;
       internalInterfaces = [
         "ve-*" # container veth interfaces
         "vm-*" # microVM TAP interfaces
@@ -179,6 +206,14 @@ in
             {
               name = "${name}.guest";
               value = entry.guest;
+            }
+            {
+              name = "${name}.host6";
+              value = entry.host6;
+            }
+            {
+              name = "${name}.guest6";
+              value = entry.guest6;
             }
           ]) config.machineAddresses
         );

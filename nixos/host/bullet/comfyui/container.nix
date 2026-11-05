@@ -50,6 +50,14 @@ let
   # LANの192.168.10.0/24と重複しない範囲を使う。
   hostAddress = "192.168.100.10";
   localAddress = "192.168.100.11";
+  hostAddress6 = import ../../../../lib/machine-address6.nix {
+    inherit lib;
+    ipv4 = hostAddress;
+  };
+  localAddress6 = import ../../../../lib/machine-address6.nix {
+    inherit lib;
+    ipv4 = localAddress;
+  };
   # コンテナ内のcomfyuiユーザのID。
   # ephemeralコンテナでは動的割り当ての記録が起動ごとに消えるため、
   # bind mountした`/var/lib/comfyui`の所有権がずれないように固定する。
@@ -91,7 +99,12 @@ in
     # コンテナを脱出されてもホスト上では無権限のUIDになるようにする。
     # identityと違いコンテナ内rootがホストのUID 0を持たなくなる。
     privateUsers = "pick";
-    inherit hostAddress localAddress;
+    inherit
+      hostAddress
+      localAddress
+      hostAddress6
+      localAddress6
+      ;
     # CUDAを使うためにNVIDIAデバイスをコンテナへ渡す。
     allowedDevices = map (node: {
       inherit node;
@@ -222,6 +235,8 @@ in
     # コンテナから外(モデルやカスタムノードのダウンロードなど)へ出られるようにする。
     nat = {
       enable = true;
+      # ULAを持つコンテナをIPv6でも外へ出す(`lib/machine-address6.nix`)。
+      enableIPv6 = true;
       internalInterfaces = [ "ve-*" ];
     };
     # NetworkManagerがコンテナのvethを管理しようとして競合するのを防ぐ。

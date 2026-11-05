@@ -40,10 +40,23 @@
 
   # IPv6
 
-  コンテナのvethにはリンクローカルのIPv6しか無く、
-  NATモジュールのmasqueradeもIPv4だけなので、
-  IPv6で外へ出る経路は元々無い。
-  許可ルールはIPv4だけを書き、IPv6は他と同じく既定のdropに落ちる。
+  コンテナとmicroVMにはULA(`lib/machine-address6.nix`)が付いていて、
+  NATモジュールの`enableIPv6`でmasqueradeされて外へ出る。
+  IPv4の`private-networks`に当たる集合はIPv6では`private-networks6`で、
+  tailnetと他のコンテナを含むULA全体とリンクローカルが入る。
+
+  自宅LANの機器が持つグローバルなIPv6アドレスは、
+  IPv4の192.168.0.0/16のような固定の範囲では表せない。
+  LANの/64はルータのRAで配られる動的な値で、
+  ここへ書き写すと変わった時に静かに穴が開く。
+  代わりに経路のnexthopで見分ける。
+  インターネット宛の転送はルータのリンクローカルアドレスをnexthopに持ち、
+  同じリンクにいるLAN機器宛の転送はその機器自身のアドレスがnexthopになる。
+  `rt ip6 nexthop fe80::/10`で前者だけを通せば、
+  LANの/64が何であってもLAN機器へは届かない。
+
+  `destinations`で個別に許す宛先は同じホスト上の他のマシンで、
+  そちらへはIPv4で繋いでいるのでIPv6の宛先は受け付けない。
 */
 { lib, config, ... }:
 let
@@ -105,7 +118,10 @@ let
         lib.concatMapStringsSep ", " toString d.tcpPorts
       } } accept comment "${names}: to ${d.address}"''
     ) m.destinations
-    ++ lib.optional m.internet ''${match} ip daddr != @private-networks accept comment "${names}: internet"''
+    ++ lib.optionals m.internet [
+      ''${match} ip daddr != @private-networks accept comment "${names}: internet"''
+      ''${match} ip6 daddr != @private-networks6 rt ip6 nexthop fe80::/10 accept comment "${names}: internet (IPv6)"''
+    ]
     ++ [ ''${match} counter drop comment "${names}: everything else"'' ];
   egressRules = lib.concatMap renderGroup (lib.attrValues byInterface);
 in
@@ -132,7 +148,8 @@ in
               type = lib.types.bool;
               default = false;
               description = ''
-                プライベートでないIPv4アドレスへの転送を許すか。
+                プライベートでないIPv4アドレスと、
+                ルータ越しにしか届かないIPv6アドレスへの転送を許すか。
                 自宅LAN、tailnet、他のコンテナ、リンクローカルは含まない。
                 名前解決もこの経路を使う。
                 コンテナのsystemd-resolvedはDNSサーバを教わらないのでフォールバックの公開DNSへ問い合わせるため、
@@ -191,6 +208,19 @@ in
             192.168.0.0/16,
             ${tailscale.ipv4Range},
             169.254.0.0/16
+          }
+        }
+
+        # IPv6で`internet`で許さない範囲。
+        # ULA全体(tailnetの${tailscale.ipv6Range}と他のコンテナを含む)とリンクローカル。
+        # 自宅LANのグローバルなアドレスはここには書けないので、
+        # 許可ルール側でnexthopがルータかどうかを見る。
+        set private-networks6 {
+          type ipv6_addr
+          flags interval
+          elements = {
+            fc00::/7,
+            fe80::/10
           }
         }
 

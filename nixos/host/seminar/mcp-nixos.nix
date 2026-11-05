@@ -116,13 +116,23 @@ in
           networks."20-lan" = {
             matchConfig.Type = "ether";
             networkConfig = {
-              Address = "${addr.guest}/24";
-              Gateway = addr.host;
+              Address = [
+                "${addr.guest}/24"
+                "${addr.guest6}/64"
+              ];
+              Gateway = [
+                addr.host
+                addr.host6
+              ];
               DNS = [
                 "1.1.1.1"
                 "1.0.0.1"
                 "8.8.8.8"
                 "8.8.4.4"
+                "2606:4700:4700::1111"
+                "2606:4700:4700::1001"
+                "2001:4860:4860::8888"
+                "2001:4860:4860::8844"
               ];
             };
           };
@@ -173,9 +183,11 @@ in
         matchConfig.Name = tap;
         addresses = [
           { Address = "${addr.host}/32"; }
+          { Address = "${addr.host6}/128"; }
         ];
         routes = [
           { Destination = "${addr.guest}/32"; }
+          { Destination = "${addr.guest6}/128"; }
         ];
       };
     };

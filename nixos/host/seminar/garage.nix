@@ -53,6 +53,8 @@ in
     privateUsers = "pick";
     hostAddress = addr.host;
     localAddress = addr.guest;
+    hostAddress6 = addr.host6;
+    localAddress6 = addr.guest6;
     # pickでは素のbind mountだと所有者が無効なUIDに見えてアクセスできないため、
     # idmapオプションで数値IDをホストとコンテナで同一視させる。
     # データディレクトリはbtrfs、環境ファイルはtmpfs上にありどちらもidmap対応。

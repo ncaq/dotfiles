@@ -109,6 +109,27 @@ lib.mapAttrs (
       )
     );
 
+    # CIランナーのコンテナからの転送を落とす専用テーブル
+    # (`nixos/host/seminar/github-runner/egress-filter.nix`)が、
+    # 実際に読み込まれていることを確認します。
+    # この境界はファイルがimportから外れたりテーブル名が変わったりしても、
+    # 残りのルールセットは問題なく読み込まれるので静かに消えます。
+    # 独立したベースチェインなので他のチェインとの並び順は関係なく、
+    # チェインの中に`ve-github-*`のdropがIPv4とIPv6の2本あることだけを見ます。
+    nft = lib.getExe' (importPkgsStable hostDef.system).nftables "nft";
+    runnerEgressTest =
+      lib.optionalString (hostDef.nixosSystem.config.networking.nftables.tables ? runner-egress) # python
+        ''
+          machine.wait_for_unit("nftables.service")
+          egress = machine.succeed("${nft} list chain inet runner-egress forward")
+          drops = [
+              line
+              for line in egress.splitlines()
+              if 'iifname "ve-github-*"' in line and " drop " in line
+          ]
+          assert len(drops) == 2, egress
+        '';
+
     redirectTest =
       # 文字列の中身は`runNixOSTest`のテストドライバが実行するPythonです。
       # 直前の`# python`はtree-sitterなどに埋め込み言語を伝えてハイライトさせる、
@@ -188,6 +209,7 @@ lib.mapAttrs (
     + caddyHealthTest
     + redirectTest
     + serveTargetTest
-    + postgresExtensionTest;
+    + postgresExtensionTest
+    + runnerEgressTest;
   }
 ) (lib.filterAttrs (_: def: !(def.nixosSystem.config.wsl.enable or false)) hostDefs)

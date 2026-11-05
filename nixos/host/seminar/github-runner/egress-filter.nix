@@ -1,4 +1,4 @@
-{ lib, config, ... }:
+{ config, ... }:
 {
   # CIランナーのコンテナからプライベートなネットワークへの転送を落とす。
   #
@@ -12,27 +12,43 @@
   #
   # - 自宅LAN(ルータの管理画面や他のホストの有線側)
   # - tailnet(seminarの身分でtailscale0から出ていく)
-  # - 他のコンテナのゲスト側アドレス
+  # - 他のコンテナのゲスト側アドレス。forgejoの2222のようにホストでDNATされる経路も含む
   #
   # 送信元アドレスではなくインターフェイス名で見るのは、
   # コンテナのrootは自分のnetns内で任意の送信元アドレスを名乗れるため。
   # vethの名前はIFNAMSIZの制限で`ve-github-rRhHH`のように短縮されるが、
   # 接頭辞は残るのでワイルドカードで拾える。
   #
-  # NATモジュールが`internalInterfaces`からのacceptを同じチェインに足すので、
-  # それより前に評価されるように`mkBefore`で先頭へ置く。
-  networking.firewall.extraForwardRules = lib.mkBefore ''
-    iifname "ve-github-*" ip daddr {
-      10.0.0.0/8,
-      172.16.0.0/12,
-      192.168.0.0/16,
-      ${config.local.tailscale.ipv4Range},
-      169.254.0.0/16
-    } drop comment "CI runner containers must not reach LAN, tailnet or other containers"
-    iifname "ve-github-*" ip6 daddr {
-      fc00::/7,
-      ${config.local.tailscale.ipv6Range},
-      fe80::/10
-    } drop comment "CI runner containers must not reach local IPv6 networks"
-  '';
+  # NixOSのfirewallの`extraForwardRules`ではなく専用のテーブルにしているのは、
+  # nixos-fwのforward-allowチェインの中での並び順に依存しないため。
+  # あちらでは`ct status dnat accept`がどのルールよりも先に評価されるので、
+  # DNATされた2222への転送はdropを素通りするし、
+  # NATモジュールの`internalInterfaces`のacceptより前に並ぶことも`mkBefore`の順序に頼ることになる。
+  # nftablesでは同じフックの全てのベースチェインを通る必要があり、
+  # どこか1つのチェインでdropされたパケットは他のチェインがacceptしていても落ちる。
+  # 独立したベースチェインに置けば、
+  # nixos-fwやnixos-natの中身がどう並んでいても必ず評価される。
+  # priorityを`filter - 1`にしてnixos-fwより先に評価させるのは、
+  # dropが決まっているパケットに他のチェインの評価を費やさないため。
+  networking.nftables.tables.runner-egress = {
+    family = "inet";
+    content = ''
+      chain forward {
+        type filter hook forward priority filter - 1; policy accept;
+
+        iifname "ve-github-*" ip daddr {
+          10.0.0.0/8,
+          172.16.0.0/12,
+          192.168.0.0/16,
+          ${config.local.tailscale.ipv4Range},
+          169.254.0.0/16
+        } drop comment "CI runner containers must not reach LAN, tailnet or other containers"
+        iifname "ve-github-*" ip6 daddr {
+          fc00::/7,
+          ${config.local.tailscale.ipv6Range},
+          fe80::/10
+        } drop comment "CI runner containers must not reach local IPv6 networks"
+      }
+    '';
+  };
 }

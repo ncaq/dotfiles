@@ -79,12 +79,15 @@ in
   # LANのインターフェイスにはグローバルIPv6アドレスも付いていて、
   # インターフェイス単位の許可ではインターネットからそこへ届く経路を塞げないため。
   # LANのIPv6はリンクローカルだけ許す。
-  # LAN内のWindowsが探索で見つけた相手へIPv6で繋ぎに来ることがあり、
+  # wsddはIPv6のマルチキャストでも探索に応答し、
+  # LAN内のWindowsが探索で見つけた相手へIPv6で繋ぎに来ることがあるが、
   # リンクローカルならインターネットからは届かない。
+  # NetBIOS(137/138)はIPv4だけのプロトコルなのでIPv6側には無い。
   networking.firewall.extraInputRules = ''
     iifname "${lanInterface}" ip saddr ${lanIpv4Subnet} tcp dport { 139, 445, 5357 } accept comment "SMB and wsdd from LAN"
     iifname "${lanInterface}" ip saddr ${lanIpv4Subnet} udp dport { 137, 138, 3702 } accept comment "NetBIOS and wsdd from LAN"
-    iifname "${lanInterface}" ip6 saddr fe80::/10 tcp dport { 139, 445 } accept comment "SMB from LAN link-local IPv6"
+    iifname "${lanInterface}" ip6 saddr fe80::/10 tcp dport { 139, 445, 5357 } accept comment "SMB and wsdd from LAN link-local IPv6"
+    iifname "${lanInterface}" ip6 saddr fe80::/10 udp dport 3702 accept comment "wsdd from LAN link-local IPv6"
     iifname "${tailscaleInterface}" ip saddr ${tailscaleIpv4Range} tcp dport 445 accept comment "SMB from tailnet"
     iifname "${tailscaleInterface}" ip6 saddr ${tailscaleIpv6Range} tcp dport 445 accept comment "SMB from tailnet"
   '';

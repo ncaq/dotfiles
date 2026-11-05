@@ -10,14 +10,5 @@
   #
   # `local.lan`はseminarの`lan.nix`が宣言しているオプションで、
   # server層を取り込むホストは今のところseminarだけなのでそのまま参照する。
-  networking.firewall.interfaces.${config.local.lan.interface} = {
-    allowedTCPPorts = config.services.openssh.ports;
-    # nixpkgsのprograms.moshモジュールがopenFirewallで開放する範囲と同じ。
-    allowedUDPPortRanges = [
-      {
-        from = 60000;
-        to = 61000;
-      }
-    ];
-  };
+  networking.firewall.interfaces.${config.local.lan.interface} = config.local.ssh.firewallRule;
 }

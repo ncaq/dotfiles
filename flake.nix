@@ -90,21 +90,20 @@
       };
     };
 
-    # 依存関係が繊細であり、
-    # nixpkgsをfollowするとstableでもunstableでもビルドに失敗します。
-    # 例えば、
-    # torch wheelのCUDAランタイム依存やwebsocketsのバージョン制約が、
-    # 上流がpinしたnixpkgsリビジョンに強く紐付いているため。
-    # 上流のREADMEもfollowsなしを標準構成としており、
-    # 上流に自動追随するためには自前のpinも避けたいので、
-    # nixpkgsノードの重複は意図的に許容します。
-    # flake.lockのノード名はrootからのDFS(兄弟はアルファベット順)で決まるため、
-    # input名を`nixpkgs`より後ろに来る名前にすることで、
-    # root直下のnixpkgsがプレーンな`nixpkgs`ノード名を保ち、
-    # `nixpkgs_2`はこちら側の推移的nixpkgsに割り当てられます。
+    # 上流のREADMEはfollowsなしを標準構成としていますが、
+    # unstableへfollowさせても評価とビルドは通り、画像と動画の生成も動きます。
+    # stableだとtransformersが古く、
+    # flash_attnが無い環境で辞書参照がKeyErrorになる不具合を踏んで、
+    # SeedVR2のカスタムノードが読み込めません。
+    # comfyui-nixのパッケージと一緒に実行するプログラムは、
+    # 同じnixpkgsから取る必要があります。
+    # 詳細は`nixos/host/bullet/comfyui/container.nix`の`comfyPkgs`のコメントを参照。
     utensils-comfyui-nix = {
       url = "github:utensils/comfyui-nix";
-      inputs.flake-parts.follows = "flake-parts";
+      inputs = {
+        nixpkgs.follows = "nixpkgs-unstable";
+        flake-parts.follows = "flake-parts";
+      };
     };
 
     git-hooks = {

@@ -7,9 +7,41 @@
   ...
 }:
 let
-  # unfreeの許可はホスト側のnixpkgsの設定にしかないため、
-  # コンテナ内のpkgsではなくホスト側から取る。
-  cudaNvcc = pkgs.cudaPackages_13.cuda_nvcc;
+  comfyuiNix = inputs.utensils-comfyui-nix;
+  versions = import "${comfyuiNix}/nix/versions.nix";
+  gpuSupport = "cuda";
+  # comfyui-nixのパッケージと、
+  # サービスがそれと一緒に実行するプログラムを組むためのpkgs。
+  # comfyui-nixのinputsのnixpkgs(flake.nixでfollowsを指定したもの)から作る。
+  #
+  # ホストやコンテナ自身のpkgsと混ぜてはいけない。
+  # comfyui-nixのランチャーはglibなどのライブラリを`LD_LIBRARY_PATH`で子プロセスにも渡すので、
+  # 別のnixpkgsのffmpegを`path`に置くとglibcの版が合わずに起動できなかった。
+  comfyPkgs = import comfyuiNix.inputs.nixpkgs {
+    inherit (pkgs.stdenv.hostPlatform) system;
+    config = {
+      # comfyui-nixのflakeが自身のpkgsに与えている設定と同じもの。
+      allowUnfree = true;
+      allowBrokenPredicate = pkg: (pkg.pname or "") == "open-clip-torch";
+      # このホストのRTX 5090(sm_120)だけに絞る。
+      # 既定ではTuringからBlackwellまで9アーキテクチャ分をnvccに渡すため、
+      # nvshmemのようにソースからビルドするCUDAパッケージのコンパイル時間が膨らむ。
+      # torchなどのwheelは事前ビルドなので影響しない。
+      cudaCapabilities = [ "12.0" ];
+    };
+  };
+  # comfyui-nixの`packages.<system>.cuda`と同じ組み立てを上のpkgsで行う。
+  # flakeの`mkComfyPackages`は公開されていないので中身の`nix/packages.nix`を直接呼ぶ。
+  comfyPackages = import "${comfyuiNix}/nix/packages.nix" {
+    inherit versions gpuSupport;
+    pkgs = comfyPkgs;
+    inherit (comfyPkgs) lib;
+    pythonOverrides = import "${comfyuiNix}/nix/python-overrides.nix" {
+      inherit versions gpuSupport;
+      pkgs = comfyPkgs;
+    };
+  };
+  cudaNvcc = comfyPkgs.cudaPackages_13.cuda_nvcc;
   # ComfyUIがlistenするポート。
   # ホスト側では`comfyui-proxy.socket`が同じ番号でlistenし、
   # コンテナ内のComfyUIへ転送する。
@@ -86,13 +118,9 @@ in
     # `bindMounts`はマウントオプションを渡せないのでextraFlagsで指定する。
     extraFlags = [ "--bind=${dataDir}:${dataDir}:idmap" ];
     config =
+      { lib, ... }:
       {
-        lib,
-        pkgs,
-        ...
-      }:
-      {
-        imports = [ inputs.utensils-comfyui-nix.nixosModules.default ];
+        imports = [ comfyuiNix.nixosModules.default ];
         system.stateVersion = "26.05";
         # コンテナにはホストのタイムゾーンが伝播しないため明示する。
         # 未設定だとUTCになり、出力ファイル名の生成日時がJSTとずれる。
@@ -106,6 +134,10 @@ in
         services.comfyui = {
           enable = true;
           gpuSupport = "cuda";
+          # 既定の`packageSet`はcomfyui-nixのflake自身のpkgsで組まれていて、
+          # `cudaCapabilities`などのnixpkgsの設定を外から渡せない。
+          # 自前の設定で組み直したものに差し替える。
+          packageSet.cuda = lib.mkForce comfyPackages.default;
           enableManager = true;
           inherit port;
           # ホストからvethを通してアクセスするので全インターフェースでlistenする。
@@ -171,7 +203,8 @@ in
           ];
         };
         systemd.services.comfyui = {
-          path = with pkgs; [
+          # ComfyUI本体と同じnixpkgsから取る。理由は`comfyPkgs`のコメントを参照。
+          path = with comfyPkgs; [
             ffmpeg-headless
             oxipng
           ];

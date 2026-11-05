@@ -8,6 +8,11 @@ let
   lanInterface = config.local.lan.interface;
   lanIpv4Subnet = config.local.lan.ipv4Subnet;
   tailscaleInterface = config.services.tailscale.interfaceName;
+  # Tailscaleが全tailnetで使う固定のアドレス範囲。
+  # https://tailscale.com/kb/1015/100.x-addresses
+  # https://tailscale.com/kb/1033/ip-and-dns-addresses
+  tailscaleIpv4Range = "100.64.0.0/10";
+  tailscaleIpv6Range = "fd7a:115c:a1e0::/48";
 in
 {
   services = {
@@ -24,20 +29,9 @@ in
           # セキュリティ設定
           "security" = "user"; # ユーザー認証必須
           "map to guest" = "never"; # ゲストアクセス禁止
-          # 待ち受けるアドレスをLANのプライベートアドレスとTailscaleのアドレスに限定する。
-          # firewallの制限と二重になるが、
-          # LANのインターフェイスにはグローバルIPv6アドレスも付いていて、
-          # インターフェイス単位のfirewallではそこへの到達を防げないため、
-          # bind先そのものを絞る。
-          # コンテナ向けのvethにもbindしなくなり、
-          # CIランナーなどのコンテナからホストのSMBへ到達できなくなる。
-          # サブネット表記にすると、そのサブネットに属するアドレスを持つインターフェイスのそのアドレスだけにbindする。
-          "bind interfaces only" = "yes";
-          "interfaces" = lib.concatStringsSep " " [
-            lanIpv4Subnet
-            "100.64.0.0/10" # Tailscale IPv4
-            "fd7a:115c:a1e0::/48" # Tailscale IPv6
-          ];
+          # 待ち受け先の制限は`bind interfaces only`ではなくfirewallで行う(下のnetworking.firewall)。
+          # Sambaはbroadcastできないインターフェイスをbind候補から外すので、
+          # point-to-pointのtailscale0には`interfaces`でどう書いてもbindできない。
         };
         "chihiro" = {
           "path" = "/mnt/noa/chihiro";
@@ -83,31 +77,22 @@ in
   # tailnetの端末はMagicDNS名で直接繋ぐので探索は要らない。
   # 139(NetBIOS session)は445(direct SMB)が使えない古いクライアント用なので、
   # tailnet側には開けない。
-  networking.firewall.interfaces = {
-    ${lanInterface} = {
-      allowedTCPPorts = [
-        139
-        445
-        5357 # wsdd
-      ];
-      allowedUDPPorts = [
-        137
-        138
-        3702 # wsdd
-      ];
-    };
-    ${tailscaleInterface}.allowedTCPPorts = [ 445 ];
-  };
+  #
+  # インターフェイスだけでなく送信元アドレスでも絞る。
+  # LANのインターフェイスにはグローバルIPv6アドレスも付いていて、
+  # インターフェイス単位の許可ではインターネットからそこへ届く経路を塞げないため。
+  # LANのIPv6はリンクローカルだけ許す。
+  # LAN内のWindowsが探索で見つけた相手へIPv6で繋ぎに来ることがあり、
+  # リンクローカルならインターネットからは届かない。
+  networking.firewall.extraInputRules = ''
+    iifname "${lanInterface}" ip saddr ${lanIpv4Subnet} tcp dport { 139, 445, 5357 } accept comment "SMB and wsdd from LAN"
+    iifname "${lanInterface}" ip saddr ${lanIpv4Subnet} udp dport { 137, 138, 3702 } accept comment "NetBIOS and wsdd from LAN"
+    iifname "${lanInterface}" ip6 saddr fe80::/10 tcp dport { 139, 445 } accept comment "SMB from LAN link-local IPv6"
+    iifname "${tailscaleInterface}" ip saddr ${tailscaleIpv4Range} tcp dport 445 accept comment "SMB from tailnet"
+    iifname "${tailscaleInterface}" ip6 saddr ${tailscaleIpv6Range} tcp dport 445 accept comment "SMB from tailnet"
+  '';
 
   systemd.services = {
-    # `bind interfaces only`を有効にするとsmbdは起動時に存在するインターフェイスにしかbindしないので、
-    # tailscale0が現れてから起動するように順序付ける。
-    # tailscaledが壊れていてもSMB自体は動くように、requiresではなくwantsにしておく。
-    samba-smbd = {
-      wants = [ "sys-subsystem-net-devices-${tailscaleInterface}.device" ];
-      after = [ "sys-subsystem-net-devices-${tailscaleInterface}.device" ];
-    };
-
     samba-password-setup = {
       description = "Setup Samba password for ncaq user";
       requires = [ "samba-smbd.service" ];

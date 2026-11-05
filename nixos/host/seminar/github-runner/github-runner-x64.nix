@@ -72,6 +72,8 @@ let
       privateUsers = "identity";
       hostAddress = addr.host;
       localAddress = addr.guest;
+      hostAddress6 = addr.host6;
+      localAddress6 = addr.guest6;
       bindMounts = {
         "/etc/runner-registration-token" = {
           hostPath = config.sops.secrets."runner-registration-token".path;

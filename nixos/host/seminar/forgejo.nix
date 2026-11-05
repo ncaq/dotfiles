@@ -34,6 +34,8 @@ in
     privateUsers = "identity";
     hostAddress = addr.host;
     localAddress = addr.guest;
+    hostAddress6 = addr.host6;
+    localAddress6 = addr.guest6;
     forwardPorts = [
       {
         containerPort = 2222;

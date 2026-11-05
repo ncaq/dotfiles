@@ -56,6 +56,8 @@ in
     privateUsers = "identity";
     hostAddress = addr.host;
     localAddress = addr.guest;
+    hostAddress6 = addr.host6;
+    localAddress6 = addr.guest6;
     bindMounts = {
       "/run/postgresql" = {
         hostPath = "/run/postgresql";

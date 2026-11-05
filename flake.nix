@@ -359,6 +359,9 @@
           systemd-specifier-test = mkNixTest "systemd-specifier-test" (
             import ./lib/systemd-specifier-test.nix { inherit lib; }
           );
+          machine-address6-test = mkNixTest "machine-address6-test" (
+            import ./lib/machine-address6-test.nix { inherit lib; }
+          );
           comfyui-api-workflow-test = mkNixTest "comfyui-api-workflow-test" (
             import ./lib/comfyui-api-workflow-test.nix { inherit lib; }
           );
@@ -465,6 +468,7 @@
                 comfyui-idle-free-memory-test
                 comfyui-workflow-cli-test
                 git-repo-subscribe
+                machine-address6-test
                 open-webui-user-settings-merge-test
                 patch-gguf-chat-template-test
                 safetensors-fp16

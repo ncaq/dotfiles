@@ -35,7 +35,7 @@
   - `lib`: `mkForce`に使う
   - `name`: 対象のコンテナ名。
     vethのインターフェース名とユニット名の両方を導く
-  - `addr`: `host`と`guest`を持つアドレスの組。
+  - `addr`: `host`と`guest`とIPv6の`host6`と`guest6`を持つアドレスの組。
     `machineAddresses`の同名エントリをそのまま渡す
 */
 {
@@ -48,7 +48,9 @@
     ifaceHost=ve-$INSTANCE
     ip link set dev "$ifaceHost" up
     ip addr add ${addr.host} dev "$ifaceHost" 2>/dev/null || true
+    ip -6 addr add ${addr.host6} dev "$ifaceHost" 2>/dev/null || true
     ip route add ${addr.guest} dev "$ifaceHost" 2>/dev/null || true
+    ip -6 route add ${addr.guest6} dev "$ifaceHost" 2>/dev/null || true
   '';
   # Linuxのインターフェース名はIFNAMSIZ(15文字)制限があるため、
   # 実際のインターフェース名は`ve-github-rRhHH`のように短縮されることがある。
@@ -56,7 +58,13 @@
   # コンテナ名から生成される完全な名前で正しくマッチする。
   network.networks."20-${name}-veth" = {
     matchConfig.Name = "ve-${name}";
-    addresses = [ { Address = "${addr.host}/32"; } ];
-    routes = [ { Destination = "${addr.guest}/32"; } ];
+    addresses = [
+      { Address = "${addr.host}/32"; }
+      { Address = "${addr.host6}/128"; }
+    ];
+    routes = [
+      { Destination = "${addr.guest}/32"; }
+      { Destination = "${addr.guest6}/128"; }
+    ];
   };
 }

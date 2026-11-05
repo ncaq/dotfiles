@@ -124,7 +124,8 @@ lib.mapAttrs (
     #
     # - NATが転送を通すインターフェイスからのパケットが許可リストのチェインへ飛ぶこと
     # - `internet`から除く集合に、LANとDNAT後のコンテナを含む`192.168.0.0/16`とtailnetの範囲が入っていること
-    # - 各マシンのacceptが宣言した宛先の数だけあり、`internet`は除く集合の否定で書かれていること
+    # - IPv6で`internet`から除く集合に、tailnetと他のコンテナを含むULA全体とリンクローカルが入っていること
+    # - 各マシンのacceptが宣言した宛先の数だけあり、`internet`はIPv4とIPv6の1つずつで除く集合の否定で書かれていること
     # - 各マシンのルールの末尾と、チェイン全体の末尾がdropであること
     nft = lib.getExe' (importPkgsStable hostDef.system).nftables "nft";
     machineEgress = hostDef.nixosSystem.config.local.machineEgress or { };
@@ -141,6 +142,10 @@ lib.mapAttrs (
           for prefix in ["192.168.0.0/16", "${hostDef.nixosSystem.config.local.tailscale.ipv4Range}"]:
               assert prefix in private_networks, private_networks
 
+          private_networks6 = machine.succeed(f"${nft} list set inet {egress_table} private-networks6")
+          for prefix in ["fc00::/7", "fe80::/10"]:
+              assert prefix in private_networks6, private_networks6
+
           egress = machine.succeed(f"${nft} list chain inet {egress_table} egress")
           # テーブルとチェインの枠を除いたルールの行だけにします。
           egress_rules = [
@@ -156,13 +161,83 @@ lib.mapAttrs (
           machine_rules = [r for r in egress_rules if 'iifname "${m.interface}"' in r]
           machine_accepts = [r for r in machine_rules if "accept" in r.split()]
           assert len(machine_accepts) == ${
-            toString (lib.length m.destinations + (if m.internet then 1 else 0))
+            toString (lib.length m.destinations + (if m.internet then 2 else 0))
           }, machine_rules
+          # 集合名は空白で区切られたトークンとして照合します。
+          # 部分文字列で見ると`@private-networks`が`@private-networks6`にも一致します。
           assert ${if m.internet then "" else "not "}any(
-              "!= @private-networks" in r for r in machine_accepts
+              "@private-networks" in r.split() for r in machine_accepts
+          ), machine_rules
+          assert ${if m.internet then "" else "not "}any(
+              "@private-networks6" in r.split() and "nexthop fe80::/10" in r for r in machine_accepts
           ), machine_rules
           assert "drop" in machine_rules[-1].split(), machine_rules
         '') (lib.attrValues machineEgress);
+
+    # コンテナとmicroVMがIPv6で外へ出るための土台が、
+    # `machine-egress`の許可リストとは別に揃っていることを確認します。
+    # 許可リストはfilterテーブルのルールの形しか見ないので、
+    # NATモジュールの`enableIPv6`が外れてIPv6のmasqueradeが消えても、
+    # vethやTAPへのULAの付与が設定から抜けても通ってしまいます。
+    #
+    # 以下を見ます。
+    #
+    # - IPv6のNATテーブルにmasqueradeがあること
+    # - IPv6アドレスを持つコンテナの設定ファイルに、ホスト側とコンテナ側のIPv6アドレスが書かれていること。
+    #   コンテナのinitとホスト側のpostStartはこのファイルを読んでアドレスと経路を付けます
+    # - ホスト側のsystemd-networkdの設定ファイルに、宣言したIPv6アドレスが書かれていること。
+    #   `lib/container-veth.nix`とmicroVMのTAPはpostStartではなくこちらで付けます
+    # - microVMのTAPに実際にIPv6アドレスが付くこと
+    #
+    # コンテナのvethは実際のインターフェイスを見ません。
+    # テストVMでは秘密情報が無いので大半のコンテナが起動に失敗して、
+    # vethが作られないからです。
+    # microVMは秘密情報を要らないものだけなのでテストVMでも起動します。
+    hostConfig = hostDef.nixosSystem.config;
+    nat = hostConfig.networking.nat;
+    ipv6Containers = lib.filterAttrs (_: c: c.hostAddress6 != null) hostConfig.containers;
+    isIpv6 = address: lib.hasInfix ":" address;
+    ipv6Networks = lib.filterAttrs (
+      _: n: lib.any (a: isIpv6 a.Address) n.addresses
+    ) hostConfig.systemd.network.networks;
+    ipv6Vms = lib.filter (name: ipv6Networks ? "20-vm-${name}") (
+      lib.attrNames (hostConfig.microvm.vms or { })
+    );
+    machineIpv6Test =
+      lib.optionalString (nat.enable && nat.enableIPv6) # python
+        ''
+          machine.wait_for_unit("nftables.service")
+          nat6 = machine.succeed("${nft} list table ip6 nixos-nat")
+          assert "masquerade" in nat6, nat6
+        ''
+      + lib.concatStrings (
+        lib.mapAttrsToList (
+          name: c: # python
+          ''
+            container_conf = machine.succeed("cat /etc/nixos-containers/${name}.conf")
+            assert "HOST_ADDRESS6=${c.hostAddress6}" in container_conf, container_conf
+            assert "LOCAL_ADDRESS6=${c.localAddress6}" in container_conf, container_conf
+          '') ipv6Containers
+      )
+      + lib.concatStrings (
+        lib.mapAttrsToList (
+          name: n:
+          lib.concatMapStrings (
+            a: # python
+            ''
+              machine.succeed("grep -qF 'Address=${a.Address}' /etc/systemd/network/${name}.network")
+            '') (lib.filter (a: isIpv6 a.Address) n.addresses)
+        ) ipv6Networks
+      )
+      + lib.concatMapStrings (
+        name:
+        lib.concatMapStrings (
+          a: # python
+          ''
+            machine.wait_for_unit("microvm@${name}.service")
+            machine.wait_until_succeeds("ip -6 addr show dev vm-${name} | grep -qF '${a.Address}'")
+          '') (lib.filter (a: isIpv6 a.Address) ipv6Networks."20-vm-${name}".addresses)
+      ) ipv6Vms;
 
     redirectTest =
       # 文字列の中身は`runNixOSTest`のテストドライバが実行するPythonです。
@@ -244,6 +319,7 @@ lib.mapAttrs (
     + redirectTest
     + serveTargetTest
     + postgresExtensionTest
-    + machineEgressTest;
+    + machineEgressTest
+    + machineIpv6Test;
   }
 ) (lib.filterAttrs (_: def: !(def.nixosSystem.config.wsl.enable or false)) hostDefs)

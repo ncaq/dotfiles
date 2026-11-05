@@ -8,11 +8,8 @@ let
   lanInterface = config.local.lan.interface;
   lanIpv4Subnet = config.local.lan.ipv4Subnet;
   tailscaleInterface = config.services.tailscale.interfaceName;
-  # Tailscaleが全tailnetで使う固定のアドレス範囲。
-  # https://tailscale.com/kb/1015/100.x-addresses
-  # https://tailscale.com/kb/1033/ip-and-dns-addresses
-  tailscaleIpv4Range = "100.64.0.0/10";
-  tailscaleIpv6Range = "fd7a:115c:a1e0::/48";
+  tailscaleIpv4Range = config.local.tailscale.ipv4Range;
+  tailscaleIpv6Range = config.local.tailscale.ipv6Range;
 in
 {
   services = {

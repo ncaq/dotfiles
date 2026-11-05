@@ -6,14 +6,32 @@
   ...
 }:
 {
-  options.local.tailscale.tailnet = lib.mkOption {
-    type = lib.types.str;
-    readOnly = true;
-    default = import ../../lib/tailnet.nix;
-    description = ''
-      `tailscale status`で確認できるこのtailnetのMagicDNSのsuffix。
-      ホスト名やService名にこれを付けたものが、tailnet内で引ける名前になる。
-    '';
+  options.local.tailscale = {
+    tailnet = lib.mkOption {
+      type = lib.types.str;
+      readOnly = true;
+      default = import ../../lib/tailnet.nix;
+      description = ''
+        `tailscale status`で確認できるこのtailnetのMagicDNSのsuffix。
+        ホスト名やService名にこれを付けたものが、tailnet内で引ける名前になる。
+      '';
+    };
+    # Tailscaleが全tailnetで使う固定のアドレス範囲。
+    # firewallで「tailnetからの通信」を送信元や宛先のアドレスで表す時の単一の出典。
+    # https://tailscale.com/kb/1015/100.x-addresses
+    # https://tailscale.com/kb/1033/ip-and-dns-addresses
+    ipv4Range = lib.mkOption {
+      type = lib.types.str;
+      readOnly = true;
+      default = "100.64.0.0/10";
+      description = "Tailscaleが各ノードへ割り当てるIPv4アドレスの範囲(CGNAT空間)。";
+    };
+    ipv6Range = lib.mkOption {
+      type = lib.types.str;
+      readOnly = true;
+      default = "fd7a:115c:a1e0::/48";
+      description = "Tailscaleが各ノードへ割り当てるIPv6アドレスの範囲(ULA)。";
+    };
   };
 
   config = {

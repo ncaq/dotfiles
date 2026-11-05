@@ -1,4 +1,4 @@
-{ lib, ... }:
+{ lib, config, ... }:
 {
   # CIランナーのコンテナからプライベートなネットワークへの転送を落とす。
   #
@@ -26,11 +26,12 @@
       10.0.0.0/8,
       172.16.0.0/12,
       192.168.0.0/16,
-      100.64.0.0/10,
+      ${config.local.tailscale.ipv4Range},
       169.254.0.0/16
     } drop comment "CI runner containers must not reach LAN, tailnet or other containers"
     iifname "ve-github-*" ip6 daddr {
       fc00::/7,
+      ${config.local.tailscale.ipv6Range},
       fe80::/10
     } drop comment "CI runner containers must not reach local IPv6 networks"
   '';

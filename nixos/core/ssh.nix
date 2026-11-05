@@ -8,6 +8,9 @@
     settings = {
       # パスワード認証を無効化
       PasswordAuthentication = false;
+      # PAM側がpam_u2fの後にpam_denyで閉じているので実害は無いが、
+      # キーボード対話認証も明示的に止めて、鍵認証以外の経路が無いことを設定から読めるようにする。
+      KbdInteractiveAuthentication = false;
     };
   };
   programs.mosh = {

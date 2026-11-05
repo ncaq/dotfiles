@@ -111,23 +111,44 @@ lib.mapAttrs (
 
     # CIランナーのコンテナからの転送を落とす専用テーブル
     # (`nixos/host/seminar/github-runner/egress-filter.nix`)が、
-    # 実際に読み込まれていることを確認します。
+    # 実際に読み込まれていて、落とすべき宛先を落としていることを確認します。
     # この境界はファイルがimportから外れたりテーブル名が変わったりしても、
     # 残りのルールセットは問題なく読み込まれるので静かに消えます。
-    # 独立したベースチェインなので他のチェインとの並び順は関係なく、
-    # チェインの中に`ve-github-*`のdropがIPv4とIPv6の2本あることだけを見ます。
+    #
+    # 発火条件は守りたいもの(CIランナーのコンテナがある)にして、
+    # 守り方(テーブルの有無)には連動させません。
+    # テーブル名は設定から直接参照するので、
+    # テーブルが消えればこの検査ごと消えるのではなく、
+    # 属性が無いという評価エラーで止まります。
+    #
+    # 独立したベースチェインなので他のチェインとの並び順は関係ありません。
+    # 代わりに宛先の集合にLANとDNAT後のコンテナを含む`192.168.0.0/16`と、
+    # tailnetの範囲が入っていることを見ます。
+    # IPv6はnftが`fd7a:115c:a1e0::/48`をULA全体の`fc00::/7`に併合して表示するので、
+    # 併合後の`fc00::/7`で見ます。
     nft = lib.getExe' (importPkgsStable hostDef.system).nftables "nft";
+    hasRunnerContainer = lib.any (lib.hasPrefix "github-runner") (
+      lib.attrNames hostDef.nixosSystem.config.containers
+    );
     runnerEgressTest =
-      lib.optionalString (hostDef.nixosSystem.config.networking.nftables.tables ? runner-egress) # python
+      lib.optionalString hasRunnerContainer # python
         ''
           machine.wait_for_unit("nftables.service")
-          egress = machine.succeed("${nft} list chain inet runner-egress forward")
+          egress = machine.succeed(
+              "${nft} list chain inet"
+              " ${hostDef.nixosSystem.config.networking.nftables.tables.runner-egress.name} forward"
+          )
           drops = [
               line
               for line in egress.splitlines()
-              if 'iifname "ve-github-*"' in line and " drop " in line
+              if 'iifname "ve-github-*"' in line and "drop" in line.split()
           ]
           assert len(drops) == 2, egress
+          (ipv4_drop,) = [line for line in drops if " ip daddr " in line]
+          (ipv6_drop,) = [line for line in drops if " ip6 daddr " in line]
+          for prefix in ["192.168.0.0/16", "${hostDef.nixosSystem.config.local.tailscale.ipv4Range}"]:
+              assert prefix in ipv4_drop, ipv4_drop
+          assert "fc00::/7" in ipv6_drop, ipv6_drop
         '';
 
     redirectTest =

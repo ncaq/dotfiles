@@ -87,7 +87,7 @@ in
           host = "0.0.0.0";
           inherit port;
           # コンテナのIPはホスト内に閉じているため、tailnet外のLANからは到達できない。
-          # ホストのFORWARDはACCEPTなので他のコンテナからも到達できるが、
+          # ホストはNATモジュールがコンテナのvethからの転送を許可しているので他のコンテナからも到達できるが、
           # ComfyUIなどから推論を利用する構想があるためこれは意図的に許容する。
           openFirewall = true;
           loadModels = config.local.ollama.loadModels;
@@ -176,7 +176,7 @@ in
   networking = {
     nat = {
       enable = true;
-      internalInterfaces = [ "ve-+" ];
+      internalInterfaces = [ "ve-*" ];
     };
     networkmanager.unmanaged = [ "interface-name:ve-*" ];
   };

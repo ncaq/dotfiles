@@ -222,7 +222,7 @@ in
     # コンテナから外(モデルやカスタムノードのダウンロードなど)へ出られるようにする。
     nat = {
       enable = true;
-      internalInterfaces = [ "ve-+" ];
+      internalInterfaces = [ "ve-*" ];
     };
     # NetworkManagerがコンテナのvethを管理しようとして競合するのを防ぐ。
     networkmanager.unmanaged = [ "interface-name:ve-*" ];

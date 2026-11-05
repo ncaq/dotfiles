@@ -195,6 +195,7 @@ _: {
     kernelModules = [ "bcache" ];
     initrd = {
       availableKernelModules = [ "bcache" ];
+      # TPM2による復号の脅威モデルは`boot.nix`の`nixos-root`と同じ。
       luks.devices = {
         "noa0" = {
           device = "/dev/disk/by-partlabel/disk-noa0-luks";

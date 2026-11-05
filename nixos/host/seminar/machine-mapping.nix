@@ -142,8 +142,8 @@ in
     networking.nat = {
       enable = true;
       internalInterfaces = [
-        "ve-+" # container veth interfaces
-        "vm-+" # microVM TAP interfaces
+        "ve-*" # container veth interfaces
+        "vm-*" # microVM TAP interfaces
       ];
     };
 

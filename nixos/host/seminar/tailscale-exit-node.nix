@@ -41,4 +41,21 @@ in
     "--advertise-exit-node"
     "--advertise-routes=${lib.concatStringsSep "," internalRoutes}"
   ];
+
+  # exit nodeとして使う端末のパケットはtailscale0から入って、
+  # LANのインターフェイス(`local.lan.interface`)へ転送される。
+  # `filterForward`でforwardチェインのpolicyがdropになっているので、
+  # tailscale0からの転送を明示的に許可しないと端末がインターネットへ出られない。
+  # tailscaledも自前のテーブルで同じ転送を許可しているが、
+  # nftablesでは同じフックの全てのベースチェインを通る必要があり、
+  # こちらで落とすとそちらの許可は意味を持たない。
+  #
+  # 出口はLANのインターフェイスに限定する。
+  # 広告しているサブネットルートはvethのホスト側アドレスで、
+  # それはINPUTで受けるので転送の出口にはならない。
+  # コンテナのvethやmicroVMのTAPへの転送はtailscaledのフィルタとACLが止めているが、
+  # こちらでも許可しないことで多層にする。
+  networking.firewall.extraForwardRules = ''
+    iifname "${config.services.tailscale.interfaceName}" oifname "${config.local.lan.interface}" accept comment "exit node traffic from tailnet to LAN"
+  '';
 }

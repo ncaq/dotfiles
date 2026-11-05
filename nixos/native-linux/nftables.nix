@@ -1,4 +1,15 @@
-_: {
+{ lib, config, ... }:
+let
+  # iptables時代の`ve-+`のようなワイルドカードは、
+  # nftablesではその名前そのものへの一致になって評価もビルドも通ったまま何にも合わない。
+  # iptables向けの資料から写した時の退行を評価時に止める。
+  endsWithPlus = lib.hasSuffix "+";
+  plusInternalInterfaces = lib.filter endsWithPlus config.networking.nat.internalInterfaces;
+  plusFirewallInterfaces = lib.filter endsWithPlus (
+    lib.attrNames config.networking.firewall.interfaces
+  );
+in
+{
   # firewallとNATのバックエンドをnftablesにする。
   #
   # カーネル側はNixOS 21.11からiptablesコマンド自体がiptables-nftなので、
@@ -18,4 +29,15 @@ _: {
   # このモジュールが`ip_tables`カーネルモジュールを読み込み禁止にしても、
   # iptables-nftはnf_tablesを使うので影響しない。
   networking.nftables.enable = true;
+
+  assertions = [
+    {
+      assertion = plusInternalInterfaces == [ ];
+      message = "networking.nat.internalInterfaces contains iptables-style wildcards ${toString plusInternalInterfaces}; nftables wildcards end with `*`, not `+`";
+    }
+    {
+      assertion = plusFirewallInterfaces == [ ];
+      message = "networking.firewall.interfaces contains iptables-style wildcards ${toString plusFirewallInterfaces}; nftables wildcards end with `*`, not `+`";
+    }
+  ];
 }

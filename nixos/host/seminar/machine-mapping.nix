@@ -1,5 +1,6 @@
 { lib, config, ... }:
 let
+  toAddress6 = ipv4: import ../../../lib/machine-address6.nix { inherit lib ipv4; };
   addressType = lib.types.submodule (
     { config, ... }:
     {
@@ -16,19 +17,13 @@ let
         # 導き方と、ULAにしている理由は`lib/machine-address6.nix`に書いてある。
         host6 = lib.mkOption {
           type = lib.types.str;
-          default = import ../../../lib/machine-address6.nix {
-            inherit lib;
-            ipv4 = config.host;
-          };
+          default = toAddress6 config.host;
           defaultText = lib.literalMD "`lib/machine-address6.nix`で`host`から導いたULA";
           description = "Host-side IPv6 address (ULA derived from `host`)";
         };
         guest6 = lib.mkOption {
           type = lib.types.str;
-          default = import ../../../lib/machine-address6.nix {
-            inherit lib;
-            ipv4 = config.guest;
-          };
+          default = toAddress6 config.guest;
           defaultText = lib.literalMD "`lib/machine-address6.nix`で`guest`から導いたULA";
           description = "Guest-side IPv6 address (ULA derived from `guest`)";
         };

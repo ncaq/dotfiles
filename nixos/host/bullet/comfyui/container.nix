@@ -50,14 +50,9 @@ let
   # LANの192.168.10.0/24と重複しない範囲を使う。
   hostAddress = "192.168.100.10";
   localAddress = "192.168.100.11";
-  hostAddress6 = import ../../../../lib/machine-address6.nix {
-    inherit lib;
-    ipv4 = hostAddress;
-  };
-  localAddress6 = import ../../../../lib/machine-address6.nix {
-    inherit lib;
-    ipv4 = localAddress;
-  };
+  toAddress6 = ipv4: import ../../../../lib/machine-address6.nix { inherit lib ipv4; };
+  hostAddress6 = toAddress6 hostAddress;
+  localAddress6 = toAddress6 localAddress;
   # コンテナ内のcomfyuiユーザのID。
   # ephemeralコンテナでは動的割り当ての記録が起動ごとに消えるため、
   # bind mountした`/var/lib/comfyui`の所有権がずれないように固定する。

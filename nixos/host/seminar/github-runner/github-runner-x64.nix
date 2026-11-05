@@ -136,6 +136,18 @@ in
 {
   containers = lib.mapAttrs mkRunnerContainer runnerContainerDefs;
 
+  # CIランナーの出口はインターネットだけ。
+  #
+  # ランナーの中ではリポジトリのワークフローが持ち込んだコードが動く。
+  # 必要な通信先はGitHubやcache.nixos.orgで、
+  # niks3-public.ncaq.netへのキャッシュの登録も、
+  # コンテナの中では公開DNSで引いてCloudflare Tunnel経由で届く。
+  # ホストのnix-daemonが行うsubstituteとpost-build-hookはホスト側の経路なので関係ない。
+  #
+  # 自宅LAN、tailnet、他のコンテナ(forgejoの2222のようにホストでDNATされる経路も含む)に、
+  # CIジョブを触らせる理由は無い。
+  local.machineEgress = lib.mapAttrs (_: _: { internet = true; }) runnerContainerDefs;
+
   systemd = lib.mkMerge (
     # ホスト側systemd-networkdでvethインターフェースにIPアドレスとルートを設定します。
     lib.mapAttrsToList (

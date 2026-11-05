@@ -5,6 +5,7 @@ let
   niks3PublicAddr = config.machineAddresses.niks3-public.guest;
   niks3PublicHostAddr = config.machineAddresses.niks3-public.host;
   niks3PrivateHostAddr = config.machineAddresses.niks3-private.host;
+  containerIfname = name: import ../../../lib/container-ifname.nix { inherit lib name; };
 in
 {
   # ホスト上でniks3-public.ncaq.netとgarage.ncaq.netをローカルのCaddyへ向けます。
@@ -82,7 +83,12 @@ in
     networking = {
       # 名前の向き先は`local.caddyInternalHosts`を参照。
       hosts = config.local.caddyInternalHosts;
-      # コンテナのvethインターフェースからCaddyの443への接続を許可する。
+      # garage.ncaq.netをホストのCaddy経由で使うniks3の2つのコンテナのvethからだけ、
+      # Caddyの443への接続を許可する。
+      # 他のコンテナがvethのホスト側アドレスの443へ繋ぐ用途は無い。
+      # CIランナーの中のniks3クライアントも公開DNSで引いてCloudflare Tunnel経由で届く。
+      # インターフェイス名は`ve-niks3-private`が15文字に収まらず縮められるので、
+      # `lib/container-ifname.nix`でパターンにする。
       #
       # Tailscale経由の接続はここでは開けない。
       # tailscaledが`INPUT`の先頭に挿す`ts-input`チェインが、
@@ -91,7 +97,15 @@ in
       # exit node経由の端末からこのアドレスへ届くかどうかは、
       # tailscaledのパケットフィルタとtailnetのACLで決まる。
       # `tailscale-exit-node.nix`を参照。
-      firewall.interfaces."ve-*".allowedTCPPorts = [ 443 ];
+      firewall.interfaces =
+        lib.genAttrs
+          (map containerIfname [
+            "niks3-public"
+            "niks3-private"
+          ])
+          (_: {
+            allowedTCPPorts = [ 443 ];
+          });
     };
     # vethインターフェースはコンテナ起動時に作成されるため、
     # Caddy起動時にはまだバインド先IPが存在しない場合がある。

@@ -49,6 +49,18 @@ in
   # PostgreSQLコンテナ側にデータベースとpeer認証のユーザを用意させる。
   postgresClient = [ "open-webui" ];
 
+  # Open WebUIの出口はインターネットだけ。
+  # web検索(`web-search.nix`)のAPIと検索結果のページの取得、
+  # 埋め込みモデルのHugging Faceからの取得に要る。
+  # OllamaとComfyUIへはホストのCaddy(`ollama-backend.nix`と`comfyui-backend.nix`)へ繋ぐので、
+  # 転送ではなくinputで届く。
+  # PostgreSQLはUnixソケット。
+  #
+  # チャットから渡されたURLをそのまま開く機能があるので、
+  # 自宅LANやtailnetや他のコンテナへ転送を許すと、
+  # UIを触れる人がそれらへHTTPリクエストを送れるSSRFになる。
+  local.machineEgress.open-webui.internet = true;
+
   # ベクトル検索に使うpgvector拡張をデータベースへ有効化させる。
   postgresExtension.open-webui = [ "vector" ];
 
@@ -182,9 +194,8 @@ in
         networking = {
           useHostResolvConf = lib.mkForce false;
           # Tailscale Serveの転送先として中継する、ホスト側のCaddyからの接続だけを許可する。
-          # ホストはNATモジュールがコンテナのvethからの転送を許可しているので、
-          # 他のコンテナからも自分のIPへ到達できてしまい、
-          # 認証を無効化したUIには送信元の制限が必要になる。
+          # 他のコンテナからの転送はホストの`local.machineEgress`が落とすが、
+          # 認証を無効化したUIなので送信元の制限をこちらでも持って多層にする。
           #
           # `extraInputRules`はnftables backendでしか適用されず、
           # iptables backendでは何の警告もなく無視される。

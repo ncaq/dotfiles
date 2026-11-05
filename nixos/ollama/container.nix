@@ -87,8 +87,9 @@ in
           host = "0.0.0.0";
           inherit port;
           # コンテナのIPはホスト内に閉じているため、tailnet外のLANからは到達できない。
-          # ホストはNATモジュールがコンテナのvethからの転送を許可しているので他のコンテナからも到達できるが、
-          # ComfyUIなどから推論を利用する構想があるためこれは意図的に許容する。
+          # 他のコンテナからはホストの`local.machineEgress`でこのアドレスを宛先に許した時だけ届く。
+          # ComfyUIなどから推論を利用する構想があるため、
+          # その時にコンテナ側で開け直さなくて済むようにこちらは開けておく。
           openFirewall = true;
           loadModels = config.local.ollama.loadModels;
           syncModels = false; # オンデマンド追加したモデルを残す。
@@ -180,4 +181,10 @@ in
     };
     networkmanager.unmanaged = [ "interface-name:ve-*" ];
   };
+
+  # Ollamaの出口はインターネットだけ。
+  # モデルの取得(`ollama pull`)でregistry.ollama.aiへ繋ぐ。
+  # 推論のクライアントはTailscale Serviceからホストの中継を経て繋ぎに来る側なので、
+  # 自宅LANやtailnetや他のコンテナへ出る理由は無い。
+  local.machineEgress.ollama.internet = true;
 }

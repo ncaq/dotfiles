@@ -143,6 +143,21 @@ in
     groups.forgejo.gid = user.gid;
   };
 
+  # forgejoの出口。
+  # LFSオブジェクトは上の`settings.lfs`の通りgarageのS3 APIへ置く。
+  # ミラーの取得やwebhookの送信や外部アバターの取得にはインターネットが要る。
+  # PostgreSQLはUnixソケットで、外からの到達はCloudflare TunnelとホストのDNATなので、
+  # それ以外の経路は要らない。
+  local.machineEgress.forgejo = {
+    internet = true;
+    destinations = [
+      {
+        address = garageAddr;
+        tcpPorts = [ 3900 ];
+      }
+    ];
+  };
+
   postgresClient = [ "forgejo" ];
 
   systemd = {

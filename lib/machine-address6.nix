@@ -19,12 +19,21 @@
   ホストごとに独立したネットワークなので複数のホストで同じ値を使って構わない。
   IPv4の192.168.100.0/24も同じ扱いになっている。
 
-  サブネットはIPv4の第3オクテットの100を、
-  下位はIPv4の第4オクテットを、それぞれそのまま16進の見た目で写す。
+  192.168.0.0/16をこの/48へ写す。
+  第3オクテットをサブネットに、第4オクテットをホストに、
+  それぞれそのまま16進の見た目で写す。
   192.168.100.11は`fdf2:a855:5a3f:100::11`になる。
   数値としては一致しない(0x11は17)が、
   IPv4とIPv6を並べて読んだ時に同じマシンだと分かることを優先した。
-  アドレスの一意性はIPv4側のassertionが保証する。
+  第3と第4のオクテットをそのまま写すので対応は単射で、
+  IPv4が互いに違えばIPv6も互いに違う。
+  先頭2オクテットは捨てるので192.168以外は受け付けない。
+  通すと別の/16と衝突する。
+
+  受け付けるのは10進の0-255を4つ並べたIPv4アドレスだけ。
+  `a.b.c.d`のような文字列をそのまま埋め込むと、
+  評価は通るのに実機で`ip`が拒否して初めて壊れる。
+  検査は`lib/machine-address6-test.nix`で固定している。
 
   # 引数
 
@@ -33,8 +42,28 @@
 */
 { lib, ipv4 }:
 let
-  prefix = "fdf2:a855:5a3f:100";
+  prefix = "fdf2:a855:5a3f";
   octets = lib.splitString "." ipv4;
+  # 10進の0-255だけを通す。
+  # `lib.toIntBase10`は符号や空文字列を受け付けないが、
+  # 先頭の0は通すので正規表現で字面も縛る。
+  isOctet =
+    s:
+    builtins.match "[0-9]{1,3}" s != null
+    && (
+      let
+        n = lib.toIntBase10 s;
+      in
+      0 <= n && n <= 255
+    );
 in
-assert lib.assertMsg (lib.length octets == 4) "machine-address6: `${ipv4}`はIPv4アドレスではありません";
-"${prefix}::${lib.last octets}"
+assert lib.assertMsg (
+  lib.length octets == 4 && lib.all isOctet octets
+) "machine-address6: `${ipv4}`はIPv4アドレスではありません";
+assert lib.assertMsg (
+  lib.take 2 octets == [
+    "192"
+    "168"
+  ]
+) "machine-address6: `${ipv4}`は192.168.0.0/16の外です。先頭2オクテットは写さないので他の/16は衝突します";
+"${prefix}:${lib.elemAt octets 2}::${lib.elemAt octets 3}"

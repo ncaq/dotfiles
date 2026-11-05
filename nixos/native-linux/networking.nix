@@ -53,6 +53,11 @@ in
         # 本体の設定でもDNS over TLSを利用するようにします。
         DNSOverTLS = "true";
         FallbackDNS = encryptedDns;
+        # LLMNRはDNSで引けなかった名前をリンクローカルにマルチキャストで問い合わせて、
+        # 名乗り出た相手を認証無しに信じる仕組みなので、
+        # 同じLANにいる攻撃者が任意の名前を自分に向けられる(Responder系の攻撃)。
+        # ホストの探索はwsddとavahi(mDNS)で足りているので、問い合わせる側としても無効にする。
+        LLMNR = "false";
       };
     };
   };

@@ -81,8 +81,8 @@ in
 
   # Open WebUIコンテナのvethからCaddyへの接続を許可する。
   # ここで開くのはOllama本体ではなくフェイルオーバーを行うCaddyだが、
-  # その先は認証のないOllamaなので`ve-+`のワイルドカードでは開けない。
-  # ホストのFORWARDはACCEPTなので、
+  # その先は認証のないOllamaなので`ve-*`のワイルドカードでは開けない。
+  # ホストはNATモジュールがコンテナのvethからの転送を許可しているので、
   # 他のコンテナで動く外部由来のコードからも到達できてしまう。
   networking.firewall.interfaces."ve-open-webui".allowedTCPPorts = [ port ];
 }

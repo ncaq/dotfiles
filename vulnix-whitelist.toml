@@ -188,10 +188,6 @@ comment = "Debianパッケージ固有のスクリプト(avahi-daemon-check-dns.
 cve = ["CVE-2022-26691"]
 comment = "macOS側の修正"
 
-["gcc"]
-cve = ["CVE-2023-4039"]
-comment = "AArch64のみ対象でDISPUTED。x86_64ホストには無関係"
-
 ["gimp"]
 cve = ["CVE-2025-8672", "CVE-2026-78465"]
 comment = ["macOS版のTCC権限の問題", "CVE-2026-78465は32bitビルド限定"]

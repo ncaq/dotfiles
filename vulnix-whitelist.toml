@@ -50,6 +50,10 @@
 # 修正のPRを `issue_url` に、おおむね1か月後の日付を `until` に書く。
 # 修正版が降りてくればバージョンが変わって外れ、
 # 修正が滞っていれば期限切れで再び報告される。
+# `["pname-version"]` が誤検知の判定で既に使われている時は、
+# 同じセクションに書くと `until` で誤検知の判定まで外れてしまうので、
+# `["pname"]`、それも使われていれば `["*"]` に書く。
+# 他のバージョンや他のパッケージの、修正の動きが無い同じCVEを巻き込む時は書かない。
 # 書き方の例は以下の通り。
 #
 #   ["foo-1.2.3"]
@@ -405,3 +409,228 @@ comment = "perl-5.42.3-env という派生物名のバージョンが 5.42.3-env
 ["samba-4.23.10"]
 cve = ["CVE-2026-2340"]
 comment = "4.23.8で修正済み。vfs_wormモジュールを設定していなければそもそも該当しない"
+
+# 本物の脆弱性で、nixpkgsで修正が進んでいてチャンネルに降りてくるのを待つもの。
+
+# gimpは ["gimp"] も ["gimp-3.0.8"] も誤検知の判定で使っているので、
+# 期限で一緒に外れないよう ["*"] にgimp固有のCVEを列挙する。
+["*"]
+cve = [
+  "CVE-2026-4150",
+  "CVE-2026-4151",
+  "CVE-2026-4152",
+  "CVE-2026-4153",
+  "CVE-2026-4154",
+  "CVE-2026-4887",
+  "CVE-2026-58381",
+  "CVE-2026-66758",
+  "CVE-2026-66759",
+  "CVE-2026-78475",
+  "CVE-2026-80101",
+  "CVE-2026-82324",
+  "CVE-2026-82328",
+  "CVE-2026-82343",
+]
+issue_url = [
+  "https://github.com/NixOS/nixpkgs/pull/505244",
+  "https://github.com/NixOS/nixpkgs/pull/562061",
+]
+until = "2026-12-06"
+comment = "gimp 3.0.8のCVE。unstableの3.2.6で修正済み。26.05へのバックポートは無く26.11待ち"
+
+# ["binutils-2.46"] は誤検知の判定で使っているので、バージョン無しで書く。
+["binutils"]
+cve = ["CVE-2026-6846"]
+issue_url = "https://github.com/NixOS/nixpkgs/pull/575360"
+until = "2026-12-06"
+comment = "上流コミット7a089e03をパッチとして当てるPRがstaging向けにopen。2.46.1でも直らない"
+
+["brotli-1.2.0"]
+cve = ["CVE-2026-111497"]
+issue_url = [
+  "https://github.com/NixOS/nixpkgs/pull/577208",
+  "https://github.com/NixOS/nixpkgs/pull/580394",
+]
+until = "2026-12-06"
+comment = "unstable由来。1.2.1への更新はstagingにマージ済みでstaging-nextからmasterへの降下待ち"
+
+["bun-1.3.13"]
+cve = ["CVE-2026-111497"]
+issue_url = "https://github.com/NixOS/nixpkgs/pull/582258"
+until = "2026-12-06"
+comment = "1.4.4へのrelease-26.05向けバックポートPRがopen。unstableは1.4.4に更新済み"
+
+["busybox-1.37.0"]
+cve = ["CVE-2025-46394"]
+issue_url = "https://github.com/NixOS/nixpkgs/pull/575361"
+until = "2026-12-06"
+comment = "unstableにだけパッチ済み。26.05へのバックポートは無く26.11待ち"
+
+["cups-2.4.19"]
+cve = [
+  "CVE-2026-107886",
+  "CVE-2026-107888",
+  "CVE-2026-107890",
+  "CVE-2026-55453",
+  "CVE-2026-55467",
+  "CVE-2026-55480",
+  "CVE-2026-61702",
+]
+issue_url = "https://github.com/NixOS/nixpkgs/pull/583991"
+until = "2026-12-06"
+comment = [
+  "2.4.20への更新PRがstaging向けにopen。26.05へのバックポートはまだ無い",
+  "CVE-2026-107885は2.4.20でも直らないので列挙していない",
+]
+
+["dhcpcd-10.3.1"]
+cve = ["CVE-2026-56113", "CVE-2026-56114", "CVE-2026-56116", "CVE-2026-56117"]
+issue_url = "https://github.com/NixOS/nixpkgs/pull/562813"
+until = "2026-12-06"
+comment = [
+  "10.5.2への更新PRがstaging-nixos向けにopen。26.05へのバックポートは無い",
+  "10.3.2へのバックポート(#534919)では直らない",
+]
+
+["fzf-0.72.0"]
+cve = ["CVE-2026-53432", "CVE-2026-53433"]
+issue_url = [
+  "https://github.com/NixOS/nixpkgs/pull/524290",
+  "https://github.com/NixOS/nixpkgs/pull/572684",
+]
+until = "2026-12-06"
+comment = "0.73.1で修正済みでunstableにだけある。26.05へのバックポートは閉じられたので26.11待ち"
+
+["giflib-5.2.2"]
+cve = ["CVE-2024-45993"]
+issue_url = "https://github.com/NixOS/nixpkgs/pull/526490"
+until = "2026-12-06"
+comment = "6.1.3で修正済みでunstableにだけある。メジャー更新なのでバックポートは無く26.11待ち"
+
+["glib-2.88.3"]
+cve = ["CVE-2026-58016"]
+issue_url = "https://github.com/NixOS/nixpkgs/pull/559510"
+until = "2026-12-06"
+comment = [
+  "上流の修正は2.89.0以降にしか無く、26.05の2.88.4への更新(#575749)では直らない",
+  "glib 2.90を含むGNOME 51はstagingにマージ済みで、unstableと26.11で追い付く",
+]
+
+["gst-plugins-good-1.26.11"]
+cve = ["CVE-2026-46469", "CVE-2026-46470"]
+issue_url = "https://github.com/NixOS/nixpkgs/pull/514056"
+until = "2026-12-06"
+comment = "GStreamer-SA-2026-0018。1.28.2で修正済みでunstableにだけある。26.11待ち"
+
+# ["gstreamer-1.26.11"] は誤検知の判定で使っているので、バージョン無しで書く。
+["gstreamer"]
+cve = [
+  "CVE-2026-18295",
+  "CVE-2026-18296",
+  "CVE-2026-18297",
+  "CVE-2026-18298",
+  "CVE-2026-18299",
+  "CVE-2026-73433",
+  "CVE-2026-73434",
+]
+issue_url = [
+  "https://github.com/NixOS/nixpkgs/pull/541369",
+  "https://github.com/NixOS/nixpkgs/pull/549902",
+]
+until = "2026-12-06"
+comment = [
+  "GStreamer-SA-2026-0050から0053は1.28.5、SA-2026-0072は1.28.6で修正済みでunstableにだけある",
+  "メンテナは26.05にバックポートしないと明言しているので26.11待ち",
+]
+
+["kotlin-2.3.21"]
+cve = ["CVE-2026-53914"]
+issue_url = "https://github.com/NixOS/nixpkgs/pull/560918"
+until = "2026-12-06"
+comment = "2.4.20で修正済みでunstableにだけある。26.05へのバックポートは無く26.11待ち"
+
+["libreoffice-25.8.5.2"]
+cve = ["CVE-2026-4430"]
+issue_url = "https://github.com/NixOS/nixpkgs/pull/551328"
+until = "2026-12-06"
+comment = "上流は25.8.7と26.2.3で修正。unstableにだけあり26.05へのバックポートは無く26.11待ち"
+
+["libreoffice-25.8.5.2-wrapped"]
+cve = ["CVE-2026-4430"]
+issue_url = "https://github.com/NixOS/nixpkgs/pull/551328"
+until = "2026-12-06"
+comment = "ラッパーの派生物名のバージョンが 25.8.5.2-wrapped と切り出されるので別に書く"
+
+["libsndfile-1.2.2"]
+cve = ["CVE-2024-50612", "CVE-2026-37555"]
+issue_url = "https://github.com/NixOS/nixpkgs/pull/575364"
+until = "2026-12-06"
+comment = [
+  "stable由来の派生物はバックポート(#576771)でパッチ済み",
+  "unstable由来の派生物向けのパッチはstagingにマージ済みでstaging-nextからの降下待ち",
+]
+
+["libusb-1.0.29"]
+cve = ["CVE-2026-23679", "CVE-2026-47104"]
+issue_url = "https://github.com/NixOS/nixpkgs/pull/521420"
+until = "2026-12-06"
+comment = "1.0.30で修正済みでunstableにだけある。26.05へのバックポートは無く26.11待ち"
+
+["miniaudio-0.11.25"]
+cve = ["CVE-2026-32837"]
+issue_url = "https://github.com/NixOS/nixpkgs/pull/581302"
+until = "2026-12-06"
+comment = "0.11.26への更新がmasterにマージ済み。26.05へのバックポートは無く26.11待ち"
+
+["mupdf-1.27.2"]
+cve = ["CVE-2026-7233"]
+issue_url = "https://github.com/NixOS/nixpkgs/pull/573327"
+until = "2026-12-06"
+comment = "1.28.5への更新がunstableにある。NVDの範囲は1.27.2以下。26.05へのバックポートは無い"
+
+["nghttp2-1.69.0"]
+cve = ["CVE-2026-58055"]
+issue_url = "https://github.com/NixOS/nixpkgs/pull/547111"
+until = "2026-12-06"
+comment = "1.70.0で修正済みでunstableにだけある。needs: port to stableだがバックポートPRは無い"
+
+["nmap-7.99"]
+cve = ["CVE-2026-58058"]
+issue_url = "https://github.com/NixOS/nixpkgs/pull/550056"
+until = "2026-12-06"
+comment = "7.991で修正済みでunstableにだけある。26.05へのバックポートは無く26.11待ち"
+
+["patch-2.8"]
+cve = ["CVE-2026-56288", "CVE-2026-56289"]
+issue_url = [
+  "https://github.com/NixOS/nixpkgs/pull/575363",
+  "https://github.com/NixOS/nixpkgs/pull/578579",
+]
+until = "2026-12-06"
+comment = "CVEパッチと2.8.1への更新がstagingにマージ済みでstaging-next待ち。26.05向けは無い"
+
+["rsync-3.5.0"]
+cve = ["CVE-2026-119741"]
+issue_url = "https://github.com/NixOS/nixpkgs/pull/583133"
+until = "2026-12-06"
+comment = "3.5.2への更新PRがstaging向けにopenで、release-26.05へのバックポートのラベル付き"
+
+["sqlite-3.53.3"]
+cve = [
+  "CVE-2026-119371",
+  "CVE-2026-119372",
+  "CVE-2026-119373",
+  "CVE-2026-119374",
+  "CVE-2026-119375",
+  "CVE-2026-119376",
+  "CVE-2026-119377",
+  "CVE-2026-119378",
+  "CVE-2026-119379",
+  "CVE-2026-119591",
+]
+issue_url = "https://github.com/NixOS/nixpkgs/pull/572495"
+until = "2026-12-06"
+comment = [
+  "3.54.0への更新がstagingにマージ済みでstaging-next待ち。26.05へのバックポートは無い",
+  "CVE-2026-119586は3.54.1以下が対象で3.54.0でも直らないので列挙していない",
+]

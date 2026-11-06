@@ -1,0 +1,390 @@
+# vulnixのホワイトリスト。
+#
+# ここに書くのは誤検知と修正済みの判定だけ。
+# 本物の脆弱性に対処するかしないかの方針は docs/vulnerability-policy.md を参照。
+# 対処しないと決めた本物の脆弱性はここには書かない。
+#
+# 実行例。実行時閉包だけを見るために -C を付ける。
+# 既定の --requisites はビルド時依存まで含む派生物の閉包を見るので、
+# ブートストラップ用のgccやHaskellのビルド依存まで報告されてしまう。
+#
+#   vulnix -C /run/current-system -w vulnix-whitelist.toml
+#
+# vulnixはnix-community/vulnixのmasterを使う。
+# 1.12.5以前は __structuredAttrs を使う派生物の patches を読めず、
+# パッチ済みのCVEをそのまま報告してしまう。
+#
+# 書式は https://github.com/nix-community/vulnix#whitelist を参照。
+# セクション名が `["pname"]` なら全バージョン、`["pname-version"]` ならそのバージョンだけに適用される。
+# `cve` を書いたルールはそのCVEだけを隠し、同じパッケージの他のCVEは報告され続ける。
+# `cve` を書かないルールはそのパッケージの全CVEを隠す。
+#
+# ルールの書き方は、誤検知の原因ごとに以下のように決める。
+#
+# 名前衝突で、そのNixパッケージ自身がその名前でNVDにCVEを登録されることがまず無いもの。
+# 主にHackageのライブラリ。衝突はバージョンを上げても再発するので、
+# `["pname"]` で全バージョンを `cve` 無しで隠す。
+# ただしpnameが別の本物のパッケージ(glib, zlibなど)と同じ場合は、
+# 本物を巻き込まないよう `["pname-version"]` でバージョンを限定する。
+#
+# 名前衝突で、そのNixパッケージ自身が本物でありCVEを持ちうるもの。
+# gitとJenkinsのGit Pluginのような関係。本物のCVEを隠さないよう、
+# `["pname"]` に衝突相手のCVEを `cve` で列挙する。
+#
+# 同じ製品だが、別プラットフォームや別ディストリビューション固有のCVE。
+# 上と同様に `["pname"]` に `cve` を列挙する。
+#
+# 派生物名からのバージョン切り出しが壊れていて、実在しないバージョンとして照合されるもの。
+# その壊れた名前そのものを `["pname-version"]` で `cve` 無しで隠す。
+#
+# バージョン比較の誤りで、修正済みバージョンが報告されるもの。
+# `["pname-version"]` にそのCVEを `cve` で列挙する。
+# バージョンが上がれば自然に外れる。
+
+# 名前衝突: Nixパッケージ自身がCVEを持つことがまず無いもの。
+# xmonadやhaskell-language-serverの実行時閉包に入るHackageのライブラリ。
+
+["async"]
+comment = "Haskell async。NVDはnpmのasync"
+
+["Diff"]
+comment = "Haskell Diff。NVDはDrupalのDiffモジュール"
+
+["focus"]
+comment = "Haskell focus。NVDはFirefox Focus"
+
+["network"]
+comment = "Haskell network。NVDはFidelis Network"
+
+["regex"]
+comment = "Haskell regex。NVDはRustのregex crate"
+
+["safe"]
+comment = "Haskell safe。NVDはF-Secure SAFE Browser"
+
+["tar"]
+comment = "Haskell tar。NVDはGNU tarとnode-tar。GNU tarのpnameはgnutar"
+
+["yaml"]
+comment = "Haskell yaml。NVDはGoのyaml"
+
+# 同上だが、pnameが本物のパッケージと同じなのでバージョンで限定する。
+
+["dbus-1.4.2"]
+comment = "Haskell dbus。NVDはD-Bus本体"
+
+["glib-0.13.12.0"]
+comment = "Haskell glib (gtk2hs)。NVDはGNOME GLib"
+
+["opentelemetry-0.8.0"]
+comment = "Haskell opentelemetry (hls-plugin-apiが依存)。NVDはGo/.NET/C++/JS/Jenkinsのもの"
+
+["zlib-0.7.1.1"]
+comment = "Haskell zlib。NVDはzlib本体やRubyのzlib"
+
+# 名前衝突: Nixパッケージ自身が本物でCVEを持ちうるもの。衝突相手のCVEだけを列挙する。
+
+["ada"]
+cve = ["CVE-2024-9410"]
+comment = "ada-url。NVDはAda.cxというSaaS"
+
+["allegro"]
+cve = ["CVE-2021-36489"]
+comment = "allegro 4.4系。NVDの対象はAllegro 5のallegro_imageアドオン"
+
+["cargo"]
+cve = [
+  "CVE-2026-14363",
+  "CVE-2026-39837",
+  "CVE-2026-39839",
+  "CVE-2026-39840",
+  "CVE-2026-39841",
+  "CVE-2026-58519",
+  "CVE-2026-58521",
+]
+comment = "NVDはMediaWikiのCargo拡張"
+
+["cvs"]
+cve = ["CVE-2022-29037"]
+comment = "NVDはJenkinsのCVS Plugin"
+
+["dash"]
+cve = ["CVE-2024-21485"]
+comment = "dashシェル。NVDはPlotly Dash"
+
+["git"]
+cve = [
+  "CVE-2021-21684",
+  "CVE-2022-30947",
+  "CVE-2022-36882",
+  "CVE-2022-36883",
+  "CVE-2022-36884",
+  "CVE-2022-38663",
+]
+comment = "NVDはJenkinsのGit Plugin"
+
+["go"]
+cve = ["CVE-2023-49292"]
+comment = "NVDはeciesというGoのライブラリ"
+
+["kitty"]
+cve = ["CVE-2023-48795", "CVE-2024-23749", "CVE-2024-25003", "CVE-2024-25004"]
+comment = "kittyターミナル。NVDはPuTTY派生のKiTTYとSSH Terrapin"
+
+["kotlin"]
+cve = ["CVE-2023-26154"]
+comment = "NVDはpubnubのSDK"
+
+["libmpeg2"]
+cve = ["CVE-2022-37416"]
+comment = "NVDはIttiam(Android)のlibmpeg2"
+
+["malcontent"]
+cve = ["CVE-2026-24845", "CVE-2026-28407"]
+comment = "GNOMEのmalcontent。NVDはChainguardのmalcontent"
+
+["mercurial"]
+cve = ["CVE-2022-43410"]
+comment = "NVDはJenkinsのMercurial Plugin"
+
+["ninja"]
+cve = ["CVE-2021-4336"]
+comment = "NVDはITRS monitor-ninja"
+
+["orc"]
+cve = ["CVE-2025-47436"]
+comment = "GStreamerのorc。NVDはApache ORC"
+
+["ruby"]
+cve = ["CVE-2026-97229"]
+comment = "NVDはGitLab"
+
+["shellcheck"]
+cve = ["CVE-2021-28794"]
+comment = "NVDはVS Codeの非公式ShellCheck拡張"
+
+["snappy"]
+cve = ["CVE-2023-28115", "CVE-2023-41330"]
+comment = "Googleのsnappy。NVDはPHPのknp-snappy"
+
+["subversion"]
+cve = ["CVE-2021-21698", "CVE-2022-29046", "CVE-2022-29048"]
+comment = "NVDはJenkinsのSubversion Plugin"
+
+["swift"]
+cve = ["CVE-2023-26154"]
+comment = "NVDはpubnubのSDK"
+
+["zlib"]
+cve = ["CVE-2023-6992", "CVE-2026-27820"]
+comment = "Cloudflareのzlibフォークと、Rubyのzlib gem"
+
+# 同じ製品だが、別プラットフォームや別ディストリビューション固有のCVE。
+
+["accountsservice"]
+cve = ["CVE-2023-3297"]
+comment = "Ubuntu独自パッチの脆弱性"
+
+["avahi"]
+cve = ["CVE-2021-26720"]
+comment = "Debianパッケージ固有のスクリプト(avahi-daemon-check-dns.sh)の問題"
+
+["cjson"]
+cve = ["CVE-2026-16554"]
+comment = "32bitプラットフォーム限定のsize_t桁溢れ"
+
+["cups"]
+cve = ["CVE-2022-26691"]
+comment = "macOS側の修正"
+
+["gimp"]
+cve = ["CVE-2025-8672", "CVE-2026-78465"]
+comment = ["CVE-2025-8672はmacOS版のTCC権限の問題", "CVE-2026-78465は32bitビルド限定"]
+
+# 派生物名からのバージョン切り出しが壊れているもの。壊れた名前そのものを隠す。
+
+["dbus-1"]
+comment = "initrdに入る dbus-1 ディレクトリ名。D-Busのバージョン1ではない"
+
+["lapack-3"]
+comment = "nixpkgsのlapackラッパー(実体はopenblas)。NVDのlapack <= 3.10.0 とは無関係"
+
+["libiff-0-unstable-2024-03-02"]
+comment = "0-unstable-... を 20190123 より古いバージョンとして照合している"
+
+["polkit-1.pam"]
+comment = "/etc/pam.d/polkit-1 の設定ファイル。pkexecのバイナリではない"
+
+# バージョン比較の誤り。修正済みバージョンが報告される。
+# nixpkgsのrelease branchパッチや、上流のポイントリリースに修正が入っていることを
+# 修正コミットの有無で確認したもの。該当コードがそのバージョンに存在しないものも含む。
+
+["binutils-2.46"]
+cve = ["CVE-2025-69649", "CVE-2025-69650", "CVE-2025-69651", "CVE-2025-69652"]
+comment = "修正コミット(2025-12-08)は2.46タグ(2026-02-08)に含まれる。CVEのthru 2.46は不正確"
+
+["brotli-1.2.1"]
+cve = ["CVE-2026-111497"]
+comment = "対象は1.0.3から1.2.0まで。1.2.1は修正済み"
+
+["capstone-5.0.7"]
+cve = ["CVE-2025-67873", "CVE-2025-68114", "CVE-2026-47143"]
+comment = [
+  "CVE-2025-67873とCVE-2025-68114は4d90b137 (CVE v5 backports) として5.0.7に含まれる",
+  "advisoryが6.0.0-Alpha5しか列挙していないので版比較で誤検知になる",
+  "CVE-2026-47143は-DCAPSTONE_X86_REDUCEビルド限定で、nixpkgsはCMakeの既定(OFF)でビルドしている",
+  "ビルド設定に依存する判断なので、バージョンを上げる時に前提を見直せるようバージョン付きにしている",
+]
+
+["ffmpeg-6.1.6"]
+cve = [
+  # 6.1.1から6.1.6のポイントリリースにcherry-pickが含まれるもの
+  "CVE-2023-49502",
+  "CVE-2023-50007",
+  "CVE-2023-50008",
+  "CVE-2023-50009",
+  "CVE-2023-50010",
+  "CVE-2024-31578",
+  "CVE-2024-31582",
+  "CVE-2024-31585",
+  "CVE-2025-10256",
+  "CVE-2025-12343",
+  "CVE-2025-1594",
+  "CVE-2026-107698",
+  "CVE-2026-30754",
+  "CVE-2026-30997",
+  "CVE-2026-30999",
+  "CVE-2026-40962",
+  "CVE-2026-52296",
+  # 6.1に該当コード(IAMF, HEIF ispe, mov tts)が無いもの。いずれも7.0以降に追加された
+  "CVE-2025-1373",
+  "CVE-2025-25468",
+  "CVE-2025-25469",
+  "CVE-2026-52295",
+  "CVE-2026-52297",
+  "CVE-2026-66037",
+  "CVE-2026-96611",
+  # mbedtlsの問題でnixpkgsはmbedtlsを使わない
+  "CVE-2026-107660",
+  # Debianがbogus CVEと判定
+  "CVE-2026-30998",
+]
+comment = [
+  "CVE-2023-49502からCVE-2026-52296までは6.1.1から6.1.6のポイントリリースにcherry-pickが含まれる",
+  "CVE-2025-1373, CVE-2025-25468, CVE-2025-25469, CVE-2026-52295, CVE-2026-52297は6.1に該当コードが無い",
+  "CVE-2026-66037, CVE-2026-96611も同じく6.1に該当コードが無い",
+  "該当コードはIAMF, HEIF ispe, mov ttsで、いずれも7.0以降に追加されたもの",
+  "CVE-2026-107660はmbedtlsの問題でnixpkgsはmbedtlsを使わない",
+  "CVE-2026-30998はDebianがbogus CVEと判定",
+]
+
+["ffmpeg-7.1.5"]
+cve = [
+  # 7.1.1から7.1.5のポイントリリースにcherry-pickが含まれるもの
+  "CVE-2025-10256",
+  "CVE-2025-12343",
+  "CVE-2025-25468",
+  "CVE-2025-25469",
+  "CVE-2026-107698",
+  "CVE-2026-30754",
+  "CVE-2026-30997",
+  "CVE-2026-30999",
+  "CVE-2026-40962",
+  "CVE-2026-52295",
+  "CVE-2026-52296",
+  "CVE-2026-52297",
+  "CVE-2026-96611",
+  # mbedtlsの問題でnixpkgsはmbedtlsを使わない
+  "CVE-2026-107660",
+  # Debianがbogus CVEと判定
+  "CVE-2026-30998",
+  # vf_quircの問題で、smallバリアントはlibquircを有効にしていない
+  "CVE-2026-66041",
+]
+comment = [
+  "CVE-2025-10256からCVE-2026-96611までは7.1.1から7.1.5のポイントリリースにcherry-pickが含まれる",
+  "CVE-2026-107660はmbedtlsの問題でnixpkgsはmbedtlsを使わない",
+  "CVE-2026-30998はDebianがbogus CVEと判定",
+  "CVE-2026-66041はvf_quircの問題で、smallバリアントはlibquircを有効にしていない",
+]
+
+["ffmpeg-8.1.3"]
+cve = [
+  "CVE-2025-25468",
+  "CVE-2025-25469",
+  "CVE-2026-52295",
+  "CVE-2026-52296",
+  "CVE-2026-52297",
+  "CVE-2026-70628",
+  "CVE-2026-70629",
+  "CVE-2026-70630",
+  "CVE-2026-70631",
+  "CVE-2026-70632",
+  "CVE-2026-96611",
+]
+comment = "8.1.1から8.1.3のポイントリリースにcherry-pickが含まれる"
+
+["ffmpeg-9.0.2"]
+cve = ["CVE-2025-25468", "CVE-2025-25469"]
+comment = "修正コミットd5873be583は9.0に含まれる"
+
+["gimp-3.0.8"]
+cve = ["CVE-2026-79902", "CVE-2026-82330"]
+comment = "SFWプラグインは3.1.4、PVRプラグインは3.2.0で追加されたもので3.0.8には無い"
+
+["glibc-2.42-103"]
+cve = [
+  "CVE-2025-15281",
+  "CVE-2026-4046",
+  "CVE-2026-4437",
+  "CVE-2026-4438",
+  "CVE-2026-5435",
+  "CVE-2026-5450",
+  "CVE-2026-5928",
+  "CVE-2026-6238",
+]
+comment = "nixpkgsの2.42-master.patch(release/2.42/masterの103コミット)に全ての修正コミットが含まれる"
+
+["glibc-2.44-57"]
+cve = ["CVE-2026-5435", "CVE-2026-6238"]
+comment = "2.44リリース自体に修正済み(NEWSのBZ 34033, 34069)。NVDの範囲が2.44を除外できていない"
+
+["gstreamer-1.26.11"]
+cve = [
+  "CVE-2026-1940",
+  "CVE-2026-2920",
+  "CVE-2026-2921",
+  "CVE-2026-2922",
+  "CVE-2026-2923",
+  "CVE-2026-3081",
+  "CVE-2026-3082",
+  "CVE-2026-3083",
+  "CVE-2026-3084",
+  "CVE-2026-3085",
+  "CVE-2026-3086",
+]
+comment = "GStreamer-SA-2026-0001から0011。1.26.11に修正が含まれる。実体はプラグイン側だがNVDのCPEはgstreamer"
+
+["jq-1.8.2"]
+cve = ["CVE-2026-44777"]
+comment = "GHSA-rmpv-jgvr-wpr9は1.8.2が修正版。1.8.2rc1 and earlierの文言で誤検知"
+
+["libraw-0.22.1"]
+cve = ["CVE-2026-20884", "CVE-2026-20911", "CVE-2026-21413", "CVE-2026-24450"]
+comment = "修正コミットは全て0.22.1に含まれる。TalosのCVEに版範囲が無い"
+
+["lua-5.2.4"]
+cve = ["CVE-2021-43519"]
+comment = "5.4.2で混入し5.4.4で修正されたコードで、5.2系には存在しない"
+
+["perl-5.42.3"]
+cve = ["CVE-2026-13221", "CVE-2026-57432", "CVE-2026-8376"]
+comment = "対象は5.42.3-RC1より前。5.42.3は修正済み"
+
+["perl-5.42.3-env"]
+cve = ["CVE-2026-13221", "CVE-2026-57432", "CVE-2026-8376"]
+comment = "perl-5.42.3-env という派生物名のバージョンが 5.42.3-env と切り出されるので別に書く"
+
+["samba-4.23.10"]
+cve = ["CVE-2026-2340"]
+comment = "4.23.8で修正済み。vfs_wormモジュールを設定していなければそもそも該当しない"

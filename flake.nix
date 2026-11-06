@@ -404,6 +404,7 @@
               shellcheck.enable = true;
               shfmt.enable = true;
               statix.enable = true;
+              taplo.enable = true;
               typos.enable = true;
               zizmor.enable = true;
             };

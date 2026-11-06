@@ -34,11 +34,11 @@
 # 名前衝突: Nixパッケージ自身がCVEを持つことがまず無いもの。
 # xmonadやhaskell-language-serverの実行時閉包に入るHackageのライブラリ。
 
-["Diff"]
-comment = "Haskell Diff。NVDはDrupalのDiffモジュール"
-
 ["async"]
 comment = "Haskell async。NVDはnpmのasync"
+
+["Diff"]
+comment = "Haskell Diff。NVDはDrupalのDiffモジュール"
 
 ["focus"]
 comment = "Haskell focus。NVDはFirefox Focus"
@@ -60,17 +60,17 @@ comment = "Haskell yaml。NVDはGoのyaml"
 
 # 同上だが、pnameが本物のパッケージと同じなのでバージョンで限定する。
 
-["glib-0.13.12.0"]
-comment = "Haskell glib (gtk2hs)。NVDはGNOME GLib"
-
-["zlib-0.7.1.1"]
-comment = "Haskell zlib。NVDはzlib本体やRubyのzlib"
-
 ["dbus-1.4.2"]
 comment = "Haskell dbus。NVDはD-Bus本体"
 
+["glib-0.13.12.0"]
+comment = "Haskell glib (gtk2hs)。NVDはGNOME GLib"
+
 ["opentelemetry-0.8.0"]
 comment = "Haskell opentelemetry (hls-plugin-apiが依存)。NVDはGo/.NET/C++/JS/Jenkinsのもの"
+
+["zlib-0.7.1.1"]
+comment = "Haskell zlib。NVDはzlib本体やRubyのzlib"
 
 # 名前衝突: Nixパッケージ自身が本物でCVEを持ちうるもの。衝突相手のCVEだけを列挙する。
 
@@ -130,10 +130,6 @@ comment = "kittyターミナル。NVDはPuTTY派生のKiTTYとSSH Terrapin"
 cve = ["CVE-2023-26154"]
 comment = "NVDはpubnubのSDK"
 
-["swift"]
-cve = ["CVE-2023-26154"]
-comment = "NVDはpubnubのSDK"
-
 ["libmpeg2"]
 cve = ["CVE-2022-37416"]
 comment = "NVDはIttiam(Android)のlibmpeg2"
@@ -170,6 +166,10 @@ comment = "Googleのsnappy。NVDはPHPのknp-snappy"
 cve = ["CVE-2021-21698", "CVE-2022-29046", "CVE-2022-29048"]
 comment = "NVDはJenkinsのSubversion Plugin"
 
+["swift"]
+cve = ["CVE-2023-26154"]
+comment = "NVDはpubnubのSDK"
+
 ["zlib"]
 cve = ["CVE-2023-6992", "CVE-2026-27820"]
 comment = "Cloudflareのzlibフォークと、Rubyのzlib gem"
@@ -184,6 +184,10 @@ comment = "Ubuntu独自パッチの脆弱性"
 cve = ["CVE-2021-26720"]
 comment = "Debianパッケージ固有のスクリプト(avahi-daemon-check-dns.sh)の問題"
 
+["cjson"]
+cve = ["CVE-2026-16554"]
+comment = "32bitプラットフォーム限定のsize_t桁溢れ"
+
 ["cups"]
 cve = ["CVE-2022-26691"]
 comment = "macOS側の修正"
@@ -192,17 +196,10 @@ comment = "macOS側の修正"
 cve = ["CVE-2025-8672", "CVE-2026-78465"]
 comment = ["CVE-2025-8672はmacOS版のTCC権限の問題", "CVE-2026-78465は32bitビルド限定"]
 
-["cjson"]
-cve = ["CVE-2026-16554"]
-comment = "32bitプラットフォーム限定のsize_t桁溢れ"
-
 # 派生物名からのバージョン切り出しが壊れているもの。壊れた名前そのものを隠す。
 
 ["dbus-1"]
 comment = "initrdに入る dbus-1 ディレクトリ名。D-Busのバージョン1ではない"
-
-["polkit-1.pam"]
-comment = "/etc/pam.d/polkit-1 の設定ファイル。pkexecのバイナリではない"
 
 ["lapack-3"]
 comment = "nixpkgsのlapackラッパー(実体はopenblas)。NVDのlapack <= 3.10.0 とは無関係"
@@ -210,42 +207,29 @@ comment = "nixpkgsのlapackラッパー(実体はopenblas)。NVDのlapack <= 3.1
 ["libiff-0-unstable-2024-03-02"]
 comment = "0-unstable-... を 20190123 より古いバージョンとして照合している"
 
+["polkit-1.pam"]
+comment = "/etc/pam.d/polkit-1 の設定ファイル。pkexecのバイナリではない"
+
 # バージョン比較の誤り。修正済みバージョンが報告される。
 # nixpkgsのrelease branchパッチや、上流のポイントリリースに修正が入っていることを
 # 修正コミットの有無で確認したもの。該当コードがそのバージョンに存在しないものも含む。
 
-["glibc-2.42-103"]
-cve = [
-  "CVE-2025-15281",
-  "CVE-2026-4046",
-  "CVE-2026-4437",
-  "CVE-2026-4438",
-  "CVE-2026-5435",
-  "CVE-2026-5450",
-  "CVE-2026-5928",
-  "CVE-2026-6238",
-]
-comment = "nixpkgsの2.42-master.patch(release/2.42/masterの103コミット)に全ての修正コミットが含まれる"
+["binutils-2.46"]
+cve = ["CVE-2025-69649", "CVE-2025-69650", "CVE-2025-69651", "CVE-2025-69652"]
+comment = "修正コミット(2025-12-08)は2.46タグ(2026-02-08)に含まれる。CVEのthru 2.46は不正確"
 
-["glibc-2.44-57"]
-cve = ["CVE-2026-5435", "CVE-2026-6238"]
-comment = "2.44リリース自体に修正済み(NEWSのBZ 34033, 34069)。NVDの範囲が2.44を除外できていない"
+["brotli-1.2.1"]
+cve = ["CVE-2026-111497"]
+comment = "対象は1.0.3から1.2.0まで。1.2.1は修正済み"
 
-["gstreamer-1.26.11"]
-cve = [
-  "CVE-2026-1940",
-  "CVE-2026-2920",
-  "CVE-2026-2921",
-  "CVE-2026-2922",
-  "CVE-2026-2923",
-  "CVE-2026-3081",
-  "CVE-2026-3082",
-  "CVE-2026-3083",
-  "CVE-2026-3084",
-  "CVE-2026-3085",
-  "CVE-2026-3086",
+["capstone-5.0.7"]
+cve = ["CVE-2025-67873", "CVE-2025-68114", "CVE-2026-47143"]
+comment = [
+  "CVE-2025-67873とCVE-2025-68114は4d90b137 (CVE v5 backports) として5.0.7に含まれる",
+  "advisoryが6.0.0-Alpha5しか列挙していないので版比較で誤検知になる",
+  "CVE-2026-47143は-DCAPSTONE_X86_REDUCEビルド限定で、nixpkgsはCMakeの既定(OFF)でビルドしている",
+  "ビルド設定に依存する判断なので、バージョンを上げる時に前提を見直せるようバージョン付きにしている",
 ]
-comment = "GStreamer-SA-2026-0001から0011。1.26.11に修正が含まれる。実体はプラグイン側だがNVDのCPEはgstreamer"
 
 ["ffmpeg-6.1.6"]
 cve = [
@@ -339,42 +323,54 @@ comment = "8.1.1から8.1.3のポイントリリースにcherry-pickが含まれ
 cve = ["CVE-2025-25468", "CVE-2025-25469"]
 comment = "修正コミットd5873be583は9.0に含まれる"
 
-["libraw-0.22.1"]
-cve = ["CVE-2026-20884", "CVE-2026-20911", "CVE-2026-21413", "CVE-2026-24450"]
-comment = "修正コミットは全て0.22.1に含まれる。TalosのCVEに版範囲が無い"
+["gimp-3.0.8"]
+cve = ["CVE-2026-79902", "CVE-2026-82330"]
+comment = "SFWプラグインは3.1.4、PVRプラグインは3.2.0で追加されたもので3.0.8には無い"
 
-["capstone-5.0.7"]
-cve = ["CVE-2025-67873", "CVE-2025-68114", "CVE-2026-47143"]
-comment = [
-  "CVE-2025-67873とCVE-2025-68114は4d90b137 (CVE v5 backports) として5.0.7に含まれる",
-  "advisoryが6.0.0-Alpha5しか列挙していないので版比較で誤検知になる",
-  "CVE-2026-47143は-DCAPSTONE_X86_REDUCEビルド限定で、nixpkgsはCMakeの既定(OFF)でビルドしている",
-  "ビルド設定に依存する判断なので、バージョンを上げる時に前提を見直せるようバージョン付きにしている",
+["glibc-2.42-103"]
+cve = [
+  "CVE-2025-15281",
+  "CVE-2026-4046",
+  "CVE-2026-4437",
+  "CVE-2026-4438",
+  "CVE-2026-5435",
+  "CVE-2026-5450",
+  "CVE-2026-5928",
+  "CVE-2026-6238",
 ]
+comment = "nixpkgsの2.42-master.patch(release/2.42/masterの103コミット)に全ての修正コミットが含まれる"
 
-["binutils-2.46"]
-cve = ["CVE-2025-69649", "CVE-2025-69650", "CVE-2025-69651", "CVE-2025-69652"]
-comment = "修正コミット(2025-12-08)は2.46タグ(2026-02-08)に含まれる。CVEのthru 2.46は不正確"
+["glibc-2.44-57"]
+cve = ["CVE-2026-5435", "CVE-2026-6238"]
+comment = "2.44リリース自体に修正済み(NEWSのBZ 34033, 34069)。NVDの範囲が2.44を除外できていない"
+
+["gstreamer-1.26.11"]
+cve = [
+  "CVE-2026-1940",
+  "CVE-2026-2920",
+  "CVE-2026-2921",
+  "CVE-2026-2922",
+  "CVE-2026-2923",
+  "CVE-2026-3081",
+  "CVE-2026-3082",
+  "CVE-2026-3083",
+  "CVE-2026-3084",
+  "CVE-2026-3085",
+  "CVE-2026-3086",
+]
+comment = "GStreamer-SA-2026-0001から0011。1.26.11に修正が含まれる。実体はプラグイン側だがNVDのCPEはgstreamer"
 
 ["jq-1.8.2"]
 cve = ["CVE-2026-44777"]
 comment = "GHSA-rmpv-jgvr-wpr9は1.8.2が修正版。1.8.2rc1 and earlierの文言で誤検知"
 
-["samba-4.23.10"]
-cve = ["CVE-2026-2340"]
-comment = "4.23.8で修正済み。vfs_wormモジュールを設定していなければそもそも該当しない"
+["libraw-0.22.1"]
+cve = ["CVE-2026-20884", "CVE-2026-20911", "CVE-2026-21413", "CVE-2026-24450"]
+comment = "修正コミットは全て0.22.1に含まれる。TalosのCVEに版範囲が無い"
 
 ["lua-5.2.4"]
 cve = ["CVE-2021-43519"]
 comment = "5.4.2で混入し5.4.4で修正されたコードで、5.2系には存在しない"
-
-["gimp-3.0.8"]
-cve = ["CVE-2026-79902", "CVE-2026-82330"]
-comment = "SFWプラグインは3.1.4、PVRプラグインは3.2.0で追加されたもので3.0.8には無い"
-
-["brotli-1.2.1"]
-cve = ["CVE-2026-111497"]
-comment = "対象は1.0.3から1.2.0まで。1.2.1は修正済み"
 
 ["perl-5.42.3"]
 cve = ["CVE-2026-13221", "CVE-2026-57432", "CVE-2026-8376"]
@@ -383,3 +379,7 @@ comment = "対象は5.42.3-RC1より前。5.42.3は修正済み"
 ["perl-5.42.3-env"]
 cve = ["CVE-2026-13221", "CVE-2026-57432", "CVE-2026-8376"]
 comment = "perl-5.42.3-env という派生物名のバージョンが 5.42.3-env と切り出されるので別に書く"
+
+["samba-4.23.10"]
+cve = ["CVE-2026-2340"]
+comment = "4.23.8で修正済み。vfs_wormモジュールを設定していなければそもそも該当しない"

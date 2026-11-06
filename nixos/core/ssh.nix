@@ -8,8 +8,33 @@
   # ssh/moshを受け付けるインターフェイスごとに同じポートの組を開けるので、
   # 組を1箇所で定義して各インターフェイスはこれを参照する。
   # moshの範囲のような値が複数箇所にあると片方だけ直す漏れが起きやすい。
+  #
+  # 型は`attrs`ではなくキーを列挙したsubmoduleにする。
+  # `nixos/server/ssh.nix`は`networking.firewall.interfaces`へ代入せず、
+  # 各キーを個別に読んでnftablesのルールを組み立てる。
+  # `attrs`のままキーを増やすと、そちらが黙って無視して、
+  # tailnet側では開いているのにLAN側の復旧経路だけが閉じる食い違いが起きる。
+  # キーを列挙しておけば、増やした時に消費側を直すまで評価が通らない。
   options.local.ssh.firewallRule = lib.mkOption {
-    type = lib.types.attrs;
+    type = lib.types.submodule {
+      options = {
+        allowedTCPPorts = lib.mkOption {
+          type = lib.types.nonEmptyListOf lib.types.port;
+          description = "ssh/moshを受け付けるTCPポート。";
+        };
+        allowedUDPPortRanges = lib.mkOption {
+          type = lib.types.nonEmptyListOf (
+            lib.types.submodule {
+              options = {
+                from = lib.mkOption { type = lib.types.port; };
+                to = lib.mkOption { type = lib.types.port; };
+              };
+            }
+          );
+          description = "moshを受け付けるUDPポートの範囲。";
+        };
+      };
+    };
     readOnly = true;
     default = {
       allowedTCPPorts = config.services.openssh.ports;
@@ -23,7 +48,9 @@
     };
     description = ''
       ssh/moshを受け付けるために1つのインターフェイスへ開けるポートの組。
-      `networking.firewall.interfaces.<name>`にそのまま代入できる形。
+      `networking.firewall.interfaces.<name>`にそのまま代入できる形で、
+      `nixos/server/ssh.nix`は各キーを個別に読んでnftablesのルールを組み立てる。
+      キーを増やす時はそちらも直すこと。
     '';
   };
 

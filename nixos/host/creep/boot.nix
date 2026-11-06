@@ -2,6 +2,12 @@
   boot = {
     loader = {
       limine = {
+        # creepのESPはWindowsと同居するディスク上で1GBしか確保していません。
+        # 共通設定の40世代だと、
+        # xanmodカーネルの更新頻度の高さから異なるカーネルが13種類ほど混在し、
+        # 1種類あたり約76MB(bzImage + initrd)で容量を使い切ってしまいました。
+        # 世代数を減らして異なるカーネルの種類数を抑えます。
+        maxGenerations = 20;
         secureBoot = {
           autoEnrollKeys = {
             # ThinkPad P16s Gen 2 AMDのファームウェアは、

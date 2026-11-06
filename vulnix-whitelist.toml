@@ -1,14 +1,18 @@
 # vulnixのホワイトリスト。
 #
-# ここに書くのは誤検知と修正済みの判定だけ。
+# ここに書くのは誤検知と修正済みの判定、そして上流の修正を待っている本物の脆弱性だけ。
 # 本物の脆弱性に対処するかしないかの方針は docs/vulnerability-policy.md を参照。
-# 対処しないと決めた本物の脆弱性はここには書かない。
+# 上流の修正待ち以外の理由で対処しないと決めた本物の脆弱性はここには書かない。
 #
 # 実行例。実行時閉包だけを見るために -C を付ける。
 # 既定の --requisites はビルド時依存まで含む派生物の閉包を見るので、
 # ブートストラップ用のgccやHaskellのビルド依存まで報告されてしまう。
 #
 #   vulnix -C /run/current-system -w vulnix-whitelist.toml
+#
+# 隠したものも修正のPRのURLと一緒に見たい時は -s (--show-whitelisted) を付ける。
+#
+#   vulnix -C /run/current-system -w vulnix-whitelist.toml -s
 #
 # vulnixはnix-community/vulnixのmasterを使う。
 # 1.12.5以前は __structuredAttrs を使う派生物の patches を読めず、
@@ -40,6 +44,19 @@
 # バージョン比較の誤りで、修正済みバージョンが報告されるもの。
 # `["pname-version"]` にそのCVEを `cve` で列挙する。
 # バージョンが上がれば自然に外れる。
+#
+# 本物の脆弱性で、nixpkgsで修正が進んでいてチャンネルに降りてくるのを待つもの。
+# `["pname-version"]` に待っているCVEを `cve` で列挙し、
+# 修正のPRを `issue_url` に、おおむね1か月後の日付を `until` に書く。
+# 修正版が降りてくればバージョンが変わって外れ、
+# 修正が滞っていれば期限切れで再び報告される。
+# 書き方の例は以下の通り。
+#
+#   ["foo-1.2.3"]
+#   cve = ["CVE-2026-00000"]
+#   issue_url = "https://github.com/NixOS/nixpkgs/pull/000000"
+#   until = "2026-12-06"
+#   comment = "1.2.4への更新PR。staging-26.05へのバックポート待ち"
 
 # 名前衝突: Nixパッケージ自身がCVEを持つことがまず無いもの。
 # xmonadやhaskell-language-serverの実行時閉包に入るHackageのライブラリ。

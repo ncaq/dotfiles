@@ -15,7 +15,8 @@
       limine = {
         enable = true;
         # ディスク容量を埋め尽くさないように上限を定めます。
-        maxGenerations = 40;
+        # ESPが小さいホストはホスト設定で更に下げます。
+        maxGenerations = lib.mkDefault 40;
         style = {
           interface = {
             # ブート時はGPUを効率的に使えないことが多いため解像度を下げて負荷を減らします。

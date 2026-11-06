@@ -196,10 +196,6 @@ comment = ["CVE-2025-8672はmacOS版のTCC権限の問題", "CVE-2026-78465は32
 cve = ["CVE-2026-16554"]
 comment = "32bitプラットフォーム限定のsize_t桁溢れ"
 
-["capstone"]
-cve = ["CVE-2026-47143"]
-comment = "-DCAPSTONE_X86_REDUCE ビルド限定。nixpkgsはCMakeの既定(OFF)でビルドしている"
-
 # 派生物名からのバージョン切り出しが壊れているもの。壊れた名前そのものを隠す。
 
 ["dbus-1"]
@@ -348,8 +344,13 @@ cve = ["CVE-2026-20884", "CVE-2026-20911", "CVE-2026-21413", "CVE-2026-24450"]
 comment = "修正コミットは全て0.22.1に含まれる。TalosのCVEに版範囲が無い"
 
 ["capstone-5.0.7"]
-cve = ["CVE-2025-67873", "CVE-2025-68114"]
-comment = "4d90b137 (CVE v5 backports) として5.0.7に含まれる。advisoryが6.0.0-Alpha5しか列挙していない"
+cve = ["CVE-2025-67873", "CVE-2025-68114", "CVE-2026-47143"]
+comment = [
+  "CVE-2025-67873とCVE-2025-68114は4d90b137 (CVE v5 backports) として5.0.7に含まれる",
+  "advisoryが6.0.0-Alpha5しか列挙していないので版比較で誤検知になる",
+  "CVE-2026-47143は-DCAPSTONE_X86_REDUCEビルド限定で、nixpkgsはCMakeの既定(OFF)でビルドしている",
+  "ビルド設定に依存する判断なので、バージョンを上げる時に前提を見直せるようバージョン付きにしている",
+]
 
 ["binutils-2.46"]
 cve = ["CVE-2025-69649", "CVE-2025-69650", "CVE-2025-69651", "CVE-2025-69652"]

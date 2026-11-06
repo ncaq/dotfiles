@@ -128,12 +128,7 @@ cve = ["CVE-2023-49292"]
 comment = "NVDはeciesというGoのライブラリ"
 
 ["kitty"]
-cve = [
-  "CVE-2023-48795",
-  "CVE-2024-23749",
-  "CVE-2024-25003",
-  "CVE-2024-25004",
-]
+cve = ["CVE-2023-48795", "CVE-2024-23749", "CVE-2024-25003", "CVE-2024-25004"]
 comment = "kittyターミナル。NVDはPuTTY派生のKiTTYとSSH Terrapin"
 
 ["kotlin"]

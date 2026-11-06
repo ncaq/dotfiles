@@ -1,9 +1,5 @@
 [files]
-extend-exclude = [
-"key/",
-"mozc/",
-"secrets/",
-]
+extend-exclude = ["key/", "mozc/", "secrets/"]
 
 [default.extend-words]
 # Part of "RGBa" (Pillow's pre-multiplied alpha RGB mode)

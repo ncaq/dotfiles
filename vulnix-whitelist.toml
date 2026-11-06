@@ -1,5 +1,9 @@
 # vulnixのホワイトリスト。
 #
+# ここに書くのは誤検知と修正済みの判定だけ。
+# 本物の脆弱性を対処するかしないかの方針は docs/vulnerability-policy.md を参照。
+# 対処しないと決めた本物の脆弱性はここには書かない。
+#
 # 書式は https://github.com/nix-community/vulnix#whitelist を参照。
 # セクション名が `["pname"]` なら全バージョン、`["pname-version"]` ならそのバージョンだけに適用される。
 # `cve` を書いたルールはそのCVEだけを隠し、同じパッケージの他のCVEは報告され続ける。

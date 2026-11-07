@@ -176,9 +176,18 @@ observe authority = do
   latest <-
     if busy
       then pure Nothing
-      else getJson authority "/history?max_items=1" >>= either throwM pure . latestActivity
+      else fetchLatestActivity authority
   now <- liftIO getCurrentTime
   pure Observation{now, busy, latest}
+
+-- | ComfyUIが記録した最後の活動時刻を取る。
+--
+-- `max_items=1`で新しい方の1件だけを引くことと、
+-- `latestActivity`がその応答を読むことは対で動く前提なので、
+-- 引く場所を1つにまとめておく。
+fetchLatestActivity :: (MonadIO m, MonadThrow m) => Text -> m (Maybe UTCTime)
+fetchLatestActivity authority =
+  getJson authority "/history?max_items=1" >>= either throwM pure . latestActivity
 
 -- | ループへ入る前の`lastActivity`を決める。
 --
@@ -197,9 +206,7 @@ observe authority = do
 initialActivity :: (MonadLogger m, MonadThrow m, MonadUnliftIO m) => Text -> m UTCTime
 initialActivity authority = do
   now <- liftIO getCurrentTime
-  fetched <-
-    tryJust transientFailure do
-      getJson authority "/history?max_items=1" >>= either throwM pure . latestActivity
+  fetched <- tryJust transientFailure (fetchLatestActivity authority)
   case fetched of
     Left reason -> do
       logWarnN ("起動時の履歴を取得できませんでした: " <> reason)

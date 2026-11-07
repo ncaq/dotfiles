@@ -23,6 +23,14 @@ loraLoader =
 fixup :: Value -> Value
 fixup value = maybe value (toJSON . fixupPrompt [loraLoader]) (asObject value)
 
+-- | `applySeed`をJSONの`Value`に対して適用する。
+-- プロンプトがオブジェクトとして読めなければテストの失敗にして、
+-- `applySeed`を通らずに成功することがないようにする。
+seedInto :: (MonadIO m) => Integer -> [(Text, Text)] -> Value -> m Value
+seedInto seed targets value = case asObject value of
+  Just prompt -> pure (toJSON (applySeed seed targets prompt))
+  Nothing -> expectationFailure ("プロンプトがオブジェクトではありません: " <> show value)
+
 tests :: TopSpec
 tests = describe "Prompt" do
   describe "fixupPrompt" do
@@ -55,8 +63,7 @@ tests = describe "Prompt" do
               "11": {"class_type": "KSampler", "inputs": {"seed": 0}},
               "6": {"class_type": "VAEDecode", "inputs": {"samples": ["5", 0]}}
             }|]
-          targets = [("5", "seed"), ("11", "seed")]
-          seeded = maybe prompt (toJSON . applySeed 314 targets) (asObject prompt)
+      seeded <- seedInto 314 [("5", "seed"), ("11", "seed")] prompt
       seeded
         `shouldBe` [aesonQQ|{
           "5": {"class_type": "KSampler", "inputs": {"seed": 314, "steps": 28}},
@@ -65,7 +72,11 @@ tests = describe "Prompt" do
         }|]
     it "存在しないノードを指しても壊れない" do
       let prompt = [aesonQQ|{"5": {"inputs": {"seed": 0}}}|]
-          seeded = maybe prompt (toJSON . applySeed 1 [("9", "seed")]) (asObject prompt)
+      seeded <- seedInto 1 [("9", "seed")] prompt
+      seeded `shouldBe` prompt
+    it "inputsの無いノードやオブジェクトでないノードには触らない" do
+      let prompt = [aesonQQ|{"5": {"class_type": "X"}, "6": "not an object"}|]
+      seeded <- seedInto 1 [("5", "seed"), ("6", "seed")] prompt
       seeded `shouldBe` prompt
   describe "readHistory" do
     it "保存されたファイルを集める" do

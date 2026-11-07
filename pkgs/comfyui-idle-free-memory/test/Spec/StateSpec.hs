@@ -55,8 +55,13 @@ tests = describe "State" do
     -- 確認の合間に短い生成が1件終わった時がこれに当たる。
     nextState idle (withHistory 1000 900) (initialState (at' 500) Nothing)
       `shouldBe` (seen 900 (idleAt 900 False), Hold)
-  it "古い履歴では時計を動かさない" do
-    nextState idle (withHistory 2000 100) (idleAt 900 True) `shouldBe` (idleAt 900 True, Hold)
+  it "古い時刻の件へ入れ替わっても時計は巻き戻さない" do
+    -- 時計の巻き戻しや履歴の削除の時に起こる。
+    -- 入れ替わりを活動として数えて解放済みを戻すので、
+    -- しきい値を超えていれば解放の要求がもう1回飛ぶ。
+    -- 最後の活動の時刻が過去へ戻ることは無い。
+    nextState idle (withHistory 2000 100) (idleAt 900 True)
+      `shouldBe` (seen 100 (idleAt 900 False), RequestFree)
   it "同じ時刻の履歴では解放済みのフラグを戻さない" do
     -- 実機ではこれが普段の状態である。
     -- 解放した後も`/history?max_items=1`は毎周回同じ最後の1件を返す。

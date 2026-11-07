@@ -39,7 +39,7 @@ import ComfyWorkflow.Comfy
   , postPrompt
   )
 import ComfyWorkflow.Parameter (Parameter (..), parameters, parseValue, positiveInt)
-import ComfyWorkflow.Prompt (HistoryResult (..), Prompt, fixupPrompt, readHistory)
+import ComfyWorkflow.Prompt (HistoryResult (..), Prompt, fixupPrompt, jsonText, readHistory)
 import ComfyWorkflow.Seed (seedTargets)
 import ComfyWorkflow.Slot (Slot (..), Slots (..), WidgetType (..))
 import ComfyWorkflow.Workflow (Workflow (..), parseWorkflow)
@@ -117,12 +117,11 @@ typeName (ComboWidget _) = "COMBO"
 typeName StringWidget = "STRING"
 typeName (OtherWidget other) = other
 
+-- | `--help`の既定値の表示。
+-- 文字列も引用符付きのJSONとして出すと、
+-- 日本語のプロンプトがエスケープされずに読める。
 currentValueText :: Value -> Text
-currentValueText (String text) = convert (show text)
-currentValueText other = jsonText other
-
-jsonText :: Value -> Text
-jsonText = convert . encode
+currentValueText = jsonText
 
 -- | ワークフローの名前とUI形式のJSONのパスと、残りのコマンドライン引数を受けて実行する。
 run :: (MonadLogger m, MonadThrow m, MonadUnliftIO m) => Text -> FilePath -> [String] -> m ()

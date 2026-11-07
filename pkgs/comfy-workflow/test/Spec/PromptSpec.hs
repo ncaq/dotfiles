@@ -83,13 +83,21 @@ tests = describe "Prompt" do
       let history =
             [aesonQQ|{
               "abc": {
-                "status": {"status_str": "error", "messages": ["boom"]},
+                "status": {"status_str": "error", "messages": ["boom", "日本語"]},
                 "outputs": {}
               }
             }|]
       case readHistory "abc" history of
-        Right (Failed reason) -> reason `textShouldContain` "error"
+        Right (Failed reason) -> do
+          reason `textShouldContain` "error"
+          -- どのノードで何が起きたのかは`messages`にしか無い。
+          reason `textShouldContain` "boom"
+          -- 非ASCIIをエスケープせずそのまま見せる。
+          reason `textShouldContain` "日本語"
         other -> expectationFailure ("失敗として報告されていません: " <> show other)
+  describe "jsonText" do
+    it "文字列を引用符付きで、非ASCIIをエスケープせずに出す" do
+      jsonText (String "日本語 \"q\"") `shouldBe` "\"日本語 \\\"q\\\"\""
     it "statusの無い履歴は失敗にしない" do
       -- 上流が形を変えた時に、成功した生成が失敗するようになる方が困る。
       readHistory "abc" [aesonQQ|{"abc": {"outputs": {}}}|] `shouldBe` Right (Succeeded [])

@@ -18,10 +18,20 @@ module ComfyWorkflow.Prompt
   , readHistory
   , relativeOutput
   , asObject
+  , jsonText
   ) where
 
 import ComfyWorkflow.Workflow (Node (..))
 import Himari
+
+-- | JSONの値を利用者に見せる文字列にする。
+--
+-- `show`はaesonの構築子を含むHaskellの表現を出し、
+-- 非ASCII文字を`\12354`のように10進のエスケープへ変えるので、
+-- 日本語のプロンプトやファイル名が読めなくなる。
+-- JSONとして出せばUTF-8のまま残る。
+jsonText :: Value -> Text
+jsonText = convert . encode
 
 -- | フロントエンドの拡張が描くウィジェット。
 --
@@ -93,7 +103,7 @@ readHistory promptId history = do
     Just str
       | str /= "success" ->
           -- どのノードで何が起きたのかは`messages`にしか無い。
-          let messages = maybe "" (convert . show) (status >>= (^. at "messages"))
+          let messages = maybe "" jsonText (status >>= (^. at "messages"))
            in pure (Failed (str <> ": " <> messages))
     _ -> Succeeded <$> collectOutputs entry
 

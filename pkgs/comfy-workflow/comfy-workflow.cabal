@@ -107,6 +107,7 @@ test-suite comfy-workflow-test
     Spec.ParameterSpec
     Spec.PromptSpec
     Spec.SeedSpec
+    Spec.WorkflowSpec
 
   build-tool-depends:
     sandwich:sandwich-discover

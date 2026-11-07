@@ -2,6 +2,8 @@
 name = "safetensors-fp16"
 version = "0.2.0"
 edition = "2024"
+# `<[T]>::as_chunks`が安定化されたバージョン。
+rust-version = "1.88"
 license = "Apache-2.0"
 
 [dependencies]

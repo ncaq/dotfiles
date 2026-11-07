@@ -1,0 +1,15 @@
+[package]
+name = "safetensors-fp16"
+version = "0.2.0"
+edition = "2024"
+license = "Apache-2.0"
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+half = "2"
+memmap2 = "0.9"
+safetensors = "0.8"
+
+[dev-dependencies]
+tempfile = "3"

@@ -16,10 +16,6 @@
       "extraPaths": ["lib"]
     },
     {
-      "root": "pkgs/safetensors-fp16",
-      "extraPaths": ["pkgs/safetensors-fp16", "pkgs/safetensors-fp16/tests"]
-    },
-    {
       "root": "nixos/host/bullet/comfyui/idle-free-memory",
       "extraPaths": ["nixos/host/bullet/comfyui/idle-free-memory"]
     },

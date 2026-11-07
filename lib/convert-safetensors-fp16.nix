@@ -32,7 +32,7 @@
     独立したderivationで包めばsrcのhashは原本のまま維持できる。
 
   なぜfixed-output derivationにするか:
-    通常のderivationだと出力パスが変換ツールとその依存(Pythonやnumpy)の
+    通常のderivationだと出力パスが変換ツールとその依存(Rustのツールチェインなど)の
     storeパスから決まるため、
     flake.lockの更新のたびに再ビルドが必要になる。
     変換の入力であるfp32の原本は数十GBあり、

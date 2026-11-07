@@ -9,7 +9,7 @@
 -- 公式の`comfy run`も振り直さない。
 -- 変換の時にこの文字列を捨てるだけである。
 -- なのでここで約束を読み取って、
--- 投げる前に`comfy workflow set-slot`で値を書き換える。
+-- 投げる前に、公式CLIが変換したAPI形式の`inputs`へ値を差し込む("ComfyWorkflow.Prompt"の`applySeed`)。
 --
 -- `fixed`と書かれているものは触らない。
 -- UIで意図して固定したものが、

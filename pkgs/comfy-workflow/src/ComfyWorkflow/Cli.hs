@@ -108,11 +108,13 @@ optionsParser name params =
               <> metavar (convert (typeName param.slot.widgetType))
               <> help (convert (describe param))
           )
+  -- 既定値は文字列も引用符付きのJSONとして出す。
+  -- 日本語のプロンプトがエスケープされずに読める。
   describe param =
     mconcat
       [ fromMaybe param.slot.name param.description
       , " (既定: "
-      , currentValueText param.slot.currentValue
+      , jsonText param.slot.currentValue
       , ")"
       , case param.slot.widgetType of
           ComboWidget choices | not (null choices) -> " 選択肢: " <> intercalate ", " choices
@@ -126,12 +128,6 @@ typeName BooleanWidget = "BOOLEAN"
 typeName (ComboWidget _) = "COMBO"
 typeName StringWidget = "STRING"
 typeName (OtherWidget other) = other
-
--- | `--help`の既定値の表示。
--- 文字列も引用符付きのJSONとして出すと、
--- 日本語のプロンプトがエスケープされずに読める。
-currentValueText :: Value -> Text
-currentValueText = jsonText
 
 -- | ワークフローの名前とUI形式のJSONのパスと、残りのコマンドライン引数を受けて実行する。
 run :: (MonadLogger m, MonadThrow m, MonadUnliftIO m) => Text -> FilePath -> [String] -> m ()

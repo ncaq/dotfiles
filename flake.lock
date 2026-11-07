@@ -246,6 +246,22 @@
         "type": "github"
       }
     },
+    "himari-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1793514651,
+        "narHash": "sha256-TRbHk8aBak0YxOwtujPWwV+2zAWK1GyAZyyyppbz9AM=",
+        "owner": "ncaq",
+        "repo": "himari",
+        "rev": "1c0b8d0dd2aadbf161cc6bfb0f007cc02f5ad93f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ncaq",
+        "repo": "himari",
+        "type": "github"
+      }
+    },
     "home-manager": {
       "inputs": {
         "nixpkgs": [
@@ -456,6 +472,7 @@
         "firge-nix": "firge-nix",
         "flake-parts": "flake-parts",
         "git-hooks": "git-hooks",
+        "himari-src": "himari-src",
         "home-manager": "home-manager",
         "konoka": "konoka",
         "microvm": "microvm",

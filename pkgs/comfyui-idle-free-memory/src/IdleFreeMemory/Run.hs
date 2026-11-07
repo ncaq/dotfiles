@@ -64,7 +64,7 @@ module IdleFreeMemory.Run
   ) where
 
 import Himari
-import IdleFreeMemory.Config (Config (..))
+import IdleFreeMemory.Config (Config (..), requestFor, validAuthority)
 import IdleFreeMemory.Response (ResponseFailure, latestActivity, queueRemaining)
 import IdleFreeMemory.State
   ( Decision (..)
@@ -117,9 +117,7 @@ run :: (MonadLogger m, MonadThrow m, MonadUnliftIO m) => Config -> m ()
 run config = do
   -- 接続先が壊れていると全ての周回が同じ理由で失敗し続けるので、
   -- 秒数の環境変数と同じく起動の時点で落とす。
-  let probe :: Maybe Request
-      probe = parseRequest (convert ("http://" <> config.authority <> "/"))
-  when (isNothing probe) do
+  unless (validAuthority config.authority) do
     logErrorN ("COMFYUI_AUTHORITYを接続先として読めません: " <> config.authority)
     throwM (ExitFailure 1)
   initial <- initialIdleState config.authority
@@ -236,7 +234,7 @@ freeIfNeeded requestFree RequestFree current = do
 -- 返らないのは相手が詰まっているか落ちている時だけである。
 getJson :: (MonadIO m, MonadThrow m) => Text -> Text -> m Value
 getJson authority path = do
-  request <- parseRequest (convert ("http://" <> authority <> path))
+  request <- requestFor authority path
   body <- successBody path =<< httpLBS request
   either (throwM . UndecodableBody path . convert) pure (eitherDecode body)
 
@@ -248,10 +246,13 @@ getJson authority path = do
 -- どちらを意図したのかが読めなくなるので両方書く。
 postFree :: (MonadIO m, MonadThrow m) => Text -> m ()
 postFree authority = do
-  request <- parseRequest (convert ("POST http://" <> authority <> path))
+  request <- requestFor authority path
   let payload = [aesonQQ|{"unload_models": true, "free_memory": true}|]
   -- 本文は空なので捨てる。
-  void (successBody path =<< httpLBS (setRequestBodyJSON payload request))
+  void
+    ( successBody path
+        =<< httpLBS (setRequestMethod "POST" (setRequestBodyJSON payload request))
+    )
  where
   path = "/free"
 

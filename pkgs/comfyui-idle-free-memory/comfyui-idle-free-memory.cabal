@@ -67,6 +67,7 @@ library
   build-depends:
     base >=4.20.0.0 && <4.23,
     himari >=1.1.6 && <1.2,
+    http-client >=0.7 && <0.8,
     http-conduit >=2.3 && <2.4,
 
 executable comfyui-idle-free-memory

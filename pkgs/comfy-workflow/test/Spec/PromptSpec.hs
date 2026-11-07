@@ -47,6 +47,26 @@ tests = describe "Prompt" do
     it "対象でないノードは触らない" do
       let prompt = [aesonQQ|{"5": {"class_type": "KSampler", "inputs": {"seed": 1}}}|]
       fixup prompt `shouldBe` prompt
+  describe "applySeed" do
+    it "指定したノードの入力へseedを書き、他には触らない" do
+      let prompt =
+            [aesonQQ|{
+              "5": {"class_type": "KSampler", "inputs": {"seed": 0, "steps": 28}},
+              "11": {"class_type": "KSampler", "inputs": {"seed": 0}},
+              "6": {"class_type": "VAEDecode", "inputs": {"samples": ["5", 0]}}
+            }|]
+          targets = [("5", "seed"), ("11", "seed")]
+          seeded = maybe prompt (toJSON . applySeed 314 targets) (asObject prompt)
+      seeded
+        `shouldBe` [aesonQQ|{
+          "5": {"class_type": "KSampler", "inputs": {"seed": 314, "steps": 28}},
+          "11": {"class_type": "KSampler", "inputs": {"seed": 314}},
+          "6": {"class_type": "VAEDecode", "inputs": {"samples": ["5", 0]}}
+        }|]
+    it "存在しないノードを指しても壊れない" do
+      let prompt = [aesonQQ|{"5": {"inputs": {"seed": 0}}}|]
+          seeded = maybe prompt (toJSON . applySeed 1 [("9", "seed")]) (asObject prompt)
+      seeded `shouldBe` prompt
   describe "readHistory" do
     it "保存されたファイルを集める" do
       let history =

@@ -19,6 +19,7 @@ module ComfyWorkflow.Prompt
   , relativeOutput
   , asObject
   , jsonText
+  , applySeed
   ) where
 
 import ComfyWorkflow.Workflow (Node (..))
@@ -76,6 +77,22 @@ fixupPrompt nodes = imap fixupNode
     | has (ix name) inputs = inputs
     | Just value <- node.widgetsValues ^? ix position = inputs & at name ?~ value
     | otherwise = inputs
+
+-- | API形式のプロンプトへseedを配る。
+--
+-- 配り先は`prompt[ノードID].inputs[入力名]`で、
+-- "ComfyWorkflow.Seed"が返すノードIDと入力名の組をそのまま使う。
+-- `--repeat`で何度投げてもseedの値しか変わらないので、
+-- 公式CLIによる変換は1回で済ませて、ここで差し替える。
+applySeed :: Integer -> [(Text, Text)] -> Prompt -> Prompt
+applySeed seed = flip (foldl' putSeed)
+ where
+  putSeed prompt (nodeId, widget) = prompt & ix nodeId %~ putInput widget
+  putInput widget nodeValue
+    | Just node <- asObject nodeValue
+    , Just inputs <- node ^. at "inputs" >>= asObject =
+        toJSON (node & at "inputs" ?~ toJSON (inputs & at widget ?~ toJSON seed))
+    | otherwise = nodeValue
 
 data HistoryResult
   = -- | 保存されたファイルの、出力ディレクトリからの相対パス。

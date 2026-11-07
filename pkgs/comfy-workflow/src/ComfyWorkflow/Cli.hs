@@ -39,7 +39,14 @@ import ComfyWorkflow.Comfy
   , postPrompt
   )
 import ComfyWorkflow.Parameter (Parameter (..), parameters, parseValue, positiveInt)
-import ComfyWorkflow.Prompt (HistoryResult (..), Prompt, fixupPrompt, jsonText, readHistory)
+import ComfyWorkflow.Prompt
+  ( HistoryResult (..)
+  , Prompt
+  , applySeed
+  , fixupPrompt
+  , jsonText
+  , readHistory
+  )
 import ComfyWorkflow.Seed (seedTargets)
 import ComfyWorkflow.Slot (Slot (..), Slots (..), WidgetType (..))
 import ComfyWorkflow.Workflow (Workflow (..), parseWorkflow)
@@ -150,25 +157,26 @@ run name workflowPath argv = do
       Right parsed -> pure (param.slot.address, parsed)
       Left reason -> handleResult (usageError ("--" <> param.flag <> ": " <> reason))
   baseSeed <- maybe (randomRIO (0, 0xFFFF_FFFF_FFFF)) pure options.seed
+  -- 公式CLIによる書き込みと変換は1回だけにする。
+  -- `--repeat`で変わるのはseedだけなので、
+  -- 変換済みのAPI形式へこちらで差し替えれば、
+  -- 回数に関係なく子プロセスの起動と`/object_info`の取得は一定で済む。
+  edited <- applyOverrides workflowValue workflowPath targetArgs overrides
+  basePrompt <- fixupPrompt workflow.nodes <$> printPrompt targetArgs edited
   let seeds = seedTargets workflow.nodes slots
-      prepare seed = do
-        let seeded = [(address, toJSON seed) | address <- seeds]
-        edited <- applyOverrides workflowValue workflowPath targetArgs (overrides <> seeded)
-        prompt <- fixupPrompt workflow.nodes <$> printPrompt targetArgs edited
-        pure (prompt, seeded)
+      seedAddresses = intercalate ", " [nodeId <> "." <> widget | (nodeId, widget) <- seeds]
+      prepare seed = applySeed seed seeds basePrompt
   if options.dryRun
     then do
       -- 投げる時と同じ順で同じものを通す。
       -- ここは「何が投げられるのか」を確かめるための出口なので、
       -- 実際に投げる内容と食い違っていては用を成さない。
-      (prompt, _) <- prepare baseSeed
-      liftIO (putStrLn (convert (convert (encodePretty prompt) :: Text)))
+      liftIO (putStrLn (convert (convert (encodePretty (prepare baseSeed)) :: Text)))
     else for_ [0 .. fromIntegral options.repeatCount - 1] \offset -> do
       let seed = baseSeed + offset
-      (prompt, seeded) <- prepare seed
-      unless (null seeded) do
-        let targets = intercalate ", " (fmap fst seeded)
-        logInfoN ("seed " <> convert (show seed) <> " を " <> targets <> " へ配りました")
+          prompt = prepare seed
+      unless (null seeds) $
+        logInfoN ("seed " <> convert (show seed) <> " を " <> seedAddresses <> " へ配りました")
       promptId <- postPrompt target prompt
       logInfoN ("投入しました: " <> promptId)
       unless options.noWait do

@@ -28,14 +28,17 @@ import Himari
 controlWords :: [Text]
 controlWords = ["fixed", "increment", "decrement", "randomize"]
 
--- | 振り直すseedのアドレスを返す。
+-- | 振り直すseedの、ノードIDと入力名の組を返す。
 --
 -- ノードごとに、
 -- `widgets_values`の中で数値の直後に振る舞いの名前が続く箇所を順に拾い、
 -- そのノードのseedのスロットへ順に対応させる。
 -- どちらもウィジェットの並び順なので、
 -- 位置合わせはこれで足りる。
-seedTargets :: [Node] -> [Slot] -> [Text]
+--
+-- 組にしているのはAPI形式へ直接書き込むためで、
+-- `prompt[ノードID].inputs[入力名]`がそのまま書き込み先になる。
+seedTargets :: [Node] -> [Slot] -> [(Text, Text)]
 seedTargets nodes slots = concatMap targetsOf nodes
  where
   targetsOf node =
@@ -45,9 +48,9 @@ seedTargets nodes slots = concatMap targetsOf nodes
           , control `elem` controlWords
           ]
         seedSlots =
-          [ slot.address
+          [ (slot.instanceId, slot.name)
           | slot <- slots
           , slot.instanceId == node.nodeId
           , slot.name `elem` seedWidgetNames
           ]
-     in [address | (address, control) <- zip seedSlots controls, control /= "fixed"]
+     in [target | (target, control) <- zip seedSlots controls, control /= "fixed"]

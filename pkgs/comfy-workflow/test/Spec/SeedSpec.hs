@@ -44,12 +44,12 @@ tests = describe "Seed" do
     -- `anima-standard`はサンプラーが3つあり、揃って動く必要がある。
     let nodes = [sampler "7" "randomize", sampler "14" "randomize", sampler "17" "randomize"]
         slots = concatMap samplerSlots ["7", "14", "17"]
-    seedTargets nodes slots `shouldBe` ["7.seed", "14.seed", "17.seed"]
+    seedTargets nodes slots `shouldBe` [("7", "seed"), ("14", "seed"), ("17", "seed")]
   it "fixedのseedには触らない" do
     -- UIで意図して固定したものが、APIから投げた時だけ動くのはおかしい。
     seedTargets [sampler "5" "fixed"] (samplerSlots "5") `shouldBe` []
   it "incrementやdecrementも振り直す" do
-    seedTargets [sampler "5" "increment"] (samplerSlots "5") `shouldBe` ["5.seed"]
+    seedTargets [sampler "5" "increment"] (samplerSlots "5") `shouldBe` [("5", "seed")]
   it "seedの前に別のウィジェットがあっても拾う" do
     -- FaceDetailerはseedの前にguide_sizeなどが並ぶ。
     let node =
@@ -67,7 +67,7 @@ tests = describe "Seed" do
           , slot "14" "seed" IntWidget
           , slot "14" "steps" IntWidget
           ]
-    seedTargets [node] slots `shouldBe` ["14.seed"]
+    seedTargets [node] slots `shouldBe` [("14", "seed")]
   it "振る舞いの名前が無いseedは振り直さない" do
     let node =
           Node
@@ -90,7 +90,7 @@ tests = describe "Seed" do
           , slot "9" "noise_seed" IntWidget
           , slot "9" "steps" IntWidget
           ]
-    seedTargets [node] slots `shouldBe` ["9.noise_seed"]
+    seedTargets [node] slots `shouldBe` [("9", "noise_seed")]
   it "振る舞いの名前と同じ文字列を持つCOMBOの値は数値の後にしか見ない" do
     -- `fixed`という選択肢を持つCOMBOの値を、seedの振る舞いと取り違えない。
     let node =

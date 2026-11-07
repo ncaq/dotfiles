@@ -1,6 +1,7 @@
 # アイドル中のComfyUIにメモリを解放させる常駐プロセスを、コンテナの中で動かす。
 #
-# 何をどう判断して解放するかは`idle-free-memory/main.py`の先頭に書いてある。
+# 中身は`pkgs/comfyui-idle-free-memory`で、
+# 何をどう判断して解放するかはそちらの`src/IdleFreeMemory/Run.hs`の冒頭に書いてある。
 #
 # ホスト側のサービスにしない理由は寿命の管理である。
 # ComfyUIのコンテナはソケットアクティベーションで起きるので、
@@ -17,28 +18,22 @@
 # vethのアドレスもコンテナのfirewallも関係しなくなる。
 {
   lib,
+  pkgs,
+  inputs,
   hardening,
   ...
 }:
 let
-  # コンテナのstoreへ持ち込むのは動かすものだけにする。
-  # ディレクトリをそのまま渡すとテストまで付いてくる。
-  source = lib.fileset.toSource {
-    root = ./idle-free-memory;
-    fileset = lib.fileset.unions [
-      ./idle-free-memory/main.py
-      ./idle-free-memory/response.py
-      ./idle-free-memory/state.py
-    ];
+  # ホスト側の`pkgs`で組む。
+  # コンテナの中もホストと同じnixpkgsなので、
+  # `nixos/host/bullet/comfyui/workflow/cli.nix`が組むcomfy-workflowと依存の閉包を共有できる。
+  comfyui-idle-free-memory = pkgs.callPackage ../../../../pkgs/comfyui-idle-free-memory {
+    inherit (inputs) himari-src;
   };
 in
 {
   containers.comfyui.config =
-    {
-      pkgs,
-      config,
-      ...
-    }:
+    { config, ... }:
     {
       systemd.services.comfyui-idle-free-memory = {
         description = "Free ComfyUI memory while idle";
@@ -46,14 +41,11 @@ in
         after = [ "comfyui.service" ];
         # 依存関係で縛らない。
         # ComfyUIが落ちている間はHTTPが失敗するだけで、
-        # スクリプトはそれを記録して次の周回へ進む。
+        # プログラムはそれを記録して次の周回へ進む。
         # 縛って止めるより、動いていない相手を叩き続けて勝手に復帰する方が単純である。
         environment = {
-          # 渡すのはホストとポートだけにする。
-          # `http://`をこちらで足して完全なURLにすると、
-          # Python側で`urlopen`へ渡るのが変数になり、
-          # ruffがS310でスキームを確定できないと警告する。
-          # 理由の詳細は`idle-free-memory/main.py`の冒頭にある。
+          # 渡すのはホストとポートだけにして、スキームはプログラムの側で固定する。
+          # comfy-workflowの`COMFYUI_AUTHORITY`と同じ形に揃える。
           COMFYUI_AUTHORITY = "127.0.0.1:${toString config.services.comfyui.port}";
           # 確認の間隔。
           # 活動時刻はComfyUI自身の記録から取るので、
@@ -69,18 +61,12 @@ in
         # コンテナの中のモジュールへはモジュール引数としては渡らないが、
         # ここはクロージャの内側なのでそのまま参照できる。
         serviceConfig = hardening.network // {
-          # ループバックへHTTPを投げるだけなので、
-          # 標準ライブラリしか使わないPythonをそのまま動かせる。
-          #
-          # `main.py`を直接指すと、
-          # Pythonが置かれたディレクトリをsys.pathの先頭へ入れるので、
-          # 隣の`response.py`と`state.py`が素のモジュールとして解決される。
-          ExecStart = "${pkgs.python3}/bin/python3 ${source}/main.py";
+          ExecStart = lib.getExe comfyui-idle-free-memory;
           DynamicUser = true;
           # 待ち続けるのが仕事なので、終了は全て異常である。
           #
-          # HTTPの失敗はPython側が周回の中で吸収するので、
-          # ここまで来る終了は環境変数の欠落やスクリプト自体の不具合など、
+          # HTTPの失敗はプログラムが周回の中で吸収するので、
+          # ここまで来る終了は環境変数の欠落や不正な値、プログラム自体の不具合など、
           # 待っても直らないものが基本になる。
           # 10秒固定のままだと、
           # systemdの既定の起動レート制限(10秒に5回)に掛からないため、

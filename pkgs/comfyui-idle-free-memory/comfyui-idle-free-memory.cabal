@@ -1,0 +1,117 @@
+cabal-version: 3.12
+name: comfyui-idle-free-memory
+version: 0.1.0.0
+synopsis: アイドル中のComfyUIにメモリを解放させる常駐プロセス
+license: Apache-2.0
+author: ncaq <ncaq@ncaq.net>
+maintainer: ncaq <ncaq@ncaq.net>
+build-type: Simple
+
+source-repository head
+  type: git
+  location: https://github.com/ncaq/dotfiles
+
+common basic
+  ghc-options:
+    -Wall
+    -Wcompat
+    -Widentities
+    -Wincomplete-record-updates
+    -Wincomplete-uni-patterns
+    -Wpartial-fields
+    -Wredundant-constraints
+
+  default-language: GHC2024
+  default-extensions:
+    ApplicativeDo
+    BlockArguments
+    CPP
+    DefaultSignatures
+    DerivingVia
+    DuplicateRecordFields
+    FunctionalDependencies
+    LexicalNegation
+    LinearTypes
+    MonadComprehensions
+    MultiWayIf
+    NegativeLiterals
+    NoFieldSelectors
+    NoImplicitPrelude
+    OverloadedLabels
+    OverloadedRecordDot
+    OverloadedStrings
+    ParallelListComp
+    PatternSynonyms
+    QualifiedDo
+    QuantifiedConstraints
+    QuasiQuotes
+    RecordWildCards
+    RecursiveDo
+    StrictData
+    TemplateHaskell
+    TypeData
+    TypeFamilies
+    TypeFamilyDependencies
+    ViewPatterns
+
+library
+  import: basic
+  hs-source-dirs: src
+  -- cabal-gild: discover ./src
+  exposed-modules:
+    IdleFreeMemory.Config
+    IdleFreeMemory.Response
+    IdleFreeMemory.Run
+    IdleFreeMemory.State
+
+  build-depends:
+    base >=4.20.0.0 && <4.23,
+    himari >=1.1.6 && <1.2,
+    http-client >=0.7 && <0.8,
+    http-conduit >=2.3 && <2.4,
+
+executable comfyui-idle-free-memory
+  import: basic
+  hs-source-dirs: app
+  main-is: Main.hs
+  -- 数分に1回HTTPを投げて残りは寝ているだけの常駐プロセスなので、
+  -- `-N`でコア数分のcapabilityとnurseryを作っても速くならない。
+  -- 並列GCのたびに全コアのGCスレッドを起こすだけになり、
+  -- 同じマシンのOllamaやComfyUIの邪魔になる。
+  ghc-options:
+    -threaded
+    -rtsopts
+
+  build-depends:
+    base,
+    comfyui-idle-free-memory,
+    himari,
+
+test-suite comfyui-idle-free-memory-test
+  import: basic
+  type: exitcode-stdio-1.0
+  hs-source-dirs: test
+  main-is: Main.hs
+  ghc-options:
+    -threaded
+    -rtsopts
+    -with-rtsopts=-N
+
+  -- cabal-gild: discover ./test --exclude ./test/Main.hs
+  other-modules:
+    Spec
+    Spec.ConfigSpec
+    Spec.FreeSpec
+    Spec.ResponseSpec
+    Spec.StateSpec
+
+  build-tool-depends:
+    sandwich:sandwich-discover
+
+  build-depends:
+    base,
+    comfyui-idle-free-memory,
+    himari,
+    http-client,
+    http-conduit,
+    sandwich >=0.3.0.5,

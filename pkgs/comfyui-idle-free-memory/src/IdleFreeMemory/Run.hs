@@ -93,17 +93,17 @@ instance Exception RequestFailure where
 -- ComfyUIの再起動中や、モデルの読み込みで応答が詰まっている間は届かない。
 -- それらは次の周回で回復するので、周回の中で吸収する。
 --
--- 接続の失敗や時間切れや途中での切断は`HttpException`に、
+-- 接続の失敗や時間切れや途中での切断は`HttpException`の`HttpExceptionRequest`に、
 -- 状態コードと本文の問題は`RequestFailure`に、
 -- 応答の形の問題は`ResponseFailure`に入る。
--- それ以外の例外はこちらの不具合なので、握り潰さずに上へ通してユニットごと落とす。
+--
+-- 同じ`HttpException`でも、URLが不正な`InvalidUrlException`は吸収しない。
+-- 接続先の値が壊れている時にしか起きず、待っても直らないためである。
+-- それ以外の例外もこちらの不具合なので、握り潰さずに上へ通してユニットごと落とす。
 transientFailure :: SomeException -> Maybe Text
 transientFailure exception
   -- 既定の表示は要求の全フィールドを何行にも渡って並べるので、
   -- 周回ごとに出るログとしては中身の理由だけにする。
-  --
-  -- 同じ`HttpException`でも`InvalidUrlException`は吸収しない。
-  -- 接続先の値が壊れている時にしか起きず、待っても直らないためである。
   | Just (HttpExceptionRequest _ content) <- fromException exception = Just (convert (show content))
   | Just (failure :: RequestFailure) <- fromException exception = Just (describe failure)
   | Just (failure :: ResponseFailure) <- fromException exception = Just (describe failure)
@@ -211,8 +211,9 @@ initialIdleState authority = do
 -- 失敗した周回でフラグだけ進めると、
 -- 次の活動があるまで再試行できなくなる。
 --
--- 通信の失敗だけを吸収する。
--- それ以外の例外はこちらの不具合なので、握り潰さずに上へ通す。
+-- 周回の中で吸収してよい一時的な失敗(通信、状態コードや本文、応答の形)だけを吸収する。
+-- 範囲は`transientFailure`が決める。
+-- それ以外の例外は握り潰さずに上へ通す。
 freeIfNeeded :: (MonadLogger m, MonadUnliftIO m) => m () -> Decision -> IdleState -> m IdleState
 freeIfNeeded _ Hold current = pure current
 freeIfNeeded requestFree RequestFree current = do

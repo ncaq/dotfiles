@@ -50,6 +50,11 @@ tests = describe "State" do
     -- 確認と確認の間に始まって終わった生成を拾い直す経路。
     -- 拾ったら解放済みのフラグも戻す。
     nextState idle (withHistory 1000 900) (idleAt 100 True) `shouldBe` (idleAt 900 False, Hold)
+  it "履歴をまだ見ていない状態から最初の活動を拾う" do
+    -- 起動時に履歴が空だったか取れなかった後、
+    -- 確認の合間に短い生成が1件終わった時がこれに当たる。
+    nextState idle (withHistory 1000 900) (initialState (at' 500) Nothing)
+      `shouldBe` (seen 900 (idleAt 900 False), Hold)
   it "古い履歴では時計を動かさない" do
     nextState idle (withHistory 2000 100) (idleAt 900 True) `shouldBe` (idleAt 900 True, Hold)
   it "同じ時刻の履歴では解放済みのフラグを戻さない" do

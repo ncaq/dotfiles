@@ -103,6 +103,7 @@ test-suite comfy-workflow-test
   -- cabal-gild: discover ./test --exclude ./test/Main.hs
   other-modules:
     Spec
+    Spec.CliSpec
     Spec.NameSpec
     Spec.ParameterSpec
     Spec.PromptSpec
@@ -117,4 +118,5 @@ test-suite comfy-workflow-test
     base,
     comfy-workflow,
     himari,
+    optparse-applicative,
     sandwich >=0.3.0.5,

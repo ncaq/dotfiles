@@ -44,9 +44,7 @@ tests = describe "freeIfNeeded" do
       >>= (`shouldBe` idleState{freed = True})
     liftIO calls >>= (`shouldBe` 1)
   for_
-    [ ("接続できない", toException (InvalidUrlException "http://127.0.0.1:8188/free" "テスト"))
-    , ("成功ではない状態コード", toException (UnexpectedStatus "/free" 500))
-    ]
+    [("成功ではない状態コード", toException (UnexpectedStatus "/free" 500))]
     \(caseName, failure) ->
       it ("要求に失敗したら解放済みにしない: " <> caseName) do
         -- 失敗した周回でフラグだけ進めると、次の活動まで再試行できなくなる。
@@ -57,3 +55,14 @@ tests = describe "freeIfNeeded" do
     -- それ以外はこちらの不具合なので、握り潰さずにユニットごと落とす。
     runSimpleNoLogEnv (freeIfNeeded (throwM Unexpected) RequestFree idleState)
       `shouldThrow` \Unexpected -> True
+  it "URLが不正なら吸収しない" do
+    -- 接続先の値が壊れている時にしか起きず、待っても直らない。
+    runSimpleNoLogEnv
+      ( freeIfNeeded
+          (throwM (InvalidUrlException "http://127.0.0.1:8188/free" "テスト"))
+          RequestFree
+          idleState
+      )
+      `shouldThrow` \case
+        InvalidUrlException _ _ -> True
+        HttpExceptionRequest _ _ -> False

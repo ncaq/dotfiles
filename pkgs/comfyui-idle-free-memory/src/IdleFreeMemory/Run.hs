@@ -110,11 +110,12 @@ instance Exception RequestFailure where
 -- それ以外の例外はこちらの不具合なので、握り潰さずに上へ通してユニットごと落とす。
 transientFailure :: SomeException -> Maybe Text
 transientFailure exception
-  | Just (failure :: HttpException) <- fromException exception = Just case failure of
-      -- 既定の表示は要求の全フィールドを何行にも渡って並べるので、
-      -- 周回ごとに出るログとしては中身の理由だけにする。
-      HttpExceptionRequest _ content -> convert (show content)
-      InvalidUrlException url reason -> convert url <> ": " <> convert reason
+  -- 既定の表示は要求の全フィールドを何行にも渡って並べるので、
+  -- 周回ごとに出るログとしては中身の理由だけにする。
+  --
+  -- 同じ`HttpException`でも`InvalidUrlException`は吸収しない。
+  -- 接続先の値が壊れている時にしか起きず、待っても直らないためである。
+  | Just (HttpExceptionRequest _ content) <- fromException exception = Just (convert (show content))
   | Just (failure :: RequestFailure) <- fromException exception = Just (describe failure)
   | Just (failure :: ResponseFailure) <- fromException exception = Just (describe failure)
   | otherwise = Nothing
@@ -125,6 +126,13 @@ transientFailure exception
 -- | 待ち続けて、アイドルが続いたら解放を要求する。返らない。
 run :: (MonadLogger m, MonadThrow m, MonadUnliftIO m) => Config -> m ()
 run config = do
+  -- 接続先が壊れていると全ての周回が同じ理由で失敗し続けるので、
+  -- 秒数の環境変数と同じく起動の時点で落とす。
+  let probe :: Maybe Request
+      probe = parseRequest (convert ("http://" <> config.authority <> "/"))
+  when (isNothing probe) do
+    logErrorN ("COMFYUI_AUTHORITYを接続先として読めません: " <> config.authority)
+    throwM (ExitFailure 1)
   initial <- initialIdleState config.authority
   logInfoN
     ( convert (show config.pollIntervalSeconds)

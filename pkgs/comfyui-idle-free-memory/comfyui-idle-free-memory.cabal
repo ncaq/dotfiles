@@ -73,10 +73,13 @@ executable comfyui-idle-free-memory
   import: basic
   hs-source-dirs: app
   main-is: Main.hs
+  -- 数分に1回HTTPを投げて残りは寝ているだけの常駐プロセスなので、
+  -- `-N`でコア数分のcapabilityとnurseryを作っても速くならない。
+  -- 並列GCのたびに全コアのGCスレッドを起こすだけになり、
+  -- 同じマシンのOllamaやComfyUIの邪魔になる。
   ghc-options:
     -threaded
     -rtsopts
-    -with-rtsopts=-N
 
   build-depends:
     base,

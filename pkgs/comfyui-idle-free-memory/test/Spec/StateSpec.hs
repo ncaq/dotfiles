@@ -44,6 +44,11 @@ tests = describe "State" do
     nextState idle (withHistory 1000 900) (idleAt 100 True) `shouldBe` (idleAt 900 False, Hold)
   it "古い履歴では時計を動かさない" do
     nextState idle (withHistory 2000 100) (idleAt 900 True) `shouldBe` (idleAt 900 True, Hold)
+  it "同じ時刻の履歴では解放済みのフラグを戻さない" do
+    -- 実機ではこれが普段の状態である。
+    -- 解放した後も`/history?max_items=1`は毎周回同じ最後の1件を返す。
+    -- ここで戻すと、しきい値を超えている間ずっと毎周回`/free`を投げ続ける。
+    nextState idle (withHistory 10000 900) (idleAt 900 True) `shouldBe` (idleAt 900 True, Hold)
   it "履歴が無ければ時計を動かさない" do
     nextState idle (quiet 1000) (idleAt 900 False) `shouldBe` (idleAt 900 False, Hold)
   it "未来の履歴は現在時刻へ倒す" do

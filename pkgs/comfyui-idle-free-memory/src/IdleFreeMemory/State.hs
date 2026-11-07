@@ -27,6 +27,9 @@ data IdleState = IdleState
   , freed :: Bool
   -- ^ 解放を要求済みかどうか。
   -- 次の活動があるまで同じ要求を投げ続けないために持つ。
+  , seenHistory :: Maybe UTCTime
+  -- ^ 最後に見た履歴の時刻を、現在時刻へ倒す前の値のまま持つ。
+  -- 新しい活動かどうかはこれと比べて決める。
   }
   deriving stock (Eq, Show)
 
@@ -61,24 +64,30 @@ nextState
   -> IdleState
   -> (IdleState, Decision)
 nextState idleThreshold observation current
-  | observation.busy = (IdleState{lastActivity = observation.now, freed = False}, Hold)
+  | observation.busy = (current{lastActivity = observation.now, freed = False}, Hold)
   | caughtUp.freed = (caughtUp, Hold)
   | diffUTCTime observation.now caughtUp.lastActivity < idleThreshold = (caughtUp, Hold)
   | otherwise = (caughtUp, RequestFree)
  where
   caughtUp = case observation.latest of
-    -- 未来の時刻は現在時刻へ倒す。
-    -- コンテナ内の時刻ずれや、
-    -- 履歴を書ける立場が未来のタイムスタンプを1件でも記録した場合に、
-    -- そのまま代入すると経過時間が負のままになる。
-    -- しきい値を二度と超えられなくなって解放が永久に止まり、
-    -- GPUを共有する他のサービスへ直接効いてしまう。
-    --
-    -- 無視せず倒すのは、
-    -- 未来を指していても「新しい活動があった」ことは事実だからである。
+    -- 新しい活動かどうかは、倒す前の履歴の時刻同士で比べる。
+    -- 倒した後の時刻を`lastActivity`と比べると、
+    -- 同じ未来の時刻が毎周回`now`へ倒されて新しく見え続け、
+    -- 時計がその未来の時刻に追いつくまで解放されなくなる。
     Just latest
-      | let activity = min latest observation.now
-      , current.lastActivity < activity ->
+      | all (< latest) current.seenHistory ->
           -- 確認と確認の間に始まって終わった生成をここで拾う。
-          IdleState{lastActivity = activity, freed = False}
+          IdleState
+            { -- 未来の時刻は現在時刻へ倒す。
+              -- コンテナ内の時刻ずれや、
+              -- 履歴を書ける立場が未来のタイムスタンプを1件でも記録した場合に、
+              -- そのまま代入すると経過時間が負のままになる。
+              -- 無視せず倒すのは、
+              -- 未来を指していても「新しい活動があった」ことは事実だからである。
+              --
+              -- busyの間に進めた時刻より古い履歴で巻き戻さない。
+              lastActivity = max current.lastActivity (min latest observation.now)
+            , freed = False
+            , seenHistory = Just latest
+            }
     _ -> current

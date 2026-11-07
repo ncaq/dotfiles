@@ -17,7 +17,8 @@ import Network.HTTP.Simple (HttpException (..))
 import Test.Sandwich
 
 idleState :: IdleState
-idleState = IdleState{lastActivity = posixSecondsToUTCTime 1000, freed = False}
+idleState =
+  IdleState{lastActivity = posixSecondsToUTCTime 1000, freed = False, seenHistory = Nothing}
 
 -- | 想定していない失敗。
 data Unexpected = Unexpected

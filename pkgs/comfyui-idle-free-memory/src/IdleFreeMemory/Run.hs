@@ -132,7 +132,7 @@ run config = do
   -- 載っていなければ`unload_all_models`は何もしないので害は無い。
   -- そのかわり、このプロセスだけが再起動した場合に、
   -- 載ったままのモデルを取りこぼさずに済む。
-  watchFrom IdleState{lastActivity = initial, freed = False}
+  watchFrom IdleState{lastActivity = initial, freed = False, seenHistory = Nothing}
  where
   watchFrom current = do
     -- 確認より先に待つ。

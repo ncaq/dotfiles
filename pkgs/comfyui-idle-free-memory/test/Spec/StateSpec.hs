@@ -25,14 +25,22 @@ quiet now = Observation{now = at' now, busy = False, latest = Nothing}
 withHistory :: NominalDiffTime -> NominalDiffTime -> Observation
 withHistory now latest = (quiet now){latest = Just (at' latest)}
 
+-- | 最後の活動の時刻と、その時刻の履歴を見たところの状態。
 idleAt :: NominalDiffTime -> Bool -> IdleState
-idleAt lastActivity freed = IdleState{lastActivity = at' lastActivity, freed}
+idleAt lastActivity freed =
+  IdleState{lastActivity = at' lastActivity, freed, seenHistory = Just (at' lastActivity)}
+
+-- | 最後に見た履歴の時刻だけを差し替える。
+seen :: NominalDiffTime -> IdleState -> IdleState
+seen history state' = state'{seenHistory = Just (at' history)}
 
 tests :: TopSpec
 tests = describe "State" do
   it "busyなら時計を巻き戻す" do
     -- 実行中なら、履歴を見るまでもなく現在時刻が最後の活動になる。
-    nextState idle (quiet 1000){busy = True} (idleAt 0 True) `shouldBe` (idleAt 1000 False, Hold)
+    -- 履歴は引いていないので、最後に見た履歴の時刻は変えない。
+    nextState idle (quiet 1000){busy = True} (idleAt 0 True)
+      `shouldBe` (seen 0 (idleAt 1000 False), Hold)
   it "busyなら履歴を見ない" do
     -- busyなら履歴は結果に影響しない。
     -- 影響しないものを引かずに済ませられることを、呼び出し側の根拠として固定する。
@@ -57,10 +65,18 @@ tests = describe "State" do
     -- しきい値を二度と超えられなくなって解放が永久に止まる。
     -- このプロセスはOllamaのCUDA OOMを防ぐための緩和策なので、
     -- 静かな無効化はGPUを共有する他のサービスへ直接効く。
-    nextState idle (withHistory 1000 99999) (idleAt 0 False) `shouldBe` (idleAt 1000 False, Hold)
+    -- 最後に見た履歴の時刻は倒す前の値のまま持つ。
+    nextState idle (withHistory 1000 99999) (idleAt 0 False)
+      `shouldBe` (seen 99999 (idleAt 1000 False), Hold)
   it "未来の履歴でも解放済みのフラグは戻す" do
     -- 倒しても「新しい活動があった」ことは事実である。
-    nextState idle (withHistory 1000 99999) (idleAt 0 True) `shouldBe` (idleAt 1000 False, Hold)
+    nextState idle (withHistory 1000 99999) (idleAt 0 True)
+      `shouldBe` (seen 99999 (idleAt 1000 False), Hold)
+  it "busyの間に進めた時刻を古い履歴で巻き戻さない" do
+    -- busyの周回は履歴を引かないので、
+    -- 次の周回で初めて見る履歴が、busyで記録した時刻より古いことがある。
+    nextState idle (withHistory 2000 1500) (seen 0 (idleAt 1800 False))
+      `shouldBe` (seen 1500 (idleAt 1800 False), Hold)
   it "未来の履歴が残り続けても有限の周回で解放する" do
     -- 1周回だけ見れば倒すことで経過時間は負にならないが、
     -- 同じ未来の時刻を毎周回拾い直すと`lastActivity`が毎回`now`へ進み、

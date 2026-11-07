@@ -14,4 +14,4 @@ memmap2 = "0.9"
 safetensors = "0.8"
 
 [dev-dependencies]
-tempfile = "3"
+tempfile = "=3.27.0"

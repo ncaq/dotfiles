@@ -2,17 +2,14 @@
 #
 # treefmtの`ruff-check`とエディタと手元の`ruff check`が同じルールを見るように、
 # リポジトリのルートへ置く。
-# `pkgs/safetensors-fp16/pyproject.toml`には`[tool.ruff]`が無いので、
-# ruffは設定を上へ探しに来てここへ辿り着く。
 
 # 対象とするPythonのバージョン。
 #
-# ruffは設定を提供したファイルを基準に`requires-python`を探すので、
-# 設定がここにある限り`pkgs/safetensors-fp16/pyproject.toml`の宣言は使われず、
+# このリポジトリには`requires-python`を宣言する`pyproject.toml`が無いので、
 # 書かなければruffの既定のバージョンで判定される。
 # 新しい構文への置き換えを勧める`UP`が本来の指摘を出さなくなるため明示する。
 #
-# ComfyUIのPython環境も`requires-python`もどちらも3.12なので、
+# ComfyUIのPython環境が3.12なので、
 # 型検査と同じ下限で揃う。
 target-version = "py312"
 

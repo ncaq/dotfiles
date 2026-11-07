@@ -329,9 +329,6 @@
           # ComfyUIの自作カスタムノードのうち、
           # ComfyUI本体に触れない部分のpytest。
           comfyui-custom-node-test = import ./lib/comfyui-custom-node-test.nix { inherit pkgs; };
-          # アイドル解放の常駐プロセスのうち、
-          # 応答の解釈とアイドルの判定のpytest。
-          comfyui-idle-free-memory-test = import ./lib/comfyui-idle-free-memory-test.nix { inherit pkgs; };
           # GGUFのチャットテンプレートの出し入れのうち、
           # メタデータの走査とバイト長を保った書き戻しのpytest。
           patch-gguf-chat-template-test = import ./lib/patch-gguf-chat-template-test.nix {
@@ -375,6 +372,11 @@
           # ビルドの中でsandwichのテストが走る。
           comfy-workflow = pkgs.callPackage ./pkgs/comfy-workflow {
             inherit comfy-cli;
+            inherit (inputs) himari-src;
+          };
+          # アイドル中のComfyUIにメモリを解放させる常駐プロセス。
+          # ビルドの中でsandwichのテストが走る。
+          comfyui-idle-free-memory = pkgs.callPackage ./pkgs/comfyui-idle-free-memory {
             inherit (inputs) himari-src;
           };
           # リポジトリ内のPythonをpyrightで型検査するためのderivation群。
@@ -513,7 +515,6 @@
                 comfy-cli
                 comfyui-api-workflow-test
                 comfyui-custom-node-test
-                comfyui-idle-free-memory-test
                 git-repo-subscribe
                 machine-address6-test
                 open-webui-user-settings-merge-test
@@ -523,6 +524,7 @@
                 ;
               # 警告を残さないために、CIでだけ`-Werror`で組む。
               comfy-workflow = comfy-workflow.override { werror = true; };
+              comfyui-idle-free-memory = comfyui-idle-free-memory.override { werror = true; };
             }
             // lib.optionalAttrs hasComfyui {
               # リポジトリ内のPythonの型検査。
@@ -546,6 +548,8 @@
             inherit safetensors-fp16;
             # Comfy-Orgの公式CLIと、それを包んでワークフローを名前で呼ぶコマンド。
             inherit comfy-cli comfy-workflow;
+            # アイドル中のComfyUIにメモリを解放させる常駐プロセス。
+            inherit comfyui-idle-free-memory;
           }
           // lib.optionalAttrs hasComfyui {
             # pyrightがPython環境とComfyUIのソースを辿るためのディレクトリ。

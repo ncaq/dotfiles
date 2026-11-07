@@ -175,14 +175,19 @@ run name workflowPath argv = do
       -- ここは「何が投げられるのか」を確かめるための出口なので、
       -- 実際に投げる内容と食い違っていては用を成さない。
       liftIO (putStrLn (convert (convert (encodePretty (prepare baseSeed)) :: Text)))
-    else for_ [0 .. fromIntegral options.repeatCount - 1] \offset -> do
-      let seed = baseSeed + offset
-          prompt = prepare seed
-      unless (null seeds) $
-        logInfoN ("seed " <> convert (show seed) <> " を " <> seedAddresses <> " へ配りました")
-      promptId <- postPrompt target prompt
-      logInfoN ("投入しました: " <> promptId)
-      unless options.noWait do
+    else do
+      -- 先に全件を投入してから順に待つ。
+      -- 1件ずつ待ってから次を投げると、
+      -- 待ちの間にComfyUIのキューが空になってGPUが遊ぶ。
+      -- 投入の順に待つので、seedの割り当ても出力の順も変わらない。
+      promptIds <- for [0 .. fromIntegral options.repeatCount - 1] \offset -> do
+        let seed = baseSeed + offset
+        unless (null seeds) $
+          logInfoN ("seed " <> convert (show seed) <> " を " <> seedAddresses <> " へ配りました")
+        promptId <- postPrompt target (prepare seed)
+        logInfoN ("投入しました: " <> promptId)
+        pure promptId
+      unless options.noWait $ for_ promptIds \promptId -> do
         waitFor targetArgs promptId
         history <- getHistory target promptId
         result <- either (throwM . ComfyFailure) pure (readHistory promptId history)

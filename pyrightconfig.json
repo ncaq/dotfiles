@@ -20,10 +20,6 @@
       "extraPaths": ["nixos/host/bullet/comfyui/idle-free-memory"]
     },
     {
-      "root": "nixos/host/bullet/comfyui/workflow/cli",
-      "extraPaths": ["nixos/host/bullet/comfyui/workflow/cli"]
-    },
-    {
       "root": "nixos/host/bullet/comfyui/custom-node/tests",
       "extraPaths": [
         "nixos/host/bullet/comfyui/custom-node",

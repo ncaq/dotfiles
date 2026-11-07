@@ -4,6 +4,8 @@ extend-exclude = ["key/", "mozc/", "secrets/"]
 [default.extend-words]
 # Part of "RGBa" (Pillow's pre-multiplied alpha RGB mode)
 Ba = "Ba"
+# Mozilla由来のCA証明書束を配るPythonパッケージ`certifi`
+certifi = "certifi"
 # HSA is something AMD uses for their GPUs
 HSA = "HSA"
 # 社名。分割で認識されなくなります。

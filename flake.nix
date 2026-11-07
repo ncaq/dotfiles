@@ -106,6 +106,12 @@
       };
     };
 
+    # stableのnixpkgsに入っている版はbrokenなので、上流のソースから組む。
+    himari-src = {
+      url = "github:ncaq/himari";
+      flake = false;
+    };
+
     git-hooks = {
       url = "github:ncaq/git-hooks";
       inputs = {
@@ -326,9 +332,6 @@
           # アイドル解放の常駐プロセスのうち、
           # 応答の解釈とアイドルの判定のpytest。
           comfyui-idle-free-memory-test = import ./lib/comfyui-idle-free-memory-test.nix { inherit pkgs; };
-          # ワークフローを名前で呼ぶコマンドのうち、
-          # ノード定義の読み取りと変換とフラグ名の決め方のpytest。
-          comfyui-workflow-cli-test = import ./lib/comfyui-workflow-cli-test.nix { inherit pkgs; };
           # GGUFのチャットテンプレートの出し入れのうち、
           # メタデータの走査とバイト長を保った書き戻しのpytest。
           patch-gguf-chat-template-test = import ./lib/patch-gguf-chat-template-test.nix {
@@ -366,6 +369,14 @@
             import ./lib/comfyui-api-workflow-test.nix { inherit lib; }
           );
           safetensors-fp16 = pkgs.callPackage ./pkgs/safetensors-fp16 { };
+          # Comfy-Orgの公式CLI。
+          comfy-cli = pkgs.callPackage ./pkgs/comfy-cli { };
+          # ワークフローを名前で呼ぶコマンド。
+          # ビルドの中でsandwichのテストが走る。
+          comfy-workflow = pkgs.callPackage ./pkgs/comfy-workflow {
+            inherit comfy-cli;
+            inherit (inputs) himari-src;
+          };
           # リポジトリ内のPythonをpyrightで型検査するためのderivation群。
           # ComfyUIのパッケージはoverlay経由でしか生えないが、
           # perSystemの`pkgs`にはoverlayが載っていないため、
@@ -395,6 +406,8 @@
             programs = {
               actionlint.enable = true;
               deadnix.enable = true;
+              fourmolu.enable = true;
+              hlint.enable = true;
               nixf-diagnose.enable = true;
               nixfmt.enable = true;
               prettier.enable = true;
@@ -409,10 +422,43 @@
               zizmor.enable = true;
             };
             settings.formatter = {
+              # cabal-gildのモジュール自動発見機能に対応するため、
+              # Haskellソースファイルの変更も検知してcabal-gildを実行します。
+              # treefmt-nixの上流では、
+              # 変更されたファイルだけを修正したいと言われてマージされていませんが、
+              # ローカルで使う分には問題ありません。
+              # [cabal-gild discover module](https://github.com/numtide/treefmt-nix/pull/384)
+              cabal-gild = {
+                command = lib.getExe (
+                  pkgs.writeShellApplication {
+                    name = "cabal-gild-wrapper";
+                    runtimeInputs = with pkgs; [
+                      git
+                      haskellPackages.cabal-gild
+                      parallel
+                    ];
+                    text = ''
+                      git ls-files -z "*.cabal" | parallel --null "cabal-gild --io {}"
+                    '';
+                  }
+                );
+                includes = [
+                  "*.cabal"
+                  # Haskellソースファイルの変更を検知するために含める
+                  "*.hs"
+                  "*.lhs"
+                  "*.hsc"
+                  "*.chs"
+                  "*.hsig"
+                  "*.lhsig"
+                ];
+              };
               editorconfig-checker = {
                 command = pkgs.editorconfig-checker;
                 includes = [ "*" ];
               };
+              # himariが推奨するスタイルのhlint設定を上流のソースから借りる。
+              hlint.options = [ "--hint=${inputs.himari-src}/.hlint.yaml" ];
               zizmor.options = [ "--pedantic" ];
             };
           };
@@ -464,10 +510,10 @@
               # derivationの中で走るテストが通ることをCIで保証したいパッケージは、
               # `packages`と両方に並べます。
               inherit
+                comfy-cli
                 comfyui-api-workflow-test
                 comfyui-custom-node-test
                 comfyui-idle-free-memory-test
-                comfyui-workflow-cli-test
                 git-repo-subscribe
                 machine-address6-test
                 open-webui-user-settings-merge-test
@@ -475,6 +521,8 @@
                 safetensors-fp16
                 systemd-specifier-test
                 ;
+              # 警告を残さないために、CIでだけ`-Werror`で組む。
+              comfy-workflow = comfy-workflow.override { werror = true; };
             }
             // lib.optionalAttrs hasComfyui {
               # リポジトリ内のPythonの型検査。
@@ -496,6 +544,8 @@
             nvd-pr-diff = pkgs.callPackage ./pkgs/nvd-pr-diff { };
             # safetensorsのF32テンソルをF16へ変換するコマンド。
             inherit safetensors-fp16;
+            # Comfy-Orgの公式CLIと、それを包んでワークフローを名前で呼ぶコマンド。
+            inherit comfy-cli comfy-workflow;
           }
           // lib.optionalAttrs hasComfyui {
             # pyrightがPython環境とComfyUIのソースを辿るためのディレクトリ。

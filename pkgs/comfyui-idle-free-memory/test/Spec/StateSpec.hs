@@ -61,6 +61,13 @@ tests = describe "State" do
   it "未来の履歴でも解放済みのフラグは戻す" do
     -- 倒しても「新しい活動があった」ことは事実である。
     nextState idle (withHistory 1000 99999) (idleAt 0 True) `shouldBe` (idleAt 1000 False, Hold)
+  it "未来の履歴が残り続けても有限の周回で解放する" do
+    -- 1周回だけ見れば倒すことで経過時間は負にならないが、
+    -- 同じ未来の時刻を毎周回拾い直すと`lastActivity`が毎回`now`へ進み、
+    -- 時計がその未来の時刻に追いつくまで解放されない。
+    let step (current, _) now = nextState idle (withHistory now 99999) current
+        decisions = snd <$> drop 1 (scanl step (idleAt 0 False, Hold) [1000, 1300 .. 2500])
+    (RequestFree `elem` decisions) `shouldBe` True
   it "解放済みなら投げ直さない" do
     -- しきい値を超え続けている間、同じ要求を投げ続けないことを固定する。
     nextState idle (quiet 10000) (idleAt 0 True) `shouldBe` (idleAt 0 True, Hold)

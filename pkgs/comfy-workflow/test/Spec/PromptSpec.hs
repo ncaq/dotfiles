@@ -115,14 +115,14 @@ tests = describe "Prompt" do
           -- 非ASCIIをエスケープせずそのまま見せる。
           reason `textShouldContain` "日本語"
         other -> expectationFailure ("失敗として報告されていません: " <> show other)
-  describe "jsonText" do
-    it "文字列を引用符付きで、非ASCIIをエスケープせずに出す" do
-      jsonText (String "日本語 \"q\"") `shouldBe` "\"日本語 \\\"q\\\"\""
     it "statusの無い履歴は失敗にしない" do
       -- 上流が形を変えた時に、成功した生成が失敗するようになる方が困る。
       readHistory "abc" [aesonQQ|{"abc": {"outputs": {}}}|] `shouldBe` Right (Succeeded [])
     it "履歴に無いprompt_idはエラー" do
       isLeft (readHistory "zzz" [aesonQQ|{}|]) `shouldBe` True
+  describe "jsonText" do
+    it "文字列を引用符付きで、非ASCIIをエスケープせずに出す" do
+      jsonText (String "日本語 \"q\"") `shouldBe` "\"日本語 \\\"q\\\"\""
   describe "relativeOutput" do
     it "絶対パスを弾く" do
       isLeft (relativeOutput "" "/etc/passwd") `shouldBe` True

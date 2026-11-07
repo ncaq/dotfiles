@@ -77,6 +77,12 @@ tests = describe "State" do
     -- 倒しても「新しい活動があった」ことは事実である。
     nextState idle (withHistory 1000 99999) (idleAt 0 True)
       `shouldBe` (seen 99999 (idleAt 1000 False), Hold)
+  it "未来の履歴の後に普通の時刻の履歴が来たら活動として拾う" do
+    -- `/history?max_items=1`が返すのは時刻が最大の件ではなく、最後に追加された件である。
+    -- 未来の時刻より前の時刻で短い生成が終わっても、新しい活動として数えなければならない。
+    -- 数えないと生成の直後に解放してしまう。
+    nextState idle (withHistory 2000 1900) (seen 99999 (idleAt 1000 True))
+      `shouldBe` (seen 1900 (idleAt 1900 False), Hold)
   it "busyの間に進めた時刻を古い履歴で巻き戻さない" do
     -- busyの周回は履歴を引かないので、
     -- 次の周回で初めて見る履歴が、busyで記録した時刻より古いことがある。

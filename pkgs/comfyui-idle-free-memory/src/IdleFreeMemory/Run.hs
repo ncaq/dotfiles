@@ -99,7 +99,7 @@ instance Exception RequestFailure where
     UnexpectedStatus path status -> convert path <> "が状態コード" <> show status <> "を返しました"
     UndecodableBody path reason -> convert path <> "の応答を読めませんでした: " <> convert reason
 
--- | ComfyUIと通信できなかったことを表す例外なら、記録用の文言を返す。
+-- | 周回の中で吸収してよい一時的な失敗(通信、状態コードや本文、応答の形)なら、記録用の文言を返す。
 --
 -- ComfyUIの再起動中や、モデルの読み込みで応答が詰まっている間は届かない。
 -- それらは次の周回で回復するので、周回の中で吸収する。

@@ -71,8 +71,13 @@ parseValue :: WidgetType -> Text -> Either Text Value
 parseValue IntWidget text = case readMay (convert text) of
   Just (integer :: Integer) -> Right (toJSON integer)
   Nothing -> Left ("整数として読めません: " <> text)
+-- Haskellの`Read`の書き方に従うので、`.5`や`5.`や`+5`は受け付けない。
+-- `NaN`と`Infinity`は`Read`では読めてしまうが、
+-- JSONには表せず`toJSON`で`null`になるので、ここで弾く。
 parseValue FloatWidget text = case readMay (convert text) of
-  Just (double :: Double) -> Right (toJSON double)
+  Just (double :: Double)
+    | isNaN double || isInfinite double -> Left ("有限の数値ではありません: " <> text)
+    | otherwise -> Right (toJSON double)
   Nothing -> Left ("数値として読めません: " <> text)
 parseValue BooleanWidget text
   | lowered `elem` ["true", "1", "yes", "on"] = Right (Bool True)

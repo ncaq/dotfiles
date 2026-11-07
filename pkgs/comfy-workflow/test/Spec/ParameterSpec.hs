@@ -89,6 +89,17 @@ tests = describe "Parameter" do
       isLeft (parseValue IntWidget "28.5") `shouldBe` True
     it "小数を読む" do
       parseValue FloatWidget "5.5" `shouldBe` Right (Number 5.5)
+      parseValue FloatWidget "-0.5" `shouldBe` Right (Number -0.5)
+      parseValue FloatWidget "1e-3" `shouldBe` Right (Number 0.001)
+      parseValue FloatWidget "5" `shouldBe` Right (Number 5)
+    it "Haskellの書き方に無い小数は受け付けない" do
+      -- 旧実装のPythonの`float()`は通していたが、受け付けないことを決めて固定する。
+      for_ [".5", "5.", "+5"] \text ->
+        isLeft (parseValue FloatWidget text) `shouldBe` True
+    it "JSONに表せない非有限の数値を弾く" do
+      -- `Read`は読めてしまうが`toJSON`で`null`になる。
+      for_ ["NaN", "Infinity", "-Infinity"] \text ->
+        isLeft (parseValue FloatWidget text) `shouldBe` True
     it "真偽値の言い回しを受け付ける" do
       for_ ["true", "1", "yes", "on", "TRUE"] \text ->
         parseValue BooleanWidget text `shouldBe` Right (Bool True)

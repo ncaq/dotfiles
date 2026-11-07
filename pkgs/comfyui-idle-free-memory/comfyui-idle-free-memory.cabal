@@ -59,6 +59,7 @@ library
   hs-source-dirs: src
   -- cabal-gild: discover ./src
   exposed-modules:
+    IdleFreeMemory.Config
     IdleFreeMemory.Response
     IdleFreeMemory.Run
     IdleFreeMemory.State
@@ -95,6 +96,7 @@ test-suite comfyui-idle-free-memory-test
   -- cabal-gild: discover ./test --exclude ./test/Main.hs
   other-modules:
     Spec
+    Spec.ConfigSpec
     Spec.FreeSpec
     Spec.ResponseSpec
     Spec.StateSpec

@@ -58,13 +58,13 @@
 -- どちらもテストで固定したい対象で、
 -- 待ち続けるループと同居していると回さずに試せないためである。
 module IdleFreeMemory.Run
-  ( Config (..)
-  , RequestFailure (..)
+  ( RequestFailure (..)
   , run
   , freeIfNeeded
   ) where
 
 import Himari
+import IdleFreeMemory.Config (Config (..))
 import IdleFreeMemory.Response (ResponseFailure, latestActivity, queueRemaining)
 import IdleFreeMemory.State
   ( Decision (..)
@@ -74,17 +74,6 @@ import IdleFreeMemory.State
   , nextState
   )
 import Network.HTTP.Simple
-
--- | 起動時に受け取る設定。
-data Config = Config
-  { authority :: Text
-  -- ^ ComfyUIの`host:port`。
-  , pollIntervalSeconds :: Int
-  -- ^ 確認の間隔。
-  , idleThreshold :: NominalDiffTime
-  -- ^ これだけ何もしていなければ解放する。
-  }
-  deriving stock (Eq, Show)
 
 -- | HTTPは通ったが、応答を受け取れる状態ではなかった。
 data RequestFailure

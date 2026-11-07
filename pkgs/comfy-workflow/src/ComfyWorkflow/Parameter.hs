@@ -35,6 +35,9 @@ data Parameter = Parameter
   deriving stock (Eq, Show)
 
 -- | 全体のオプションが使う名前。パラメータ側には譲らせる。
+--
+-- "ComfyWorkflow.Cli"の`optionsParser`が定義する名前を手で写したものなので、
+-- あちらで追加や改名をしたらここも揃えること。
 reservedFlags :: [Text]
 reservedFlags = ["help", "seed", "repeat", "dry-run", "no-wait"]
 

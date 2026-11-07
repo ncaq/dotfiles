@@ -71,6 +71,9 @@ optionsParser name params =
     (parser <**> helper)
     (fullDesc <> progDesc ("ComfyUIのワークフロー" <> convert name <> "を実行します。"))
  where
+  -- 全体のオプションの名前は"ComfyWorkflow.Parameter"の`reservedFlags`と揃えること。
+  -- ここで追加や改名をしてあちらを忘れると、
+  -- 同じ名前のウィジェットを持つワークフローでパラメータのフラグと衝突する。
   parser = do
     seed <-
       optional $

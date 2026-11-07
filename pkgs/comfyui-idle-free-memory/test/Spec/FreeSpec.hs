@@ -11,9 +11,11 @@
 module Spec.FreeSpec (tests) where
 
 import Himari
+import IdleFreeMemory.Response (ResponseFailure (..))
 import IdleFreeMemory.Run (RequestFailure (..), freeIfNeeded)
 import IdleFreeMemory.State (Decision (..), IdleState (..))
-import Network.HTTP.Simple (HttpException (..))
+import Network.HTTP.Client (HttpExceptionContent (..))
+import Network.HTTP.Simple (HttpException (..), defaultRequest)
 import Test.Sandwich
 
 idleState :: IdleState
@@ -43,8 +45,19 @@ tests = describe "freeIfNeeded" do
     runSimpleNoLogEnv (freeIfNeeded (liftIO request) RequestFree idleState)
       >>= (`shouldBe` idleState{freed = True})
     liftIO calls >>= (`shouldBe` 1)
+  -- 吸収する例外の分岐を全て通す。
+  -- 実機で起こる接続拒否と時間切れは`HttpExceptionRequest`になる。
   for_
-    [("成功ではない状態コード", toException (UnexpectedStatus "/free" 500))]
+    [
+      ( "接続できない"
+      , toException
+          (HttpExceptionRequest defaultRequest (ConnectionFailure (toException (userError "拒否"))))
+      )
+    , ("時間切れ", toException (HttpExceptionRequest defaultRequest ResponseTimeout))
+    , ("成功ではない状態コード", toException (UnexpectedStatus "/free" 500))
+    , ("本文を読めない", toException (UndecodableBody "/free" "テスト"))
+    , ("応答の形が違う", toException PromptNotObject)
+    ]
     \(caseName, failure) ->
       it ("要求に失敗したら解放済みにしない: " <> caseName) do
         -- 失敗した周回でフラグだけ進めると、次の活動まで再試行できなくなる。

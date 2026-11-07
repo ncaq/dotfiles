@@ -106,5 +106,6 @@ test-suite comfyui-idle-free-memory-test
     base,
     comfyui-idle-free-memory,
     himari,
+    http-client,
     http-conduit,
     sandwich >=0.3.0.5,

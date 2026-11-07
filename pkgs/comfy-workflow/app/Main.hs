@@ -7,6 +7,9 @@ import Himari
 main :: IO ()
 main = do
   args <- getArgs
+  -- 公式CLIは投げるだけの時に進捗を追う常駐プロセスを起こすが、ここでは要らない。
+  -- 子プロセスへ渡す環境なので、入口で一度だけ自分の環境に立てれば足りる。
+  setEnv "COMFY_NO_WATCH" "1"
   -- 普段は進捗だけを見せる。
   -- 公式CLIに何をどう渡したかは、`COMFY_WORKFLOW_DEBUG`を立てた時だけ出す。
   debug <- isJust <$> lookupEnv "COMFY_WORKFLOW_DEBUG"

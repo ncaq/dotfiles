@@ -57,9 +57,6 @@ authorityOf target = target.host <> ":" <> convert (show target.port)
 comfyJson :: (FromJSON a, MonadIO m, MonadLogger m, MonadThrow m) => [Text] -> m a
 comfyJson args = do
   logDebugN command
-  -- 投げるだけの時に進捗を追う常駐プロセスを勝手に起こさせない。
-  -- 子プロセスへ渡す環境なので、自分の環境に立てれば足りる。
-  setEnv "COMFY_NO_WATCH" "1"
   (_, out) <- readProcessStdout (proc "comfy" (fmap convert ("--json" : args)))
   envelope <- either (throwM . ComfyFailure . malformed out . convert) pure (eitherDecode out)
   case envelope of

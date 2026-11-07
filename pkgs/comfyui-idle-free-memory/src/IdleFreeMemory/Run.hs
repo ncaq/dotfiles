@@ -66,7 +66,13 @@ module IdleFreeMemory.Run
 
 import Himari
 import IdleFreeMemory.Response (ResponseFailure, latestActivity, queueRemaining)
-import IdleFreeMemory.State (Decision (..), IdleState (..), Observation (..), nextState)
+import IdleFreeMemory.State
+  ( Decision (..)
+  , IdleState (..)
+  , Observation (..)
+  , initialState
+  , nextState
+  )
 import Network.HTTP.Simple
 
 -- | 起動時に受け取る設定。
@@ -119,20 +125,14 @@ transientFailure exception
 -- | 待ち続けて、アイドルが続いたら解放を要求する。返らない。
 run :: (MonadLogger m, MonadThrow m, MonadUnliftIO m) => Config -> m ()
 run config = do
-  initial <- initialActivity config.authority
+  initial <- initialIdleState config.authority
   logInfoN
     ( convert (show config.pollIntervalSeconds)
         <> "秒ごとに確認し、"
         <> convert (show config.idleThreshold)
         <> "のアイドルで解放します"
     )
-  -- 起動直後は未解放から始める。
-  -- 通常はコンテナが起きた直後で何も載っていないので、
-  -- 最初の1回だけ何も降ろさない要求が飛ぶことになるが、
-  -- 載っていなければ`unload_all_models`は何もしないので害は無い。
-  -- そのかわり、このプロセスだけが再起動した場合に、
-  -- 載ったままのモデルを取りこぼさずに済む。
-  watchFrom IdleState{lastActivity = initial, freed = False, seenHistory = Nothing}
+  watchFrom initial
  where
   watchFrom current = do
     -- 確認より先に待つ。
@@ -189,30 +189,21 @@ fetchLatestActivity :: (MonadIO m, MonadThrow m) => Text -> m (Maybe UTCTime)
 fetchLatestActivity authority =
   getJson authority "/history?max_items=1" >>= either throwM pure . latestActivity
 
--- | ループへ入る前の`lastActivity`を決める。
+-- | ループへ入る前の状態を作る。
 --
--- 現在時刻から始めると、
--- このプロセスだけが再起動した時に困る。
--- ComfyUIが何時間も前から放置されていても、
--- 履歴の時刻は初期値より古いので拾い直されず、
--- 解放まで改めてしきい値の分だけ待つことになる。
--- 載ったままのモデルを取りこぼさないという意図が半分しか効かない。
---
--- 履歴が取れたらそれを使う。
--- 一度も実行していない場合と、
--- ComfyUIがまだ起動しきっていない場合は現在時刻へ倒す。
--- その場合に待つ時間は、
--- どのみち何も載っていないか、これから載るところなので惜しくない。
-initialActivity :: (MonadLogger m, MonadThrow m, MonadUnliftIO m) => Text -> m UTCTime
-initialActivity authority = do
-  now <- liftIO getCurrentTime
+-- 履歴から何を決めるかは`initialState`が持つ。
+-- ここはComfyUIがまだ起動しきっていない場合に、
+-- 履歴が無いものとして扱うことだけを受け持つ。
+initialIdleState :: (MonadLogger m, MonadThrow m, MonadUnliftIO m) => Text -> m IdleState
+initialIdleState authority = do
   fetched <- tryJust transientFailure (fetchLatestActivity authority)
-  case fetched of
+  latest <- case fetched of
     Left reason -> do
       logWarnN ("起動時の履歴を取得できませんでした: " <> reason)
-      pure now
-    -- 未来の時刻はループの中と同じく現在時刻へ倒す。
-    Right latest -> pure (maybe now (min now) latest)
+      pure Nothing
+    Right latest -> pure latest
+  now <- liftIO getCurrentTime
+  pure (initialState now latest)
 
 -- | 必要なら解放を要求して、通った時だけ`freed`を立てる。
 --

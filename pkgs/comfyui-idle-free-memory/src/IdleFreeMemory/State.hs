@@ -15,6 +15,7 @@ module IdleFreeMemory.State
   ( IdleState (..)
   , Observation (..)
   , Decision (..)
+  , initialState
   , nextState
   ) where
 
@@ -49,6 +50,37 @@ data Decision
   = Hold
   | RequestFree
   deriving stock (Eq, Show)
+
+-- | ループへ入る前の状態を、起動時の現在時刻と履歴の時刻から決める。
+--
+-- 現在時刻から始めると、
+-- このプロセスだけが再起動した時に困る。
+-- ComfyUIが何時間も前から放置されていても、
+-- 履歴の時刻は初期値より古いので拾い直されず、
+-- 解放まで改めてしきい値の分だけ待つことになる。
+-- 載ったままのモデルを取りこぼさないという意図が半分しか効かない。
+--
+-- 履歴が取れたらそれを使う。
+-- 一度も実行していない場合と、
+-- ComfyUIがまだ起動しきっていない場合は現在時刻へ倒す。
+-- その場合に待つ時間は、
+-- どのみち何も載っていないか、これから載るところなので惜しくない。
+--
+-- 未解放から始める。
+-- 通常はコンテナが起きた直後で何も載っていないので、
+-- 最初の1回だけ何も降ろさない要求が飛ぶことになるが、
+-- 載っていなければ`unload_all_models`は何もしないので害は無い。
+-- そのかわり、このプロセスだけが再起動した場合に、
+-- 載ったままのモデルを取りこぼさずに済む。
+initialState :: UTCTime -> Maybe UTCTime -> IdleState
+initialState now latest =
+  IdleState
+    { -- 未来の時刻は`nextState`と同じく現在時刻へ倒す。
+      lastActivity = maybe now (min now) latest
+    , freed = False
+    , -- 起動時に見た履歴を次の周回で新しい活動として数え直さないように、倒す前の値で持つ。
+      seenHistory = latest
+    }
 
 -- | 1周回分の遷移を行い、更新後の状態と解放を要求すべきかを返す。
 --

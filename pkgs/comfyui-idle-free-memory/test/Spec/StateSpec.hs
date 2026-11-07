@@ -97,3 +97,17 @@ tests = describe "State" do
     -- 解放が成功したかはHTTPの結果次第なので、ここでは立てない。
     -- 立ててしまうと、要求に失敗した周回で次の活動まで再試行できなくなる。
     nextState idle (quiet 10000) (idleAt 1000 False) `shouldBe` (idleAt 1000 False, RequestFree)
+  describe "initialState" do
+    it "履歴が無ければ現在時刻から未解放で始める" do
+      -- 一度も実行していない場合と、履歴を取れなかった場合の両方がここに来る。
+      initialState (at' 1000) Nothing
+        `shouldBe` IdleState{lastActivity = at' 1000, freed = False, seenHistory = Nothing}
+    it "履歴があればその時刻から始める" do
+      -- このプロセスだけが再起動した時に、しきい値の分を改めて待たないようにする。
+      initialState (at' 1000) (Just (at' 400)) `shouldBe` idleAt 400 False
+    it "未来の履歴は現在時刻へ倒し、見た時刻は倒す前の値で持つ" do
+      initialState (at' 1000) (Just (at' 99999)) `shouldBe` seen 99999 (idleAt 1000 False)
+    it "起動時に見た履歴は次の周回で新しい活動として数えない" do
+      -- 数え直すと、起動時から未来を指していた履歴で解放が1周回分遅れる。
+      nextState idle (withHistory 1600 99999) (initialState (at' 1000) (Just (at' 99999)))
+        `shouldBe` (seen 99999 (idleAt 1000 False), RequestFree)

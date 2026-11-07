@@ -2,7 +2,7 @@
 #
 # `nixos/host/bullet/comfyui/workflow/cli.nix`が、
 # ワークフローごとの`comfy-<名前>`ラッパーから呼ぶ。
-# 中身は公式の`comfy-cli`とcurlを呼ぶので、両方をPATHへ足して包む。
+# 中身は公式の`comfy-cli`を呼ぶので、PATHへ足して包む。
 #
 # `callPackage`の結果に`haskell.lib`の関数を重ねると、
 # `override`がこのファイルを`mkDerivation`付きで呼び直して壊れる。
@@ -13,7 +13,6 @@
   haskellPackages,
   makeWrapper,
   comfy-cli,
-  curl,
   himari-src,
   werror ? false,
 }:
@@ -42,12 +41,7 @@ lib.pipe package [
     buildTools = (old.buildTools or [ ]) ++ [ makeWrapper ];
     postInstall = (old.postInstall or "") + ''
       wrapProgram "$out/bin/comfy-workflow" \
-        --prefix PATH : ${
-          lib.makeBinPath [
-            comfy-cli
-            curl
-          ]
-        }
+        --prefix PATH : ${lib.makeBinPath [ comfy-cli ]}
     '';
   }))
   (haskell.lib.compose.appendConfigureFlags (lib.optional werror "--ghc-options=-Werror"))

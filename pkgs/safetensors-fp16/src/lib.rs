@@ -151,8 +151,11 @@ pub fn convert(src: &Path, dst: &Path, allow_overflow: bool) -> Result<()> {
     });
     serialize_to_file(views, metadata.metadata().clone(), dst)
         .with_context(|| format!("failed to write {}", dst.display()))?;
+    // `serialize_to_file`は隣の一時ファイルへ書いてからrenameするので、
+    // 書き込みの途中で失敗した時は一時ファイルが消えてdstは作られない。
+    // 消す必要があるのは、書き終えてからオーバーフローが分かったここだけ。
     if let Some(name) = overflow.get() {
-        std::fs::remove_file(dst)?;
+        std::fs::remove_file(dst).with_context(|| format!("failed to remove {}", dst.display()))?;
         bail!("{name}: F32 values overflow to infinity in F16; pass --allow-overflow to accept");
     }
     Ok(())

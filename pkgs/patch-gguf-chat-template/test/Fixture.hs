@@ -13,6 +13,7 @@ module Fixture
   , encodeKv
   , architectureEntry
   , quantizationEntry
+  , fixedWidthEntries
   , tokensEntry
   , tokenTypeEntry
   , templateEntry
@@ -72,6 +73,27 @@ architectureEntry = encodeKv "general.architecture" GgufString (encodeString arc
 quantizationEntry :: ByteString
 quantizationEntry = encodeKv "general.quantization_version" GgufUInt32 (encodeWord32 2)
 
+-- | uint32以外の固定長の型を1つずつ。
+--
+-- 実際のGGUFでもテンプレートより前に`rope.freq_base`のfloat32や、
+-- `tokenizer.ggml.add_bos_token`のboolが並ぶ。
+-- 幅を1つでも間違えると以降の全ての位置がずれるので、
+-- 全ての幅の読み飛ばしを位置のテストが通るようにする。
+-- 値の中身は読まれないので、幅の分だけバイトがあれば何でも良い。
+fixedWidthEntries :: [ByteString]
+fixedWidthEntries =
+  [ encodeKv "fixture.uint8" GgufUInt8 (B.replicate 1 0xff)
+  , encodeKv "fixture.int8" GgufInt8 (B.replicate 1 0xff)
+  , encodeKv "fixture.uint16" GgufUInt16 (B.replicate 2 0xff)
+  , encodeKv "fixture.int16" GgufInt16 (B.replicate 2 0xff)
+  , encodeKv "fixture.int32" GgufInt32 (B.replicate 4 0xff)
+  , encodeKv "rope.freq_base" GgufFloat32 (B.replicate 4 0xff)
+  , encodeKv "tokenizer.ggml.add_bos_token" GgufBool (B.replicate 1 0x01)
+  , encodeKv "fixture.uint64" GgufUInt64 (B.replicate 8 0xff)
+  , encodeKv "fixture.int64" GgufInt64 (B.replicate 8 0xff)
+  , encodeKv "fixture.float64" GgufFloat64 (B.replicate 8 0xff)
+  ]
+
 -- | 文字列の配列。
 -- 要素ごとに長さが違うので1つずつ読み飛ばす経路を通る。
 tokensEntry :: ByteString
@@ -102,7 +124,9 @@ fileTypeEntry = encodeKv "general.file_type" GgufUInt32 (encodeWord32 18)
 -- `Nothing`ならチャットテンプレートの項目自体を持たない。
 entries :: Maybe ByteString -> [ByteString]
 entries template =
-  [architectureEntry, quantizationEntry, tokensEntry, tokenTypeEntry (fromIntegral (length tokens))]
+  [architectureEntry, quantizationEntry]
+    <> fixedWidthEntries
+    <> [tokensEntry, tokenTypeEntry (fromIntegral (length tokens))]
     <> foldMap (pure . templateEntry) template
     <> [fileTypeEntry]
 

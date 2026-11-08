@@ -104,11 +104,11 @@ comment = "Haskell zlib。NVDはzlib本体やRubyのzlib"
 
 ["ada"]
 cve = ["CVE-2024-9410"]
-comment = "ada-url。NVDはAda.cxというSaaS"
+comment = "ada-url。CVE-2024-9410はAda.cxというSaaSのもの"
 
 ["allegro"]
 cve = ["CVE-2021-36489"]
-comment = "allegro 4.4系。NVDの対象はAllegro 5のallegro_imageアドオン"
+comment = "allegro 4.4系。CVE-2021-36489はAllegro 5のallegro_imageアドオンのもの"
 
 ["cargo"]
 cve = [
@@ -120,15 +120,15 @@ cve = [
   "CVE-2026-58519",
   "CVE-2026-58521",
 ]
-comment = "NVDはMediaWikiのCargo拡張"
+comment = "列挙したCVEはすべてMediaWikiのCargo拡張のもの"
 
 ["cvs"]
 cve = ["CVE-2022-29037"]
-comment = "NVDはJenkinsのCVS Plugin"
+comment = "CVE-2022-29037はJenkinsのCVS Pluginのもの"
 
 ["dash"]
 cve = ["CVE-2024-21485"]
-comment = "dashシェル。NVDはPlotly Dash"
+comment = "dashシェル。CVE-2024-21485はPlotly Dashのもの"
 
 ["git"]
 cve = [
@@ -139,77 +139,80 @@ cve = [
   "CVE-2022-36884",
   "CVE-2022-38663",
 ]
-comment = "NVDはJenkinsのGit Plugin"
+comment = "列挙したCVEはすべてJenkinsのGit Pluginのもの"
 
 ["go"]
 cve = ["CVE-2023-49292"]
-comment = "NVDはeciesというGoのライブラリ"
+comment = "CVE-2023-49292はeciesというGoのライブラリのもの"
 
 ["kotlin"]
 cve = ["CVE-2023-26154"]
-comment = "NVDはpubnubのSDK"
+comment = "CVE-2023-26154はpubnubのSDKのもの"
 
 ["libmpeg2"]
 cve = ["CVE-2022-37416"]
-comment = "NVDはIttiam(Android)のlibmpeg2"
+comment = "CVE-2022-37416はIttiam(Android)のlibmpeg2のもの"
 
 ["malcontent"]
 cve = ["CVE-2026-24845", "CVE-2026-28407"]
-comment = "GNOMEのmalcontent。NVDはChainguardのmalcontent"
+comment = "GNOMEのmalcontent。CVE-2026-24845, CVE-2026-28407はChainguardのmalcontentのもの"
 
 ["mercurial"]
 cve = ["CVE-2022-43410"]
-comment = "NVDはJenkinsのMercurial Plugin"
+comment = "CVE-2022-43410はJenkinsのMercurial Pluginのもの"
 
 ["ninja"]
 cve = ["CVE-2021-4336"]
-comment = "NVDはITRS monitor-ninja"
+comment = "CVE-2021-4336はITRS monitor-ninjaのもの"
 
 ["orc"]
 cve = ["CVE-2025-47436"]
-comment = "GStreamerのorc。NVDはApache ORC"
+comment = "GStreamerのorc。CVE-2025-47436はApache ORCのもの"
 
 ["ruby"]
 cve = ["CVE-2026-97229"]
-comment = "NVDはGitLab"
+comment = "CVE-2026-97229はGitLabのもの"
 
 ["shellcheck"]
 cve = ["CVE-2021-28794"]
-comment = "NVDはVS Codeの非公式ShellCheck拡張"
+comment = "CVE-2021-28794はVS Codeの非公式ShellCheck拡張のもの"
 
 ["snappy"]
 cve = ["CVE-2023-28115", "CVE-2023-41330"]
-comment = "Googleのsnappy。NVDはPHPのknp-snappy"
+comment = "Googleのsnappy。CVE-2023-28115, CVE-2023-41330はPHPのknp-snappyのもの"
 
 ["subversion"]
 cve = ["CVE-2021-21698", "CVE-2022-29046", "CVE-2022-29048"]
-comment = "NVDはJenkinsのSubversion Plugin"
+comment = "列挙したCVEはすべてJenkinsのSubversion Pluginのもの"
 
 ["swift"]
 cve = ["CVE-2023-26154"]
-comment = "NVDはpubnubのSDK"
+comment = "CVE-2023-26154はpubnubのSDKのもの"
 
 ["zlib"]
 cve = ["CVE-2023-6992", "CVE-2026-27820"]
-comment = "Cloudflareのzlibフォークと、Rubyのzlib gem"
+comment = [
+  "CVE-2023-6992はCloudflareのzlibフォークのもの",
+  "CVE-2026-27820はRubyのzlib gemのもの",
+]
 
 # 同じ製品だが、別プラットフォームや別ディストリビューション固有のCVE。
 
 ["accountsservice"]
 cve = ["CVE-2023-3297"]
-comment = "Ubuntu独自パッチの脆弱性"
+comment = "CVE-2023-3297はUbuntu独自パッチの脆弱性"
 
 ["avahi"]
 cve = ["CVE-2021-26720"]
-comment = "Debianパッケージ固有のスクリプト(avahi-daemon-check-dns.sh)の問題"
+comment = "CVE-2021-26720はDebianパッケージ固有のスクリプト(avahi-daemon-check-dns.sh)の問題"
 
 ["cjson"]
 cve = ["CVE-2026-16554"]
-comment = "32bitプラットフォーム限定のsize_t桁溢れ"
+comment = "CVE-2026-16554は32bitプラットフォーム限定のsize_t桁溢れ"
 
 ["cups"]
 cve = ["CVE-2022-26691"]
-comment = "macOS側の修正"
+comment = "CVE-2022-26691はmacOS側の修正"
 
 ["gimp"]
 cve = ["CVE-2025-8672", "CVE-2026-78465"]

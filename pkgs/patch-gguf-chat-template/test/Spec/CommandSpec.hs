@@ -1,6 +1,6 @@
 -- | `extract`と`embed`のテスト。
 --
--- 位置の計算は`Spec.GgufSpec`が固定しているので、
+-- 位置の計算は`Spec.Gguf.LocateSpec`が固定しているので、
 -- ここでは実際のファイルに対して読み書きした結果を見る。
 -- 特に書き戻した後にテンプレート以外の全てのバイトが元のままであることを確かめる。
 module Spec.CommandSpec (tests) where

@@ -91,12 +91,6 @@ comment = "Haskell yaml。NVDはGoのyaml"
 
 # 同上だが、pnameが本物のパッケージと同じなのでバージョンで限定する。
 
-["dbus-1.4.2"]
-comment = "Haskell dbus。NVDはD-Bus本体"
-
-["glib-0.13.12.0"]
-comment = "Haskell glib (gtk2hs)。NVDはGNOME GLib"
-
 ["opentelemetry-0.8.0"]
 comment = "Haskell opentelemetry (hls-plugin-apiが依存)。NVDはGo/.NET/C++/JS/Jenkinsのもの"
 
@@ -401,10 +395,6 @@ comment = "対象は5.42.3-RC1より前。5.42.3は修正済み"
 ["perl-5.42.3-env"]
 cve = ["CVE-2026-13221", "CVE-2026-57432", "CVE-2026-8376"]
 comment = "perl-5.42.3-env という派生物名のバージョンが 5.42.3-env と切り出されるので別に書く"
-
-["samba-4.23.10"]
-cve = ["CVE-2026-2340"]
-comment = "4.23.8で修正済み。vfs_wormモジュールを設定していなければそもそも該当しない"
 
 # 本物の脆弱性で、nixpkgsで修正が進んでいてチャンネルに降りてくるのを待つもの。
 

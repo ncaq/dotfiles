@@ -11,7 +11,6 @@ module NvdPrDiff.GitHub
   , botLogin
   , findExisting
   , upsertComment
-  , perPage
   , collectPages
   , acceptStatus
   ) where
@@ -89,13 +88,13 @@ commentsPath :: Target -> Text
 commentsPath target =
   "repos/" <> target.repository <> "/issues/" <> convert (show target.prNumber) <> "/comments"
 
--- | 1ページに収める数。GitHubの上限。
-perPage :: Int
-perPage = 100
-
 -- | PRの全てのコメント。
+--
+-- 1ページに収める数はGitHubの上限の100にする。
+-- `per_page`に渡す値とページめくりを止める閾値は同じでなければならないので、
+-- ここで1つの値を両方へ渡す。
 listComments :: (MonadIO m, MonadLogger m, MonadThrow m) => Target -> m [Comment]
-listComments target = collectPages \n -> do
+listComments target = collectPages perPage \n -> do
   raw <-
     request
       target
@@ -108,13 +107,15 @@ listComments target = collectPages \n -> do
       )
       Nothing
   either (throwM . ResponseUnreadable . convert) pure (eitherDecode raw)
+ where
+  perPage = 100 :: Int
 
 -- | ページ番号で1ページ分を取る関数を1ページ目から順に呼び、全てを繋げて返す。
 --
--- 1ページに満たないページが来たらそこで止める。
--- ちょうど`perPage`件のページの後は次のページも取り、空で返ってきて止まる。
-collectPages :: (Monad m) => (Int -> m [a]) -> m [a]
-collectPages fetch = page 1
+-- 1ページの大きさに満たないページが来たらそこで止める。
+-- ちょうど1ページ分のページの後は次のページも取り、空で返ってきて止まる。
+collectPages :: (Monad m) => Int -> (Int -> m [a]) -> m [a]
+collectPages perPage fetch = page 1
  where
   page n = do
     items <- fetch n

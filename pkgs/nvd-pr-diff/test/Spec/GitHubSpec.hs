@@ -11,12 +11,16 @@ marker = "<!-- nvd-pr-diff -->"
 comment :: Integer -> Text -> Text -> Comment
 comment commentId author body = Comment{commentId, author, body}
 
--- | 全部で`total`件あるコメントを100件ずつ返す取り方で集めて、
+-- | テストで使う1ページの大きさ。境界を見るだけなので小さくする。
+perPage :: Int
+perPage = 3
+
+-- | 全部で`total`件あるコメントを`perPage`件ずつ返す取り方で集めて、
 -- 集まった一覧と取りに行ったページ番号の並びを返す。
 pagesOf :: Int -> ([Int], [Int])
 pagesOf total =
   runState
-    ( collectPages \n -> do
+    ( collectPages perPage \n -> do
         modify (<> [n])
         pure (take perPage (drop ((n - 1) * perPage) [1 .. total]))
     )
@@ -28,11 +32,11 @@ tests = do
     it "0件なら1ページ取って終わる" do
       pagesOf 0 `shouldBe` ([], [1])
     it "1ページに満たなければ1ページで終わる" do
-      pagesOf 99 `shouldBe` ([1 .. 99], [1])
+      pagesOf 2 `shouldBe` ([1, 2], [1])
     it "ちょうど1ページ分なら次の空のページまで取る" do
-      pagesOf 100 `shouldBe` ([1 .. 100], [1, 2])
+      pagesOf 3 `shouldBe` ([1, 2, 3], [1, 2])
     it "1ページを超えれば2ページ目も繋げる" do
-      pagesOf 101 `shouldBe` ([1 .. 101], [1, 2])
+      pagesOf 4 `shouldBe` ([1, 2, 3, 4], [1, 2])
   describe "acceptStatus" do
     for_ [200, 201, 204] \status ->
       it (show status <> "は本文を返す") do

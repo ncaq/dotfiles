@@ -38,6 +38,9 @@ instance Exception TargetFailure where
     InvalidPrNumber raw -> "PR_NUMBERが数ではありません: " <> convert raw
 
 -- | 環境変数を引く関数から投稿先を組み立てる。
+--
+-- GitHub Actionsは`${{ github.base_ref }}`のように値の無い式を空文字列で渡すので、
+-- 空は無いのと同じに扱う。
 targetFrom :: (Text -> Maybe Text) -> Either TargetFailure Target
 targetFrom lookupVariable =
   Target
@@ -46,7 +49,8 @@ targetFrom lookupVariable =
     <*> require "GITHUB_REPOSITORY"
     <*> require "GH_TOKEN"
  where
-  require name = maybe (Left (MissingVariable name)) Right (lookupVariable name)
+  require name =
+    maybe (Left (MissingVariable name)) Right (mfilter (/= mempty) (lookupVariable name))
   number raw = maybe (Left (InvalidPrNumber raw)) Right (readMay (convert raw))
 
 -- | 実際の環境変数から投稿先を読む。

@@ -59,8 +59,9 @@ withBaseWorktree dir baseRef action = do
   add = do
     code <- runProcess (proc "git" ["worktree", "add", "--detach", dir, "--", remoteRef])
     unless (code == ExitSuccess) (throwM (WorktreeFailed code))
-  -- ディレクトリ自体は一時ディレクトリごと消えるので、ここではgitの記録を外す。
-  -- 外せなくても結果には関わらないので、記録だけして続ける。
+  -- worktreeのディレクトリとgitの記録をここで外す。
+  -- 外せなくてもディレクトリは一時ディレクトリごと消えて結果にも関わらないので、
+  -- 記録だけして続ける。
   remove = do
     code <- runProcess (proc "git" ["worktree", "remove", "--force", dir])
     unless (code == ExitSuccess) $

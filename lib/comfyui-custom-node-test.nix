@@ -1,10 +1,11 @@
 /**
   comfyuiCustomNodeTest: ComfyUIの自作カスタムノードのpytestを走らせるderivation。
 
-  型: { pkgs } -> derivation
+  型: { pkgs, comfyui } -> derivation
 
   引数:
-    pkgs - pytestを走らせるPythonと`runCommand`を取るためのnixpkgs
+    pkgs - `runCommand`と`fileset`を取るためのnixpkgs
+    comfyui - Pythonインタプリタとパッケージセットを取るためのComfyUIのパッケージ
 
   何を検査するか:
     ComfyUI本体やtorchに触れないモジュールだけを対象にする。
@@ -19,11 +20,18 @@
     翻訳のレスポンスも中断したジョブの記録も途中で切れた生成も、
     実際に壊れたものが来る経路でしか通らない。
 
-  なぜComfyUIのPython環境を使わないか:
-    `checks.pyright`はComfyUIの環境を使うが、
-    こちらの対象は標準ライブラリと`requests`しか使わない。
-    素の`python3`で足りるなら、
-    CUDA版torchを含む閉包を持たないaarch64でもそのまま走らせられる。
+  なぜComfyUIのPythonインタプリタを使うか:
+    テストの対象は実際にはComfyUIのPython環境で動くので、
+    nixpkgsの既定の`python3`で走らせるとバージョンがずれ、
+    ComfyUIのPythonに無い構文や挙動に依存してもテストで気づけない。
+    `checks.pyright`もComfyUIの環境を使うので、
+    型検査とテストが同じバージョンを見るように揃える。
+
+  なぜComfyUIの環境そのものは使わないか:
+    対象は標準ライブラリと`requests`しか使わないので、
+    `pythonRuntime`からインタプリタとパッケージセットだけを取り、
+    `pytest`と`requests`を足す。
+    torchなどを閉包に含めずに済む。
 
   なぜノードのderivationと入力を分けるか:
     `writeCheckedNode`はノードごとに入力を絞っているので、
@@ -31,7 +39,7 @@
     ノードのディレクトリ全体を入力にすると、
     テストが読まないファイルの変更でもこのcheckが作り直される。
 */
-{ pkgs }:
+{ pkgs, comfyui }:
 let
   inherit (pkgs) lib;
 
@@ -47,7 +55,7 @@ let
     ];
   };
 
-  python = pkgs.python3.withPackages (pythonPkgs: [
+  python = comfyui.pythonRuntime.python.withPackages (pythonPkgs: [
     pythonPkgs.pytest
     pythonPkgs.requests
   ]);

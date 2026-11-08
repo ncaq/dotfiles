@@ -6,6 +6,7 @@
 module Fixture
   ( architecture
   , tokens
+  , tokenCount
   , tensorData
   , encodeWord32
   , encodeWord64
@@ -42,6 +43,10 @@ architecture = "qwen3"
 
 tokens :: [ByteString]
 tokens = ["a", "bb", "ccc"]
+
+-- | `tokens`の実際の要素数。
+tokenCount :: Word64
+tokenCount = fromIntegral (length tokens)
 
 tensorData :: ByteString
 tensorData = "tensor-data-placeholder"
@@ -96,11 +101,12 @@ fixedWidthEntries =
 
 -- | 文字列の配列。
 -- 要素ごとに長さが違うので1つずつ読み飛ばす経路を通る。
-tokensEntry :: ByteString
-tokensEntry =
+-- 要素数を引数にするのは、実際の要素数と違う値を書いたファイルを組み立てるためである。
+tokensEntry :: Word64 -> ByteString
+tokensEntry count =
   encodeKv "tokenizer.ggml.tokens" GgufArray $
     encodeWord32 (encodeValueType GgufString)
-      <> encodeWord64 (fromIntegral (length tokens))
+      <> encodeWord64 count
       <> foldMap encodeString tokens
 
 -- | int32の配列。
@@ -126,7 +132,7 @@ entries :: Maybe ByteString -> [ByteString]
 entries template =
   [architectureEntry, quantizationEntry]
     <> fixedWidthEntries
-    <> [tokensEntry, tokenTypeEntry (fromIntegral (length tokens))]
+    <> [tokensEntry tokenCount, tokenTypeEntry tokenCount]
     <> foldMap (pure . templateEntry) template
     <> [fileTypeEntry]
 

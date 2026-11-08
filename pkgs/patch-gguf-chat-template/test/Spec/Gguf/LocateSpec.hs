@@ -90,8 +90,7 @@ tests = describe "locateChatTemplate" do
     -- 固定長の要素はまとめて読み飛ばすので、`hSeek`は末尾を越えても成功してしまう。
     -- 要素数の側で止めないと気付けない。
     let broken = tokenTypeEntry hugeLength
-        original = tokenTypeEntry (fromIntegral (length tokens))
-        kvs = replacing original broken (entries (Just template))
+        kvs = replacing (tokenTypeEntry tokenCount) broken (entries (Just template))
         remaining =
           remainingAfterLength kvs broken $
             encodeString "tokenizer.ggml.token_type"
@@ -100,6 +99,13 @@ tests = describe "locateChatTemplate" do
               <> encodeWord64 hugeLength
     locate (assembleEntries kvs)
       `shouldThrow` (== LengthExceedsFile (4 * toInteger hugeLength) remaining)
+  it "文字列配列の要素数が実際より多くても止まる" do
+    -- 文字列の配列は要素ごとに長さを読むので、
+    -- 要素数が多いと後ろの項目のバイトを長さとして読み進む。
+    -- どの位置でどう止まるかは後ろのバイトの並び次第なので、
+    -- テンプレートの位置を返さずに何らかの理由で止まることだけを固定する。
+    let kvs = replacing (tokensEntry tokenCount) (tokensEntry hugeLength) (entries (Just template))
+    locate (assembleEntries kvs) `shouldThrow` \(_ :: GgufFailure) -> True
   it "途中で切れたファイルは何バイト足りなかったかを言って止まる" do
     -- ヘッダの24バイトの直後、最初のキーの長さプレフィックスの途中で切る。
     locate (B.take 30 (buildGguf (Just template))) `shouldThrow` (== UnexpectedEndOfFile 8 6)

@@ -61,6 +61,19 @@ tests = describe "render" do
       "master"
       ( report
           [ Section{kind = VersionChanges, packages = [upgraded, bare]}
+          , -- Bash版が拾えていなかった区分。見出しも同じ形で出ることを固定する。
+            Section
+              { kind = SelectionStateChanges
+              , packages =
+                  [ Package
+                      { install = Changed
+                      , selection = Just NewlySelected
+                      , name = "qux"
+                      , before = [single "3.0"]
+                      , after = Nothing
+                      }
+                  ]
+              }
           , Section
               { kind = RemovedPackages
               , packages =
@@ -86,6 +99,12 @@ tests = describe "render" do
         , "| --- | --- | --- |"
         , "| `U.` | `foo` | `1.0` -> `1.1, 1.2 x2` |"
         , "| `C.` | `bare` | `<no versions>` -> `1.0` |"
+        , ""
+        , "### Selection state changes"
+        , ""
+        , "| State | Package | Version |"
+        , "| --- | --- | --- |"
+        , "| `C+` | `qux` | `3.0` |"
         , ""
         , "### Removed packages"
         , ""

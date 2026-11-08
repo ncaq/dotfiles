@@ -9,6 +9,7 @@
 -- * `GH_TOKEN`: PRコメントを投稿できるGitHubのトークン。
 module NvdPrDiff.Target
   ( Target (..)
+  , Token (..)
   , TargetFailure (..)
   , targetFrom
   , readTarget
@@ -20,9 +21,18 @@ data Target = Target
   { baseRef :: Text
   , prNumber :: Int
   , repository :: Text
-  , token :: Text
+  , token :: Token
   }
   deriving stock (Eq, Show)
+
+-- | GitHubのトークン。
+--
+-- `Target`ごと`show`してログや例外に出しても中身が漏れないように、`Show`は伏せる。
+newtype Token = Token Text
+  deriving stock (Eq)
+
+instance Show Token where
+  show _ = "Token <redacted>"
 
 -- | 投稿先を揃えられない理由。
 data TargetFailure
@@ -47,7 +57,7 @@ targetFrom lookupVariable =
     <$> require "BASE_REF"
     <*> (require "PR_NUMBER" >>= number)
     <*> require "GITHUB_REPOSITORY"
-    <*> require "GH_TOKEN"
+    <*> (Token <$> require "GH_TOKEN")
  where
   require name =
     maybe (Left (MissingVariable name)) Right (mfilter (/= mempty) (lookupVariable name))

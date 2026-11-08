@@ -16,7 +16,7 @@ module NvdPrDiff.GitHub
 import Data.Text (isPrefixOf)
 import Himari
 import Network.HTTP.Simple
-import NvdPrDiff.Target (Target (..))
+import NvdPrDiff.Target (Target (..), Token (..))
 
 -- | PRコメントのうち、探すのに要る部分。
 data Comment = Comment
@@ -119,7 +119,7 @@ request target method path payload = do
   let prepared =
         base
           & setRequestMethod method
-          & setRequestHeader "Authorization" ["Bearer " <> convert target.token]
+          & setRequestHeader "Authorization" ["Bearer " <> convert secret]
           & setRequestHeader "Accept" ["application/vnd.github+json"]
           & setRequestHeader "X-GitHub-Api-Version" ["2022-11-28"]
           & setRequestHeader "User-Agent" ["nvd-pr-diff"]
@@ -130,5 +130,6 @@ request target method path payload = do
     then pure (getResponseBody response)
     else throwM (RequestFailed status (convert (getResponseBody response)))
  where
+  Token secret = target.token
   bodyOnly :: Text -> Map Text Text
   bodyOnly body = mempty & at "body" ?~ body

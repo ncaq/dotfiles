@@ -25,8 +25,10 @@ tests = describe "targetFrom" do
           { baseRef = "master"
           , prNumber = 1234
           , repository = "ncaq/dotfiles"
-          , token = "ghs_secret"
+          , token = Token "ghs_secret"
           }
+  it "トークンはshowしても中身を出さない" do
+    show (Token "ghs_secret") `shouldBe` "Token <redacted>"
   for_ ["BASE_REF", "PR_NUMBER", "GITHUB_REPOSITORY", "GH_TOKEN"] \name ->
     it (convert name <> "が無ければその名前を報告する") do
       targetWith (filter ((/= name) . fst) environment) `shouldBe` Left (MissingVariable name)

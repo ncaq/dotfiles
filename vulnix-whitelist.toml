@@ -23,47 +23,13 @@
 # `cve` を書いたルールはそのCVEだけを隠し、同じパッケージの他のCVEは報告され続ける。
 # `cve` を書かないルールはそのパッケージの全CVEを隠す。
 #
-# ルールの書き方は、誤検知の原因ごとに以下のように決める。
-#
-# 名前衝突で、そのNixパッケージ自身がその名前でNVDにCVEを登録されることがまず無いもの。
-# 主にHackageのライブラリ。衝突はバージョンを上げても再発するので、
-# `["pname"]` で全バージョンを `cve` 無しで隠す。
-# ただしpnameが別の本物のパッケージ(glib, zlibなど)と同じ場合は、
-# 本物を巻き込まないよう `["pname-version"]` でバージョンを限定する。
-#
-# 名前衝突で、そのNixパッケージ自身が本物でありCVEを持ちうるもの。
-# gitとJenkinsのGit Pluginのような関係。本物のCVEを隠さないよう、
-# `["pname"]` に衝突相手のCVEを `cve` で列挙する。
-#
-# 同じ製品だが、別プラットフォームや別ディストリビューション固有のCVE。
-# 上と同様に `["pname"]` に `cve` を列挙する。
-#
-# 派生物名からのバージョン切り出しが壊れていて、実在しないバージョンとして照合されるもの。
-# その壊れた名前そのものを `["pname-version"]` で `cve` 無しで隠す。
-#
-# バージョン比較の誤りで、修正済みバージョンが報告されるもの。
-# `["pname-version"]` にそのCVEを `cve` で列挙する。
-# バージョンが上がれば自然に外れる。
-#
-# 本物の脆弱性で、nixpkgsで修正が進んでいてチャンネルに降りてくるのを待つもの。
-# `["pname-version"]` に待っているCVEを `cve` で列挙し、
-# 修正のPRを `issue_url` に、おおむね1か月後の日付を `until` に書く。
-# 修正版が降りてくればバージョンが変わって外れ、
-# 修正が滞っていれば期限切れで再び報告される。
-# `["pname-version"]` が誤検知の判定で既に使われている時は、
-# 同じセクションに書くと `until` で誤検知の判定まで外れてしまうので、
-# `["pname"]`、それも使われていれば `["*"]` に書く。
-# 他のバージョンや他のパッケージの、修正の動きが無い同じCVEを巻き込む時は書かない。
-# 書き方の例は以下の通り。
-#
-#   ["foo-1.2.3"]
-#   cve = ["CVE-2026-00000"]
-#   issue_url = "https://github.com/NixOS/nixpkgs/pull/000000"
-#   until = "2026-12-06"
-#   comment = "1.2.4への更新PR。staging-26.05へのバックポート待ち"
+# ルールは隠す理由ごとにまとめ、
+# 書き方はそれぞれのまとまりの先頭のコメントに書く。
 
-# 名前衝突: Nixパッケージ自身がCVEを持つことがまず無いもの。
-# xmonadやhaskell-language-serverの実行時閉包に入るHackageのライブラリ。
+# 名前衝突で、そのNixパッケージ自身がその名前でNVDにCVEを登録されることがまず無いもの。
+# 主にxmonadやhaskell-language-serverの実行時閉包に入るHackageのライブラリ。
+# 衝突はバージョンを上げても再発するので、
+# `["pname"]` で全バージョンを `cve` 無しで隠す。
 
 ["async"]
 comment = "Haskell async。NVDはnpmのasync"
@@ -89,13 +55,8 @@ comment = "Haskell tar。NVDはGNU tarとnode-tar。GNU tarのpnameはgnutar"
 ["yaml"]
 comment = "Haskell yaml。NVDはGoのyaml"
 
-# 同上だが、pnameが本物のパッケージと同じなのでバージョンで限定する。
-
-["dbus-1.4.2"]
-comment = "Haskell dbus。NVDはD-Bus本体"
-
-["glib-0.13.12.0"]
-comment = "Haskell glib (gtk2hs)。NVDはGNOME GLib"
+# 同上だが、pnameが別の本物のパッケージ(glib, zlibなど)と同じもの。
+# 本物を巻き込まないよう `["pname-version"]` でバージョンを限定する。
 
 ["opentelemetry-0.8.0"]
 comment = "Haskell opentelemetry (hls-plugin-apiが依存)。NVDはGo/.NET/C++/JS/Jenkinsのもの"
@@ -103,15 +64,17 @@ comment = "Haskell opentelemetry (hls-plugin-apiが依存)。NVDはGo/.NET/C++/J
 ["zlib-0.7.1.1"]
 comment = "Haskell zlib。NVDはzlib本体やRubyのzlib"
 
-# 名前衝突: Nixパッケージ自身が本物でCVEを持ちうるもの。衝突相手のCVEだけを列挙する。
+# 名前衝突で、そのNixパッケージ自身が本物でありCVEを持ちうるもの。
+# gitとJenkinsのGit Pluginのような関係。本物のCVEを隠さないよう、
+# `["pname"]` に衝突相手のCVEを `cve` で列挙する。
 
 ["ada"]
 cve = ["CVE-2024-9410"]
-comment = "ada-url。NVDはAda.cxというSaaS"
+comment = "ada-url。CVE-2024-9410はAda.cxというSaaSのもの"
 
 ["allegro"]
 cve = ["CVE-2021-36489"]
-comment = "allegro 4.4系。NVDの対象はAllegro 5のallegro_imageアドオン"
+comment = "allegro 4.4系。CVE-2021-36489はAllegro 5のallegro_imageアドオンのもの"
 
 ["cargo"]
 cve = [
@@ -123,15 +86,15 @@ cve = [
   "CVE-2026-58519",
   "CVE-2026-58521",
 ]
-comment = "NVDはMediaWikiのCargo拡張"
+comment = "列挙したCVEはすべてMediaWikiのCargo拡張のもの"
 
 ["cvs"]
 cve = ["CVE-2022-29037"]
-comment = "NVDはJenkinsのCVS Plugin"
+comment = "CVE-2022-29037はJenkinsのCVS Pluginのもの"
 
 ["dash"]
 cve = ["CVE-2024-21485"]
-comment = "dashシェル。NVDはPlotly Dash"
+comment = "dashシェル。CVE-2024-21485はPlotly Dashのもの"
 
 ["git"]
 cve = [
@@ -142,83 +105,98 @@ cve = [
   "CVE-2022-36884",
   "CVE-2022-38663",
 ]
-comment = "NVDはJenkinsのGit Plugin"
+comment = "列挙したCVEはすべてJenkinsのGit Pluginのもの"
 
 ["go"]
 cve = ["CVE-2023-49292"]
-comment = "NVDはeciesというGoのライブラリ"
+comment = "CVE-2023-49292はeciesというGoのライブラリのもの"
 
 ["kotlin"]
 cve = ["CVE-2023-26154"]
-comment = "NVDはpubnubのSDK"
+comment = "CVE-2023-26154はpubnubのSDKのもの"
 
 ["libmpeg2"]
 cve = ["CVE-2022-37416"]
-comment = "NVDはIttiam(Android)のlibmpeg2"
+comment = "CVE-2022-37416はIttiam(Android)のlibmpeg2のもの"
 
 ["malcontent"]
 cve = ["CVE-2026-24845", "CVE-2026-28407"]
-comment = "GNOMEのmalcontent。NVDはChainguardのmalcontent"
+comment = "GNOMEのmalcontent。CVE-2026-24845, CVE-2026-28407はChainguardのmalcontentのもの"
 
 ["mercurial"]
 cve = ["CVE-2022-43410"]
-comment = "NVDはJenkinsのMercurial Plugin"
+comment = "CVE-2022-43410はJenkinsのMercurial Pluginのもの"
 
 ["ninja"]
 cve = ["CVE-2021-4336"]
-comment = "NVDはITRS monitor-ninja"
+comment = "CVE-2021-4336はITRS monitor-ninjaのもの"
 
 ["orc"]
 cve = ["CVE-2025-47436"]
-comment = "GStreamerのorc。NVDはApache ORC"
+comment = "GStreamerのorc。CVE-2025-47436はApache ORCのもの"
 
 ["ruby"]
 cve = ["CVE-2026-97229"]
-comment = "NVDはGitLab"
+comment = "CVE-2026-97229はGitLabのもの"
 
 ["shellcheck"]
 cve = ["CVE-2021-28794"]
-comment = "NVDはVS Codeの非公式ShellCheck拡張"
+comment = "CVE-2021-28794はVS Codeの非公式ShellCheck拡張のもの"
 
 ["snappy"]
 cve = ["CVE-2023-28115", "CVE-2023-41330"]
-comment = "Googleのsnappy。NVDはPHPのknp-snappy"
+comment = "Googleのsnappy。CVE-2023-28115, CVE-2023-41330はPHPのknp-snappyのもの"
 
 ["subversion"]
 cve = ["CVE-2021-21698", "CVE-2022-29046", "CVE-2022-29048"]
-comment = "NVDはJenkinsのSubversion Plugin"
+comment = "列挙したCVEはすべてJenkinsのSubversion Pluginのもの"
 
 ["swift"]
 cve = ["CVE-2023-26154"]
-comment = "NVDはpubnubのSDK"
+comment = "CVE-2023-26154はpubnubのSDKのもの"
 
 ["zlib"]
 cve = ["CVE-2023-6992", "CVE-2026-27820"]
-comment = "Cloudflareのzlibフォークと、Rubyのzlib gem"
+comment = [
+  "CVE-2023-6992はCloudflareのzlibフォークのもの",
+  "CVE-2026-27820はRubyのzlib gemのもの",
+]
 
 # 同じ製品だが、別プラットフォームや別ディストリビューション固有のCVE。
+# 上と同様に `["pname"]` に `cve` を列挙する。
 
 ["accountsservice"]
 cve = ["CVE-2023-3297"]
-comment = "Ubuntu独自パッチの脆弱性"
+comment = "CVE-2023-3297はUbuntu独自パッチの脆弱性"
 
 ["avahi"]
 cve = ["CVE-2021-26720"]
-comment = "Debianパッケージ固有のスクリプト(avahi-daemon-check-dns.sh)の問題"
+comment = "CVE-2021-26720はDebianパッケージ固有のスクリプト(avahi-daemon-check-dns.sh)の問題"
 
 ["cjson"]
 cve = ["CVE-2026-16554"]
-comment = "32bitプラットフォーム限定のsize_t桁溢れ"
+comment = "CVE-2026-16554は32bitプラットフォーム限定のsize_t桁溢れ"
 
 ["cups"]
 cve = ["CVE-2022-26691"]
-comment = "macOS側の修正"
+comment = "CVE-2022-26691はmacOS側の修正"
 
 ["gimp"]
 cve = ["CVE-2025-8672", "CVE-2026-78465"]
 comment = ["CVE-2025-8672はmacOS版のTCC権限の問題", "CVE-2026-78465は32bitビルド限定"]
 
-# 派生物名からのバージョン切り出しが壊れているもの。壊れた名前そのものを隠す。
+# NVDが別製品のCVEに無関係なパッケージのCPEを付けてしまったもの。
+# 上と同様に `["pname"]` に `cve` を列挙する。
+
+["game-music-emu"]
+cve = ["CVE-2026-0016", "CVE-2026-0017", "CVE-2026-0018"]
+comment = [
+  "どれもAndroidのframeworkのCVE。NVDが同じ番号のNotCVE-2026-0016から0018のlibgmeのCPEを混ぜた",
+  "libgme側の欠陥は別物でCVEが付いていない。CVEが付けば別の番号で報告される",
+]
+
+# 派生物名からのバージョン切り出しが壊れていて、実在しないバージョンとして照合されるもの。
+# その壊れた名前そのものを `["pname-version"]` で `cve` 無しで隠す。
 
 ["dbus-1"]
 comment = "initrdに入る dbus-1 ディレクトリ名。D-Busのバージョン1ではない"
@@ -232,9 +210,11 @@ comment = "0-unstable-... を 20190123 より古いバージョンとして照�
 ["polkit-1.pam"]
 comment = "/etc/pam.d/polkit-1 の設定ファイル。pkexecのバイナリではない"
 
-# バージョン比較の誤り。修正済みバージョンが報告される。
+# バージョン比較の誤りで、修正済みバージョンが報告されるもの。
 # nixpkgsのrelease branchパッチや、上流のポイントリリースに修正が入っていることを
 # 修正コミットの有無で確認したもの。該当コードがそのバージョンに存在しないものも含む。
+# `["pname-version"]` にそのCVEを `cve` で列挙する。
+# バージョンが上がれば自然に外れる。
 
 ["binutils-2.46"]
 cve = ["CVE-2025-69649", "CVE-2025-69650", "CVE-2025-69651", "CVE-2025-69652"]
@@ -402,11 +382,22 @@ comment = "対象は5.42.3-RC1より前。5.42.3は修正済み"
 cve = ["CVE-2026-13221", "CVE-2026-57432", "CVE-2026-8376"]
 comment = "perl-5.42.3-env という派生物名のバージョンが 5.42.3-env と切り出されるので別に書く"
 
-["samba-4.23.10"]
-cve = ["CVE-2026-2340"]
-comment = "4.23.8で修正済み。vfs_wormモジュールを設定していなければそもそも該当しない"
-
 # 本物の脆弱性で、nixpkgsで修正が進んでいてチャンネルに降りてくるのを待つもの。
+# `["pname-version"]` に待っているCVEを `cve` で列挙し、
+# 修正のPRを `issue_url` に、おおむね1か月後の日付を `until` に書く。
+# 修正版が降りてくればバージョンが変わって外れ、
+# 修正が滞っていれば期限切れで再び報告される。
+# `["pname-version"]` が誤検知の判定で既に使われている時は、
+# 同じセクションに書くと `until` で誤検知の判定まで外れてしまうので、
+# `["pname"]`、それも使われていれば `["*"]` に書く。
+# 他のバージョンや他のパッケージの、修正の動きが無い同じCVEを巻き込む時は書かない。
+# 書き方の例は以下の通り。
+#
+#   ["foo-1.2.3"]
+#   cve = ["CVE-2026-00000"]
+#   issue_url = "https://github.com/NixOS/nixpkgs/pull/000000"
+#   until = "2026-12-06"
+#   comment = "1.2.4への更新PR。staging-26.05へのバックポート待ち"
 
 # gimpは ["gimp"] も ["gimp-3.0.8"] も誤検知の判定で使っているので、
 # 期限で一緒に外れないよう ["*"] にgimp固有のCVEを列挙する。

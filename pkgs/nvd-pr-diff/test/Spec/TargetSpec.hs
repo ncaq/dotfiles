@@ -30,5 +30,10 @@ tests = describe "targetFrom" do
   for_ ["BASE_REF", "PR_NUMBER", "GITHUB_REPOSITORY", "GH_TOKEN"] \name ->
     it (convert name <> "が無ければその名前を報告する") do
       targetWith (filter ((/= name) . fst) environment) `shouldBe` Left (MissingVariable name)
+  -- GitHub Actionsは`${{ github.base_ref }}`のように値が無い式を空文字列で渡すので、
+  -- 空は無いのと同じに扱う。消したBash版の`${VAR:?}`も空を弾いていた。
+  for_ ["BASE_REF", "PR_NUMBER", "GITHUB_REPOSITORY", "GH_TOKEN"] \name ->
+    it (convert name <> "が空文字列でもその名前を報告する") do
+      targetWith ((name, "") : environment) `shouldBe` Left (MissingVariable name)
   it "PR番号が数でなければ生の値を報告する" do
     targetWith (("PR_NUMBER", "abc") : environment) `shouldBe` Left (InvalidPrNumber "abc")

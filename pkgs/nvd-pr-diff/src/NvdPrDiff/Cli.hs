@@ -23,7 +23,8 @@ host = "seminar"
 
 -- | 投稿先を読み、両側を評価して比べ、PRコメントへ投稿する。
 --
--- 想定している失敗は理由を1行でログに出して`ExitFailure 1`にする。
+-- 想定している失敗は理由をログに出して`ExitFailure 1`にする。
+-- nvdの出力を読めなかった時は、megaparsecの複数行の説明がそのまま理由に付く。
 -- それ以外の例外はこちらの不具合なので変換せずに通す。
 run :: (MonadLogger m, MonadThrow m, MonadUnliftIO m) => m Upsert
 run =

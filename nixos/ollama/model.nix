@@ -3,12 +3,16 @@
   lib,
   pkgs,
   config,
+  inputs,
   ...
 }:
 let
   enableCuda = config.local.ollama.enableCuda;
   fetchHuggingFace = import ../../lib/fetch-hugging-face.nix { inherit pkgs; };
-  patchGgufChatTemplate = import ../../lib/patch-gguf-chat-template.nix { inherit pkgs; };
+  patchGgufChatTemplate = import ../../lib/patch-gguf-chat-template.nix {
+    inherit pkgs;
+    inherit (inputs) himari-src;
+  };
   # registryのQwen3.8が同梱しているパラメータ。
   # GGUFから自前で組み立てるとparamsレイヤーが付いてこないので明示する。
   # `draft_num_predict`が特に重要で、

@@ -329,11 +329,6 @@
           # ComfyUIの自作カスタムノードのうち、
           # ComfyUI本体に触れない部分のpytest。
           comfyui-custom-node-test = import ./lib/comfyui-custom-node-test.nix { inherit pkgs; };
-          # GGUFのチャットテンプレートの出し入れのうち、
-          # メタデータの走査とバイト長を保った書き戻しのpytest。
-          patch-gguf-chat-template-test = import ./lib/patch-gguf-chat-template-test.nix {
-            inherit pkgs;
-          };
           # Open WebUIの利用者ごとの設定を合成するjqのフィルタが、
           # 意図した通りに合成することを検査するderivation。
           open-webui-user-settings-merge-test =
@@ -377,6 +372,11 @@
           # アイドル中のComfyUIにメモリを解放させる常駐プロセス。
           # ビルドの中でsandwichのテストが走る。
           comfyui-idle-free-memory = pkgs.callPackage ./pkgs/comfyui-idle-free-memory {
+            inherit (inputs) himari-src;
+          };
+          # GGUFのチャットテンプレートを取り出して書き戻すコマンド。
+          # ビルドの中でsandwichのテストが走る。
+          patch-gguf-chat-template = pkgs.callPackage ./pkgs/patch-gguf-chat-template {
             inherit (inputs) himari-src;
           };
           # リポジトリ内のPythonをpyrightで型検査するためのderivation群。
@@ -518,13 +518,13 @@
                 git-repo-subscribe
                 machine-address6-test
                 open-webui-user-settings-merge-test
-                patch-gguf-chat-template-test
                 safetensors-fp16
                 systemd-specifier-test
                 ;
               # 警告を残さないために、CIでだけ`-Werror`で組む。
               comfy-workflow = comfy-workflow.override { werror = true; };
               comfyui-idle-free-memory = comfyui-idle-free-memory.override { werror = true; };
+              patch-gguf-chat-template = patch-gguf-chat-template.override { werror = true; };
             }
             // lib.optionalAttrs hasComfyui {
               # リポジトリ内のPythonの型検査。
@@ -550,6 +550,8 @@
             inherit comfy-cli comfy-workflow;
             # アイドル中のComfyUIにメモリを解放させる常駐プロセス。
             inherit comfyui-idle-free-memory;
+            # GGUFのチャットテンプレートを取り出して書き戻すコマンド。
+            inherit patch-gguf-chat-template;
           }
           // lib.optionalAttrs hasComfyui {
             # pyrightがPython環境とComfyUIのソースを辿るためのディレクトリ。

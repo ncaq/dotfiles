@@ -12,10 +12,6 @@
   "extraPaths": [".typecheck/src"],
   "executionEnvironments": [
     {
-      "root": "lib/tests",
-      "extraPaths": ["lib"]
-    },
-    {
       "root": "nixos/host/bullet/comfyui/custom-node/tests",
       "extraPaths": [
         "nixos/host/bullet/comfyui/custom-node",

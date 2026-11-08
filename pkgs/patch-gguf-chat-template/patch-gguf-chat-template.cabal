@@ -59,6 +59,7 @@ library
   hs-source-dirs: src
   -- cabal-gild: discover ./src
   exposed-modules:
+    PatchGgufChatTemplate.Cli
     PatchGgufChatTemplate.Command
     PatchGgufChatTemplate.Gguf.Failure
     PatchGgufChatTemplate.Gguf.Format
@@ -100,6 +101,7 @@ test-suite patch-gguf-chat-template-test
   other-modules:
     Fixture
     Spec
+    Spec.CliSpec
     Spec.CommandSpec
     Spec.Gguf.FormatSpec
     Spec.Gguf.LocateSpec

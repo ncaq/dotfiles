@@ -197,8 +197,6 @@ class SaveSvtAv1:
                         warn_video_only("音声のチャンネル数が0です")
                 except Exception as error:
                     warn_video_only(error)
-                    audio_stream = None
-                    audio_frames = []
 
             for image in images:
                 rgb48 = (

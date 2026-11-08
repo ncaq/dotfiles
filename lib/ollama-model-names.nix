@@ -1,7 +1,7 @@
 /**
   アクセラレータごとに、役割から実際のモデル名を引く表。
 
-  型: { cuda = { general, freedom }; cpu = { general, freedom }; embedding; }
+  型: { cuda = { general, freedom, translate }; cpu = { general, freedom, translate }; embedding; }
 
   NixOSモジュールからはこのファイルを直接importせず、
   `nixos/ollama/model.nix`がここから設定する`local.ollama.models`を参照すること。
@@ -44,6 +44,10 @@
       "qwen3.8-27b-mtp:q6_k"
     ];
     freedom = [ "qwen3.8-27b-heretic-rvn:q6_k" ];
+    # 配布元の評価ではQ4_K_MとBF16の翻訳精度の差は誤差の範囲に収まる。
+    # 19.5GBあるので汎用モデルとは同時にVRAMへ載らないが、
+    # 使わなくなった方がkeep_aliveで降りるので入れ替わりで動く。
+    translate = [ "plamo-3-translate-31b:q4_k_m" ];
   };
   cpu = {
     general = [
@@ -70,6 +74,9 @@
     # 対話を待っていられる速度ではないため、
     # ディスクとロード時間を消費するだけになる。
     freedom = [ ];
+    # 31Bのdenseは汎用モデルの24Bと同様にCPUでは待っていられる速度が出ないので8Bにする。
+    # 配布元の評価では8Bと31Bの翻訳精度の差は小さい。
+    translate = [ "plamo-3-translate-8b:q4_k_m" ];
   };
   # RAGの埋め込みに使うモデル。
   # アクセラレータ別にしない理由は`nixos/ollama/option.nix`のオプションの説明にある。

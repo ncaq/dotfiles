@@ -28,6 +28,15 @@ let
           待っていられる速度で動かせないハードウェアでは空にする。
         '';
       };
+
+      translate = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ ];
+        description = ''
+          翻訳に特化したモデル。
+          汎用モデルに翻訳させるより軽く、用語集や文体の指定も効く。
+        '';
+      };
     };
   };
 in
@@ -140,11 +149,11 @@ in
       default =
         with config.local.ollama;
         lib.subtractLists (lib.attrNames ggufModels) (
-          hostModels.general ++ hostModels.freedom ++ models.embedding
+          hostModels.general ++ hostModels.freedom ++ hostModels.translate ++ models.embedding
         );
       defaultText = lib.literalExpression ''
         lib.subtractLists (lib.attrNames ggufModels)
-          (hostModels.general ++ hostModels.freedom ++ models.embedding)
+          (hostModels.general ++ hostModels.freedom ++ hostModels.translate ++ models.embedding)
       '';
       description = ''
         Ollama registryからpullするモデル。

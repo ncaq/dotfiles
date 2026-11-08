@@ -46,6 +46,31 @@ let
   # home-managerの設定もこれを読むため、実体は`lib/`に置いている。
   # 理由はそのファイルの先頭に書いてある。
   modelNames = import ../../lib/ollama-model-names.nix;
+  # PLaMo 3 Translateの配布元が推奨する生成の設定。
+  #
+  # 学習時の最大長は入力と出力の合計で32768トークンなので、
+  # contextをそれ以上伸ばしても長文の翻訳は保証されない。
+  # bulletの既定の131072のままだとKVキャッシュがVRAMを余計に占めるので、
+  # 学習時の長さに揃える。
+  #
+  # 翻訳文の終わりにモデルは`<|plamo:tag|>`か`<|plamo:bos|>`を出す。
+  # 後者はGGUFのeosなので、停止文字列として足すのは前者だけでよい。
+  #
+  # チャットテンプレートはGGUFに埋め込まれたJinjaをOllamaがllama-serverへ渡して使う。
+  # Ollamaは`chat_template_kwargs`を受け取れないので、
+  # 訳す言語などは先頭のsystemメッセージに`[plamo-translate]`の形式で書く。
+  # 省略すると日本語と英語の間で自動的に向きを切り替える。
+  #
+  # 配布元のGGUFには`yarn_truncate=false`の設定が入っているが、
+  # 今のllama.cppはまだこれを解釈しないため、
+  # 長文では配布元の想定と少しずれた訳になる場合がある。
+  # 公式のCLIはllama-serverへyarnの引数を直接渡して回避しているが、
+  # Ollamaにはその引数を渡す手段が無い。
+  plamoTranslateParameters = {
+    num_ctx = 32768;
+    stop = "<|plamo:tag|>";
+    temperature = 0;
+  };
   ggufModels =
     lib.optionalAttrs enableCuda {
       # registryに無い量子化でQwen3.8-27Bを使うための自前ビルド。
@@ -170,6 +195,36 @@ let
         ];
         parameters = qwenParameters;
       };
+      # 翻訳特化のPLaMo 3 Translate。
+      # revは`target_lang`を省略した時の挙動が日英の自動切り替えに変わった後のもの。
+      "plamo-3-translate-31b:q4_k_m" = {
+        sources = [
+          (fetchHuggingFace {
+            owner = "pfnet";
+            repo = "plamo-3-translate-31b-GGUF";
+            rev = "8aa0d99cd886de5c7efb1d9418ce56562f54946a";
+            file = "plamo-3-translate-31b-Q4_K_M.gguf";
+            hash = "sha256-R3iMPrcbgwkZqEVAIjgd6UOkPt+rZdrZ50KZcCjR+d8=";
+          })
+        ];
+        parameters = plamoTranslateParameters;
+      };
+    }
+    // lib.optionalAttrs (!enableCuda) {
+      # CPUで推論するホスト向けのPLaMo 3 Translate。
+      # revの選び方はCUDA向けの31Bと同じ。
+      "plamo-3-translate-8b:q4_k_m" = {
+        sources = [
+          (fetchHuggingFace {
+            owner = "pfnet";
+            repo = "plamo-3-translate-8b-GGUF";
+            rev = "fccc6b15efc7d615189fa5df6a1a02ecd2dbc18f";
+            file = "plamo-3-translate-8b-Q4_K_M.gguf";
+            hash = "sha256-lOXT+RtCH3yJAN2qwnsRoZ90QUJslUu7JaL9YKFkAYc=";
+          })
+        ];
+        parameters = plamoTranslateParameters;
+      };
     }
     // {
       # RAGの埋め込み用モデル。CUDAの有無に関係なく全てのOllamaホストへ登録する。
@@ -202,7 +257,7 @@ let
     };
   # 全てのアクセラレータの全ての役割に現れるモデル名。
   declaredModels =
-    lib.concatMap (models: models.general ++ models.freedom) [
+    lib.concatMap (models: models.general ++ models.freedom ++ models.translate) [
       modelNames.cuda
       modelNames.cpu
     ]

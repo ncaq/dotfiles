@@ -23,6 +23,11 @@ closureLine :: Text
 closureLine =
   "Closure size: 1234 -> 1240 (10 paths added, 4 paths removed, delta +6, disk usage +1.2 MiB)."
 
+-- | パッケージが減った時の閉包の行。差もディスク使用量も負になる。
+shrinkingClosureLine :: Text
+shrinkingClosureLine =
+  "Closure size: 10 -> 8 (1 paths added, 3 paths removed, delta -2, disk usage -1.2 MiB)."
+
 closure :: ClosureSize
 closure =
   ClosureSize{before = 1234, after = 1240, added = 10, removed = 4, diskUsage = Just "+1.2 MiB"}
@@ -140,6 +145,27 @@ tests = describe "parseReport" do
           , sections = []
           , closure =
               ClosureSize{before = 10, after = 10, added = 0, removed = 0, diskUsage = Nothing}
+          }
+  -- パッケージを減らすPRでは差もディスク使用量も負になる。
+  it "減った差と負のディスク使用量を読む" do
+    parseReport
+      ( intercalate
+          "\n"
+          (header <> ["No version or selection state changes.", shrinkingClosureLine])
+      )
+      `shouldBe` Right
+        Report
+          { before = beforePath
+          , after = afterPath
+          , sections = []
+          , closure =
+              ClosureSize
+                { before = 10
+                , after = 8
+                , added = 1
+                , removed = 3
+                , diskUsage = Just "-1.2 MiB"
+                }
           }
   it "選択の記号が無い行も読む" do
     parseReport

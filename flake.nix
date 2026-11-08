@@ -326,9 +326,6 @@
         }:
         let
           git-repo-subscribe = pkgs.callPackage ./pkgs/git-repo-subscribe { };
-          # ComfyUIの自作カスタムノードのうち、
-          # ComfyUI本体に触れない部分のpytest。
-          comfyui-custom-node-test = import ./lib/comfyui-custom-node-test.nix { inherit pkgs; };
           # Open WebUIの利用者ごとの設定を合成するjqのフィルタが、
           # 意図した通りに合成することを検査するderivation。
           open-webui-user-settings-merge-test =
@@ -403,8 +400,16 @@
             inherit pkgs;
             comfyui = (importPkgsStable system).comfy-ui-cuda;
           };
+          # ComfyUIの自作カスタムノードのうち、
+          # ComfyUI本体に触れない部分のpytest。
+          # PythonのバージョンをComfyUIに揃えるため、
+          # 型検査と同じcomfyuiからインタプリタを取る。
+          comfyui-custom-node-test = import ./lib/comfyui-custom-node-test.nix {
+            inherit pkgs;
+            comfyui = (importPkgsStable system).comfy-ui-cuda;
+          };
           # CUDA版torchを含むcomfyuiはaarch64では現実的にビルドできないため、
-          # 型検査もx86_64-linuxでだけ提供します。
+          # 型検査とテストもx86_64-linuxでだけ提供します。
           hasComfyui = system == "x86_64-linux";
         in
         {
@@ -519,7 +524,6 @@
               inherit
                 comfy-cli
                 comfyui-api-workflow-test
-                comfyui-custom-node-test
                 git-repo-subscribe
                 machine-address6-test
                 open-webui-user-settings-merge-test
@@ -535,6 +539,7 @@
             // lib.optionalAttrs hasComfyui {
               # リポジトリ内のPythonの型検査。
               pyright = pythonPyright.check;
+              inherit comfyui-custom-node-test;
             };
 
           packages = {

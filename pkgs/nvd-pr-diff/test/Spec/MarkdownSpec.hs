@@ -32,6 +32,17 @@ upgraded =
     , after = Just [single "1.1", Version{label = Just "1.2", count = 2}]
     }
 
+-- | 変化前のバージョンの一覧が空のパッケージ。
+bare :: Package
+bare =
+  Package
+    { install = Changed
+    , selection = Just Unselected
+    , name = "bare"
+    , before = []
+    , after = Just [single "1.0"]
+    }
+
 system :: Package
 system =
   Package
@@ -49,7 +60,7 @@ tests = describe "render" do
       "seminar"
       "master"
       ( report
-          [ Section{kind = VersionChanges, packages = [upgraded]}
+          [ Section{kind = VersionChanges, packages = [upgraded, bare]}
           , Section
               { kind = RemovedPackages
               , packages =
@@ -74,6 +85,7 @@ tests = describe "render" do
         , "| State | Package | Version |"
         , "| --- | --- | --- |"
         , "| `U.` | `foo` | `1.0` -> `1.1, 1.2 x2` |"
+        , "| `C.` | `bare` | `<no versions>` -> `1.0` |"
         , ""
         , "### Removed packages"
         , ""

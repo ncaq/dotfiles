@@ -41,6 +41,7 @@ full =
          , "[U.]  #01  foo                   1.0 -> 1.1"
          , "[D*]  #02  bar-baz               2.0, 2.1 x2 -> 1.9"
          , "[C.]  #03  nixos-system-seminar  26.05.20261101.aaaaaaa -> 26.05.20261108.bbbbbbb"
+         , "[C.]  #04  bare                  <no versions> -> 1.0"
          , "Selection state changes:"
          , "[C+]  #1  qux  <none>"
          , "Added packages:"
@@ -86,6 +87,14 @@ tests = describe "parseReport" do
                           , name = "nixos-system-seminar"
                           , before = [single "26.05.20261101.aaaaaaa"]
                           , after = Just [single "26.05.20261108.bbbbbbb"]
+                          }
+                      , -- `<no versions>`は空白を含むので、1つのトークンとして空の一覧に読む。
+                        Package
+                          { install = Changed
+                          , selection = Just Unselected
+                          , name = "bare"
+                          , before = []
+                          , after = Just [single "1.0"]
                           }
                       ]
                   }

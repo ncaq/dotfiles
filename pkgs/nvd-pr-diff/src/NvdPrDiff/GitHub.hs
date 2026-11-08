@@ -11,6 +11,9 @@ module NvdPrDiff.GitHub
   , botLogin
   , findExisting
   , upsertComment
+  , perPage
+  , collectPages
+  , acceptStatus
   ) where
 
 import Data.Text (isPrefixOf)
@@ -90,24 +93,38 @@ commentsPath target =
 perPage :: Int
 perPage = 100
 
--- | PRの全てのコメント。1ページに満たなくなるまでめくる。
+-- | PRの全てのコメント。
 listComments :: (MonadIO m, MonadLogger m, MonadThrow m) => Target -> m [Comment]
-listComments target = page 1
+listComments target = collectPages \n -> do
+  raw <-
+    request
+      target
+      "GET"
+      ( commentsPath target
+          <> "?per_page="
+          <> convert (show perPage)
+          <> "&page="
+          <> convert (show n)
+      )
+      Nothing
+  either (throwM . ResponseUnreadable . convert) pure (eitherDecode raw)
+
+-- | ページ番号で1ページ分を取る関数を1ページ目から順に呼び、全てを繋げて返す。
+--
+-- 1ページに満たないページが来たらそこで止める。
+-- ちょうど`perPage`件のページの後は次のページも取り、空で返ってきて止まる。
+collectPages :: (Monad m) => (Int -> m [a]) -> m [a]
+collectPages fetch = page 1
  where
   page n = do
-    raw <-
-      request
-        target
-        "GET"
-        ( commentsPath target
-            <> "?per_page="
-            <> convert (show perPage)
-            <> "&page="
-            <> convert (show (n :: Int))
-        )
-        Nothing
-    comments <- either (throwM . ResponseUnreadable . convert) pure (eitherDecode raw)
-    if length comments < perPage then pure comments else (comments <>) <$> page (n + 1)
+    items <- fetch n
+    if length items < perPage then pure items else (items <>) <$> page (n + 1)
+
+-- | 成功の状態コードなら本文を返し、それ以外は状態コードと本文を添えて失敗にする。
+acceptStatus :: Int -> LazyByteString -> Either GitHubFailure LazyByteString
+acceptStatus status body
+  | status `div` 100 == 2 = Right body
+  | otherwise = Left (RequestFailed status (convert body))
 
 -- | REST APIを1回呼んで本文を返す。本文を渡せば`body`だけのJSONとして送る。
 request
@@ -125,10 +142,7 @@ request target method path payload = do
           & setRequestHeader "User-Agent" ["nvd-pr-diff"]
           & maybe id (setRequestBodyJSON . bodyOnly) payload
   response <- httpLBS prepared
-  let status = getResponseStatusCode response
-  if status `div` 100 == 2
-    then pure (getResponseBody response)
-    else throwM (RequestFailed status (convert (getResponseBody response)))
+  either throwM pure (acceptStatus (getResponseStatusCode response) (getResponseBody response))
  where
   Token secret = target.token
   bodyOnly :: Text -> Map Text Text

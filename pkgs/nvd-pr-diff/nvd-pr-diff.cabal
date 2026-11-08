@@ -1,0 +1,117 @@
+cabal-version: 3.12
+name: nvd-pr-diff
+version: 0.1.0.0
+synopsis: baseとPRのNix評価結果のnvd diffをPRコメントとして投稿する
+license: Apache-2.0
+author: ncaq <ncaq@ncaq.net>
+maintainer: ncaq <ncaq@ncaq.net>
+build-type: Simple
+extra-source-files: test/fixture/*.txt
+
+source-repository head
+  type: git
+  location: https://github.com/ncaq/dotfiles
+
+common basic
+  ghc-options:
+    -Wall
+    -Wcompat
+    -Widentities
+    -Wincomplete-record-updates
+    -Wincomplete-uni-patterns
+    -Wpartial-fields
+    -Wredundant-constraints
+
+  default-language: GHC2024
+  default-extensions:
+    ApplicativeDo
+    BlockArguments
+    CPP
+    DefaultSignatures
+    DerivingVia
+    DuplicateRecordFields
+    FunctionalDependencies
+    LexicalNegation
+    LinearTypes
+    MonadComprehensions
+    MultiWayIf
+    NegativeLiterals
+    NoFieldSelectors
+    NoImplicitPrelude
+    OverloadedLabels
+    OverloadedRecordDot
+    OverloadedStrings
+    ParallelListComp
+    PatternSynonyms
+    QualifiedDo
+    QuantifiedConstraints
+    QuasiQuotes
+    RecordWildCards
+    RecursiveDo
+    StrictData
+    TemplateHaskell
+    TypeData
+    TypeFamilies
+    TypeFamilyDependencies
+    ViewPatterns
+
+library
+  import: basic
+  hs-source-dirs: src
+  -- cabal-gild: discover ./src
+  exposed-modules:
+    NvdPrDiff.Build
+    NvdPrDiff.Cli
+    NvdPrDiff.GitHub
+    NvdPrDiff.Markdown
+    NvdPrDiff.Report
+    NvdPrDiff.Target
+
+  build-depends:
+    base >=4.20.0.0 && <4.23,
+    himari >=1.1.6 && <1.2,
+    http-conduit >=2.3 && <2.4,
+    megaparsec >=9.6 && <9.8,
+    text >=2.1 && <2.2,
+
+executable nvd-pr-diff
+  import: basic
+  hs-source-dirs: app
+  main-is: Main.hs
+  ghc-options:
+    -threaded
+    -rtsopts
+    -with-rtsopts=-N
+
+  build-depends:
+    base,
+    himari,
+    nvd-pr-diff,
+
+test-suite nvd-pr-diff-test
+  import: basic
+  type: exitcode-stdio-1.0
+  hs-source-dirs: test
+  main-is: Main.hs
+  ghc-options:
+    -threaded
+    -rtsopts
+    -with-rtsopts=-N
+
+  -- cabal-gild: discover ./test --exclude ./test/Main.hs
+  other-modules:
+    Spec
+    Spec.GitHubSpec
+    Spec.MarkdownSpec
+    Spec.ReportSpec
+    Spec.TargetSpec
+
+  build-tool-depends:
+    sandwich:sandwich-discover
+
+  build-depends:
+    base,
+    himari,
+    nvd-pr-diff,
+    sandwich >=0.3.0.5,
+    text,

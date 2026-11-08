@@ -379,6 +379,11 @@
           patch-gguf-chat-template = pkgs.callPackage ./pkgs/patch-gguf-chat-template {
             inherit (inputs) himari-src;
           };
+          # PRコメントにnvd diffを投稿するコマンド。
+          # ビルドの中でsandwichのテストが走る。
+          nvd-pr-diff = pkgs.callPackage ./pkgs/nvd-pr-diff {
+            inherit (inputs) himari-src;
+          };
           # リポジトリ内のPythonをpyrightで型検査するためのderivation群。
           # ComfyUIのパッケージはoverlay経由でしか生えないが、
           # perSystemの`pkgs`にはoverlayが載っていないため、
@@ -525,6 +530,7 @@
               comfy-workflow = comfy-workflow.override { werror = true; };
               comfyui-idle-free-memory = comfyui-idle-free-memory.override { werror = true; };
               patch-gguf-chat-template = patch-gguf-chat-template.override { werror = true; };
+              nvd-pr-diff = nvd-pr-diff.override { werror = true; };
             }
             // lib.optionalAttrs hasComfyui {
               # リポジトリ内のPythonの型検査。
@@ -542,8 +548,8 @@
               ;
             # Gitリポジトリを購読するためのツール。
             inherit git-repo-subscribe;
-            # PRコメントにnvd diffを投稿するスクリプト。
-            nvd-pr-diff = pkgs.callPackage ./pkgs/nvd-pr-diff { };
+            # PRコメントにnvd diffを投稿するコマンド。
+            inherit nvd-pr-diff;
             # safetensorsのF32テンソルをF16へ変換するコマンド。
             inherit safetensors-fp16;
             # Comfy-Orgの公式CLIと、それを包んでワークフローを名前で呼ぶコマンド。

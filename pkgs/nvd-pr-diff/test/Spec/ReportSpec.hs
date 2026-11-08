@@ -203,3 +203,61 @@ tests = describe "parseReport" do
     case parseReport "garbage" of
       Left (Unparsable detail) -> detail `textShouldContain` "<<< "
       Right parsed -> expectationFailure ("読めてしまいました: " <> show parsed)
+  -- bulletの2世代を`nvd --color never diff`した出力をそのまま置いてある。
+  -- 手で組み立てた入力と違い、nvdを更新して出力の形が変わった時にここで気付ける。
+  it "bulletの実際の出力を読む" do
+    actual <- convert <$> liftIO (readFile "test/fixture/nvd-diff-bullet.txt")
+    parseReport actual
+      `shouldBe` Right
+        Report
+          { before = "/nix/var/nix/profiles/system-1214-link"
+          , after = "/nix/var/nix/profiles/system-1215-link"
+          , sections =
+              [ Section
+                  { kind = VersionChanges
+                  , packages =
+                      [ Package
+                          { install = Downgraded
+                          , selection = Just Unselected
+                          , name = "nixos-system-bullet"
+                          , before =
+                              [single systemBefore]
+                          , after =
+                              Just
+                                [single systemAfter]
+                          }
+                      ]
+                  }
+              , Section
+                  { kind = RemovedPackages
+                  , packages =
+                      [ removed "hm_kittydiff.conf" [Version{label = Nothing, count = 1}]
+                      , removed "hm_kittykitty.conf" [Version{label = Nothing, count = 1}]
+                      , removed "kitty" [single "0.49.1", single "0.49.1-terminfo"]
+                      , removed "kitty-themes" [single "0-unstable-2026-03-31"]
+                      , removed "libstartup-notification" [single "0.12"]
+                      , removed "shader-slang" [single "2026.18"]
+                      ]
+                  }
+              ]
+          , closure =
+              ClosureSize
+                { before = 6534
+                , after = 6527
+                , added = 19
+                , removed = 26
+                , diskUsage = Just "-141.9MiB"
+                }
+          }
+ where
+  -- bulletのブートエントリのラベルは、`nixos/core/label.nix`がコミットの情報から組む。
+  systemBefore = "26.05-815f656-master-merge.renovate.lock-file-maintenance"
+  systemAfter = "26.05-252e3db-master-merge.replace-patch-gguf-chat-template"
+  removed pname versions =
+    Package
+      { install = Removed
+      , selection = Just Unselected
+      , name = pname
+      , before = versions
+      , after = Nothing
+      }

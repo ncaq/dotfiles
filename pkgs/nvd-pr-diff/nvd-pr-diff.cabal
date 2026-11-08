@@ -6,6 +6,7 @@ license: Apache-2.0
 author: ncaq <ncaq@ncaq.net>
 maintainer: ncaq <ncaq@ncaq.net>
 build-type: Simple
+extra-source-files: test/fixture/*.txt
 
 source-repository head
   type: git

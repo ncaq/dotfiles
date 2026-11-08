@@ -1,0 +1,12 @@
+<<< /nix/var/nix/profiles/system-1214-link
+>>> /nix/var/nix/profiles/system-1215-link
+Version changes:
+[D.]  #1  nixos-system-bullet  26.05-815f656-master-merge.renovate.lock-file-maintenance -> 26.05-252e3db-master-merge.replace-patch-gguf-chat-template
+Removed packages:
+[R.]  #1  hm_kittydiff.conf        <none>
+[R.]  #2  hm_kittykitty.conf       <none>
+[R.]  #3  kitty                    0.49.1, 0.49.1-terminfo
+[R.]  #4  kitty-themes             0-unstable-2026-03-31
+[R.]  #5  libstartup-notification  0.12
+[R.]  #6  shader-slang             2026.18
+Closure size: 6534 -> 6527 (19 paths added, 26 paths removed, delta -7, disk usage -141.9MiB).

@@ -18,8 +18,10 @@ module Fixture
   , templateEntry
   , fileTypeEntry
   , entries
+  , replacing
   , header
   , assemble
+  , assembleEntries
   , buildGguf
   , withGgufFile
   ) where
@@ -104,6 +106,11 @@ entries template =
     <> foldMap (pure . templateEntry) template
     <> [fileTypeEntry]
 
+-- | 並びの中の1項目を差し替える。
+-- 壊れた項目を標準の並びへ埋め込んで、他の項目は正常なまま保つために使う。
+replacing :: ByteString -> ByteString -> [ByteString] -> [ByteString]
+replacing original replacement = fmap \entry -> if entry == original then replacement else entry
+
 -- | ヘッダ。
 -- マジックナンバー、バージョン、テンソル数、メタデータ数の順に並ぶ。
 header :: Word32 -> Word64 -> ByteString
@@ -113,9 +120,13 @@ header version kvCount = ggufMagic <> encodeWord32 version <> encodeWord64 0 <> 
 assemble :: Word32 -> [ByteString] -> ByteString
 assemble version kvs = header version (fromIntegral (length kvs)) <> mconcat kvs <> tensorData
 
+-- | 対応しているバージョンで項目を並べてGGUF全体にする。
+assembleEntries :: [ByteString] -> ByteString
+assembleEntries = assemble ggufVersion
+
 -- | テンプレートを含む最小のGGUFを組み立てる。
 buildGguf :: Maybe ByteString -> ByteString
-buildGguf = assemble ggufVersion . entries
+buildGguf = assembleEntries . entries
 
 -- | GGUFを一時ディレクトリへ置いて、そのパスとテンプレートを置くためのパスを渡す。
 withGgufFile :: (MonadUnliftIO m) => ByteString -> (FilePath -> FilePath -> m a) -> m a

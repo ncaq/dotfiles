@@ -30,6 +30,19 @@ locate :: (MonadThrow m, MonadUnliftIO m) => ByteString -> m Span
 locate content =
   withGgufFile content \ggufPath _ -> withBinaryFile ggufPath ReadMode locateChatTemplate
 
+-- | 壊れた項目の長さプレフィックスを読み終えた位置から末尾までの残り。
+--
+-- 走査がその項目へ辿り着くまでに読むのは、ヘッダと手前の項目の全てと、
+-- その項目のキーと型IDと長さプレフィックスである。
+remainingAfterLength :: [ByteString] -> ByteString -> ByteString -> Integer
+remainingAfterLength kvs broken prefixOfBroken =
+  toInteger (B.length (assembleEntries kvs) - B.length consumed)
+ where
+  consumed =
+    header ggufVersion (fromIntegral (length kvs))
+      <> mconcat (takeWhile (/= broken) kvs)
+      <> prefixOfBroken
+
 tests :: TopSpec
 tests = describe "locateChatTemplate" do
   it "可変長の値を挟んでもテンプレートの位置を返す" do
@@ -41,8 +54,7 @@ tests = describe "locateChatTemplate" do
     locate (buildGguf Nothing) `shouldThrow` (== ChatTemplateNotFound)
   it "テンプレートが文字列でなければ止まる" do
     let content =
-          assemble
-            ggufVersion
+          assembleEntries
             [ architectureEntry
             , encodeKv "tokenizer.chat_template" GgufUInt32 (encodeWord32 7)
             , fileTypeEntry
@@ -55,59 +67,39 @@ tests = describe "locateChatTemplate" do
   it "知らない型IDは読み飛ばせないので止まる" do
     -- 型IDは0から12まで。
     let unknown = encodeString "x" <> encodeWord32 13
-    locate (assemble ggufVersion [unknown, templateEntry template])
+    locate (assembleEntries [unknown, templateEntry template])
       `shouldThrow` (== UnknownValueType 13)
   it "配列の配列は読み飛ばせないので止まる" do
     let nested =
           encodeKv "x" GgufArray (encodeWord32 (encodeValueType GgufArray) <> encodeWord64 0)
-    locate (assemble ggufVersion [nested, templateEntry template])
+    locate (assembleEntries [nested, templateEntry template])
       `shouldThrow` (== UnsupportedElementType GgufArray)
   it "ファイル末尾を超える長さの文字列は読まずに止まる" do
     -- テンプレートより手前の項目の長さだけを、ファイル全体より大きい値へ差し替える。
     let broken =
           encodeKv "general.architecture" GgufString (encodeWord64 hugeLength <> architecture)
-        content =
-          assemble
-            ggufVersion
-            [ broken
-            , quantizationEntry
-            , tokensEntry
-            , tokenTypeEntry (fromIntegral (length tokens))
-            , templateEntry template
-            , fileTypeEntry
-            ]
-        -- 長さプレフィックスを読み終えた位置から末尾までが残り。
-        consumed =
-          header ggufVersion 6
-            <> encodeString "general.architecture"
-            <> encodeWord32 (encodeValueType GgufString)
-            <> encodeWord64 hugeLength
-        remaining = toInteger (B.length content - B.length consumed)
-    locate content `shouldThrow` (== LengthExceedsFile (toInteger hugeLength) remaining)
+        kvs = replacing architectureEntry broken (entries (Just template))
+        remaining =
+          remainingAfterLength kvs broken $
+            encodeString "general.architecture"
+              <> encodeWord32 (encodeValueType GgufString)
+              <> encodeWord64 hugeLength
+    locate (assembleEntries kvs)
+      `shouldThrow` (== LengthExceedsFile (toInteger hugeLength) remaining)
   it "固定長配列の要素数がファイル末尾を超えていたら止まる" do
     -- 固定長の要素はまとめて読み飛ばすので、`hSeek`は末尾を越えても成功してしまう。
     -- 要素数の側で止めないと気付けない。
-    let content =
-          assemble
-            ggufVersion
-            [ architectureEntry
-            , quantizationEntry
-            , tokensEntry
-            , tokenTypeEntry hugeLength
-            , templateEntry template
-            , fileTypeEntry
-            ]
-        consumed =
-          header ggufVersion 6
-            <> architectureEntry
-            <> quantizationEntry
-            <> tokensEntry
-            <> encodeString "tokenizer.ggml.token_type"
-            <> encodeWord32 (encodeValueType GgufArray)
-            <> encodeWord32 (encodeValueType GgufInt32)
-            <> encodeWord64 hugeLength
-        remaining = toInteger (B.length content - B.length consumed)
-    locate content `shouldThrow` (== LengthExceedsFile (4 * toInteger hugeLength) remaining)
+    let broken = tokenTypeEntry hugeLength
+        original = tokenTypeEntry (fromIntegral (length tokens))
+        kvs = replacing original broken (entries (Just template))
+        remaining =
+          remainingAfterLength kvs broken $
+            encodeString "tokenizer.ggml.token_type"
+              <> encodeWord32 (encodeValueType GgufArray)
+              <> encodeWord32 (encodeValueType GgufInt32)
+              <> encodeWord64 hugeLength
+    locate (assembleEntries kvs)
+      `shouldThrow` (== LengthExceedsFile (4 * toInteger hugeLength) remaining)
   it "途中で切れたファイルは何バイト足りなかったかを言って止まる" do
     -- ヘッダの24バイトの直後、最初のキーの長さプレフィックスの途中で切る。
     locate (B.take 30 (buildGguf (Just template))) `shouldThrow` (== UnexpectedEndOfFile 8 6)

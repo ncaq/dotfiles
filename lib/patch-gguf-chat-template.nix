@@ -1,15 +1,16 @@
 /**
   patchGgufChatTemplate: GGUFの`tokenizer.chat_template`へ差分を当てた派生GGUFを作る関数。
 
-  型: { pkgs } -> { gguf, patch, hash } -> derivation
+  型: { pkgs, himari-src } -> { gguf, patch, hash } -> derivation
 
   引数:
-    pkgs  - `runCommand`とPythonを取るためのnixpkgs
-    gguf  - 元になるGGUF(`fetchHuggingFace`の結果など)
-    patch - チャットテンプレートに当てるunified diffのファイル。
-            `patch`コマンドがヘッダより前の文章を読み飛ばすので、
-            差分の意図はファイルの先頭に書いておける。
-    hash  - 差分を当てた後のファイルのSRI形式sha256ハッシュ
+    pkgs       - `runCommand`と`pkgs/patch-gguf-chat-template`を組むためのnixpkgs
+    himari-src - `pkgs/patch-gguf-chat-template`が依存するhimariのソース(flakeのinput)
+    gguf       - 元になるGGUF(`fetchHuggingFace`の結果など)
+    patch      - チャットテンプレートに当てるunified diffのファイル。
+                 `patch`コマンドがヘッダより前の文章を読み飛ばすので、
+                 差分の意図はファイルの先頭に書いておける。
+    hash       - 差分を当てた後のファイルのSRI形式sha256ハッシュ
 
   なぜ必要か:
     Hugging Faceで配布されるGGUFのチャットテンプレートには、
@@ -33,7 +34,7 @@
     GGUFのメタデータ文字列は長さプレフィックス付きで並んでいるため、
     長さが変わるとそれ以降の全てのオフセットがずれ、
     ファイル全体の書き直しになる。
-    `patch_gguf_chat_template.py`が縮んだ分をJinjaのコメントで埋めて長さを揃える。
+    `patch-gguf-chat-template`が縮んだ分をJinjaのコメントで埋めて長さを揃える。
     伸びる差分は埋めようがないので拒否される。
     その場合は差分の側を短く書き直す。
 
@@ -43,7 +44,7 @@
     22GB級のGGUFを丸ごと複製せずに派生を作れる。
 
   なぜfixed-output derivationにするか:
-    通常のderivationだと出力パスがPythonやstdenvのstoreパスから決まるため、
+    通常のderivationだと出力パスが書き換えに使うコマンドやstdenvのstoreパスから決まるため、
     flake.lockの更新のたびに中身が同じまま別のパスになる。
     `allowSubstitutes = false`はこのderivationをビルドする時の判定にしか効かず、
     参照元のパスをキャッシュから取得するとクロージャの一部として一緒に取得される。
@@ -63,7 +64,10 @@
     `hash = ""`で一度ビルドして、
     hash mismatchのエラーに出る実際の値を書き写す。
 */
-{ pkgs }:
+{ pkgs, himari-src }:
+let
+  patchGgufChatTemplate = pkgs.callPackage ../pkgs/patch-gguf-chat-template { inherit himari-src; };
+in
 {
   gguf,
   patch,
@@ -71,7 +75,7 @@
 }:
 pkgs.runCommand "${gguf.name}-patched-template"
   {
-    nativeBuildInputs = [ pkgs.python3 ];
+    nativeBuildInputs = [ patchGgufChatTemplate ];
 
     outputHashMode = "flat";
     outputHashAlgo = "sha256";
@@ -88,11 +92,11 @@ pkgs.runCommand "${gguf.name}-patched-template"
     # 元のGGUFは読み取り専用のまま取り出せるので、
     # 配布元がテンプレートを変えていた場合はメタデータの読み取りだけで止まる。
     # 逆にすると、失敗が確定した後で数十GBを書いたことになる。
-    python3 ${./patch_gguf_chat_template.py} extract ${gguf} chat_template.jinja
+    patch-gguf-chat-template extract ${gguf} chat_template.jinja
     # `--fuzz=0`でコンテキスト行の不一致を許さない。
     patch --fuzz=0 chat_template.jinja ${patch}
 
     cp --reflink=auto ${gguf} "$out"
     chmod +w "$out"
-    python3 ${./patch_gguf_chat_template.py} embed "$out" chat_template.jinja
+    patch-gguf-chat-template embed "$out" chat_template.jinja
   ''

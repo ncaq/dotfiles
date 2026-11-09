@@ -10,7 +10,10 @@
   ...
 }:
 let
-  hostName = osConfig.networking.hostName or null;
+  # 空文字列はどのホスト名とも一致しないので、
+  # NixOSの外のhome-managerでは下の既定の設定になる。
+  # `null`を属性名に使うと`or`へ届く前に型エラーになる。
+  hostName = osConfig.networking.hostName or "";
   setting =
     {
       # RTX 5090で速度を優先するのでCUDA版にする。

@@ -58,9 +58,17 @@ let
       # CPUで推論するのでGPUのバックエンドは要らない。
       # Ollamaの翻訳モデルと同じく、
       # CPUでも待っていられる範囲で精度を取って8Bにする。
+      # Ollamaのmtpと違い、0.8BのドラフトならこのホストのCPUでも速くなる。
+      # 英文93トークンを日本語の91トークンへ訳す実測では、
+      # 8Bだけで9.7トークン/秒のところ、
+      # ドラフトを足すと18.5トークン/秒になり、
+      # 82個の提案のうち67個が受理された。
+      # 2Bならドラフトを足して38トークン/秒出るが、
+      # 8Bでも待っていられる速さが出るので精度を優先する。
       seminar = {
         inherit (pkgs-unstable) llama-cpp;
         model = plamoTranslateModel."8b-q4_k_m";
+        draftModel = plamoTranslateModel."0.8b-q4_0";
       };
     }
     .${hostName} or {

@@ -2,7 +2,8 @@
 #
 # nixpkgsにはまだ無いので自前でパッケージ化している。
 # Linuxでは推論をllama.cppの`llama-server`へ任せ、
-# モデルのGGUFは初回の実行時にHugging Faceのキャッシュへ取得する。
+# モデルをHugging Faceのリポジトリ名で指定した場合は、
+# 初回の実行時にHugging Faceのキャッシュへ取得する。
 {
   lib,
   python3Packages,
@@ -10,12 +11,14 @@
   llama-cpp,
   versionCheckHook,
   # 既定で使うモデル。
+  # GGUFのパスか、Hugging Faceの`<user>/<repo>[:QUANT]`を受け付ける。
   # `null`なら上流の既定のモデルを使う。
   # `--model`で指定すればこの既定値は上書きされる。
   model ? null,
   # 投機的デコーディングに使うドラフトのモデル。
-  # 上流は既定のモデル以外ではドラフトを自動で付けないので、
-  # 既定以外の`model`で速度が欲しい場合に指定する。
+  # 形式は`model`と同じ。
+  # 上流はリポジトリ名で指定した既定のモデル以外ではドラフトを自動で付けないので、
+  # それ以外の`model`で速度が欲しい場合に指定する。
   # `--draft-model`で指定すればこの既定値は上書きされる。
   draftModel ? null,
 }:

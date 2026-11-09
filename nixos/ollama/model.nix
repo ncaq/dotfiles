@@ -9,6 +9,8 @@
 let
   enableCuda = config.local.ollama.enableCuda;
   fetchHuggingFace = import ../../lib/fetch-hugging-face.nix { inherit pkgs; };
+  # CLIと同じstoreのパスを使うため、取得の定義は`lib/`で共有している。
+  plamoTranslateModel = import ../../lib/plamo-translate-model.nix { inherit pkgs; };
   patchGgufChatTemplate = import ../../lib/patch-gguf-chat-template.nix {
     inherit pkgs;
     inherit (inputs) himari-src;
@@ -196,33 +198,15 @@ let
         parameters = qwenParameters;
       };
       # 翻訳特化のPLaMo 3 Translate。
-      # revは`target_lang`を省略した時の挙動が日英の自動切り替えに変わった後のもの。
       "plamo-3-translate-31b:q4_k_m" = {
-        sources = [
-          (fetchHuggingFace {
-            owner = "pfnet";
-            repo = "plamo-3-translate-31b-GGUF";
-            rev = "8aa0d99cd886de5c7efb1d9418ce56562f54946a";
-            file = "plamo-3-translate-31b-Q4_K_M.gguf";
-            hash = "sha256-R3iMPrcbgwkZqEVAIjgd6UOkPt+rZdrZ50KZcCjR+d8=";
-          })
-        ];
+        sources = [ plamoTranslateModel."31b-q4_k_m" ];
         parameters = plamoTranslateParameters;
       };
     }
     // lib.optionalAttrs (!enableCuda) {
       # CPUで推論するホスト向けのPLaMo 3 Translate。
-      # revの選び方はCUDA向けの31Bと同じ。
       "plamo-3-translate-8b:q4_k_m" = {
-        sources = [
-          (fetchHuggingFace {
-            owner = "pfnet";
-            repo = "plamo-3-translate-8b-GGUF";
-            rev = "fccc6b15efc7d615189fa5df6a1a02ecd2dbc18f";
-            file = "plamo-3-translate-8b-Q4_K_M.gguf";
-            hash = "sha256-lOXT+RtCH3yJAN2qwnsRoZ90QUJslUu7JaL9YKFkAYc=";
-          })
-        ];
+        sources = [ plamoTranslateModel."8b-q4_k_m" ];
         parameters = plamoTranslateParameters;
       };
     }

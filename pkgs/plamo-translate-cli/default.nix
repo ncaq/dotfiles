@@ -78,6 +78,21 @@ python3Packages.buildPythonApplication rec {
   doCheck = true;
   pythonImportsCheck = [ "plamo_translate" ];
   nativeInstallCheckInputs = [ versionCheckHook ];
+  # ラッパーに渡す引数の組み立てが崩れてもビルドと`--version`は通ってしまい、
+  # 翻訳を実行するまで気付けない。
+  # 推論せずに確かめられるよう、生成されたラッパーに値が入っていることを見る。
+  postInstallCheck = ''
+    wrapper="$out/bin/plamo-translate"
+    grep -F -q -- ${lib.escapeShellArg "PLAMO_TRANSLATE_CLI_LLAMA_SERVER"} "$wrapper"
+    grep -F -q -- ${lib.escapeShellArg (lib.getExe' llama-cpp "llama-server")} "$wrapper"
+  ''
+  + lib.optionalString (model != null) ''
+    grep -F -q -- ${lib.escapeShellArg "PLAMO_TRANSLATE_CLI_MODEL_NAME"} "$wrapper"
+    grep -F -q -- ${lib.escapeShellArg (toString model)} "$wrapper"
+  ''
+  + lib.optionalString (draftModel != null) ''
+    grep -F -q -- ${lib.escapeShellArg "--draft-model ${toString draftModel}"} "$wrapper"
+  '';
 
   meta = {
     description = "PLaMo Translateでローカル翻訳するCLI";

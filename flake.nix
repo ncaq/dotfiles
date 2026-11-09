@@ -360,6 +360,15 @@
           safetensors-fp16 = pkgs.callPackage ./pkgs/safetensors-fp16 { };
           # Comfy-Orgの公式CLI。
           comfy-cli = pkgs.callPackage ./pkgs/comfy-cli { };
+          # PLaMo Translateでローカル翻訳するCLI。
+          # CIでCUDAをビルドしないようCPU版のllama.cppを渡す。
+          # モデルとドラフトはラッパーの検査の分岐を通すためだけの値で、
+          # 検査は推論しないので実在しなくてよい。
+          plamo-translate-cli = pkgs.callPackage ./pkgs/plamo-translate-cli {
+            inherit ((importPkgsUnstable system)) llama-cpp;
+            model = "pfnet/plamo-3-translate-8b-GGUF:Q4_K_M";
+            draftModel = "pfnet/plamo-3-translate-0.8b-GGUF:Q4_0";
+          };
           # ワークフローを名前で呼ぶコマンド。
           # ビルドの中でsandwichのテストが走る。
           comfy-workflow = pkgs.callPackage ./pkgs/comfy-workflow {
@@ -527,6 +536,7 @@
                 git-repo-subscribe
                 machine-address6-test
                 open-webui-user-settings-merge-test
+                plamo-translate-cli
                 safetensors-fp16
                 systemd-specifier-test
                 ;
@@ -559,6 +569,8 @@
             inherit safetensors-fp16;
             # Comfy-Orgの公式CLIと、それを包んでワークフローを名前で呼ぶコマンド。
             inherit comfy-cli comfy-workflow;
+            # PLaMo Translateでローカル翻訳するCLI。
+            inherit plamo-translate-cli;
             # アイドル中のComfyUIにメモリを解放させる常駐プロセス。
             inherit comfyui-idle-free-memory;
             # GGUFのチャットテンプレートを取り出して書き戻すコマンド。

@@ -4,11 +4,10 @@ module Fixture
   ) where
 
 import Himari
+import UserSettingsSync.Object (objectOf)
 
 -- | JSONのオブジェクトを`Map`として読む。オブジェクトでなければ空にする。
 --
 -- 期待する値を`aesonQQ`で書いてから`Map`と比べるために使う。
 fields :: Value -> Map Text Value
-fields value = case fromJSON value of
-  Success object -> object
-  Error _ -> mempty
+fields = fromMaybe mempty . objectOf

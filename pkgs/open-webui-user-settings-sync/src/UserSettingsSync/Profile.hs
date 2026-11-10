@@ -8,6 +8,7 @@ module UserSettingsSync.Profile
 
 import Data.ByteString.Base64 qualified as Base64
 import Himari
+import UserSettingsSync.Object (objectOf)
 
 -- | 宣言した列に、画像をdata URLにした`profile_image_url`を足す。
 desiredProfile
@@ -35,7 +36,4 @@ declaredColumns
   -> Map Text Value
 declaredColumns desired response = imap (\column _ -> fromMaybe Null (current ^? ix column)) desired
  where
-  current :: Map Text Value
-  current = case fromJSON response of
-    Success object -> object
-    Error _ -> mempty
+  current = fromMaybe mempty (objectOf response)

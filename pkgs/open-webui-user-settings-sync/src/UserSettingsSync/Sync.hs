@@ -23,6 +23,7 @@ import UserSettingsSync.Call
   , updateSettings
   )
 import UserSettingsSync.Failure (ApiFailure (..), SyncFailure (..))
+import UserSettingsSync.Object (objectOf)
 import UserSettingsSync.Profile (declaredColumns, desiredProfile)
 import UserSettingsSync.Settings (currentUi, mergeUi)
 import UserSettingsSync.Token (Token (..))
@@ -81,11 +82,8 @@ sync environment declaration = do
   -- 応答が期待した形でなかった場合はここで落としておく。
   -- 空のトークンをそのまま使うと、
   -- 認証の失敗ではなく設定の取得の失敗として現れて原因が分かりにくい。
-  tokenOf response = case fromJSON response of
-    Success (fields :: Map Text Value)
-      | Just (String token) <- fields ^? ix "token"
-      , token /= mempty ->
-          pure (Token token)
+  tokenOf response = case objectOf response >>= (^? ix "token") of
+    Just (String token) | token /= mempty -> pure (Token token)
     _ -> throwM MissingToken
   syncSettings token = do
     current <- currentUi <$> environment.transport (getSettings token)

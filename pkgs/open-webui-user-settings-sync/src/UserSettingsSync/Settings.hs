@@ -9,6 +9,7 @@ module UserSettingsSync.Settings
 
 import Data.Text qualified as T
 import Himari
+import UserSettingsSync.Object (objectOf)
 
 -- | 設定の応答から今の`ui`を取り出す。
 --
@@ -16,11 +17,6 @@ import Himari
 -- `ui`が無い時も含めて、オブジェクトでなければ空として扱う。
 currentUi :: Value -> Map Text Value
 currentUi response = fromMaybe mempty (objectOf response >>= (^? ix "ui") >>= objectOf)
- where
-  objectOf :: Value -> Maybe (Map Text Value)
-  objectOf value = case fromJSON value of
-    Success object -> Just object
-    Error _ -> Nothing
 
 -- | 今の`ui`へ宣言した鍵だけを重ねて、システムプロンプトも合わせる。
 --

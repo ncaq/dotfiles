@@ -64,6 +64,7 @@ library
     UserSettingsSync.Config
     UserSettingsSync.Declared
     UserSettingsSync.Failure
+    UserSettingsSync.Object
     UserSettingsSync.Profile
     UserSettingsSync.Settings
     UserSettingsSync.Sync

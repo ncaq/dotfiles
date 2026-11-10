@@ -171,7 +171,7 @@ in
       ];
     };
     garage-setup-niks3-private = import ../../../lib/garage-setup.nix {
-      inherit pkgs config;
+      inherit pkgs config inputs;
       name = "niks3-private";
     };
   };

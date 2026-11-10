@@ -399,6 +399,11 @@
           certspotter-mackerel = pkgs.callPackage ./pkgs/certspotter-mackerel {
             inherit (inputs) himari-src;
           };
+          # flakeに定義された全ホストの閉包をGC rootとして登録するコマンド。
+          # ビルドの中でsandwichのテストが走る。
+          nix-gc-root-hosts = pkgs.callPackage ./pkgs/nix-gc-root-hosts {
+            inherit (inputs) himari-src;
+          };
           # seminarへのレイテンシを見てTailscaleのexit nodeを切り替えるdispatcherスクリプト。
           # ビルドの中でsandwichのテストが走る。
           tailscale-exit-node = pkgs.callPackage ./pkgs/tailscale-exit-node {
@@ -560,6 +565,7 @@
                 ;
               # 警告を残さないために、CIでだけ`-Werror`で組む。
               certspotter-mackerel = certspotter-mackerel.override { werror = true; };
+              nix-gc-root-hosts = nix-gc-root-hosts.override { werror = true; };
               tailscale-exit-node = tailscale-exit-node.override { werror = true; };
               wifi-wired-exclusive = wifi-wired-exclusive.override { werror = true; };
               comfy-workflow = comfy-workflow.override { werror = true; };
@@ -597,6 +603,8 @@
             inherit comfyui-idle-free-memory;
             # certspotterが検知したイベントをMackerelのチェックへ繋ぐコマンド。
             inherit certspotter-mackerel;
+            # flakeに定義された全ホストの閉包をGC rootとして登録するコマンド。
+            inherit nix-gc-root-hosts;
             # seminarへのレイテンシを見てTailscaleのexit nodeを切り替えるdispatcherスクリプト。
             inherit tailscale-exit-node;
             # 有線接続中はWiFiの接続を切るNetworkManagerのdispatcherスクリプト。

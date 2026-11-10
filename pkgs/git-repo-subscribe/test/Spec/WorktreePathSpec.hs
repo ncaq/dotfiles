@@ -14,5 +14,7 @@ tests = describe "parseWorktreePath" do
     parseWorktreePath "relative/repository" `shouldBe` Left RelativePath
   it "`..`を含むパスを拒否する" do
     parseWorktreePath "/tmp/../repository" `shouldBe` Left NotNormalizedPath
-  it "ルートを拒否する" do
-    parseWorktreePath "/" `shouldBe` Left RootPath
+  -- 綴りが違ってもルートを指すパスは全て拒否する。
+  for_ ["/", "//", "/.", "///"] \path ->
+    it ("ルートを指す" <> path <> "を拒否する") do
+      parseWorktreePath path `shouldBe` Left RootPath

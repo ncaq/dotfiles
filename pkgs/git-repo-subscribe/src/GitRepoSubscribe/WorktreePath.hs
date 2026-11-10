@@ -8,9 +8,10 @@ module GitRepoSubscribe.WorktreePath
 import GitRepoSubscribe.Failure (WorktreePathError (..))
 import Himari
 
--- | worktreeの置き場所にできる、正規化された絶対パス。
+-- | worktreeの置き場所にできる、`..`を含まない、ルートではない絶対パス。
 --
 -- 構築子は公開せず、検証を通った値しか作れないようにする。
+-- `/a/./b`や`/a//b`のような綴りは正規化せずにそのまま持つ。
 newtype WorktreePath = WorktreePath FilePath
   deriving stock (Eq, Show)
 

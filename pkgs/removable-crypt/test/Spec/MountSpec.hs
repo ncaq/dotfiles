@@ -18,12 +18,14 @@ plugged :: World
 plugged = attachedBtrfs{paths = ["/dev/disk/by-id/usb-SanDisk-0:0-part1"]}
 
 -- | マウントして、結果と、行われた操作を順に返す。
-mounted :: (MonadThrow m, MonadUnliftIO m) => World -> m (Either Failure (), [Event])
-mounted world = do
+--
+-- 偽のシステムが投げる例外のような、`Failure`ではない例外も結果として受ける。
+mountedAny :: (MonadThrow m, MonadUnliftIO m) => World -> m (Either SomeException (), [Event])
+mountedAny world = do
   name <- mapperNamed "gideon"
   deviceId <- deviceWithId "usb-SanDisk-0:0-part1"
   observed world \system ->
-    try
+    tryAny
       ( mount
           system
           MountRequest
@@ -34,6 +36,22 @@ mounted world = do
             , owner = "ncaq"
             }
       )
+
+-- | 想定している失敗で終わったものだけを結果として、マウントする。
+--
+-- それ以外の例外で終わった時は、その例外をそのまま投げ直す。
+mounted :: (MonadThrow m, MonadUnliftIO m) => World -> m (Either Failure (), [Event])
+mounted world = do
+  (result, events) <- mountedAny world
+  case result of
+    Right () -> pure (Right (), events)
+    Left exception -> case fromException exception of
+      Just failure -> pure (Left failure, events)
+      Nothing -> throwM exception
+
+-- | 偽のシステムが投げた例外で終わったなら、その例外を返す。
+thrown :: Either SomeException () -> Maybe FixtureFailure
+thrown = either fromException (const Nothing)
 
 -- | 指定のプログラムと最初の引数のコマンドを失敗させる。
 failingAt :: String -> String -> World -> World
@@ -118,3 +136,47 @@ tests = describe "mount" do
       `shouldBe` Left
         (CommandFailed (mountFilesystem name ["noatime", "compress=zstd"]) (ExitFailure 1))
     drop 4 events `shouldBe` [RemovedDirectory "/mnt/gideon", Executed (detach name)]
+  it "スナップショットのサブボリュームを作れなければ、アンマウントして巻き戻す" do
+    name <- mapperNamed "gideon"
+    (result, events) <- mounted plugged{failing = (== createSnapshotsSubvolume name)}
+    result `shouldBe` Left (CommandFailed (createSnapshotsSubvolume name) (ExitFailure 1))
+    drop 6 events `shouldBe` unwinding name
+  it "スナップショットを取った後の掃除に失敗しても、アンマウントして巻き戻す" do
+    name <- mapperNamed "gideon"
+    (result, events) <- mounted plugged{failing = (== cleanupSnapshots name)}
+    result `shouldBe` Left (CommandFailed (cleanupSnapshots name) (ExitFailure 1))
+    drop 8 events `shouldBe` unwinding name
+  describe "外部コマンドの終了コードではなく例外で失敗した時" do
+    -- 実機では、呼んだ人がpasswdに無い時の所有者の変更や、ディレクトリの作成が例外を投げる。
+    -- 巻き戻しが`Failure`だけを捕まえる形になっていないことを固定する。
+    it "マウントポイントを作れなければ、復号を解く" do
+      name <- mapperNamed "gideon"
+      (result, events) <-
+        mountedAny plugged{throwingOn = \_ event -> event == MadeDirectory "/mnt/gideon"}
+      thrown result `shouldBe` Just (OperationThrew (MadeDirectory "/mnt/gideon"))
+      -- 作れていないマウントポイントは消しに行かない。
+      drop 2 events `shouldBe` [Executed (detach name)]
+    it "マウントの前の所有者の変更に失敗したら、アンマウントはせずに巻き戻す" do
+      name <- mapperNamed "gideon"
+      (result, events) <-
+        mountedAny plugged{throwingOn = firstOwning}
+      thrown result `shouldBe` Just (OperationThrew owned)
+      drop 3 events `shouldBe` [RemovedDirectory "/mnt/gideon", Executed (detach name)]
+    it "マウントの後の所有者の変更に失敗したら、アンマウントして巻き戻す" do
+      name <- mapperNamed "gideon"
+      (result, events) <-
+        mountedAny plugged{throwingOn = secondOwning}
+      thrown result `shouldBe` Just (OperationThrew owned)
+      drop 5 events `shouldBe` unwinding name
+ where
+  owned = GaveTo "ncaq" "/mnt/gideon"
+  -- マウントの前に行う、1回目の所有者の変更。
+  firstOwning previous event = event == owned && owned `notElem` previous
+  -- マウントの後に行う、2回目の所有者の変更。
+  secondOwning previous event = event == owned && owned `elem` previous
+  -- マウントした後の失敗で行う巻き戻し。
+  unwinding name =
+    [ Executed (unmountFilesystem name)
+    , RemovedDirectory "/mnt/gideon"
+    , Executed (detach name)
+    ]

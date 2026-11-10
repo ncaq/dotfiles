@@ -1,6 +1,7 @@
 -- | 実際のデバイスを触らずに済ませるための、偽のシステム。
 module Fixture
   ( Event (..)
+  , FixtureFailure (..)
   , World (..)
   , attachedBtrfs
   , observed
@@ -20,6 +21,8 @@ import RemovableCrypt.UserName (UserName)
 data FixtureFailure
   = -- | 消せないことにしてあるディレクトリを消そうとした。
     DirectoryNotRemovable FilePath
+  | -- | 例外を投げることにしてある操作が行われた。
+    OperationThrew Event
   | -- | テストの中の名前が検査を通らなかった。
     InvalidName Text
   deriving stock (Eq, Show)
@@ -44,6 +47,9 @@ data World = World
   -- ^ 失敗させる外部コマンド。
   , undeletable :: [FilePath]
   -- ^ 消そうとすると失敗するディレクトリ。
+  , throwingOn :: [Event] -> Event -> Bool
+  -- ^ 例外を投げさせる操作。それまでに行われた操作と、今の操作を受け取る。
+  -- ディレクトリの作成と所有者の変更にだけ効く。
   }
 
 -- | `gideon`が復号されてbtrfsとして`/mnt/gideon`にマウントされている状態。
@@ -60,6 +66,7 @@ attachedBtrfs =
     , filesystem = Just Btrfs
     , failing = const False
     , undeletable = []
+    , throwingOn = \_ _ -> False
     }
 
 -- | 偽のシステムで操作を行って、結果と、行われた操作を順に返す。
@@ -71,19 +78,24 @@ observed world action = do
   events <- newIORef []
   existing <- newIORef world.paths
   let record event = modifyIORef' events (<> [event])
+      -- 記録してから、例外を投げることにしてある操作なら投げる。
+      perform event = do
+        previous <- readIORef events
+        record event
+        when (world.throwingOn previous event) (throwM (OperationThrew event))
       system =
         System
           { mapperControllable = pure world.controllable
           , pathExists = \path -> elem path <$> readIORef existing
           , directoryExists = \path -> elem path <$> readIORef existing
           , makeDirectory = \path -> do
-              record (MadeDirectory path)
+              perform (MadeDirectory path)
               modifyIORef' existing (<> [path])
           , removeEmptyDirectory = \path -> do
               record (RemovedDirectory path)
               when (path `elem` world.undeletable) (throwM (DirectoryNotRemovable path))
               modifyIORef' existing (filter (/= path))
-          , giveTo = \user path -> record (GaveTo user path)
+          , giveTo = \user path -> perform (GaveTo user path)
           , filesystemType = const (pure world.filesystem)
           , execute = \command -> do
               record (Executed command)

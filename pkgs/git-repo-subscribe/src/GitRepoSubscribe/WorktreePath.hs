@@ -22,8 +22,7 @@ worktreeFilePath (WorktreePath path) = path
 parseWorktreePath :: FilePath -> Either WorktreePathError WorktreePath
 parseWorktreePath path
   | not (isAbsolute path) = Left RelativePath
-  | components == ["/"] = Left RootPath
-  | ".." `elem` components = Left NotNormalizedPath
+  -- `//`や`/.`のような別の綴りもルートなので、正規化してから比べる。
+  | normalise path == "/" = Left RootPath
+  | ".." `elem` splitDirectories path = Left NotNormalizedPath
   | otherwise = Right (WorktreePath path)
- where
-  components = splitDirectories path

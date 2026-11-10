@@ -4,7 +4,7 @@ module Spec.CommandSpec (tests) where
 import Fixture
 import RemovableCrypt.Command
 import RemovableCrypt.FilesystemType (FilesystemType (..), parseFilesystemType)
-import RemovableCrypt.MountOption (joinMountOptions)
+import RemovableCrypt.MountOption (joinMountOptions, splitMountOptions)
 import Test.Sandwich
 
 tests :: TopSpec
@@ -52,3 +52,10 @@ tests = do
       parseFilesystemType "btrfs\n" `shouldBe` Btrfs
     it "他の種類はそのまま持つ" do
       parseFilesystemType "ext4\n" `shouldBe` OtherFilesystem "ext4"
+  describe "splitMountOptions" do
+    it "カンマで分ける" do
+      splitMountOptions "noatime,compress=zstd" `shouldBe` ["noatime", "compress=zstd"]
+    it "空文字列はオプションが無いものとして読む" do
+      splitMountOptions "" `shouldBe` []
+    it "空の要素は捨てる" do
+      splitMountOptions "noatime,,compress=zstd," `shouldBe` ["noatime", "compress=zstd"]

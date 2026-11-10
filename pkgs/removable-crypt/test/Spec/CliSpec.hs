@@ -26,9 +26,9 @@ mountArguments =
   , "gideon"
   , "--device-id"
   , "usb-SanDisk-0:0-part1"
-  , "--mount-option"
-  , "noatime"
-  , "--btrfs-mount-option"
+  , "--mount-options"
+  , "noatime,nodiratime"
+  , "--btrfs-mount-options"
   , "compress=zstd"
   ]
 
@@ -45,7 +45,7 @@ tests = describe "runWith" do
     name <- mapperNamed "gideon"
     (result, logs, events) <- executed plugged sudo mountArguments
     (result, logs) `shouldBe` (Right (), [])
-    filter (== Executed (mountFilesystem name ["noatime", "compress=zstd"])) events
+    filter (== Executed (mountFilesystem name ["noatime", "nodiratime", "compress=zstd"])) events
       `shouldNotBe` []
     filter (== GaveTo "ncaq" "/mnt/gideon") events `shouldNotBe` []
   it "mountが失敗したら理由を出して1で終わる" do
@@ -68,7 +68,11 @@ tests = describe "runWith" do
     result `shouldBe` Left (ExitFailure 1)
     length logs `shouldBe` 3
   for_
-    [ ["mount", "--name", "../etc", "--device-id", "usb-SanDisk-0:0-part1"]
+    [ mountArguments <> ["--mount-options", "suid,dev"]
+    , mountArguments <> ["--btrfs-mount-options", "suid"]
+    , mountArguments <> ["--name", "other"]
+    , ["mount", "--name", "gideon", "--device-id", "usb-SanDisk-0:0-part1"]
+    , ["mount", "--name", "../etc", "--device-id", "usb-SanDisk-0:0-part1"]
     , ["mount", "--name", "gideon", "--device-id", "../../sda"]
     , ["mount", "--name", "gideon"]
     , ["unmount", "--name", "a/b"]

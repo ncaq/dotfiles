@@ -56,15 +56,13 @@ let
         name
         "--device-id"
         device.deviceId
-      ]
-      ++ lib.concatMap (option: [
-        "--mount-option"
-        option
-      ]) device.mountOptions
-      ++ lib.concatMap (option: [
-        "--btrfs-mount-option"
-        option
-      ]) device.btrfsMountOptions;
+        # マウントオプションは、空でも必ずカンマ区切りの1つの引数として渡します。
+        # ここで指定しておくと、呼び出し元が後ろへ同じオプションを足しても2回目の指定として弾かれます。
+        "--mount-options"
+        (lib.concatStringsSep "," device.mountOptions)
+        "--btrfs-mount-options"
+        (lib.concatStringsSep "," device.btrfsMountOptions)
+      ];
       unmountArguments = [
         "unmount"
         "--name"

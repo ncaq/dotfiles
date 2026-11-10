@@ -17,7 +17,7 @@ import RemovableCrypt.DeviceId (DeviceId, parseDeviceId)
 import RemovableCrypt.Failure (Failure (..))
 import RemovableCrypt.MapperName (MapperName, mountPoint, parseMapperName)
 import RemovableCrypt.Mount (MountRequest (..), mount)
-import RemovableCrypt.MountOption (MountOption (..))
+import RemovableCrypt.MountOption (MountOption, splitMountOptions)
 import RemovableCrypt.System (System, realSystem)
 import RemovableCrypt.Unmount (Problem (..), unmount)
 import RemovableCrypt.UserName (invokingUser)
@@ -84,11 +84,17 @@ mountParser =
     <*> option
       (maybeReader (parseDeviceId . convert))
       (long "device-id" <> metavar "ID" <> help "Device ID under /dev/disk/by-id/")
-    <*> many (mountOption "mount-option" "Mount option for every filesystem")
-    <*> many (mountOption "btrfs-mount-option" "Additional mount option for btrfs")
+    <*> mountOptions "mount-options" "Comma-separated mount options for every filesystem"
+    <*> mountOptions "btrfs-mount-options" "Comma-separated additional mount options for btrfs"
  where
-  mountOption name description =
-    MountOption <$> strOption (long name <> metavar "OPTION" <> help description)
+  -- 同じ名前を何度も書ける形にはせず、カンマ区切りの1つの必須のオプションにする。
+  -- デバイスごとのラッパーは宣言した引数の後ろへ呼び出し元の引数をそのまま足すので、
+  -- 何度も書ける形だと、sudo越しに呼ぶ人が宣言に無い`suid`や`dev`を足せてしまう。
+  -- 必須にしておけば、ラッパーが既に指定しているので、2回目の指定として弾かれる。
+  mountOptions name description =
+    option
+      (splitMountOptions . convert <$> str @String)
+      (long name <> metavar "OPTIONS" <> help description)
 
 nameOption :: Parser MapperName
 nameOption =

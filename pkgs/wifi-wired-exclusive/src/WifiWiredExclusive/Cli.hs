@@ -10,7 +10,7 @@ module WifiWiredExclusive.Cli
   ) where
 
 import Himari
-import WifiWiredExclusive.Action (parseAction)
+import WifiWiredExclusive.Action (Action (..), requestedAction)
 import WifiWiredExclusive.Device (parseDevices)
 import WifiWiredExclusive.Nmcli (Nmcli (..), systemNmcli)
 import WifiWiredExclusive.Plan (plan)
@@ -28,12 +28,12 @@ run = runWith systemNmcli
 -- イベントと操作の間に状態が変わって失敗することがあるが、次のイベントで再評価される。
 -- 失敗は記録だけ残して残りの操作を続ける。
 runWith :: (MonadLogger m) => Nmcli m -> [String] -> m ()
-runWith nmcli = \case
-  [_interface, action]
-    | isJust (parseAction (convert action)) ->
-        nmcli.listDevices >>= traverse_ attempt . plan . parseDevices
-  _ -> pure ()
+runWith nmcli argv = case requestedAction argv of
+  Just InterfaceUp -> reconcile
+  Just InterfaceDown -> reconcile
+  Nothing -> pure ()
  where
+  reconcile = nmcli.listDevices >>= traverse_ attempt . plan . parseDevices
   attempt operation =
     nmcli.perform operation >>= \case
       ExitSuccess -> pure ()

@@ -4,6 +4,7 @@
 module WifiWiredExclusive.Action
   ( Action (..)
   , parseAction
+  , requestedAction
   ) where
 
 import Himari
@@ -22,4 +23,13 @@ parseAction :: Text -> Maybe Action
 parseAction = \case
   "up" -> Just InterfaceUp
   "down" -> Just InterfaceDown
+  _ -> Nothing
+
+-- | dispatcherスクリプトとして受け取った引数から、アクションを読む。
+--
+-- 第1引数がインターフェース名、第2引数がアクションである。
+-- 人が呼ぶコマンドではないので、引数の数が合わない時も失敗にはせず`Nothing`にする。
+requestedAction :: [String] -> Maybe Action
+requestedAction = \case
+  [_interface, action] -> parseAction (convert action)
   _ -> Nothing

@@ -12,7 +12,7 @@ module TailscaleExitNode.Cli
   ) where
 
 import Himari
-import TailscaleExitNode.Action (parseAction)
+import TailscaleExitNode.Action (Action (..), requestedAction)
 import TailscaleExitNode.ExitNode (ExitNode (..), chooseExitNode)
 import TailscaleExitNode.Latency (parsePingLatency)
 import TailscaleExitNode.NodeName (homeServer)
@@ -52,15 +52,15 @@ readiness = Readiness{policy = constantDelay 1000000 <> limitRetries 30, limit =
 -- pingが届かないので外部にいるとみなすことになる。
 runWith
   :: (MonadLogger m, MonadUnliftIO m) => Readiness m -> Tailscale m -> [String] -> m ()
-runWith waiting tailscale = \case
-  [_interface, action] | isJust (parseAction (convert action)) -> do
+runWith waiting tailscale argv = case requestedAction argv of
+  Just InterfaceUp -> do
     void . timeout waiting.limit $
       retrying waiting.policy (\_ isReady -> pure (not isReady)) (const tailscale.ready)
     latency <- parsePingLatency <$> tailscale.ping homeServer
     let exitNode = chooseExitNode homeServer latency
     logInfoN (describe latency exitNode)
     tailscale.setExitNode exitNode
-  _ -> pure ()
+  Nothing -> pure ()
  where
   describe latency exitNode =
     "自宅サーバへのレイテンシは"

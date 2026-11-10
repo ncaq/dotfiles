@@ -2,7 +2,7 @@
 module Spec.ActionSpec (tests) where
 
 import Himari
-import TailscaleExitNode.Action (Action (..), parseAction)
+import TailscaleExitNode.Action (Action (..), parseAction, requestedAction)
 import Test.Sandwich
 
 cases :: [(Text, Maybe Action)]
@@ -16,7 +16,16 @@ cases =
   ]
 
 tests :: TopSpec
-tests = describe "parseAction" do
-  for_ cases \(raw, expected) ->
-    it (show raw <> " -> " <> show expected) do
-      parseAction raw `shouldBe` expected
+tests = do
+  describe "parseAction" do
+    for_ cases \(raw, expected) ->
+      it (show raw <> " -> " <> show expected) do
+        parseAction raw `shouldBe` expected
+  describe "requestedAction" do
+    it "第2引数をアクションとして読む" do
+      requestedAction ["wlp1s0", "up"] `shouldBe` Just InterfaceUp
+    it "知らないアクションは読まない" do
+      requestedAction ["wlp1s0", "pre-up"] `shouldBe` Nothing
+    for_ [[], ["wlp1s0"], ["wlp1s0", "up", "extra"]] \argv ->
+      it ("引数が" <> show argv <> "なら読まない") do
+        requestedAction argv `shouldBe` Nothing

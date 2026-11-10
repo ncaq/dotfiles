@@ -112,6 +112,7 @@ test-suite garage-setup-test
     Spec.ConfigSpec
     Spec.KeyFileSpec
     Spec.SetupSpec
+    Spec.TransportSpec
 
   build-tool-depends:
     sandwich:sandwich-discover
@@ -120,5 +121,8 @@ test-suite garage-setup-test
     base,
     garage-setup,
     himari,
+    http-types >=0.12 && <0.13,
     sandwich >=0.3.0.5,
     unix,
+    wai >=3.2 && <3.3,
+    warp >=3.4 && <3.5,

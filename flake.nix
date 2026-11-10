@@ -399,6 +399,11 @@
           certspotter-mackerel = pkgs.callPackage ./pkgs/certspotter-mackerel {
             inherit (inputs) himari-src;
           };
+          # 暗号化されたリムーバブルデバイスをマウントしてアンマウントするコマンド。
+          # ビルドの中でsandwichのテストが走る。
+          removable-crypt = pkgs.callPackage ./pkgs/removable-crypt {
+            inherit (inputs) himari-src;
+          };
           # GarageのS3バケットとキーを用意するコマンド。
           # ビルドの中でsandwichのテストが走る。
           garage-setup = pkgs.callPackage ./pkgs/garage-setup {
@@ -570,6 +575,7 @@
                 ;
               # 警告を残さないために、CIでだけ`-Werror`で組む。
               certspotter-mackerel = certspotter-mackerel.override { werror = true; };
+              removable-crypt = removable-crypt.override { werror = true; };
               garage-setup = garage-setup.override { werror = true; };
               nix-gc-root-hosts = nix-gc-root-hosts.override { werror = true; };
               tailscale-exit-node = tailscale-exit-node.override { werror = true; };
@@ -609,6 +615,8 @@
             inherit comfyui-idle-free-memory;
             # certspotterが検知したイベントをMackerelのチェックへ繋ぐコマンド。
             inherit certspotter-mackerel;
+            # 暗号化されたリムーバブルデバイスをマウントしてアンマウントするコマンド。
+            inherit removable-crypt;
             # GarageのS3バケットとキーを用意するコマンド。
             inherit garage-setup;
             # flakeに定義された全ホストの閉包をGC rootとして登録するコマンド。

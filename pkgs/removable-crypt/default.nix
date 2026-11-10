@@ -1,58 +1,60 @@
-# 暗号化されたリムーバブルデバイス1台をマウントする`mnt-<名前>`と、
-# アンマウントする`umnt-<名前>`を提供します。
-# `lib/removable-crypt.nix`がデバイスごとに呼びます。
-# 何をするかは`mount.bash`と`unmount.bash`の冒頭に書いてあります。
+# 暗号化されたリムーバブルデバイスをマウントしてアンマウントするコマンド。
+#
+# `mount`と`unmount`のサブコマンドを持つ。
+# `lib/removable-crypt.nix`がデバイスごとに引数を付けて、`mnt-<名前>`と`umnt-<名前>`として包む。
+# 手順は`src/RemovableCrypt/Mount.hs`と`src/RemovableCrypt/Unmount.hs`に書いてある。
+#
+# `callPackage`の結果に`haskell.lib`の関数を重ねると、
+# `override`がこのファイルを`mkDerivation`付きで呼び直して壊れる。
+# CIで警告をエラーにしたい時は`werror`で指定する。
 {
   lib,
-  runCommand,
+  haskell,
+  haskellPackages,
   makeWrapper,
-  shellcheck,
   btrfs-progs,
-  coreutils,
   snapper,
   systemd,
   util-linux,
-  # マッパーの名前。マウントポイントは`/mnt/<name>`になります。
-  name,
-  # `/dev/disk/by-id/`以下のデバイスのID。
-  deviceId,
-  # 全てのファイルシステムで使うマウントオプション。
-  mountOptions,
-  # btrfsの時に`mountOptions`へ足すマウントオプション。
-  btrfsMountOptions,
+  himari-src,
+  werror ? false,
 }:
 let
-  runtimePath = lib.makeBinPath [
-    btrfs-progs
-    coreutils
-    snapper
-    systemd
-    util-linux
-  ];
-in
-runCommand "removable-crypt-${name}"
-  {
-    nativeBuildInputs = [
-      makeWrapper
-      shellcheck
+  packages = haskellPackages.extend (
+    hself: _hsuper: {
+      # himariはstableのnixpkgsではbrokenなので、上流のソースから組む。
+      himari = hself.callCabal2nix "himari" himari-src { };
+    }
+  );
+  # 動かすものだけをstoreへ入れる。
+  # ディレクトリをそのまま渡すと`dist-newstyle`のような作業中のファイルまで付いてくる。
+  source = lib.fileset.toSource {
+    root = ./.;
+    fileset = lib.fileset.unions [
+      ./removable-crypt.cabal
+      ./app
+      ./src
+      ./test
     ];
-    meta.mainProgram = "mnt-${name}";
-  }
-  ''
-    shellcheck ${./mount.bash} ${./unmount.bash}
-    install -Dm755 ${./mount.bash} $out/libexec/removable-crypt/mount.bash
-    install -Dm755 ${./unmount.bash} $out/libexec/removable-crypt/unmount.bash
-    patchShebangs $out/libexec
-    # sudo越しに呼ぶコマンドなので、呼び出し元の環境変数で上書きできない`--set`で固定します。
-    makeWrapper $out/libexec/removable-crypt/mount.bash $out/bin/${lib.escapeShellArg "mnt-${name}"} \
-      --set REMOVABLE_CRYPT_NAME ${lib.escapeShellArg name} \
-      --set REMOVABLE_CRYPT_DEVICE_ID ${lib.escapeShellArg deviceId} \
-      --set REMOVABLE_CRYPT_MOUNT_OPTIONS ${lib.escapeShellArg (lib.concatStringsSep "," mountOptions)} \
-      --set REMOVABLE_CRYPT_BTRFS_MOUNT_OPTIONS ${
-        lib.escapeShellArg (lib.concatStringsSep "," (mountOptions ++ btrfsMountOptions))
-      } \
-      --prefix PATH : ${runtimePath}
-    makeWrapper $out/libexec/removable-crypt/unmount.bash $out/bin/${lib.escapeShellArg "umnt-${name}"} \
-      --set REMOVABLE_CRYPT_NAME ${lib.escapeShellArg name} \
-      --prefix PATH : ${runtimePath}
-  ''
+  };
+  package = packages.callCabal2nix "removable-crypt" source { };
+in
+lib.pipe package [
+  (haskell.lib.compose.overrideCabal (old: {
+    buildTools = (old.buildTools or [ ]) ++ [ makeWrapper ];
+    # 復号とマウントとスナップショットは外部コマンドに任せるので、PATHへ足して包む。
+    postInstall = (old.postInstall or "") + ''
+      wrapProgram "$out/bin/removable-crypt" \
+        --prefix PATH : ${
+          lib.makeBinPath [
+            btrfs-progs
+            snapper
+            systemd
+            util-linux
+          ]
+        }
+    '';
+  }))
+  (haskell.lib.compose.appendConfigureFlags (lib.optional werror "--ghc-options=-Werror"))
+  haskell.lib.compose.justStaticExecutables
+]

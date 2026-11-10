@@ -399,6 +399,11 @@
           certspotter-mackerel = pkgs.callPackage ./pkgs/certspotter-mackerel {
             inherit (inputs) himari-src;
           };
+          # 有線接続中はWiFiの接続を切るNetworkManagerのdispatcherスクリプト。
+          # ビルドの中でsandwichのテストが走る。
+          wifi-wired-exclusive = pkgs.callPackage ./pkgs/wifi-wired-exclusive {
+            inherit (inputs) himari-src;
+          };
           # リポジトリ内のPythonをpyrightで型検査するためのderivation群。
           # ComfyUIのパッケージはoverlay経由でしか生えないが、
           # perSystemの`pkgs`にはoverlayが載っていないため、
@@ -550,6 +555,7 @@
                 ;
               # 警告を残さないために、CIでだけ`-Werror`で組む。
               certspotter-mackerel = certspotter-mackerel.override { werror = true; };
+              wifi-wired-exclusive = wifi-wired-exclusive.override { werror = true; };
               comfy-workflow = comfy-workflow.override { werror = true; };
               comfyui-idle-free-memory = comfyui-idle-free-memory.override { werror = true; };
               git-repo-subscribe = git-repo-subscribe.override { werror = true; };
@@ -585,6 +591,8 @@
             inherit comfyui-idle-free-memory;
             # certspotterが検知したイベントをMackerelのチェックへ繋ぐコマンド。
             inherit certspotter-mackerel;
+            # 有線接続中はWiFiの接続を切るNetworkManagerのdispatcherスクリプト。
+            inherit wifi-wired-exclusive;
             # GGUFのチャットテンプレートを取り出して書き戻すコマンド。
             inherit patch-gguf-chat-template;
           }

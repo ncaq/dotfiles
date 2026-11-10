@@ -116,6 +116,10 @@ in
         # ネットワークが繋がらない場所ではGitのタイムアウトまでディスプレイマネージャの起動が遅れます。
         # ユーザサービスに分離してactivationやGUIの起動と並行に動かします。
         # 切り替え時はsd-switchが`default.target`から引かれる停止中のユニットとして起動します。
+        #
+        # oneshotなので`default.target`は購読が終わるまで届きませんが、ログインは待たせません。
+        # ユーザのsystemdは`default.target`ではなく`basic.target`に届いた時点で`READY=1`を送るので、
+        # `user@.service`の起動完了もセッションの作成も購読を待たないからです。
         systemd.user.services.git-repo-subscribe = {
           Unit.Description = "Clone and update subscribed Git repositories";
           Service = {

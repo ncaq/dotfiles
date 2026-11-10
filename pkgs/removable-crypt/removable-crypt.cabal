@@ -122,4 +122,3 @@ test-suite removable-crypt-test
     himari,
     removable-crypt,
     sandwich >=0.3.0.5,
-    text >=2.1 && <2.2,

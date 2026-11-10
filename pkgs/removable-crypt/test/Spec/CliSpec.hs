@@ -1,7 +1,6 @@
 -- | コマンドライン引数からの実行と、終了の仕方のテスト。
 module Spec.CliSpec (tests) where
 
-import Data.Text (isInfixOf)
 import Fixture
 import Himari
 import RemovableCrypt.Cli (runWith)
@@ -49,24 +48,58 @@ tests = describe "runWith" do
       `shouldNotBe` []
     filter (== GaveTo "ncaq" "/mnt/gideon") events `shouldNotBe` []
   it "mountが失敗したら理由を出して1で終わる" do
-    (result, logs, _) <- executed plugged{controllable = False} sudo mountArguments
-    result `shouldBe` Left (ExitFailure 1)
-    length logs `shouldBe` 1
-    filter (isInfixOf "sudo") logs `shouldBe` logs
+    executed plugged{controllable = False} sudo mountArguments
+      >>= ( `shouldBe`
+              ( Left (ExitFailure 1)
+              , ["/dev/mapper/controlを操作する権限がありません。sudoを付けて実行してください"]
+              , []
+              )
+          )
   it "呼んだ人が分からなければ、何もせずに1で終わる" do
-    (result, logs, events) <- executed plugged [] mountArguments
-    result `shouldBe` Left (ExitFailure 1)
-    length logs `shouldBe` 1
-    events `shouldBe` []
-  it "unmountは成功で終わる" do
-    (result, logs, events) <- executed attachedBtrfs sudo ["unmount", "--name", "gideon"]
-    (result, logs) `shouldBe` (Right (), [])
-    length events `shouldBe` 4
+    executed plugged [] mountArguments
+      >>= ( `shouldBe`
+              ( Left (ExitFailure 1)
+              , ["マウントポイントの所有者にするユーザが分かりません"]
+              , []
+              )
+          )
+  it "unmountは手順を順に行って成功で終わる" do
+    name <- mapperNamed "gideon"
+    executed attachedBtrfs sudo ["unmount", "--name", "gideon"]
+      >>= ( `shouldBe`
+              ( Right ()
+              , []
+              ,
+                [ Executed (createSnapshot name "unmount")
+                , Executed (unmountFilesystem name)
+                , RemovedDirectory "/mnt/gideon"
+                , Executed (detach name)
+                ]
+              )
+          )
   it "unmountで失敗した手順があれば、手順ごとに警告を出して1で終わる" do
+    name <- mapperNamed "gideon"
+    -- 外部コマンドは全て失敗するが、マウントポイントの削除は成功するので、その警告は出ない。
+    executed attachedBtrfs{failing = const True} sudo ["unmount", "--name", "gideon"]
+      >>= ( `shouldBe`
+              ( Left (ExitFailure 1)
+              ,
+                [ "アンマウントの前のスナップショットを取れませんでした"
+                , "/mnt/gideonをアンマウントできませんでした"
+                , "復号を解けませんでした"
+                ]
+              ,
+                [ Executed (createSnapshot name "unmount")
+                , Executed (unmountFilesystem name)
+                , RemovedDirectory "/mnt/gideon"
+                , Executed (detach name)
+                ]
+              )
+          )
+  it "マウントポイントを消せなければ、その警告だけを出して1で終わる" do
     (result, logs, _) <-
-      executed attachedBtrfs{failing = const True} sudo ["unmount", "--name", "gideon"]
-    result `shouldBe` Left (ExitFailure 1)
-    length logs `shouldBe` 3
+      executed attachedBtrfs{undeletable = ["/mnt/gideon"]} sudo ["unmount", "--name", "gideon"]
+    (result, logs) `shouldBe` (Left (ExitFailure 1), ["/mnt/gideonを消せませんでした"])
   for_
     [ mountArguments <> ["--mount-options", "suid,dev"]
     , mountArguments <> ["--btrfs-mount-options", "suid"]

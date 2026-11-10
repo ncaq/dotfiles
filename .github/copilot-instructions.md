@@ -155,13 +155,22 @@ nix fmt
 Claudeの応答完了時にStopフックで`nix fmt`が自動実行されます。
 ファイルの差分が出ることがあります。
 
-## 統合チェック
+## 統合チェックは`./check.sh`を使う
 
-nix-fast-buildコマンドで統合チェックを実行できます。
+統合チェックを実行する時は、
+`nix-fast-build`を直接実行せずに、
+リポジトリルートの`./check.sh`を実行してください。
 
 ```console
-nix-fast-build --option eval-cache false --no-link --skip-cached --no-nom
+./check.sh
 ```
+
+このスクリプトは今のマシンのシステムの`checks`だけを`nix-fast-build`で評価してビルドします。
+`nix-fast-build`を直接実行すると全システムの`checks`が評価され、
+`callCabal2nix`のようなIFDを含むパッケージが、
+そのシステムを実行できないマシンでは評価に失敗します。
+
+追加の引数はそのまま`nix-fast-build`へ渡されます。
 
 ## 設定の適用は`./install.sh`を使う
 

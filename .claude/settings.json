@@ -17,7 +17,7 @@
   },
   "enableAllProjectMcpServers": true,
   "permissions": {
-    "allow": ["Bash(./install.sh:*)"],
+    "allow": ["Bash(./check.sh:*)", "Bash(./install.sh:*)"],
     "additionalDirectories": [
       "~/.claude",
       "~/Desktop/nixpkgs",

@@ -1,69 +1,52 @@
-# certspotterが検知したイベントをMackerelのチェックへ繋ぐ2つのコマンド。
+# certspotterが検知したイベントをMackerelのチェックへ繋ぐコマンド。
 #
-# - `certspotter-hook`: certspotterのhookとして、イベントを1行のJSONでログへ追記する
-# - `check-certspotter`: Mackerelのチェックとして、ログに最近のイベントがあればCRITICALにする
+# 1つのコマンドに2つのサブコマンドを持つ。
 #
-# `nixos/host/seminar/certspotter.nix`から呼ばれます。
+# - `certspotter-mackerel hook`: certspotterのhookとして、イベントを1行のJSONでログへ追記する
+# - `certspotter-mackerel check`: Mackerelのチェックとして、ログに最近のイベントがあればCRITICALにする
 #
-# シェルではなくHaskellで書いています。
-# `SUMMARY`や`ISSUER_DN`やSANはCA/CTログ由来の信頼できない値で、
-# シェルで制御文字を潰すだけでは漏れが出やすいためです。
+# `nixos/host/seminar/certspotter.nix`が設定の環境変数を付けたラッパーで包んで使う。
+# 入力は全て環境変数で、何が要るかは`src/CertspotterMackerel/Config.hs`と
+# `src/CertspotterMackerel/Notification.hs`に書いてある。
+#
+# シェルではなくHaskellで書いている。
+# `SUMMARY`や`ISSUER_DN`やSANはCAとCTログ由来の信頼できない値で、
+# シェルで制御文字を潰すだけでは漏れが出やすいためである。
 # aesonに記録と読み取りの両方を任せれば、
-# 改行やタブが入っても列ずれや偽の行は構造的に起きません。
-# unliftioは`IO`を直接書かずに`MonadIO`と`MonadUnliftIO`で抽象化するために使います。
+# 改行やタブが入っても列ずれや偽の行は構造的に起きない。
 #
-# ビルドの中で`test.bash`が2つのプログラムを突き合わせて検査します。
+# `callPackage`の結果に`haskell.lib`の関数を重ねると、
+# `override`がこのファイルを`mkDerivation`付きで呼び直して壊れる。
+# CIで警告をエラーにしたい時は`werror`で指定する。
 {
   lib,
-  runCommand,
-  makeWrapper,
-  shellcheck,
-  writers,
-  systemd,
-  # hookが追記してチェックが読むログ。
-  eventsLog,
-  # この秒数以内のイベントがあればチェックをCRITICALにします。
-  alertWindowSeconds,
-  # チェックが動いていることを確かめるsystemdのユニット。
-  serviceUnit,
+  haskell,
+  haskellPackages,
+  himari-src,
+  werror ? false,
 }:
 let
-  haskellArgs = {
-    libraries = hpkgs: [
-      hpkgs.aeson
-      hpkgs.unliftio
-    ];
-    ghcArgs = [
-      "-Wall"
-      "-Wcompat"
-      "-Widentities"
-      "-Wincomplete-record-updates"
-      "-Wincomplete-uni-patterns"
-      "-Wpartial-fields"
-      "-Wredundant-constraints"
-      "-Werror"
+  packages = haskellPackages.extend (
+    hself: _hsuper: {
+      # himariはstableのnixpkgsではbrokenなので、上流のソースから組む。
+      himari = hself.callCabal2nix "himari" himari-src { };
+    }
+  );
+  # 動かすものだけをstoreへ入れる。
+  # ディレクトリをそのまま渡すと`dist-newstyle`のような作業中のファイルまで付いてくる。
+  source = lib.fileset.toSource {
+    root = ./.;
+    fileset = lib.fileset.unions [
+      ./certspotter-mackerel.cabal
+      ./app
+      ./src
+      ./test
     ];
   };
-  # 設定は環境変数で受け取るので、ラッパーで包む前のプログラムは設定に依らず共有されます。
-  hook = writers.writeHaskellBin "certspotter-hook" haskellArgs ./certspotter-hook.hs;
-  check = writers.writeHaskellBin "check-certspotter" haskellArgs ./check-certspotter.hs;
+  package = packages.callCabal2nix "certspotter-mackerel" source { };
 in
-runCommand "certspotter-mackerel"
-  {
-    nativeBuildInputs = [
-      makeWrapper
-      shellcheck
-    ];
-  }
-  ''
-    shellcheck ${./test.bash}
-    bash ${./test.bash} ${lib.getExe hook} ${lib.getExe check}
-
-    makeWrapper ${lib.getExe hook} $out/bin/certspotter-hook \
-      --set CERTSPOTTER_EVENTS_LOG ${lib.escapeShellArg eventsLog}
-    makeWrapper ${lib.getExe check} $out/bin/check-certspotter \
-      --set CERTSPOTTER_EVENTS_LOG ${lib.escapeShellArg eventsLog} \
-      --set CERTSPOTTER_ALERT_WINDOW_SECONDS ${toString alertWindowSeconds} \
-      --set CERTSPOTTER_SERVICE_UNIT ${lib.escapeShellArg serviceUnit} \
-      --prefix PATH : ${lib.makeBinPath [ systemd ]}
-  ''
+lib.pipe package [
+  (haskell.lib.compose.appendConfigureFlags (lib.optional werror "--ghc-options=-Werror"))
+  # seminarの閉包へGHCを持ち込まない。
+  haskell.lib.compose.justStaticExecutables
+]

@@ -43,3 +43,7 @@ tests = do
       splitFields "a\\\\b:c" `shouldBe` ["a\\b", "c"]
     it "空の欄も欄として数える" do
       splitFields "a::c" `shouldBe` ["a", "", "c"]
+    it "行末に残ったバックスラッシュは値として読む" do
+      splitFields "a:b\\" `shouldBe` ["a", "b\\"]
+    it "空の行は空の欄が1つとして読む" do
+      splitFields "" `shouldBe` [""]

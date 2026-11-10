@@ -6,10 +6,14 @@ module WifiWiredExclusive.Device
   ) where
 
 import Data.Text qualified as T
-import Himari
+import Himari hiding (try)
+import Text.Megaparsec hiding (many, some)
+import Text.Megaparsec.Char
 import WifiWiredExclusive.DeviceName (DeviceName (..))
 import WifiWiredExclusive.DeviceState (DeviceState, parseDeviceState)
 import WifiWiredExclusive.DeviceType (DeviceType, parseDeviceType)
+
+type Parser = Parsec Void Text
 
 data Device = Device
   { name :: DeviceName
@@ -39,11 +43,12 @@ parseDevices = mapMaybe (device . splitFields) . T.lines
 --
 -- 欄は`:`で区切られていて、値の中の`:`と`\`は`\`でエスケープされている。
 splitFields :: Text -> [Text]
-splitFields = fmap convert . go "" . convert
+splitFields = fromMaybe [] . parseMaybe (field `sepBy` char ':')
+
+-- | 区切りの`:`の手前までの1つの欄。エスケープを外した値を返す。
+field :: Parser Text
+field = convert <$> many (try escaped <|> anySingleBut ':')
  where
-  go :: String -> String -> [String]
-  go field = \case
-    [] -> [reverse field]
-    '\\' : character : rest -> go (character : field) rest
-    ':' : rest -> reverse field : go "" rest
-    character : rest -> go (character : field) rest
+  -- `\`の次の1文字は、`:`や`\`であってもそのまま値の一部になる。
+  -- 行末に`\`だけが残っている時はエスケープとして読めないので、その`\`を値として読む。
+  escaped = char '\\' *> anySingle

@@ -47,10 +47,14 @@ register nix config = do
   -- ダウンロードとビルドが構成間で全く重ならない。
   -- まとめて渡せばNixのスケジューラが構成を横断して並列に処理する。
   -- 失敗は後段のout-linkで個別に検知するので、ここでは記録だけ残して進む。
-  nix.warmUp (fmap (.installable) roots) >>= \case
-    ExitSuccess -> pure ()
-    ExitFailure code ->
-      logWarnN ("まとめてのビルドが終了コード" <> convert (show code) <> "で失敗しました。個別に続けます")
+  --
+  -- 構成が1つも無い時は呼ばない。
+  -- installableの無い`nix build`は、カレントディレクトリのflakeをビルドしようとする。
+  unless (null roots) do
+    nix.warmUp (fmap (.installable) roots) >>= \case
+      ExitSuccess -> pure ()
+      ExitFailure code ->
+        logWarnN ("まとめてのビルドが終了コード" <> convert (show code) <> "で失敗しました。個別に続けます")
   -- まとめてのビルドで成果物が揃っているので、
   -- ここの個別のビルドはout-linkを張るだけでほぼ即座に終わる。
   failed <- catMaybes <$> traverse linkRoot roots

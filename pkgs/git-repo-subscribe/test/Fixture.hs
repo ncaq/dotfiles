@@ -20,6 +20,7 @@ module Fixture
 
 import Data.ByteString qualified as B
 import Data.Text (strip)
+import GitRepoSubscribe.Git.Environment (gitEnvironment)
 import GitRepoSubscribe.PartialCloneFilter (parsePartialCloneFilter)
 import GitRepoSubscribe.RemoteUrl (RemoteUrl, parseRemoteUrl)
 import GitRepoSubscribe.Repository (Repository (..))
@@ -107,13 +108,10 @@ commitLocally fixture = do
 isolated :: (MonadIO m) => [(String, String)] -> [String] -> m (ProcessConfig () () ())
 isolated extra args = do
   inherited <- getEnvironment
-  pure (System.Process.Typed.setEnv (extra <> fixed <> inherited) (proc "git" args))
- where
-  fixed =
-    [ ("GIT_CONFIG_GLOBAL", "/dev/null")
-    , ("GIT_CONFIG_NOSYSTEM", "1")
-    , ("GIT_CONFIG_SYSTEM", "/dev/null")
-    ]
+  -- 本体と同じ環境変数にする。
+  -- 設定を切り離すだけだと、Gitのフックの中からテストを走らせた時に、
+  -- 継いだ`GIT_DIR`などがフィクスチャの操作を呼び出し元のリポジトリへ向けてしまう。
+  pure (System.Process.Typed.setEnv (extra <> gitEnvironment inherited) (proc "git" args))
 
 -- | Gitを実行する。失敗したら出力を付けた例外になる。
 git :: (MonadIO m) => [String] -> m ()

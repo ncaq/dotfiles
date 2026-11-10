@@ -2,6 +2,7 @@
   pkgs,
   lib,
   config,
+  inputs,
   ...
 }:
 let
@@ -12,6 +13,7 @@ let
   #
   # 中身は`pkgs/wifi-wired-exclusive`にある。
   wifiWiredExclusive = pkgs.callPackage ../../pkgs/wifi-wired-exclusive {
+    inherit (inputs) himari-src;
     networkmanager = config.networking.networkmanager.package;
   };
 in

@@ -1,47 +1,43 @@
 # Open WebUIの利用者ごとの設定とプロフィールを、宣言した内容へ揃えるコマンド。
 #
-# `nixos/host/seminar/open-webui/user-settings.nix`のサービスから呼ばれます。
-# 何をするかと必要な環境変数は`open-webui-user-settings-sync.bash`の冒頭に書いてあります。
+# `nixos/host/seminar/open-webui/user-settings.nix`のサービスから呼ばれる。
+# 何をするかは`src/UserSettingsSync/Sync.hs`に、
+# 入力の環境変数は`src/UserSettingsSync/Config.hs`に書いてある。
 #
-# 設定をマージするjqのフィルタは`user-settings-merge.jq`にあり、
-# `merge-test.nix`が同じファイルを検査します。
-# フィルタは`$out`へ入れてラッパーからパスで渡すので、
-# 実機のクロージャに含まれてGCで消えることはありません。
+# Open WebUIのAPIは自前でHTTPを叩くので、外部コマンドへの依存は無い。
+#
+# `callPackage`の結果に`haskell.lib`の関数を重ねると、
+# `override`がこのファイルを`mkDerivation`付きで呼び直して壊れる。
+# CIで警告をエラーにしたい時は`werror`で指定する。
 {
   lib,
-  runCommand,
-  makeWrapper,
-  shellcheck,
-  coreutils,
-  curl,
-  jq,
+  haskell,
+  haskellPackages,
+  himari-src,
+  werror ? false,
 }:
-runCommand "open-webui-user-settings-sync"
-  {
-    nativeBuildInputs = [
-      makeWrapper
-      shellcheck
+let
+  packages = haskellPackages.extend (
+    hself: _hsuper: {
+      # himariはstableのnixpkgsではbrokenなので、上流のソースから組む。
+      himari = hself.callCabal2nix "himari" himari-src { };
+    }
+  );
+  # 動かすものだけをstoreへ入れる。
+  # ディレクトリをそのまま渡すと`dist-newstyle`のような作業中のファイルまで付いてくる。
+  source = lib.fileset.toSource {
+    root = ./.;
+    fileset = lib.fileset.unions [
+      ./open-webui-user-settings-sync.cabal
+      ./app
+      ./src
+      ./test
     ];
-    meta.mainProgram = "open-webui-user-settings-sync";
-  }
-  ''
-    shellcheck ${./open-webui-user-settings-sync.bash}
-    install -Dm755 ${./open-webui-user-settings-sync.bash} \
-      $out/libexec/open-webui-user-settings-sync/open-webui-user-settings-sync.bash
-    install -Dm644 ${./user-settings-merge.jq} \
-      $out/share/open-webui-user-settings-sync/user-settings-merge.jq
-    # systemdのサービスのPATHにはbashが無いので、`env`で探させずストアのbashへ固定します。
-    patchShebangs $out/libexec
-    makeWrapper $out/libexec/open-webui-user-settings-sync/open-webui-user-settings-sync.bash \
-      $out/bin/open-webui-user-settings-sync \
-      --set OPEN_WEBUI_USER_SETTINGS_MERGE_FILTER \
-        $out/share/open-webui-user-settings-sync/user-settings-merge.jq \
-      --prefix PATH : ${
-        lib.makeBinPath [
-          # `base64`のために要る。
-          coreutils
-          curl
-          jq
-        ]
-      }
-  ''
+  };
+  package = packages.callCabal2nix "open-webui-user-settings-sync" source { };
+in
+lib.pipe package [
+  (haskell.lib.compose.appendConfigureFlags (lib.optional werror "--ghc-options=-Werror"))
+  # seminarの閉包へGHCを持ち込まない。
+  haskell.lib.compose.justStaticExecutables
+]

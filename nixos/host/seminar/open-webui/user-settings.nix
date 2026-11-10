@@ -220,9 +220,11 @@ let
     iframeSandboxAllowSameOrigin = false;
   };
 
-  # 同期のスクリプトの中身は`pkgs/open-webui-user-settings-sync`にある。
+  # 同期の中身は`pkgs/open-webui-user-settings-sync`にある。
   # 宣言はJSONのファイルにして、下のサービスの環境変数でパスを渡す。
-  sync = pkgs.callPackage ../../../../pkgs/open-webui-user-settings-sync { };
+  sync = pkgs.callPackage ../../../../pkgs/open-webui-user-settings-sync {
+    inherit (inputs) himari-src;
+  };
 in
 {
   systemd.services.open-webui-user-settings-sync = {
@@ -250,8 +252,8 @@ in
     wantedBy = [ "container@open-webui.service" ];
     bindsTo = [ "container@open-webui.service" ];
 
-    # スクリプトが読む環境変数の意味は、
-    # `pkgs/open-webui-user-settings-sync/open-webui-user-settings-sync.bash`の冒頭に書いてある。
+    # 環境変数の意味は、
+    # `pkgs/open-webui-user-settings-sync/src/UserSettingsSync/Config.hs`に書いてある。
     environment = {
       OPEN_WEBUI_URL = url;
       OPEN_WEBUI_DECLARED_SETTINGS_FILE = pkgs.writeText "open-webui-declared-settings.json" (

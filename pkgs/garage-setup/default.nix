@@ -1,34 +1,43 @@
 # GarageのS3バケットとキーを用意するコマンド。
-# `lib/garage-setup.nix`が作るサービスから呼ばれます。
-# 何をするかと必要な環境変数は`garage-setup.bash`の冒頭に書いてあります。
+#
+# `lib/garage-setup.nix`が作るサービスから呼ばれる。
+# 何をするかは`src/GarageSetup/Setup.hs`に、
+# 入力の環境変数は`src/GarageSetup/Config.hs`に書いてある。
+#
+# Admin APIは自前でHTTPを叩くので、外部コマンドへの依存は無い。
+#
+# `callPackage`の結果に`haskell.lib`の関数を重ねると、
+# `override`がこのファイルを`mkDerivation`付きで呼び直して壊れる。
+# CIで警告をエラーにしたい時は`werror`で指定する。
 {
   lib,
-  runCommand,
-  makeWrapper,
-  shellcheck,
-  coreutils,
-  curl,
-  jq,
+  haskell,
+  haskellPackages,
+  himari-src,
+  werror ? false,
 }:
-runCommand "garage-setup"
-  {
-    nativeBuildInputs = [
-      makeWrapper
-      shellcheck
+let
+  packages = haskellPackages.extend (
+    hself: _hsuper: {
+      # himariはstableのnixpkgsではbrokenなので、上流のソースから組む。
+      himari = hself.callCabal2nix "himari" himari-src { };
+    }
+  );
+  # 動かすものだけをstoreへ入れる。
+  # ディレクトリをそのまま渡すと`dist-newstyle`のような作業中のファイルまで付いてくる。
+  source = lib.fileset.toSource {
+    root = ./.;
+    fileset = lib.fileset.unions [
+      ./garage-setup.cabal
+      ./app
+      ./src
+      ./test
     ];
-    meta.mainProgram = "garage-setup";
-  }
-  ''
-    shellcheck ${./garage-setup.bash}
-    install -Dm755 ${./garage-setup.bash} $out/libexec/garage-setup/garage-setup.bash
-    # systemdのサービスのPATHにはbashが無いので、`env`で探させずストアのbashへ固定します。
-    patchShebangs $out/libexec
-    makeWrapper $out/libexec/garage-setup/garage-setup.bash $out/bin/garage-setup \
-      --prefix PATH : ${
-        lib.makeBinPath [
-          coreutils
-          curl
-          jq
-        ]
-      }
-  ''
+  };
+  package = packages.callCabal2nix "garage-setup" source { };
+in
+lib.pipe package [
+  (haskell.lib.compose.appendConfigureFlags (lib.optional werror "--ghc-options=-Werror"))
+  # seminarの閉包へGHCを持ち込まない。
+  haskell.lib.compose.justStaticExecutables
+]

@@ -1,0 +1,35 @@
+-- | NetworkManagerがdispatcherスクリプトへ渡すアクション。
+--
+-- 第2引数として渡される。一覧は`man 8 NetworkManager-dispatcher`にある。
+module WifiWiredExclusive.Action
+  ( Action (..)
+  , parseAction
+  , requestedAction
+  ) where
+
+import Himari
+
+-- | デバイスの接続状態が変化するアクション。
+data Action
+  = InterfaceUp
+  | InterfaceDown
+  deriving stock (Eq, Show)
+
+-- | 接続状態が変化するアクションだけを読む。
+--
+-- `pre-up`や`dhcp4-change`や`connectivity-change`のような他のアクションでは、
+-- 有線とWiFiのどちらを使うかは変わらないので`Nothing`にする。
+parseAction :: Text -> Maybe Action
+parseAction = \case
+  "up" -> Just InterfaceUp
+  "down" -> Just InterfaceDown
+  _ -> Nothing
+
+-- | dispatcherスクリプトとして受け取った引数から、アクションを読む。
+--
+-- 第1引数がインターフェース名、第2引数がアクションである。
+-- 人が呼ぶコマンドではないので、引数の数が合わない時も失敗にはせず`Nothing`にする。
+requestedAction :: [String] -> Maybe Action
+requestedAction = \case
+  [_interface, action] -> parseAction (convert action)
+  _ -> Nothing

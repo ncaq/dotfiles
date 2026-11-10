@@ -1,33 +1,49 @@
 # flakeに定義された全ホストの閉包をGC rootとして登録するコマンド。
-# 何をどう登録するかは`nix-gc-root-hosts.bash`の冒頭に書いてあります。
+#
+# `nixos/host/seminar/nix-gc-root-hosts.nix`のサービスから呼ばれる。
+# 何をどう登録するかは`src/NixGcRootHosts/Register.hs`に書いてある。
+#
+# `callPackage`の結果に`haskell.lib`の関数を重ねると、
+# `override`がこのファイルを`mkDerivation`付きで呼び直して壊れる。
+# CIで警告をエラーにしたい時は`werror`で指定する。
 {
   lib,
-  runCommand,
+  haskell,
+  haskellPackages,
   makeWrapper,
-  shellcheck,
-  coreutils,
-  jq,
   nix,
+  himari-src,
+  werror ? false,
 }:
-runCommand "nix-gc-root-hosts"
-  {
-    nativeBuildInputs = [
-      makeWrapper
-      shellcheck
+let
+  packages = haskellPackages.extend (
+    hself: _hsuper: {
+      # himariはstableのnixpkgsではbrokenなので、上流のソースから組む。
+      himari = hself.callCabal2nix "himari" himari-src { };
+    }
+  );
+  # 動かすものだけをstoreへ入れる。
+  # ディレクトリをそのまま渡すと`dist-newstyle`のような作業中のファイルまで付いてくる。
+  source = lib.fileset.toSource {
+    root = ./.;
+    fileset = lib.fileset.unions [
+      ./nix-gc-root-hosts.cabal
+      ./app
+      ./src
+      ./test
     ];
-    meta.mainProgram = "nix-gc-root-hosts";
-  }
-  ''
-    shellcheck ${./nix-gc-root-hosts.bash}
-    install -Dm755 ${./nix-gc-root-hosts.bash} $out/libexec/nix-gc-root-hosts/nix-gc-root-hosts.bash
-    # systemdのサービスのPATHにはbashが無いので、`env`で探させずストアのbashへ固定します。
-    patchShebangs $out/libexec
-    makeWrapper $out/libexec/nix-gc-root-hosts/nix-gc-root-hosts.bash $out/bin/nix-gc-root-hosts \
-      --prefix PATH : ${
-        lib.makeBinPath [
-          coreutils
-          jq
-          nix
-        ]
-      }
-  ''
+  };
+  package = packages.callCabal2nix "nix-gc-root-hosts" source { };
+in
+lib.pipe package [
+  (haskell.lib.compose.overrideCabal (old: {
+    buildTools = (old.buildTools or [ ]) ++ [ makeWrapper ];
+    # 構成の列挙とビルドは`nix`に任せるので、PATHへ足して包む。
+    postInstall = (old.postInstall or "") + ''
+      wrapProgram "$out/bin/nix-gc-root-hosts" \
+        --prefix PATH : ${lib.makeBinPath [ nix ]}
+    '';
+  }))
+  (haskell.lib.compose.appendConfigureFlags (lib.optional werror "--ghc-options=-Werror"))
+  haskell.lib.compose.justStaticExecutables
+]

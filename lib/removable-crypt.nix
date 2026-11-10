@@ -2,6 +2,7 @@
   pkgs,
   lib,
   config,
+  inputs,
   ...
 }:
 let
@@ -38,15 +39,45 @@ let
     };
   };
 
+  # マウントとアンマウントの中身。`pkgs/removable-crypt`にあります。
+  removable-crypt = pkgs.callPackage ../pkgs/removable-crypt {
+    inherit (inputs) himari-src;
+    systemd = config.systemd.package;
+  };
+
   # デバイスごとの`mnt-<名前>`と`umnt-<名前>`。
-  # 中身は`pkgs/removable-crypt`にあります。
+  # サブコマンドとデバイスごとの引数を付けて包みます。
   mkCommands =
     name: device:
-    pkgs.callPackage ../pkgs/removable-crypt {
-      inherit name;
-      inherit (device) deviceId mountOptions btrfsMountOptions;
-      systemd = config.systemd.package;
-    };
+    let
+      mountArguments = [
+        "mount"
+        "--name"
+        name
+        "--device-id"
+        device.deviceId
+        # マウントオプションは、空でも必ずカンマ区切りの1つの引数として渡します。
+        # ここで指定しておくと、呼び出し元が後ろへ同じオプションを足しても2回目の指定として弾かれます。
+        "--mount-options"
+        (lib.concatStringsSep "," device.mountOptions)
+        "--btrfs-mount-options"
+        (lib.concatStringsSep "," device.btrfsMountOptions)
+      ];
+      unmountArguments = [
+        "unmount"
+        "--name"
+        name
+      ];
+      # `--add-flags`の値はラッパーのスクリプトへそのまま埋まるので、
+      # 引数ごとにクォートしてから、ビルドのシェルに渡すためにもう一度クォートします。
+      flags = arguments: lib.escapeShellArg (lib.escapeShellArgs arguments);
+    in
+    pkgs.runCommand "removable-crypt-${name}" { nativeBuildInputs = [ pkgs.makeWrapper ]; } ''
+      makeWrapper ${lib.getExe removable-crypt} $out/bin/${lib.escapeShellArg "mnt-${name}"} \
+        --add-flags ${flags mountArguments}
+      makeWrapper ${lib.getExe removable-crypt} $out/bin/${lib.escapeShellArg "umnt-${name}"} \
+        --add-flags ${flags unmountArguments}
+    '';
 
   allCommands = lib.mapAttrsToList mkCommands cfg.devices;
 

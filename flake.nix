@@ -330,11 +330,6 @@
           git-repo-subscribe = pkgs.callPackage ./pkgs/git-repo-subscribe {
             inherit (inputs) himari-src;
           };
-          # Open WebUIの利用者ごとの設定を合成するjqのフィルタが、
-          # 意図した通りに合成することを検査するderivation。
-          open-webui-user-settings-merge-test = import ./pkgs/open-webui-user-settings-sync/merge-test.nix {
-            inherit pkgs;
-          };
           # 評価時にしか走らない純粋なNixのテストをderivationへ包む。
           #
           # `bullet/comfyui/workflow/lib/*-test.nix`は`validate.nix`が`assert`で走らせるが、
@@ -397,6 +392,36 @@
           # certspotterが検知したイベントをMackerelのチェックへ繋ぐコマンド。
           # ビルドの中でsandwichのテストが走る。
           certspotter-mackerel = pkgs.callPackage ./pkgs/certspotter-mackerel {
+            inherit (inputs) himari-src;
+          };
+          # Open WebUIの利用者ごとの設定とプロフィールを宣言へ揃えるコマンド。
+          # ビルドの中でsandwichのテストが走る。
+          open-webui-user-settings-sync = pkgs.callPackage ./pkgs/open-webui-user-settings-sync {
+            inherit (inputs) himari-src;
+          };
+          # 暗号化されたリムーバブルデバイスをマウントしてアンマウントするコマンド。
+          # ビルドの中でsandwichのテストが走る。
+          removable-crypt = pkgs.callPackage ./pkgs/removable-crypt {
+            inherit (inputs) himari-src;
+          };
+          # GarageのS3バケットとキーを用意するコマンド。
+          # ビルドの中でsandwichのテストが走る。
+          garage-setup = pkgs.callPackage ./pkgs/garage-setup {
+            inherit (inputs) himari-src;
+          };
+          # flakeに定義された全ホストの閉包をGC rootとして登録するコマンド。
+          # ビルドの中でsandwichのテストが走る。
+          nix-gc-root-hosts = pkgs.callPackage ./pkgs/nix-gc-root-hosts {
+            inherit (inputs) himari-src;
+          };
+          # seminarへのレイテンシを見てTailscaleのexit nodeを切り替えるdispatcherスクリプト。
+          # ビルドの中でsandwichのテストが走る。
+          tailscale-exit-node = pkgs.callPackage ./pkgs/tailscale-exit-node {
+            inherit (inputs) himari-src;
+          };
+          # 有線接続中はWiFiの接続を切るNetworkManagerのdispatcherスクリプト。
+          # ビルドの中でsandwichのテストが走る。
+          wifi-wired-exclusive = pkgs.callPackage ./pkgs/wifi-wired-exclusive {
             inherit (inputs) himari-src;
           };
           # リポジトリ内のPythonをpyrightで型検査するためのderivation群。
@@ -543,13 +568,18 @@
                 comfy-cli
                 comfyui-api-workflow-test
                 machine-address6-test
-                open-webui-user-settings-merge-test
                 plamo-translate-cli
                 safetensors-fp16
                 systemd-specifier-test
                 ;
               # 警告を残さないために、CIでだけ`-Werror`で組む。
               certspotter-mackerel = certspotter-mackerel.override { werror = true; };
+              open-webui-user-settings-sync = open-webui-user-settings-sync.override { werror = true; };
+              removable-crypt = removable-crypt.override { werror = true; };
+              garage-setup = garage-setup.override { werror = true; };
+              nix-gc-root-hosts = nix-gc-root-hosts.override { werror = true; };
+              tailscale-exit-node = tailscale-exit-node.override { werror = true; };
+              wifi-wired-exclusive = wifi-wired-exclusive.override { werror = true; };
               comfy-workflow = comfy-workflow.override { werror = true; };
               comfyui-idle-free-memory = comfyui-idle-free-memory.override { werror = true; };
               git-repo-subscribe = git-repo-subscribe.override { werror = true; };
@@ -585,6 +615,18 @@
             inherit comfyui-idle-free-memory;
             # certspotterが検知したイベントをMackerelのチェックへ繋ぐコマンド。
             inherit certspotter-mackerel;
+            # Open WebUIの利用者ごとの設定とプロフィールを宣言へ揃えるコマンド。
+            inherit open-webui-user-settings-sync;
+            # 暗号化されたリムーバブルデバイスをマウントしてアンマウントするコマンド。
+            inherit removable-crypt;
+            # GarageのS3バケットとキーを用意するコマンド。
+            inherit garage-setup;
+            # flakeに定義された全ホストの閉包をGC rootとして登録するコマンド。
+            inherit nix-gc-root-hosts;
+            # seminarへのレイテンシを見てTailscaleのexit nodeを切り替えるdispatcherスクリプト。
+            inherit tailscale-exit-node;
+            # 有線接続中はWiFiの接続を切るNetworkManagerのdispatcherスクリプト。
+            inherit wifi-wired-exclusive;
             # GGUFのチャットテンプレートを取り出して書き戻すコマンド。
             inherit patch-gguf-chat-template;
           }

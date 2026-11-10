@@ -1,6 +1,7 @@
 {
   config,
   hardening,
+  inputs,
   lib,
   pkgs,
   ...
@@ -26,6 +27,7 @@ let
   #
   # 中身は`pkgs/nix-gc-root-hosts`にあります。
   nix-gc-root-hosts = pkgs.callPackage ../../../pkgs/nix-gc-root-hosts {
+    inherit (inputs) himari-src;
     nix = config.nix.package;
   };
 in

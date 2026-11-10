@@ -13,6 +13,7 @@ module Fixture
   , git
   , gitIn
   , gitTextIn
+  , gitSucceedsOutside
   , temporaryRefs
   , historicalBlobFetched
   ) where
@@ -126,6 +127,15 @@ gitIn path args = git (["-C", path] <> args)
 gitTextIn :: (MonadIO m) => FilePath -> [String] -> m Text
 gitTextIn path args =
   strip . convert <$> (isolated [] (["-C", path] <> args) >>= readProcessStdout_)
+
+-- | どのリポジトリにも属さない一時ディレクトリでGitを実行して、成功したかを返す。
+--
+-- Git本体の判定を、作業中のリポジトリの状態に左右されずに聞くのに使う。
+gitSucceedsOutside :: (MonadUnliftIO m) => [String] -> m Bool
+gitSucceedsOutside args = withSystemTempDirectory "git-repo-subscribe" \dir -> do
+  config <- isolated [] args
+  (== ExitSuccess)
+    <$> runProcess (setWorkingDir dir (setStdout nullStream (setStderr nullStream config)))
 
 -- | 残っているfetch用の一時ref。改行区切り。
 temporaryRefs :: (MonadIO m) => FilePath -> m Text

@@ -7,6 +7,7 @@ module GitRepoSubscribe.Cli
   ( run
   ) where
 
+import GitRepoSubscribe.ExitCode (gitExitCode)
 import GitRepoSubscribe.Failure (BranchNameError, CommitIdError, GitFailure (..))
 import GitRepoSubscribe.Outcome (Outcome (..), skipWarning)
 import GitRepoSubscribe.PartialCloneFilter (parsePartialCloneFilter)
@@ -23,8 +24,9 @@ import Options.Applicative
 -- 一時的な通信の不調などで呼び出し側の処理全体を止めないためである。
 --
 -- Gitのコマンドが失敗した時は、説明はGit自身が既に出しているので、
--- その終了コードをそのまま返す。
+-- 1から255の終了コードはそのまま返し、それ以外は1にする。
 -- それ以外の想定している失敗は理由をログに出して`ExitFailure 1`にする。
+-- 引数が誤っている時は、使い方を標準エラー出力へ出して`ExitFailure 1`にする。
 run :: (MonadLogger m, MonadThrow m, MonadUnliftIO m) => [String] -> m ()
 run argv = do
   repository <-
@@ -42,8 +44,7 @@ run argv = do
  where
   reportGit :: (MonadLogger m, MonadThrow m) => GitFailure -> m a
   reportGit = \case
-    GitFailed _ (ExitFailure code) | 0 < code && code < 256 -> throwM (ExitFailure code)
-    GitFailed _ _ -> throwM (ExitFailure 1)
+    GitFailed _ code -> throwM (gitExitCode code)
     failure -> report failure
   report :: forall e m a. (Exception e, MonadLogger m, MonadThrow m) => e -> m a
   report failure = do

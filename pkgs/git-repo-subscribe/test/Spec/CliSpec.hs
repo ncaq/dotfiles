@@ -52,6 +52,13 @@ tests = describe "run" do
       filter (isInfixOf "has no origin remote") logs `shouldBe` logs
       length logs `shouldBe` 1
       gitTextIn fixture.subscription ["rev-parse", "HEAD"] >>= (`shouldBe` initialHead)
+  it "URLとして読めない引数は1で終わり、置き場所を作らない" do
+    withFixture \fixture -> do
+      let destination = fixture.root </> "invalid-argument"
+      -- 使い方はoptparse-applicativeが標準エラー出力へ直接出すので、こちらのログには何も出ない。
+      runCapturing (run ["not a url", destination, "blob:none"])
+        >>= (`shouldBe` (Left (ExitFailure 1), []))
+      doesPathExist destination >>= (`shouldBe` False)
   it "cloneに失敗したらGitの終了コードで終わり、置き場所を作らない" do
     withFixture \fixture -> do
       let destination = fixture.root </> "failed-subscription"

@@ -30,7 +30,9 @@ parseBranchName value
   | otherwise = Left (BranchNameError value)
  where
   valid =
-    value /= "@"
+    -- `HEAD`は参照名としては正しいが、ブランチ名としてはGitが拒否する。
+    -- 逆に`@`だけの名前は、ブランチ名としてはGitが受け付ける。
+    value /= "HEAD"
       && not ("-" `isPrefixOf` value)
       && not ("." `isSuffixOf` value)
       && not (any (`isInfixOf` value) ["..", "@{"])

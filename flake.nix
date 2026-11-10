@@ -394,6 +394,11 @@
           nvd-pr-diff = pkgs.callPackage ./pkgs/nvd-pr-diff {
             inherit (inputs) himari-src;
           };
+          # certspotterが検知したイベントをMackerelのチェックへ繋ぐコマンド。
+          # ビルドの中でsandwichのテストが走る。
+          certspotter-mackerel = pkgs.callPackage ./pkgs/certspotter-mackerel {
+            inherit (inputs) himari-src;
+          };
           # リポジトリ内のPythonをpyrightで型検査するためのderivation群。
           # ComfyUIのパッケージはoverlay経由でしか生えないが、
           # perSystemの`pkgs`にはoverlayが載っていないため、
@@ -544,6 +549,7 @@
                 systemd-specifier-test
                 ;
               # 警告を残さないために、CIでだけ`-Werror`で組む。
+              certspotter-mackerel = certspotter-mackerel.override { werror = true; };
               comfy-workflow = comfy-workflow.override { werror = true; };
               comfyui-idle-free-memory = comfyui-idle-free-memory.override { werror = true; };
               git-repo-subscribe = git-repo-subscribe.override { werror = true; };
@@ -577,6 +583,8 @@
             inherit plamo-translate-cli;
             # アイドル中のComfyUIにメモリを解放させる常駐プロセス。
             inherit comfyui-idle-free-memory;
+            # certspotterが検知したイベントをMackerelのチェックへ繋ぐコマンド。
+            inherit certspotter-mackerel;
             # GGUFのチャットテンプレートを取り出して書き戻すコマンド。
             inherit patch-gguf-chat-template;
           }

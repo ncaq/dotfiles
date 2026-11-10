@@ -108,6 +108,7 @@ test-suite open-webui-user-settings-sync-test
     Spec
     Spec.CallSpec
     Spec.ConfigSpec
+    Spec.DeclaredSpec
     Spec.ProfileSpec
     Spec.SettingsSpec
     Spec.SyncSpec
@@ -117,6 +118,7 @@ test-suite open-webui-user-settings-sync-test
 
   build-depends:
     base,
+    bytestring,
     himari,
     open-webui-user-settings-sync,
     sandwich >=0.3.0.5,

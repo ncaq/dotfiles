@@ -325,7 +325,11 @@
           ...
         }:
         let
-          git-repo-subscribe = pkgs.callPackage ./pkgs/git-repo-subscribe { };
+          # Gitリポジトリを購読するためのツール。
+          # ビルドの中でsandwichのテストが走る。
+          git-repo-subscribe = pkgs.callPackage ./pkgs/git-repo-subscribe {
+            inherit (inputs) himari-src;
+          };
           # Open WebUIの利用者ごとの設定を合成するjqのフィルタが、
           # 意図した通りに合成することを検査するderivation。
           open-webui-user-settings-merge-test =
@@ -533,7 +537,6 @@
               inherit
                 comfy-cli
                 comfyui-api-workflow-test
-                git-repo-subscribe
                 machine-address6-test
                 open-webui-user-settings-merge-test
                 plamo-translate-cli
@@ -543,6 +546,7 @@
               # 警告を残さないために、CIでだけ`-Werror`で組む。
               comfy-workflow = comfy-workflow.override { werror = true; };
               comfyui-idle-free-memory = comfyui-idle-free-memory.override { werror = true; };
+              git-repo-subscribe = git-repo-subscribe.override { werror = true; };
               patch-gguf-chat-template = patch-gguf-chat-template.override { werror = true; };
               nvd-pr-diff = nvd-pr-diff.override { werror = true; };
             }

@@ -330,11 +330,6 @@
           git-repo-subscribe = pkgs.callPackage ./pkgs/git-repo-subscribe {
             inherit (inputs) himari-src;
           };
-          # Open WebUIの利用者ごとの設定を合成するjqのフィルタが、
-          # 意図した通りに合成することを検査するderivation。
-          open-webui-user-settings-merge-test = import ./pkgs/open-webui-user-settings-sync/merge-test.nix {
-            inherit pkgs;
-          };
           # 評価時にしか走らない純粋なNixのテストをderivationへ包む。
           #
           # `bullet/comfyui/workflow/lib/*-test.nix`は`validate.nix`が`assert`で走らせるが、
@@ -397,6 +392,11 @@
           # certspotterが検知したイベントをMackerelのチェックへ繋ぐコマンド。
           # ビルドの中でsandwichのテストが走る。
           certspotter-mackerel = pkgs.callPackage ./pkgs/certspotter-mackerel {
+            inherit (inputs) himari-src;
+          };
+          # Open WebUIの利用者ごとの設定とプロフィールを宣言へ揃えるコマンド。
+          # ビルドの中でsandwichのテストが走る。
+          open-webui-user-settings-sync = pkgs.callPackage ./pkgs/open-webui-user-settings-sync {
             inherit (inputs) himari-src;
           };
           # 暗号化されたリムーバブルデバイスをマウントしてアンマウントするコマンド。
@@ -568,13 +568,13 @@
                 comfy-cli
                 comfyui-api-workflow-test
                 machine-address6-test
-                open-webui-user-settings-merge-test
                 plamo-translate-cli
                 safetensors-fp16
                 systemd-specifier-test
                 ;
               # 警告を残さないために、CIでだけ`-Werror`で組む。
               certspotter-mackerel = certspotter-mackerel.override { werror = true; };
+              open-webui-user-settings-sync = open-webui-user-settings-sync.override { werror = true; };
               removable-crypt = removable-crypt.override { werror = true; };
               garage-setup = garage-setup.override { werror = true; };
               nix-gc-root-hosts = nix-gc-root-hosts.override { werror = true; };
@@ -615,6 +615,8 @@
             inherit comfyui-idle-free-memory;
             # certspotterが検知したイベントをMackerelのチェックへ繋ぐコマンド。
             inherit certspotter-mackerel;
+            # Open WebUIの利用者ごとの設定とプロフィールを宣言へ揃えるコマンド。
+            inherit open-webui-user-settings-sync;
             # 暗号化されたリムーバブルデバイスをマウントしてアンマウントするコマンド。
             inherit removable-crypt;
             # GarageのS3バケットとキーを用意するコマンド。

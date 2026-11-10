@@ -7,7 +7,8 @@
 module TailscaleExitNode.Cli
   ( run
   , runWith
-  , readinessPolicy
+  , Readiness (..)
+  , readiness
   ) where
 
 import Himari
@@ -18,16 +19,29 @@ import TailscaleExitNode.NodeName (homeServer)
 import TailscaleExitNode.Tailscale (Tailscale (..), systemTailscale)
 
 -- | 実際の`tailscale`で実行する。
-run :: (MonadIO m, MonadLogger m) => [String] -> m ()
-run = runWith readinessPolicy systemTailscale
+run :: (MonadLogger m, MonadUnliftIO m) => [String] -> m ()
+run = runWith readiness systemTailscale
 
--- | tailscaledの準備完了を1秒おきに最大30秒待つ。
+-- | tailscaledの準備完了の待ち方。
+data Readiness m = Readiness
+  { policy :: RetryPolicyM m
+  -- ^ 問い合わせ直す間隔と回数。
+  , limit :: Int
+  -- ^ 待ち全体の上限。マイクロ秒。
+  }
+
+-- | tailscaledの準備完了を1秒おきに、全体で最大30秒待つ。
 --
 -- systemdのサービスを介して待つと、dispatcherからの同期起動で依存が循環するので、
 -- ここで待つ。
 -- 相手は同じマシンのデーモンなので、間隔を広げていく必要は無い。
-readinessPolicy :: (Monad m) => RetryPolicyM m
-readinessPolicy = constantDelay 1000000 <> limitRetries 30
+--
+-- 回数の上限とは別に、全体の上限も持つ。
+-- 回数の上限が数えるのは問い合わせの間の待ち時間だけなので、
+-- tailscaledが接続を受け付けたまま応答しないと、1回の問い合わせが返らずに待ち続けてしまう。
+-- dispatcherはスクリプトを順番に実行するので、ここで止まると他のスクリプトも待たされる。
+readiness :: (Monad m) => Readiness m
+readiness = Readiness{policy = constantDelay 1000000 <> limitRetries 30, limit = 30000000}
 
 -- | 待ち方と`tailscale`の呼び出しを受け取って実行する。
 --
@@ -36,10 +50,12 @@ readinessPolicy = constantDelay 1000000 <> limitRetries 30
 --
 -- tailscaledが待っても応答しない時も、そのまま先へ進む。
 -- pingが届かないので外部にいるとみなすことになる。
-runWith :: (MonadIO m, MonadLogger m) => RetryPolicyM m -> Tailscale m -> [String] -> m ()
-runWith policy tailscale = \case
+runWith
+  :: (MonadLogger m, MonadUnliftIO m) => Readiness m -> Tailscale m -> [String] -> m ()
+runWith waiting tailscale = \case
   [_interface, action] | isJust (parseAction (convert action)) -> do
-    void (retrying policy (\_ isReady -> pure (not isReady)) (const tailscale.ready))
+    void . timeout waiting.limit $
+      retrying waiting.policy (\_ isReady -> pure (not isReady)) (const tailscale.ready)
     latency <- parsePingLatency <$> tailscale.ping homeServer
     let exitNode = chooseExitNode homeServer latency
     logInfoN (describe latency exitNode)

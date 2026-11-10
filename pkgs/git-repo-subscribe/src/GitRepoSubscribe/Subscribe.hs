@@ -97,7 +97,7 @@ update repository = do
         [ heads <> ":" <> fetchRef
         , heads <> ":refs/remotes/origin/" <> convert (branchNameText branch)
         ]
-      initial = WorktreeState{origin = Just origin, headId, branch = Just branch}
+      initial = WorktreeState{origin = Just origin, headId = Just headId, branch = Just branch}
   ExceptT $
     runExceptT (fastForward initial fetchRef refspecs) `finally` removeTemporaryRef path fetchRef
  where

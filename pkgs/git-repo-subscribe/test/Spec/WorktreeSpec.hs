@@ -14,7 +14,7 @@ import Test.Sandwich
 -- テスト用の値なので、検証に落ちたら例外にする。
 worktreeState :: (MonadThrow m) => Text -> Char -> Text -> m WorktreeState
 worktreeState origin digit branch =
-  WorktreeState (Just (ConfiguredRemote origin))
+  WorktreeState (Just (ConfiguredRemote origin)) . Just
     <$> either throwM pure (parseCommitId (convert (replicate 40 digit)))
     <*> (Just <$> either throwM pure (parseBranchName branch))
 
@@ -32,6 +32,11 @@ tests = describe "detectConcurrentChange" do
     initial <- worktreeState "file:///remote" '0' "master"
     current <- worktreeState "file:///remote" '1' "master"
     detectConcurrentChange initial current mustNotInspect `shouldBe` Right (Just HeadChanged)
+  -- fetchの間にコミットが無い状態へ戻された時も、失敗ではなくHEADの変化として扱う。
+  it "HEADが無くなっていたらローカルの変更を調べずに報告する" do
+    initial <- worktreeState "file:///remote" '0' "master"
+    detectConcurrentChange initial initial{headId = Nothing} mustNotInspect
+      `shouldBe` Right (Just HeadChanged)
   it "ブランチが変わっていたらローカルの変更を調べずに報告する" do
     initial <- worktreeState "file:///remote" '0' "master"
     current <- worktreeState "file:///remote" '0' "topic"

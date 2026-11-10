@@ -20,7 +20,8 @@ import Himari
 -- | fetchの前後で変わっていないことを確かめる、worktreeの状態。
 data WorktreeState = WorktreeState
   { origin :: Maybe ConfiguredRemote
-  , headId :: CommitId
+  , headId :: Maybe CommitId
+  -- ^ まだコミットが無ければ`Nothing`。
   , branch :: Maybe BranchName
   }
   deriving stock (Eq, Show)
@@ -28,10 +29,7 @@ data WorktreeState = WorktreeState
 -- | 今のworktreeの状態を読む。
 readWorktreeState :: (MonadIO m, MonadThrow m) => FilePath -> m WorktreeState
 readWorktreeState path =
-  WorktreeState
-    <$> originUrl path
-    <*> (gitText (inWorktree path ["rev-parse", "HEAD"]) >>= either throwM pure . parseCommitId)
-    <*> currentBranch path
+  WorktreeState <$> originUrl path <*> optionalHeadId path <*> currentBranch path
 
 -- | fetchの前後の状態を比べて、間に変わったものがあればその理由を返す。
 --

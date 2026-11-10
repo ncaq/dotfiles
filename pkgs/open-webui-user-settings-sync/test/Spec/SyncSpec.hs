@@ -15,6 +15,8 @@ import UserSettingsSync.Sync (Declaration (..), Environment (..), sync)
 data Server = Server
   { healthFailures :: Int
   -- ^ 起動の確認が、最初に何回失敗するか。
+  , healthHangs :: Bool
+  -- ^ 起動の確認が、接続を受け付けたまま返らないか。
   , signInResponse :: Value
   , storedSettings :: Value
   , storedProfile :: Map Text Value
@@ -36,6 +38,7 @@ synced :: Server
 synced =
   Server
     { healthFailures = 0
+    , healthHangs = False
     , signInResponse = [aesonQQ|{"token": "token", "role": "admin"}|]
     , storedSettings = [aesonQQ|{"ui": {"ctrlEnterToSend": true, "system": "こんにちは"}}|]
     , storedProfile =
@@ -58,6 +61,7 @@ synchronized server = do
         modifyIORef' calls (<> [(call.method, call.path)])
         case (call.method, call.path) of
           (Get, "/health") -> do
+            when server.healthHangs (forever (threadDelay 1000000))
             unhealthy <-
               atomicModifyIORef' remainingFailures \count -> (max 0 (count - 1), 0 < count)
             when unhealthy (throwM (UnexpectedStatus call.path 503))
@@ -80,6 +84,8 @@ synchronized server = do
           { transport
           , -- 待たずに最大3回まで問い合わせ直す。
             healthRetry = limitRetries 3
+          , -- 全体は50ミリ秒で打ち切る。
+            healthLimit = 50000
           }
   result <- runSimpleNoLogEnv (tryAny (sync environment declaration))
   (result,,,) <$> readIORef calls <*> readIORef settings <*> readIORef profile
@@ -155,6 +161,11 @@ tests = describe "sync" do
     (result, calls, _, _) <- synchronized synced{healthFailures = 10}
     failureOf result `shouldBe` Just (UnexpectedStatus "/health" 503)
     calls `shouldBe` replicate 4 (Get, "/health")
+  it "起動の確認が返らなければ、全体の上限で打ち切って失敗する" do
+    -- 接続を受け付けたまま応答しない時がこれに当たる。
+    (result, calls, _, _) <- synchronized synced{healthHangs = True}
+    failureOf result `shouldBe` Just HealthTimedOut
+    calls `shouldBe` [(Get, "/health")]
   for_
     [ ("トークンが無い", [aesonQQ|{"detail": "error"}|])
     , ("トークンがnullの", [aesonQQ|{"token": null}|])

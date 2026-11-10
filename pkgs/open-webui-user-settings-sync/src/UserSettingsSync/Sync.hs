@@ -9,6 +9,7 @@ module UserSettingsSync.Sync
   ( Environment (..)
   , Declaration (..)
   , healthPolicy
+  , healthLimit
   , sync
   ) where
 
@@ -32,6 +33,8 @@ data Environment m = Environment
   { transport :: Transport m
   , healthRetry :: RetryPolicyM m
   -- ^ Open WebUIが応答するまでの待ち方。
+  , healthLimit :: Int
+  -- ^ 応答を待つ全体の上限。マイクロ秒。
   }
 
 -- | 宣言した内容。
@@ -54,10 +57,23 @@ data Declaration = Declaration
 healthPolicy :: (MonadIO m) => RetryPolicyM m
 healthPolicy = limitRetriesByCumulativeDelay 600000000 (capDelay 2000000 (fullJitterBackoff 100000))
 
+-- | 応答を待つ全体の上限。10分。
+--
+-- `healthPolicy`の上限が数えるのは問い合わせの間の待ち時間だけで、
+-- 1回の問い合わせにかかる時間は含まない。
+-- 接続を受け付けたまま応答しない相手だと、1回ごとにHTTPの応答待ちの上限まで待つので、
+-- 全体は10分を大きく超える。
+-- 全体をこの上限で打ち切って、何を待って時間切れになったのかが分かる失敗にする。
+healthLimit :: Int
+healthLimit = 600000000
+
 -- | 設定とプロフィールを宣言へ揃える。
 sync :: (MonadLogger m, MonadThrow m, MonadUnliftIO m) => Environment m -> Declaration -> m ()
 sync environment declaration = do
-  void (recoverAll environment.healthRetry (const (environment.transport health)))
+  timeout
+    environment.healthLimit
+    (recoverAll environment.healthRetry (const (environment.transport health)))
+    >>= maybe (throwM HealthTimedOut) (const (pure ()))
   token <- environment.transport signIn >>= tokenOf
   syncSettings token
   syncProfile token

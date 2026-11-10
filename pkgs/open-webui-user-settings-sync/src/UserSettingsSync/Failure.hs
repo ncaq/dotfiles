@@ -47,12 +47,15 @@ instance Exception ApiFailure where
 
 -- | 同期しても宣言と実体が揃わなかった。
 data SyncFailure
-  = -- | プロフィールを更新しても宣言と一致しなかった。
+  = -- | Open WebUIが上限まで待っても応答しなかった。
+    HealthTimedOut
+  | -- | プロフィールを更新しても宣言と一致しなかった。
     ProfileNotConverged
   deriving stock (Eq, Show)
 
 instance Exception SyncFailure where
   displayException = \case
+    HealthTimedOut -> "Open WebUIが応答するのを待ちましたが、時間切れになりました"
     ProfileNotConverged ->
       "プロフィールを更新しても宣言と一致しませんでした。"
         <> "宣言に上流が受け付けない列が含まれている可能性があります"

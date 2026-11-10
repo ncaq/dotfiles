@@ -47,8 +47,20 @@ registered
   -> [FilePath]
   -> m (Either EvalFailed Outcome, [[Installable]], [FilePath])
 registered behavior existing =
+  (\(outcome, warmed, entries, _) -> (outcome, warmed, entries))
+    <$> registeredIn behavior \stateDirectory ->
+      for_ existing \entry -> writeFile (stateDirectory </> entry) ""
+
+-- | 状態ディレクトリを用意する操作を受け取って登録して、`registered`の結果に加えてログも返す。
+registeredIn
+  :: (MonadUnliftIO m)
+  => Behavior
+  -> (FilePath -> IO ())
+  -> m (Either EvalFailed Outcome, [[Installable]], [FilePath], [Text])
+registeredIn behavior prepare =
   withSystemTempDirectory "nix-gc-root-hosts-test" \stateDirectory -> do
-    for_ existing \entry -> liftIO (writeFile (stateDirectory </> entry) "")
+    liftIO (prepare stateDirectory)
+    logs <- newIORef []
     warmed <- newIORef []
     let nix =
           Nix
@@ -63,9 +75,13 @@ registered behavior existing =
                   else ExitSuccess <$ liftIO (writeFile path "linked")
             }
     outcome <-
-      runSimpleNoLogEnv
+      runSimpleEnvWith
+        (\_ _ _ message -> modifyIORef' logs (<> [convert (fromLogStr message)]))
         (try (register nix Config{stateDirectory, flake = "/etc/nixos-flake"}))
-    (outcome,,) <$> readIORef warmed <*> (sort <$> listDirectory stateDirectory)
+    (outcome,,,)
+      <$> readIORef warmed
+      <*> (sort <$> listDirectory stateDirectory)
+      <*> readIORef logs
 
 bullet :: Installable
 bullet = "/etc/nixos-flake#nixosConfigurations.bullet.config.system.build.toplevel"
@@ -111,3 +127,29 @@ tests = describe "register" do
     -- 空の一覧のまま掃除へ進むと、既存のrootを全て消してしまう。
     registered healthy{hosts = Nothing} ["nixos-bullet", "nixos-seminar"]
       >>= (`shouldBe` (Left EvalFailed, [], ["nixos-bullet", "nixos-seminar"]))
+  it "まとめてのビルドが失敗したら、警告を出してから個別に続ける" do
+    (outcome, _, entries, logs) <-
+      registeredIn healthy{warmUpExit = ExitFailure 1} (const (pure ()))
+    outcome `shouldBe` Right AllRegistered
+    entries `shouldBe` allRoots
+    logs `shouldBe` ["まとめてのビルドが終了コード1で失敗しました。個別に続けます"]
+  it "全て成功したら何もログに出さない" do
+    (_, _, _, logs) <- registeredIn healthy (const (pure ()))
+    logs `shouldBe` []
+  it "構成が1つも無ければ、まとめてのビルドを呼ばず、rootも作らない" do
+    -- 引数の無い`nix build`はカレントディレクトリのflakeをビルドしようとする。
+    -- 空の名前のrootを作ることも無い。
+    registered healthy{hosts = Just [], systems = []} []
+      >>= (`shouldBe` (Right AllRegistered, [], []))
+  it "構成が1つも無くなったら、残っていたrootを全て消す" do
+    registered healthy{hosts = Just [], systems = []} ["nixos-bullet"]
+      >>= (`shouldBe` (Right AllRegistered, [], []))
+  it "シンボリックリンクではない残骸も、種類を問わず消す" do
+    -- `nix build`の中断などで、中身のあるディレクトリや切れたリンクが残ることがある。
+    (outcome, _, entries, _) <-
+      registeredIn healthy \stateDirectory -> do
+        createDirectory (stateDirectory </> "nixos-debris")
+        writeFile (stateDirectory </> "nixos-debris" </> "partial") "partial"
+        createFileLink "/nonexistent/store/path" (stateDirectory </> "nixos-dangling")
+    outcome `shouldBe` Right AllRegistered
+    entries `shouldBe` allRoots

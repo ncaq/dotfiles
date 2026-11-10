@@ -1,0 +1,139 @@
+cabal-version: 3.12
+name: git-repo-subscribe
+version: 0.2.0.0
+synopsis: Gitリポジトリをcloneして、安全な時だけfast-forwardで更新する
+license: Apache-2.0
+author: ncaq <ncaq@ncaq.net>
+maintainer: ncaq <ncaq@ncaq.net>
+build-type: Simple
+
+source-repository head
+  type: git
+  location: https://github.com/ncaq/dotfiles
+
+common basic
+  ghc-options:
+    -Wall
+    -Wcompat
+    -Widentities
+    -Wincomplete-record-updates
+    -Wincomplete-uni-patterns
+    -Wpartial-fields
+    -Wredundant-constraints
+
+  default-language: GHC2024
+  default-extensions:
+    ApplicativeDo
+    BlockArguments
+    CPP
+    DefaultSignatures
+    DerivingVia
+    DuplicateRecordFields
+    FunctionalDependencies
+    LexicalNegation
+    LinearTypes
+    MonadComprehensions
+    MultiWayIf
+    NegativeLiterals
+    NoFieldSelectors
+    NoImplicitPrelude
+    OverloadedLabels
+    OverloadedRecordDot
+    OverloadedStrings
+    ParallelListComp
+    PatternSynonyms
+    QualifiedDo
+    QuantifiedConstraints
+    QuasiQuotes
+    RecordWildCards
+    RecursiveDo
+    StrictData
+    TemplateHaskell
+    TypeData
+    TypeFamilies
+    TypeFamilyDependencies
+    ViewPatterns
+
+library
+  import: basic
+  hs-source-dirs: src
+  -- cabal-gild: discover ./src
+  exposed-modules:
+    GitRepoSubscribe.BranchName
+    GitRepoSubscribe.Cli
+    GitRepoSubscribe.CommitId
+    GitRepoSubscribe.ConfiguredRemote
+    GitRepoSubscribe.DefaultBranch
+    GitRepoSubscribe.Failure
+    GitRepoSubscribe.Git
+    GitRepoSubscribe.Git.Environment
+    GitRepoSubscribe.Outcome
+    GitRepoSubscribe.PartialCloneFilter
+    GitRepoSubscribe.RemoteUrl
+    GitRepoSubscribe.Repository
+    GitRepoSubscribe.Subscribe
+    GitRepoSubscribe.UnsafeCharacter
+    GitRepoSubscribe.Worktree
+    GitRepoSubscribe.WorktreePath
+
+  build-depends:
+    base >=4.20.0.0 && <4.23,
+    himari >=1.1.6 && <1.2,
+    mtl >=2.3 && <2.4,
+    network-uri >=2.6 && <2.7,
+    optparse-applicative >=0.18 && <0.20,
+    process >=1.6 && <1.7,
+    text >=2.1 && <2.2,
+    typed-process >=0.2 && <0.3,
+
+executable git-repo-subscribe
+  import: basic
+  hs-source-dirs: app
+  main-is: Main.hs
+  ghc-options:
+    -threaded
+    -rtsopts
+    -with-rtsopts=-N
+
+  build-depends:
+    base,
+    git-repo-subscribe,
+    himari,
+
+test-suite git-repo-subscribe-test
+  import: basic
+  type: exitcode-stdio-1.0
+  hs-source-dirs: test
+  main-is: Main.hs
+  ghc-options:
+    -threaded
+    -rtsopts
+    -with-rtsopts=-N
+
+  -- cabal-gild: discover ./test --exclude ./test/Main.hs
+  other-modules:
+    Fixture
+    Spec
+    Spec.BranchNameSpec
+    Spec.CliSpec
+    Spec.CommitIdSpec
+    Spec.DefaultBranchSpec
+    Spec.GitEnvironmentSpec
+    Spec.OutcomeSpec
+    Spec.PartialCloneFilterSpec
+    Spec.RemoteUrlSpec
+    Spec.SubscribeSpec
+    Spec.WorktreePathSpec
+    Spec.WorktreeSpec
+
+  build-tool-depends:
+    sandwich:sandwich-discover
+
+  build-depends:
+    base,
+    bytestring >=0.12 && <0.13,
+    git-repo-subscribe,
+    himari,
+    sandwich >=0.3.0.5,
+    text,
+    typed-process,

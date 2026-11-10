@@ -47,7 +47,7 @@ nix fmt
 ## Static
 
 ```zsh
-nix-fast-build --option eval-cache false --no-link --skip-cached
+./check.sh
 ```
 
 # Policy

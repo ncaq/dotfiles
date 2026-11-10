@@ -38,138 +38,17 @@ let
     };
   };
 
-  mkMountCommand =
+  # デバイスごとの`mnt-<名前>`と`umnt-<名前>`。
+  # 中身は`pkgs/removable-crypt`にあります。
+  mkCommands =
     name: device:
-    pkgs.writeShellApplication {
-      name = "mnt-${name}";
-      runtimeInputs = [
-        config.systemd.package
-        pkgs.btrfs-progs
-        pkgs.snapper
-        pkgs.util-linux
-      ];
-      text = ''
-        if [[ ! -w /dev/mapper/control ]]; then
-          echo "error: no permission to access /dev/mapper/control (use sudo)" >&2
-          exit 1
-        fi
-
-        device_path="/dev/disk/by-id/${device.deviceId}"
-        mapper_name="${name}"
-        target_user="''${SUDO_USER:-$USER}"
-        mount_point="/mnt/${name}"
-
-        mapper_attached=0
-        mounted=0
-
-        cleanup() {
-          if [[ "$mounted" -eq 1 ]]; then
-            umount "$mount_point" 2>/dev/null || true
-          fi
-          if [[ -d "$mount_point" ]]; then
-            rmdir "$mount_point" 2>/dev/null || true
-          fi
-          if [[ "$mapper_attached" -eq 1 ]]; then
-            systemd-cryptsetup detach "$mapper_name" 2>/dev/null || true
-          fi
-        }
-        trap cleanup EXIT
-
-        if [[ ! -e "$device_path" ]]; then
-          echo "error: device not found: $device_path" >&2
-          exit 1
-        fi
-
-        systemd-cryptsetup attach "$mapper_name" "$device_path"
-        mapper_attached=1
-
-        mkdir -p "$mount_point"
-        chown "$target_user:" "$mount_point"
-
-        fs_type=$(blkid -s TYPE -o value "/dev/mapper/$mapper_name")
-        if [[ "$fs_type" == "btrfs" ]]; then
-          mount -o "${
-            lib.concatStringsSep "," (device.mountOptions ++ device.btrfsMountOptions)
-          }" "/dev/mapper/$mapper_name" "$mount_point"
-        else
-          mount -o "${lib.concatStringsSep "," device.mountOptions}" \
-            "/dev/mapper/$mapper_name" "$mount_point"
-        fi
-        mounted=1
-
-        chown "$target_user:" "$mount_point"
-
-        # btrfs: create snapshot and cleanup old ones
-        if [[ "$fs_type" == "btrfs" ]]; then
-          if [[ ! -d "$mount_point/.snapshots" ]]; then
-            btrfs subvolume create "$mount_point/.snapshots"
-          fi
-          snapper -c "$mapper_name" create --cleanup-algorithm timeline --description "mount"
-          snapper -c "$mapper_name" cleanup timeline
-        fi
-
-        # Success - disable cleanup
-        trap - EXIT
-      '';
+    pkgs.callPackage ../pkgs/removable-crypt {
+      inherit name;
+      inherit (device) deviceId mountOptions btrfsMountOptions;
+      systemd = config.systemd.package;
     };
 
-  mkUnmountCommand =
-    name: _device:
-    pkgs.writeShellApplication {
-      name = "umnt-${name}";
-      runtimeInputs = [
-        config.systemd.package
-        pkgs.snapper
-        pkgs.util-linux
-      ];
-      text = ''
-        if [[ ! -w /dev/mapper/control ]]; then
-          echo "error: no permission to access /dev/mapper/control (use sudo)" >&2
-          exit 1
-        fi
-
-        mapper_name="${name}"
-        mount_point="/mnt/${name}"
-        has_error=0
-
-        # btrfs: create snapshot before unmount
-        if [[ -e "/dev/mapper/$mapper_name" ]]; then
-          fs_type=$(blkid -s TYPE -o value "/dev/mapper/$mapper_name" 2>/dev/null || true)
-          if [[ "$fs_type" == "btrfs" ]]; then
-            if ! snapper -c "$mapper_name" create \
-                --cleanup-algorithm timeline --description "unmount"; then
-              echo "warning: failed to create snapshot for $mapper_name" >&2
-              has_error=1
-            fi
-          fi
-        fi
-
-        if ! umount "$mount_point"; then
-          echo "warning: failed to unmount $mount_point" >&2
-          has_error=1
-        fi
-
-        if [[ -d "$mount_point" ]]; then
-          if ! rmdir "$mount_point"; then
-            echo "warning: failed to remove $mount_point" >&2
-            has_error=1
-          fi
-        fi
-
-        if [[ -e "/dev/mapper/$mapper_name" ]]; then
-          if ! systemd-cryptsetup detach "$mapper_name"; then
-            echo "warning: failed to detach $mapper_name" >&2
-            has_error=1
-          fi
-        fi
-
-        exit "$has_error"
-      '';
-    };
-
-  allCommands =
-    (lib.mapAttrsToList mkMountCommand cfg.devices)
-    ++ (lib.mapAttrsToList mkUnmountCommand cfg.devices);
+  allCommands = lib.mapAttrsToList mkCommands cfg.devices;
 
 in
 {

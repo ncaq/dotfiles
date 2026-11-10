@@ -1,5 +1,5 @@
 /**
-  openWebuiUserSettingsMergeTest: `user-settings.nix`のマージのjqのフィルタを検査するderivation。
+  openWebuiUserSettingsMergeTest: `open-webui-user-settings-sync`のマージのjqのフィルタを検査するderivation。
 
   型: { pkgs } -> derivation
 

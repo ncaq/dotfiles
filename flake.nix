@@ -332,9 +332,9 @@
           };
           # Open WebUIの利用者ごとの設定を合成するjqのフィルタが、
           # 意図した通りに合成することを検査するderivation。
-          open-webui-user-settings-merge-test =
-            import ./nixos/host/seminar/open-webui/lib/user-settings-merge-test.nix
-              { inherit pkgs; };
+          open-webui-user-settings-merge-test = import ./pkgs/open-webui-user-settings-sync/merge-test.nix {
+            inherit pkgs;
+          };
           # 評価時にしか走らない純粋なNixのテストをderivationへ包む。
           #
           # `bullet/comfyui/workflow/lib/*-test.nix`は`validate.nix`が`assert`で走らせるが、

@@ -19,6 +19,21 @@ cases =
         <> "pong from seminar (100.82.4.93) via 192.168.10.88:41641 in 4ms\n"
     , Just 0.004
     )
+  ,
+    ( -- `-c 1`でDERP経由のpongだけが返ると、直接の経路ができなかったことが標準エラー出力へ出る。
+      -- 標準出力とまとめて受け取るので、pongの後ろに行が続く。
+      "pongの後ろに直接の経路ができなかった行が続いても読む"
+    , "pong from seminar (100.82.4.93) via DERP(tok) in 38ms\n"
+        <> "direct connection not established\n"
+    , Just 0.038
+    )
+  ,
+    ( "pongの前に別の行があっても読む"
+    , "2026/11/11 00:00:00 some warning in 5ms of something\n"
+        <> "pong from seminar (100.82.4.93) via DERP(tok) in 38ms\n"
+    , Just 0.038
+    )
+  , ("pongではない行のレイテンシらしい文字列は読まない", "connected in 4ms", Nothing)
   , ("届かなかった出力は読まない", "ping \"seminar\" timed out", Nothing)
   , ("ノードが見つからない出力は読まない", "no matching peer", Nothing)
   , ("知らない単位は読まない", "pong from seminar (100.82.4.93) via DERP(tok) in 4h", Nothing)

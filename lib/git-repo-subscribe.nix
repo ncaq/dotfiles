@@ -93,7 +93,10 @@ in
   options.programs.git-repo-subscribe.repositories = lib.mkOption {
     type = lib.types.attrsOf repositoryType;
     default = { };
-    description = "Git repositories cloned and safely updated in the background";
+    description = ''
+      Git repositories cloned and safely updated by a systemd user service,
+      or during activation on Termux where systemd is unavailable.
+    '';
   };
 
   config = lib.mkIf (cfg.repositories != { }) (

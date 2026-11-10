@@ -21,6 +21,8 @@ data RemoteUrlError
     InvalidUrlSyntax
   | -- | 対応していないスキーム。そのスキーム。
     UnsupportedScheme Text
+  | -- | 接続先のホストが無い。`file`はホストが空でもよいが、オーソリティごと無いものは拒否する。
+    UrlMissingHost
   | -- | パスワードが埋め込まれている。
     UrlPassword
   | -- | HTTPSかfileのURLにユーザ名が埋め込まれている。
@@ -36,6 +38,7 @@ instance Exception RemoteUrlError where
     InvalidUrlSyntax -> "Git remote URL is not a valid absolute URL"
     UnsupportedScheme scheme ->
       "unsupported Git remote URL scheme `" <> convert scheme <> "`; expected https, ssh, or file"
+    UrlMissingHost -> "Git remote URL must name a host after `//`"
     UrlPassword -> "Git remote URL must not contain a password"
     UrlUsername -> "HTTPS and file Git remote URLs must not contain a username"
     UrlUnsafeCharacter -> "Git remote URL must not contain whitespace or control characters"

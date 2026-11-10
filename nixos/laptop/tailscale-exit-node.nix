@@ -2,6 +2,7 @@
   pkgs,
   lib,
   config,
+  inputs,
   ...
 }:
 let
@@ -11,6 +12,7 @@ let
   # 中身は`pkgs/tailscale-exit-node`にあります。
   tailscaleExitNodeScript = lib.getExe (
     pkgs.callPackage ../../pkgs/tailscale-exit-node {
+      inherit (inputs) himari-src;
       tailscale = config.services.tailscale.package;
     }
   );

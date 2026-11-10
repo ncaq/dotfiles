@@ -1,39 +1,49 @@
 # seminarへのレイテンシを見てTailscaleのexit nodeを切り替えるNetworkManagerのdispatcherスクリプト。
-# `nixos/laptop/tailscale-exit-node.nix`から呼ばれます。
-# 何をするかは`tailscale-exit-node.bash`の冒頭に書いてあります。
+#
+# `nixos/laptop/tailscale-exit-node.nix`から呼ばれる。
+# 何をどう決めるかは`src/TailscaleExitNode/ExitNode.hs`に書いてある。
+#
+# `callPackage`の結果に`haskell.lib`の関数を重ねると、
+# `override`がこのファイルを`mkDerivation`付きで呼び直して壊れる。
+# CIで警告をエラーにしたい時は`werror`で指定する。
 {
   lib,
-  runCommand,
+  haskell,
+  haskellPackages,
   makeWrapper,
-  shellcheck,
-  bash,
-  coreutils,
-  gnugrep,
   tailscale,
+  himari-src,
+  werror ? false,
 }:
-runCommand "tailscale-exit-node"
-  {
-    nativeBuildInputs = [
-      makeWrapper
-      shellcheck
+let
+  packages = haskellPackages.extend (
+    hself: _hsuper: {
+      # himariはstableのnixpkgsではbrokenなので、上流のソースから組む。
+      himari = hself.callCabal2nix "himari" himari-src { };
+    }
+  );
+  # 動かすものだけをstoreへ入れる。
+  # ディレクトリをそのまま渡すと`dist-newstyle`のような作業中のファイルまで付いてくる。
+  source = lib.fileset.toSource {
+    root = ./.;
+    fileset = lib.fileset.unions [
+      ./tailscale-exit-node.cabal
+      ./app
+      ./src
+      ./test
     ];
-    meta.mainProgram = "tailscale-exit-node";
-  }
-  ''
-    shellcheck ${./tailscale-exit-node.bash}
-    install -Dm755 ${./tailscale-exit-node.bash} \
-      $out/libexec/tailscale-exit-node/tailscale-exit-node.bash
-    # dispatcherのPATHにbashがあるとは限らないので、`env`で探させずストアのbashへ固定します。
-    patchShebangs $out/libexec
-    makeWrapper $out/libexec/tailscale-exit-node/tailscale-exit-node.bash \
-      $out/bin/tailscale-exit-node \
-      --prefix PATH : ${
-        lib.makeBinPath [
-          # スクリプトの中で`bash -c`を呼ぶために要る。
-          bash
-          coreutils
-          gnugrep
-          tailscale
-        ]
-      }
-  ''
+  };
+  package = packages.callCabal2nix "tailscale-exit-node" source { };
+in
+lib.pipe package [
+  (haskell.lib.compose.overrideCabal (old: {
+    buildTools = (old.buildTools or [ ]) ++ [ makeWrapper ];
+    # レイテンシの計測とexit nodeの設定は`tailscale`に任せるので、PATHへ足して包む。
+    postInstall = (old.postInstall or "") + ''
+      wrapProgram "$out/bin/tailscale-exit-node" \
+        --prefix PATH : ${lib.makeBinPath [ tailscale ]}
+    '';
+  }))
+  (haskell.lib.compose.appendConfigureFlags (lib.optional werror "--ghc-options=-Werror"))
+  haskell.lib.compose.justStaticExecutables
+]

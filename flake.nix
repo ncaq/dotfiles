@@ -399,6 +399,11 @@
           certspotter-mackerel = pkgs.callPackage ./pkgs/certspotter-mackerel {
             inherit (inputs) himari-src;
           };
+          # seminarへのレイテンシを見てTailscaleのexit nodeを切り替えるdispatcherスクリプト。
+          # ビルドの中でsandwichのテストが走る。
+          tailscale-exit-node = pkgs.callPackage ./pkgs/tailscale-exit-node {
+            inherit (inputs) himari-src;
+          };
           # 有線接続中はWiFiの接続を切るNetworkManagerのdispatcherスクリプト。
           # ビルドの中でsandwichのテストが走る。
           wifi-wired-exclusive = pkgs.callPackage ./pkgs/wifi-wired-exclusive {
@@ -555,6 +560,7 @@
                 ;
               # 警告を残さないために、CIでだけ`-Werror`で組む。
               certspotter-mackerel = certspotter-mackerel.override { werror = true; };
+              tailscale-exit-node = tailscale-exit-node.override { werror = true; };
               wifi-wired-exclusive = wifi-wired-exclusive.override { werror = true; };
               comfy-workflow = comfy-workflow.override { werror = true; };
               comfyui-idle-free-memory = comfyui-idle-free-memory.override { werror = true; };
@@ -591,6 +597,8 @@
             inherit comfyui-idle-free-memory;
             # certspotterが検知したイベントをMackerelのチェックへ繋ぐコマンド。
             inherit certspotter-mackerel;
+            # seminarへのレイテンシを見てTailscaleのexit nodeを切り替えるdispatcherスクリプト。
+            inherit tailscale-exit-node;
             # 有線接続中はWiFiの接続を切るNetworkManagerのdispatcherスクリプト。
             inherit wifi-wired-exclusive;
             # GGUFのチャットテンプレートを取り出して書き戻すコマンド。

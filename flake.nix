@@ -516,8 +516,6 @@
                 command = pkgs.editorconfig-checker;
                 includes = [ "*" ];
               };
-              # himariが推奨するスタイルのhlint設定を上流のソースから借りる。
-              hlint.options = [ "--hint=${inputs.himari-src}/.hlint.yaml" ];
               zizmor.options = [ "--pedantic" ];
             };
           };

@@ -1,5 +1,0 @@
-with-compiler: ghc-9.10.3
-packages: .
-
-package *
-  ghc-options: -j

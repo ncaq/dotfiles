@@ -117,7 +117,7 @@ let
       "qwen_image_2.1_int8_convrot.safetensors" = fetchHuggingFace {
         owner = "Comfy-Org";
         repo = "Qwen-Image-2.1";
-        rev = "0217efd1d9c9452e84f6448903d6e21bfa171ffd";
+        rev = "aacf31a6d48e707f352ecba714cee0680da3479b";
         file = "diffusion_models/qwen_image_2.1_int8_convrot.safetensors";
         hash = "sha256-y3QRPLA/rs15YRsB/X/WQvCqYNbwuVCGq+4hTXXqpX0=";
       };
@@ -176,7 +176,7 @@ let
       "qwen3vl_8b_bf16.safetensors" = fetchHuggingFace {
         owner = "Comfy-Org";
         repo = "Qwen-Image-2.1";
-        rev = "0217efd1d9c9452e84f6448903d6e21bfa171ffd";
+        rev = "aacf31a6d48e707f352ecba714cee0680da3479b";
         file = "text_encoders/qwen3vl_8b_bf16.safetensors";
         hash = "sha256-aL3IK8G2aFEWKuZWIl5+IGgWa2A9sZvV1aO5DrEmaak=";
       };
@@ -234,7 +234,7 @@ let
       "qwen_image_2.1_vae_bf16.safetensors" = fetchHuggingFace {
         owner = "Comfy-Org";
         repo = "Qwen-Image-2.1";
-        rev = "0217efd1d9c9452e84f6448903d6e21bfa171ffd";
+        rev = "aacf31a6d48e707f352ecba714cee0680da3479b";
         file = "vae/qwen_image_2.1_vae_bf16.safetensors";
         hash = "sha256-uyH3RzBR4aw2hRXdPy4VzUTXoRdI7ogj4d3KPkh2t8k=";
       };

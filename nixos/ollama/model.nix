@@ -135,7 +135,7 @@ let
           (fetchHuggingFace {
             owner = "unsloth";
             repo = "Qwen3.8-27B-GGUF";
-            rev = "4ca720788d1e01f1bff70c033e0d0028fd02e502";
+            rev = "43f522df59109a037f64f1e29ab1eff5c00e8e1e";
             file = "mmproj-F16.gguf";
             hash = "sha256-y7hBqe4GNrLsFy9buN8uqN/rAekP58YSZYHWYqC05D4=";
           })

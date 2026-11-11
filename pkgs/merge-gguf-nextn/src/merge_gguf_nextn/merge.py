@@ -105,6 +105,29 @@ def _per_layer_overrides(
     return overrides
 
 
+_COMPARE_CHUNK_BYTES = 64 * 1024 * 1024
+
+
+def same_bytes(
+    a: np.ndarray, b: np.ndarray, chunk_bytes: int = _COMPARE_CHUNK_BYTES
+) -> bool:
+    """2つの配列がバイト列として同じかを、少しずつ比べて確かめる。
+
+    `np.array_equal`に丸ごと渡すと要素数と同じ大きさのbool配列を一度に確保する。
+    Qwen3.8-27Bの埋め込みのテンソルはBF16で約2.5GBあり、
+    ビルドのメモリのピークがその分だけ増えるので、
+    `chunk_bytes`ずつ比べて最初に違ったところで打ち切る。
+    """
+    a_bytes = a.reshape(-1).view(np.uint8)
+    b_bytes = b.reshape(-1).view(np.uint8)
+    if a_bytes.size != b_bytes.size:
+        return False
+    return all(
+        np.array_equal(a_bytes[i : i + chunk_bytes], b_bytes[i : i + chunk_bytes])
+        for i in range(0, a_bytes.size, chunk_bytes)
+    )
+
+
 def _check_shared_tensors(
     main_tensors: dict[str, gguf.ReaderTensor],
     shared: Iterable[gguf.ReaderTensor],
@@ -126,7 +149,7 @@ def _check_shared_tensors(
             counterpart.shape, tensor.shape
         ):
             raise MergeError(f"テンソル`{tensor.name}`の型か形が本体と違います")
-        if not np.array_equal(counterpart.data, tensor.data):
+        if not same_bytes(counterpart.data, tensor.data):
             raise MergeError(f"テンソル`{tensor.name}`の中身が本体と違います")
 
 

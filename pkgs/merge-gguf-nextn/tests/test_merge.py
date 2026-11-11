@@ -6,7 +6,7 @@ import gguf
 import numpy as np
 import pytest
 
-from merge_gguf_nextn.merge import MergeError, merge
+from merge_gguf_nextn.merge import MergeError, merge, same_bytes
 
 ARCH = "test"
 MAIN_BLOCKS = 2
@@ -231,3 +231,13 @@ def test_rejects_main_that_already_has_nextn(tmp_path: Path) -> None:
     draft = _draft_file(tmp_path / "draft.gguf")
     with pytest.raises(MergeError, match="既にNextN層"):
         merge(draft, draft, tmp_path / "out.gguf")
+
+
+def test_same_bytes_compares_every_chunk() -> None:
+    a = np.arange(10, dtype=np.float32)
+    b = a.copy()
+    assert same_bytes(a, b, chunk_bytes=12)
+    # 最後のチャンクだけが違う場合も見逃さない。
+    b[-1] = -1.0
+    assert not same_bytes(a, b, chunk_bytes=12)
+    assert not same_bytes(a, a[:-1], chunk_bytes=12)

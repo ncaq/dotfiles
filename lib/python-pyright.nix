@@ -58,6 +58,10 @@
     環境が1つなら`venvPath`と`venv`が1組で済み、
     Pythonのバージョン文字列をコミットするファイルへ書かずに済む。
 
+    `pkgs/merge-gguf-nextn`が使う`gguf`も同じ理由で足す。
+    ComfyUIとは関係の無いパッケージだが、
+    環境を1つに保つためにここへ並べる。
+
   なぜuvやuv2nixで依存を用意しないか:
     uv2nixは`uv.lock`のPyPI依存をNixへ持ち込むためのものだが、
     ComfyUI側はそもそも`comfy`や`nodes`がPyPIに無く、
@@ -129,7 +133,11 @@ let
   # pyrightがリポジトリルートの`.typecheck`から相対パスで辿る2つをまとめる。
   # `venvPath`が`.typecheck`で`venv`が`env`、`extraPaths`が`.typecheck/src`に対応する。
   typecheckDir = pkgs.linkFarm "typecheck" {
-    env = (comfyui.withExtraPythonPackages (pythonPkgs: [ pythonPkgs.pytest ])).pythonRuntime;
+    env =
+      (comfyui.withExtraPythonPackages (pythonPkgs: [
+        pythonPkgs.gguf
+        pythonPkgs.pytest
+      ])).pythonRuntime;
     src = comfyui.comfyuiSrc;
   };
 in

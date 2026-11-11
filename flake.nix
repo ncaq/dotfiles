@@ -585,6 +585,8 @@
               git-repo-subscribe = git-repo-subscribe.override { werror = true; };
               patch-gguf-chat-template = patch-gguf-chat-template.override { werror = true; };
               nvd-pr-diff = nvd-pr-diff.override { werror = true; };
+              # `renovate-recovery`ワークフローが直接実行するTypeScriptの型検査とテスト。
+              renovate-recovery = pkgs.callPackage ./pkgs/renovate-recovery { };
             }
             // lib.optionalAttrs hasComfyui {
               # リポジトリ内のPythonの型検査。
@@ -601,6 +603,12 @@
               home-manager
               nix-fast-build
               ;
+            # `renovate-recovery`ワークフローが`claude-code-action`へ渡す実行ファイル。
+            # NixOSのセルフホステッドランナーでは、
+            # アクションが自分でダウンロードするバイナリは動的リンクを解決できず動かないため、
+            # Nixでビルドしたものを指定します。
+            inherit (pkgs) bun;
+            inherit (importPkgsUnstable system) claude-code;
             # Gitリポジトリを購読するためのツール。
             inherit git-repo-subscribe;
             # PRコメントにnvd diffを投稿するコマンド。

@@ -141,6 +141,35 @@ jobs:
           jq -r '.[] | ".#nixosConfigurations.\(.).config.system.build.toplevel"' |
           xargs nix build -L --keep-going
 
+  renovate-recovery:
+    name: renovate-recovery
+    # RenovateのPRでチェックが失敗した時に、Claude Codeが原因を調べて代わりのPRを作ります。
+    # 復旧のPRはRenovateのPRではないので、そのチェックが失敗してもここは動きません。
+    needs:
+      - nix-fast-build
+      - build-home-manager
+      - build-nix-on-droid
+      - build-nixos
+      - test-nixos-boot
+    # `failure()`は実行がキャンセルされた時には成立しません。
+    if: >-
+      failure() &&
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.user.login == 'renovate[bot]' &&
+      startsWith(github.head_ref, 'renovate/') &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    # 呼び出し先のワークフローの権限は呼び出し元の権限に制約されるので、ここで明示します。
+    permissions:
+      contents: read # リポジトリコンテンツの読み取り
+      id-token: write # niks3-publicとのOIDC認証と、Claude GitHub Appのトークンの取得に使用
+      pull-requests: write # 処理済みかどうかの判定と、結果のコメントの投稿
+    uses: ./.github/workflows/renovate-recovery.yml
+    with:
+      pr-number: ${{ github.event.pull_request.number }}
+      run-id: ${{ github.run_id }}
+    secrets:
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+
   test-nixos-boot:
     name: test-nixos-boot
     needs:

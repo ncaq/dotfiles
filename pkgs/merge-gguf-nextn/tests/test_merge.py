@@ -241,3 +241,20 @@ def test_same_bytes_compares_every_chunk() -> None:
     b[-1] = -1.0
     assert not same_bytes(a, b, chunk_bytes=12)
     assert not same_bytes(a, a[:-1], chunk_bytes=12)
+
+
+def test_removes_partial_output_on_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def fail(*_args: object, **_kwargs: object) -> None:
+        raise OSError("書き込めません")
+
+    monkeypatch.setattr(gguf.GGUFWriter, "write_tensor_data", fail)
+    out = tmp_path / "out.gguf"
+    with pytest.raises(OSError, match="書き込めません"):
+        merge(
+            _main_file(tmp_path / "main.gguf"),
+            _draft_file(tmp_path / "draft.gguf"),
+            out,
+        )
+    assert not out.exists()

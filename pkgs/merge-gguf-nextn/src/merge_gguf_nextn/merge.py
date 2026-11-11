@@ -204,6 +204,22 @@ def merge(main_path: Path, draft_path: Path, output_path: Path) -> None:
         overrides[key] = field
 
     writer = gguf.GGUFWriter(output_path, arch, endianess=main.endianess)
+    try:
+        _write(writer, main, overrides, [*main.tensors, *nextn_tensors])
+    except BaseException:
+        # 途中まで書いたファイルを完成品と取り違えないように消す。
+        writer.close()
+        output_path.unlink(missing_ok=True)
+        raise
+    writer.close()
+
+
+def _write(
+    writer: gguf.GGUFWriter,
+    main: gguf.GGUFReader,
+    overrides: dict[str, gguf.ReaderField],
+    tensors: list[gguf.ReaderTensor],
+) -> None:
     for field in main.fields.values():
         # アーキテクチャと`GGUF.`で始まる仮想的なフィールドはwriterが自分で書く。
         if field.name == gguf.Keys.General.ARCHITECTURE or field.name.startswith(
@@ -215,7 +231,6 @@ def merge(main_path: Path, draft_path: Path, output_path: Path) -> None:
     for field in overrides.values():
         _copy_field(writer, field)
 
-    tensors = [*main.tensors, *nextn_tensors]
     for tensor in tensors:
         writer.add_tensor_info(
             tensor.name,
@@ -229,4 +244,3 @@ def merge(main_path: Path, draft_path: Path, output_path: Path) -> None:
     writer.write_ti_data_to_file()
     for tensor in tensors:
         writer.write_tensor_data(tensor.data, tensor_endianess=main.endianess)
-    writer.close()

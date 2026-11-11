@@ -6,6 +6,8 @@ extend-exclude = ["key/", "mozc/", "secrets/"]
 Ba = "Ba"
 # Mozilla由来のCA証明書束を配るPythonパッケージ`certifi`
 certifi = "certifi"
+# llama.cppのgguf-pyの引数と属性の綴り(`GGUFWriter`の`endianess`など)
+endianess = "endianess"
 # HSA is something AMD uses for their GPUs
 HSA = "HSA"
 # 社名。分割で認識されなくなります。

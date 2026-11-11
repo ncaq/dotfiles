@@ -2,6 +2,7 @@
 {
   lib,
   pkgs,
+  pkgs-unstable,
   config,
   inputs,
   ...
@@ -9,6 +10,8 @@
 let
   enableCuda = config.local.ollama.enableCuda;
   fetchHuggingFace = import ../../lib/fetch-hugging-face.nix { inherit pkgs; };
+  # NextN層を持つQwen3.8を量子化できるのはunstableのllama.cppだけなのでunstableを渡す。
+  quantizeGgufWithNextn = import ../../lib/quantize-gguf-with-nextn.nix { pkgs = pkgs-unstable; };
   # CLIと同じstoreのパスを使うため、取得の定義は`lib/`で共有している。
   plamoTranslateModel = import ../../lib/plamo-translate-model.nix { inherit pkgs; };
   patchGgufChatTemplate = import ../../lib/patch-gguf-chat-template.nix {
@@ -23,13 +26,10 @@ let
   # 指定していなかった`qwen3.8-27b-heretic-rvn:q4_k_m`が80.4トークン/秒だったのに対し、
   # 同じGGUFにこれを足すだけで141.4トークン/秒まで上がった。
   #
-  # 値の4は配布元の推奨より長い。
-  # JackrongのREADMEは`--spec-draft-n-max 2`を勧めているが、
-  # bulletで同じ問いを2回ずつ測ると2が127.0と127.2、
-  # 4が133.6と134.2トークン/秒で4の方が速い。
-  # 投機的デコーディングはドラフトを伸ばすほど末尾の受理率が下がるものの、
-  # 実測の位置ごとの受理率は4本目でも0.369あり、
-  # 外した分の検証コストを補って余る。
+  # 値の4は実測で最も速かったものである。
+  # `qwen3.8-27b-mtp:q6_k`でbulletで同じ問いを2回ずつ測ると、
+  # 2が120.8と124.3、3が135.9と136.8、
+  # 4が137.6と137.9、5が134.6と135.0トークン/秒だった。
   #
   # 残りはQwen3.8公式のThinking Mode向けの推奨サンプリングで、
   # Ollamaの既定値(temperature 0.8, top_k 40, top_p 0.9, repeat_penalty 1.1)とは異なる。
@@ -82,11 +82,16 @@ let
       # MTPのドラフトヘッドはQwen3.8の公式の重みに元から入っており、
       # 対応したllama.cppで変換すれば`qwen35.nextn_predict_layers=1`として、
       # 本体と同じGGUFの中に15テンソル約451MBで残る。
-      # Jackrongのリポジトリはそれを捨てずに量子化したもので、
-      # 素のQwen3.8に対する改変は入っていない。
       #
-      # 供給元がOllama公式のregistryから個人のリポジトリへ移るため、
-      # 登録した結果が公式のQwen3.8-27Bと噛み合うことを一度確認した。
+      # 公式の重みからggml-orgが変換したBF16を取り、自分でQ6_Kへ量子化する。
+      # ggml-orgはドラフトヘッドを`mtp-*.gguf`として本体から切り離して配っているので、
+      # 量子化の前に本体へまとめ直す。
+      # まとめる方法とその理由は`lib/quantize-gguf-with-nextn.nix`にある。
+      #
+      # ggml-orgの変換のチャットテンプレートはassistantの発話を`{% generation %}`で囲んでいる。
+      # assistantの発話を含む会話をOllamaで生成できることを確かめた。
+      #
+      # 登録した結果が公式のQwen3.8-27Bと噛み合うことを確認した。
       # `ollama show`が返す値は`Qwen/Qwen3.8-27B`の`config.json`と以下の通り一致する。
       #
       # - context lengthの262144が`max_position_embeddings`
@@ -99,8 +104,8 @@ let
       # `rev`と`hash`で固定しているので、
       # 配布元が後から差し替えた場合はビルドが壊れて気付ける。
       #
-      # unslothも同じ量子化を配っているが、
-      # あちらはMTPのドラフトヘッドを`MTP/mtp-*.gguf`として別ファイルに切り出している。
+      # unslothのQ6_Kをそのまま使わないのは、
+      # ggml-orgと同じくMTPのドラフトヘッドを`MTP/mtp-*.gguf`として別ファイルに切り出しているからである。
       # 本体と一緒に`FROM`へ並べると`ollama create`は取り込みこそするものの、
       # マニフェストに`model`のレイヤーが2つ並ぶ形になり、
       # ollamaは最後の`model`レイヤーを本体だと解釈する。
@@ -113,8 +118,7 @@ let
       # visionはregistry版がマニフェストの別レイヤーとして同梱しているだけなので、
       # 本体のGGUFを取るだけでは付いてこず、clipの投影器を自分で足す必要がある。
       # 投影器はunslothのF16を使う。
-      # registry版の投影器も888MiBでF16相当であり、
-      # Jackrongが置いているF32は1.72GiBと倍を占める割に得るものが無い。
+      # registry版の投影器も888MiBでF16相当なので、それに揃える。
       #
       # チャットテンプレートはそのままではコーディングエージェントからの入力を弾くので、
       # `qwen3.8-chat-template.patch`を当てて緩和したものを登録する。
@@ -122,20 +126,32 @@ let
       "qwen3.8-27b-mtp:q6_k" = {
         sources = [
           (patchGgufChatTemplate {
-            gguf = fetchHuggingFace {
-              owner = "Jackrong";
-              repo = "Qwen3.8-27B-MTP-GGUF";
-              rev = "422451108d80df4a55ebd66c3416af42a0ce0b0c";
-              file = "Qwen3.8-27B-MTP-Q6_K.gguf";
-              hash = "sha256-0PqUrycPPeQmll8fn29hQKrp9arZuIu0ZkUkknSNUm4=";
+            gguf = quantizeGgufWithNextn {
+              name = "Qwen3.8-27B-MTP-Q6_K.gguf";
+              model = fetchHuggingFace {
+                owner = "ggml-org";
+                repo = "Qwen3.8-27B-GGUF";
+                rev = "8ccda149192dec5f41450a402e66889e5fd25a24";
+                file = "Qwen3.8-27B-BF16.gguf";
+                hash = "sha256-7hHoaU5cXP+griGJVwbJc2A1DkBTKXkwi3VtIKmnF70=";
+              };
+              draft = fetchHuggingFace {
+                owner = "ggml-org";
+                repo = "Qwen3.8-27B-GGUF";
+                rev = "8ccda149192dec5f41450a402e66889e5fd25a24";
+                file = "mtp-Qwen3.8-27B-BF16.gguf";
+                hash = "sha256-n8QonqUMFvNWcyFBWW8zgOdHcjy5EikaoLj+z9j5Jzw=";
+              };
+              type = "Q6_K";
+              hash = "sha256-T6KMlLIqOin7XqDldVnLh49fg3bdSwLNqm9hwme0mSg=";
             };
             patch = ./qwen3.8-chat-template.patch;
-            hash = "sha256-hNa87dUY35OHeEY34ey9ld0obztOuCy0us4lmgNs6/w=";
+            hash = "sha256-3UfAApLmAbkXsNKXJfV1YhPDRl0VmRTjWbwEiDMzl68=";
           })
           (fetchHuggingFace {
             owner = "unsloth";
             repo = "Qwen3.8-27B-GGUF";
-            rev = "4ca720788d1e01f1bff70c033e0d0028fd02e502";
+            rev = "43f522df59109a037f64f1e29ab1eff5c00e8e1e";
             file = "mmproj-F16.gguf";
             hash = "sha256-y7hBqe4GNrLsFy9buN8uqN/rAekP58YSZYHWYqC05D4=";
           })
@@ -170,9 +186,10 @@ let
       # 投影器は`ggml-org/Qwen3.8-27B-GGUF`にある公式のものと同一で、
       # ARAは言語モデル側の層しか触っていないため素の投影器がそのまま噛み合う。
       #
-      # チャットテンプレートは汎用モデルのものとバイト単位で同一なので、
-      # 同じ`qwen3.8-chat-template.patch`を当てる。
+      # チャットテンプレートには汎用モデルと同じ`qwen3.8-chat-template.patch`を当てる。
       # ARAは重みしか触っておらずテンプレートは素のQwen3.8のままだからである。
+      # 汎用モデルのggml-orgの変換はassistantの発話を`{% generation %}`で囲む点だけが異なるが、
+      # パッチが触る箇所はどちらも同じ形をしている。
       # 今の呼び出し側であるOpen WebUIが弾かれる形を送っているわけではないが、
       # reasoning effortを明示する経路があれば同じ500に当たる。
       # 片方だけ緩和されている状態は、

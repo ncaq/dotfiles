@@ -71,6 +71,10 @@ def _per_layer_overrides(
     層の数だけ要素を持つ配列はNextN層の分だけ伸ばす必要がある。
     本体の層に当たる前半が本体と一致することを確かめて、
     違うモデルの組を黙ってまとめないようにする。
+
+    本体の層の数だけ要素を持つ配列がドラフトヘッドで伸びていない時も失敗にする。
+    そのまま本体の値を写すと、
+    `block_count`だけが増えて配列の長さと食い違うためである。
     """
     overrides: dict[str, gguf.ReaderField] = {}
     for field in draft.fields.values():
@@ -88,6 +92,16 @@ def _per_layer_overrides(
                 f"層ごとの配列`{field.name}`の本体の層に当たる値が本体と一致しません"
             )
         overrides[field.name] = field
+    for field in main.fields.values():
+        if (
+            field.name.startswith(f"{arch}.")
+            and _is_array(field)
+            and len(field.data) == main_blocks
+            and field.name not in overrides
+        ):
+            raise MergeError(
+                f"本体の層ごとの配列`{field.name}`がドラフトヘッドで伸びていません"
+            )
     return overrides
 
 

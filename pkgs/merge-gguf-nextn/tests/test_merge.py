@@ -33,11 +33,14 @@ def _write(
     recurrent: list[bool],
     nextn: int | None,
     tensors: dict[str, np.ndarray],
+    arrays: dict[str, list[int]] | None = None,
 ) -> None:
     writer = gguf.GGUFWriter(path, ARCH)
     writer.add_string("general.name", "fixture")
     writer.add_uint32(f"{ARCH}.block_count", block_count)
     writer.add_array(f"{ARCH}.attention.recurrent_layers", recurrent)
+    for key, values in (arrays or {}).items():
+        writer.add_array(key, values)
     if nextn is not None:
         writer.add_uint32(f"{ARCH}.nextn_predict_layers", nextn)
     for name, data in tensors.items():
@@ -48,7 +51,7 @@ def _write(
     writer.close()
 
 
-def _main_file(path: Path) -> Path:
+def _main_file(path: Path, *, arrays: dict[str, list[int]] | None = None) -> Path:
     tensors = {**_shared(0.0), **_layer(0, 1.0), **_layer(1, 1.0)}
     _write(
         path,
@@ -56,6 +59,7 @@ def _main_file(path: Path) -> Path:
         recurrent=[True, False],
         nextn=None,
         tensors=tensors,
+        arrays=arrays,
     )
     return path
 
@@ -136,6 +140,20 @@ def test_rejects_per_layer_array_disagreeing_with_main(tmp_path: Path) -> None:
         merge(
             _main_file(tmp_path / "main.gguf"),
             _draft_file(tmp_path / "draft.gguf", recurrent=[False, False, False]),
+            tmp_path / "out.gguf",
+        )
+
+
+def test_rejects_per_layer_array_missing_from_draft(tmp_path: Path) -> None:
+    # 本体にだけある層ごとの配列は伸ばせないので、
+    # まとめると`block_count`と配列の長さが食い違う。
+    with pytest.raises(MergeError, match="head_count_kv"):
+        merge(
+            _main_file(
+                tmp_path / "main.gguf",
+                arrays={f"{ARCH}.attention.head_count_kv": [4, 4]},
+            ),
+            _draft_file(tmp_path / "draft.gguf"),
             tmp_path / "out.gguf",
         )
 

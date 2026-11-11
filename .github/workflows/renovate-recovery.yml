@@ -68,6 +68,7 @@ jobs:
     outputs:
       run: ${{ steps.decide.outputs.run }}
       key: ${{ steps.decide.outputs.key }}
+      head-ref: ${{ steps.decide.outputs.head-ref }}
       head-sha: ${{ steps.decide.outputs.head-sha }}
       base-sha: ${{ steps.decide.outputs.base-sha }}
     steps:
@@ -129,6 +130,10 @@ jobs:
             echo "bun=${bun}/bin/bun"
           } >>"$GITHUB_OUTPUT"
       - uses: anthropics/claude-code-action@4fa93a88de49bbef68b10eb15aabedf28ca0e1ed # v1.0.271
+        env:
+          # `use_commit_signing`のコミット先のブランチです。
+          # 未指定だと`GITHUB_HEAD_REF`、つまりRenovateのブランチへコミットしてしまいます。
+          CLAUDE_BRANCH: renovate-recovery/${{ inputs.pr-number }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           path_to_claude_code_executable: ${{ steps.executables.outputs.claude }}
@@ -139,9 +144,16 @@ jobs:
           additional_permissions: |
             actions: read
           display_report: "true"
+          # masterのブランチ保護は署名付きのコミットを要求します。
+          # コミットをGitHubのAPI経由で作り、GitHubに署名させます。
+          use_commit_signing: "true"
+          # 復旧のブランチが無い時に、RenovateのPRのheadから切るためのブランチです。
+          base_branch: ${{ needs.gate.outputs.head-ref }}
+          # 署名の無いコミットを積まないよう、`git push`は禁止します。
           claude_args: >-
             --model opus
-            --allowedTools "Bash,Edit,Glob,Grep,Read,TodoWrite,WebFetch,WebSearch,Write"
+            --allowedTools "Bash,Edit,Glob,Grep,Read,TodoWrite,WebFetch,WebSearch,Write,mcp__github_file_ops__commit_files,mcp__github_file_ops__delete_files"
+            --disallowedTools "Bash(git push:*)"
             --add-dir "${{ runner.temp }}"
           prompt: |
             `pkgs/renovate-recovery/prompt.md`を読んで、その手順に従ってください。

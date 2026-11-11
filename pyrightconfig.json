@@ -18,6 +18,10 @@
         "nixos/host/bullet/comfyui/custom-node/anime-video-quick",
         "nixos/host/bullet/comfyui/custom-node/rewrite-edit-prompt"
       ]
+    },
+    {
+      "root": "pkgs/merge-gguf-nextn",
+      "extraPaths": ["pkgs/merge-gguf-nextn/src"]
     }
   ]
 }

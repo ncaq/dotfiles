@@ -384,6 +384,10 @@
           patch-gguf-chat-template = pkgs.callPackage ./pkgs/patch-gguf-chat-template {
             inherit (inputs) himari-src;
           };
+          # GGUFの本体へ別ファイルのMTPのNextN層を足すコマンド。
+          # ビルドの中でpytestのテストが走る。
+          # モデルの量子化から呼ぶのと同じunstableのgguf-pyで組む。
+          merge-gguf-nextn = (importPkgsUnstable system).callPackage ./pkgs/merge-gguf-nextn { };
           # PRコメントにnvd diffを投稿するコマンド。
           # ビルドの中でsandwichのテストが走る。
           nvd-pr-diff = pkgs.callPackage ./pkgs/nvd-pr-diff {
@@ -568,6 +572,7 @@
                 comfy-cli
                 comfyui-api-workflow-test
                 machine-address6-test
+                merge-gguf-nextn
                 plamo-translate-cli
                 safetensors-fp16
                 systemd-specifier-test
@@ -637,6 +642,8 @@
             inherit wifi-wired-exclusive;
             # GGUFのチャットテンプレートを取り出して書き戻すコマンド。
             inherit patch-gguf-chat-template;
+            # GGUFの本体へ別ファイルのMTPのNextN層を足すコマンド。
+            inherit merge-gguf-nextn;
           }
           // lib.optionalAttrs hasComfyui {
             # pyrightがPython環境とComfyUIのソースを辿るためのディレクトリ。

@@ -1,0 +1,165 @@
+name: renovate-recovery
+
+# RenovateのPRのCIが失敗した時に、Claude Codeが原因を調べて代わりのPRを作ります。
+# Claude Codeへの指示は`pkgs/renovate-recovery/prompt.md`に、
+# 起動するかどうかの判定は`pkgs/renovate-recovery/src/decide.ts`に書いてあります。
+#
+# `check`ワークフローのジョブが失敗した時に`workflow_call`で呼ばれます。
+# `workflow_dispatch`は、抑止の条件を無視して手動でやり直すためのものです。
+
+on:
+  workflow_call:
+    inputs:
+      pr-number:
+        description: 復旧の対象にするRenovateのPRの番号
+        type: number
+        required: true
+      run-id:
+        description: 失敗したワークフローの実行のID
+        type: string
+        required: false
+        default: ""
+      force:
+        description: 処理済みかどうかの判定を無視して実行する
+        type: boolean
+        required: false
+        default: false
+    secrets:
+      CLAUDE_CODE_OAUTH_TOKEN:
+        description: Claude CodeのOAuthトークン
+        required: true
+  workflow_dispatch:
+    inputs:
+      pr-number:
+        description: 復旧の対象にするRenovateのPRの番号
+        type: number
+        required: true
+      run-id:
+        description: 失敗したワークフローの実行のID(空ならClaude Codeが探す)
+        type: string
+        required: false
+        default: ""
+      force:
+        description: 処理済みかどうかの判定を無視して実行する
+        type: boolean
+        required: false
+        default: true
+
+permissions: {}
+
+# 同じPRに対する復旧が自動と手動で重ならないようにします。
+# 動いている復旧は途中で止めず、後から来たものを待たせます。
+concurrency:
+  group: renovate-recovery-${{ inputs.pr-number }}
+  cancel-in-progress: false
+
+jobs:
+  gate:
+    name: gate
+    # Claude Codeを起動するかどうかを決めます。
+    # RenovateはmasterがすすむたびにPRをrebaseするので、CIは同じ原因で何度も失敗します。
+    # そのたびにClaude Codeを動かさないよう、ここで安く判定して弾きます。
+    # セルフホステッドランナーを占有しないようGitHubのランナーで動かします。
+    permissions:
+      contents: read # 判定のスクリプトのチェックアウト
+      pull-requests: read # PRの情報とコメントの読み取り
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      run: ${{ steps.decide.outputs.run }}
+      key: ${{ steps.decide.outputs.key }}
+      head-sha: ${{ steps.decide.outputs.head-sha }}
+      base-sha: ${{ steps.decide.outputs.base-sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          sparse-checkout: pkgs/renovate-recovery
+      - name: Decide whether to run
+        id: decide
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          PR_NUMBER: ${{ inputs.pr-number }}
+          FORCE: ${{ inputs.force }}
+          # 同じPRに対して次に動かすまで空ける時間。
+          # lock file maintenanceはrebaseのたびに内容が変わるので、
+          # 長く壊れている間は1日に1回だけ動くようにします。
+          COOLDOWN_HOURS: "20"
+        with:
+          # github-scriptの中のNode.jsは`.ts`をそのまま読み込めます。
+          script: |
+            const { gate } = await import(`${process.env.GITHUB_WORKSPACE}/pkgs/renovate-recovery/src/gate.ts`)
+            await gate({ github, context, core })
+
+  recover:
+    name: recover
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    # Claude GitHub Appが自分のトークンを管理するので、ここで必要な権限は最小限です。
+    permissions:
+      contents: read # リポジトリコンテンツの読み取り
+      id-token: write # niks3-publicとのOIDC認証と、Claude GitHub Appのトークンの取得に使用
+      pull-requests: write # 結果のコメントの投稿
+    # 失敗の再現と修正の検証にNixのビルドが要りますが、
+    # GitHubのランナーではディスクが足りないためセルフホステッドランナーで動かします。
+    runs-on: [self-hosted, Linux]
+    timeout-minutes: 360 # キャッシュが切れている時は時間がかかるため長めに設定。
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ needs.gate.outputs.head-sha }}
+          # masterとの比較やブランチの作成のために全オブジェクトを要求。
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./.github/actions/setup-nix
+      - name: Keep a copy of the comment script
+        # Claude Codeが作業ツリーを書き換えても、結果の投稿には元のスクリプトを使います。
+        run: cp -r pkgs/renovate-recovery/src "${RUNNER_TEMP}/renovate-recovery-src"
+      - name: Build Claude Code and Bun
+        id: executables
+        env:
+          # RenovateのPRの`flake.lock`は壊れている可能性があるので、baseのものを使います。
+          FLAKE: github:${{ github.repository }}/${{ needs.gate.outputs.base-sha }}
+        run: |
+          set -euo pipefail
+          claude=$(nix build --no-link --print-out-paths "${FLAKE}#claude-code")
+          bun=$(nix build --no-link --print-out-paths "${FLAKE}#bun")
+          {
+            echo "claude=${claude}/bin/claude"
+            echo "bun=${bun}/bin/bun"
+          } >>"$GITHUB_OUTPUT"
+      - uses: anthropics/claude-code-action@ebcdfe6dc6bb7511eb63e59e07df256dbcf59a2e # v1.0.145
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          path_to_claude_code_executable: ${{ steps.executables.outputs.claude }}
+          path_to_bun_executable: ${{ steps.executables.outputs.bun }}
+          # `check`から呼ばれた時のactorはRenovateです。
+          allowed_bots: renovate
+          # 失敗したジョブのログを読むために必要です。
+          additional_permissions: |
+            actions: read
+          display_report: "true"
+          claude_args: >-
+            --model opus
+            --allowedTools "Bash,Edit,Glob,Grep,Read,TodoWrite,WebFetch,WebSearch,Write"
+            --add-dir "${{ runner.temp }}"
+          prompt: |
+            `pkgs/renovate-recovery/prompt.md`を読んで、その手順に従ってください。
+
+            - リポジトリ: ${{ github.repository }}
+            - RenovateのPRの番号: ${{ inputs.pr-number }}
+            - 失敗したワークフローの実行のID: ${{ inputs.run-id || '(未指定)' }}
+            - 結果を書くファイル: ${{ runner.temp }}/renovate-recovery-result.md
+      - name: Post result comment
+        # rebaseで実行ごと打ち切られた時は記録を残さず、新しい内容での失敗に任せます。
+        # それ以外は失敗でも記録して、同じ内容で何度も動かないようにします。
+        if: ${{ !cancelled() }}
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          PR_NUMBER: ${{ inputs.pr-number }}
+          KEY: ${{ needs.gate.outputs.key }}
+          RESULT_FILE: ${{ runner.temp }}/renovate-recovery-result.md
+        with:
+          script: |
+            const { postComment } = await import(`${process.env.RUNNER_TEMP}/renovate-recovery-src/post-comment.ts`)
+            await postComment({ github, context, core })

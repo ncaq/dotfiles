@@ -17,15 +17,17 @@ RenovateのPRのCIが失敗したので、
 
 ## 守ること
 
-- `renovate/`で始まるブランチと`master`にはpushしない。
+- `renovate/`で始まるブランチと`master`にはコミットしない。
   Renovateは自分以外のコミットが載ったブランチの更新をやめてしまいます
 - PRをマージしない。RenovateのPRを閉じない
-- 作るPRは1つだけ。ブランチ名は`renovate-recovery/<RenovateのPRの番号>`に固定する。
-  同名のブランチが既にリモートにあるなら、
-  新しく作らずに`git push --force-with-lease`で上書きして、
-  既存のPRがあればそのタイトルと本文を更新する
+- 作るPRは1つだけ。ブランチ名は`renovate-recovery/<RenovateのPRの番号>`に固定する
+- コミットは`git commit`と`git push`ではなく、
+  `mcp__github_file_ops__commit_files`と`mcp__github_file_ops__delete_files`で作る。
+  `master`のブランチ保護が署名付きのコミットを要求していて、
+  これらのツールで作ったコミットにだけGitHubが署名します。
+  詳しくは後の「コミットとPR」に書きます
 - `.github/workflows/`以下は変更しない。
-  渡されているトークンにはワークフローを書き換える権限が無いのでpushが失敗します。
+  渡されているトークンにはワークフローを書き換える権限が無いのでコミットが失敗します。
   ワークフローの修正が必要な失敗なら、PRを作らずに報告だけにする
 - CIを通すためだけにテストやチェックを無効化したり、パッケージやホストを構成から外したりしない
 - RenovateのPRへのコメントは自分では投稿しない。
@@ -66,8 +68,7 @@ RenovateのPRのCIが失敗したので、
 APIの変更への追従のように、
 このリポジトリの側を少し直せば更新を取り込める場合です。
 
-RenovateのPRのheadからブランチを切り、
-修正のコミットを積みます。
+RenovateのPRのheadの上に修正のコミットを積みます。
 Renovateのコミットはそのまま残します。
 
 変更が大きくなる、
@@ -136,7 +137,21 @@ PRを作る前に、
 コミットメッセージは`.github/git-commit-instructions.md`に従います。
 日本語のConventional Commitsです。
 
-PRは`gh pr create`で`master`に向けて作ります。
+コミットは作業ツリーで編集したファイルを、
+`mcp__github_file_ops__commit_files`に渡して作ります。
+ツールが作業ツリーのファイルの内容を読み、
+GitHubのAPIでリモートの`renovate-recovery/<RenovateのPRの番号>`へ直接コミットします。
+ローカルで`git commit`する必要はありません。
+
+- 変更したファイルは`git status --porcelain`で漏れなく確かめて、すべて渡す
+- 削除したファイルは`mcp__github_file_ops__delete_files`で消す
+- リモートにブランチが無ければ、ツールがRenovateのPRのheadから作る
+- 以前の復旧で作ったブランチがリモートに残っていると、その古い内容の上に積まれてしまう。
+  最初のコミットの前に`git ls-remote origin refs/heads/renovate-recovery/<RenovateのPRの番号>`で確かめて、
+  残っていたら`gh api -X DELETE repos/<owner>/<repo>/git/refs/heads/renovate-recovery/<RenovateのPRの番号>`で削除する。
+  そのブランチのPRが開いていれば一緒に閉じられるので、新しくPRを作り直す
+
+PRは`gh pr create --head renovate-recovery/<RenovateのPRの番号>`で`master`に向けて作ります。
 
 - タイトル: RenovateのPRのタイトルを元にして、何をしたのかが分かるものにする。
   例: `build(deps): lock file maintenance (nixpkgs-unstableを除く)`

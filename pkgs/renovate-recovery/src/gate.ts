@@ -77,6 +77,7 @@ export async function gate({ github, context, core }: ScriptArguments): Promise<
 
   core.setOutput("run", String(decision.run));
   core.setOutput("key", key);
+  core.setOutput("head-ref", pull.data.head.ref);
   core.setOutput("head-sha", pull.data.head.sha);
   core.setOutput("base-sha", pull.data.base.sha);
 }

@@ -147,8 +147,14 @@ let
   overlayMount = "/nix/.rw-store";
   # ホストのNixのデータベース。
   hostNixDb = "/nix/var/nix/db";
-  # VMの名前からmachineAddressesのエントリを引きます。
-  addrOf = name: config.machineAddresses.${name};
+  # TAPのホスト側とゲスト側のネットワークの定義。
+  # アドレスはVMの名前で`machineAddresses`のエントリを引きます。
+  tapNetworkOf =
+    name: tap:
+    import ../../../../lib/microvm-tap.nix {
+      inherit tap;
+      addr = config.machineAddresses.${name};
+    };
   # GitHub ActionsのランナーのVMを生成する関数。
   mkRunnerVm =
     name:
@@ -175,9 +181,6 @@ let
       # 各ランナー定義にマージする追加オプション。
       extraRunnerOptions ? { },
     }:
-    let
-      addr = addrOf name;
-    in
     {
       inherit pkgs;
       config = {
@@ -300,30 +303,7 @@ let
         };
         systemd = {
           tmpfiles.rules = [ "d ${overlayMount}/builds 0755 root root -" ];
-          network.enable = true;
-          network.networks."20-lan" = {
-            matchConfig.Type = "ether";
-            networkConfig = {
-              Address = [
-                "${addr.guest}/24"
-                "${addr.guest6}/64"
-              ];
-              Gateway = [
-                addr.host
-                addr.host6
-              ];
-              DNS = [
-                "1.1.1.1"
-                "1.0.0.1"
-                "8.8.8.8"
-                "8.8.4.4"
-                "2606:4700:4700::1111"
-                "2606:4700:4700::1001"
-                "2001:4860:4860::8888"
-                "2001:4860:4860::8844"
-              ];
-            };
-          };
+          network = (tapNetworkOf name tap).guest;
           # ホストのNixのデータベースの写しを、VMのデータベースとして置きます。
           # nix-daemonが動き出す前に済ませる必要があるので、
           # ソケットより前に順序付けます。
@@ -380,24 +360,9 @@ in
   }) runnerVmDefs;
 
   systemd = {
-    # microvm.nixの推奨に従いsystemd-networkdでTAPインターフェースを設定します。
-    network.networks = lib.mapAttrs' (
-      name: def:
-      let
-        addr = addrOf name;
-      in
-      lib.nameValuePair "20-${def.tap}" {
-        matchConfig.Name = def.tap;
-        addresses = [
-          { Address = "${addr.host}/32"; }
-          { Address = "${addr.host6}/128"; }
-        ];
-        routes = [
-          { Destination = "${addr.guest}/32"; }
-          { Destination = "${addr.guest6}/128"; }
-        ];
-      }
-    ) runnerVmDefs;
+    network.networks = lib.mkMerge (
+      lib.mapAttrsToList (name: def: (tapNetworkOf name def.tap).host) runnerVmDefs
+    );
 
     # 登録トークンは1時間で切れます。
     # ephemeralなランナーはジョブが終わるたびに登録し直すので、

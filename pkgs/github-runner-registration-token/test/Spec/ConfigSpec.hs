@@ -19,16 +19,18 @@ tests :: TopSpec
 tests = describe "configFrom" do
   it "揃っていれば読む" do
     configFrom (`lookup` complete)
-      `shouldBe` Right
-        Config
-          { repository = "ncaq/dotfiles"
-          , api = "https://api.github.com"
-          , accessTokenFile = "/run/secrets/runner-registration-token"
-          , runtimeDirectory = "/run/github-runner-dotfiles-x64-registration-token"
-          }
+      >>= ( `shouldBe`
+              Config
+                { repository = "ncaq/dotfiles"
+                , api = "https://api.github.com"
+                , accessTokenFile = "/run/secrets/runner-registration-token"
+                , runtimeDirectory = "/run/github-runner-dotfiles-x64-registration-token"
+                }
+          )
   for_ (fst <$> complete) \variable -> do
     it (convert variable <> "が無ければ失敗にする") do
       configFrom (`lookup` filter ((/= variable) . fst) complete)
-        `shouldBe` Left (MissingVariable variable)
+        `shouldThrow` (== MissingVariable variable)
     it (convert variable <> "が空でも失敗にする") do
-      configFrom (`lookup` ((variable, "") : complete)) `shouldBe` Left (MissingVariable variable)
+      configFrom (`lookup` ((variable, "") : complete))
+        `shouldThrow` (== MissingVariable variable)

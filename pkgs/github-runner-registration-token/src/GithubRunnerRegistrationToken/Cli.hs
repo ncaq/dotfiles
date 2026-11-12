@@ -22,8 +22,7 @@ import Himari
 run :: (MonadLogger m, MonadThrow m, MonadUnliftIO m) => [String] -> m ()
 run _ = handle (report @ConfigFailure) . handle (report @ApiFailure) $ do
   environment <- getEnvironment
-  config <-
-    either throwM pure (configFrom (\name -> convert <$> lookup (convert name) environment))
+  config <- configFrom (\name -> convert <$> lookup (convert name) environment)
   accessToken <- readAccessToken config.accessTokenFile
   registrationToken <-
     recoverAll

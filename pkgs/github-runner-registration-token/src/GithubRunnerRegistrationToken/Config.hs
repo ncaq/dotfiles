@@ -24,7 +24,9 @@ data Config = Config
   deriving stock (Eq, Show)
 
 -- | 環境変数を引く関数から設定を組み立てる。空は無いのと同じに扱う。
-configFrom :: (Text -> Maybe Text) -> Either ConfigFailure Config
+--
+-- 揃わない時は`ConfigFailure`を投げる。
+configFrom :: (MonadThrow m) => (Text -> Maybe Text) -> m Config
 configFrom lookupVariable =
   Config . Repository
     <$> require "GITHUB_RUNNER_REGISTRATION_TOKEN_REPOSITORY"
@@ -33,4 +35,4 @@ configFrom lookupVariable =
     <*> (convert <$> require "RUNTIME_DIRECTORY")
  where
   require variable =
-    maybe (Left (MissingVariable variable)) Right (mfilter (/= mempty) (lookupVariable variable))
+    maybe (throwM (MissingVariable variable)) pure (mfilter (/= mempty) (lookupVariable variable))

@@ -12,43 +12,74 @@
  * - `RESULT_DIR`: 結果のファイルを置いてよいディレクトリ
  */
 
-import { lstat, readFile, realpath } from "node:fs/promises";
+import { constants } from "node:fs";
+import { lstat, open } from "node:fs/promises";
 import { buildCommentBody } from "./comment.ts";
 import { requireEnv, requireIntegerEnv } from "./env.ts";
-import { rejectResultFile } from "./recovery-output.ts";
+import { rejectResultDir, rejectResultFile } from "./recovery-output.ts";
 import type { ActionsCore, ScriptArguments } from "./script-arguments.ts";
 
-/** ファイルが存在しない時のエラーかを判定します。 */
-function isNotFound(error: unknown): boolean {
-  return error instanceof Error && "code" in error && error.code === "ENOENT";
+/** 例外が指定したエラーコードのものかを判定します。 */
+function hasErrorCode(error: unknown, code: string): boolean {
+  return error instanceof Error && "code" in error && error.code === code;
+}
+
+/** 読まなかった理由を警告に出して、結果の代わりに投稿する文を返します。 */
+function rejected(reason: string, core: ActionsCore): string {
+  core.warning(reason);
+  return `${reason}。結果は読み込んでいません。`;
 }
 
 /**
  * 結果のファイルを読みます。
  * Claude Codeが書かずに終了した時は`undefined`を返します。
  * シンボリックリンクなど読んではいけないファイルの時は、読まずに理由を結果の代わりに返します。
+ *
+ * 調べてから開き直すと、その間に差し替えられるおそれがあるので、
+ * リンクをたどらずに開いたハンドルを調べて、同じハンドルから読みます。
  */
 async function readResult(
   file: string,
-  allowedDir: string,
+  resultDir: string,
   core: ActionsCore,
 ): Promise<string | undefined> {
   try {
-    const stats = await lstat(file);
-    const rejection = rejectResultFile(
-      { isRegularFile: stats.isFile(), realPath: await realpath(file), size: stats.size },
-      await realpath(allowedDir),
-    );
-    if (rejection != null) {
-      core.warning(rejection);
-      return `${rejection}。結果は読み込んでいません。`;
+    const dirRejection = rejectResultDir({ isDirectory: (await lstat(resultDir)).isDirectory() });
+    if (dirRejection != null) {
+      return rejected(dirRejection, core);
     }
-    return await readFile(file, "utf8");
   } catch (error) {
-    if (isNotFound(error)) {
+    if (hasErrorCode(error, "ENOENT")) {
       return undefined;
     }
     throw error;
+  }
+
+  let handle;
+  try {
+    handle = await open(file, constants.O_RDONLY | constants.O_NOFOLLOW);
+  } catch (error) {
+    if (hasErrorCode(error, "ENOENT")) {
+      return undefined;
+    }
+    if (hasErrorCode(error, "ELOOP")) {
+      return rejected("結果のファイルがシンボリックリンクです", core);
+    }
+    throw error;
+  }
+  try {
+    const stats = await handle.stat();
+    const fileRejection = rejectResultFile({
+      isFile: stats.isFile(),
+      nlink: stats.nlink,
+      size: stats.size,
+    });
+    if (fileRejection != null) {
+      return rejected(fileRejection, core);
+    }
+    return await handle.readFile({ encoding: "utf8" });
+  } finally {
+    await handle.close();
   }
 }
 

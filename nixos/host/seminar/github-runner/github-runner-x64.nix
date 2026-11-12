@@ -270,7 +270,12 @@ let
                   # PATを渡していないことを明示します。
                   tokenType = "registration";
                   inherit url;
-                  extraEnvironment.ACTIONS_RUNNER_HOOK_JOB_STARTED = jobStartedHook;
+                  extraEnvironment = {
+                    ACTIONS_RUNNER_HOOK_JOB_STARTED = jobStartedHook;
+                    # 同じVMで`./check.sh`が重なり得る数。
+                    # `nix-fast-build`のラッパーが、評価に使うメモリの予算をこの数で割ります。
+                    NIX_FAST_BUILD_CONCURRENT_JOBS = toString runnerNum;
+                  };
                 }
                 // extraRunnerOptions;
               };

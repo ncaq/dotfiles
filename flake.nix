@@ -421,6 +421,11 @@
           garage-setup = pkgs.callPackage ./pkgs/garage-setup {
             inherit (inputs) himari-src;
           };
+          # GitHub Actionsのランナーの登録トークンを発行してファイルに置くコマンド。
+          # ビルドの中でsandwichのテストが走る。
+          github-runner-registration-token = pkgs.callPackage ./pkgs/github-runner-registration-token {
+            inherit (inputs) himari-src;
+          };
           # flakeに定義された全ホストの閉包をGC rootとして登録するコマンド。
           # ビルドの中でsandwichのテストが走る。
           nix-gc-root-hosts = pkgs.callPackage ./pkgs/nix-gc-root-hosts {
@@ -588,6 +593,9 @@
               open-webui-user-settings-sync = open-webui-user-settings-sync.override { werror = true; };
               removable-crypt = removable-crypt.override { werror = true; };
               garage-setup = garage-setup.override { werror = true; };
+              github-runner-registration-token = github-runner-registration-token.override {
+                werror = true;
+              };
               nix-gc-root-hosts = nix-gc-root-hosts.override { werror = true; };
               tailscale-exit-node = tailscale-exit-node.override { werror = true; };
               wifi-wired-exclusive = wifi-wired-exclusive.override { werror = true; };
@@ -645,6 +653,8 @@
             inherit removable-crypt;
             # GarageのS3バケットとキーを用意するコマンド。
             inherit garage-setup;
+            # GitHub Actionsのランナーの登録トークンを発行してファイルに置くコマンド。
+            inherit github-runner-registration-token;
             # flakeに定義された全ホストの閉包をGC rootとして登録するコマンド。
             inherit nix-gc-root-hosts;
             # seminarへのレイテンシを見てTailscaleのexit nodeを切り替えるdispatcherスクリプト。

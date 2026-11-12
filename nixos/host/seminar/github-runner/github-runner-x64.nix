@@ -2,6 +2,7 @@
   pkgs,
   lib,
   config,
+  hardening,
   githubRunnerShare,
   ...
 }:
@@ -10,6 +11,7 @@ let
     githubActionsRunnerPackages
     selfHostRunnerPackages
     jobStartedHook
+    registrationTokenBroker
     users
     ciNixSettings
     ;
@@ -40,6 +42,11 @@ let
       extraRunnerOptions.serviceOverrides.ReadWritePaths = [ "/mnt/noa/cdn.ncaq.net" ];
     };
   };
+  # 登録トークンを発行するホスト側のサービスの名前。
+  tokenServiceOf = name: "${name}-registration-token";
+  # 登録トークンを置くホスト側のディレクトリ。
+  # サービスの`RuntimeDirectory`として作られます。
+  tokenDirOf = name: "/run/${tokenServiceOf name}";
   # コンテナ名からmachineAddressesのエントリを引きます。
   addrOf = name: config.machineAddresses.${name};
   # GitHub Actionsランナーコンテナを生成する関数。
@@ -75,8 +82,11 @@ let
       hostAddress6 = addr.host6;
       localAddress6 = addr.guest6;
       bindMounts = {
-        "/etc/runner-registration-token" = {
-          hostPath = config.sops.secrets."runner-registration-token".path;
+        # ホスト側で発行した登録トークンの置き場所。
+        # トークンはrenameで置き換えられるので、
+        # ファイルではなくディレクトリをbind mountして更新が見えるようにします。
+        "/run/runner-registration-token" = {
+          hostPath = tokenDirOf name;
           isReadOnly = true;
         };
         # ホストのnix-daemonがランナーのワークディレクトリ配下に書かれた、
@@ -123,7 +133,10 @@ let
                     group = "github-runner";
                     extraLabels = [ "NixOS" ];
                     extraPackages = extraPkgs;
-                    tokenFile = "/etc/runner-registration-token";
+                    tokenFile = "/run/runner-registration-token/token";
+                    # 登録トークンには`gh`で始まる接頭辞が無いので`auto`でも判定できますが、
+                    # PATを渡していないことを明示します。
+                    tokenType = "registration";
                     inherit url;
                     extraEnvironment.ACTIONS_RUNNER_HOOK_JOB_STARTED = jobStartedHook;
                   }
@@ -173,21 +186,67 @@ in
           "d /run/github-runner 0700 github-runner github-runner -"
         ];
 
-        services = lib.mapAttrs' (
+        # 登録トークンは1時間で切れます。
+        # ephemeralなランナーはジョブが終わるたびに登録し直すので、
+        # 30分ごとに発行し直して、
+        # 置いてあるトークンの残り時間が常に30分以上あるようにします。
+        timers = lib.mapAttrs' (
           name: _:
-          lib.nameValuePair "container@${name}" {
-            requires = [ "sops-install-secrets.service" ];
-            after = [ "sops-install-secrets.service" ];
-            serviceConfig = {
-              # CIジョブがホストのリソースを過剰に消費しないよう制限します。
-              # CPUQuotaはコア数×100%で指定する必要があります。
-              # 割り当て可能スレッド数分を割り当てます。
-              CPUQuota = "${toString (config.local.cpuBudgetThreads * 100)}%";
-              MemoryHigh = "16G"; # ソフトリミット。これを超えるとメモリを積極的に解放します。
-              MemoryMax = "32G"; # ハードリミット。これぐらいで十分だろうという推定値。
-            };
+          lib.nameValuePair (tokenServiceOf name) {
+            wantedBy = [ "timers.target" ];
+            # oneshotのサービスはactiveにならないので`OnUnitActiveSec`では繰り返せません。
+            # 発行に失敗した回があっても次の周期で試し直せるように時刻で起動します。
+            timerConfig.OnCalendar = "*:0/30";
           }
         ) runnerContainerDefs;
+
+        services =
+          lib.mapAttrs' (
+            name: def:
+            lib.nameValuePair (tokenServiceOf name) {
+              description = "Issue GitHub Actions runner registration token for ${name}";
+              requires = [ "sops-install-secrets.service" ];
+              after = [
+                "sops-install-secrets.service"
+                "network-online.target"
+              ];
+              wants = [ "network-online.target" ];
+              # トークンをrootの所有で置くためにrootで動かします。
+              # コンテナの中でこれを読むのはgithub-runnersモジュールのrootの処理だけです。
+              serviceConfig = hardening.network // {
+                Type = "oneshot";
+                ExecStart = registrationTokenBroker;
+                RuntimeDirectory = tokenServiceOf name;
+                RuntimeDirectoryMode = "0700";
+                # oneshotは終了すると停止扱いになるので、
+                # 発行したトークンが消えないように残します。
+                RuntimeDirectoryPreserve = true;
+              };
+              environment = {
+                GITHUB_RUNNER_REGISTRATION_TOKEN_REPOSITORY = lib.removePrefix "https://github.com/" def.url;
+                GITHUB_RUNNER_REGISTRATION_TOKEN_API = "https://api.github.com";
+                GITHUB_RUNNER_REGISTRATION_TOKEN_ACCESS_TOKEN_FILE =
+                  config.sops.secrets."runner-registration-token".path;
+              };
+            }
+          ) runnerContainerDefs
+          // lib.mapAttrs' (
+            name: _:
+            lib.nameValuePair "container@${name}" {
+              # bind mountするディレクトリと最初の登録トークンが、
+              # コンテナの起動より前に用意されている必要があります。
+              requires = [ "${tokenServiceOf name}.service" ];
+              after = [ "${tokenServiceOf name}.service" ];
+              serviceConfig = {
+                # CIジョブがホストのリソースを過剰に消費しないよう制限します。
+                # CPUQuotaはコア数×100%で指定する必要があります。
+                # 割り当て可能スレッド数分を割り当てます。
+                CPUQuota = "${toString (config.local.cpuBudgetThreads * 100)}%";
+                MemoryHigh = "16G"; # ソフトリミット。これを超えるとメモリを積極的に解放します。
+                MemoryMax = "32G"; # ハードリミット。これぐらいで十分だろうという推定値。
+              };
+            }
+          ) runnerContainerDefs;
       }
     ]
   );

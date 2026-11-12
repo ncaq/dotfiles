@@ -91,12 +91,13 @@ RenovateのPRのCIが失敗したので、
   ビルドはせずに、その旨を結果のファイルに短く書いて終了する
 - `gh run view <実行のID> --json jobs`で失敗したジョブを特定する。
   実行のIDが渡されていない時は`gh pr checks`から探す
-- 失敗したジョブのログを`gh api repos/<owner>/<repo>/actions/jobs/<ジョブのID>/logs`で取得する。
-  この復旧のジョブ自身が同じ実行の中で動いていて実行がまだ完了していないため、
-  `gh run view --log-failed`は使えません。
+- 失敗したジョブのログは、
+  ワークフローが`.renovate-recovery/logs/`へ保存しています。
   ログは数万行になるので、
-  `.renovate-recovery/`へ保存してから、
-  `Grep`や`Read`の範囲指定で必要な部分だけを読む
+  `Grep`や`Read`の範囲指定で必要な部分だけを読む。
+  実行のIDが渡されていない時は保存されていません。
+  その時の対象の実行は完了しているので、
+  `gh run view <実行のID> --log-failed > .renovate-recovery/failed.log`で保存してから読む
 - 必要なら手元で同じコマンドを実行して再現する。
   各ジョブが実行しているコマンドは`.github/workflows/check.yml`に書いてあります
 

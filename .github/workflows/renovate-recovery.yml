@@ -98,6 +98,7 @@ jobs:
     if: needs.gate.outputs.run == 'true'
     # Claude GitHub Appが自分のトークンを管理するので、ここで必要な権限は最小限です。
     permissions:
+      actions: read # 失敗したジョブのログの取得
       contents: read # リポジトリコンテンツの読み取り
       id-token: write # niks3-publicとのOIDC認証と、Claude GitHub Appのトークンの取得に使用
       pull-requests: write # 結果のコメントの投稿
@@ -127,6 +128,17 @@ jobs:
           set -euo pipefail
           mkdir -p .renovate-recovery
           echo "/.renovate-recovery/" >>.git/info/exclude
+      - name: Fetch failed job logs
+        # 失敗したジョブのログをClaude Codeが読める場所へ保存します。
+        # Claude Codeに任意のジョブのログを取得するAPIを許可しなくて済むよう、ここで取得します。
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          RUN_ID: ${{ inputs.run-id }}
+          LOG_DIR: ${{ github.workspace }}/.renovate-recovery/logs
+        with:
+          script: |
+            const { fetchFailedJobLogs } = await import(`${process.env.RUNNER_TEMP}/renovate-recovery-src/fetch-failed-job-logs.ts`)
+            await fetchFailedJobLogs({ github, context, core })
       - name: Build Claude Code and Bun
         id: executables
         env:
@@ -187,10 +199,8 @@ jobs:
           base_branch: ${{ needs.gate.outputs.head-ref }}
           # 許可するツールとコマンドの大半は、
           # `pkgs/renovate-recovery/claude-config.nix`の`permissions`に書いてあります。
-          # ここでは実行ごとに変わるものだけを許可します。
-          #
-          # - 失敗したジョブのログの取得
-          # - 以前の復旧で作ったブランチの削除
+          # ここでは実行ごとに変わるもの、
+          # つまり以前の復旧で作ったブランチの削除だけを許可します。
           #
           # スキルの`allowed-tools`は範囲の無い`Edit`を許可することがあるので、
           # `runner.temp`への書き込みはここで明示的に拒否します。
@@ -200,7 +210,6 @@ jobs:
           claude_args: >-
             --model opus
             --allowedTools
-            'Bash(gh api repos/${{ github.repository }}/actions/jobs/*/logs*)'
             'Bash(gh api -X DELETE repos/${{ github.repository }}/git/refs/heads/renovate-recovery/${{ inputs.pr-number }})'
             --disallowedTools
             'Edit(/${{ runner.temp }}/**)'

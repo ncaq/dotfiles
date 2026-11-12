@@ -116,6 +116,17 @@ jobs:
       - name: Keep a copy of the comment script
         # Claude Codeが作業ツリーを書き換えても、結果の投稿には元のスクリプトを使います。
         run: cp -r pkgs/renovate-recovery/src "${RUNNER_TEMP}/renovate-recovery-src"
+      - name: Prepare a work directory for Claude Code
+        # Claude Codeが一時ファイルや結果のファイルを書く場所です。
+        # `runner.temp`には後のステップが使うスクリプトのコピーや`GITHUB_ENV`のファイルがあるので、
+        # Claude Codeには書かせず、作業ツリーの中に専用の場所を作ります。
+        # 作業ツリーの中なら相対パスで扱えるので、絶対パスを拒否する権限の規則とも両立します。
+        # `.git/info/exclude`に足して、
+        # `git status`やflakeのソースやコミットの対象に入らないようにします。
+        run: |
+          set -euo pipefail
+          mkdir -p .renovate-recovery
+          echo "/.renovate-recovery/" >>.git/info/exclude
       - name: Build Claude Code and Bun
         id: executables
         env:
@@ -171,18 +182,20 @@ jobs:
           # `pkgs/renovate-recovery/claude-config.nix`の`permissions`に書いてあります。
           # ここでは実行ごとに変わるものだけを許可します。
           #
-          # - 結果のファイルなどを書く`runner.temp`への書き込み
           # - 失敗したジョブのログの取得
           # - 以前の復旧で作ったブランチの削除
+          #
+          # スキルの`allowed-tools`は範囲の無い`Edit`を許可することがあるので、
+          # `runner.temp`への書き込みはここで明示的に拒否します。
           #
           # `claude_args`のクォートの中で`$`が展開されないよう、単一引用符で囲みます。
           claude_args: >-
             --model opus
             --allowedTools
-            'Edit(/${{ runner.temp }}/**)'
             'Bash(gh api repos/${{ github.repository }}/actions/jobs/*/logs*)'
             'Bash(gh api -X DELETE repos/${{ github.repository }}/git/refs/heads/renovate-recovery/${{ inputs.pr-number }})'
-            --add-dir "${{ runner.temp }}"
+            --disallowedTools
+            'Edit(/${{ runner.temp }}/**)'
             ${{ steps.executables.outputs.claude-config-args }}
           prompt: |
             `pkgs/renovate-recovery/prompt.md`を読んで、その手順に従ってください。
@@ -190,7 +203,7 @@ jobs:
             - リポジトリ: ${{ github.repository }}
             - RenovateのPRの番号: ${{ inputs.pr-number }}
             - 失敗したワークフローの実行のID: ${{ inputs.run-id || '(未指定)' }}
-            - 結果を書くファイル: ${{ runner.temp }}/renovate-recovery-result.md
+            - 結果を書くファイル: .renovate-recovery/result.md
       - name: Post result comment
         # rebaseで実行ごと打ち切られた時は記録を残さず、新しい内容での失敗に任せます。
         # それ以外は失敗でも記録して、同じ内容で何度も動かないようにします。
@@ -199,7 +212,7 @@ jobs:
         env:
           PR_NUMBER: ${{ inputs.pr-number }}
           KEY: ${{ needs.gate.outputs.key }}
-          RESULT_FILE: ${{ runner.temp }}/renovate-recovery-result.md
+          RESULT_FILE: ${{ github.workspace }}/.renovate-recovery/result.md
         with:
           script: |
             const { postComment } = await import(`${process.env.RUNNER_TEMP}/renovate-recovery-src/post-comment.ts`)

@@ -262,6 +262,13 @@ let
           "Edit(./check.sh)"
           # 渡されているトークンでは変更をコミットできません。
           "Edit(./.github/workflows/**)"
+          # スキルの`allowed-tools`は範囲の無い`Edit`を許可することがあり、
+          # そのスキルが動いている間は作業ツリーの外にも書けてしまいます。
+          # ホームディレクトリのシェルの設定などと、
+          # 同じコンテナで動く全てのランナーの`runner.temp`への書き込みを拒否します。
+          # `runner.temp`には後のステップが使うスクリプトのコピーや`GITHUB_ENV`のファイルがあります。
+          "Edit(~/**)"
+          "Edit(//run/github-runner/*/_temp/**)"
           "Read(//proc/**)"
         ]
         ++ map (pattern: "Bash(${pattern})") deniedBashPatterns;

@@ -45,6 +45,17 @@ let
       text = ''exec node ${github-runner}/job-started-hook.js "$@"'';
     }
   );
+  # リポジトリの管理権限を持つPATで、
+  # 1時間で切れるランナーの登録トークンを発行してファイルに置きます。
+  # PATはホストのrootだけが持ち、
+  # コンテナにはランナーの登録にしか使えない登録トークンだけを渡すための仲介です。
+  # 環境変数の意味は、
+  # `pkgs/github-runner-registration-token/src/GithubRunnerRegistrationToken/Config.hs`に書いてあります。
+  registrationTokenBroker = lib.getExe (
+    pkgs.callPackage ../../../../pkgs/github-runner-registration-token {
+      inherit (inputs) himari-src;
+    }
+  );
   # GitHub Actionsランナーはホストのnixデーモンと通信するため、
   # 統一されたユーザ値を使います。
   user = config.serviceUser.github-runner;
@@ -83,6 +94,7 @@ in
       githubActionsRunnerPackages
       selfHostRunnerPackages
       jobStartedHook
+      registrationTokenBroker
       users
       ciNixSettings
       ;
@@ -100,13 +112,13 @@ in
 
   sops = {
     secrets = {
-      # セルフホストランナーがGitHub Actionsに自身を登録するためのトークン。
-      # github-runnersモジュールは`tokenFile`をrootで読んで状態ディレクトリへ写すので、
-      # ジョブを実行する`github-runner`ユーザーが読める必要はありません。
-      # `privateUsers = "identity"`によりコンテナのrootはホストのrootと同じUIDなので、
-      # bind mountしたままコンテナ内のrootから読めます。
-      "runner-registration-token" = {
+      # ランナーの登録トークンを発行するためのPAT。
+      # リポジトリの`Administration: Read and write`を持つfine-grained PATです。
+      # ホストの`registrationTokenBroker`だけが読み、
+      # コンテナには渡しません。
+      "runner-registration-pat" = {
         sopsFile = ../../../../secrets/seminar/github-runner.yaml;
+        # 暗号化したファイルのキーは、PATをコンテナへ渡していた頃の名前のままです。
         key = "runner-registration-token";
         owner = "root";
         group = "root";

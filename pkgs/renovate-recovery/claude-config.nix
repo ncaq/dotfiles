@@ -12,10 +12,30 @@
   lib,
   runCommand,
   writeText,
+  writeShellApplication,
+  gawk,
+  gnused,
+  yq-go,
   konokaPlugins,
   git-hooks,
 }:
 let
+  # スキルの`allowed-tools`が範囲の無い`Bash`を許可していないかを確かめるコマンド。
+  # YAMLを読む処理はyqに任せていて、
+  # ビルドの中で一度走るだけの検査なのでシェルスクリプトにしています。
+  checkSkillAllowedTools = writeShellApplication {
+    name = "check-skill-allowed-tools";
+    runtimeInputs = [
+      gawk
+      gnused
+      yq-go
+    ];
+    text = builtins.readFile ./check-skill-allowed-tools.sh;
+  };
+  # 検査そのものが期待どおりに判定するかを確かめるための固定のSKILL.md。
+  # `unrestricted`は検出されるべきもの、`restricted`は検出されてはいけないものです。
+  skillFixtures = ./test/skill-allowed-tools;
+
   # 読み込むkonokaのプラグイン。
   # 以下の理由で除外したものはここに含めていません。
   #
@@ -350,24 +370,18 @@ runCommand "renovate-recovery-claude-config" { } ''
       echo "$plugin はClaude Codeのプラグインではありません" >&2
       exit 1
     fi
-    # スキルの`allowed-tools`が範囲の無い`Bash`を許可すると、
-    # そのスキルの間は`permissions.allow`の一覧に関係なく任意のコマンドを実行できてしまいます。
-    # konokaの更新でそのようなスキルが入ったら気付けるようにします。
-    for skill in "$plugin"/skills/*/SKILL.md; do
-      [ -e "$skill" ] || continue
-      if awk '
-        /^---$/ { fence++; next }
-        fence == 1 {
-          if ($0 ~ /^[A-Za-z-]+:/) {
-            inside = ($0 ~ /^allowed-tools:/)
-            sub(/^allowed-tools:[ ]*(>-|>|\|)?/, "")
-          }
-          if (inside) print
-        }
-      ' "$skill" | tr ',' '\n' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//' | grep -qx 'Bash'; then
-        echo "$skill が範囲の無いBashを許可しています" >&2
-        exit 1
-      fi
-    done
   done
+
+  # konokaの更新で範囲の無い`Bash`を許可するスキルが入ったら気付けるようにします。
+  # 検査が壊れて何も検出しなくなっても気付けるよう、
+  # 先に固定のSKILL.mdで判定が期待どおりかを確かめます。
+  for skill in ${skillFixtures}/unrestricted/*/SKILL.md; do
+    if ${lib.getExe checkSkillAllowedTools} "$skill" 2>/dev/null; then
+      echo "検査が $skill を見逃しました" >&2
+      exit 1
+    fi
+  done
+  ${lib.getExe checkSkillAllowedTools} ${skillFixtures}/restricted/*/SKILL.md
+  shopt -s nullglob
+  ${lib.getExe checkSkillAllowedTools} $out/plugins/*/skills/*/SKILL.md
 ''

@@ -42,7 +42,8 @@ export function parseRunId(value: string | undefined): number | null | undefined
  *
  * ジョブ名には`renovate-recovery / recover`のように空白やスラッシュが入るので、
  * ファイル名に使える文字以外は`_`に置き換えます。
- * 先頭の`.`と`-`も落として、隠しファイルやコマンドのオプションと取り違えないようにします。
+ * 先頭の`.`と`_`と`-`も落として、隠しファイルやコマンドのオプションと取り違えないようにします。
+ * `_`も落とすのは、`../`のような上の階層を指す部分を置き換えた後に残る分も取り除くためです。
  * 同じ名前のジョブがあっても衝突しないよう、ジョブのIDを付けます。
  */
 export function jobLogFileName(job: JobSummary): string {

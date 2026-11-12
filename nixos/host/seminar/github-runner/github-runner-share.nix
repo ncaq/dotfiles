@@ -15,6 +15,10 @@ let
     [
       cachix
       inputs.niks3.packages.${pkgs.stdenv.hostPlatform.system}.niks3
+      # `./check.sh`はPATHにあるこのラッパーを使います。
+      # メモリに合わせて評価のワーカー数を抑えるので、
+      # 評価だけでメモリを食い尽くすのを防げます。
+      (import ../../../../lib/nix-fast-build-wrapper.nix { inherit pkgs; })
     ];
   # runnerが使うTypeScriptコードをビルドしてGitHub Actionsで利用できるようにします。
   # 吐き出されるコードはピュアなJavaScriptなのでアーキテクチャ非依存です。

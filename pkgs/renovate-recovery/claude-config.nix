@@ -287,7 +287,7 @@ let
         disableBypassPermissionsMode = "disable";
         allow = [
           # 作業ツリーへの書き込み。
-          # 作業ディレクトリと`--add-dir`の外は許可しません。
+          # 作業ツリーの外への書き込みは許可しません。
           # ファイルの権限の判定には`Edit`と`Read`の規則だけが使われ、
           # `Edit`は`Write`などの書き込む全てのツールに、
           # `Read`は`Glob`や`Grep`などの読む全てのツールに効きます。

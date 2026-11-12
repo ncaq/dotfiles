@@ -226,7 +226,7 @@ in
                 GITHUB_RUNNER_REGISTRATION_TOKEN_REPOSITORY = lib.removePrefix "https://github.com/" def.url;
                 GITHUB_RUNNER_REGISTRATION_TOKEN_API = "https://api.github.com";
                 GITHUB_RUNNER_REGISTRATION_TOKEN_ACCESS_TOKEN_FILE =
-                  config.sops.secrets."runner-registration-token".path;
+                  config.sops.secrets."runner-registration-pat".path;
               };
             }
           ) runnerContainerDefs

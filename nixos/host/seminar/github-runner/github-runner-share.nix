@@ -113,12 +113,12 @@ in
   sops = {
     secrets = {
       # ランナーの登録トークンを発行するためのPAT。
-      # キーの名前は登録トークンですが、
-      # 中身はリポジトリの`Administration: Read and write`を持つfine-grained PATです。
+      # リポジトリの`Administration: Read and write`を持つfine-grained PATです。
       # ホストの`registrationTokenBroker`だけが読み、
       # コンテナには渡しません。
-      "runner-registration-token" = {
+      "runner-registration-pat" = {
         sopsFile = ../../../../secrets/seminar/github-runner.yaml;
+        # 暗号化したファイルのキーは、PATをコンテナへ渡していた頃の名前のままです。
         key = "runner-registration-token";
         owner = "root";
         group = "root";

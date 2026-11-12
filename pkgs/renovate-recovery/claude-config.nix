@@ -25,8 +25,13 @@ let
   # - fsharp-lsp, proofreading-ja: このリポジトリの復旧では使わない
   # - log-analyzer: スキルの`allowed-tools`が`Bash`を無制限に許可していて、
   #   下の`permissions`の許可の一覧を迂回できてしまう
-  # - web-tasuke: `react-refactor-component`スキルが`Bash(nix:*)`や`Bash(npm:*)`を許可していて、
-  #   同じく許可の一覧を迂回できてしまう
+  #
+  # `web-tasuke`の`react-refactor-component`スキルは、
+  # `allowed-tools`で`npm run`や`eslint`などを許可しています。
+  # これらはリポジトリのスクリプトや設定を実行するので、
+  # `nix fmt`や`./check.sh`と同じ程度の危険として受け入れます。
+  # `nix`のサブコマンドは個別に許可しているだけなので、
+  # 下の`permissions.deny`の危ないオプションの拒否が効きます。
   #
   # `commit`と`pr`は、
   # `commit-style`と`pr-style`のスタイルの規則と、
@@ -41,6 +46,7 @@ let
     "pr"
     "programming-tasuke"
     "research"
+    "web-tasuke"
   ];
   plugins = lib.getAttrs pluginNames konokaPlugins;
 

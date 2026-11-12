@@ -52,6 +52,25 @@ function describeError(error: unknown): string {
 }
 
 /**
+ * ログの保存先を作って、失敗したジョブを選びます。
+ * どちらかに失敗したら警告して`undefined`を返します。
+ */
+async function prepareFailedJobs(
+  source: JobLogSource,
+  reporter: LogReporter,
+  runId: number,
+  logDir: string,
+): Promise<JobSummary[] | undefined> {
+  try {
+    await mkdir(logDir, { recursive: true });
+    return selectFailedJobs(await source.listJobs(runId));
+  } catch (error) {
+    reporter.warning(`実行${runId}のログを保存する準備に失敗しました: ${describeError(error)}`);
+    return undefined;
+  }
+}
+
+/**
  * 失敗したジョブのログを保存します。
  *
  * ログは復旧を助ける補助なので、取得や保存に失敗しても警告に留めて例外を投げません。
@@ -82,12 +101,8 @@ export async function saveFailedJobLogs(
     return;
   }
 
-  let failedJobs;
-  try {
-    await mkdir(logDir, { recursive: true });
-    failedJobs = selectFailedJobs(await source.listJobs(runId));
-  } catch (error) {
-    reporter.warning(`実行${runId}のログを保存する準備に失敗しました: ${describeError(error)}`);
+  const failedJobs = await prepareFailedJobs(source, reporter, runId, logDir);
+  if (failedJobs == null) {
     return;
   }
   if (failedJobs.length === 0) {

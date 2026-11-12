@@ -3,55 +3,17 @@
 -- 偽のサーバを空いているポートに立てて、実際にHTTPで送る。
 module Spec.ApiSpec (tests) where
 
+import Fixture
 import GithubRunnerRegistrationToken.Api (issueRegistrationToken)
 import GithubRunnerRegistrationToken.Failure (ApiFailure (..))
 import GithubRunnerRegistrationToken.RegistrationToken (RegistrationToken (..))
 import GithubRunnerRegistrationToken.Repository (Repository)
 import Himari
-import Network.HTTP.Types (hAccept, hAuthorization, hUserAgent, status201, status401)
-import Network.Wai (Application, rawPathInfo, requestHeaders, requestMethod, responseLBS)
-import Network.Wai.Handler.Warp (testWithApplication)
 import Test.Sandwich
-
--- | 偽のGitHubのAPIが返す、発行の応答。
-newtype Issued = Issued
-  { token :: Text
-  }
-  deriving stock (Generic)
-  deriving (ToJSON) via CustomJSON '[] Issued
-
--- | リポジトリごとに決まった応答を返す、偽のGitHubのAPI。
---
--- `ncaq/echo`は、受け取ったリクエストのメソッドとヘッダを`|`で繋いだものをトークンとして返す。
-application :: Application
-application request respond =
-  respond case rawPathInfo request of
-    "/repos/ncaq/dotfiles/actions/runners/registration-token" ->
-      responseLBS status201 [] (encode Issued{token = "AABBCC"})
-    "/repos/ncaq/echo/actions/runners/registration-token" ->
-      responseLBS status201 [] (encode Issued{token = echo})
-    "/repos/ncaq/forbidden/actions/runners/registration-token" ->
-      responseLBS status401 [] "Bad credentials"
-    "/repos/ncaq/garbled/actions/runners/registration-token" ->
-      responseLBS status201 [] "<html>"
-    _ -> responseLBS status201 [] "{}"
- where
-  echo =
-    convert (requestMethod request)
-      <> foldMap
-        (\name -> "|" <> maybe "" convert (lookup name (requestHeaders request)))
-        [hAuthorization, hAccept, hUserAgent, "X-GitHub-Api-Version"]
 
 -- | 偽のGitHubのAPIに対して発行する。
 issueFrom :: (MonadThrow m, MonadUnliftIO m) => Repository -> m RegistrationToken
-issueFrom repository = withRunInIO \runInIO ->
-  testWithApplication (pure application) \port ->
-    runInIO
-      ( issueRegistrationToken
-          ("http://127.0.0.1:" <> convert (show port))
-          "access-token"
-          repository
-      )
+issueFrom repository = withApi \api -> issueRegistrationToken api "access-token" repository
 
 tests :: TopSpec
 tests = describe "issueRegistrationToken" do

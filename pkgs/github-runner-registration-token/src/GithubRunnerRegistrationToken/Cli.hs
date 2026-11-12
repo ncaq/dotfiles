@@ -3,6 +3,7 @@
 -- `app/Main.hs`は環境を用意してここを呼ぶだけにする。
 module GithubRunnerRegistrationToken.Cli
   ( run
+  , runWith
   , report
   ) where
 
@@ -13,20 +14,29 @@ import GithubRunnerRegistrationToken.Failure (ApiFailure, ConfigFailure)
 import GithubRunnerRegistrationToken.TokenFile (tokenFileName, writeTokenFile)
 import Himari
 
--- | プロセスの環境変数を設定として、登録トークンを発行してファイルに置く。引数は取らない。
+-- | プロセスの環境変数を設定として、登録トークンを発行してファイルに置く。
+run :: (MonadLogger m, MonadThrow m, MonadUnliftIO m) => m ()
+run = do
+  environment <- getEnvironment
+  runWith issuePolicy (\name -> convert <$> lookup (convert name) environment)
+
+-- | 発行の試し直し方と環境変数を引く関数を受け取って、登録トークンを発行してファイルに置く。
 --
 -- アクセストークンはこのプロセスだけが持ち、
 -- ランナーにはランナーの登録にしか使えない登録トークンだけを渡す。
 --
 -- 設定が揃わない時と、GitHubのAPIの応答を使えなかった時は、理由をログに出して`ExitFailure 1`にする。
-run :: (MonadLogger m, MonadThrow m, MonadUnliftIO m) => [String] -> m ()
-run _ = handle (report @ConfigFailure) . handle (report @ApiFailure) $ do
-  environment <- getEnvironment
-  config <- configFrom (\name -> convert <$> lookup (convert name) environment)
+runWith
+  :: (MonadLogger m, MonadThrow m, MonadUnliftIO m)
+  => RetryPolicyM m
+  -> (Text -> Maybe Text)
+  -> m ()
+runWith policy lookupVariable = handle (report @ConfigFailure) . handle (report @ApiFailure) $ do
+  config <- configFrom lookupVariable
   accessToken <- readAccessToken config.accessTokenFile
   registrationToken <-
     recoverAll
-      issuePolicy
+      policy
       (const (issueRegistrationToken config.api accessToken config.repository))
   writeTokenFile (config.runtimeDirectory </> tokenFileName) registrationToken
   logInfoN ("登録トークンを発行しました: " <> convert (show config.repository))

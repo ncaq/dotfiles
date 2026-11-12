@@ -4,4 +4,4 @@ import GithubRunnerRegistrationToken.Cli (run)
 import Himari
 
 main :: IO ()
-main = runSimpleEnv (getArgs >>= run)
+main = runSimpleEnv run

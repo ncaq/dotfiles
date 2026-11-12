@@ -102,9 +102,11 @@ test-suite github-runner-registration-token-test
 
   -- cabal-gild: discover ./test --exclude ./test/Main.hs
   other-modules:
+    Fixture
     Spec
     Spec.AccessTokenSpec
     Spec.ApiSpec
+    Spec.CliSpec
     Spec.ConfigSpec
     Spec.RegistrationTokenSpec
     Spec.TokenFileSpec
@@ -118,6 +120,7 @@ test-suite github-runner-registration-token-test
     himari,
     http-types >=0.12 && <0.13,
     sandwich >=0.3.0.5,
+    text,
     unix,
     wai >=3.2 && <3.3,
     warp >=3.4 && <3.5,

@@ -11,9 +11,30 @@ export interface JobSummary {
   readonly conclusion: string | null;
 }
 
-/** ログを保存する対象のジョブを選びます。失敗したジョブだけを対象にします。 */
+/**
+ * ログを保存する対象のジョブの結論。
+ * Nixのビルドが時間切れで落ちるのもRenovateの更新で起こりうるので、`timed_out`も含めます。
+ */
+const LOGGED_CONCLUSIONS: ReadonlySet<string> = new Set(["failure", "timed_out"]);
+
+/** ログを保存する対象のジョブを選びます。 */
 export function selectFailedJobs(jobs: readonly JobSummary[]): JobSummary[] {
-  return jobs.filter((job) => job.conclusion === "failure");
+  return jobs.filter((job) => job.conclusion != null && LOGGED_CONCLUSIONS.has(job.conclusion));
+}
+
+/**
+ * 環境変数で渡された実行のIDを読みます。
+ * 空なら`undefined`を、正の整数として読めなければ`null`を返します。
+ */
+export function parseRunId(value: string | undefined): number | null | undefined {
+  if (value == null || value === "") {
+    return undefined;
+  }
+  if (!/^[0-9]+$/.test(value)) {
+    return null;
+  }
+  const runId = Number(value);
+  return Number.isSafeInteger(runId) && 0 < runId ? runId : null;
 }
 
 /**

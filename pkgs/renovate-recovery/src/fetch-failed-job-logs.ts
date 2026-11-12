@@ -21,44 +21,68 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { requireEnv } from "./env.ts";
-import { jobLogFileName, selectFailedJobs } from "./job-log.ts";
+import { jobLogFileName, parseRunId, selectFailedJobs } from "./job-log.ts";
 import type { ScriptArguments } from "./script-arguments.ts";
 
+/** 例外を警告に載せる文字列にします。 */
+function describeError(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+/**
+ * ログは復旧を助ける補助なので、取得に失敗しても警告に留めて、このステップ自体は成功させます。
+ * ステップが失敗するとClaude Codeが起動されないまま、処理済みとして記録されてしまうからです。
+ */
 export async function fetchFailedJobLogs({
   github,
   context,
   core,
 }: ScriptArguments): Promise<void> {
-  const runId = process.env["RUN_ID"] ?? "";
-  if (runId === "") {
+  const runId = parseRunId(process.env["RUN_ID"]);
+  if (runId === undefined) {
     // 手動実行で実行のIDが渡されていない時は、
     // 対象の実行は完了しているのでClaude Codeが`gh run view --log-failed`で読めます。
     core.info("実行のIDが渡されていないので、ログの取得を省略します");
+    return;
+  }
+  if (runId === null) {
+    core.warning("実行のIDが正の整数ではないので、ログの取得を省略します");
     return;
   }
   const { owner, repo } = context.repo;
   const logDir = requireEnv("LOG_DIR");
   await mkdir(logDir, { recursive: true });
 
-  const jobs = await github.paginate(github.rest.actions.listJobsForWorkflowRun, {
-    owner,
-    repo,
-    run_id: Number(runId),
-    filter: "latest",
-    per_page: 100,
-  });
-  const failedJobs = selectFailedJobs(jobs);
-  for (const job of failedJobs) {
-    const response = await github.rest.actions.downloadJobLogsForWorkflowRun({
+  let failedJobs;
+  try {
+    const jobs = await github.paginate(github.rest.actions.listJobsForWorkflowRun, {
       owner,
       repo,
-      job_id: job.id,
+      run_id: runId,
+      filter: "latest",
+      per_page: 100,
     });
-    const file = path.join(logDir, jobLogFileName(job));
-    await writeFile(file, String(response.data), "utf8");
-    core.info(`${job.name}のログを${file}へ保存しました`);
+    failedJobs = selectFailedJobs(jobs);
+  } catch (error) {
+    core.warning(`実行${runId}のジョブの一覧を取得できませんでした: ${describeError(error)}`);
+    return;
   }
   if (failedJobs.length === 0) {
     core.warning(`実行${runId}に失敗したジョブが見つかりませんでした`);
+    return;
+  }
+  for (const job of failedJobs) {
+    try {
+      const response = await github.rest.actions.downloadJobLogsForWorkflowRun({
+        owner,
+        repo,
+        job_id: job.id,
+      });
+      const file = path.join(logDir, jobLogFileName(job));
+      await writeFile(file, String(response.data), "utf8");
+      core.info(`${job.name}のログを${file}へ保存しました`);
+    } catch (error) {
+      core.warning(`${job.name}のログを保存できませんでした: ${describeError(error)}`);
+    }
   }
 }

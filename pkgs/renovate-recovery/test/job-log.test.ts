@@ -1,15 +1,36 @@
 import { describe, expect, it } from "vitest";
-import { jobLogFileName, selectFailedJobs } from "../src/job-log.ts";
+import { jobLogFileName, parseRunId, selectFailedJobs } from "../src/job-log.ts";
 
 describe("selectFailedJobs", () => {
-  it("失敗したジョブだけを選ぶ", () => {
+  it("失敗したジョブと時間切れのジョブだけを選ぶ", () => {
     const jobs = [
       { id: 1, name: "nix-fast-build", conclusion: "failure" },
       { id: 2, name: "build-nixos", conclusion: "success" },
       { id: 3, name: "test-nixos-boot", conclusion: "skipped" },
       { id: 4, name: "renovate-recovery / recover", conclusion: null },
+      { id: 5, name: "build-home-manager", conclusion: "timed_out" },
+      { id: 6, name: "build-nix-on-droid", conclusion: "cancelled" },
     ];
-    expect(selectFailedJobs(jobs).map((job) => job.id)).toEqual([1]);
+    expect(selectFailedJobs(jobs).map((job) => job.id)).toEqual([1, 5]);
+  });
+});
+
+describe("parseRunId", () => {
+  it("正の整数を読む", () => {
+    expect(parseRunId("43152603489")).toBe(43152603489);
+  });
+
+  it("空なら指定なしとして扱う", () => {
+    expect(parseRunId("")).toBeUndefined();
+    expect(parseRunId(undefined)).toBeUndefined();
+  });
+
+  it("整数として読めない値は不正として扱う", () => {
+    expect(parseRunId("abc")).toBeNull();
+    expect(parseRunId("1.5")).toBeNull();
+    expect(parseRunId("-1")).toBeNull();
+    expect(parseRunId("0")).toBeNull();
+    expect(parseRunId("99999999999999999999")).toBeNull();
   });
 });
 

@@ -80,7 +80,7 @@ tests = describe "runWith" do
         runRetrying
           (filter ((/= "GITHUB_RUNNER_REGISTRATION_TOKEN_API") . fst) workspace.environment)
       result `shouldBe` Left (ExitFailure 1)
-      length logs `shouldBe` 1
+      logs `shouldBe` ["環境変数GITHUB_RUNNER_REGISTRATION_TOKEN_APIが必要です"]
       doesFileExist workspace.tokenFile >>= (`shouldBe` False)
       workspace.requests >>= (`shouldBe` 0)
   it "APIに接続できなければ理由を出して1で終わり、ファイルを作らない" do
@@ -110,7 +110,7 @@ tests = describe "runWith" do
     withWorkspace "ncaq/forbidden" \workspace -> do
       (result, logs) <- runRetrying workspace.environment
       result `shouldBe` Left (ExitFailure 1)
-      length logs `shouldBe` 1
+      logs `shouldBe` ["登録トークンの発行が状態コード401を返しました: Bad credentials"]
       doesFileExist workspace.tokenFile >>= (`shouldBe` False)
       workspace.requests >>= (`shouldBe` 3)
   it "読めない応答は試し直さずに1で終わり、ファイルを作らない" do

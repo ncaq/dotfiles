@@ -73,13 +73,15 @@ export async function saveFailedJobLogs(
     reporter.warning("実行のIDが正の整数ではないので、ログの取得を省略します");
     return;
   }
+  const logDir = input.logDir;
+  if (logDir == null || logDir === "") {
+    reporter.warning("ログを保存するディレクトリが渡されていないので、ログの取得を省略します");
+    return;
+  }
 
   let failedJobs;
   try {
-    if (input.logDir == null || input.logDir === "") {
-      throw new Error("ログを保存するディレクトリが渡されていません");
-    }
-    await mkdir(input.logDir, { recursive: true });
+    await mkdir(logDir, { recursive: true });
     failedJobs = selectFailedJobs(await source.listJobs(runId));
   } catch (error) {
     reporter.warning(`実行${runId}のログを保存する準備に失敗しました: ${describeError(error)}`);
@@ -89,7 +91,6 @@ export async function saveFailedJobLogs(
     reporter.warning(`実行${runId}に失敗したジョブが見つかりませんでした`);
     return;
   }
-  const logDir = input.logDir;
   for (const job of failedJobs) {
     try {
       const file = path.join(logDir, jobLogFileName(job));

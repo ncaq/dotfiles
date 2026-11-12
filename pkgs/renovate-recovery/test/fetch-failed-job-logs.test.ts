@@ -88,6 +88,39 @@ describe("saveFailedJobLogs", () => {
     expect(reporter.warnings).toHaveLength(1);
   });
 
+  it.each([
+    ["空", ""],
+    ["未定義", undefined],
+  ])("実行のIDが%sなら取得せず情報だけを出す", async (_name, runId) => {
+    const logDir = await mkdtemp(path.join(tmpdir(), "job-logs-"));
+    let called = false;
+    const source: JobLogSource = {
+      listJobs: () => {
+        called = true;
+        return Promise.resolve(JOBS);
+      },
+      downloadLog: () => Promise.resolve(""),
+    };
+    const reporter = recordingReporter();
+    await saveFailedJobLogs(source, reporter, { runId, logDir });
+    expect(called).toBe(false);
+    expect(reporter.warnings).toEqual([]);
+    expect(reporter.infos).toHaveLength(1);
+  });
+
+  it("失敗したジョブが無ければ警告してファイルを作らない", async () => {
+    const logDir = await mkdtemp(path.join(tmpdir(), "job-logs-"));
+    const source: JobLogSource = {
+      listJobs: () => Promise.resolve(JOBS.map((job) => ({ ...job, conclusion: "success" }))),
+      downloadLog: () => Promise.resolve(""),
+    };
+    const reporter = recordingReporter();
+    await saveFailedJobLogs(source, reporter, { runId: "100", logDir });
+    expect(await readdir(logDir)).toEqual([]);
+    expect(reporter.warnings).toHaveLength(1);
+    expect(reporter.warnings[0]).toMatch(/失敗したジョブが見つかりません/);
+  });
+
   it("実行のIDが不正なら取得しない", async () => {
     let called = false;
     const source: JobLogSource = {

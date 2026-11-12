@@ -18,7 +18,7 @@ let
       # `./check.sh`はPATHにあるこのラッパーを使います。
       # メモリに合わせて評価のワーカー数を抑えるので、
       # 評価だけでメモリを食い尽くすのを防げます。
-      (import ../../../../lib/nix-fast-build-wrapper.nix { inherit pkgs; })
+      (pkgs.callPackage ../../../../pkgs/nix-fast-build-wrapper.nix { })
     ];
   # runnerが使うTypeScriptコードをビルドしてGitHub Actionsで利用できるようにします。
   # 吐き出されるコードはピュアなJavaScriptなのでアーキテクチャ非依存です。

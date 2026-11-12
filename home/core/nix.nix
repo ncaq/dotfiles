@@ -2,7 +2,7 @@
 { pkgs, inputs, ... }:
 let
   # メモリに合わせて評価のワーカー数を抑える`nix-fast-build`のラッパー。
-  nix-fast-build-wrapper = import ../../lib/nix-fast-build-wrapper.nix { inherit pkgs; };
+  nix-fast-build-wrapper = pkgs.callPackage ../../pkgs/nix-fast-build-wrapper.nix { };
   # `secrets/cachix.yaml`から認証トークンを復号して`cachix push ncaq`するラッパー。
   cachix-push-ncaq = pkgs.callPackage ../../pkgs/cachix-push-ncaq { };
   # `secrets/niks3-{public,private}.yaml`から認証トークンを復号して、

@@ -623,8 +623,10 @@
               fastfetch
               git
               home-manager
-              nix-fast-build
               ;
+            # メモリに合わせて評価のワーカー数を抑える`nix-fast-build`のラッパー。
+            # `./check.sh`がPATHに無い環境で`nix run`する対象です。
+            nix-fast-build = pkgs.callPackage ./pkgs/nix-fast-build-wrapper.nix { };
             # `renovate-recovery`ワークフローが`claude-code-action`へ渡す実行ファイル。
             # NixOSのセルフホステッドランナーでは、
             # アクションが自分でダウンロードするバイナリは動的リンクを解決できず動かないため、

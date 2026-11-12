@@ -7,6 +7,7 @@ module GithubRunnerRegistrationToken.Api
 
 import GithubRunnerRegistrationToken.AccessToken (AccessToken (..))
 import GithubRunnerRegistrationToken.Failure (ApiFailure (..))
+import GithubRunnerRegistrationToken.Microseconds (microseconds)
 import GithubRunnerRegistrationToken.RegistrationToken (RegistrationToken)
 import GithubRunnerRegistrationToken.Repository (Repository (..))
 import Himari
@@ -56,5 +57,9 @@ recoveringIssue policy action = recovering policy [const transport, const api] (
 --
 -- 起動直後はネットワークがまだ繋がっていないことがある。
 -- 最初の発行に失敗するとコンテナも起動できないので、合わせて1分ほどは試し直す。
+-- 間隔は1秒から始めて、10秒まで広げていく。
 issuePolicy :: (MonadIO m) => RetryPolicyM m
-issuePolicy = limitRetriesByCumulativeDelay 60000000 (capDelay 10000000 (fullJitterBackoff 1000000))
+issuePolicy =
+  limitRetriesByCumulativeDelay
+    (microseconds 60)
+    (capDelay (microseconds 10) (fullJitterBackoff (microseconds 1)))

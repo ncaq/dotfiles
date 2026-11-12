@@ -8,6 +8,7 @@ module GithubRunnerRegistrationToken.AccessToken
 
 import Data.ByteString qualified as B
 import Data.Text qualified as T
+import GithubRunnerRegistrationToken.Failure (ConfigFailure (..))
 import Himari
 
 -- | `Show`は中身を伏せる。
@@ -19,5 +20,11 @@ instance Show AccessToken where
   show _ = "AccessToken <redacted>"
 
 -- | ファイルからトークンを読む。前後の空白と改行は落とす。
-readAccessToken :: (MonadIO m) => FilePath -> m AccessToken
-readAccessToken path = AccessToken . T.strip . convert <$> liftIO (B.readFile path)
+--
+-- 落とした結果が空なら`EmptyAccessToken`を投げる。
+-- 空のトークンを送って401を待つより先に、設定の誤りとして知らせる。
+readAccessToken :: (MonadIO m, MonadThrow m) => FilePath -> m AccessToken
+readAccessToken path = do
+  token <- T.strip . convert <$> liftIO (B.readFile path)
+  when (token == mempty) (throwM (EmptyAccessToken path))
+  pure (AccessToken token)

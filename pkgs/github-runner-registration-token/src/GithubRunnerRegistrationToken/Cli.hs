@@ -11,6 +11,7 @@ import GithubRunnerRegistrationToken.AccessToken (readAccessToken)
 import GithubRunnerRegistrationToken.Api (issuePolicy, issueRegistrationToken, recoveringIssue)
 import GithubRunnerRegistrationToken.Config (Config (..), configFrom)
 import GithubRunnerRegistrationToken.Failure (ApiFailure, ConfigFailure)
+import GithubRunnerRegistrationToken.Repository (Repository (..))
 import GithubRunnerRegistrationToken.TokenFile (tokenFileName, writeTokenFile)
 import Himari
 
@@ -37,7 +38,8 @@ runWith policy lookupVariable = handle (report @ConfigFailure) . handle (report 
   registrationToken <-
     recoveringIssue policy (issueRegistrationToken config.api accessToken config.repository)
   writeTokenFile (config.runtimeDirectory </> tokenFileName) registrationToken
-  logInfoN ("登録トークンを発行しました: " <> convert (show config.repository))
+  let Repository repository = config.repository
+  logInfoN ("登録トークンを発行しました: " <> repository)
 
 -- | 想定している失敗を、ログに出して`ExitFailure 1`にする。
 report :: forall e m a. (Exception e, MonadLogger m, MonadThrow m) => e -> m a

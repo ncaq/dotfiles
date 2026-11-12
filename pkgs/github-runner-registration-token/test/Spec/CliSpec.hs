@@ -71,7 +71,7 @@ tests = describe "runWith" do
   it "ログにアクセストークンと登録トークンを出さない" do
     withWorkspace "ncaq/dotfiles" \workspace -> do
       (_, logs) <- runRetrying workspace.environment
-      length logs `shouldBe` 1
+      logs `shouldBe` ["登録トークンを発行しました: ncaq/dotfiles"]
       filter (\line -> any (`isInfixOf` line) ["github_pat_example", "AABBCC"]) logs
         `shouldBe` []
   it "環境変数が欠けていれば理由を出して1で終わり、ファイルを作らない" do

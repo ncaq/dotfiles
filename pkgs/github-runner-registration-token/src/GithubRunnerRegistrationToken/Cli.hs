@@ -26,7 +26,8 @@ run = do
 -- アクセストークンはこのプロセスだけが持ち、
 -- ランナーにはランナーの登録にしか使えない登録トークンだけを渡す。
 --
--- 設定が揃わない時と、GitHubのAPIの応答を使えなかった時は、理由をログに出して`ExitFailure 1`にする。
+-- 設定が誤っている時と、GitHubのAPIから登録トークンを得られなかった時は、
+-- 理由をログに出して`ExitFailure 1`にする。接続できなかった時もこれに含む。
 runWith
   :: (MonadLogger m, MonadThrow m, MonadUnliftIO m)
   => RetryPolicyM m

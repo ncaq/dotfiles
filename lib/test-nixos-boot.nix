@@ -192,7 +192,15 @@ lib.mapAttrs (
     # コンテナのvethは実際のインターフェイスを見ません。
     # テストVMでは秘密情報が無いので大半のコンテナが起動に失敗して、
     # vethが作られないからです。
-    # microVMは秘密情報を要らないものだけなのでテストVMでも起動します。
+    #
+    # microVMは、テストVMでも起動するものだけ実際のインターフェイスを見ます。
+    # ホスト側のユニットが他のユニットを`requires`しているmicroVMは、
+    # 秘密情報から作るものを待っていてテストVMでは起動しないので、待ちません。
+    # GitHub ActionsのランナーのVMがそうで、登録トークンを発行できないと起動しません。
+    # 起動しないmicroVMも、networkdの設定ファイルの検査の対象には入っています。
+    #
+    # TAPの名前はVMの名前から導かず、VMの`microvm.interfaces`から引きます。
+    # インターフェイス名は15文字までなので、VMの名前より短い名前を付けることがあります。
     hostConfig = hostDef.nixosSystem.config;
     nat = hostConfig.networking.nat;
     ipv6Containers = lib.filterAttrs (_: c: c.hostAddress6 != null) hostConfig.containers;
@@ -200,8 +208,18 @@ lib.mapAttrs (
     ipv6Networks = lib.filterAttrs (
       _: n: lib.any (a: isIpv6 a.Address) n.addresses
     ) hostConfig.systemd.network.networks;
-    ipv6Vms = lib.filter (name: ipv6Networks ? "20-vm-${name}") (
-      lib.attrNames (hostConfig.microvm.vms or { })
+    startsInTestVm =
+      name: ((hostConfig.systemd.services."microvm@${name}" or { }).requires or [ ]) == [ ];
+    ipv6VmTaps = lib.filter (t: ipv6Networks ? "20-${t.tap}") (
+      lib.concatLists (
+        lib.mapAttrsToList (
+          name: vm:
+          map (interface: {
+            inherit name;
+            tap = interface.id;
+          }) (lib.filter (interface: interface.type == "tap") vm.config.config.microvm.interfaces)
+        ) (lib.filterAttrs (name: _: startsInTestVm name) (hostConfig.microvm.vms or { }))
+      )
     );
     machineIpv6Test =
       lib.optionalString (nat.enable && nat.enableIPv6) # python
@@ -230,14 +248,63 @@ lib.mapAttrs (
         ) ipv6Networks
       )
       + lib.concatMapStrings (
-        name:
+        t:
         lib.concatMapStrings (
           a: # python
           ''
-            machine.wait_for_unit("microvm@${name}.service")
-            machine.wait_until_succeeds("ip -6 addr show dev vm-${name} | grep -qF '${a.Address}'")
-          '') (lib.filter (a: isIpv6 a.Address) ipv6Networks."20-vm-${name}".addresses)
-      ) ipv6Vms;
+            machine.wait_for_unit("microvm@${t.name}.service")
+            machine.wait_until_succeeds("ip -6 addr show dev ${t.tap} | grep -qF '${a.Address}'")
+          '') (lib.filter (a: isIpv6 a.Address) ipv6Networks."20-${t.tap}".addresses)
+      ) ipv6VmTaps;
+
+    # GitHub ActionsのランナーのVMのために、ホスト側で用意するものを確認します。
+    # ランナーのVMは秘密情報が無いとテストVMでは起動しないので、
+    # 評価とブートが通っても以下は静かに壊れます。
+    #
+    # - ストアの準備のサービスが、前の書き込み用の層のイメージを消して、
+    #   ホストのNixのデータベースの写しを壊れていない形で置くこと。
+    #   ここが失敗するとVMが起動できなくなります
+    # - ホストのGCの前後の処理に、全てのランナーのVMのユニットが入っていること。
+    #   GCがパスを消した後もVMが動き続けると、VMのデータベースと実体が食い違います
+    #
+    # `nixos/host/seminar/github-runner`をimportしていないホストにはオプション自体が生えないので、
+    # `or`で無いものとして扱います。
+    githubRunnerVms = hostConfig.local.githubRunnerVms or { };
+    sqlite3 = lib.getExe (importPkgsStable hostDef.system).sqlite;
+    githubRunnerVmTest =
+      lib.concatStrings (
+        lib.mapAttrsToList (
+          name: vm: # python
+          ''
+            machine.succeed("systemctl start install-microvm-${name}.service")
+            machine.succeed("touch ${vm.overlayImage}")
+            machine.succeed("systemctl start ${vm.storeService}")
+            machine.fail("test -e ${vm.overlayImage}")
+            store_database_check = machine.succeed(
+                "${sqlite3} ${vm.storeDatabase} 'PRAGMA integrity_check'"
+            )
+            assert store_database_check.strip() == "ok", store_database_check
+          '') githubRunnerVms
+      )
+      + lib.optionalString (githubRunnerVms != { }) (
+        # python
+        ''
+          nix_gc_unit = machine.succeed("systemctl cat nix-gc.service")
+          for key in ["ExecStartPre", "ExecStopPost"]:
+              nix_gc_scripts = [
+                  line.split("=", 1)[1].strip()
+                  for line in nix_gc_unit.splitlines()
+                  if line.startswith(key + "=")
+              ]
+              assert len(nix_gc_scripts) == 1, nix_gc_unit
+              nix_gc_script = machine.succeed(f"cat {nix_gc_scripts[0]}")
+        ''
+        + lib.concatMapStrings (
+          name: # python
+          ''
+            ${"    "}assert "microvm@${name}.service" in nix_gc_script, nix_gc_script
+          '') (lib.attrNames githubRunnerVms)
+      );
 
     # 自宅LANのインターフェイスへ開けている許可が、
     # 全て送信元アドレスでも絞られていることを確認します。
@@ -359,6 +426,7 @@ lib.mapAttrs (
     + postgresExtensionTest
     + machineEgressTest
     + machineIpv6Test
+    + githubRunnerVmTest
     + lanInputTest;
   }
 ) (lib.filterAttrs (_: def: !(def.nixosSystem.config.wsl.enable or false)) hostDefs)

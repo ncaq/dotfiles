@@ -35,9 +35,10 @@ fi
 
 arguments+=("$@")
 
-# home-managerが入れるラッパーがPATHにあれば、
-# メモリに合わせて評価のワーカー数を抑えてくれるのでそれを使います。
-# CIのようにPATHに無い環境では、flakeが固定している版を使います。
+# `nix-fast-build`は、メモリに合わせて評価のワーカー数を抑えるラッパーを使います。
+# home-managerの環境やセルフホステッドランナーのVMのようにPATHにあれば、
+# flakeの評価を省けるのでそれを使います。
+# PATHに無い環境では、flakeが出している同じラッパーを使います。
 if command -v nix-fast-build >/dev/null 2>&1; then
   exec nix-fast-build "${arguments[@]}"
 else

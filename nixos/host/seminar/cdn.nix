@@ -35,8 +35,9 @@ in
   # 配信ディレクトリ。
   # GitHub Actionsセルフホストランナーがrsyncで書き込み、
   # Caddyはother権限で読み取ります。
-  # github-runnerコンテナへのbindMountのhostPathとしても使われるため、
-  # コンテナ起動前に存在している必要があります。
+  # ランナーのVMへvirtiofsで共有するディレクトリでもあるため、
+  # VMの起動前に存在している必要があります。
+  # 共有を通してVMの誰が書いても、ホストでは`github-runner`の所有になります。
   systemd.tmpfiles.rules = [
     "d ${cdnRoot} 0755 github-runner github-runner -"
   ];

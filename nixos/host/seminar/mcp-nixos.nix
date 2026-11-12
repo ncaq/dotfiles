@@ -20,10 +20,14 @@
   ...
 }:
 let
-  addr = config.machineAddresses.mcp-nixos;
   # ホスト側のTAPインターフェイス名。
   # VMの定義とsystemd-networkdと帯域制限と出口の制限が同じ名前を使うので1箇所に置く。
   tap = "vm-mcp-nixos";
+  # TAPのホスト側とゲスト側のネットワークの定義。
+  tapNetwork = import ../../../lib/microvm-tap.nix {
+    inherit tap;
+    addr = config.machineAddresses.mcp-nixos;
+  };
   # mcp-nixosリポジトリのwebサイトで使われているfaviconです。
   # コミットをpinして取得の再現性を保証します。
   favicon = pkgs.fetchurl {
@@ -116,32 +120,7 @@ in
         '';
       };
       systemd = {
-        network = {
-          enable = true;
-          networks."20-lan" = {
-            matchConfig.Type = "ether";
-            networkConfig = {
-              Address = [
-                "${addr.guest}/24"
-                "${addr.guest6}/64"
-              ];
-              Gateway = [
-                addr.host
-                addr.host6
-              ];
-              DNS = [
-                "1.1.1.1"
-                "1.0.0.1"
-                "8.8.8.8"
-                "8.8.4.4"
-                "2606:4700:4700::1111"
-                "2606:4700:4700::1001"
-                "2001:4860:4860::8888"
-                "2001:4860:4860::8844"
-              ];
-            };
-          };
-        };
+        network = tapNetwork.guest;
         services.mcp-nixos-http = {
           description = "mcp-nixos HTTP server";
           after = [ "network.target" ];
@@ -169,7 +148,7 @@ in
   };
   # mcp-nixosの出口はインターネットだけ。
   # search.nixos.orgやGitHubやcache.nixos.orgのような公開APIへ問い合わせる読み取り専用のサーバで、
-  # 名前解決も上の`DNS`の通り公開DNSへ投げる。
+  # 名前解決も`lib/microvm-tap.nix`の通り公開DNSへ投げる。
   # 自宅LANやtailnetや他のコンテナへ出る理由は無い。
   # TAPはコンテナのvethと違って名前を導けないので、VMの定義と同じ名前を明示する。
   local.machineEgress.mcp-nixos = {
@@ -180,21 +159,7 @@ in
   systemd = {
     network = {
       enable = true;
-      # microvm.nixの推奨に従いsystemd-networkdでTAPインターフェースを設定します。
-      # networking.interfacesが生成するnetwork-addresses-*サービスは、
-      # network.targetより前に順序付けられるため、
-      # network.targetより後に作成されるTAPインターフェースと相性が悪いです。
-      networks."20-${tap}" = {
-        matchConfig.Name = tap;
-        addresses = [
-          { Address = "${addr.host}/32"; }
-          { Address = "${addr.host6}/128"; }
-        ];
-        routes = [
-          { Destination = "${addr.guest}/32"; }
-          { Destination = "${addr.guest6}/128"; }
-        ];
-      };
+      networks = tapNetwork.host;
     };
     # DoS攻撃に加担しないように、
     # 一応帯域制限をかけておきます。

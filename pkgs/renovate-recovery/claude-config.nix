@@ -391,13 +391,22 @@ runCommand "renovate-recovery-claude-config" { } ''
   # konokaの更新で範囲の無い`Bash`を許可するスキルが入ったら気付けるようにします。
   # 検査が壊れて何も検出しなくなっても気付けるよう、
   # 先に固定のSKILL.mdで判定が期待どおりかを確かめます。
-  for skill in ${skillFixtures}/unrestricted/*/SKILL.md; do
-    if ${lib.getExe checkSkillAllowedTools} "$skill" 2>/dev/null; then
-      echo "検査が $skill を見逃しました" >&2
+  # 検出は終了コード3なので、検査そのものが失敗して落ちた場合とは区別します。
+  shopt -s nullglob
+  unrestricted=(${skillFixtures}/unrestricted/*/SKILL.md)
+  restricted=(${skillFixtures}/restricted/*/SKILL.md)
+  if [ "''${#unrestricted[@]}" -eq 0 ] || [ "''${#restricted[@]}" -eq 0 ]; then
+    echo "検査を確かめるための固定のSKILL.mdが見つかりません" >&2
+    exit 1
+  fi
+  for skill in "''${unrestricted[@]}"; do
+    status=0
+    ${lib.getExe checkSkillAllowedTools} "$skill" 2>/dev/null || status=$?
+    if [ "$status" -ne 3 ]; then
+      echo "検査が $skill を検出しませんでした(終了コード $status)" >&2
       exit 1
     fi
   done
-  ${lib.getExe checkSkillAllowedTools} ${skillFixtures}/restricted/*/SKILL.md
-  shopt -s nullglob
+  ${lib.getExe checkSkillAllowedTools} "''${restricted[@]}"
   ${lib.getExe checkSkillAllowedTools} $out/plugins/*/skills/*/SKILL.md
 ''

@@ -76,7 +76,7 @@ let
       # VMでは評価もビルドもVMのメモリを使うので、
       # 同時に動かすジョブを絞ります。
       # ワークフローの側も`nvd-diff`の後に他のジョブを動かすので、
-      # セルフホステッドランナーで同時に動くジョブは2つまでです。
+      # dotfilesのセルフホステッドランナーで同時に動くジョブは2つまでです。
       runnerNum = 2;
       url = "https://github.com/ncaq/dotfiles";
       # ホスト側のTAPインターフェイス名。
@@ -145,8 +145,8 @@ let
   overlayImageOf = name: "${config.microvm.stateDir}/${name}/${overlayImage}";
   # 書き込み用の層をVMの中でマウントする場所。
   overlayMount = "/nix/.rw-store";
-  # ホストのNixのデータベース。
-  hostNixDb = "/nix/var/nix/db";
+  # Nixのデータベースの置き場所。ホストでもVMの中でも同じパスです。
+  nixDbDir = "/nix/var/nix/db";
   # TAPのホスト側とゲスト側のネットワークの定義。
   # アドレスはVMの名前で`machineAddresses`のエントリを引きます。
   tapNetworkOf =
@@ -329,8 +329,8 @@ let
               ExecStart = [
                 # microvm.nixがVMのシステムの閉包だけを登録したデータベースを先に作っています。
                 # ホストのデータベースにはその閉包も入っているので、丸ごと置き換えます。
-                "${lib.getExe' pkgs.coreutils "rm"} --force ${hostNixDb}/db.sqlite-wal ${hostNixDb}/db.sqlite-shm"
-                "${lib.getExe' pkgs.coreutils "install"} --mode=644 /run/host-nix-db/db.sqlite ${hostNixDb}/db.sqlite"
+                "${lib.getExe' pkgs.coreutils "rm"} --force ${nixDbDir}/db.sqlite-wal ${nixDbDir}/db.sqlite-shm"
+                "${lib.getExe' pkgs.coreutils "install"} --mode=644 /run/host-nix-db/db.sqlite ${nixDbDir}/db.sqlite"
               ];
             };
           };
@@ -434,13 +434,13 @@ in
               "${lib.getExe' pkgs.coreutils "rm"} --force ${overlayImageOf name} ${storeDirOf name}/db.sqlite"
               # 動いているデータベースをそのままコピーすると書き込みの途中を拾うことがあるので、
               # SQLiteのバックアップの機能で一貫した状態を取ります。
-              "${lib.getExe pkgs.sqlite} ${hostNixDb}/db.sqlite \".backup ${storeDirOf name}/db.sqlite\""
+              "${lib.getExe pkgs.sqlite} ${nixDbDir}/db.sqlite \".backup ${storeDirOf name}/db.sqlite\""
             ];
             CacheDirectory = storeServiceOf name;
             CacheDirectoryMode = "0700";
             # WALモードのデータベースは読むだけでも共有メモリのファイルへ書き込みます。
             ReadWritePaths = [
-              hostNixDb
+              nixDbDir
               "${config.microvm.stateDir}/${name}"
             ];
             # イメージとその親のディレクトリはmicrovmユーザーの所有なので、

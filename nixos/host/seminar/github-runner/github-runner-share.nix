@@ -112,7 +112,7 @@ in
       # ランナーの登録トークンを発行するためのPAT。
       # リポジトリの`Administration: Read and write`を持つfine-grained PATです。
       # ホストの`registrationTokenBroker`だけが読み、
-      # コンテナには渡しません。
+      # ランナーのVMには渡しません。
       "runner-registration-pat" = {
         sopsFile = ../../../../secrets/seminar/github-runner.yaml;
         # 暗号化したファイルのキーは、PATをコンテナへ渡していた頃の名前のままです。

@@ -135,8 +135,9 @@ let
   # VMのストアを用意するホスト側のサービスの名前。
   storeServiceOf = name: "${name}-store";
   # ホストのNixのデータベースの写しを置くホスト側のディレクトリ。
-  # サービスの`RuntimeDirectory`として作られます。
-  storeDirOf = name: "/run/${storeServiceOf name}";
+  # サービスの`CacheDirectory`として作られます。
+  # 写しは数百MiBあるので、tmpfsの`/run`ではなくディスクに置いてホストのメモリを使わせません。
+  storeDirOf = name: "/var/cache/${storeServiceOf name}";
   # VMだけが持つ書き込み用の層のイメージ。
   overlayImage = "nix-store-overlay.img";
   overlayImageOf = name: "${config.microvm.stateDir}/${name}/${overlayImage}";
@@ -442,15 +443,14 @@ in
             Type = "oneshot";
             ExecStart = [
               # イメージが無ければmicrovm.nixが起動の前に空のものを作ります。
-              "${lib.getExe' pkgs.coreutils "rm"} --force ${overlayImageOf name}"
+              # 前の起動の時の写しも捨てます。
+              "${lib.getExe' pkgs.coreutils "rm"} --force ${overlayImageOf name} ${storeDirOf name}/db.sqlite"
               # 動いているデータベースをそのままコピーすると書き込みの途中を拾うことがあるので、
               # SQLiteのバックアップの機能で一貫した状態を取ります。
               "${lib.getExe pkgs.sqlite} ${hostNixDb}/db.sqlite \".backup ${storeDirOf name}/db.sqlite\""
             ];
-            RuntimeDirectory = storeServiceOf name;
-            RuntimeDirectoryMode = "0700";
-            # oneshotは終了すると停止扱いになるので、写しが消えないように残します。
-            RuntimeDirectoryPreserve = true;
+            CacheDirectory = storeServiceOf name;
+            CacheDirectoryMode = "0700";
             # WALモードのデータベースは読むだけでも共有メモリのファイルへ書き込みます。
             ReadWritePaths = [
               hostNixDb

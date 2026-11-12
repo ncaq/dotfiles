@@ -151,6 +151,8 @@ in
       type = lib.types.attrsOf (lib.types.ints.between 3 4294967294);
       default = {
         mcp-nixos = 3;
+        github-runner-dotfiles-x64 = 4;
+        github-runner-cdn-ncaq-net-x64 = 5;
       };
       description = "vsock CID assignments for microVMs (must be >= 3, unique per VM)";
     };

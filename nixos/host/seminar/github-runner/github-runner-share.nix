@@ -52,7 +52,7 @@ let
   # リポジトリの管理権限を持つPATで、
   # 1時間で切れるランナーの登録トークンを発行してファイルに置きます。
   # PATはホストのrootだけが持ち、
-  # コンテナにはランナーの登録にしか使えない登録トークンだけを渡すための仲介です。
+  # VMにはランナーの登録にしか使えない登録トークンだけを渡すための仲介です。
   # 環境変数の意味は、
   # `pkgs/github-runner-registration-token/src/GithubRunnerRegistrationToken/Config.hs`に書いてあります。
   registrationTokenBroker = lib.getExe (
@@ -60,14 +60,12 @@ let
       inherit (inputs) himari-src;
     }
   );
-  # GitHub Actionsランナーはホストのnixデーモンと通信するため、
-  # 統一されたユーザ値を使います。
+  # ランナーのVMとホストで統一されたユーザ値を使います。
   user = config.serviceUser.github-runner;
   # ユーザーとグループ定義。
-  # コンテナのnixコマンドはホストのnixデーモンと通信するため、
-  # UIDとGIDはホストと一致させる必要があります。
-  # なので明示的に定義します。
-  # ホスト側でユーザーを解決できなければ`trusted-users`が機能しません。
+  # ランナーのVMは共有したホストのディレクトリへ書き込むことがあります。
+  # virtiofsはUIDとGIDをそのまま通すので、
+  # ホストの側の所有者と合うように明示的に定義します。
   users = {
     users.github-runner = {
       isSystemUser = true;
@@ -76,7 +74,7 @@ let
     };
     groups.github-runner.gid = user.gid;
   };
-  # CI用のnix設定。
+  # ランナーのVMの中のnix-daemonに渡すCI用のnix設定。
   # ホストの`nix.settings`をベースにしますが、
   # キャッシュ設定などはCIの設定側で設定するべきなのと、
   # ホスト側のビルドフックは動かないので、
@@ -104,9 +102,10 @@ in
       ;
   };
 
-  # ホストのnixデーモンがコンテナ内のgithub-runnerユーザーを信頼するよう設定します。
+  # ホストにも同じユーザーを置きます。
+  # ランナーのVMと共有するディレクトリの所有者として使います。
+  # ホストのnix-daemonの`trusted-users`には入れません。
   inherit users;
-  nix.settings.trusted-users = [ "github-runner" ];
 
   sops = {
     secrets = {

@@ -87,6 +87,8 @@ let
       # `./check.sh`だけで32GiBを使いました。
       # 24GiBでは`nix-eval-jobs`のワーカーがOOMで落ちました。
       mem = 40 * 1024;
+      # CIでNixOS TestのVMを動かします。
+      nestedVirt = true;
     };
     github-runner-cdn-ncaq-net-x64 = {
       basename = "cdn-ncaq-net-x64";
@@ -165,6 +167,9 @@ let
       vcpu,
       # VMのメモリ(MiB)。
       mem,
+      # VMの中でさらにVMを動かせるようにするか。
+      # ネストした仮想化はホストのKVMの攻撃面を広げるので、必要なVMだけで有効にします。
+      nestedVirt ? false,
       # 追加の共有。
       extraShares ? [ ],
       # 各ランナー定義にマージする追加オプション。
@@ -181,6 +186,13 @@ let
           hypervisor = "cloud-hypervisor";
           vsock.cid = config.microvmCid.${name};
           inherit vcpu mem;
+          # cloud-hypervisorは何も指定しないとネストした仮想化をVMへ見せます。
+          # モジュールを読み込まないだけではVMのrootが自分で読み込めるので、
+          # 要らないVMではハイパーバイザの側で見せないようにします。
+          cloud-hypervisor.extraArgs = lib.optionals (!nestedVirt) [
+            "--cpus"
+            "nested=off"
+          ];
           # VMが使っていないメモリをホストへ返させます。
           # 返させないと、一度使ったメモリはVMが止まるまでホストに戻りません。
           balloon = true;
@@ -233,7 +245,10 @@ let
           ];
         };
         # NixOS TestのVMをネストした仮想化で動かします。
-        boot.kernelModules = [ "kvm-amd" ];
+        # ホストと同じCPUなので、読み込むモジュールはホストの設定から導きます。
+        boot.kernelModules = lib.optionals nestedVirt (
+          lib.filter (lib.hasPrefix "kvm-") config.boot.kernelModules
+        );
         inherit users;
         nix.settings = ciNixSettings // {
           # ジョブは`flake.nix`のキャッシュの設定や`post-build-hook`を使います。

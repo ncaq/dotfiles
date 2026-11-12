@@ -1,6 +1,6 @@
 # baseとPRのNix評価結果をnvdで比べて、差分をPRコメントとして投稿するコマンド。
 #
-# `.github/workflows/nvd-diff.yml`が`nix run .#nvd-pr-diff`で呼ぶ。
+# `.github/workflows/check.yml`の`nvd-diff`ジョブが`nix run .#nvd-pr-diff`で呼ぶ。
 # 入力は全て環境変数で、何が要るかは`src/NvdPrDiff/Target.hs`に書いてある。
 # nvdの出力をどう読むかは`src/NvdPrDiff/Report.hs`に、
 # コメントの形は`src/NvdPrDiff/Markdown.hs`にある。

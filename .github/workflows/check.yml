@@ -54,9 +54,56 @@ jobs:
           echo "Untrusted source: self-hosted runner jobs will not run"
           exit 1
 
+  nvd-diff:
+    name: nvd-diff
+    # baseとPRのseminarのシステムをnvdで比べて、差分をPRのコメントとして投稿します。
+    #
+    # 他のセルフホステッドランナーのジョブより先に動かします。
+    # ここでseminarのシステムをビルドするので、
+    # 後ろのジョブはその成果物を使えて、
+    # 重い評価とビルドが同時に走る山も崩せます。
+    #
+    # 差分を出すのはPRの時だけですが、
+    # ジョブごと飛ばすと、
+    # これを`needs`に持つ後ろのジョブまで全て飛ばされてしまいます。
+    # pushやmerge_groupでも後ろのジョブが動くように、
+    # ジョブは毎回動かして、
+    # 中のステップだけをPRの時に限ります。
+    needs: is-trusted
+    permissions:
+      contents: read # リポジトリコンテンツの読み取り
+      id-token: write # `ncaq/nix-composite-action`内のniks3-publicとのOIDC認証に使用
+      pull-requests: write # PRコメントのupsert
+    # セルフホステッドランナーは未認証のソースからは実行しない。
+    # フォークからのPRは`is-trusted`が失敗するので、ここも後ろのジョブも動きません。
+    if: needs.is-trusted.result == 'success'
+    runs-on: [self-hosted, Linux]
+    timeout-minutes: 360 # キャッシュが切れている時は時間がかかるため長めに設定。
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        if: github.event_name == 'pull_request'
+        with:
+          # base refのworktree展開のために全オブジェクトを要求。
+          # 履歴の浅さに依存しない安全側に倒しています。
+          # そこまで重いリポジトリでもないのでフルに要求しても問題はありません。
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./.github/actions/setup-nix
+        if: github.event_name == 'pull_request'
+      - name: Run nvd-pr-diff
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: nix run .#nvd-pr-diff
+
   nix-fast-build:
     name: nix-fast-build
-    needs: is-trusted
+    needs:
+      - is-trusted
+      # 重い評価とビルドの山を崩すため、先に`nvd-diff`を終わらせます。
+      - nvd-diff
     permissions:
       contents: read # リポジトリコンテンツの読み取り
       id-token: write # `ncaq/nix-composite-action`内のniks3-publicとのOIDC認証に使用
@@ -124,7 +171,10 @@ jobs:
 
   build-nixos:
     name: build-nixos
-    needs: is-trusted
+    needs:
+      - is-trusted
+      # `nvd-diff`がビルドしたseminarのシステムを使うため、先に終わらせます。
+      - nvd-diff
     permissions:
       contents: read # リポジトリコンテンツの読み取り
       id-token: write # `ncaq/nix-composite-action`内のniks3-publicとのOIDC認証に使用

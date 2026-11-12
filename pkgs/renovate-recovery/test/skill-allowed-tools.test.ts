@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  BOM,
   extractFrontmatter,
   findUnrestrictedBash,
   splitToolList,
@@ -56,5 +57,27 @@ describe("findUnrestrictedBash", () => {
 
   it("allowed-toolsが無ければ検出しない", () => {
     expect(findUnrestrictedBash(skill(""))).toEqual([]);
+  });
+
+  it("先頭のBOMがあっても検出する", () => {
+    expect(findUnrestrictedBash(BOM + skill("allowed-tools: Bash\n"))).toHaveLength(1);
+  });
+
+  it("区切りの行の末尾に空白があっても検出する", () => {
+    expect(
+      findUnrestrictedBash("--- \nname: test\nallowed-tools: Bash\n---  \n本文\n"),
+    ).toHaveLength(1);
+  });
+
+  it("frontmatterを取り出せなければ見逃さずに例外を投げる", () => {
+    expect(() => findUnrestrictedBash("本文だけ\nallowed-tools: Bash\n")).toThrow(
+      /frontmatterを取り出せません/,
+    );
+  });
+
+  it("frontmatterがYAMLのオブジェクトでなければ例外を投げる", () => {
+    expect(() => findUnrestrictedBash("---\n- Bash\n---\n本文\n")).toThrow(
+      /オブジェクトではありません/,
+    );
   });
 });

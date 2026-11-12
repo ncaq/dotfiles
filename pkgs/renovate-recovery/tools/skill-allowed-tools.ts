@@ -16,13 +16,24 @@ import { parse } from "yaml";
 /** 範囲の無い`Bash`と同じ意味になる書き方。 */
 const UNRESTRICTED_BASH: ReadonlySet<string> = new Set(["Bash", "Bash(*)", "Bash(*:*)"]);
 
-/** SKILL.mdの先頭の`---`から次の`---`までのYAMLのfrontmatterを取り出します。無ければ`undefined`です。 */
+/** バイト順マーク。ソースに直接書くとリンターが不正な空白として扱うので、コードポイントから作ります。 */
+export const BOM = String.fromCodePoint(0xfeff);
+
+/** frontmatterの区切りの行か。行末の空白は許します。 */
+function isFence(line: string): boolean {
+  return line.trimEnd() === "---";
+}
+
+/**
+ * SKILL.mdの先頭の`---`から次の`---`までのYAMLのfrontmatterを取り出します。無ければ`undefined`です。
+ * 先頭のBOMは落とします。
+ */
 export function extractFrontmatter(markdown: string): string | undefined {
-  const lines = markdown.split(/\r?\n/);
-  if (lines[0] !== "---") {
+  const lines = (markdown.startsWith(BOM) ? markdown.slice(BOM.length) : markdown).split(/\r?\n/);
+  if (lines[0] == null || !isFence(lines[0])) {
     return undefined;
   }
-  const end = lines.indexOf("---", 1);
+  const end = lines.findIndex((line, index) => 0 < index && isFence(line));
   if (end === -1) {
     return undefined;
   }
@@ -70,14 +81,24 @@ function toolsOf(allowedTools: unknown): string[] {
   return [];
 }
 
-/** SKILL.mdの中身から、範囲の無い`Bash`にあたる指定を返します。無ければ空の配列です。 */
+/**
+ * SKILL.mdの中身から、範囲の無い`Bash`にあたる指定を返します。無ければ空の配列です。
+ *
+ * この検査は権限の迂回に気付くための安全装置なので、
+ * 判定できない時は見逃さずに例外を投げます。
+ * スキルには`name`と`description`のfrontmatterが必ずあるので、
+ * frontmatterを取り出せないか、YAMLのオブジェクトとして読めない時は判定できないものとして扱います。
+ */
 export function findUnrestrictedBash(markdown: string): string[] {
   const frontmatter = extractFrontmatter(markdown);
   if (frontmatter == null) {
-    return [];
+    throw new Error("frontmatterを取り出せません");
   }
   const parsed: unknown = parse(frontmatter);
-  if (parsed == null || typeof parsed !== "object" || !("allowed-tools" in parsed)) {
+  if (parsed == null || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error("frontmatterがYAMLのオブジェクトではありません");
+  }
+  if (!("allowed-tools" in parsed)) {
     return [];
   }
   return toolsOf(parsed["allowed-tools"]).filter((tool) => UNRESTRICTED_BASH.has(tool));

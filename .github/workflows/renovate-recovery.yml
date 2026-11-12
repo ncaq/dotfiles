@@ -143,6 +143,10 @@ jobs:
       - name: Fetch failed job logs
         # 失敗したジョブのログをClaude Codeが読める場所へ保存します。
         # Claude Codeに任意のジョブのログを取得するAPIを許可しなくて済むよう、ここで取得します。
+        # ログは補助なので、ここが失敗してもClaude Codeは起動します。
+        # 失敗したまま止まると、Claude Codeが動かないのに処理済みとして記録されてしまいます。
+        # スクリプトも失敗を警告に留めますが、取りこぼした例外にも備えます。
+        continue-on-error: true
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           RUN_ID: ${{ inputs.run-id }}

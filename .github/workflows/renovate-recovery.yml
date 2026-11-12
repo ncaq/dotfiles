@@ -195,7 +195,8 @@ jobs:
           # スキルの`allowed-tools`は範囲の無い`Edit`を許可することがあるので、
           # `runner.temp`への書き込みはここで明示的に拒否します。
           #
-          # `claude_args`のクォートの中で`$`が展開されないよう、単一引用符で囲みます。
+          # 規則は空白や`*`を含むので、
+          # `claude_args`を引数に分ける時に1つの引数のまま渡るよう単一引用符で囲みます。
           claude_args: >-
             --model opus
             --allowedTools

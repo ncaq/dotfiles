@@ -71,8 +71,11 @@ let
   # 評価に環境変数を読ませたり、
   # ホストのnix-daemonにサンドボックスの外でコマンドを実行させたりできるので、
   # 許可した`nix`のサブコマンドや`./check.sh`に付けられないようにします。
-  # 設定は`--<設定名>`の形でも渡せるので、
-  # 危ない設定の名前の一部で塞ぎます。
+  # 設定は`--<設定名>`や真偽値の`--no-<設定名>`の形でも渡せるので、
+  # それらも`--`付きのフラグ名で塞ぎます。
+  # `--`を付けずに設定名の一部だけで塞ぐと、
+  # `git-hooks`のようなinput名を含む正当なコマンドまで拒否してしまいます。
+  # 末尾に`-`を付けたものは、同じ前置きを持つ一連のフラグをまとめて塞ぎます。
   #
   # `--impure`は`check`ワークフローがNix-on-Droidのビルドに使っているので塞ぎません。
   # 環境変数を読むには評価されるコードを書き換える必要があり、
@@ -86,14 +89,23 @@ let
     "--inputs-from"
     "--extra-"
     "--store"
-    "pure-eval"
-    "unsafe"
-    "sandbox"
-    "-hook"
-    "builders"
-    "substituters"
-    "trusted"
-    "sigs"
+    "--pure-eval"
+    "--no-pure-eval"
+    "--allow-unsafe-native-code-during-evaluation"
+    # `--sandbox-paths`などもまとめて塞ぎます。
+    "--sandbox"
+    "--no-sandbox"
+    "--build-hook"
+    "--post-build-hook"
+    "--pre-build-hook"
+    "--diff-hook"
+    "--run-diff-hook"
+    # `--builders-use-substitutes`もまとめて塞ぎます。
+    "--builders"
+    "--substituters"
+    "--trusted-"
+    "--require-sigs"
+    "--no-require-sigs"
   ];
 
   # コマンドの中で絶対パスの直前に来うる文字。

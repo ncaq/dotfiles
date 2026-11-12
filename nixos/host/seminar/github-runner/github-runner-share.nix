@@ -104,12 +104,6 @@ in
   inherit users;
   nix.settings.trusted-users = [ "github-runner" ];
 
-  # Nix-on-Droidなどaarch64-linuxのビルドを必要にするものがあるので、
-  # aarch64-linuxバイナリをQEMU user-modeで透過的に実行できるようにします。
-  # ホストのnixデーモンがビルドサンドボックスを作成するため、
-  # コンテナ側ではなくホストレベルで設定が必要です。
-  boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
-
   sops = {
     secrets = {
       # ランナーの登録トークンを発行するためのPAT。

@@ -62,6 +62,8 @@ let
     users
     ciNixSettings
     ;
+  # ランナーのユーザーのUIDとGID。ホストとVMで同じ値です。
+  runnerUser = config.serviceUser.github-runner;
   # リポジトリごとのランナーのVMの定義。
   # attr名がそのままVMの名前になります。
   # IPアドレスとvsockのCIDは`machineAddresses`と`microvmCid`の同名のエントリを参照するため、
@@ -97,11 +99,27 @@ let
       extraShares = [
         # cdn.ncaq.netのデプロイ先。
         # ランナー上のワークフローがrsyncで直接書き込みます(cdn.nix参照)。
+        #
+        # virtiofsdはホストのrootで動いて、何も指定しないとUIDとGIDをそのまま通します。
+        # ジョブはVMの中でrootになれるので、
+        # そのままだとホストのファイルシステムにrootの所有でsetuidの実行ファイルを置けます。
+        # VMの全てのUIDとGIDをホストの`github-runner`へ寄せて、
+        # VMの誰が作ったファイルもホストでは`github-runner`の所有にします。
+        # デバイスノードを作る権限もvirtiofsdから落とします。
+        # VMの中のマウントに`nosuid`や`nodev`を付けても、
+        # VMのrootが外せるのでホストは守れません。
         {
           tag = "cdn";
           source = "/mnt/noa/cdn.ncaq.net";
           mountPoint = "/mnt/noa/cdn.ncaq.net";
           proto = "virtiofs";
+          # UIDとGIDの変換はPOSIX ACLと併用できません。
+          posixAcl = false;
+          extraArgs = [
+            "--translate-uid=squash-guest:0:${toString runnerUser.uid}:4294967295"
+            "--translate-gid=squash-guest:0:${toString runnerUser.gid}:4294967295"
+            "--modcaps=-mknod"
+          ];
         }
       ];
       # github-runnersモジュールは`ProtectSystem=strict`でサービスを強化するため、

@@ -84,6 +84,11 @@ in
             source = "/nix/store";
             mountPoint = "/nix/.ro-store";
             proto = "virtiofs";
+            # VMの中で読み取り専用にマウントするだけでは、
+            # VMのrootがマウントし直せば書き込めます。
+            # virtiofsdはホストのrootで動くので、
+            # virtiofsdの側でも書き込みを拒否させます。
+            readOnly = true;
           }
         ];
       };

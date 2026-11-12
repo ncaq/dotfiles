@@ -194,8 +194,8 @@ in
           name: _:
           lib.nameValuePair (tokenServiceOf name) {
             wantedBy = [ "timers.target" ];
-            # oneshotのサービスはactiveにならないので`OnUnitActiveSec`では繰り返せません。
-            # 発行に失敗した回があっても次の周期で試し直せるように時刻で起動します。
+            # 発行に失敗した回があっても次の周期で試し直せるように、
+            # 前回の起動からの経過ではなく時刻で起動します。
             timerConfig.OnCalendar = "*:0/30";
           }
         ) runnerContainerDefs;

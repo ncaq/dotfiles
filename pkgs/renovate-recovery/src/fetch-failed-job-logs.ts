@@ -62,17 +62,20 @@ export async function saveFailedJobLogs(
   reporter: LogReporter,
   input: SaveFailedJobLogsInput,
 ): Promise<void> {
-  const runId = parseRunId(input.runId);
-  if (runId === undefined) {
-    // 手動実行で実行のIDが渡されていない時は、
-    // 対象の実行は完了しているのでClaude Codeが`gh run view --log-failed`で読めます。
-    reporter.info("実行のIDが渡されていないので、ログの取得を省略します");
-    return;
+  const parsedRunId = parseRunId(input.runId);
+  switch (parsedRunId.kind) {
+    case "absent":
+      // 手動実行で実行のIDが渡されていない時は、
+      // 対象の実行は完了しているのでClaude Codeが`gh run view --log-failed`で読めます。
+      reporter.info("実行のIDが渡されていないので、ログの取得を省略します");
+      return;
+    case "invalid":
+      reporter.warning("実行のIDが正の整数ではないので、ログの取得を省略します");
+      return;
+    case "ok":
+      break;
   }
-  if (runId === null) {
-    reporter.warning("実行のIDが正の整数ではないので、ログの取得を省略します");
-    return;
-  }
+  const { runId } = parsedRunId;
   const logDir = input.logDir;
   if (logDir == null || logDir === "") {
     reporter.warning("ログを保存するディレクトリが渡されていないので、ログの取得を省略します");

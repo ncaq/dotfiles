@@ -17,21 +17,20 @@ describe("selectFailedJobs", () => {
 
 describe("parseRunId", () => {
   it("正の整数を読む", () => {
-    expect(parseRunId("43152603489")).toBe(43152603489);
+    expect(parseRunId("43152603489")).toEqual({ kind: "ok", runId: 43152603489 });
   });
 
   it("空なら指定なしとして扱う", () => {
-    expect(parseRunId("")).toBeUndefined();
-    expect(parseRunId(undefined)).toBeUndefined();
+    expect(parseRunId("")).toEqual({ kind: "absent" });
+    expect(parseRunId(undefined)).toEqual({ kind: "absent" });
   });
 
-  it("整数として読めない値は不正として扱う", () => {
-    expect(parseRunId("abc")).toBeNull();
-    expect(parseRunId("1.5")).toBeNull();
-    expect(parseRunId("-1")).toBeNull();
-    expect(parseRunId("0")).toBeNull();
-    expect(parseRunId("99999999999999999999")).toBeNull();
-  });
+  it.each(["abc", "1.5", "-1", "0", "99999999999999999999"])(
+    "整数として読めない値%sは不正として扱う",
+    (value) => {
+      expect(parseRunId(value)).toEqual({ kind: "invalid" });
+    },
+  );
 });
 
 describe("jobLogFileName", () => {

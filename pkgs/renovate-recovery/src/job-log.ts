@@ -22,19 +22,25 @@ export function selectFailedJobs(jobs: readonly JobSummary[]): JobSummary[] {
   return jobs.filter((job) => job.conclusion != null && LOGGED_CONCLUSIONS.has(job.conclusion));
 }
 
-/**
- * 環境変数で渡された実行のIDを読みます。
- * 空なら`undefined`を、正の整数として読めなければ`null`を返します。
- */
-export function parseRunId(value: string | undefined): number | null | undefined {
+/** 環境変数で渡された実行のIDを読んだ結果。 */
+export type ParsedRunId =
+  /** 渡されていない。 */
+  | { readonly kind: "absent" }
+  /** 正の整数として読めない。 */
+  | { readonly kind: "invalid" }
+  /** 読めた。 */
+  | { readonly kind: "ok"; readonly runId: number };
+
+/** 環境変数で渡された実行のIDを読みます。 */
+export function parseRunId(value: string | undefined): ParsedRunId {
   if (value == null || value === "") {
-    return undefined;
+    return { kind: "absent" };
   }
   if (!/^[0-9]+$/.test(value)) {
-    return null;
+    return { kind: "invalid" };
   }
   const runId = Number(value);
-  return Number.isSafeInteger(runId) && 0 < runId ? runId : null;
+  return Number.isSafeInteger(runId) && 0 < runId ? { kind: "ok", runId } : { kind: "invalid" };
 }
 
 /**

@@ -43,9 +43,16 @@ describe("jobLogFileName", () => {
 
   it("上の階層や隠しファイルを指す名前にしない", () => {
     expect(jobLogFileName({ id: 7, name: "../../etc", conclusion: null })).toBe("etc-7.log");
+    expect(jobLogFileName({ id: 8, name: ".", conclusion: null })).toBe("job-8.log");
+    expect(jobLogFileName({ id: 9, name: "..", conclusion: null })).toBe("job-9.log");
+  });
+
+  it("コマンドのオプションと取り違える名前にしない", () => {
+    expect(jobLogFileName({ id: 10, name: "-x", conclusion: null })).toBe("x-10.log");
+    expect(jobLogFileName({ id: 11, name: "--", conclusion: null })).toBe("job-11.log");
   });
 
   it("使える文字が残らない時は代わりの名前を使う", () => {
-    expect(jobLogFileName({ id: 9, name: "日本語", conclusion: null })).toBe("job-9.log");
+    expect(jobLogFileName({ id: 12, name: "日本語", conclusion: null })).toBe("job-12.log");
   });
 });

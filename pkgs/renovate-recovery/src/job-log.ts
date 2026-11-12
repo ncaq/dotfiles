@@ -42,9 +42,10 @@ export function parseRunId(value: string | undefined): number | null | undefined
  *
  * ジョブ名には`renovate-recovery / recover`のように空白やスラッシュが入るので、
  * ファイル名に使える文字以外は`_`に置き換えます。
+ * 先頭の`.`と`-`も落として、隠しファイルやコマンドのオプションと取り違えないようにします。
  * 同じ名前のジョブがあっても衝突しないよう、ジョブのIDを付けます。
  */
 export function jobLogFileName(job: JobSummary): string {
-  const safeName = job.name.replace(/[^A-Za-z0-9._-]+/g, "_").replace(/^[._]+/, "");
+  const safeName = job.name.replace(/[^A-Za-z0-9._-]+/g, "_").replace(/^[._-]+/, "");
   return `${safeName === "" ? "job" : safeName}-${job.id}.log`;
 }

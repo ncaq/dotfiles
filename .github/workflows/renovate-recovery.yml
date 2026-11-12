@@ -245,10 +245,9 @@ jobs:
         env:
           PR_NUMBER: ${{ inputs.pr-number }}
           KEY: ${{ needs.gate.outputs.key }}
-          RESULT_FILE: ${{ github.workspace }}/${{ env.RECOVERY_DIR }}/result.md
-          # 結果のファイルの実際の場所がこの中にあるかを確かめます。
+          # 投稿のスクリプトは、このファイルとその親のディレクトリがリンクではないことを確かめてから読みます。
           # シンボリックリンクで秘密を読ませる細工を投稿しないためです。
-          RESULT_DIR: ${{ github.workspace }}/${{ env.RECOVERY_DIR }}
+          RESULT_FILE: ${{ github.workspace }}/${{ env.RECOVERY_DIR }}/result.md
         with:
           script: |
             const { postComment } = await import(`${process.env.RUNNER_TEMP}/renovate-recovery-src/post-comment.ts`)

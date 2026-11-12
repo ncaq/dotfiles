@@ -8,16 +8,21 @@
  *
  * - `PR_NUMBER`: RenovateのPRの番号
  * - `KEY`: `gate`ジョブが出力した更新の内容のキー
- * - `RESULT_FILE`: Claude Codeが結果を書くファイル。無くてもよい
- * - `RESULT_DIR`: 結果のファイルを置いてよいディレクトリ
+ * - `RESULT_FILE`: Claude Codeが結果を書くファイルのフルパス。無くてもよい
  */
 
 import { constants } from "node:fs";
 import { lstat, open } from "node:fs/promises";
+import path from "node:path";
 import { buildCommentBody } from "./comment.ts";
 import { requireEnv, requireIntegerEnv } from "./env.ts";
 import { rejectResultDir, rejectResultFile } from "./recovery-output.ts";
-import type { ActionsCore, ScriptArguments } from "./script-arguments.ts";
+import type { ScriptArguments } from "./script-arguments.ts";
+
+/** 警告の出力先。`@actions/core`のうち使う分だけです。 */
+export interface WarningReporter {
+  warning(message: string): void;
+}
 
 /** 例外が指定したエラーコードのものかを判定します。 */
 function hasErrorCode(error: unknown, code: string): boolean {
@@ -25,8 +30,8 @@ function hasErrorCode(error: unknown, code: string): boolean {
 }
 
 /** 読まなかった理由を警告に出して、結果の代わりに投稿する文を返します。 */
-function rejected(reason: string, core: ActionsCore): string {
-  core.warning(reason);
+function rejected(reason: string, reporter: WarningReporter): string {
+  reporter.warning(reason);
   return `${reason}。結果は読み込んでいません。`;
 }
 
@@ -35,18 +40,22 @@ function rejected(reason: string, core: ActionsCore): string {
  * Claude Codeが書かずに終了した時は`undefined`を返します。
  * シンボリックリンクなど読んではいけないファイルの時は、読まずに理由を結果の代わりに返します。
  *
- * 調べてから開き直すと、その間に差し替えられるおそれがあるので、
+ * ファイル自体は、調べてから開き直すとその間に差し替えられるおそれがあるので、
  * リンクをたどらずに開いたハンドルを調べて、同じハンドルから読みます。
+ * 親のディレクトリは`lstat`で調べてから開くまでの間に差し替えられる余地が残りますが、
+ * このステップはClaude Codeのプロセスが終わった後に動くので、
+ * 作業ツリーを書き換えるものはもういません。
  */
-async function readResult(
+export async function readResult(
   file: string,
-  resultDir: string,
-  core: ActionsCore,
+  reporter: WarningReporter,
 ): Promise<string | undefined> {
   try {
-    const dirRejection = rejectResultDir({ isDirectory: (await lstat(resultDir)).isDirectory() });
+    const dirRejection = rejectResultDir({
+      isDirectory: (await lstat(path.dirname(file))).isDirectory(),
+    });
     if (dirRejection != null) {
-      return rejected(dirRejection, core);
+      return rejected(dirRejection, reporter);
     }
   } catch (error) {
     if (hasErrorCode(error, "ENOENT")) {
@@ -63,7 +72,7 @@ async function readResult(
       return undefined;
     }
     if (hasErrorCode(error, "ELOOP")) {
-      return rejected("結果のファイルがシンボリックリンクです", core);
+      return rejected("結果のファイルがシンボリックリンクです", reporter);
     }
     throw error;
   }
@@ -75,7 +84,7 @@ async function readResult(
       size: stats.size,
     });
     if (fileRejection != null) {
-      return rejected(fileRejection, core);
+      return rejected(fileRejection, reporter);
     }
     return await handle.readFile({ encoding: "utf8" });
   } finally {
@@ -87,7 +96,7 @@ export async function postComment({ github, context, core }: ScriptArguments): P
   const { owner, repo } = context.repo;
   const body = buildCommentBody({
     key: requireEnv("KEY"),
-    result: await readResult(requireEnv("RESULT_FILE"), requireEnv("RESULT_DIR"), core),
+    result: await readResult(requireEnv("RESULT_FILE"), core),
     runUrl: `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`,
   });
   await github.rest.issues.createComment({

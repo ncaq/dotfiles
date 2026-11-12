@@ -57,6 +57,11 @@ RenovateのPRのCIが失敗したので、
   長い文章や値はファイルに書いてから、
   `--body-file`のようにファイルを受け取るオプションで渡す
 - `nix`の`--expr`や`--file`、`--option`のような評価やビルドの仕組みを変えるオプションは使えない
+- `nix build`は`nix build --no-link --print-out-paths .#<属性>`の形で使う。
+  `--no-link`が無いと許可されません
+- `run-commit-msg-hook`や`gh`の`--body-file`には、
+  `.renovate-recovery/`の下のファイルを相対パスで渡す。
+  絶対パスと入力のリダイレクト(`<`)は使えない
 - 以前の復旧のブランチの削除は、
   後の「コミットとPR」に書いたコマンドをそのままの形で実行した時だけ許可されています
 

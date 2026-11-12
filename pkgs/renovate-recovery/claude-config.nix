@@ -181,7 +181,10 @@ let
     "git switch"
     "ls"
     "mkdir"
-    "nix build"
+    # `--no-link`が無いと作業ツリーに`result`のリンクを作ります。
+    # derivationの出力は作業ツリーの外を指すリンクにもなれるので、
+    # 許可したコマンドにそのリンクを渡すと外のファイルを読めてしまいます。
+    "nix build --no-link"
     "nix derivation show"
     "nix eval"
     "nix flake lock"
@@ -217,6 +220,19 @@ let
     "*?*"
     "*[*"
     "*{*"
+    # ファイルを読み込むコマンドに絶対パスを渡すこと。
+    # ストアのパスはderivationの作り方次第で`/proc/self/environ`などへのリンクにできるので、
+    # `/nix/store`の下を指していても外のファイルを読めます。
+    # `Read`ツールはリンクを解決して拒否しますが、Bashのコマンドはたどってしまいます。
+    # スキルの`allowed-tools`も`run-commit-msg-hook`を範囲を絞らず許可するので、
+    # 許可の一覧ではなく拒否で塞ぎます。
+    "run-commit-msg-hook /*"
+    "gh*--body-file /*"
+    "gh*--body-file=/*"
+    "gh* -F /*"
+    "gh* -F/*"
+    # 入力のリダイレクトで同じように外のファイルを読ませること。
+    "*<*"
     # jqは許可していませんが、
     # スキルの`allowed-tools`が許可した時に備えて、
     # `env`と`$ENV`で環境変数を読む使い方を拒否します。

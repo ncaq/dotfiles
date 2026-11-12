@@ -8,7 +8,7 @@ module GithubRunnerRegistrationToken.Cli
   ) where
 
 import GithubRunnerRegistrationToken.AccessToken (readAccessToken)
-import GithubRunnerRegistrationToken.Api (issuePolicy, issueRegistrationToken)
+import GithubRunnerRegistrationToken.Api (issuePolicy, issueRegistrationToken, recoveringIssue)
 import GithubRunnerRegistrationToken.Config (Config (..), configFrom)
 import GithubRunnerRegistrationToken.Failure (ApiFailure, ConfigFailure)
 import GithubRunnerRegistrationToken.TokenFile (tokenFileName, writeTokenFile)
@@ -35,9 +35,7 @@ runWith policy lookupVariable = handle (report @ConfigFailure) . handle (report 
   config <- configFrom lookupVariable
   accessToken <- readAccessToken config.accessTokenFile
   registrationToken <-
-    recoverAll
-      policy
-      (const (issueRegistrationToken config.api accessToken config.repository))
+    recoveringIssue policy (issueRegistrationToken config.api accessToken config.repository)
   writeTokenFile (config.runtimeDirectory </> tokenFileName) registrationToken
   logInfoN ("登録トークンを発行しました: " <> convert (show config.repository))
 

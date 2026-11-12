@@ -101,11 +101,15 @@ in
   sops = {
     secrets = {
       # セルフホストランナーがGitHub Actionsに自身を登録するためのトークン。
+      # github-runnersモジュールは`tokenFile`をrootで読んで状態ディレクトリへ写すので、
+      # ジョブを実行する`github-runner`ユーザーが読める必要はありません。
+      # `privateUsers = "identity"`によりコンテナのrootはホストのrootと同じUIDなので、
+      # bind mountしたままコンテナ内のrootから読めます。
       "runner-registration-token" = {
         sopsFile = ../../../../secrets/seminar/github-runner.yaml;
         key = "runner-registration-token";
-        owner = "github-runner";
-        group = "github-runner";
+        owner = "root";
+        group = "root";
         mode = "0400";
       };
     };

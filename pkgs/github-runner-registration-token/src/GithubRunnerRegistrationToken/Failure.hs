@@ -7,14 +7,17 @@ module GithubRunnerRegistrationToken.Failure
 import Himari
 
 -- | 設定を揃えられない理由。
-newtype ConfigFailure
+data ConfigFailure
   = -- | 必要な環境変数が無いか空である。その名前。
     MissingVariable Text
+  | -- | アクセストークンのファイルが空か、空白だけである。そのパス。
+    EmptyAccessToken FilePath
   deriving stock (Eq, Show)
 
 instance Exception ConfigFailure where
   displayException = \case
     MissingVariable name -> "環境変数" <> convert name <> "が必要です"
+    EmptyAccessToken path -> "アクセストークンのファイル" <> path <> "が空です"
 
 -- | HTTPは通ったが、GitHubのAPIの応答を使えなかった。
 data ApiFailure

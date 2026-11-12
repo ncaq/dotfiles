@@ -84,6 +84,58 @@ let
       done
     '';
   };
+  # 名前解決を待つリモートのホスト名。
+  # ローカルの`file://`と、名前解決の要らない`[...]`のIPv6アドレスは含めません。
+  remoteHosts = lib.unique (
+    lib.concatMap (
+      repository:
+      let
+        matched = builtins.match "^(https|ssh)://([^@/]+@)?([^@/:]+).*$" repository.url;
+        host = lib.elemAt matched 2;
+      in
+      lib.optional (matched != null && !lib.hasPrefix "[" host) host
+    ) repositories
+  );
+  # ユーザのsystemdからはシステムの`network-online.target`を待てず、
+  # 待てたとしてもNetworkManagerは実際に繋がる前にこのtargetへ届かせます。
+  # 起動直後に購読すると名前解決に失敗して全て更新を諦めてしまうため、
+  # リモートのホストの名前が解決できるようになるまで待ちます。
+  # 時間内に解決できなければ警告を出して、購読はそのまま試みます。
+  waitForRemoteHosts = pkgs.writeShellApplication {
+    name = "git-repo-subscribe-wait-for-hosts";
+    runtimeInputs = with pkgs; [
+      coreutils
+      getent
+    ];
+    text = ''
+      timeout="$1"
+      shift
+      deadline=$((SECONDS + timeout))
+      for host in "$@"; do
+        until getent ahosts "$host" >/dev/null; do
+          if ((SECONDS >= deadline)); then
+            echo "warning: unable to resolve $host within $timeout seconds; subscribing anyway" >&2
+            exit 0
+          fi
+          sleep 1
+        done
+      done
+    '';
+  };
+  # systemdのユーザサービスとして、名前解決を待ってから購読します。
+  waitAndSubscribeAll = pkgs.writeShellApplication {
+    name = "git-repo-subscribe-wait-and-subscribe-all";
+    text = ''
+      ${lib.escapeShellArgs (
+        [
+          (lib.getExe waitForRemoteHosts)
+          "120"
+        ]
+        ++ remoteHosts
+      )}
+      exec ${lib.getExe subscribeAll}
+    '';
+  };
   repositoryPaths = map (repository: repository.path) repositories;
   haveNestedRepositoryPaths = lib.any (
     path: lib.any (other: path != other && lib.hasPrefix "${path}/" other) repositoryPaths
@@ -120,14 +172,15 @@ in
         # ユーザサービスに分離してactivationやGUIの起動と並行に動かします。
         # 切り替え時はsd-switchが`default.target`から引かれる停止中のユニットとして起動します。
         #
-        # oneshotなので`default.target`は購読が終わるまで届きませんが、ログインは待たせません。
-        # ユーザのsystemdは`default.target`ではなく`basic.target`に届いた時点で`READY=1`を送るので、
-        # `user@.service`の起動完了もセッションの作成も購読を待たないからです。
+        # sd-switchは起動したユニットの起動ジョブが終わるまで待つので、
+        # oneshotにすると名前解決を待つ間は切り替えが終わりません。
+        # `exec`にしてプロセスを起動した時点で起動ジョブを終わらせ、
+        # 切り替えも`default.target`も購読を待たないようにします。
         systemd.user.services.git-repo-subscribe = {
           Unit.Description = "Clone and update subscribed Git repositories";
           Service = {
-            Type = "oneshot";
-            ExecStart = lib.getExe subscribeAll;
+            Type = "exec";
+            ExecStart = lib.getExe waitAndSubscribeAll;
           };
           Install.WantedBy = [ "default.target" ];
         };

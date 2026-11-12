@@ -199,13 +199,26 @@ let
   # リポジトリにも`home/`があるので、
   # 相対パスと区別できるよう絶対パスの始まりになる区切りの直後だけを対象にします。
   ++ lib.concatMap (dir: map (separator: "*${separator}/${dir}*") absolutePathSeparators) [
+    "dev"
     "etc"
     "home"
     "proc"
     "root"
+    "run"
     "sys"
     "var"
-  ];
+  ]
+  # 作業ツリーの外へ出る相対パス。
+  # `../../proc/self/environ`のように上へ辿れば、絶対パスを書かなくても同じ場所を読めます。
+  # `git diff a..b`の範囲指定を巻き込まないよう、スラッシュの付いた形と単独の`..`だけを対象にします。
+  ++ [
+    "*../*"
+    "* .."
+  ]
+  # ホームディレクトリを指すチルダ。
+  # `HEAD~1`のようなgitのリビジョン指定を巻き込まないよう、
+  # 絶対パスと同じ区切りの直後だけを対象にします。
+  ++ map (separator: "*${separator}~*") absolutePathSeparators;
 
   # 普段の`home/core/claude-code.nix`の設定から、
   # ランナーでも意味のあるものだけを抜き出しています。

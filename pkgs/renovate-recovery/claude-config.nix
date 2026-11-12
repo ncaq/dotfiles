@@ -129,9 +129,13 @@ let
   # 復旧の手順で使うものだけを許可します。
   # `cat`のような読み取り専用のコマンドは、
   # Claude Code自身が作業ディレクトリの中に限って許可するのでここには書きません。
+  # `jq`や`sort`や`diff`や`wc`のように任意のファイルを引数に取るコマンドもここには書きません。
+  # ここで許可すると前置きの照合だけで通り、
+  # 下の拒否の規則をglobなどで迂回して作業ツリーの外を読めてしまいます。
+  # 書かなければClaude Code自身の検査を通り、
+  # globを含めて作業ディレクトリの外のパスを拒否してくれます。
   allowedBashCommands = [
     "./check.sh"
-    "diff"
     "gh label list"
     "gh pr checks"
     "gh pr create"
@@ -155,7 +159,6 @@ let
     "git show"
     "git status"
     "git switch"
-    "jq"
     "ls"
     "mkdir"
     "nix build"
@@ -177,8 +180,6 @@ let
     "read-contributing"
     "read-pull-request-template"
     "run-commit-msg-hook"
-    "sort"
-    "wc"
   ];
 
   # 許可したコマンドでも塞ぎたい使い方。
@@ -189,7 +190,16 @@ let
     # 許可したコマンドの引数を通して環境変数の中身を外へ出せてしまいます。
     "*$*"
     "*`*"
-    # jqは`env`と`$ENV`で環境変数を読めます。
+    # シェルのglobとブレース展開。
+    # 規則が照合した後でシェルが展開するので、
+    # `/pr?c/self/environ`のように書くと絶対パスの拒否を迂回できます。
+    # `*`も同じように使えますが、規則の文法で`*`そのものを指せないので塞げていません。
+    "*?*"
+    "*[*"
+    "*{*"
+    # jqは許可していませんが、
+    # スキルの`allowed-tools`が許可した時に備えて、
+    # `env`と`$ENV`で環境変数を読む使い方を拒否します。
     "jq*env*"
     "jq*ENV*"
     # gitの外部コマンドの実行と、作業ツリーの外への書き込み。

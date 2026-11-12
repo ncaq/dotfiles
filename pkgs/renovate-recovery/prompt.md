@@ -50,7 +50,10 @@ RenovateのPRのCIが失敗したので、
 - ファイルの中身は`Read`と`Grep`で読む
 - `WebFetch`は直接は使えない。
   web上のページを読む必要がある時は`research:research`スキルに調べさせる
-- Bashのコマンドの中で`$`による変数展開やコマンド置換、バッククォートは使えない。
+- Bashのコマンドの中で`$`による変数展開やコマンド置換、バッククォート、
+  `?`や`[`や`{`のようなglobやブレース展開は使えない。
+  `jq`や`sort`のようにファイルを引数に取るコマンドは、作業ツリーの中のファイルにしか使えない。
+  ファイルは主に`Read`と`Grep`で読み、差分は`git diff`で見る。
   長い文章や値はファイルに書いてから、
   `--body-file`のようにファイルを受け取るオプションで渡す
 - `nix`の`--expr`や`--file`、`--option`のような評価やビルドの仕組みを変えるオプションは使えない
@@ -140,7 +143,8 @@ upstreamのビルドの失敗やテストの失敗のように、
   `origin/master`の`flake.lock`を取り出して、
   原因のinput以外を`nix flake update <input名>...`で更新する方法が確実です。
   終わったら、
-  原因のinputのノードが`origin/master`のものと一致していることを`jq`で確かめる
+  原因のinputのノードが`origin/master`のものと一致していることを、
+  `git diff origin/master -- flake.lock`の差分に原因のinputが出てこないことで確かめる
 - `Cargo.lock`や`package-lock.json`など: 原因の依存だけを`origin/master`のバージョンへ戻す
 
 原因のinputや依存を1つに絞れない時は、

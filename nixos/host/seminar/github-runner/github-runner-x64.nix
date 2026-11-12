@@ -344,6 +344,13 @@ in
 {
   microvm.vms = lib.mapAttrs mkRunnerVm runnerVmDefs;
 
+  # ブートテストがストアの準備とGCの前後の処理を確かめるために読みます。
+  local.githubRunnerVms = lib.mapAttrs (name: _: {
+    storeService = "${storeServiceOf name}.service";
+    storeDatabase = "${storeDirOf name}/db.sqlite";
+    overlayImage = overlayImageOf name;
+  }) runnerVmDefs;
+
   # CIランナーの出口はインターネットだけ。
   #
   # ランナーの中ではリポジトリのワークフローが持ち込んだコードが動く。

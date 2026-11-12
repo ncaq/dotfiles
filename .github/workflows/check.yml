@@ -100,17 +100,15 @@ jobs:
 
   build-nix-on-droid:
     name: build-nix-on-droid
-    # こちらでビルドするものはどうせaarch64なので、
-    # パッケージに大きな変動が起きても、
-    # どうせ現状build-nixosでビルドされないので、
-    # こちらのビルドは並列で実行しても問題ないです。
-    needs: is-trusted
+    # ビルドするものはaarch64なので、
+    # GitHubホステッドのaarch64のランナーでエミュレーション無しにビルドします。
+    # セルフホステッドランナーはx86_64なので、
+    # そちらで動かすとQEMUのユーザーモードでのエミュレーションが要ります。
+    # セルフホステッドランナーを使わないので`is-trusted`の結果は待ちません。
     permissions:
       contents: read # リポジトリコンテンツの読み取り
       id-token: write # `ncaq/nix-composite-action`内のniks3-publicとのOIDC認証に使用
-    # セルフホステッドランナーは未認証のソースからは実行しない。
-    if: needs.is-trusted.result == 'success'
-    runs-on: [self-hosted, Linux]
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 360 # キャッシュが切れている時は時間がかかるため長めに設定。
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7

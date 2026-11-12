@@ -299,11 +299,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1794281609,
-        "narHash": "sha256-rR/MOvBFx7w0/XNEQm1QdsD6EzCW4C8pNC5mXr05f3o=",
+        "lastModified": 1794456601,
+        "narHash": "sha256-e3jNh8Dk3+drlcDxnmWMCMvPfCJil4sTWurBqcCa0TQ=",
         "owner": "ncaq",
         "repo": "konoka",
-        "rev": "a126a94c3d33fd4eb2239b9bff5ddf581d863ee1",
+        "rev": "d1f444a94973e34344fbd1d5e58e361348fa3d30",
         "type": "github"
       },
       "original": {

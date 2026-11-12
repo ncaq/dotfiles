@@ -98,6 +98,7 @@ jobs:
     if: needs.gate.outputs.run == 'true'
     # Claude GitHub Appが自分のトークンを管理するので、ここで必要な権限は最小限です。
     permissions:
+      actions: read # 失敗したジョブのログの取得
       contents: read # リポジトリコンテンツの読み取り
       id-token: write # niks3-publicとのOIDC認証と、Claude GitHub Appのトークンの取得に使用
       pull-requests: write # 結果のコメントの投稿
@@ -105,6 +106,10 @@ jobs:
     # GitHubのランナーではディスクが足りないためセルフホステッドランナーで動かします。
     runs-on: [self-hosted, Linux]
     timeout-minutes: 360 # キャッシュが切れている時は時間がかかるため長めに設定。
+    env:
+      # Claude Codeが一時ファイルや結果のファイルを書く、作業ツリーの中のディレクトリです。
+      # `prompt.md`にも同じ名前を書いているので、変える時は合わせてください。
+      RECOVERY_DIR: .renovate-recovery
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -116,6 +121,40 @@ jobs:
       - name: Keep a copy of the comment script
         # Claude Codeが作業ツリーを書き換えても、結果の投稿には元のスクリプトを使います。
         run: cp -r pkgs/renovate-recovery/src "${RUNNER_TEMP}/renovate-recovery-src"
+      - name: Prepare a work directory for Claude Code
+        # Claude Codeが一時ファイルや結果のファイルを書く場所です。
+        # `runner.temp`には後のステップが使うスクリプトのコピーや`GITHUB_ENV`のファイルがあるので、
+        # Claude Codeには書かせず、作業ツリーの中に専用の場所を作ります。
+        # 作業ツリーの中なら相対パスで扱えるので、絶対パスを拒否する権限の規則とも両立します。
+        # `.git/info/exclude`に足して、
+        # `git status`やflakeのソースやコミットの対象に入らないようにします。
+        #
+        # `core.symlinks`を切って、checkoutやrestoreがシンボリックリンクをただのファイルとして書くようにします。
+        # Claude Codeは`git fetch`と`git checkout`で任意のコミットの中身を作業ツリーに置けます。
+        # リンクを置けると、
+        # 相対パスで作業ツリーの外を読んだり、
+        # 結果のファイルを`/proc/self/environ`などへのリンクにしたりできてしまいます。
+        # `.git/config`はClaude Codeの権限の規則で書き換えを拒否しています。
+        run: |
+          set -euo pipefail
+          mkdir -p "${RECOVERY_DIR}"
+          echo "/${RECOVERY_DIR}/" >>.git/info/exclude
+          git config --local core.symlinks false
+      - name: Fetch failed job logs
+        # 失敗したジョブのログをClaude Codeが読める場所へ保存します。
+        # Claude Codeに任意のジョブのログを取得するAPIを許可しなくて済むよう、ここで取得します。
+        # ログは補助なので、ここが失敗してもClaude Codeは起動します。
+        # 失敗したまま止まると、Claude Codeが動かないのに処理済みとして記録されてしまいます。
+        # スクリプトも失敗を警告に留めますが、取りこぼした例外にも備えます。
+        continue-on-error: true
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          RUN_ID: ${{ inputs.run-id }}
+          LOG_DIR: ${{ github.workspace }}/${{ env.RECOVERY_DIR }}/logs
+        with:
+          script: |
+            const { fetchFailedJobLogs } = await import(`${process.env.RUNNER_TEMP}/renovate-recovery-src/fetch-failed-job-logs.ts`)
+            await fetchFailedJobLogs({ github, context, core })
       - name: Build Claude Code and Bun
         id: executables
         env:
@@ -125,15 +164,40 @@ jobs:
           set -euo pipefail
           claude=$(nix build --no-link --print-out-paths "${FLAKE}#claude-code")
           bun=$(nix build --no-link --print-out-paths "${FLAKE}#bun")
+          # プラグインやプロンプトなど、普段の設定から同期したものです。
+          # 中身は`pkgs/renovate-recovery/claude-config.nix`に書いてあります。
+          config=$(nix build --no-link --print-out-paths "${FLAKE}#renovate-recovery-claude-config")
+          args=(
+            --settings "${config}/settings.json"
+            --append-system-prompt-file "${config}/append-system-prompt.md"
+          )
+          # プラグインが無い時にglobがそのまま引数に渡らないようにします。
+          shopt -s nullglob
+          plugins=("${config}"/plugins/*)
+          if [ "${#plugins[@]}" -eq 0 ]; then
+            echo "::error::${config}/plugins にプラグインがありません"
+            exit 1
+          fi
+          for plugin in "${plugins[@]}"; do
+            args+=(--plugin-dir "${plugin}")
+          done
+          # `commit`プラグインの`run-commit-msg-hook`が、
+          # 普段と同じcommitlintの検査をコミットメッセージにかけられるようにします。
+          # 作業ツリーではなく`.git/config`に書くので、コミットの対象にはなりません。
+          git config --local core.hooksPath "${config}/git-hooks"
           {
             echo "claude=${claude}/bin/claude"
             echo "bun=${bun}/bin/bun"
+            echo "claude-config-args=${args[*]}"
           } >>"$GITHUB_OUTPUT"
       - uses: anthropics/claude-code-action@4fa93a88de49bbef68b10eb15aabedf28ca0e1ed # v1.0.271
         env:
           # `use_commit_signing`のコミット先のブランチです。
           # 未指定だと`GITHUB_HEAD_REF`、つまりRenovateのブランチへコミットしてしまいます。
           CLAUDE_BRANCH: renovate-recovery/${{ inputs.pr-number }}
+          # Claude Codeが実行するコマンドの環境変数から、Anthropicの認証情報を取り除きます。
+          # GitHub Actionsの中では既定で有効ですが、既定が変わっても外れないよう明示します。
+          CLAUDE_CODE_SUBPROCESS_ENV_SCRUB: "1"
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           path_to_claude_code_executable: ${{ steps.executables.outputs.claude }}
@@ -149,19 +213,30 @@ jobs:
           use_commit_signing: "true"
           # 復旧のブランチが無い時に、RenovateのPRのheadから切るためのブランチです。
           base_branch: ${{ needs.gate.outputs.head-ref }}
-          # 署名の無いコミットを積まないよう、`git push`は禁止します。
+          # 許可するツールとコマンドの大半は、
+          # `pkgs/renovate-recovery/claude-config.nix`の`permissions`に書いてあります。
+          # ここでは実行ごとに変わるもの、
+          # つまり以前の復旧で作ったブランチの削除だけを許可します。
+          #
+          # スキルの`allowed-tools`は範囲の無い`Edit`を許可することがあるので、
+          # `runner.temp`への書き込みはここで明示的に拒否します。
+          #
+          # 規則は空白や`*`を含むので、
+          # `claude_args`を引数に分ける時に1つの引数のまま渡るよう単一引用符で囲みます。
           claude_args: >-
             --model opus
-            --allowedTools "Bash,Edit,Glob,Grep,Read,TodoWrite,WebFetch,WebSearch,Write,mcp__github_file_ops__commit_files,mcp__github_file_ops__delete_files"
-            --disallowedTools "Bash(git push:*)"
-            --add-dir "${{ runner.temp }}"
+            --allowedTools
+            'Bash(gh api -X DELETE repos/${{ github.repository }}/git/refs/heads/renovate-recovery/${{ inputs.pr-number }})'
+            --disallowedTools
+            'Edit(/${{ runner.temp }}/**)'
+            ${{ steps.executables.outputs.claude-config-args }}
           prompt: |
             `pkgs/renovate-recovery/prompt.md`を読んで、その手順に従ってください。
 
             - リポジトリ: ${{ github.repository }}
             - RenovateのPRの番号: ${{ inputs.pr-number }}
             - 失敗したワークフローの実行のID: ${{ inputs.run-id || '(未指定)' }}
-            - 結果を書くファイル: ${{ runner.temp }}/renovate-recovery-result.md
+            - 結果を書くファイル: ${{ env.RECOVERY_DIR }}/result.md
       - name: Post result comment
         # rebaseで実行ごと打ち切られた時は記録を残さず、新しい内容での失敗に任せます。
         # それ以外は失敗でも記録して、同じ内容で何度も動かないようにします。
@@ -170,7 +245,9 @@ jobs:
         env:
           PR_NUMBER: ${{ inputs.pr-number }}
           KEY: ${{ needs.gate.outputs.key }}
-          RESULT_FILE: ${{ runner.temp }}/renovate-recovery-result.md
+          # 投稿のスクリプトは、このファイルとその親のディレクトリがリンクではないことを確かめてから読みます。
+          # シンボリックリンクで秘密を読ませる細工を投稿しないためです。
+          RESULT_FILE: ${{ github.workspace }}/${{ env.RECOVERY_DIR }}/result.md
         with:
           script: |
             const { postComment } = await import(`${process.env.RUNNER_TEMP}/renovate-recovery-src/post-comment.ts`)

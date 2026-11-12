@@ -325,6 +325,14 @@
           ...
         }:
         let
+          # `renovate-recovery`ワークフローのClaude Codeへ渡すプラグインやプロンプトなどの設定一式。
+          renovate-recovery-claude-config = pkgs.callPackage ./pkgs/renovate-recovery/claude-config.nix {
+            konokaPlugins = inputs.konoka.packages.${system};
+            git-hooks = inputs.git-hooks.packages.${system}.default;
+            inherit renovate-recovery;
+          };
+          # `renovate-recovery`ワークフローが直接実行するTypeScriptの型検査とテスト。
+          renovate-recovery = pkgs.callPackage ./pkgs/renovate-recovery { };
           # Gitリポジトリを購読するためのツール。
           # ビルドの中でsandwichのテストが走る。
           git-repo-subscribe = pkgs.callPackage ./pkgs/git-repo-subscribe {
@@ -588,8 +596,11 @@
               git-repo-subscribe = git-repo-subscribe.override { werror = true; };
               patch-gguf-chat-template = patch-gguf-chat-template.override { werror = true; };
               nvd-pr-diff = nvd-pr-diff.override { werror = true; };
-              # `renovate-recovery`ワークフローが直接実行するTypeScriptの型検査とテスト。
-              renovate-recovery = pkgs.callPackage ./pkgs/renovate-recovery { };
+              inherit renovate-recovery;
+              # 同じワークフローのClaude Codeへ渡す設定一式。
+              # 使われるのはRenovateのPRが失敗した時だけなので、
+              # konokaやgit-hooksの更新で壊れたことに普段のCIで気付けるようにします。
+              inherit renovate-recovery-claude-config;
             }
             // lib.optionalAttrs hasComfyui {
               # リポジトリ内のPythonの型検査。
@@ -612,6 +623,8 @@
             # Nixでビルドしたものを指定します。
             inherit (pkgs) bun;
             inherit (importPkgsUnstable system) claude-code;
+            # 同じワークフローのClaude Codeへ渡すプラグインやプロンプトなどの設定一式。
+            inherit renovate-recovery-claude-config;
             # Gitリポジトリを購読するためのツール。
             inherit git-repo-subscribe;
             # PRコメントにnvd diffを投稿するコマンド。

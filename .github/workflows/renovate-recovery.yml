@@ -149,10 +149,9 @@ jobs:
           # `use_commit_signing`のコミット先のブランチです。
           # 未指定だと`GITHUB_HEAD_REF`、つまりRenovateのブランチへコミットしてしまいます。
           CLAUDE_BRANCH: renovate-recovery/${{ inputs.pr-number }}
-          # ランナーのサービスには`XDG_RUNTIME_DIR`が無く、
-          # `log-analyzer`などのスキルは作業ディレクトリを`/tmp`に作ってしまいます。
-          # `--add-dir`で読み書きを許可している場所へ向けます。
-          XDG_RUNTIME_DIR: ${{ runner.temp }}
+          # Claude Codeが実行するコマンドの環境変数から、Anthropicの認証情報を取り除きます。
+          # GitHub Actionsの中では既定で有効ですが、既定が変わっても外れないよう明示します。
+          CLAUDE_CODE_SUBPROCESS_ENV_SCRUB: "1"
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           path_to_claude_code_executable: ${{ steps.executables.outputs.claude }}
@@ -168,12 +167,22 @@ jobs:
           use_commit_signing: "true"
           # 復旧のブランチが無い時に、RenovateのPRのheadから切るためのブランチです。
           base_branch: ${{ needs.gate.outputs.head-ref }}
-          # 署名の無いコミットを積まないよう、`git push`は禁止します。
-          # `Agent`と`Skill`と`mcp__plugin_*`は同期したプラグインのスキルが使います。
+          # 許可するツールとコマンドの大半は、
+          # `pkgs/renovate-recovery/claude-config.nix`の`permissions`に書いてあります。
+          # ここでは実行ごとに変わるものだけを許可します。
+          #
+          # - 結果のファイルなどを書く`runner.temp`への書き込み
+          # - 失敗したジョブのログの取得
+          # - 以前の復旧で作ったブランチの削除
+          #
+          # `claude_args`のクォートの中で`$`が展開されないよう、単一引用符で囲みます。
           claude_args: >-
             --model opus
-            --allowedTools "Agent,Bash,Edit,Glob,Grep,Read,Skill,TodoWrite,WebFetch,WebSearch,Write,mcp__github_file_ops__commit_files,mcp__github_file_ops__delete_files,mcp__plugin_nix-tasuke_nixos,mcp__plugin_research_cloudflare,mcp__plugin_research_context7,mcp__plugin_research_deepwiki,mcp__plugin_research_mdn,mcp__plugin_research_microsoft-learn"
-            --disallowedTools "Bash(git push:*)"
+            --allowedTools
+            'Edit(/${{ runner.temp }}/**)'
+            'Write(/${{ runner.temp }}/**)'
+            'Bash(gh api repos/${{ github.repository }}/actions/jobs/*/logs*)'
+            'Bash(gh api -X DELETE repos/${{ github.repository }}/git/refs/heads/renovate-recovery/${{ inputs.pr-number }})'
             --add-dir "${{ runner.temp }}"
             ${{ steps.executables.outputs.claude-config-args }}
           prompt: |

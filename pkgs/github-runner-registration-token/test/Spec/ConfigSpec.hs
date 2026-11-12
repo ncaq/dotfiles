@@ -11,7 +11,7 @@ complete :: [(Text, Text)]
 complete =
   [ ("GITHUB_RUNNER_REGISTRATION_TOKEN_REPOSITORY", "ncaq/dotfiles")
   , ("GITHUB_RUNNER_REGISTRATION_TOKEN_API", "https://api.github.com")
-  , ("GITHUB_RUNNER_REGISTRATION_TOKEN_ACCESS_TOKEN_FILE", "/run/secrets/runner-registration-token")
+  , ("GITHUB_RUNNER_REGISTRATION_TOKEN_ACCESS_TOKEN_FILE", "/run/secrets/runner-registration-pat")
   , ("RUNTIME_DIRECTORY", "/run/github-runner-dotfiles-x64-registration-token")
   ]
 
@@ -23,7 +23,7 @@ tests = describe "configFrom" do
               Config
                 { repository = "ncaq/dotfiles"
                 , api = "https://api.github.com"
-                , accessTokenFile = "/run/secrets/runner-registration-token"
+                , accessTokenFile = "/run/secrets/runner-registration-pat"
                 , runtimeDirectory = "/run/github-runner-dotfiles-x64-registration-token"
                 }
           )

@@ -192,7 +192,15 @@ lib.mapAttrs (
     # コンテナのvethは実際のインターフェイスを見ません。
     # テストVMでは秘密情報が無いので大半のコンテナが起動に失敗して、
     # vethが作られないからです。
-    # microVMは秘密情報を要らないものだけなのでテストVMでも起動します。
+    #
+    # microVMは、テストVMでも起動するものだけ実際のインターフェイスを見ます。
+    # ホスト側のユニットが他のユニットを`requires`しているmicroVMは、
+    # 秘密情報から作るものを待っていてテストVMでは起動しないので、待ちません。
+    # GitHub ActionsのランナーのVMがそうで、登録トークンを発行できないと起動しません。
+    # 起動しないmicroVMも、networkdの設定ファイルの検査の対象には入っています。
+    #
+    # TAPの名前はVMの名前から導かず、VMの`microvm.interfaces`から引きます。
+    # インターフェイス名は15文字までなので、VMの名前より短い名前を付けることがあります。
     hostConfig = hostDef.nixosSystem.config;
     nat = hostConfig.networking.nat;
     ipv6Containers = lib.filterAttrs (_: c: c.hostAddress6 != null) hostConfig.containers;
@@ -200,8 +208,18 @@ lib.mapAttrs (
     ipv6Networks = lib.filterAttrs (
       _: n: lib.any (a: isIpv6 a.Address) n.addresses
     ) hostConfig.systemd.network.networks;
-    ipv6Vms = lib.filter (name: ipv6Networks ? "20-vm-${name}") (
-      lib.attrNames (hostConfig.microvm.vms or { })
+    startsInTestVm =
+      name: ((hostConfig.systemd.services."microvm@${name}" or { }).requires or [ ]) == [ ];
+    ipv6VmTaps = lib.filter (t: ipv6Networks ? "20-${t.tap}") (
+      lib.concatLists (
+        lib.mapAttrsToList (
+          name: vm:
+          map (interface: {
+            inherit name;
+            tap = interface.id;
+          }) (lib.filter (interface: interface.type == "tap") vm.config.config.microvm.interfaces)
+        ) (lib.filterAttrs (name: _: startsInTestVm name) (hostConfig.microvm.vms or { }))
+      )
     );
     machineIpv6Test =
       lib.optionalString (nat.enable && nat.enableIPv6) # python
@@ -230,14 +248,14 @@ lib.mapAttrs (
         ) ipv6Networks
       )
       + lib.concatMapStrings (
-        name:
+        t:
         lib.concatMapStrings (
           a: # python
           ''
-            machine.wait_for_unit("microvm@${name}.service")
-            machine.wait_until_succeeds("ip -6 addr show dev vm-${name} | grep -qF '${a.Address}'")
-          '') (lib.filter (a: isIpv6 a.Address) ipv6Networks."20-vm-${name}".addresses)
-      ) ipv6Vms;
+            machine.wait_for_unit("microvm@${t.name}.service")
+            machine.wait_until_succeeds("ip -6 addr show dev ${t.tap} | grep -qF '${a.Address}'")
+          '') (lib.filter (a: isIpv6 a.Address) ipv6Networks."20-${t.tap}".addresses)
+      ) ipv6VmTaps;
 
     # 自宅LANのインターフェイスへ開けている許可が、
     # 全て送信元アドレスでも絞られていることを確認します。

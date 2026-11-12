@@ -106,6 +106,10 @@ jobs:
     # GitHubのランナーではディスクが足りないためセルフホステッドランナーで動かします。
     runs-on: [self-hosted, Linux]
     timeout-minutes: 360 # キャッシュが切れている時は時間がかかるため長めに設定。
+    env:
+      # Claude Codeが一時ファイルや結果のファイルを書く、作業ツリーの中のディレクトリです。
+      # `prompt.md`にも同じ名前を書いているので、変える時は合わせてください。
+      RECOVERY_DIR: .renovate-recovery
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -124,17 +128,25 @@ jobs:
         # 作業ツリーの中なら相対パスで扱えるので、絶対パスを拒否する権限の規則とも両立します。
         # `.git/info/exclude`に足して、
         # `git status`やflakeのソースやコミットの対象に入らないようにします。
+        #
+        # `core.symlinks`を切って、checkoutやrestoreがシンボリックリンクをただのファイルとして書くようにします。
+        # Claude Codeは`git fetch`と`git checkout`で任意のコミットの中身を作業ツリーに置けます。
+        # リンクを置けると、
+        # 相対パスで作業ツリーの外を読んだり、
+        # 結果のファイルを`/proc/self/environ`などへのリンクにしたりできてしまいます。
+        # `.git/config`はClaude Codeの権限の規則で書き換えを拒否しています。
         run: |
           set -euo pipefail
-          mkdir -p .renovate-recovery
-          echo "/.renovate-recovery/" >>.git/info/exclude
+          mkdir -p "${RECOVERY_DIR}"
+          echo "/${RECOVERY_DIR}/" >>.git/info/exclude
+          git config --local core.symlinks false
       - name: Fetch failed job logs
         # 失敗したジョブのログをClaude Codeが読める場所へ保存します。
         # Claude Codeに任意のジョブのログを取得するAPIを許可しなくて済むよう、ここで取得します。
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           RUN_ID: ${{ inputs.run-id }}
-          LOG_DIR: ${{ github.workspace }}/.renovate-recovery/logs
+          LOG_DIR: ${{ github.workspace }}/${{ env.RECOVERY_DIR }}/logs
         with:
           script: |
             const { fetchFailedJobLogs } = await import(`${process.env.RUNNER_TEMP}/renovate-recovery-src/fetch-failed-job-logs.ts`)
@@ -220,7 +232,7 @@ jobs:
             - リポジトリ: ${{ github.repository }}
             - RenovateのPRの番号: ${{ inputs.pr-number }}
             - 失敗したワークフローの実行のID: ${{ inputs.run-id || '(未指定)' }}
-            - 結果を書くファイル: .renovate-recovery/result.md
+            - 結果を書くファイル: ${{ env.RECOVERY_DIR }}/result.md
       - name: Post result comment
         # rebaseで実行ごと打ち切られた時は記録を残さず、新しい内容での失敗に任せます。
         # それ以外は失敗でも記録して、同じ内容で何度も動かないようにします。
@@ -229,7 +241,10 @@ jobs:
         env:
           PR_NUMBER: ${{ inputs.pr-number }}
           KEY: ${{ needs.gate.outputs.key }}
-          RESULT_FILE: ${{ github.workspace }}/.renovate-recovery/result.md
+          RESULT_FILE: ${{ github.workspace }}/${{ env.RECOVERY_DIR }}/result.md
+          # 結果のファイルの実際の場所がこの中にあるかを確かめます。
+          # シンボリックリンクで秘密を読ませる細工を投稿しないためです。
+          RESULT_DIR: ${{ github.workspace }}/${{ env.RECOVERY_DIR }}
         with:
           script: |
             const { postComment } = await import(`${process.env.RUNNER_TEMP}/renovate-recovery-src/post-comment.ts`)

@@ -13,5 +13,8 @@ export interface ScriptArguments {
   /** ワークフローの実行の文脈。 */
   readonly context: typeof context;
   /** ジョブの出力やログを扱う関数群。 */
-  readonly core: typeof core;
+  readonly core: ActionsCore;
 }
+
+/** `@actions/core`の関数群の型。 */
+export type ActionsCore = typeof core;

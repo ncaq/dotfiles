@@ -83,6 +83,23 @@ tests = describe "runWith" do
       length logs `shouldBe` 1
       doesFileExist workspace.tokenFile >>= (`shouldBe` False)
       workspace.requests >>= (`shouldBe` 0)
+  it "APIに接続できなければ理由を出して1で終わり、ファイルを作らない" do
+    withWorkspace "ncaq/dotfiles" \workspace -> do
+      api <- closedApi
+      (result, logs) <-
+        runRetrying (("GITHUB_RUNNER_REGISTRATION_TOKEN_API", api) : workspace.environment)
+      result `shouldBe` Left (ExitFailure 1)
+      length logs `shouldBe` 1
+      doesFileExist workspace.tokenFile >>= (`shouldBe` False)
+  it "APIのURLが読めなければ理由を出して1で終わり、ファイルを作らない" do
+    withWorkspace "ncaq/dotfiles" \workspace -> do
+      (result, logs) <-
+        runRetrying
+          (("GITHUB_RUNNER_REGISTRATION_TOKEN_API", "not a url") : workspace.environment)
+      result `shouldBe` Left (ExitFailure 1)
+      logs `shouldBe` ["GitHubのAPIのURLとして読めません: not a url"]
+      doesFileExist workspace.tokenFile >>= (`shouldBe` False)
+      workspace.requests >>= (`shouldBe` 0)
   it "失敗の状態コードは試し直して、成功すればトークンを書く" do
     withWorkspace "ncaq/flaky" \workspace -> do
       (result, _) <- runRetrying workspace.environment

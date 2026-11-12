@@ -3,6 +3,7 @@ module Fixture
   ( variables
   , withApi
   , withCountedApi
+  , closedApi
   ) where
 
 import Himari
@@ -61,6 +62,12 @@ application requests request respond = do
 -- | 偽のGitHubのAPIを空いているポートに立てて、そのURLを渡す。
 withApi :: (MonadUnliftIO m) => (Text -> m a) -> m a
 withApi action = withCountedApi (\api _ -> action api)
+
+-- | 誰も待ち受けていないポートを指すURL。接続は拒否される。
+--
+-- 偽のGitHubのAPIを立てて、止めた後のポートを使う。
+closedApi :: (MonadUnliftIO m) => m Text
+closedApi = withApi pure
 
 -- | 偽のGitHubのAPIを空いているポートに立てて、そのURLと、受け取ったリクエストの数を読む操作を渡す。
 withCountedApi :: (MonadUnliftIO m) => (Text -> m Int -> m a) -> m a

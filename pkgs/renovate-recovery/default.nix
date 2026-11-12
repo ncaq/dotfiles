@@ -10,6 +10,7 @@
 #
 # `package.json`の依存は全て開発用で、実行時には何もインストールされない。
 # `src/`から型以外をimportしてよいのはNode.jsの組み込みモジュールだけ。
+# `tools/`はビルドの中でnode_modulesと一緒に動かすスクリプトで、依存をimportしてよい。
 {
   lib,
   runCommand,
@@ -38,13 +39,26 @@ let
       ./vitest.config.ts
       ./src
       ./test
+      ./tools
     ];
   };
 in
-runCommand "renovate-recovery" { nativeBuildInputs = [ nodejs ]; } ''
-  cp -r ${tsRoot}/. .
-  ln -s ${nodeModules}/node_modules node_modules
-  npm run lint
-  npm run test
-  touch $out
-''
+runCommand "renovate-recovery"
+  {
+    nativeBuildInputs = [ nodejs ];
+    # `tools/`のスクリプトを他のderivationの中で動かすために出します。
+    passthru = {
+      inherit nodeModules;
+      tools = lib.fileset.toSource {
+        root = ./.;
+        fileset = ./tools;
+      };
+    };
+  }
+  ''
+    cp -r ${tsRoot}/. .
+    ln -s ${nodeModules}/node_modules node_modules
+    npm run lint
+    npm run test
+    touch $out
+  ''

@@ -12,35 +12,12 @@
   lib,
   runCommand,
   writeText,
-  writeShellApplication,
-  gawk,
-  gnused,
-  yq-go,
+  nodejs,
   konokaPlugins,
   git-hooks,
+  renovate-recovery,
 }:
 let
-  # スキルの`allowed-tools`が範囲の無い`Bash`を許可していないかを確かめるコマンド。
-  #
-  # 補助プログラムの言語の基準では、
-  # 構造のあるデータを読むものや振る舞いをテストで固定したいものはシェルスクリプトにしません。
-  # ここではYAMLの解釈とリストの展開を既存のyqが行うので、
-  # シェルの側はyqの出力を区切って決まった値と照合するだけになります。
-  # 振る舞いはビルドの中で固定のSKILL.mdを判定させて確かめています。
-  # Haskellのプロジェクトを1つ増やすほどの処理ではないので、シェルスクリプトにしています。
-  checkSkillAllowedTools = writeShellApplication {
-    name = "check-skill-allowed-tools";
-    runtimeInputs = [
-      gawk
-      gnused
-      yq-go
-    ];
-    text = builtins.readFile ./check-skill-allowed-tools.sh;
-  };
-  # 検査そのものが期待どおりに判定するかを確かめるための固定のSKILL.md。
-  # `unrestricted`は検出されるべきもの、`restricted`は検出されてはいけないものです。
-  skillFixtures = ./test/skill-allowed-tools;
-
   # 読み込むkonokaのプラグイン。
   # 以下の理由で除外したものはここに含めていません。
   #
@@ -396,24 +373,15 @@ runCommand "renovate-recovery-claude-config" { } ''
   done
 
   # konokaの更新で範囲の無い`Bash`を許可するスキルが入ったら気付けるようにします。
-  # 検査が壊れて何も検出しなくなっても気付けるよう、
-  # 先に固定のSKILL.mdで判定が期待どおりかを確かめます。
-  # 検出は終了コード3なので、検査そのものが失敗して落ちた場合とは区別します。
+  # 検査は`renovate-recovery`の`tools/`にあり、判定は同じパッケージのテストで確かめています。
+  # ESMのimportは`node_modules`をスクリプトの位置から探すので、隣に並べてから動かします。
+  cp -r ${renovate-recovery.tools}/tools tools
+  ln -s ${renovate-recovery.nodeModules}/node_modules node_modules
   shopt -s nullglob
-  unrestricted=(${skillFixtures}/unrestricted/*/SKILL.md)
-  restricted=(${skillFixtures}/restricted/*/SKILL.md)
-  if [ "''${#unrestricted[@]}" -eq 0 ] || [ "''${#restricted[@]}" -eq 0 ]; then
-    echo "検査を確かめるための固定のSKILL.mdが見つかりません" >&2
+  skills=($out/plugins/*/skills/*/SKILL.md)
+  if [ "''${#skills[@]}" -eq 0 ]; then
+    echo "検査するスキルが見つかりません" >&2
     exit 1
   fi
-  for skill in "''${unrestricted[@]}"; do
-    status=0
-    ${lib.getExe checkSkillAllowedTools} "$skill" 2>/dev/null || status=$?
-    if [ "$status" -ne 3 ]; then
-      echo "検査が $skill を検出しませんでした(終了コード $status)" >&2
-      exit 1
-    fi
-  done
-  ${lib.getExe checkSkillAllowedTools} "''${restricted[@]}"
-  ${lib.getExe checkSkillAllowedTools} $out/plugins/*/skills/*/SKILL.md
+  ${lib.getExe nodejs} tools/check-skill-allowed-tools.ts "''${skills[@]}"
 ''

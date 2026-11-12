@@ -231,6 +231,31 @@ in
         gidValues = map (e: e.value) gidEntries;
         duplicateGidValues = findDuplicates gidValues;
 
+        # 全てのmicroVMのNIC。
+        # ホスト側のTAPの名前(`id`)とMACアドレスは、VMをまたいで重なってはいけない。
+        vmInterfaces = lib.concatLists (
+          lib.mapAttrsToList (
+            vm: definition:
+            map (interface: {
+              inherit vm;
+              inherit (interface) id mac;
+            }) definition.config.config.microvm.interfaces
+          ) config.microvm.vms
+        );
+        tapEntries = map (i: {
+          name = i.vm;
+          value = i.id;
+        }) vmInterfaces;
+        duplicateTapValues = findDuplicates (map (e: e.value) tapEntries);
+        # Linuxのインターフェイス名は15文字まで。
+        # 超えると評価は通って、ホストでVMを起動する時にTAPの作成で初めて失敗する。
+        longTapEntries = lib.filter (e: lib.stringLength e.value > 15) tapEntries;
+        macEntries = map (i: {
+          name = i.vm;
+          value = i.mac;
+        }) vmInterfaces;
+        duplicateMacValues = findDuplicates (map (e: e.value) macEntries);
+
         cidDups = formatDuplicates toString cidEntries;
         addrDups = formatDuplicates lib.id addressEntries;
         uidDups = formatDuplicates toString uidEntries;
@@ -252,6 +277,20 @@ in
         {
           assertion = duplicateGidValues == [ ];
           message = "serviceUser gid values must be unique, but found duplicates: ${gidDups}";
+        }
+        {
+          assertion = duplicateTapValues == [ ];
+          message = "microVM TAP interface ids must be unique, but found duplicates: ${formatDuplicates lib.id tapEntries}";
+        }
+        {
+          assertion = longTapEntries == [ ];
+          message = "microVM TAP interface ids must be at most 15 characters, but found: ${
+            lib.concatMapStringsSep ", " (e: "${e.value} (${e.name})") longTapEntries
+          }";
+        }
+        {
+          assertion = duplicateMacValues == [ ];
+          message = "microVM MAC addresses must be unique, but found duplicates: ${formatDuplicates lib.id macEntries}";
         }
       ];
   };

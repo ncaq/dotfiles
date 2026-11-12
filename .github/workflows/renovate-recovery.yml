@@ -180,7 +180,6 @@ jobs:
             --model opus
             --allowedTools
             'Edit(/${{ runner.temp }}/**)'
-            'Write(/${{ runner.temp }}/**)'
             'Bash(gh api repos/${{ github.repository }}/actions/jobs/*/logs*)'
             'Bash(gh api -X DELETE repos/${{ github.repository }}/git/refs/heads/renovate-recovery/${{ inputs.pr-number }})'
             --add-dir "${{ runner.temp }}"

@@ -224,14 +224,14 @@ let
       permissions = {
         disableBypassPermissionsMode = "disable";
         allow = [
-          # 作業ツリーの読み書き。
+          # 作業ツリーへの書き込み。
           # 作業ディレクトリと`--add-dir`の外は許可しません。
+          # ファイルの権限の判定には`Edit`と`Read`の規則だけが使われ、
+          # `Edit`は`Write`などの書き込む全てのツールに、
+          # `Read`は`Glob`や`Grep`などの読む全てのツールに効きます。
           "Edit(./**)"
-          "Write(./**)"
           # 依存のソースを調べるための読み取り。
           "Read(//nix/store/**)"
-          "Glob(//nix/store/**)"
-          "Grep(//nix/store/**)"
           "Agent"
           "Skill"
           "TodoWrite"

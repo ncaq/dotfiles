@@ -143,7 +143,14 @@ jobs:
             --settings "${config}/settings.json"
             --append-system-prompt-file "${config}/append-system-prompt.md"
           )
-          for plugin in "${config}"/plugins/*; do
+          # プラグインが無い時にglobがそのまま引数に渡らないようにします。
+          shopt -s nullglob
+          plugins=("${config}"/plugins/*)
+          if [ "${#plugins[@]}" -eq 0 ]; then
+            echo "::error::${config}/plugins にプラグインがありません"
+            exit 1
+          fi
+          for plugin in "${plugins[@]}"; do
             args+=(--plugin-dir "${plugin}")
           done
           # `commit`プラグインの`run-commit-msg-hook`が、

@@ -313,4 +313,38 @@ runCommand "renovate-recovery-claude-config" { } ''
   ln -s ${git-hooks}/lib/git-hooks/dist/hooks/commit-msg $out/git-hooks/commit-msg
   ln -s ${appendSystemPrompt} $out/append-system-prompt.md
   ln -s ${settings} $out/settings.json
+
+  # 上流の構成が変わってもビルドが通ってしまい、
+  # 復旧が必要になった時に初めて壊れていたと気付く事態を避けるため、
+  # 前提が崩れていたらここで失敗させます。
+  # `ln -s`はリンク先が無くても成功するので、リンク先を確かめます。
+  if [ ! -x $out/git-hooks/commit-msg ]; then
+    echo "git-hooksのcommit-msgフックが見つかりません" >&2
+    exit 1
+  fi
+  for plugin in $out/plugins/*; do
+    if [ ! -f "$plugin/.claude-plugin/plugin.json" ]; then
+      echo "$plugin はClaude Codeのプラグインではありません" >&2
+      exit 1
+    fi
+    # スキルの`allowed-tools`が範囲の無い`Bash`を許可すると、
+    # そのスキルの間は`permissions.allow`の一覧に関係なく任意のコマンドを実行できてしまいます。
+    # konokaの更新でそのようなスキルが入ったら気付けるようにします。
+    for skill in "$plugin"/skills/*/SKILL.md; do
+      [ -e "$skill" ] || continue
+      if awk '
+        /^---$/ { fence++; next }
+        fence == 1 {
+          if ($0 ~ /^[A-Za-z-]+:/) {
+            inside = ($0 ~ /^allowed-tools:/)
+            sub(/^allowed-tools:[ ]*(>-|>|\|)?/, "")
+          }
+          if (inside) print
+        }
+      ' "$skill" | tr ',' '\n' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//' | grep -qx 'Bash'; then
+        echo "$skill が範囲の無いBashを許可しています" >&2
+        exit 1
+      fi
+    done
+  done
 ''

@@ -612,6 +612,11 @@
             # Nixでビルドしたものを指定します。
             inherit (pkgs) bun;
             inherit (importPkgsUnstable system) claude-code;
+            # 同じワークフローのClaude Codeへ渡すプラグインやプロンプトなどの設定一式。
+            renovate-recovery-claude-config = pkgs.callPackage ./pkgs/renovate-recovery/claude-config.nix {
+              konokaPlugins = inputs.konoka.packages.${system};
+              git-hooks = inputs.git-hooks.packages.${system}.default;
+            };
             # Gitリポジトリを購読するためのツール。
             inherit git-repo-subscribe;
             # PRコメントにnvd diffを投稿するコマンド。

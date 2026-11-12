@@ -125,15 +125,34 @@ jobs:
           set -euo pipefail
           claude=$(nix build --no-link --print-out-paths "${FLAKE}#claude-code")
           bun=$(nix build --no-link --print-out-paths "${FLAKE}#bun")
+          # プラグインやプロンプトなど、普段の設定から同期したものです。
+          # 中身は`pkgs/renovate-recovery/claude-config.nix`に書いてあります。
+          config=$(nix build --no-link --print-out-paths "${FLAKE}#renovate-recovery-claude-config")
+          args=(
+            --settings "${config}/settings.json"
+            --append-system-prompt-file "${config}/append-system-prompt.md"
+          )
+          for plugin in "${config}"/plugins/*; do
+            args+=(--plugin-dir "${plugin}")
+          done
+          # `commit`プラグインの`run-commit-msg-hook`が、
+          # 普段と同じcommitlintの検査をコミットメッセージにかけられるようにします。
+          # 作業ツリーではなく`.git/config`に書くので、コミットの対象にはなりません。
+          git config --local core.hooksPath "${config}/git-hooks"
           {
             echo "claude=${claude}/bin/claude"
             echo "bun=${bun}/bin/bun"
+            echo "claude-config-args=${args[*]}"
           } >>"$GITHUB_OUTPUT"
       - uses: anthropics/claude-code-action@4fa93a88de49bbef68b10eb15aabedf28ca0e1ed # v1.0.271
         env:
           # `use_commit_signing`のコミット先のブランチです。
           # 未指定だと`GITHUB_HEAD_REF`、つまりRenovateのブランチへコミットしてしまいます。
           CLAUDE_BRANCH: renovate-recovery/${{ inputs.pr-number }}
+          # ランナーのサービスには`XDG_RUNTIME_DIR`が無く、
+          # `log-analyzer`などのスキルは作業ディレクトリを`/tmp`に作ってしまいます。
+          # `--add-dir`で読み書きを許可している場所へ向けます。
+          XDG_RUNTIME_DIR: ${{ runner.temp }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           path_to_claude_code_executable: ${{ steps.executables.outputs.claude }}
@@ -150,11 +169,13 @@ jobs:
           # 復旧のブランチが無い時に、RenovateのPRのheadから切るためのブランチです。
           base_branch: ${{ needs.gate.outputs.head-ref }}
           # 署名の無いコミットを積まないよう、`git push`は禁止します。
+          # `Agent`と`Skill`と`mcp__plugin_*`は同期したプラグインのスキルが使います。
           claude_args: >-
             --model opus
-            --allowedTools "Bash,Edit,Glob,Grep,Read,TodoWrite,WebFetch,WebSearch,Write,mcp__github_file_ops__commit_files,mcp__github_file_ops__delete_files"
+            --allowedTools "Agent,Bash,Edit,Glob,Grep,Read,Skill,TodoWrite,WebFetch,WebSearch,Write,mcp__github_file_ops__commit_files,mcp__github_file_ops__delete_files,mcp__plugin_nix-tasuke_nixos,mcp__plugin_research_cloudflare,mcp__plugin_research_context7,mcp__plugin_research_deepwiki,mcp__plugin_research_mdn,mcp__plugin_research_microsoft-learn"
             --disallowedTools "Bash(git push:*)"
             --add-dir "${{ runner.temp }}"
+            ${{ steps.executables.outputs.claude-config-args }}
           prompt: |
             `pkgs/renovate-recovery/prompt.md`を読んで、その手順に従ってください。
 

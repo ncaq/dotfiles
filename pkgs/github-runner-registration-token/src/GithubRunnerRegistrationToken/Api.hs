@@ -12,6 +12,7 @@ import GithubRunnerRegistrationToken.RegistrationToken (RegistrationToken)
 import GithubRunnerRegistrationToken.Repository (Repository (..))
 import Himari
 import Network.HTTP.Simple
+import Network.HTTP.Types (statusCode, statusIsSuccessful)
 
 -- | リポジトリのランナーの登録トークンを発行する。
 --
@@ -24,9 +25,11 @@ issueRegistrationToken api (AccessToken token) (Repository repository) = do
     parseRequest
       (convert (api <> "/repos/" <> repository <> "/actions/runners/registration-token"))
   response <- httpLBS (addressed base)
-  let status = getResponseStatusCode response
+  let status = getResponseStatus response
       content = getResponseBody response
-  unless (status `div` 100 == 2) (throwM (UnexpectedStatus status (convert content)))
+  unless
+    (statusIsSuccessful status)
+    (throwM (UnexpectedStatus (statusCode status) (convert content)))
   either (throwM . UndecodableBody . convert) pure (eitherDecode content)
  where
   addressed =

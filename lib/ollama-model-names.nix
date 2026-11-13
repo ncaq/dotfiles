@@ -26,12 +26,17 @@
 */
 {
   cuda = {
+    # 対話を待っていられる速度を出すため、
+    # どのモデルもKVキャッシュまで含めて32GiBのVRAMに乗り切るものを選ぶ。
+    # 少しでもCPUへ溢れると速度が大きく落ちるためである。
+    # 互いに同時にはVRAMへ載らないが、
+    # 使わなくなった方がkeep_aliveで降りるので入れ替わりで動く。
     general = [
       # Googleの31Bのdense。visionに対応する。
       # registryの既定タグはQ4_K_Mの本体にMTPのドラフトと投影器を同梱している。
       # 一段上のq8_0は本体だけで30.39GiBあり、KVキャッシュを載せる余地が無い。
       "gemma4:31b"
-      # bulletは32GiBのVRAMに収まる範囲で汎用品質を優先して27Bのdenseを使う。
+      # Alibabaの27Bのdense。visionに対応する。
       # registryの`qwen3.8:27b-mtp-q4_K_M`ではなくHugging FaceのGGUFを自前で組むのは、
       # registryのmtp付きタグがq4_K_Mとq8_0とbf16しか無く、
       # q8_0は27GiBあってKVキャッシュを載せる余地が無いためである。
@@ -50,7 +55,7 @@
     freedom = [ "qwen3.8-27b-heretic-rvn:q6_k" ];
     # 配布元の評価ではQ4_K_MとBF16の翻訳精度の差は誤差の範囲に収まる。
     # 19.5GBあるので汎用モデルとは同時にVRAMへ載らないが、
-    # 使わなくなった方がkeep_aliveで降りるので入れ替わりで動く。
+    # 汎用モデル同士と同じく入れ替わりで動く。
     translate = [ "plamo-3-translate-31b:q4_k_m" ];
   };
   cpu = {

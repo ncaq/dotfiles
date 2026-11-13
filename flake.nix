@@ -633,8 +633,6 @@
             # Nixでビルドしたものを指定します。
             inherit (pkgs) bun;
             inherit (importPkgsUnstable system) claude-code;
-            # 同じワークフローが、Claude Codeの実行の記録を暗号化するのに使います。
-            inherit (pkgs) gnupg;
             # 同じワークフローのClaude Codeへ渡すプラグインやプロンプトなどの設定一式。
             inherit renovate-recovery-claude-config;
             # Gitリポジトリを購読するためのツール。

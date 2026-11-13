@@ -120,12 +120,7 @@ jobs:
       - uses: ./.github/actions/setup-nix
       - name: Keep a copy of the comment script
         # Claude Codeが作業ツリーを書き換えても、結果の投稿には元のスクリプトを使います。
-        #
-        # 実行の記録を暗号化する公開鍵も、Claude Codeが動く前に写しを取ります。
-        run: |
-          set -euo pipefail
-          cp -r pkgs/renovate-recovery/src "${RUNNER_TEMP}/renovate-recovery-src"
-          cp key/ncaq-public-key.asc "${RUNNER_TEMP}/execution-log-public-key.asc"
+        run: cp -r pkgs/renovate-recovery/src "${RUNNER_TEMP}/renovate-recovery-src"
       - name: Prepare a work directory for Claude Code
         # Claude Codeが一時ファイルや結果のファイルを書く場所です。
         # `runner.temp`には後のステップが使うスクリプトのコピーや`GITHUB_ENV`のファイルがあるので、
@@ -262,31 +257,31 @@ jobs:
       - name: Encrypt execution log
         # 要約で足りない時のために、実行の記録の全文を暗号化して残します。
         # 公開のリポジトリのアーティファクトはGitHubにログインしていれば誰でも取得できるので、
-        # 秘密鍵を持つ人だけが読めるよう、リポジトリの管理者のGPGの公開鍵で暗号化します。
+        # 秘密鍵を持つ人だけが読めるよう、リポジトリの所有者のGPGの公開鍵で暗号化します。
         #
-        # 公開鍵の写しはClaude Codeが動く前に取っていて、
-        # 宛先は主鍵のフィンガープリントで指定します。
-        # 鍵のファイルが別の鍵に差し替えられていたら、宛先が見つからずに失敗します。
+        # 公開鍵は、リポジトリの所有者がGitHubのアカウントに登録しているものを取得します。
+        # 作業ツリーのファイルはClaude Codeが書き換えられるので使いません。
+        # アカウントに登録できるのは所有者だけなので、鍵やフィンガープリントをここに書かなくて済みます。
+        # `--recipient-file`は鍵を鍵束に取り込まずに宛先にするもので、
+        # ファイルの中の鍵が1つではない時は失敗します。
+        # 鍵が登録されていない時や複数ある時は、暗号化せずにこのステップが失敗します。
         #
         # 読む時は、アーティファクトを取得して`gpg --decrypt`します。
         id: encrypt
         if: ${{ !cancelled() && steps.claude.outputs.execution_file != '' }}
         continue-on-error: true
         env:
-          FLAKE: github:${{ github.repository }}/${{ needs.gate.outputs.base-sha }}
+          OWNER: ${{ github.repository_owner }}
           EXECUTION_FILE: ${{ steps.claude.outputs.execution_file }}
-          # `.sops.yaml`と同じ、ncaqのGPGの主鍵のフィンガープリントです。
-          RECIPIENT: 7DDE3BC405DC58D94BF661D342248C7D0FB73D57
         run: |
           set -euo pipefail
-          # gnupgは出力が複数あるので、実行ファイルのある`out`だけを指定します。
-          gnupg=$(nix build --no-link --print-out-paths "${FLAKE}#gnupg^out")
+          key="${RUNNER_TEMP}/execution-log-public-key.asc"
+          curl --fail --silent --show-error --location --proto '=https' \
+            --output "${key}" "https://github.com/${OWNER}.gpg"
           GNUPGHOME=$(mktemp -d -p "${RUNNER_TEMP}")
           export GNUPGHOME
-          "${gnupg}/bin/gpg" --batch --import "${RUNNER_TEMP}/execution-log-public-key.asc"
-          # 取り込んだばかりの鍵には信用の設定が無いので、フィンガープリントでの指定を信用します。
-          "${gnupg}/bin/gpg" --batch --trust-model always \
-            --recipient "${RECIPIENT}" \
+          gpg --batch \
+            --recipient-file "${key}" \
             --output "${RUNNER_TEMP}/claude-execution-output.json.gpg" \
             --encrypt "${EXECUTION_FILE}"
           echo "file=${RUNNER_TEMP}/claude-execution-output.json.gpg" >>"$GITHUB_OUTPUT"

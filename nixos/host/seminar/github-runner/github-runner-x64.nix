@@ -64,6 +64,8 @@ let
     ;
   # ランナーのユーザーのUIDとGID。ホストとVMで同じ値です。
   runnerUser = config.serviceUser.github-runner;
+  # cdn.ncaq.netのランナーへ共有するステージングのディレクトリ。
+  cdnDeployRoot = config.local.cdnDeploy.deployRoot;
   # リポジトリごとのランナーのVMの定義。
   # attr名がそのままVMの名前になります。
   # IPアドレスとvsockのCIDは`machineAddresses`と`microvmCid`の同名のエントリを参照するため、
@@ -134,8 +136,9 @@ let
       vcpu = 4;
       mem = 8 * 1024;
       extraShares = [
-        # cdn.ncaq.netのデプロイ先。
-        # ランナー上のワークフローがrsyncで直接書き込みます(cdn.nix参照)。
+        # cdn.ncaq.netのデプロイのステージング。
+        # ランナー上のワークフローがrsyncで書き込み、
+        # ホストの同期のサービスが配信ディレクトリへ写します(cdn.nix参照)。
         #
         # virtiofsdはホストのrootで動いて、何も指定しないとUIDとGIDをそのまま通します。
         # ジョブはVMの中でrootになれるので、
@@ -147,8 +150,8 @@ let
         # VMのrootが外せるのでホストは守れません。
         {
           tag = "cdn";
-          source = "/mnt/noa/cdn.ncaq.net";
-          mountPoint = "/mnt/noa/cdn.ncaq.net";
+          source = cdnDeployRoot;
+          mountPoint = cdnDeployRoot;
           proto = "virtiofs";
           # UIDとGIDの変換はPOSIX ACLと併用できません。
           posixAcl = false;
@@ -161,7 +164,7 @@ let
       ];
       # github-runnersモジュールは`ProtectSystem=strict`でサービスを強化するため、
       # 共有が書き込み可能でも`ReadWritePaths`に含まれないパスへは書き込めません。
-      extraRunnerOptions.serviceOverrides.ReadWritePaths = [ "/mnt/noa/cdn.ncaq.net" ];
+      extraRunnerOptions.serviceOverrides.ReadWritePaths = [ cdnDeployRoot ];
     };
   };
   # 登録トークンを発行するホスト側のサービスの名前。

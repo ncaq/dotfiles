@@ -37,14 +37,26 @@ let
   #
   # テストVMでも起動するマシンだけを見ます。
   # microVMは`startsInTestVm`のもの、
-  # コンテナは`postgres-extension.nix`が拡張を確かめているpostgresqlです。
+  # コンテナは秘密情報が無くてもテストVMで起動するpostgresqlです。
+  # 他のトピックがマシンの起動を待った後に走ることには頼らず、
+  # ログを見る前にここでマシンのユニットの起動を待ちます。
+  # 起動に失敗した時は`wait_for_unit`がその時点で落ちるので、
+  # ログが現れるのをタイムアウトまで待ち続けずに済みます。
   #
   # microVMの行がホストの既定のjournalには入っていないことも見ます。
   # VMごとのjournalのnamespaceへ分けているのは、
   # VMが大量に書いてホスト自身のログを押し出せないようにするためで、
   # 分け方が外れてもログは既定のjournalへ入って読めてしまうので気付けません。
   vmNames = lib.filter startsInTestVm (lib.attrNames microvms);
-  containerNames = lib.optional (config.containers ? postgresql) "postgresql";
+  startedMachines =
+    map (name: {
+      inherit name;
+      unit = "microvm@${name}.service";
+    }) vmNames
+    ++ lib.optional (config.containers ? postgresql) {
+      name = "postgresql";
+      unit = "container@postgresql.service";
+    };
 
   # `machine-log`のコマンド自体の分岐を確かめるための、
   # 起動しないマシンも含めた全てのマシンの名前です。
@@ -67,12 +79,13 @@ lib.optionalString (allNames != [ ]) # python
     machine.fail("machine-log no-such-machine")
   ''
 + lib.concatMapStrings (
-  name: # python
+  m: # python
   ''
+    machine.wait_for_unit("${m.unit}")
     machine.wait_until_succeeds(
-        "machine-log ${name} --no-pager --output=cat | grep -F 'systemd[1]: '"
+        "machine-log ${m.name} --no-pager --output=cat | grep -F 'systemd[1]: '"
     )
-  '') (vmNames ++ containerNames)
+  '') startedMachines
 + lib.concatMapStrings (
   name: # python
   ''

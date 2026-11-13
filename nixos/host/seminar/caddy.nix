@@ -2,19 +2,22 @@
 let
   garageAddr = config.machineAddresses.garage.guest;
   garageHostAddr = config.machineAddresses.garage.host;
-  niks3PublicAddr = config.machineAddresses.niks3-public.guest;
   niks3PublicHostAddr = config.machineAddresses.niks3-public.host;
   niks3PrivateHostAddr = config.machineAddresses.niks3-private.host;
   containerIfname = name: import ../../../lib/container-ifname.nix { inherit lib name; };
 in
 {
-  # ホスト上でniks3-public.ncaq.netとgarage.ncaq.netをローカルのCaddyへ向けます。
-  # substituteはホストのnix-daemonが行うため、
-  # これによりCIのキャッシュ取得がCloudflare Tunnelを経由しなくなります。
+  # ホスト上でgarage.ncaq.netをローカルのCaddyへ向けます。
   # garage.ncaq.netはniks3が発行するpresigned URLのアップロード先なので、
-  # キャッシュへのアップロードもマシン内で完結します。
-  # 向き先はそれぞれの用途に対応するvethのホスト側アドレスにして、
+  # ホストからniks3-privateへのキャッシュのアップロードがマシン内で完結します。
+  # 向き先は用途に対応するvethのホスト側アドレスにして、
   # 障害の切り分けが素直になるようにします。
+  #
+  # niks3-public.ncaq.netはここへ向けません。
+  # 以前はCIランナーがホストのnix-daemonを使っていたので、
+  # ホストで名前を内部へ向ければCIのキャッシュの出し入れがマシン内で完結しました。
+  # 今のランナーはmicroVMの中のnix-daemonを使い、公開DNSで引いてCloudflare Tunnel経由で届きます。
+  # ホスト自身はniks3-privateを優先して使うので、内部の経路を持つ意味が無くなりました。
   #
   # ここに書いた名前は、seminarをexit nodeにしている端末にも内部アドレスとして見えます。
   # exit nodeを使う端末は全てのDNSクエリをexit node側のtailscaledへ送り、
@@ -37,7 +40,6 @@ in
     readOnly = true;
     default = {
       ${garageHostAddr} = [ "garage.ncaq.net" ];
-      ${niks3PublicHostAddr} = [ "niks3-public.ncaq.net" ];
     };
     description = ''
       ホスト上のCaddyへ向ける名前の、vethのホスト側アドレスから名前のリストへの対応。
@@ -63,20 +65,6 @@ in
         extraConfig = ''
           bind ${garageHostAddr} ${niks3PublicHostAddr} ${niks3PrivateHostAddr}
           reverse_proxy http://${garageAddr}:3900
-        '';
-      };
-      # ホスト自身からniks3-publicへのアクセスをマシン内で完結させるproxy。
-      # niks3-public.ncaq.netの公開経路はCloudflare Tunnelのみなので、
-      # そのままだと同じマシン上のキャッシュへCloudflareを往復して到達することになります。
-      # substituteやpost-build-hookはホストのnix-daemonが実行するため、
-      # ホストのnetworking.hostsで名前をこのバインド先へ向けることで、
-      # CIランナーのキャッシュ入出力もマシン内で完結します。
-      # https://github.com/ncaq/dotfiles/issues/1535
-      virtualHosts."niks3-public.ncaq.net" = {
-        useACMEHost = "niks3-public.ncaq.net";
-        extraConfig = ''
-          bind ${niks3PublicHostAddr}
-          reverse_proxy http://${niks3PublicAddr}:5751
         '';
       };
     };

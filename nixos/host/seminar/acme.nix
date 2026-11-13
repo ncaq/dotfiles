@@ -13,9 +13,5 @@ in
     # Cloudflare Tunnelの接続先は変更せず(Garage直接のまま)、
     # niks3コンテナおよびホスト自身からの内部アクセスをCaddy HTTPS経由にする。
     "garage.ncaq.net" = dns01Cert;
-    # niks3-public.ncaq.netも同様に、
-    # ホスト内部からのアクセスをCaddy HTTPS経由でバイパスするために取得する。
-    # caddy.nix参照。
-    "niks3-public.ncaq.net" = dns01Cert;
   };
 }

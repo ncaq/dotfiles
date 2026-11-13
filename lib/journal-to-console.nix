@@ -7,12 +7,18 @@
   microVMにはsshdも無く、動いている間に中へ入って読むこともできない。
   障害が起きても原因を追えないまま再起動することになる。
 
-  ゲストのコンソールの出力は、
-  ホストのjournalへ`container@<名前>`や`microvm@<名前>`のユニットのログとして入る。
+  ゲストのコンソールの出力は、ホストのjournaldが受け取る。
   ゲストのjournaldにコンソールへも書かせれば、
-  中のサービスのログがホストのjournalに残り、
+  中のサービスのログがホストに残り、
   ゲストを再起動した後も読める。
+
+  ホストで入る場所は、コンテナとmicroVMで違う。
+
+  - コンテナ: 既定のjournalへ、`container@<名前>`のユニットのログとして入る
+  - microVM: VMと同じ名前のjournalのnamespaceへ入る。既定のjournalには入らない
+
   読む時は`nixos/native-linux/machine-log.nix`の`machine-log`を使う。
+  入る場所の違いを気にせずに、マシンの名前だけで読める。
 
   # 他の方法を採らない理由
 
@@ -41,6 +47,8 @@
   `nixos/native-linux/machine-log.nix`に書いている。
 */
 {
-  # `/dev/console`は、microVMではシリアルコンソール、コンテナではnspawnが繋ぐptyを指す。
+  # `/dev/console`は、コンテナではnspawnが繋ぐptyを指す。
+  # microVMではvirtio-console(`hvc0`)を指す。
+  # そうなるようにカーネルのコンソールを`nixos/host/seminar/microvm-log.nix`で決めている。
   services.journald.console = "/dev/console";
 }

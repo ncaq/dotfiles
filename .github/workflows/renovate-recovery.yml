@@ -276,7 +276,10 @@ jobs:
         run: |
           set -euo pipefail
           key="${RUNNER_TEMP}/execution-log-public-key.asc"
-          curl --fail --silent --show-error --location --proto '=https' \
+          # `--disable`は最初の引数に置いた時だけ効いて、`~/.curlrc`を読まなくします。
+          # このジョブのホームディレクトリはClaude Codeの作業ツリーの親なので、
+          # 書き込みの拒否の規則だけに頼らず、設定ファイルで接続先や出力先を変えられないようにします。
+          curl --disable --fail --silent --show-error --location --proto '=https' \
             --output "${key}" "https://github.com/${OWNER}.gpg"
           GNUPGHOME=$(mktemp -d -p "${RUNNER_TEMP}")
           export GNUPGHOME

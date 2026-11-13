@@ -1,6 +1,6 @@
 { lib }:
 let
-  duplicate = import ./duplicate.nix { inherit lib; };
+  inherit (import ./fixture.nix { inherit lib; }) duplicate;
   validWorkflow = {
     nodes = [
       {

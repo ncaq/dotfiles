@@ -131,7 +131,7 @@ let
   #
   # 入力スロットの並びとウィジェットの並びはノード定義に一致させる必要があり、
   # 崩れるとSend to Workflowが動かなくなる。
-  # UIで開くまで気付けないため、ここに一箇所だけ定義して`lib/builder-test.nix`で検証する。
+  # UIで開くまで気付けないため、ここに一箇所だけ定義して`test/eval/comfyui-workflow/builder/lora-loader.nix`で検証する。
   #
   # UNETにだけ作用するLoRAを扱うワークフローでは、
   # `clipLink`を省略してCLIPを繋がずに使う。

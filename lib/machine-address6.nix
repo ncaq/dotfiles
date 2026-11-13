@@ -33,7 +33,7 @@
   受け付けるのは10進の0-255を4つ並べたIPv4アドレスだけ。
   `a.b.c.d`のような文字列をそのまま埋め込むと、
   評価は通るのに実機で`ip`が拒否して初めて壊れる。
-  検査は`lib/machine-address6-test.nix`で固定している。
+  検査は`test/eval/machine-address6.nix`で固定している。
 
   # 引数
 

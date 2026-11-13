@@ -1,7 +1,6 @@
 { lib }:
 let
-  builder = import ./builder.nix { inherit lib; };
-  widget = import ./widget.nix { inherit lib; };
+  inherit (import ./fixture.nix { inherit lib; }) builder widget;
   nodes = [
     {
       id = 5;

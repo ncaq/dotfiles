@@ -268,8 +268,13 @@
 
       nixosConfigurations = lib.mapAttrs (_: def: def.nixosSystem) hostDefs;
 
-      testNixosBoot = import ./lib/test-nixos-boot.nix {
-        inherit lib importPkgsStable hostDefs;
+      testNixosBoot = import ./test/nixos-boot {
+        inherit
+          lib
+          importPkgsStable
+          importDirModules
+          hostDefs
+          ;
       };
 
       mkLinuxHomeManager = import ./lib/mk-linux-home-manager.nix {
@@ -338,32 +343,11 @@
           git-repo-subscribe = pkgs.callPackage ./pkgs/git-repo-subscribe {
             inherit (inputs) himari-src;
           };
-          # 評価時にしか走らない純粋なNixのテストをderivationへ包む。
-          #
-          # `bullet/comfyui/workflow/lib/*-test.nix`は`validate.nix`が`assert`で走らせるが、
-          # `lib/`のこれらは検査を使う側がホストの構成の中にあるため、
-          # そのホストを評価しない限り走らない。
-          # CIで必ず走らせたいので`checks`へ載せる。
-          #
-          # テストは全ての表明を通ると`true`を返す。
-          # `builtins.seq`でその値を強制してからビルドを成功させる。
-          mkNixTest =
-            name: test:
-            pkgs.runCommand name {
-              passed = builtins.seq (
-                assert test;
-                test
-              ) name;
-            } ''echo "$passed" > "$out"'';
-          systemd-specifier-test = mkNixTest "systemd-specifier-test" (
-            import ./lib/systemd-specifier-test.nix { inherit lib; }
-          );
-          machine-address6-test = mkNixTest "machine-address6-test" (
-            import ./lib/machine-address6-test.nix { inherit lib; }
-          );
-          comfyui-api-workflow-test = mkNixTest "comfyui-api-workflow-test" (
-            import ./lib/comfyui-api-workflow-test.nix { inherit lib; }
-          );
+          # 評価時にしか走らない純粋なNixのテストを、ファイルごとにderivationへ包んだもの。
+          nixTests = import ./test/eval {
+            inherit lib;
+            inherit (pkgs) runCommand;
+          };
           safetensors-fp16 = pkgs.callPackage ./pkgs/safetensors-fp16 { };
           # Comfy-Orgの公式CLI。
           comfy-cli = pkgs.callPackage ./pkgs/comfy-cli { };
@@ -464,7 +448,7 @@
           # ComfyUI本体に触れない部分のpytest。
           # PythonのバージョンをComfyUIに揃えるため、
           # 型検査と同じcomfyuiからインタプリタを取る。
-          comfyui-custom-node-test = import ./lib/comfyui-custom-node-test.nix {
+          comfyui-custom-node-test = import ./test/comfyui-custom-node.nix {
             inherit pkgs;
             comfyui = (importPkgsStable system).comfy-ui-cuda;
           };
@@ -573,6 +557,7 @@
             in
             nixosEvalChecks
             // hmEvalChecks
+            // nixTests
             // {
               # `nix-fast-build`が見るのは`.#checks`だけで、
               # `packages`へ置いただけではCIでビルドされません。
@@ -581,12 +566,9 @@
               # `packages`と両方に並べます。
               inherit
                 comfy-cli
-                comfyui-api-workflow-test
-                machine-address6-test
                 merge-gguf-nextn
                 plamo-translate-cli
                 safetensors-fp16
-                systemd-specifier-test
                 ;
               # 警告を残さないために、CIでだけ`-Werror`で組む。
               certspotter-mackerel = certspotter-mackerel.override { werror = true; };

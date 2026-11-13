@@ -1,6 +1,6 @@
 { lib }:
 let
-  order = import ./order.nix { inherit lib; };
+  inherit (import ./fixture.nix { inherit lib; }) order;
   validWorkflow = {
     nodes = [
       {

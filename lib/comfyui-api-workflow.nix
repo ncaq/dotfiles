@@ -19,8 +19,8 @@
 
   `checks`が検査そのもので、項目ごとにエラー文字列のリストを返す。
   `assertions`はそれをNixOSのassertionへ包む。
-  分けてあるのは`comfyui-api-workflow-test.nix`が項目ごとに表明できるようにするためで、
-  `comfyui/workflow/lib/link.nix`と`link-test.nix`の関係に揃えている。
+  分けてあるのは`test/eval/comfyui-api-workflow/`が項目ごとに表明できるようにするためで、
+  `comfyui/workflow/lib/link.nix`と`test/eval/comfyui-workflow/link.nix`の関係に揃えている。
   テストは配線の漏れを見るために`assertions`の側も通す。
 
   ```nix

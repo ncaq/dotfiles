@@ -1,6 +1,6 @@
 { lib }:
 let
-  overlap = import ./overlap.nix { inherit lib; };
+  inherit (import ./fixture.nix { inherit lib; }) overlap;
   validNodes = [
     {
       id = 1;

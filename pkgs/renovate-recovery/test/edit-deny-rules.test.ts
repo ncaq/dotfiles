@@ -7,8 +7,12 @@ import {
   resolveEditPattern,
 } from "../tools/edit-deny-rules.ts";
 
-/** 問題が無いと判定されるべき、今の設定と同じ`Edit`の拒否の規則。 */
-const currentRules = [
+/**
+ * 問題が無いと判定されるべき規則の例。判定のテストの土台にします。
+ * `claude-config.nix`の設定から読んだものではないので、設定が変わってもここは変わりません。
+ * 実際の設定の検査は、ビルドの中で`tools/check-edit-deny-rules.ts`が行います。
+ */
+const baselineRules = [
   "Edit(./.git/**)",
   "Edit(./check.sh)",
   "Edit(./.github/workflows/**)",
@@ -79,12 +83,12 @@ describe("findDenyingRules", () => {
 });
 
 describe("checkEditDenyRules", () => {
-  it("今の設定の規則には問題が無い", () => {
-    expect(checkEditDenyRules(currentRules)).toStrictEqual([]);
+  it("土台の規則の例には問題が無い", () => {
+    expect(checkEditDenyRules(baselineRules)).toStrictEqual([]);
   });
 
   it("ホームディレクトリの全体を拒否すると、作業ツリーへ書けないことを報告する", () => {
-    const problems = checkEditDenyRules([...currentRules, "Edit(~/**)"]);
+    const problems = checkEditDenyRules([...baselineRules, "Edit(~/**)"]);
     expect(problems).toContain(
       "Edit(~/**) が作業ツリーの .renovate-recovery/result.md への書き込みを拒否しています",
     );
@@ -92,7 +96,7 @@ describe("checkEditDenyRules", () => {
   });
 
   it("作業ディレクトリの全体を拒否しても報告する", () => {
-    expect(checkEditDenyRules([...currentRules, "Edit(./**)"])).not.toStrictEqual([]);
+    expect(checkEditDenyRules([...baselineRules, "Edit(./**)"])).not.toStrictEqual([]);
   });
 
   it.each([
@@ -105,13 +109,13 @@ describe("checkEditDenyRules", () => {
     ["Edit(./check.sh)", "dotfiles/dotfiles/check.sh"],
     ["Edit(./.github/workflows/**)", "dotfiles/dotfiles/.github/workflows/check.yml"],
   ])("%s が消えたら、守られなくなった場所を報告する", (removed, unprotected) => {
-    expect(checkEditDenyRules(currentRules.filter((rule) => rule !== removed))).toContain(
+    expect(checkEditDenyRules(baselineRules.filter((rule) => rule !== removed))).toContain(
       `${RUNNER_LAYOUT.home}/${unprotected} への書き込みを拒否する規則がありません`,
     );
   });
 
   it("自分のランナーの_tempだけを拒否する規則では、他のランナーの分を報告する", () => {
-    const rules = currentRules.map((rule) =>
+    const rules = baselineRules.map((rule) =>
       rule === "Edit(//run/github-runner/*/_temp/**)"
         ? "Edit(//run/github-runner/dotfiles-x64-0/_temp/**)"
         : rule,
@@ -122,7 +126,7 @@ describe("checkEditDenyRules", () => {
   });
 
   it("判定できない書き方のEditの規則を報告する", () => {
-    expect(checkEditDenyRules([...currentRules, "Edit(secrets/**)"])).toStrictEqual([
+    expect(checkEditDenyRules([...baselineRules, "Edit(secrets/**)"])).toStrictEqual([
       "Edit(secrets/**) は判定できない書き方です",
     ]);
   });

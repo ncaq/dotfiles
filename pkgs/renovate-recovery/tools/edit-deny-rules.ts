@@ -70,6 +70,9 @@ export const MUST_BE_DENIED: readonly string[] = [
   `${RUNNER_LAYOUT.home}/_tool/node/bin/node`,
   `${RUNNER_LAYOUT.home}/.gitconfig`,
   `${RUNNER_LAYOUT.home}/.config/git/config`,
+  `${RUNNER_LAYOUT.home}/.curlrc`,
+  `${RUNNER_LAYOUT.home}/.ssh/authorized_keys`,
+  `${RUNNER_LAYOUT.home}/.claude/settings.json`,
   // 同じVMで動く他のランナーの、後のステップが読む場所。
   `${runnerHome("dotfiles-x64-1")}/_temp/set_env`,
 ];

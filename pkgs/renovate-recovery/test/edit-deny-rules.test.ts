@@ -20,8 +20,8 @@ const baselineRules = [
   "Edit(//run/github-runner/*/_temp/**)",
   "Edit(//run/github-runner/*/_actions/**)",
   "Edit(//run/github-runner/*/_tool/**)",
-  "Edit(~/.gitconfig)",
-  "Edit(~/.config/**)",
+  "Edit(~/.*)",
+  "Edit(~/.*/**)",
   "Read(//proc/**)",
   "Bash(git commit*)",
 ];
@@ -103,6 +103,20 @@ describe("findDenyingRules", () => {
     ).toStrictEqual(["Edit(~/**)"]);
   });
 
+  it("ホームディレクトリ直下のドットで始まるパスの拒否は、作業ツリーには当たらない", () => {
+    const rules = ["Edit(~/.*)", "Edit(~/.*/**)"];
+    expect(
+      findDenyingRules(rules, RUNNER_LAYOUT, `${RUNNER_LAYOUT.cwd}/.renovate-recovery/result.md`),
+    ).toStrictEqual([]);
+    expect(findDenyingRules(rules, RUNNER_LAYOUT, `${RUNNER_LAYOUT.cwd}/.envrc`)).toStrictEqual([]);
+    expect(findDenyingRules(rules, RUNNER_LAYOUT, `${RUNNER_LAYOUT.home}/.curlrc`)).toStrictEqual([
+      "Edit(~/.*)",
+    ]);
+    expect(
+      findDenyingRules(rules, RUNNER_LAYOUT, `${RUNNER_LAYOUT.home}/.ssh/authorized_keys`),
+    ).toStrictEqual(["Edit(~/.*/**)"]);
+  });
+
   it("*は1つの階層にだけ当たる", () => {
     const rules = ["Edit(//run/github-runner/*/_temp/**)"];
     expect(
@@ -142,8 +156,11 @@ describe("checkEditDenyRules", () => {
     ["Edit(//run/github-runner/*/_temp/**)", "_temp/renovate-recovery-src/post-comment.ts"],
     ["Edit(//run/github-runner/*/_actions/**)", "_actions/actions/github-script/v9/dist/index.js"],
     ["Edit(//run/github-runner/*/_tool/**)", "_tool/node/bin/node"],
-    ["Edit(~/.gitconfig)", ".gitconfig"],
-    ["Edit(~/.config/**)", ".config/git/config"],
+    ["Edit(~/.*)", ".gitconfig"],
+    ["Edit(~/.*)", ".curlrc"],
+    ["Edit(~/.*/**)", ".config/git/config"],
+    ["Edit(~/.*/**)", ".ssh/authorized_keys"],
+    ["Edit(~/.*/**)", ".claude/settings.json"],
     ["Edit(./.git/**)", "dotfiles/dotfiles/.git/config"],
     ["Edit(./check.sh)", "dotfiles/dotfiles/check.sh"],
     ["Edit(./.github/workflows/**)", "dotfiles/dotfiles/.github/workflows/check.yml"],

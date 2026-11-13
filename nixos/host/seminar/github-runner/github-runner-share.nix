@@ -115,7 +115,7 @@ in
       # ランナーのVMには渡しません。
       "runner-registration-pat" = {
         sopsFile = ../../../../secrets/seminar/github-runner.yaml;
-        # 暗号化したファイルのキーは、PATをコンテナへ渡していた頃の名前のままです。
+        # 暗号化したファイルのキーは、PATをランナーの隔離環境へ渡していた頃の名前のままです。
         key = "runner-registration-token";
         owner = "root";
         group = "root";

@@ -1,6 +1,6 @@
 # GitHub Actionsのランナーの登録トークンを発行してファイルに置くコマンド。
 #
-# seminarのランナーのコンテナごとのサービスから呼ばれる。
+# seminarのランナーの隔離環境ごとのサービスから呼ばれる。
 # 何をするかは`src/GithubRunnerRegistrationToken/Cli.hs`に、
 # 入力の環境変数は`src/GithubRunnerRegistrationToken/Config.hs`に書いてある。
 #

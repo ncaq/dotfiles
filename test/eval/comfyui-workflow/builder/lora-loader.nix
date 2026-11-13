@@ -7,7 +7,7 @@
 # 綴りや並びが崩れてもビルドは通ってUIで開くまで気付けない。
 { lib }:
 let
-  builder = import ../../../../nixos/host/bullet/comfyui/workflow/lib/builder.nix { inherit lib; };
+  inherit (import ../fixture.nix { inherit lib; }) builder;
   # CLIPも通す場合。
   withClip = builder.mkLoraLoader {
     id = 16;

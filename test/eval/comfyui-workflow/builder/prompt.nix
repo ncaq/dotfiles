@@ -5,12 +5,13 @@
 # ID重複・リンク・order・重なりの各検証を通ることを確かめる。
 { lib }:
 let
-  workflowLib = ../../../../nixos/host/bullet/comfyui/workflow/lib;
-  builder = import (workflowLib + "/builder.nix") { inherit lib; };
-  duplicate = import (workflowLib + "/duplicate.nix") { inherit lib; };
-  link = import (workflowLib + "/link.nix") { inherit lib; };
-  order = import (workflowLib + "/order.nix") { inherit lib; };
-  overlap = import (workflowLib + "/overlap.nix") { inherit lib; };
+  inherit (import ../fixture.nix { inherit lib; })
+    builder
+    duplicate
+    link
+    order
+    overlap
+    ;
 
   findNode = nodes: id: lib.findFirst (node: node.id == id) null nodes;
   outputLinks =

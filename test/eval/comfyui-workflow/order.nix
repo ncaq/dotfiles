@@ -1,6 +1,6 @@
 { lib }:
 let
-  order = import ../../../nixos/host/bullet/comfyui/workflow/lib/order.nix { inherit lib; };
+  inherit (import ./fixture.nix { inherit lib; }) order;
   validWorkflow = {
     nodes = [
       {

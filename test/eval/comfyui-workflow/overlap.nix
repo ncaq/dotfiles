@@ -1,6 +1,6 @@
 { lib }:
 let
-  overlap = import ../../../nixos/host/bullet/comfyui/workflow/lib/overlap.nix { inherit lib; };
+  inherit (import ./fixture.nix { inherit lib; }) overlap;
   validNodes = [
     {
       id = 1;

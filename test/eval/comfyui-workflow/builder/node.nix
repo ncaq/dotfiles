@@ -1,7 +1,7 @@
 # `builder.mkNode`がオプション引数を省略した時の形状を検証する。
 { lib }:
 let
-  builder = import ../../../../nixos/host/bullet/comfyui/workflow/lib/builder.nix { inherit lib; };
+  inherit (import ../fixture.nix { inherit lib; }) builder;
   # オプション引数を全て省略した素のノード。
   plainNode = builder.mkNode {
     id = 1;

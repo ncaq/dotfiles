@@ -1,7 +1,7 @@
 # App Modeの入力と出力の定義の形式を検証する。
 { lib }:
 let
-  builder = import ../../../../nixos/host/bullet/comfyui/workflow/lib/builder.nix { inherit lib; };
+  inherit (import ../fixture.nix { inherit lib; }) builder;
 
   appMeta = {
     inputs = [ (builder.mkAppInput 1 "seed") ];

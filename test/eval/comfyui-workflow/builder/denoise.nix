@@ -1,7 +1,7 @@
 # denoiseの強さがサンプラーの選択とステップ数へ変換されることを検証する。
 { lib }:
 let
-  builder = import ../../../../nixos/host/bullet/comfyui/workflow/lib/builder.nix { inherit lib; };
+  inherit (import ../fixture.nix { inherit lib; }) builder;
 
   findNode = nodes: id: lib.findFirst (node: node.id == id) null nodes;
 

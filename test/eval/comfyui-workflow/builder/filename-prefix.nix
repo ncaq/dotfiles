@@ -2,7 +2,7 @@
 # 置換パターンはサーバ側のfolder_pathsの仕様に合わせている。
 { lib }:
 let
-  builder = import ../../../../nixos/host/bullet/comfyui/workflow/lib/builder.nix { inherit lib; };
+  inherit (import ../fixture.nix { inherit lib; }) builder;
 in
 assert lib.assertMsg (
   builder.mkFilenamePrefix "test" == "test/test-%year%-%month%-%day%-%hour%-%minute%-%second%"

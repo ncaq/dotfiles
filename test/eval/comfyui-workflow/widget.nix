@@ -1,7 +1,6 @@
 { lib }:
 let
-  builder = import ../../../nixos/host/bullet/comfyui/workflow/lib/builder.nix { inherit lib; };
-  widget = import ../../../nixos/host/bullet/comfyui/workflow/lib/widget.nix { inherit lib; };
+  inherit (import ./fixture.nix { inherit lib; }) builder widget;
   nodes = [
     {
       id = 5;

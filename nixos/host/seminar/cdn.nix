@@ -48,7 +48,6 @@ let
           --times \
           --perms \
           --chmod=D755,F644 \
-          --checksum \
           --delete \
           --delete-after \
           --delay-updates \
@@ -173,7 +172,10 @@ in
       # 写す時にホストの側でシンボリックリンクとデバイスと特殊ファイルを捨てます。
       #
       # `--archive`はリンクや所有者を持ち込むので使わず、必要なものだけを指定します。
-      # checkoutのたびにmtimeが変わるので、中身で比べます。
+      # 比べるのは既定のサイズとmtimeで、中身は読みません。
+      # checkoutのたびにmtimeは変わりますが、
+      # cdn.ncaq.netのワークフローは`--checksum`付きで`--times`無しのrsyncでステージングへ書くので、
+      # 中身が変わらないファイルはステージングでmtimeが保たれます。
       services.${syncService} = {
         description = "Sync cdn.ncaq.net content from runner staging";
         serviceConfig = hardening.isolated // {

@@ -27,14 +27,27 @@ export interface RunnerLayout {
   readonly cwd: string;
 }
 
+/** nixpkgsのgithub-runnerのモジュールが、ランナーごとの作業ディレクトリを置く場所。 */
+const RUNNER_ROOT = "/run/github-runner";
+
+/**
+ * ランナーのホームディレクトリを返します。
+ * nixpkgsのgithub-runnerのモジュールは、
+ * `HOME`とランナーの作業ディレクトリを`/run/github-runner/<ランナーの名前>`にします。
+ */
+function runnerHome(name: string): string {
+  return `${RUNNER_ROOT}/${name}`;
+}
+
 /**
  * セルフホステッドランナーの配置。
- * nixpkgsのgithub-runnerのモジュールは`HOME`をランナーの作業ディレクトリにして、
- * 作業ツリーをその下の`<リポジトリ名>/<リポジトリ名>`に置きます。
+ * ランナーの名前は`nixos/host/seminar/github-runner/github-runner-x64.nix`が決めています。
+ * 作業ツリーをホームディレクトリの下の`<リポジトリ名>/<リポジトリ名>`に置くのは、
+ * nixpkgsのモジュールではなく、Actionsのランナーと`actions/checkout`の既定の動きです。
  */
 export const RUNNER_LAYOUT: RunnerLayout = {
-  home: "/run/github-runner/dotfiles-x64-0",
-  cwd: "/run/github-runner/dotfiles-x64-0/dotfiles/dotfiles",
+  home: runnerHome("dotfiles-x64-0"),
+  cwd: `${runnerHome("dotfiles-x64-0")}/dotfiles/dotfiles`,
 };
 
 /** Claude Codeが書けなければならない、作業ディレクトリからのパス。 */
@@ -56,7 +69,7 @@ export const MUST_BE_DENIED: readonly string[] = [
   `${RUNNER_LAYOUT.home}/.gitconfig`,
   `${RUNNER_LAYOUT.home}/.config/git/config`,
   // 同じVMで動く他のランナーの、後のステップが読む場所。
-  "/run/github-runner/dotfiles-x64-1/_temp/set_env",
+  `${runnerHome("dotfiles-x64-1")}/_temp/set_env`,
 ];
 
 /** `Edit(...)`の規則ならその中身を返します。他のツールの規則なら`undefined`です。 */

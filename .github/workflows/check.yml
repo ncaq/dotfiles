@@ -241,8 +241,9 @@ jobs:
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup-nix
-      - name: nix build
-        run: >-
-          nix eval --json .#testNixosBoot --apply builtins.attrNames |
-          jq -r '.[] | ".#testNixosBoot.\(.)"' |
-          xargs nix build -L --keep-going
+      # `nix build`は1つのプロセスでホストを1つずつ評価しますが、
+      # `nix-fast-build`はホストごとに評価のワーカーへ割り振るので評価も並列に進みます。
+      # ランナーのVMのPATHにある、メモリに合わせてワーカー数を抑えるラッパーを使います。
+      # オプションの意味は`./check.sh`と同じです。
+      - name: nix-fast-build
+        run: nix-fast-build --flake .#testNixosBoot --option eval-cache false --no-nom

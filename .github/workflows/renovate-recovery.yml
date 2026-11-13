@@ -191,6 +191,7 @@ jobs:
             echo "claude-config-args=${args[*]}"
           } >>"$GITHUB_OUTPUT"
       - uses: anthropics/claude-code-action@4fa93a88de49bbef68b10eb15aabedf28ca0e1ed # v1.0.271
+        id: claude
         env:
           # `use_commit_signing`のコミット先のブランチです。
           # 未指定だと`GITHUB_HEAD_REF`、つまりRenovateのブランチへコミットしてしまいます。
@@ -237,6 +238,66 @@ jobs:
             - RenovateのPRの番号: ${{ inputs.pr-number }}
             - 失敗したワークフローの実行のID: ${{ inputs.run-id || '(未指定)' }}
             - 結果を書くファイル: ${{ env.RECOVERY_DIR }}/result.md
+      - name: Report execution summary
+        # 復旧がうまく動かなかった時に原因を追えるよう、Claude Codeの実行の記録の要約をログに出します。
+        # 記録の全文はツールの結果を含むので、公開のログには出せません。
+        # 読み込まれたプラグインやMCPサーバーの状態、呼ばれたツールの名前、
+        # 権限で拒否された呼び出しのような、中身を含まない構造だけを出します。
+        # 何を出すかは`pkgs/renovate-recovery/src/execution-summary.ts`に書いてあります。
+        # 調査のための補助なので、失敗しても結果の投稿は続けます。
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          EXECUTION_FILE: ${{ steps.claude.outputs.execution_file }}
+        with:
+          script: |
+            const { reportExecution } = await import(`${process.env.RUNNER_TEMP}/renovate-recovery-src/report-execution.ts`)
+            await reportExecution({ github, context, core })
+      - name: Encrypt execution log
+        # 要約で足りない時のために、実行の記録の全文を暗号化して残します。
+        # 公開のリポジトリのアーティファクトはGitHubにログインしていれば誰でも取得できるので、
+        # 秘密鍵を持つ人だけが読めるよう、リポジトリの所有者のGPGの公開鍵で暗号化します。
+        #
+        # 公開鍵は、リポジトリの所有者がGitHubのアカウントに登録しているものを取得します。
+        # 作業ツリーのファイルはClaude Codeが書き換えられるので使いません。
+        # アカウントに登録できるのは所有者だけなので、鍵やフィンガープリントをここに書かなくて済みます。
+        # `--recipient-file`は鍵を鍵束に取り込まずに宛先にするもので、
+        # ファイルの中の鍵が1つではない時は失敗します。
+        # 鍵が登録されていない時や複数ある時は、暗号化せずにこのステップが失敗します。
+        #
+        # 読む時は、アーティファクトを取得して`gpg --decrypt`します。
+        id: encrypt
+        if: ${{ !cancelled() && steps.claude.outputs.execution_file != '' }}
+        continue-on-error: true
+        env:
+          OWNER: ${{ github.repository_owner }}
+          EXECUTION_FILE: ${{ steps.claude.outputs.execution_file }}
+        run: |
+          set -euo pipefail
+          key="${RUNNER_TEMP}/execution-log-public-key.asc"
+          # `--disable`は最初の引数に置いた時だけ効いて、`~/.curlrc`を読まなくします。
+          # このジョブのホームディレクトリはClaude Codeの作業ツリーの親なので、
+          # 書き込みの拒否の規則だけに頼らず、設定ファイルで接続先や出力先を変えられないようにします。
+          curl --disable --fail --silent --show-error --location --proto '=https' \
+            --output "${key}" "https://github.com/${OWNER}.gpg"
+          GNUPGHOME=$(mktemp -d -p "${RUNNER_TEMP}")
+          export GNUPGHOME
+          gpg --batch \
+            --recipient-file "${key}" \
+            --output "${RUNNER_TEMP}/claude-execution-output.json.gpg" \
+            --encrypt "${EXECUTION_FILE}"
+          echo "file=${RUNNER_TEMP}/claude-execution-output.json.gpg" >>"$GITHUB_OUTPUT"
+      - name: Upload encrypted execution log
+        if: ${{ !cancelled() && steps.encrypt.outputs.file != '' }}
+        continue-on-error: true
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: claude-execution-output-${{ inputs.pr-number }}
+          path: ${{ steps.encrypt.outputs.file }}
+          if-no-files-found: error
+          # 調査が済めば要らないので、長くは残しません。
+          retention-days: 7
       - name: Post result comment
         # rebaseで実行ごと打ち切られた時は記録を残さず、新しい内容での失敗に任せます。
         # それ以外は失敗でも記録して、同じ内容で何度も動かないようにします。

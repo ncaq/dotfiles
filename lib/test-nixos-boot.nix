@@ -497,7 +497,33 @@ lib.mapAttrs (
 
           assert_response("evil.example.com", rejected)
         '';
+
+    # 全てのコンテナとmicroVMに、ログを流す設定が入っていることを評価の結果で確認します。
+    # 上の`machineLogTest`が実際のログを見られるのはテストVMで起動するマシンだけです。
+    # 設定は`options.containers`と`options.microvm.vms`のsubmoduleへ足した定義が、
+    # 各マシンの定義と合成されることで入るので、
+    # 合成が崩れても起動しないマシンでは評価もブートも通ってしまいます。
+    # GitHub ActionsのランナーのVMがちょうど起動しないマシンです。
+    #
+    # 以下を見ます。
+    #
+    # - 全てのコンテナとmicroVMの中で、journaldがコンソールへ書く設定になっていること
+    # - 全てのmicroVMのホスト側のユニットが、VMと同じ名前のjournalのnamespaceへログを出すこと
+    machineLogGuestConfigs =
+      lib.mapAttrs (_: c: c.config) hostConfig.containers
+      // lib.mapAttrs (_: vm: vm.config.config) (hostConfig.microvm.vms or { });
+    machineLogWithoutConsole = lib.attrNames (
+      lib.filterAttrs (_: guest: guest.services.journald.console == "") machineLogGuestConfigs
+    );
+    machineLogWithoutNamespace = lib.filter (
+      name: (hostConfig.systemd.services."microvm@${name}".serviceConfig.LogNamespace or null) != name
+    ) (lib.attrNames (hostConfig.microvm.vms or { }));
   in
+  assert lib.assertMsg (
+    machineLogWithoutConsole == [ ]
+  ) "中のjournalをコンソールへ流す設定が入っていないマシンがあります: ${lib.concatStringsSep ", " machineLogWithoutConsole}";
+  assert lib.assertMsg (machineLogWithoutNamespace == [ ])
+    "ログをjournalのnamespaceへ分けていないmicroVMがあります: ${lib.concatStringsSep ", " machineLogWithoutNamespace}";
   (importPkgsStable hostDef.system).testers.runNixOSTest {
     name = "test-nixos-boot-${name}";
     node = {

@@ -120,7 +120,12 @@ jobs:
       - uses: ./.github/actions/setup-nix
       - name: Keep a copy of the comment script
         # Claude Codeが作業ツリーを書き換えても、結果の投稿には元のスクリプトを使います。
-        run: cp -r pkgs/renovate-recovery/src "${RUNNER_TEMP}/renovate-recovery-src"
+        #
+        # 実行の記録を暗号化する公開鍵も、Claude Codeが動く前に写しを取ります。
+        run: |
+          set -euo pipefail
+          cp -r pkgs/renovate-recovery/src "${RUNNER_TEMP}/renovate-recovery-src"
+          cp key/ncaq-public-key.asc "${RUNNER_TEMP}/execution-log-public-key.asc"
       - name: Prepare a work directory for Claude Code
         # Claude Codeが一時ファイルや結果のファイルを書く場所です。
         # `runner.temp`には後のステップが使うスクリプトのコピーや`GITHUB_ENV`のファイルがあるので、
@@ -191,6 +196,7 @@ jobs:
             echo "claude-config-args=${args[*]}"
           } >>"$GITHUB_OUTPUT"
       - uses: anthropics/claude-code-action@4fa93a88de49bbef68b10eb15aabedf28ca0e1ed # v1.0.271
+        id: claude
         env:
           # `use_commit_signing`のコミット先のブランチです。
           # 未指定だと`GITHUB_HEAD_REF`、つまりRenovateのブランチへコミットしてしまいます。
@@ -237,6 +243,63 @@ jobs:
             - RenovateのPRの番号: ${{ inputs.pr-number }}
             - 失敗したワークフローの実行のID: ${{ inputs.run-id || '(未指定)' }}
             - 結果を書くファイル: ${{ env.RECOVERY_DIR }}/result.md
+      - name: Report execution summary
+        # 復旧がうまく動かなかった時に原因を追えるよう、Claude Codeの実行の記録の要約をログに出します。
+        # 記録の全文はツールの結果を含むので、公開のログには出せません。
+        # 読み込まれたプラグインやMCPサーバーの状態、呼ばれたツールの名前、
+        # 権限で拒否された呼び出しのような、中身を含まない構造だけを出します。
+        # 何を出すかは`pkgs/renovate-recovery/src/execution-summary.ts`に書いてあります。
+        # 調査のための補助なので、失敗しても結果の投稿は続けます。
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          EXECUTION_FILE: ${{ steps.claude.outputs.execution_file }}
+        with:
+          script: |
+            const { reportExecution } = await import(`${process.env.RUNNER_TEMP}/renovate-recovery-src/report-execution.ts`)
+            await reportExecution({ github, context, core })
+      - name: Encrypt execution log
+        # 要約で足りない時のために、実行の記録の全文を暗号化して残します。
+        # 公開のリポジトリのアーティファクトはGitHubにログインしていれば誰でも取得できるので、
+        # 秘密鍵を持つ人だけが読めるよう、リポジトリの管理者のGPGの公開鍵で暗号化します。
+        #
+        # 公開鍵の写しはClaude Codeが動く前に取っていて、
+        # 宛先は主鍵のフィンガープリントで指定します。
+        # 鍵のファイルが別の鍵に差し替えられていたら、宛先が見つからずに失敗します。
+        #
+        # 読む時は、アーティファクトを取得して`gpg --decrypt`します。
+        id: encrypt
+        if: ${{ !cancelled() && steps.claude.outputs.execution_file != '' }}
+        continue-on-error: true
+        env:
+          FLAKE: github:${{ github.repository }}/${{ needs.gate.outputs.base-sha }}
+          EXECUTION_FILE: ${{ steps.claude.outputs.execution_file }}
+          # `.sops.yaml`と同じ、ncaqのGPGの主鍵のフィンガープリントです。
+          RECIPIENT: 7DDE3BC405DC58D94BF661D342248C7D0FB73D57
+        run: |
+          set -euo pipefail
+          # gnupgは出力が複数あるので、実行ファイルのある`out`だけを指定します。
+          gnupg=$(nix build --no-link --print-out-paths "${FLAKE}#gnupg^out")
+          GNUPGHOME=$(mktemp -d -p "${RUNNER_TEMP}")
+          export GNUPGHOME
+          "${gnupg}/bin/gpg" --batch --import "${RUNNER_TEMP}/execution-log-public-key.asc"
+          # 取り込んだばかりの鍵には信用の設定が無いので、フィンガープリントでの指定を信用します。
+          "${gnupg}/bin/gpg" --batch --trust-model always \
+            --recipient "${RECIPIENT}" \
+            --output "${RUNNER_TEMP}/claude-execution-output.json.gpg" \
+            --encrypt "${EXECUTION_FILE}"
+          echo "file=${RUNNER_TEMP}/claude-execution-output.json.gpg" >>"$GITHUB_OUTPUT"
+      - name: Upload encrypted execution log
+        if: ${{ !cancelled() && steps.encrypt.outputs.file != '' }}
+        continue-on-error: true
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: claude-execution-output-${{ inputs.pr-number }}
+          path: ${{ steps.encrypt.outputs.file }}
+          if-no-files-found: error
+          # 調査が済めば要らないので、長くは残しません。
+          retention-days: 7
       - name: Post result comment
         # rebaseで実行ごと打ち切られた時は記録を残さず、新しい内容での失敗に任せます。
         # それ以外は失敗でも記録して、同じ内容で何度も動かないようにします。

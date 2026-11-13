@@ -171,16 +171,15 @@ jobs:
             --settings "${config}/settings.json"
             --append-system-prompt-file "${config}/append-system-prompt.md"
           )
-          # プラグインが無い時にglobがそのまま引数に渡らないようにします。
-          shopt -s nullglob
-          plugins=("${config}"/plugins/*)
-          if [ "${#plugins[@]}" -eq 0 ]; then
-            echo "::error::${config}/plugins にプラグインがありません"
+          # プラグインは`claude_args`の`--plugin-dir`では渡しません。
+          # アクションは`claude_args`の同じフラグを最後の1つで上書きするので、
+          # 並べても最後のプラグインしか読み込まれないためです。
+          # 設定一式に入っているローカルのマーケットプレイスと、
+          # インストールするプラグインの一覧を、アクションの入力へ渡します。
+          if [ ! -s "${config}/plugins.txt" ]; then
+            echo "::error::${config}/plugins.txt にプラグインがありません"
             exit 1
           fi
-          for plugin in "${plugins[@]}"; do
-            args+=(--plugin-dir "${plugin}")
-          done
           # `commit`プラグインの`run-commit-msg-hook`が、
           # 普段と同じcommitlintの検査をコミットメッセージにかけられるようにします。
           # 作業ツリーではなく`.git/config`に書くので、コミットの対象にはなりません。
@@ -189,6 +188,11 @@ jobs:
             echo "claude=${claude}/bin/claude"
             echo "bun=${bun}/bin/bun"
             echo "claude-config-args=${args[*]}"
+            echo "plugin-marketplace=${config}/marketplace"
+            # 複数行の値なので区切りを使う書式で渡します。
+            echo "plugins<<END_OF_PLUGINS"
+            cat "${config}/plugins.txt"
+            echo "END_OF_PLUGINS"
           } >>"$GITHUB_OUTPUT"
       - uses: anthropics/claude-code-action@4fa93a88de49bbef68b10eb15aabedf28ca0e1ed # v1.0.271
         id: claude
@@ -203,6 +207,10 @@ jobs:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           path_to_claude_code_executable: ${{ steps.executables.outputs.claude }}
           path_to_bun_executable: ${{ steps.executables.outputs.bun }}
+          # 普段使っているkonokaのプラグインのうち、復旧で使うものです。
+          # 一覧は`pkgs/renovate-recovery/claude-config.nix`の`pluginNames`にあります。
+          plugin_marketplaces: ${{ steps.executables.outputs.plugin-marketplace }}
+          plugins: ${{ steps.executables.outputs.plugins }}
           # `check`から呼ばれた時のactorはRenovateです。
           allowed_bots: renovate
           # 失敗したジョブのログを読むために必要です。

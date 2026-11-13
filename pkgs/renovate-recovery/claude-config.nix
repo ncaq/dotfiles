@@ -2,9 +2,11 @@
 #
 # 普段使っているClaude Codeの設定のうち、
 # CIで動かしても問題ないものだけを集めたディレクトリを作ります。
-# ワークフローは`claude_args`でこのディレクトリの中身を指定します。
+# ワークフローは`claude_args`とアクションの入力でこのディレクトリの中身を指定します。
 #
-# - `plugins/`: `--plugin-dir`で読み込むkonokaのプラグイン
+# - `plugins/`: 読み込むkonokaのプラグイン
+# - `marketplace/`: `plugins/`をまとめたローカルのマーケットプレイス
+# - `plugins.txt`: インストールするプラグインの一覧
 # - `git-hooks/`: `core.hooksPath`に指定するgitフック
 # - `append-system-prompt.md`: `--append-system-prompt-file`で渡すプロンプト
 # - `settings.json`: `--settings`で渡す設定
@@ -51,6 +53,25 @@ let
     "web-tasuke"
   ];
   plugins = lib.getAttrs pluginNames konokaPlugins;
+
+  # プラグインをまとめたローカルのマーケットプレイスの名前。
+  marketplaceName = "renovate-recovery";
+  # マーケットプレイスの定義。
+  # `source`は定義のあるディレクトリからの相対パスで、`marketplace/plugins/<名前>`を指します。
+  marketplaceManifest = writeText "marketplace.json" (
+    builtins.toJSON {
+      name = marketplaceName;
+      owner.name = "ncaq";
+      plugins = map (name: {
+        inherit name;
+        source = "./plugins/${name}";
+      }) pluginNames;
+    }
+  );
+  # アクションの`plugins`の入力に渡す、インストールするプラグインの一覧。1行に1つです。
+  pluginList = writeText "plugins.txt" (
+    lib.concatMapStrings (name: "${name}@${marketplaceName}\n") pluginNames
+  );
 
   # 普段のコーディングエージェント向けのプロンプトのうち、
   # 出力の書き方を決めるものだけを使います。
@@ -396,6 +417,16 @@ runCommand "renovate-recovery-claude-config" { } ''
   ln -s ${git-hooks}/lib/git-hooks/dist/hooks/commit-msg $out/git-hooks/commit-msg
   ln -s ${appendSystemPrompt} $out/append-system-prompt.md
   ln -s ${settings} $out/settings.json
+
+  # プラグインをまとめたローカルのマーケットプレイス。
+  # `claude-code-action`は`claude_args`の同じフラグを最後の1つで上書きするので、
+  # `--plugin-dir`を並べても最後のプラグインしか読み込まれません。
+  # アクションの`plugin_marketplaces`と`plugins`の入力なら、
+  # ローカルのパスのマーケットプレイスから複数のプラグインをインストールできます。
+  mkdir -p $out/marketplace/.claude-plugin
+  ln -s ../plugins $out/marketplace/plugins
+  ln -s ${marketplaceManifest} $out/marketplace/.claude-plugin/marketplace.json
+  ln -s ${pluginList} $out/plugins.txt
 
   # 上流の構成が変わってもビルドが通ってしまい、
   # 復旧が必要になった時に初めて壊れていたと気付く事態を避けるため、

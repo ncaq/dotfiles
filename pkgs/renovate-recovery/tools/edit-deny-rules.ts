@@ -55,6 +55,8 @@ export const MUST_BE_WRITABLE: readonly string[] = [
   ".renovate-recovery/result.md",
   ".renovate-recovery/pr-body.md",
   "flake.lock",
+  "flake.nix",
+  "pkgs/renovate-recovery/default.nix",
   "pkgs/renovate-recovery/package-lock.json",
 ];
 
@@ -96,7 +98,12 @@ export function resolveEditPattern(pattern: string, layout: RunnerLayout): strin
 
 /**
  * globをパスの全体に当てる正規表現にします。
- * `**`は階層をまたいで何にでも、`*`は1つの階層の中で何にでも当たります。
+ * gitignoreと同じく、以下のように当てます。
+ *
+ * - `**<スラッシュ>`: 0個以上の階層
+ * - `**`: 階層をまたいで何にでも
+ * - `*`: 1つの階層の中で何にでも
+ * - それ以外: 文字通り
  *
  * `path.matchesGlob`は使いません。
  * `.`で始まる名前に`*`や`**`が当たらないので、
@@ -104,15 +111,18 @@ export function resolveEditPattern(pattern: string, layout: RunnerLayout): strin
  * Claude Codeの規則はgitignoreと同じく`.`で始まる名前にも当たります。
  */
 export function globToRegExp(glob: string): RegExp {
-  const source = glob
-    .split("**")
-    .map((part) =>
-      part
-        .split("*")
-        .map((literal) => literal.replaceAll(/[\\^$.+?()[\]{}|]/gu, String.raw`\$&`))
-        .join("[^/]*"),
-    )
-    .join(".*");
+  const source = glob.replaceAll(/\*\*\/|\*\*|\*|[^*]+/gu, (token) => {
+    switch (token) {
+      case "**/":
+        return "(?:.*/)?";
+      case "**":
+        return ".*";
+      case "*":
+        return "[^/]*";
+      default:
+        return token.replaceAll(/[\\^$.+?()[\]{}|]/gu, String.raw`\$&`);
+    }
+  });
   return new RegExp(`^${source}$`, "su");
 }
 

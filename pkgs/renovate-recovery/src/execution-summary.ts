@@ -120,6 +120,37 @@ function summarizeResult(message: Record<string, unknown>): string[] {
 }
 
 /**
+ * エラーになったツールの呼び出しのIDを集めます。
+ * ツールの結果は呼び出しの後に別のメッセージで届くので、要約を作る前に全体から集めます。
+ */
+function collectFailedToolUseIds(messages: readonly Record<string, unknown>[]): Set<string> {
+  return new Set(
+    messages
+      .filter((message) => message["type"] === "user")
+      .flatMap((message) => contentBlocks(message, "tool_result"))
+      .filter((block) => block["is_error"] === true)
+      .map((block) => asString(block["tool_use_id"]))
+      .filter((id) => id != null),
+  );
+}
+
+/** Claude Codeのメッセージから、呼ばれたツールの名前とエラーになったかどうかを取り出します。 */
+function summarizeToolUses(
+  message: Record<string, unknown>,
+  failedToolUseIds: ReadonlySet<string>,
+): string[] {
+  return contentBlocks(message, "tool_use").map((block) => {
+    const name = asString(block["name"]) ?? "?";
+    // スキルは名前が分からないとどのプラグインの話か追えないので、スキルの名前だけ添えます。
+    const input = block["input"];
+    const skill = name === "Skill" && isRecord(input) ? asString(input["skill"]) : undefined;
+    const label = skill == null ? name : `${name}(${skill})`;
+    const status = failedToolUseIds.has(asString(block["id"]) ?? "") ? "error" : "ok";
+    return `tool: ${sanitizeDetail(label)} ${status}`;
+  });
+}
+
+/**
  * 実行の記録を、ログに出す行の列にします。
  * 記録はメッセージの配列で、それ以外の形なら何も読めなかったことを1行で返します。
  */
@@ -128,29 +159,13 @@ export function summarizeExecution(execution: unknown): string[] {
     return ["実行の記録がメッセージの配列ではありません"];
   }
   const messages = execution.filter(isRecord);
-  // ツールの結果は呼び出しの後に別のメッセージで届くので、先にエラーだった呼び出しのIDを集めます。
-  const failedToolUseIds = new Set(
-    messages
-      .filter((message) => message["type"] === "user")
-      .flatMap((message) => contentBlocks(message, "tool_result"))
-      .filter((block) => block["is_error"] === true)
-      .map((block) => asString(block["tool_use_id"]))
-      .filter((id) => id != null),
-  );
+  const failedToolUseIds = collectFailedToolUseIds(messages);
   return messages.flatMap((message) => {
     switch (message["type"]) {
       case "system":
         return message["subtype"] === "init" ? summarizeInit(message) : [];
       case "assistant":
-        return contentBlocks(message, "tool_use").map((block) => {
-          const name = asString(block["name"]) ?? "?";
-          // スキルは名前が分からないとどのプラグインの話か追えないので、スキルの名前だけ添えます。
-          const input = block["input"];
-          const skill = name === "Skill" && isRecord(input) ? asString(input["skill"]) : undefined;
-          const label = skill == null ? name : `${name}(${skill})`;
-          const status = failedToolUseIds.has(asString(block["id"]) ?? "") ? "error" : "ok";
-          return `tool: ${sanitizeDetail(label)} ${status}`;
-        });
+        return summarizeToolUses(message, failedToolUseIds);
       case "result":
         return summarizeResult(message);
       default:

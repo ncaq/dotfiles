@@ -362,6 +362,29 @@ lib.mapAttrs (
           )
         '';
 
+    # コンテナとmicroVMの中のjournalがホストのjournalへ届いていて、
+    # `machine-log`(`nixos/native-linux/machine-log.nix`)で読めることを確認します。
+    # ゲストのjournaldの設定が外れても、評価とブートは通ったまま、
+    # ブートの表示だけが入る元の状態へ静かに戻ります。
+    # 障害が起きて読もうとした時に初めて気付くことになります。
+    #
+    # ブートの表示(`[  OK  ] Started ...`)はjournaldを通らずに出るので、
+    # journaldが流した行にだけ現れる`systemd[1]: `の形を探します。
+    #
+    # テストVMでも起動するマシンだけを見ます。
+    # microVMは`startsInTestVm`のもの、
+    # コンテナは`postgresExtensionTest`が起動を待っているpostgresqlです。
+    machineLogNames =
+      lib.filter startsInTestVm (lib.attrNames (hostConfig.microvm.vms or { }))
+      ++ lib.optional (hostConfig.containers ? postgresql) "postgresql";
+    machineLogTest = lib.concatMapStrings (
+      name: # python
+      ''
+        machine.wait_until_succeeds(
+            "machine-log ${name} --no-pager --output=cat | grep -F 'systemd[1]: '"
+        )
+      '') machineLogNames;
+
     # 自宅LANのインターフェイスへ開けている許可が、
     # 全て送信元アドレスでも絞られていることを確認します。
     # LANのインターフェイスにはグローバルIPv6アドレスも付いているので、
@@ -484,6 +507,7 @@ lib.mapAttrs (
     + machineIpv6Test
     + githubRunnerVmTest
     + cdnDeployTest
+    + machineLogTest
     + lanInputTest;
   }
 ) (lib.filterAttrs (_: def: !(def.nixosSystem.config.wsl.enable or false)) hostDefs)

@@ -1,7 +1,7 @@
 -- | 全ホストの閉包をGC rootとして登録する。
 --
 -- セルフホストランナーはこのホストのnix storeを共有しているが、
--- `nix build`のresultリンクはephemeralなランナーコンテナ内にあるため、
+-- `nix build`のresultリンクはジョブごとに作り直されるランナーの隔離環境の中にあるため、
 -- ジョブ終了後は他ホスト向けの閉包を守るrootが残らない。
 -- そのままGCに回収されると、次のCIで巨大なパスを取得し直すことになる。
 -- <https://github.com/ncaq/dotfiles/issues/1535>

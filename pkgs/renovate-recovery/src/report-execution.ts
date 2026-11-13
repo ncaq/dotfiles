@@ -7,7 +7,7 @@
  *
  * 以下の環境変数を読みます。
  *
- * - `EXECUTION_FILE`: 実行の記録のファイルのフルパス。空なら何もしない
+ * - `EXECUTION_FILE`: 実行の記録のファイルのフルパス。空なら警告だけを出して要約を省略する
  */
 
 import { readFile } from "node:fs/promises";

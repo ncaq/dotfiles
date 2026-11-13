@@ -111,6 +111,51 @@ describe("summarizeExecution", () => {
       summarizeExecution([null, "text", 1, { type: "unknown" }, { type: "assistant" }]),
     ).toStrictEqual([]);
   });
+
+  it("ログに出すどの項目に改行や行の区切りの文字を入れても、新しい行を始めさせない", () => {
+    const lineSeparator = String.fromCodePoint(0x2028);
+    const paragraphSeparator = String.fromCodePoint(0x2029);
+    const evil = `x\n::error::injected\r${lineSeparator}y${paragraphSeparator}z`;
+    const injected = summarizeExecution([
+      {
+        type: "system",
+        subtype: "init",
+        claude_code_version: evil,
+        model: evil,
+        plugins: [{ name: evil, version: evil }],
+        plugin_errors: [evil, { message: evil }],
+        mcp_servers: [{ name: evil, status: evil }],
+      },
+      {
+        type: "assistant",
+        message: {
+          content: [
+            { type: "tool_use", id: "t1", name: evil, input: {} },
+            { type: "tool_use", id: "t2", name: "Skill", input: { skill: evil } },
+          ],
+        },
+      },
+      {
+        type: "result",
+        subtype: evil,
+        permission_denials: [
+          { tool_name: evil, tool_input: { command: evil } },
+          { tool_name: "Read", tool_input: { file_path: evil } },
+          { tool_name: "Grep", tool_input: { path: evil } },
+          { tool_name: "Skill", tool_input: { skill: evil } },
+          { tool_name: "Glob", tool_input: { pattern: evil } },
+          { tool_name: "WebFetch", tool_input: { url: evil } },
+          { tool_name: "Other", tool_input: { [evil]: 1 } },
+        ],
+      },
+    ]);
+    // 入れた値がどの行にも届いていることを先に確かめて、項目の取りこぼしで通るのを防ぎます。
+    expect(injected).toHaveLength(15);
+    for (const line of injected) {
+      expect(line).toContain("::error::injected");
+      expect(line).not.toMatch(/[\p{Cc}\p{Zl}\p{Zp}]/u);
+    }
+  });
 });
 
 describe("sanitizeDetail", () => {

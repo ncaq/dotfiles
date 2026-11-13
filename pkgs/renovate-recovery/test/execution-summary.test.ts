@@ -112,6 +112,93 @@ describe("summarizeExecution", () => {
     ).toStrictEqual([]);
   });
 
+  it.each([
+    {
+      name: "ターン数が数値でなければ?にする",
+      message: { type: "result", subtype: "success", is_error: false, num_turns: "16" },
+      expected: ["result: subtype=success is_error=false num_turns=? permission_denials=0"],
+    },
+    {
+      name: "エラーかどうかが無ければエラーではないとして扱う",
+      message: { type: "result", subtype: "success", num_turns: 1 },
+      expected: ["result: subtype=success is_error=false num_turns=1 permission_denials=0"],
+    },
+    {
+      name: "エラーかどうかが真偽値でなければエラーではないとして扱う",
+      message: { type: "result", subtype: "success", is_error: "true", num_turns: 1 },
+      expected: ["result: subtype=success is_error=false num_turns=1 permission_denials=0"],
+    },
+    {
+      name: "終了の種別が無ければ?にする",
+      message: { type: "result", is_error: true, num_turns: 1 },
+      expected: ["result: subtype=? is_error=true num_turns=1 permission_denials=0"],
+    },
+    {
+      name: "拒否された呼び出しの引数がオブジェクトでなければ説明を空にする",
+      message: {
+        type: "result",
+        subtype: "success",
+        num_turns: 1,
+        permission_denials: [{ tool_name: "Bash", tool_input: "ls" }, { tool_name: "Read" }],
+      },
+      expected: [
+        "result: subtype=success is_error=false num_turns=1 permission_denials=2",
+        "denied: Bash ",
+        "denied: Read ",
+      ],
+    },
+    {
+      name: "何をしようとしたかが分かる引数が複数あれば、一覧で先にあるものを出す",
+      message: {
+        type: "result",
+        subtype: "success",
+        num_turns: 1,
+        permission_denials: [
+          { tool_name: "Grep", tool_input: { pattern: "a", path: "src" } },
+          { tool_name: "X", tool_input: { url: "https://example.com", command: "ls" } },
+        ],
+      },
+      expected: [
+        "result: subtype=success is_error=false num_turns=1 permission_denials=2",
+        "denied: Grep path=src",
+        "denied: X command=ls",
+      ],
+    },
+    {
+      name: "拒否された呼び出しのツールの名前が無ければ?にする",
+      message: {
+        type: "result",
+        subtype: "success",
+        num_turns: 1,
+        permission_denials: [{ tool_input: { command: "ls" } }],
+      },
+      expected: [
+        "result: subtype=success is_error=false num_turns=1 permission_denials=1",
+        "denied: ? command=ls",
+      ],
+    },
+    {
+      name: "名前の無いツールの呼び出しは?にする",
+      message: { type: "assistant", message: { content: [{ type: "tool_use", id: "t1" }] } },
+      expected: ["tool: ? ok"],
+    },
+    {
+      name: "スキルの名前が文字列でなければツールの名前だけを出す",
+      message: {
+        type: "assistant",
+        message: { content: [{ type: "tool_use", id: "t1", name: "Skill", input: { skill: 1 } }] },
+      },
+      expected: ["tool: Skill ok"],
+    },
+    {
+      name: "初期化の情報が何も無ければ?にして、一覧は出さない",
+      message: { type: "system", subtype: "init", plugins: "commit", mcp_servers: null },
+      expected: ["init: claude_code_version=? model=?"],
+    },
+  ])("$name", ({ message, expected }) => {
+    expect(summarizeExecution([message])).toStrictEqual(expected);
+  });
+
   it("ログに出すどの項目に改行や行の区切りの文字を入れても、新しい行を始めさせない", () => {
     const lineSeparator = String.fromCodePoint(0x2028);
     const paragraphSeparator = String.fromCodePoint(0x2029);

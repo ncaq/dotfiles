@@ -67,6 +67,16 @@ describe("reportExecutionFile", () => {
     const reporter = recordingReporter();
     await reportExecutionFile(reporter, file);
     expect(reporter.infos).toStrictEqual([]);
+    expect(reporter.warnings).toHaveLength(1);
     expect(reporter.warnings[0]).toMatch(/実行の記録を読めませんでした/);
+  });
+
+  it("配列ではないJSONは、警告ではなく読めなかったことを1行で出す", async () => {
+    const file = path.join(await makeTempDir(), "execution.json");
+    await writeFile(file, "{}");
+    const reporter = recordingReporter();
+    await reportExecutionFile(reporter, file);
+    expect(reporter.infos).toStrictEqual(["実行の記録がメッセージの配列ではありません"]);
+    expect(reporter.warnings).toStrictEqual([]);
   });
 });

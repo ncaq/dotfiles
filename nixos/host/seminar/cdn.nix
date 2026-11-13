@@ -65,7 +65,7 @@ let
   };
 in
 {
-  # ランナーのVMの共有の定義と`lib/test-nixos-boot.nix`のブートテストが、
+  # ランナーのVMの共有の定義と`test/nixos-boot`のブートテストが、
   # ここからパスや名前を参照します。
   options.local.cdnDeploy = lib.mkOption {
     type = lib.types.submodule {

@@ -1,6 +1,6 @@
 { lib }:
 let
-  link = import ./link.nix { inherit lib; };
+  link = import ../../../nixos/host/bullet/comfyui/workflow/lib/link.nix { inherit lib; };
   validWorkflow = {
     nodes = [
       {

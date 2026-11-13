@@ -159,7 +159,7 @@ in
               runtimeInputs = [
                 # サーバはコンテナ内で動いているので、
                 # psqlもそのコンテナで拡張込みで実際に起動しているパッケージから取る。
-                # `lib/test-nixos-boot.nix`と同じ参照先。
+                # `test/nixos-boot/script/postgres-extension.nix`と同じ参照先。
                 config.containers.postgresql.config.services.postgresql.finalPackage
                 pkgs.util-linux
               ];

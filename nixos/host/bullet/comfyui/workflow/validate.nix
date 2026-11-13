@@ -7,19 +7,16 @@
 # NixOSのassertionsで機械的に検出する。
 # `local.comfyui.workflows`を横断して検証するので、
 # ワークフローを追加するだけで自動的に検証対象になる。
+#
+# 検証に使う`lib/`の関数自体のテストは`test/eval/comfyui-workflow/`にあり、
+# flakeの`checks`として走る。
 { config, lib, ... }:
 let
-  builderTest = import ./lib/builder-test.nix { inherit lib; };
   duplicate = import ./lib/duplicate.nix { inherit lib; };
-  duplicateTest = import ./lib/duplicate-test.nix { inherit lib; };
   link = import ./lib/link.nix { inherit lib; };
-  linkTest = import ./lib/link-test.nix { inherit lib; };
   order = import ./lib/order.nix { inherit lib; };
-  orderTest = import ./lib/order-test.nix { inherit lib; };
   overlap = import ./lib/overlap.nix { inherit lib; };
-  overlapTest = import ./lib/overlap-test.nix { inherit lib; };
   widget = import ./lib/widget.nix { inherit lib; };
-  widgetTest = import ./lib/widget-test.nix { inherit lib; };
   describeOverlap =
     pair: "  ${toString pair.a.id}(${pair.a.label}) と ${toString pair.b.id}(${pair.b.label})";
   modelNames = lib.flatten (
@@ -38,12 +35,6 @@ let
     ) config.local.comfyui.models
   );
 in
-assert builderTest;
-assert duplicateTest;
-assert linkTest;
-assert orderTest;
-assert overlapTest;
-assert widgetTest;
 {
   config.assertions = lib.concatLists (
     lib.mapAttrsToList (

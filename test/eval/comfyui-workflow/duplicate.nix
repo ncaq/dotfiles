@@ -1,6 +1,6 @@
 { lib }:
 let
-  duplicate = import ./duplicate.nix { inherit lib; };
+  duplicate = import ../../../nixos/host/bullet/comfyui/workflow/lib/duplicate.nix { inherit lib; };
   validWorkflow = {
     nodes = [
       {

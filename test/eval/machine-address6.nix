@@ -9,7 +9,7 @@
 # 評価時に固定しておく。
 { lib }:
 let
-  toAddress6 = ipv4: import ./machine-address6.nix { inherit lib ipv4; };
+  toAddress6 = ipv4: import ../../lib/machine-address6.nix { inherit lib ipv4; };
   rejects = ipv4: !(builtins.tryEval (builtins.deepSeq (toAddress6 ipv4) true)).success;
 in
 assert lib.assertMsg (

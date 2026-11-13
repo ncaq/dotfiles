@@ -8,7 +8,7 @@
 # 判定の穴も、後から判定を緩めてしまった場合も検出できない。
 { lib }:
 let
-  specifier = import ./systemd-specifier.nix { inherit lib; };
+  specifier = import ../../lib/systemd-specifier.nix { inherit lib; };
   inherit (specifier) hasUnsafeSpecifier unsafeNames;
 in
 assert lib.assertMsg (!(hasUnsafeSpecifier "plain-text")) "`%`を含まない値を拒否しました";

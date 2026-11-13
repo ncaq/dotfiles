@@ -36,9 +36,10 @@
     general = [
       # Googleの31Bのdense。visionに対応する。
       # registryの既定タグはQ4_K_Mの本体にMTPのドラフトと投影器を同梱している。
-      # bulletでの実測(KVキャッシュq8_0, context 131072)では、
-      # llama-serverが28.1GiBで全層がGPUに載り、
-      # 123.3と132.4トークン/秒が出て、VRAMの空きも1.6GiB残る。
+      # bulletでの実測(KVキャッシュq8_0, context 131072)は以下の通り。
+      # - llama-server: 28.1GiBで全層がGPUに載る
+      # - VRAMの空き: 1.6GiB
+      # - 生成速度: 同じ条件で2回測って123.3と132.4トークン/秒
       # 一段上のq8_0は本体だけで30.39GiBあり、KVキャッシュを載せる余地が無い。
       "gemma4:31b"
       # Alibabaの27Bのdense。visionに対応する。

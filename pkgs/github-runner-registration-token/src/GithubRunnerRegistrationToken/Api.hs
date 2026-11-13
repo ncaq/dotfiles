@@ -68,7 +68,7 @@ recoveringIssue policy action = recovering policy [const retryable] (const actio
 -- | 発行に失敗した時の試し直し方。
 --
 -- 起動直後はネットワークがまだ繋がっていないことがある。
--- 最初の発行に失敗するとコンテナも起動できないので、合わせて1分ほどは試し直す。
+-- 最初の発行に失敗するとランナーの隔離環境も起動できないので、合わせて1分ほどは試し直す。
 -- 間隔は1秒から始めて、10秒まで広げていく。
 issuePolicy :: (MonadIO m) => RetryPolicyM m
 issuePolicy =

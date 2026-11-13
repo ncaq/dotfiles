@@ -9,35 +9,57 @@ let
   # cloudflaredからCaddyへ内部ルーティングするためのポート。
   # 以前は8081をTailscale Serve用の中継に使っていたため、それを避けて8082にした名残。
   cdnPort = 8082;
-  # 配信コンテンツの置き場所。
-  # 速度をあまり求めないデータの集積場なので/mnt/noa以下に置きます。
-  cdnRoot = "/mnt/noa/cdn.ncaq.net";
-  inherit (config.local.cdnDeploy) deployRoot;
+  inherit (config.local.cdnDeploy)
+    cdnRoot
+    deployRoot
+    deployStamp
+    syncUser
+    syncService
+    ;
   # ジョブが書き込む配信コンテンツ。
   deployPublic = "${deployRoot}/public";
-  # ジョブが配信コンテンツを書き終えた印。
-  # `public`の外に置くのは、
-  # ジョブのrsyncの`--delete`で印が消えた時の通知で、
-  # 書き込みの途中の状態を写さないためです。
-  deployStamp = "${deployRoot}/deployed";
-  # 配信ディレクトリを所有して同期を行うホスト専用のユーザ。
-  syncUser = "cdn-ncaq-net";
-  syncService = "cdn-ncaq-net-sync";
 in
 {
+  # ランナーのVMの共有の定義と`lib/test-nixos-boot.nix`のブートテストが、
+  # ここからパスや名前を参照します。
   options.local.cdnDeploy = lib.mkOption {
     type = lib.types.submodule {
-      options.deployRoot = lib.mkOption {
-        type = lib.types.str;
-        description = "cdn.ncaq.netのランナーのVMへ共有するステージングのディレクトリ。";
+      options = {
+        cdnRoot = lib.mkOption {
+          type = lib.types.str;
+          description = "Caddyが配信するディレクトリ。";
+        };
+        deployRoot = lib.mkOption {
+          type = lib.types.str;
+          description = "cdn.ncaq.netのランナーのVMへ共有するステージングのディレクトリ。";
+        };
+        deployStamp = lib.mkOption {
+          type = lib.types.str;
+          description = "ジョブが配信コンテンツを書き終えた印のファイル。";
+        };
+        syncUser = lib.mkOption {
+          type = lib.types.str;
+          description = "配信ディレクトリを所有して同期を行うホスト専用のユーザ。";
+        };
+        syncService = lib.mkOption {
+          type = lib.types.str;
+          description = "ステージングから配信ディレクトリへ写すサービスの名前。";
+        };
       };
     };
     readOnly = true;
-    default.deployRoot = "/mnt/noa/cdn.ncaq.net-deploy";
-    description = ''
-      cdn.ncaq.netのデプロイの受け渡しの定義。
-      ランナーのVMの共有の定義がここを参照する。
-    '';
+    default = rec {
+      # 速度をあまり求めないデータの集積場なので/mnt/noa以下に置きます。
+      cdnRoot = "/mnt/noa/cdn.ncaq.net";
+      deployRoot = "/mnt/noa/cdn.ncaq.net-deploy";
+      # `public`の外に置くのは、
+      # ジョブのrsyncの`--delete`で印が消えた時の通知で、
+      # 書き込みの途中の状態を写さないためです。
+      deployStamp = "${deployRoot}/deployed";
+      syncUser = "cdn-ncaq-net";
+      syncService = "cdn-ncaq-net-sync";
+    };
+    description = "cdn.ncaq.netのデプロイの受け渡しの定義。";
   };
 
   config = {

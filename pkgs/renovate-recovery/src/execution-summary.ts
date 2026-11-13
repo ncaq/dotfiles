@@ -11,27 +11,25 @@
  * - 読み込まれたプラグインの名前と版、プラグインのエラー
  * - MCPサーバーの名前と接続の状態
  * - 呼ばれたツールの名前と、エラーになったかどうか。`Skill`にはスキルの名前を添える
- * - 権限で拒否された呼び出しのツールの名前と、引数のうちの1つ
+ * - 権限で拒否された呼び出しのツールの名前と、引数の名前
  * - 終了の種別、エラーかどうか、ターン数、拒否された呼び出しの数
  *
  * ツールの結果の本文とClaude Codeの文章は出しません。
- * 拒否された呼び出しの引数は全ては出しません。
- * `DETAIL_KEYS`に挙げた、何をしようとしたかが分かる引数のうち、
- * 最初に見つかった1つの値だけを出します。
- * どれも無い時は引数の名前だけを出します。
- * 引数はClaude Codeが書いた文字列なので、
+ * ツールの引数の値も出しません。
+ * コマンドやパスやURLはClaude Codeが自由に書ける文字列で、
+ * 仕込まれた指示に従って読んだ値を書き写されると、公開のログへ出てしまうからです。
+ * 拒否された呼び出しが何をしようとしたのかは、
+ * 暗号化したアーティファクトの全文の方で読みます。
+ *
+ * ツールやスキルの名前もClaude Codeが書く文字列なので、
  * 制御文字を空白に置き換えて長さを切り詰めた上で出します。
- * 全文は暗号化したアーティファクトの方で読みます。
  *
  * 記録の形はClaude Codeの版で変わりうるので、
  * 知らない形の要素は例外にせず読み飛ばします。
  */
 
-/** 引数などの文字列を出す時の長さの上限。 */
+/** 名前などの文字列を出す時の長さの上限。 */
 export const MAX_DETAIL_LENGTH = 200;
-
-/** 拒否された呼び出しの引数のうち、何をしようとしたかが分かるもの。先に見つかったものを出します。 */
-const DETAIL_KEYS = ["command", "file_path", "path", "skill", "pattern", "url"];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -58,18 +56,12 @@ export function sanitizeDetail(text: string): string {
     : flattened;
 }
 
-/** ツールの引数から、何をしようとしたかが分かる短い説明を作ります。 */
+/**
+ * ツールの引数の名前の一覧を作ります。値は出しません。
+ * 引数がオブジェクトでなければ空文字列を返します。
+ */
 function describeToolInput(input: unknown): string {
-  if (!isRecord(input)) {
-    return "";
-  }
-  for (const key of DETAIL_KEYS) {
-    const value = asString(input[key]);
-    if (value != null) {
-      return `${key}=${sanitizeDetail(value)}`;
-    }
-  }
-  return `keys=${sanitizeDetail(Object.keys(input).join(","))}`;
+  return isRecord(input) ? `keys=${sanitizeDetail(Object.keys(input).join(","))}` : "";
 }
 
 /** 文字列の項目をログに出す形にします。文字列でなければ`?`にします。 */

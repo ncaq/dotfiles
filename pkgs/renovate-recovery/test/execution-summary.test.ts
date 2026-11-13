@@ -56,9 +56,10 @@ const execution = [
     permission_denials: [
       {
         tool_name: "Write",
-        tool_input: { file_path: ".renovate-recovery/result.md", content: SECRET },
+        tool_input: { file_path: `.renovate-recovery/${SECRET}.md`, content: SECRET },
       },
-      { tool_name: "Bash", tool_input: { command: "ls /run/github-runner" } },
+      { tool_name: "Bash", tool_input: { command: `echo ${SECRET}` } },
+      { tool_name: "WebFetch", tool_input: { url: `https://example.com/?q=${SECRET}` } },
       { tool_name: "mcp__x__y", tool_input: { query: SECRET, action: "info" } },
     ],
   },
@@ -84,19 +85,22 @@ describe("summarizeExecution", () => {
     ]);
   });
 
-  it("終了の種別と、権限で拒否された呼び出しを出す", () => {
+  it("終了の種別と、拒否された呼び出しの数を出す", () => {
     expect(lines).toContain(
-      "result: subtype=success is_error=false num_turns=16 permission_denials=3",
+      "result: subtype=success is_error=false num_turns=16 permission_denials=4",
     );
-    expect(lines).toContain("denied: Write file_path=.renovate-recovery/result.md");
-    expect(lines).toContain("denied: Bash command=ls /run/github-runner");
   });
 
-  it("何をしようとしたかが分かる引数が無い時は、引数の名前だけを出す", () => {
-    expect(lines).toContain("denied: mcp__x__y keys=query,action");
+  it("権限で拒否された呼び出しは、ツールの名前と引数の名前だけを出す", () => {
+    expect(lines.filter((line) => line.startsWith("denied: "))).toStrictEqual([
+      "denied: Write keys=file_path,content",
+      "denied: Bash keys=command",
+      "denied: WebFetch keys=url",
+      "denied: mcp__x__y keys=query,action",
+    ]);
   });
 
-  it("ツールの結果の本文も、Claude Codeの文章も、書き込む内容も出さない", () => {
+  it("ツールの結果の本文も、Claude Codeの文章も、ツールの引数の値も出さない", () => {
     expect(lines.join("\n")).not.toContain(SECRET);
   });
 
@@ -148,20 +152,16 @@ describe("summarizeExecution", () => {
       ],
     },
     {
-      name: "何をしようとしたかが分かる引数が複数あれば、一覧で先にあるものを出す",
+      name: "拒否された呼び出しに引数が1つも無ければ、引数の名前の一覧を空にする",
       message: {
         type: "result",
         subtype: "success",
         num_turns: 1,
-        permission_denials: [
-          { tool_name: "Grep", tool_input: { pattern: "a", path: "src" } },
-          { tool_name: "X", tool_input: { url: "https://example.com", command: "ls" } },
-        ],
+        permission_denials: [{ tool_name: "TodoWrite", tool_input: {} }],
       },
       expected: [
-        "result: subtype=success is_error=false num_turns=1 permission_denials=2",
-        "denied: Grep path=src",
-        "denied: X command=ls",
+        "result: subtype=success is_error=false num_turns=1 permission_denials=1",
+        "denied: TodoWrite keys=",
       ],
     },
     {
@@ -174,7 +174,7 @@ describe("summarizeExecution", () => {
       },
       expected: [
         "result: subtype=success is_error=false num_turns=1 permission_denials=1",
-        "denied: ? command=ls",
+        "denied: ? keys=command",
       ],
     },
     {
@@ -226,18 +226,13 @@ describe("summarizeExecution", () => {
         type: "result",
         subtype: evil,
         permission_denials: [
-          { tool_name: evil, tool_input: { command: evil } },
-          { tool_name: "Read", tool_input: { file_path: evil } },
-          { tool_name: "Grep", tool_input: { path: evil } },
-          { tool_name: "Skill", tool_input: { skill: evil } },
-          { tool_name: "Glob", tool_input: { pattern: evil } },
-          { tool_name: "WebFetch", tool_input: { url: evil } },
+          { tool_name: evil, tool_input: { command: "ls" } },
           { tool_name: "Other", tool_input: { [evil]: 1 } },
         ],
       },
     ]);
     // 入れた値がどの行にも届いていることを先に確かめて、項目の取りこぼしで通るのを防ぎます。
-    expect(injected).toHaveLength(15);
+    expect(injected).toHaveLength(10);
     for (const line of injected) {
       expect(line).toContain("::error::injected");
       expect(line).not.toMatch(/[\p{Cc}\p{Zl}\p{Zp}]/u);

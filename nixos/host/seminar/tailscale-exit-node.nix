@@ -15,7 +15,7 @@ in
   # `--advertise-exit-node`を一緒に指定しないとexit nodeの広告が消える。
   #
   # exit node経由の端末がseminarのCaddyへ届くための経路も一緒に広告する。
-  # `caddy.nix`の`networking.hosts`で`niks3-public.ncaq.net`と`garage.ncaq.net`を、
+  # `caddy.nix`の`networking.hosts`で`garage.ncaq.net`を、
   # コンテナのvethのホスト側アドレスへ向けているが、
   # この名前の解決結果はexit node経由の端末にもそのまま返る。
   # tailscaledは`0.0.0.0/0`を広告する時、

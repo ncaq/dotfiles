@@ -4,6 +4,7 @@ import {
   checkEditDenyRules,
   editRulePattern,
   findDenyingRules,
+  globToRegExp,
   resolveEditPattern,
 } from "../tools/edit-deny-rules.ts";
 
@@ -60,6 +61,37 @@ describe("resolveEditPattern", () => {
   });
 });
 
+describe("globToRegExp", () => {
+  it("globではない部分の正規表現の記号は、文字通りに当てる", () => {
+    expect(globToRegExp("/a/check.sh").test("/a/check.sh")).toBe(true);
+    expect(globToRegExp("/a/check.sh").test("/a/checkXsh")).toBe(false);
+    expect(globToRegExp("/a/[x](y)+{z}|^$?").test("/a/[x](y)+{z}|^$?")).toBe(true);
+    expect(globToRegExp("/a/[x]").test("/a/x")).toBe(false);
+  });
+
+  it("パスの全体に当てる", () => {
+    expect(globToRegExp("/a/b").test("/a/b/c")).toBe(false);
+    expect(globToRegExp("/a/b").test("/x/a/b")).toBe(false);
+  });
+
+  it("*は1つの階層の中で、ドットで始まる名前にも当たる", () => {
+    expect(globToRegExp("/a/*").test("/a/.b")).toBe(true);
+    expect(globToRegExp("/a/*.md").test("/a/b.md")).toBe(true);
+    expect(globToRegExp("/a/*").test("/a/b/c")).toBe(false);
+  });
+
+  it("**はドットで始まる名前と複数の階層に当たる", () => {
+    expect(globToRegExp("/a/**").test("/a/.b/.c/d")).toBe(true);
+    expect(globToRegExp("/a/**").test("/ab/c")).toBe(false);
+  });
+
+  it("**/は0個以上の階層に当たる", () => {
+    expect(globToRegExp("/a/**/*.nix").test("/a/flake.nix")).toBe(true);
+    expect(globToRegExp("/a/**/*.nix").test("/a/b/c/default.nix")).toBe(true);
+    expect(globToRegExp("/a/**/*.nix").test("/a/b/flake.lock")).toBe(false);
+  });
+});
+
 describe("findDenyingRules", () => {
   it("ホームディレクトリの全体の拒否は、その中の作業ツリーのドットで始まる場所にも当たる", () => {
     expect(
@@ -93,6 +125,13 @@ describe("checkEditDenyRules", () => {
       "Edit(~/**) が作業ツリーの .renovate-recovery/result.md への書き込みを拒否しています",
     );
     expect(problems).toContain("Edit(~/**) が作業ツリーの flake.lock への書き込みを拒否しています");
+  });
+
+  it("作業ツリーのNixのファイルを拒否すると、直下のものも深い階層のものも報告する", () => {
+    expect(checkEditDenyRules([...baselineRules, "Edit(./**/*.nix)"])).toStrictEqual([
+      "Edit(./**/*.nix) が作業ツリーの flake.nix への書き込みを拒否しています",
+      "Edit(./**/*.nix) が作業ツリーの pkgs/renovate-recovery/default.nix への書き込みを拒否しています",
+    ]);
   });
 
   it("作業ディレクトリの全体を拒否しても報告する", () => {

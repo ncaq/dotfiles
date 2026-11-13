@@ -352,8 +352,10 @@ lib.mapAttrs (
           machine.fail(as_runner(f"touch {deploy_root}/new-entry"))
 
           machine.succeed(f"mv {deploy_public} {deploy_public}.orig && ln -s /etc {deploy_public}")
-          machine.execute("systemctl start ${cdnDeploy.syncService}.service")
+          machine.fail("systemctl start ${cdnDeploy.syncService}.service")
           machine.fail(f"test -e {cdn_root}/passwd")
+          # 写す前に止まるので、`--delete`で配信中の中身が消えることもありません。
+          machine.succeed(f"test -f {cdn_root}/a.txt")
           machine.succeed(
               f"rm {deploy_public} && mv {deploy_public}.orig {deploy_public}"
               " && systemctl reset-failed ${cdnDeploy.syncService}.service"

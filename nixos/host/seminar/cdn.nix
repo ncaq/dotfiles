@@ -18,6 +18,35 @@ let
     ;
   # ジョブが書き込む配信コンテンツ。
   deployPublic = "${deployRoot}/public";
+  # ステージングから配信ディレクトリへ写すスクリプト。
+  #
+  # `public`がシンボリックリンクだったら写さずに失敗させます。
+  # 同期は隔離された場所で動くので、
+  # リンクの先にあるのはホストのファイルではなく空のディレクトリだったりします。
+  # そのまま写すと`--delete`で配信ディレクトリが空になるので、写す前に止めます。
+  syncScript = pkgs.writeShellApplication {
+    name = "cdn-ncaq-net-sync";
+    runtimeInputs = [ pkgs.rsync ];
+    text = ''
+      if [[ -L ${deployPublic} || ! -d ${deployPublic} ]]; then
+        echo "${deployPublic} is not a real directory" >&2
+        exit 1
+      fi
+      rsync \
+        --recursive \
+        --times \
+        --perms \
+        --chmod=D755,F644 \
+        --checksum \
+        --delete \
+        --delete-after \
+        --delay-updates \
+        --no-links \
+        --no-devices \
+        --no-specials \
+        -- ${deployPublic}/ ${cdnRoot}/
+    '';
+  };
 in
 {
   # ランナーのVMの共有の定義と`lib/test-nixos-boot.nix`のブートテストが、
@@ -103,7 +132,15 @@ in
         # ランナーのVMへvirtiofsで共有するディレクトリなので、
         # VMの起動前に存在している必要があります。
         # 共有を通してVMの誰が書いても、ホストでは`github-runner`の所有になります。
-        "d ${deployRoot} 0755 github-runner github-runner -"
+        #
+        # ステージング自体はrootの所有にして、
+        # ジョブが`public`をシンボリックリンクへ差し替えられないようにします。
+        # 同期は`public/`を転送元にするので、
+        # 差し替えられると`--no-links`の効かない転送元のパスでリンクが辿られます。
+        # ジョブが書けるのは`public`の中と`deployed`だけです。
+        "d ${deployRoot} 0755 root root -"
+        "d ${deployPublic} 0755 github-runner github-runner -"
+        "f ${deployStamp} 0644 github-runner github-runner -"
         # 配信ディレクトリ。
         # 同期のサービスだけが書き込み、Caddyはother権限で読み取ります。
         "d ${cdnRoot} 0755 ${syncUser} ${syncUser} -"
@@ -130,34 +167,19 @@ in
           Type = "oneshot";
           User = syncUser;
           Group = syncUser;
-          ExecStart = lib.escapeShellArgs [
-            (lib.getExe pkgs.rsync)
-            "--recursive"
-            "--times"
-            "--perms"
-            "--chmod=D755,F644"
-            "--checksum"
-            "--delete"
-            "--delete-after"
-            "--delay-updates"
-            "--no-links"
-            "--no-devices"
-            "--no-specials"
-            "--"
-            "${deployPublic}/"
-            "${cdnRoot}/"
-          ];
-          # 同期の途中にジョブがファイルをリンクへ差し替えても、
-          # 辿った先に読めるものが無いように、
-          # ステージングと配信ディレクトリ以外の`/mnt`と`/var`を隠します。
-          TemporaryFileSystem = [
-            "/mnt"
-            "/var"
-          ];
+          ExecStart = lib.getExe syncScript;
           BindReadOnlyPaths = [ deployRoot ];
           BindPaths = [ cdnRoot ];
           ReadWritePaths = [ cdnRoot ];
         };
+        # 同期の途中にジョブがファイルをリンクへ差し替えた時や、
+        # 何かの理由で`public`自体がリンクになった時に、
+        # 辿った先にホストのファイルが無いようにします。
+        # ルートはExecStartの閉包のストアのパスだけを置いたtmpfsになり、
+        # 他に見えるのはステージングと配信ディレクトリだけです。
+        # `/etc`や`/run`や他のストアのパスはそもそも存在しません。
+        # 閉包に入るrsyncなどのパッケージは誰でも読める公開のものです。
+        confinement.enable = true;
       };
       paths.${syncService} = {
         wantedBy = [ "paths.target" ];

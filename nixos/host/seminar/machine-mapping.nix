@@ -85,6 +85,10 @@ in
           host = "192.168.100.90";
           guest = "192.168.100.91";
         };
+        cdn = {
+          host = "192.168.100.100";
+          guest = "192.168.100.101";
+        };
       };
       description = "Network addresses for containers and microVMs";
     };

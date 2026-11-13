@@ -317,6 +317,10 @@ lib.mapAttrs (
     # - ツリーの中のリンクは捨てられ、通常のファイルだけが同期のユーザの所有の644で写ること
     # - ジョブのユーザがステージングの`public`自体を動かせないこと
     # - それでも`public`が`/etc`へのリンクになった時に、`/etc`の中身が写らないこと
+    # - 写したファイルを、Cloudflare Tunnelの転送先にしているコンテナの中のCaddyが配信すること。
+    #   コンテナのbind mountやCaddyの設定やハードニングが崩れると、
+    #   ホストの同期は通ったまま配信だけが失敗します。
+    #   テストVMではコンテナを`privateUsers = "identity"`で動かします(`nixos/test/vm-override.nix`)
     #
     # `nixos/host/seminar/cdn.nix`をimportしていないホストにはオプション自体が生えないので、
     # `or`で無いものとして扱います。
@@ -347,6 +351,11 @@ lib.mapAttrs (
           machine.fail(f"test -e {cdn_root}/sub/etc-link -o -L {cdn_root}/sub/etc-link")
           served = machine.succeed(f"stat -c '%U %a' {cdn_root}/a.txt").strip()
           assert served == "${cdnDeploy.syncUser} 644", served
+          # コンテナの中のCaddyが待ち受けを始めるまで待ちます。
+          served_body = machine.wait_until_succeeds(
+              "${curl} --fail --silent --show-error --max-time 3 ${cdnDeploy.origin}/sub/b.txt"
+          )
+          assert served_body == "nested\n", served_body
 
           machine.fail(as_runner(f"mv {deploy_public} {deploy_public}.moved"))
           machine.fail(as_runner(f"touch {deploy_root}/new-entry"))

@@ -6,15 +6,16 @@
   ...
 }:
 let
-  # cloudflaredからCaddyへ内部ルーティングするためのポート。
-  # 以前は8081をTailscale Serve用の中継に使っていたため、それを避けて8082にした名残。
-  cdnPort = 8082;
+  addr = config.machineAddresses.cdn;
+  # コンテナの中のCaddyが待ち受けるポート。
+  cdnPort = 8080;
   inherit (config.local.cdnDeploy)
     cdnRoot
     deployRoot
     deployStamp
     syncUser
     syncService
+    origin
     ;
   # ジョブが書き込む配信コンテンツ。
   deployPublic = "${deployRoot}/public";
@@ -71,7 +72,11 @@ in
       options = {
         cdnRoot = lib.mkOption {
           type = lib.types.str;
-          description = "Caddyが配信するディレクトリ。";
+          description = "Caddyが配信するディレクトリ。ホストとコンテナで同じパス。";
+        };
+        origin = lib.mkOption {
+          type = lib.types.str;
+          description = "Cloudflare Tunnelが転送する先の、コンテナの中のCaddyのURL。";
         };
         deployRoot = lib.mkOption {
           type = lib.types.str;
@@ -103,34 +108,89 @@ in
       deployStamp = "${deployRoot}/deployed";
       syncUser = "cdn-ncaq-net";
       syncService = "cdn-ncaq-net-sync";
+      origin = "http://${addr.guest}:${toString cdnPort}";
     };
-    description = "cdn.ncaq.netのデプロイの受け渡しの定義。";
+    description = "cdn.ncaq.netのデプロイの受け渡しと配信の定義。";
   };
 
   config = {
-    services = {
-      # cdn.ncaq.netの静的ファイル配信。
-      # 以前はCloudflare Pagesで配信していましたが、
-      # Pagesには1ファイル25MiBの制限があり配信できないファイルがあるため、
-      # seminarからCloudflare Tunnel経由で配信します。
-      # TLS終端はCloudflare側で行われるためオリジンはHTTPのみで済みます。
-      cloudflared.tunnels.seminar.ingress."cdn.ncaq.net" = "http://127.0.0.1:${toString cdnPort}";
+    # cdn.ncaq.netの静的ファイル配信。
+    # 以前はCloudflare Pagesで配信していましたが、
+    # Pagesには1ファイル25MiBの制限があり配信できないファイルがあるため、
+    # seminarからCloudflare Tunnel経由で配信します。
+    # TLS終端はCloudflare側で行われるためオリジンはHTTPのみで済みます。
+    services.cloudflared.tunnels.seminar.ingress."cdn.ncaq.net" = origin;
 
-      # コンテンツはホストの同期のサービスが配信ディレクトリへ置きます。
-      caddy.virtualHosts.":${toString cdnPort}".extraConfig = ''
-        bind 127.0.0.1
-        # 過去に持っていたコンテンツのリダイレクト定義。
-        redir /dic-nico-intersection-pixiv.txt https://raw.githubusercontent.com/ncaq/dic-nico-intersection-pixiv/master/public/dic-nico-intersection-pixiv-google.txt permanent
-        redir /keymap.txt https://raw.githubusercontent.com/ncaq/dotfiles/master/mozc/keymap.txt permanent
-        redir /nlod.txt https://raw.githubusercontent.com/ncaq/dotfiles/master/mozc/nlod.txt temporary
-        redir /uBlacklist.txt https://raw.githubusercontent.com/ncaq/uBlacklistRule/master/uBlacklist.txt permanent
-        redir /uBlockOrigin.txt https://raw.githubusercontent.com/ncaq/uBlacklistRule/master/uBlockOrigin.txt permanent
-        # ファイルをそのまま配信。
-        root * ${cdnRoot}
-        # browseによりディレクトリアクセス時はファイル一覧ページを表示します。
-        file_server browse
-      '';
+    # 配信するCaddyはホストのCaddyとは分けてコンテナで動かします。
+    # インターネットから直接リクエストを受けるのに、
+    # 中身はcdn.ncaq.netのリポジトリへpushできる誰かが決めるので、
+    # 同期でシンボリックリンクを捨てている(下の`services.${syncService}`)のに加えて、
+    # Caddy自体の脆弱性やリンクの扱いの漏れがあっても、
+    # 届くのが配信ディレクトリとストアだけになるようにします。
+    # 動的なプログラムを動かすわけではないので、microVMではなくコンテナにしています。
+    containers.cdn = {
+      autoStart = true;
+      ephemeral = true;
+      privateNetwork = true;
+      # 毎起動ランダムな高位UID範囲へマップして、
+      # コンテナを脱出されてもホスト上では無権限のUIDになるようにします。
+      privateUsers = "pick";
+      hostAddress = addr.host;
+      localAddress = addr.guest;
+      hostAddress6 = addr.host6;
+      localAddress6 = addr.guest6;
+      # 配信ディレクトリは同期で`D755,F644`に揃えているので、
+      # UIDがマップされないpickでもotherのパーミッションで読めます。
+      # 書く必要は無いのでidmapは付けずに読み取り専用で渡します。
+      bindMounts.${cdnRoot} = {
+        hostPath = cdnRoot;
+        isReadOnly = true;
+      };
+      config = {
+        system.stateVersion = "26.05";
+        networking.firewall.allowedTCPPorts = [ cdnPort ];
+        services.caddy = {
+          enable = true;
+          # admin APIは使わないので切ります。
+          # 切るとreloadができないので、設定の変更は再起動で反映させます。
+          globalConfig = ''
+            admin off
+          '';
+          enableReload = false;
+          # ホスト名なしのポート指定にすることでCaddyの自動HTTPSを無効にしています。
+          virtualHosts.":${toString cdnPort}" = {
+            # 既定のアクセスログの出力先の`/var/log/caddy`は、
+            # ephemeralなコンテナでは再起動のたびに消えます。
+            # journalへ流せばホストのjournalに残り、`machine-log cdn`で読めます。
+            logFormat = ''
+              output stderr
+            '';
+            extraConfig = ''
+              # 過去に持っていたコンテンツのリダイレクト定義。
+              redir /dic-nico-intersection-pixiv.txt https://raw.githubusercontent.com/ncaq/dic-nico-intersection-pixiv/master/public/dic-nico-intersection-pixiv-google.txt permanent
+              redir /keymap.txt https://raw.githubusercontent.com/ncaq/dotfiles/master/mozc/keymap.txt permanent
+              redir /nlod.txt https://raw.githubusercontent.com/ncaq/dotfiles/master/mozc/nlod.txt temporary
+              redir /uBlacklist.txt https://raw.githubusercontent.com/ncaq/uBlacklistRule/master/uBlacklist.txt permanent
+              redir /uBlockOrigin.txt https://raw.githubusercontent.com/ncaq/uBlacklistRule/master/uBlockOrigin.txt permanent
+              # ファイルをそのまま配信。
+              root * ${cdnRoot}
+              # browseによりディレクトリアクセス時はファイル一覧ページを表示します。
+              file_server browse
+            '';
+          };
+        };
+        # 1024以上のポートで平文のHTTPを返すだけなので、
+        # パッケージのユニットが渡す`CAP_NET_BIND_SERVICE`と`CAP_NET_ADMIN`も外します。
+        # `CAP_NET_ADMIN`はHTTP/3のUDPバッファを広げるためのもので、HTTPSを持たないので使いません。
+        systemd.services.caddy.serviceConfig = hardening.network // {
+          AmbientCapabilities = "";
+        };
+      };
     };
+
+    # 配信はリクエストへ応答するだけで、
+    # リダイレクトも応答として返すだけなので、外へ出る理由がありません。
+    local.machineEgress.cdn = { };
 
     users = {
       users.${syncUser} = {
@@ -158,7 +218,7 @@ in
         "d ${deployPublic} 0755 github-runner github-runner -"
         "f ${deployStamp} 0644 github-runner github-runner -"
         # 配信ディレクトリ。
-        # 同期のサービスだけが書き込み、Caddyはother権限で読み取ります。
+        # 同期のサービスだけが書き込み、コンテナの中のCaddyはother権限で読み取ります。
         "d ${cdnRoot} 0755 ${syncUser} ${syncUser} -"
       ];
 
@@ -166,8 +226,10 @@ in
       #
       # Caddyの`file_server`はシンボリックリンクを辿り、辿らない設定もありません。
       # ランナーのジョブが配信ディレクトリへ直接書けると、
-      # `/etc`や`/var/lib/caddy`を指すリンクを置くだけで、
-      # Caddyが読めるホストのファイルを公開できてしまいます。
+      # `/etc`などを指すリンクを置くだけで、
+      # Caddyが読めるファイルを公開できてしまいます。
+      # Caddyはコンテナの中で動くのでホストのファイルには届きませんが、
+      # コンテナの中の設定やストアのパスも配信する理由は無いので、ここで捨てます。
       # ジョブのrsyncのオプションはジョブ自身が書き換えられるので境界になりません。
       # ジョブにはステージングだけを書かせて、
       # 写す時にホストの側でシンボリックリンクとデバイスと特殊ファイルを捨てます。

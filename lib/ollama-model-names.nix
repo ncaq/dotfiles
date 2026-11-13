@@ -27,6 +27,10 @@
 {
   cuda = {
     general = [
+      # Googleの31Bのdense。visionに対応する。
+      # registryの既定タグはQ4_K_Mの本体にMTPのドラフトと投影器を同梱している。
+      # 一段上のq8_0は本体だけで30.39GiBあり、KVキャッシュを載せる余地が無い。
+      "gemma4:31b"
       # bulletは32GiBのVRAMに収まる範囲で汎用品質を優先して27Bのdenseを使う。
       # registryの`qwen3.8:27b-mtp-q4_K_M`ではなくHugging FaceのGGUFを自前で組むのは、
       # registryのmtp付きタグがq4_K_Mとq8_0とbf16しか無く、

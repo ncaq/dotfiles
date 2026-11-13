@@ -35,13 +35,14 @@
     # VRAMが足りなければOllamaがアイドル中のモデルを降ろすので入れ替わりで動く。
     general = [
       # Googleの31Bのdense。visionに対応する。
-      # registryの既定タグはQ4_K_Mの本体にMTPのドラフトと投影器を同梱している。
+      # registryの既定タグ`gemma4:31b`をblobのダイジェストで固定して組み立てたもの。
+      # Q4_K_Mの本体にMTPのドラフトと投影器が付く。
       # bulletでの実測(KVキャッシュq8_0, context 131072)は以下の通り。
       # - llama-server: 28.1GiBで全層がGPUに載る
       # - VRAMの空き: 1.6GiB
       # - 生成速度: 同じ条件で2回測って123.3と132.4トークン/秒
       # 一段上のq8_0は本体だけで30.39GiBあり、KVキャッシュを載せる余地が無い。
-      "gemma4:31b"
+      "gemma4-31b-mtp:q4_k_m"
       # Alibabaの27Bのdense。visionに対応する。
       # registryの`qwen3.8:27b-mtp-q4_K_M`ではなくHugging FaceのGGUFを自前で組むのは、
       # registryのmtp付きタグがq4_K_Mとq8_0とbf16しか無く、

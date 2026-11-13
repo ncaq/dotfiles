@@ -57,5 +57,16 @@ let
         ) name;
       } ''echo "$passed" > "$out"''
     );
+
+  tests = map mkNixTest (lib.filter isTest (lib.filesystem.listFilesRecursive ./.));
+
+  # `/`を`-`へ置き換えるので、`a/b-c.nix`と`a-b/c.nix`のような別のファイルが同じ名前になり得る。
+  # `lib.listToAttrs`は重複した名前の片方を黙って捨てるので、
+  # テストが`checks`から消えたことに気付けるように評価を止める。
+  names = map (test: test.name) tests;
+  duplicateNames = lib.unique (lib.filter (name: lib.count (other: other == name) names > 1) names);
 in
-lib.listToAttrs (map mkNixTest (lib.filter isTest (lib.filesystem.listFilesRecursive ./.)))
+assert lib.assertMsg (
+  duplicateNames == [ ]
+) "テストの属性名が衝突しています: ${lib.concatStringsSep ", " duplicateNames}";
+lib.listToAttrs tests

@@ -11,15 +11,45 @@
   machine-log garage -b --grep=error
   ```
 
-  コンテナは`container@<名前>.service`、
-  microVMは`microvm@<名前>.service`のログとして入っているので、
-  `journalctl --unit`で直接読んでも同じものが出る。
   コマンドにしているのは、
-  どちらの仕組みで動いているマシンかを覚えていなくても名前だけで読めるようにするため。
+  コンテナとmicroVMでログの入る場所が違っても、
+  マシンの名前だけで読めるようにするため。
 
-  microVMの側の設定は、
+  - コンテナ: 既定のjournalの`container@<名前>.service`。`journalctl --unit`で読む
+  - microVM: マシンと同じ名前のjournalのnamespace。`journalctl --namespace`で読む
+
+  microVMの中の設定は、
   microVMのホストモジュールを取り込んだホストにしかオプションが無いので、
   そのホストの設定(`nixos/host/seminar/microvm-log.nix`)に置いている。
+
+  # microVMのログはjournalのnamespaceへ分ける
+
+  ゲストが書く量はゲストが決められる。
+  journaldは上限に達すると古いファイルから消すので、
+  既定のjournalへ入れると、
+  大量に書くゲストがホスト自身のログ(sshdやsudoの記録を含む)を押し出せる。
+  CIのランナーのmicroVMでは持ち込まれたコードがrootで動くので、
+  これはホストの証跡を消す手段になる。
+  レート制限は量を減らすだけで、
+  保存先を共有している限り押し出せることは変わらない。
+
+  namespaceはjournaldのインスタンスも保存先も上限も別なので、
+  ゲストがどれだけ書いても消えるのはそのゲスト自身の古いログだけになる。
+  VMごとに分けているのは、
+  あるVMが他のVMのログを押し出すことも防ぐため。
+
+  # コンテナのログは分けていない
+
+  コンテナにも同じ`LogNamespace`を付けると、コンテナが起動しなくなる。
+  systemdはnamespaceのソケットを見せるためにサービスをマウント名前空間へ入れるが、
+  その中ではnspawnの`--ephemeral`が、
+  `Failed to create ephemeral snapshot: Too many open files`で失敗する。
+  ブートテストのpostgresqlのコンテナで確かめた。
+
+  コンテナの中で動くのは自分で選んで入れたサービスで、
+  持ち込まれたコードがrootで動くmicroVMとは前提が違う。
+  コンテナが大量に書けばホストの古いログは押し出されうるが、
+  それは受け入れている。
 */
 {
   lib,
@@ -33,15 +63,20 @@ let
   vmNames = lib.attrNames (config.microvm.vms or { });
   duplicated = lib.intersectLists containerNames vmNames;
 
-  units =
-    lib.genAttrs containerNames (name: "container@${name}.service")
-    // lib.genAttrs vmNames (name: "microvm@${name}.service");
+  # マシンの名前から、そのログを選ぶjournalctlの引数への対応。
+  selectors =
+    lib.genAttrs containerNames (name: "--unit=container@${name}.service")
+    // lib.genAttrs vmNames (name: "--namespace=${name}");
+
+  # namespaceごとのjournalの上限。
+  # 何も書かないとnamespaceごとにファイルシステムの10%(最大4G)まで使う。
+  maxUse = "1G";
 
   machineLog = pkgs.writeShellApplication {
     name = "machine-log";
     runtimeInputs = [ config.systemd.package ];
     text = ''
-      machines=(${lib.escapeShellArgs (lib.attrNames units)})
+      machines=(${lib.escapeShellArgs (lib.attrNames selectors)})
 
       if [[ $# -eq 0 ]]; then
         printf '%s\n' "''${machines[@]}"
@@ -53,9 +88,9 @@ let
 
       case "$name" in
       ${lib.concatStrings (
-        lib.mapAttrsToList (name: unit: ''
-          ${lib.escapeShellArg name}) unit=${lib.escapeShellArg unit} ;;
-        '') units
+        lib.mapAttrsToList (name: selector: ''
+          ${lib.escapeShellArg name}) selector=${lib.escapeShellArg selector} ;;
+        '') selectors
       )}
       *)
         echo "machine-log: unknown machine: $name" >&2
@@ -65,7 +100,7 @@ let
         ;;
       esac
 
-      exec journalctl --unit="$unit" "$@"
+      exec journalctl "$selector" "$@"
     '';
   };
 in
@@ -78,13 +113,33 @@ in
     );
   };
 
-  config = lib.mkIf (units != { }) {
+  config = lib.mkIf (selectors != { }) {
     environment.systemPackages = [ machineLog ];
+
+    systemd.services = lib.genAttrs' vmNames (
+      name:
+      lib.nameValuePair "microvm@${name}" {
+        # `microvm@`はテンプレートなので、このVMの分だけを追加の設定として重ねる。
+        overrideStrategy = "asDropin";
+        serviceConfig.LogNamespace = name;
+      }
+    );
+
+    environment.etc = lib.genAttrs' vmNames (
+      name:
+      lib.nameValuePair "systemd/journald@${name}.conf" {
+        text = ''
+          [Journal]
+          Storage=persistent
+          SystemMaxUse=${maxUse}
+        '';
+      }
+    );
 
     assertions = [
       {
         assertion = duplicated == [ ];
-        message = "machine-log: コンテナとmicroVMで名前が重なっているので、名前からユニットを決められません: ${lib.concatStringsSep ", " duplicated}";
+        message = "machine-log: コンテナとmicroVMで名前が重なっているので、名前からログの場所を決められません: ${lib.concatStringsSep ", " duplicated}";
       }
     ];
   };

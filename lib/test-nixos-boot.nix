@@ -374,16 +374,29 @@ lib.mapAttrs (
     # テストVMでも起動するマシンだけを見ます。
     # microVMは`startsInTestVm`のもの、
     # コンテナは`postgresExtensionTest`が起動を待っているpostgresqlです。
-    machineLogNames =
-      lib.filter startsInTestVm (lib.attrNames (hostConfig.microvm.vms or { }))
-      ++ lib.optional (hostConfig.containers ? postgresql) "postgresql";
-    machineLogTest = lib.concatMapStrings (
-      name: # python
-      ''
-        machine.wait_until_succeeds(
-            "machine-log ${name} --no-pager --output=cat | grep -F 'systemd[1]: '"
-        )
-      '') machineLogNames;
+    #
+    # microVMの行がホストの既定のjournalには入っていないことも見ます。
+    # VMごとのjournalのnamespaceへ分けているのは、
+    # VMが大量に書いてホスト自身のログを押し出せないようにするためで、
+    # 分け方が外れてもログは既定のjournalへ入って読めてしまうので気付けません。
+    machineLogVmNames = lib.filter startsInTestVm (lib.attrNames (hostConfig.microvm.vms or { }));
+    machineLogContainerNames = lib.optional (hostConfig.containers ? postgresql) "postgresql";
+    machineLogTest =
+      lib.concatMapStrings (
+        name: # python
+        ''
+          machine.wait_until_succeeds(
+              "machine-log ${name} --no-pager --output=cat | grep -F 'systemd[1]: '"
+          )
+        '') (machineLogVmNames ++ machineLogContainerNames)
+      + lib.concatMapStrings (
+        name: # python
+        ''
+          machine.fail(
+              "journalctl --unit=microvm@${name}.service --no-pager --output=cat"
+              " | grep -F 'systemd[1]: '"
+          )
+        '') machineLogVmNames;
 
     # 自宅LANのインターフェイスへ開けている許可が、
     # 全て送信元アドレスでも絞られていることを確認します。

@@ -24,27 +24,43 @@ let
   # 同期は隔離された場所で動くので、
   # リンクの先にあるのはホストのファイルではなく空のディレクトリだったりします。
   # そのまま写すと`--delete`で配信ディレクトリが空になるので、写す前に止めます。
+  #
+  # 同期の途中で次のジョブが`deployed`を更新しても、
+  # path unitからの起動は今動いている起動にまとめられて、もう一度は走りません。
+  # 写し始める前の`deployed`の時刻を覚えておいて、
+  # 写し終えた時に更新されていたら写し直します。
   syncScript = pkgs.writeShellApplication {
     name = "cdn-ncaq-net-sync";
-    runtimeInputs = [ pkgs.rsync ];
+    runtimeInputs = [
+      pkgs.coreutils
+      pkgs.rsync
+    ];
     text = ''
-      if [[ -L ${deployPublic} || ! -d ${deployPublic} ]]; then
-        echo "${deployPublic} is not a real directory" >&2
-        exit 1
-      fi
-      rsync \
-        --recursive \
-        --times \
-        --perms \
-        --chmod=D755,F644 \
-        --checksum \
-        --delete \
-        --delete-after \
-        --delay-updates \
-        --no-links \
-        --no-devices \
-        --no-specials \
-        -- ${deployPublic}/ ${cdnRoot}/
+      seen=$(mktemp)
+      while true; do
+        touch --reference=${deployStamp} "$seen"
+        if [[ -L ${deployPublic} || ! -d ${deployPublic} ]]; then
+          echo "${deployPublic} is not a real directory" >&2
+          exit 1
+        fi
+        rsync \
+          --recursive \
+          --times \
+          --perms \
+          --chmod=D755,F644 \
+          --checksum \
+          --delete \
+          --delete-after \
+          --delay-updates \
+          --no-links \
+          --no-devices \
+          --no-specials \
+          -- ${deployPublic}/ ${cdnRoot}/
+        if [[ ! ${deployStamp} -nt "$seen" ]]; then
+          break
+        fi
+        echo "${deployStamp} was updated during sync, syncing again"
+      done
     '';
   };
 in

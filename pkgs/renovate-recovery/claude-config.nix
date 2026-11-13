@@ -360,6 +360,8 @@ let
           # 作業ツリーがホームディレクトリの中にあります。
           # `deny`は`allow`より優先されるので、
           # `Edit(~/**)`を拒否すると結果のファイルも修正も書けなくなります。
+          # 作業ツリーを覆う拒否が入っていないことは、
+          # このファイルの最後のビルドの中の検査で確かめています。
           #
           # 同じVMで動く他のランナーの作業ツリーへの書き込みは受け入れます。
           # 同じリポジトリのランナーなので、
@@ -416,4 +418,10 @@ runCommand "renovate-recovery-claude-config" { } ''
     exit 1
   fi
   ${lib.getExe nodejs} tools/check-skill-allowed-tools.ts "''${skills[@]}"
+
+  # `Edit`の拒否の規則が作業ツリーを覆っていないことと、
+  # 後のステップが読む場所の拒否が残っていることを確かめます。
+  # 作業ツリーを覆う拒否が入っても、ワークフローは成功で終わるので、
+  # ここで確かめないと復旧が要る時まで気付けません。
+  ${lib.getExe nodejs} tools/check-edit-deny-rules.ts ${settings}
 ''

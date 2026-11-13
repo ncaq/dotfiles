@@ -348,6 +348,24 @@ Cloudflare Tunnelでインターネットからアクセス可能なサービス
 [NixOS Containers](https://wiki.nixos.org/wiki/NixOS_Containers)か、
 [microvm.nix](https://github.com/microvm-nix/microvm.nix)で隔離しています。
 
+## コンテナとmicroVMのログ
+
+コンテナやmicroVMの中のサービスのログは、
+ホストで`machine-log`を使って読みます。
+
+```console
+machine-log
+machine-log forgejo --since=-1h
+machine-log mcp-nixos -f
+```
+
+引数を付けないとマシンの一覧を出します。
+マシン名より後ろの引数は`journalctl`へそのまま渡ります。
+
+中のjournalをコンソール経由でホストのjournalへ流しているので、
+コンテナやmicroVMを再起動した後も、再起動する前のログを読めます。
+中のユニット名では絞り込めないので、`--grep`で絞ります。
+
 ## ストレージ
 
 大容量データは`/mnt/noa`にbtrfs RAID1で格納されています。

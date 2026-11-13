@@ -96,9 +96,10 @@ in
       # 速度をあまり求めないデータの集積場なので/mnt/noa以下に置きます。
       cdnRoot = "/mnt/noa/cdn.ncaq.net";
       deployRoot = "/mnt/noa/cdn.ncaq.net-deploy";
-      # `public`の外に置くのは、
-      # ジョブのrsyncの`--delete`で印が消えた時の通知で、
-      # 書き込みの途中の状態を写さないためです。
+      # 印は`public`の外に置きます。
+      # `public`の中に置くと、ジョブのrsyncの`--delete`が書き込みの途中で印を消します。
+      # 消えたこともpath unitには変化に見えるので、
+      # その時点の書き込みの途中の状態を写してしまいます。
       deployStamp = "${deployRoot}/deployed";
       syncUser = "cdn-ncaq-net";
       syncService = "cdn-ncaq-net-sync";

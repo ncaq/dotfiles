@@ -2,8 +2,9 @@
 {
   # GitHub ActionsのランナーのVMについて、
   # ホスト側で用意するものの場所をモジュールの外から参照できるようにします。
-  # `test/nixos-boot/script/github-runner.nix`がブートテストでこれを読んで、
-  # ストアの準備とGCの前後の処理を確かめます。
+  # ブートテストがこれを読んで、
+  # ストアの準備(`test/nixos-boot/script/github-runner-store.nix`)と、
+  # GCの前後の処理(`test/nixos-boot/script/github-runner-gc.nix`)を確かめます。
   # 値は`github-runner-x64.nix`が定義します。
   options.local.githubRunnerVms = lib.mkOption {
     type = lib.types.attrsOf (

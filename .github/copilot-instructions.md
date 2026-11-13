@@ -332,6 +332,30 @@ gpg鍵で暗号化されたyamlファイルが`secrets/`ディレクトリに格
 自分の所有しているデバイスであり、
 信頼できるものです。
 
+# コンテナとmicroVMのログ
+
+[NixOS Containers](https://wiki.nixos.org/wiki/NixOS_Containers)や、
+[microvm.nix](https://github.com/microvm-nix/microvm.nix)のmicroVMの中のサービスのログは、
+ホストで`machine-log`を使って読みます。
+コンテナかmicroVMを持つネイティブLinuxのホストならどこでも使えます。
+
+```console
+machine-log
+machine-log forgejo --since=-1h
+machine-log mcp-nixos -f
+```
+
+引数を付けないとマシンの一覧を出します。
+マシン名より後ろの引数は`journalctl`へそのまま渡ります。
+
+中のjournalをコンソール経由でホストのjournalへ流しているので、
+コンテナやmicroVMを再起動した後も、再起動する前のログを読めます。
+中のユニット名では絞り込めないので、`--grep`で絞ります。
+
+microVMのログはVMごとのjournalのnamespaceへ分けているので、
+`journalctl --unit=microvm@<名前>`では出ません。
+`machine-log`を使うか、`journalctl --namespace=<名前>`で読みます。
+
 # seminarサーバ
 
 自宅サーバ`seminar`はNixOSで稼働しており、

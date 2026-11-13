@@ -362,6 +362,57 @@ lib.mapAttrs (
           )
         '';
 
+    # コンテナとmicroVMの中のjournalがホストのjournalへ届いていて、
+    # `machine-log`(`nixos/native-linux/machine-log.nix`)で読めることを確認します。
+    # ゲストのjournaldの設定が外れても、評価とブートは通ったまま、
+    # ブートの表示だけが入る元の状態へ静かに戻ります。
+    # 障害が起きて読もうとした時に初めて気付くことになります。
+    #
+    # ブートの表示(`[  OK  ] Started ...`)はjournaldを通らずに出るので、
+    # journaldが流した行にだけ現れる`systemd[1]: `の形を探します。
+    #
+    # テストVMでも起動するマシンだけを見ます。
+    # microVMは`startsInTestVm`のもの、
+    # コンテナは`postgresExtensionTest`が起動を待っているpostgresqlです。
+    #
+    # microVMの行がホストの既定のjournalには入っていないことも見ます。
+    # VMごとのjournalのnamespaceへ分けているのは、
+    # VMが大量に書いてホスト自身のログを押し出せないようにするためで、
+    # 分け方が外れてもログは既定のjournalへ入って読めてしまうので気付けません。
+    machineLogVmNames = lib.filter startsInTestVm (lib.attrNames (hostConfig.microvm.vms or { }));
+    machineLogContainerNames = lib.optional (hostConfig.containers ? postgresql) "postgresql";
+
+    # `machine-log`のコマンド自体の分岐を確かめるための、
+    # 起動しないマシンも含めた全てのマシンの名前です。
+    # 引数無しの一覧がこの名前を1行ずつ出すことと、
+    # 知らない名前は失敗することを見ます。
+    # 名前の対応はNixの評価時に`case`文として生成しているので、
+    # 生成の仕方が崩れると全ての名前が知らない名前の側へ落ちます。
+    machineLogAllNames =
+      lib.attrNames hostConfig.containers ++ lib.attrNames (hostConfig.microvm.vms or { });
+    machineLogTest =
+      lib.optionalString (machineLogAllNames != [ ]) # python
+        ''
+          machine_log_list = machine.succeed("machine-log").splitlines()
+          assert sorted(machine_log_list) == sorted(${builtins.toJSON machineLogAllNames}), machine_log_list
+          machine.fail("machine-log no-such-machine")
+        ''
+      + lib.concatMapStrings (
+        name: # python
+        ''
+          machine.wait_until_succeeds(
+              "machine-log ${name} --no-pager --output=cat | grep -F 'systemd[1]: '"
+          )
+        '') (machineLogVmNames ++ machineLogContainerNames)
+      + lib.concatMapStrings (
+        name: # python
+        ''
+          machine.fail(
+              "journalctl --unit=microvm@${name}.service --no-pager --output=cat"
+              " | grep -F 'systemd[1]: '"
+          )
+        '') machineLogVmNames;
+
     # 自宅LANのインターフェイスへ開けている許可が、
     # 全て送信元アドレスでも絞られていることを確認します。
     # LANのインターフェイスにはグローバルIPv6アドレスも付いているので、
@@ -447,7 +498,33 @@ lib.mapAttrs (
 
           assert_response("evil.example.com", rejected)
         '';
+
+    # 全てのコンテナとmicroVMに、ログを流す設定が入っていることを評価の結果で確認します。
+    # 上の`machineLogTest`が実際のログを見られるのはテストVMで起動するマシンだけです。
+    # 設定は`options.containers`と`options.microvm.vms`のsubmoduleへ足した定義が、
+    # 各マシンの定義と合成されることで入るので、
+    # 合成が崩れても起動しないマシンでは評価もブートも通ってしまいます。
+    # GitHub ActionsのランナーのVMがちょうど起動しないマシンです。
+    #
+    # 以下を見ます。
+    #
+    # - 全てのコンテナとmicroVMの中で、journaldがコンソールへ書く設定になっていること
+    # - 全てのmicroVMのホスト側のユニットが、VMと同じ名前のjournalのnamespaceへログを出すこと
+    machineLogGuestConfigs =
+      lib.mapAttrs (_: c: c.config) hostConfig.containers
+      // lib.mapAttrs (_: vm: vm.config.config) (hostConfig.microvm.vms or { });
+    machineLogWithoutConsole = lib.attrNames (
+      lib.filterAttrs (_: guest: guest.services.journald.console == "") machineLogGuestConfigs
+    );
+    machineLogWithoutNamespace = lib.filter (
+      name: (hostConfig.systemd.services."microvm@${name}".serviceConfig.LogNamespace or null) != name
+    ) (lib.attrNames (hostConfig.microvm.vms or { }));
   in
+  assert lib.assertMsg (
+    machineLogWithoutConsole == [ ]
+  ) "中のjournalをコンソールへ流す設定が入っていないマシンがあります: ${lib.concatStringsSep ", " machineLogWithoutConsole}";
+  assert lib.assertMsg (machineLogWithoutNamespace == [ ])
+    "ログをjournalのnamespaceへ分けていないmicroVMがあります: ${lib.concatStringsSep ", " machineLogWithoutNamespace}";
   (importPkgsStable hostDef.system).testers.runNixOSTest {
     name = "test-nixos-boot-${name}";
     node = {
@@ -484,6 +561,7 @@ lib.mapAttrs (
     + machineIpv6Test
     + githubRunnerVmTest
     + cdnDeployTest
+    + machineLogTest
     + lanInputTest;
   }
 ) (lib.filterAttrs (_: def: !(def.nixosSystem.config.wsl.enable or false)) hostDefs)

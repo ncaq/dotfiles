@@ -160,9 +160,6 @@ in
         # 配信ディレクトリ。
         # 同期のサービスだけが書き込み、Caddyはother権限で読み取ります。
         "d ${cdnRoot} 0755 ${syncUser} ${syncUser} -"
-        # 以前はランナーが直接書き込んでいたので、
-        # その頃の`github-runner`の所有のファイルを同期のユーザへ移します。
-        "Z ${cdnRoot} - ${syncUser} ${syncUser} -"
       ];
 
       # ステージングから配信ディレクトリへ写します。

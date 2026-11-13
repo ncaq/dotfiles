@@ -89,6 +89,41 @@ let
       mem = 40 * 1024;
       # CIでNixOS TestのVMを動かします。
       nestedVirt = true;
+      # ジョブの中でbubblewrapを動かせるように、
+      # github-runnersモジュールが既定で付けるサービスの制限の一部を外します。
+      #
+      # `renovate-recovery`ワークフローのClaude Codeは、
+      # 認証情報をコマンドに渡さないための隔離としてコマンドをbubblewrapの中で実行します。
+      # bubblewrapは名前空間を作って`/proc`をマウントし直すので、
+      # 以下の制限があると1つのコマンドも実行できません。
+      # ランナーと同じ制限を付けた一時的なユニットで、1つずつ確かめました。
+      #
+      # - `RestrictNamespaces`: 名前空間を作れない
+      # - `SystemCallFilter`の`~@mount`と`~capset`: bubblewrapがシグナルで落ちる
+      # - `ProtectKernelLogs`と`ProtectKernelTunables`と`ProtectHostname`:
+      #   `/proc`の一部を隠すので、新しい`/proc`のマウントをカーネルが拒否する
+      #
+      # ジョブをホストや他のVMから守るのはmicroVMの隔離で、
+      # サービス単位の制限はVMの中での多層防御です。
+      # 外すのはこのVMだけで、cdn.ncaq.netのランナーには手を付けません。
+      extraRunnerOptions.serviceOverrides = {
+        RestrictNamespaces = false;
+        ProtectKernelLogs = false;
+        ProtectKernelTunables = false;
+        ProtectHostname = false;
+        # モジュールは一覧を`mkBefore`で足すので、
+        # 2つを除いた一覧で丸ごと置き換えます。
+        SystemCallFilter = lib.mkForce [
+          "~@clock"
+          "~@cpu-emulation"
+          "~@module"
+          "~@obsolete"
+          "~@raw-io"
+          "~@reboot"
+          "~setdomainname"
+          "~sethostname"
+        ];
+      };
     };
     github-runner-cdn-ncaq-net-x64 = {
       basename = "cdn-ncaq-net-x64";

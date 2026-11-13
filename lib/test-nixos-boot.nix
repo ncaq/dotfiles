@@ -381,8 +381,22 @@ lib.mapAttrs (
     # 分け方が外れてもログは既定のjournalへ入って読めてしまうので気付けません。
     machineLogVmNames = lib.filter startsInTestVm (lib.attrNames (hostConfig.microvm.vms or { }));
     machineLogContainerNames = lib.optional (hostConfig.containers ? postgresql) "postgresql";
+    #
+    # コマンド自体の分岐も見ます。
+    # 引数無しの一覧は、起動しないマシンも含めた全てのマシンの名前を1行ずつ出すこと、
+    # 知らない名前は失敗することです。
+    # 名前の対応はNixの評価時に`case`文として生成しているので、
+    # 生成の仕方が崩れると全ての名前が知らない名前の側へ落ちます。
+    machineLogAllNames =
+      lib.attrNames hostConfig.containers ++ lib.attrNames (hostConfig.microvm.vms or { });
     machineLogTest =
-      lib.concatMapStrings (
+      lib.optionalString (machineLogAllNames != [ ]) # python
+        ''
+          machine_log_list = machine.succeed("machine-log").splitlines()
+          assert sorted(machine_log_list) == sorted(${builtins.toJSON machineLogAllNames}), machine_log_list
+          machine.fail("machine-log no-such-machine")
+        ''
+      + lib.concatMapStrings (
         name: # python
         ''
           machine.wait_until_succeeds(

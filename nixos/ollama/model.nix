@@ -44,6 +44,20 @@ let
     top_k = 20;
     top_p = 0.95;
   };
+  # Ollama registryのblobを取得する。
+  # blobはダイジェストで指定され中身がそのsha256なので、
+  # ダイジェストをそのままハッシュに使えてタグの差し替えに影響されない。
+  fetchOllamaBlob =
+    {
+      name,
+      model,
+      digest,
+    }:
+    pkgs.fetchurl {
+      inherit name;
+      url = "https://registry.ollama.ai/v2/library/${model}/blobs/sha256:${digest}";
+      hash = "sha256:${digest}";
+    };
   # アクセラレータごとに、役割から実際のモデル名を引く表。
   # home-managerの設定もこれを読むため、実体は`lib/`に置いている。
   # 理由はそのファイルの先頭に書いてある。
@@ -111,9 +125,10 @@ let
       # ollamaは最後の`model`レイヤーを本体だと解釈する。
       # bulletではドラフトヘッドが後ろに来て、
       # 1.28GiBのドラフトを本体としてロードしたllama-serverがsegmentation faultで落ちた。
-      # レイヤーの並びは`FROM`の順番では制御できず、
-      # Modelfileにドラフトを指定する構文も無いため、
-      # 別ファイルのドラフトヘッドは使えない。
+      # レイヤーの並びは`FROM`の順番では制御できないため、
+      # 別ファイルのドラフトヘッドは`FROM`では使えない。
+      # 今のOllamaにはドラフトを指定する`DRAFT`があるが、
+      # NextN層だけのGGUFを渡せるかは確かめていない。
       #
       # visionはregistry版がマニフェストの別レイヤーとして同梱しているだけなので、
       # 本体のGGUFを取るだけでは付いてこず、clipの投影器を自分で足す必要がある。
@@ -216,6 +231,41 @@ let
           })
         ];
         parameters = qwenParameters;
+      };
+      # registryの`gemma4:31b`と同じものを、
+      # タグではなくblobのダイジェストで固定して組み立てる。
+      # タグは上流で差し替わり得て、
+      # VRAMの空きが少ないので中身が変わると溢れるかもしれないためである。
+      # 本体と投影器とMTPのドラフトのblob、
+      # およびTEMPLATEとRENDERERとPARSERとparamsは、
+      # 2026-11-13時点のタグのマニフェストと`ollama show --modelfile`の内容に揃えてある。
+      "gemma4-31b-mtp:q4_k_m" = {
+        sources = [
+          (fetchOllamaBlob {
+            name = "gemma4-31b-q4_k_m.gguf";
+            model = "gemma4";
+            digest = "cd20f2b3f2e30239023189c04e65754b0cc7c38959665ac727461ee470df16cf";
+          })
+          (fetchOllamaBlob {
+            name = "gemma4-31b-projector.gguf";
+            model = "gemma4";
+            digest = "6357a8a2d521e7b3b67d5afd3a6f5094b2712736b5bd6e1c9f17f8e4e6fae9b0";
+          })
+        ];
+        draft = fetchOllamaBlob {
+          name = "gemma4-31b-draft.gguf";
+          model = "gemma4";
+          digest = "9ec411cf75f3ab210708dad5adb53d98a151f2c72f0659da97892b8a0a14e3e3";
+        };
+        template = "{{ .Prompt }}";
+        renderer = "gemma4";
+        parser = "gemma4";
+        parameters = {
+          draft_num_predict = 3;
+          temperature = 1;
+          top_k = 64;
+          top_p = 0.95;
+        };
       };
       # 翻訳特化のPLaMo 3 Translate。
       "plamo-3-translate-31b:q4_k_m" = {

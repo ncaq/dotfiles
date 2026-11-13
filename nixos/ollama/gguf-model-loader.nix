@@ -41,6 +41,11 @@ let
     name: model:
     pkgs.writeText "ollama-${sanitizeName name}-Modelfile" (
       lib.concatMapStrings (source: "FROM ${source}\n") model.sources
+      + lib.optionalString (model.draft != null) "DRAFT ${model.draft}\n"
+      # 複数行になり得るので三重引用符で囲みます。
+      + lib.optionalString (model.template != null) "TEMPLATE \"\"\"${model.template}\"\"\"\n"
+      + lib.optionalString (model.renderer != null) "RENDERER ${model.renderer}\n"
+      + lib.optionalString (model.parser != null) "PARSER ${model.parser}\n"
       # 値は`toJSON`で書きます。
       # 数値はそのまま、文字列は引用符付きになり、
       # Modelfileの`PARAMETER`はどちらの表記も受け付けます。

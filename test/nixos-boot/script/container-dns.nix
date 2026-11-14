@@ -13,16 +13,28 @@
 # - IPv4を持たないコンテナはIPv6のサーバだけを持つこと
 # - IPv4を持つコンテナはIPv6のサーバを先に並べ、続けてIPv4のサーバも持つこと
 #
+# IPv4を持つかの期待値は、実装の式を書き写すと取り違えても同じ判定をして通るので、
+# seminarの`machineAddresses`の`ipv4`という実装より上流の宣言で決めます。
+# seminarにはIPv4を持つコンテナと持たないコンテナの両方が宣言されているので、
+# 実装の式を取り違えればここで食い違います。
+# 宣言の無いコンテナ(ネットワークを持たないpostgresqlや、bulletのコンテナ)は、
+# 実装と同じ式で期待値を出して、並び順と出し分けだけを見ます。
+#
 # 実機の構成の値だけで決まるので、テストVMの中では何もしません。
 { lib, config, ... }:
 let
   # `<address>#<name>`のアドレスの部分がIPv6か。
   isIpv6 = server: lib.hasInfix ":" (lib.head (lib.splitString "#" server));
+  machineAddresses = config.machineAddresses or { };
   check =
     name: c:
     let
       servers = c.config.services.resolved.settings.Resolve.FallbackDNS;
-      hasIpv4 = !c.privateNetwork || c.localAddress != null;
+      hasIpv4 =
+        if machineAddresses ? ${name} then
+          machineAddresses.${name}.ipv4
+        else
+          !c.privateNetwork || c.localAddress != null;
       ipv6Servers = lib.filter isIpv6 servers;
       ipv4Servers = lib.filter (s: !isIpv6 s) servers;
     in

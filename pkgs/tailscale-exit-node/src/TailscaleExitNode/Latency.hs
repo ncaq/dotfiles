@@ -15,7 +15,7 @@ type Parser = Parsec Void Text
 --
 -- pongの行は以下の形をしている。
 --
--- > pong from seminar (100.82.4.93) via 192.168.10.88:41641 in 4ms
+-- > pong from seminar (fd7a:115c:a1e0::b934:6c4a) via [2001:db8::1]:41641 in 4ms
 --
 -- 出力にはpong以外の行も混ざる。
 -- 直接の経路ができるまで待つのが既定の動作なので、

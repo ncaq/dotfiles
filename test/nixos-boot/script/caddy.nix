@@ -10,13 +10,14 @@ let
   curl = lib.getExe pkgs.curl;
 
   # admin APIをUNIXソケットへ移せているかを確認します。
-  # 設定が外れてもCaddyは既定の`127.0.0.1:2019`で普通に起動してしまうので、
+  # 設定が外れてもCaddyは既定の`localhost:2019`で普通に起動してしまうので、
   # 他のテストは全て通ったまま無言で退行します。
+  # 既定に合わせて名前で叩くので、curlは`::1`と`127.0.0.1`の両方を試します。
   admin = # python
     ''
       machine.wait_for_unit("caddy.service")
       machine.succeed("test -S /run/caddy/admin.sock")
-      machine.fail("${curl} --fail --silent --max-time 3 http://127.0.0.1:2019/config/")
+      machine.fail("${curl} --fail --silent --max-time 3 http://localhost:2019/config/")
     '';
 
   # 死活監視用のエンドポイントを確認します。

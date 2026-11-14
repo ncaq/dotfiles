@@ -22,4 +22,5 @@ install repository platform = case platform of
   command = switchCommand platform
   switch = do
     logInfoN ("設定を適用します: " <> commandLine command)
-    runProcess (setWorkingDir repository (proc command.program command.arguments))
+    runProcess . setWorkingDir repository $
+      proc (convert command.program) (convert <$> command.arguments)

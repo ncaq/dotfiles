@@ -13,15 +13,15 @@ data Architecture
   | Aarch64
   deriving stock (Bounded, Enum, Eq, Show)
 
--- | `uname`の`machine`の値から決める。
-parseArchitecture :: String -> Either UnsupportedArchitecture Architecture
+-- | `uname`の`machine`の値から決める。用意していないものは`UnsupportedArchitecture`を投げる。
+parseArchitecture :: (MonadThrow m) => Text -> m Architecture
 parseArchitecture = \case
-  "x86_64" -> Right X86_64
-  "aarch64" -> Right Aarch64
-  machine -> Left (UnsupportedArchitecture machine)
+  "x86_64" -> pure X86_64
+  "aarch64" -> pure Aarch64
+  machine -> throwM (UnsupportedArchitecture machine)
 
 -- | Nixのsystemの名前。`homeConfigurations`の属性名にしている。
-architectureSystem :: Architecture -> String
+architectureSystem :: Architecture -> Text
 architectureSystem = \case
   X86_64 -> "x86_64-linux"
   Aarch64 -> "aarch64-linux"

@@ -5,13 +5,14 @@ module DotfilesInstall.SwitchCommand
   , commandLine
   ) where
 
+import Data.Text (unwords)
 import DotfilesInstall.Architecture (architectureSystem)
 import DotfilesInstall.Platform (Platform (..))
-import Himari
+import Himari hiding (unwords)
 
 data SwitchCommand = SwitchCommand
-  { program :: String
-  , arguments :: [String]
+  { program :: Text
+  , arguments :: [Text]
   }
   deriving stock (Eq, Show)
 
@@ -29,4 +30,4 @@ switchCommand = \case
 
 -- | ログに出すための1行の表記。
 commandLine :: SwitchCommand -> Text
-commandLine command = convert (unwords (command.program : command.arguments))
+commandLine command = unwords (command.program : command.arguments)

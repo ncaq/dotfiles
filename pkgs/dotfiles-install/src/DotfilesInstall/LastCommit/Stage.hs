@@ -43,10 +43,10 @@ withStagedLastCommit repository action = do
   stage lastCommit = do
     logInfoN ("最新のコミットの情報を注入します: " <> convert lastCommitFile)
     writeBinaryFile path (convert (encode lastCommit))
-    gitChecked repository ["add", "-f", "--", lastCommitFile]
+    gitChecked repository ["add", "-f", "--", convert lastCommitFile]
   -- 戻せなくても害の無いファイルが残るだけなので、記録だけして続ける。
   unstage = do
-    reset <- gitRun repository ["reset", "--quiet", "--", lastCommitFile]
+    reset <- gitRun repository ["reset", "--quiet", "--", convert lastCommitFile]
     unless (reset == ExitSuccess) $
       logWarnN ("注入したファイルをindexから外せませんでした: " <> convert (show reset))
     exists <- doesFileExist path

@@ -22,7 +22,7 @@ run :: (MonadLogger m, MonadThrow m, MonadUnliftIO m) => [String] -> m ()
 run argv = do
   liftIO . handleParseResult $ execParserPure defaultPrefs parserInfo argv
   handle (report @UnsupportedArchitecture) . handle (report @GitFailure) $ do
-    platform <- either throwM pure . detectPlatform =<< probe
+    platform <- detectPlatform =<< probe
     code <- install "." platform
     unless (code == ExitSuccess) (throwM code)
  where

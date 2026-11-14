@@ -5,13 +5,12 @@ module DotfilesInstall.Platform
   ) where
 
 import DotfilesInstall.Architecture (Architecture, parseArchitecture)
-import DotfilesInstall.Failure (UnsupportedArchitecture)
 import DotfilesInstall.Probe (Probe (..))
 import Himari
 
 data Platform
   = -- | NixOS。そのホスト名。
-    NixOS String
+    NixOS Text
   | -- | Termuxの上のNix-on-Droid。
     NixOnDroid
   | -- | その他のLinux。home-managerだけを適用する。
@@ -23,8 +22,9 @@ data Platform
 -- NixOS、Termux、その他の順に見る。
 -- アーキテクチャを見るのはhome-managerだけを適用する時だけなので、
 -- NixOSやTermuxでは未対応のアーキテクチャでも失敗にしない。
-detectPlatform :: Probe -> Either UnsupportedArchitecture Platform
+-- home-managerだけを適用する時に未対応なら`UnsupportedArchitecture`を投げる。
+detectPlatform :: (MonadThrow m) => Probe -> m Platform
 detectPlatform probe
-  | probe.isNixos = Right (NixOS probe.hostName)
-  | probe.isTermux = Right NixOnDroid
+  | probe.isNixos = pure (NixOS probe.hostName)
+  | probe.isTermux = pure NixOnDroid
   | otherwise = HomeManager <$> parseArchitecture probe.machineName

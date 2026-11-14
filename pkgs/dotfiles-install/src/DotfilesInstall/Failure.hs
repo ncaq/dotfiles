@@ -4,19 +4,21 @@ module DotfilesInstall.Failure
   , GitFailure (..)
   ) where
 
-import Himari
+import Data.Text (unwords)
+import Himari hiding (unwords)
 
 -- | home-managerの構成を用意していないアーキテクチャだった。`uname`の`machine`の値。
-newtype UnsupportedArchitecture = UnsupportedArchitecture String
+newtype UnsupportedArchitecture = UnsupportedArchitecture Text
   deriving stock (Eq, Show)
 
 instance Exception UnsupportedArchitecture where
-  displayException (UnsupportedArchitecture machine) = "未対応のアーキテクチャです: " <> machine
+  displayException (UnsupportedArchitecture machine) =
+    "未対応のアーキテクチャです: " <> convert machine
 
 -- | Gitのコマンドが失敗した。その引数と終了コード。
-data GitFailure = GitFailed [String] ExitCode
+data GitFailure = GitFailed [Text] ExitCode
   deriving stock (Eq, Show)
 
 instance Exception GitFailure where
   displayException (GitFailed args code) =
-    "git " <> unwords args <> "が" <> show code <> "で失敗しました"
+    "git " <> convert (unwords args) <> "が" <> show code <> "で失敗しました"

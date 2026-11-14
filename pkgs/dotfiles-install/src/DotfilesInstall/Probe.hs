@@ -14,9 +14,9 @@ data Probe = Probe
   -- ^ `/etc/NIXOS`があるか。
   , isTermux :: Bool
   -- ^ 環境変数`TERMUX_VERSION`が空ではない値で設定されているか。
-  , hostName :: String
+  , hostName :: Text
   -- ^ `uname`の`nodename`。`hostname`コマンドが出すものと同じ。
-  , machineName :: String
+  , machineName :: Text
   -- ^ `uname`の`machine`。
   }
   deriving stock (Eq, Show)
@@ -27,7 +27,7 @@ probe =
   Probe
     <$> doesFileExist "/etc/NIXOS"
     <*> ((`notElem` [Nothing, Just ""]) <$> lookupEnv "TERMUX_VERSION")
-    <*> (nodeName <$> systemId)
-    <*> (machine <$> systemId)
+    <*> (convert . nodeName <$> systemId)
+    <*> (convert . machine <$> systemId)
  where
   systemId = liftIO getSystemID

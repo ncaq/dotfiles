@@ -15,6 +15,8 @@
 # - `internet`から除く集合に、LANとDNAT後のコンテナを含む`192.168.0.0/16`とtailnetの範囲が入っていること
 # - IPv6で`internet`から除く集合に、tailnetと他のコンテナを含むULA全体とリンクローカルが入っていること
 # - 各マシンのacceptが宣言した宛先の数だけあり、`internet`はIPv4とIPv6の1つずつで除く集合の否定で書かれていること
+# - 宣言した宛先はIPv6の`ip6 daddr`で許されていること。
+#   マシン同士はIPv6で繋ぐので、`ip daddr`に戻ると宛先へ届かなくなります
 # - 各マシンのルールの末尾と、チェイン全体の末尾がdropであること
 {
   lib,
@@ -69,5 +71,13 @@ lib.optionalString (machineEgress != { }) (
           "@private-networks6" in r.split() and "nexthop fe80::/10" in r for r in machine_accepts
       ), machine_rules
       assert "drop" in machine_rules[-1].split(), machine_rules
-    '') (lib.attrValues machineEgress)
+    ''
+    + lib.concatMapStrings (
+      d: # python
+      ''
+        assert any(
+            "ip6 daddr ${d.address} " in r for r in machine_accepts
+        ), machine_rules
+      '') m.destinations
+  ) (lib.attrValues machineEgress)
 )

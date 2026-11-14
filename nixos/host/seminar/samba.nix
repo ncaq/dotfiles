@@ -23,9 +23,10 @@ in
       settings = {
         global = {
           # 基本設定
-          "workgroup" = "WORKGROUP";
+          # NetBIOSの名前とワークグループは書かない。
+          # 既定ではホスト名から導いた`SEMINAR`と`WORKGROUP`になり、
+          # NetBIOSを使わないので他の値にする理由も無い。
           "server string" = "Seminar Home Server";
-          "netbios name" = "SEMINAR";
           # セキュリティ設定
           "security" = "user"; # ユーザー認証必須
           "map to guest" = "never"; # ゲストアクセス禁止
@@ -41,7 +42,9 @@ in
           # NetBIOSはIPv4だけのプロトコルで、
           # nmbdはコンテナのvethも含む全てのインターフェイスへ届かないブロードキャストを投げ続けていた。
           "disable netbios" = "yes";
-          "smb ports" = "445";
+          # 既定の待ち受けは`tcp, nbt`で、`disable netbios`だけでは`nbt`(139番)が残るので、
+          # 445番へ直接繋ぐ`tcp`だけにする。
+          "server smb transports" = "tcp";
         };
         "chihiro" = {
           "path" = "/mnt/noa/chihiro";

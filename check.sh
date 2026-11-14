@@ -4,13 +4,19 @@ set -euo pipefail
 # どこから呼ばれてもこのリポジトリのflakeを見ます。
 cd "$(dirname "$0")"
 
-# 今のマシンのシステムの`checks`だけを評価します。
+# 今のマシンのシステムの分だけを評価します。
 # `nix-fast-build`は既定では`.#checks`の全システムを評価しますが、
 # `callCabal2nix`のようなIFDは評価するだけで対象のシステムのderivationをビルドするので、
 # そのシステムを実行できないマシンでは評価が失敗します。
 # ビルドされるのは元から今のシステムの分だけなので、評価も同じ範囲に揃えます。
 # flakeの評価は純粋で今のシステムを知れないので、ここで調べて属性を指定します。
 system=$(nix eval --raw --impure --expr builtins.currentSystem)
+
+# 評価してビルドするflakeの出力。
+# 既定の`checks`は、ホストの構成を評価するだけに留めた手元向けの軽いものです。
+# CIは`CHECK_OUTPUT=ciJobs`を渡して、
+# ホストの構成のビルドとブートテストまで含めたものを1回で処理します。
+output=${CHECK_OUTPUT:-checks}
 
 # `--option eval-cache false`は、
 # 評価のワーカーが評価キャッシュを取り合って出す競合の警告を抑止するものです。
@@ -20,7 +26,7 @@ system=$(nix eval --raw --impure --expr builtins.currentSystem)
 # `--skip-cached`は、
 # ビルドキャッシュがあるものはスキップして高速化するものです。
 arguments=(
-  --flake ".#checks.$system"
+  --flake ".#$output.$system"
   --option eval-cache false
   --no-link
   --skip-cached

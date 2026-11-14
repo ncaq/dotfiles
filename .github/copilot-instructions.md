@@ -228,6 +228,15 @@ Claudeの応答完了時にStopフックで`nix fmt`が自動実行されます�
 
 追加の引数はそのまま`nix-fast-build`へ渡されます。
 
+既定で処理する`checks`は、ホストとhome-managerの構成を評価するだけに留めた軽いものです。
+CIは`CHECK_OUTPUT=ciJobs`を渡して、
+全ホストとhome-managerの構成のビルドと、ホストのブートテストまでを1回で処理します。
+手元でCIと同じものを確かめたい時だけ、同じように実行してください。
+
+```console
+CHECK_OUTPUT=ciJobs ./check.sh
+```
+
 ## 設定の適用は`./install.sh`を使う
 
 設定をシステムに適用する時は、

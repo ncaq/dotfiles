@@ -51,10 +51,10 @@ in
     # identityと違いコンテナ内rootがホストのUID 0を持たなくなる。
     # garageはUNIXソケットのpeer認証を使わないためpickにできる。
     privateUsers = "pick";
-    hostAddress = addr.host;
-    localAddress = addr.guest;
     hostAddress6 = addr.host6;
     localAddress6 = addr.guest6;
+    hostAddress = addr.host4;
+    localAddress = addr.guest4;
     # pickでは素のbind mountだと所有者が無効なUIDに見えてアクセスできないため、
     # idmapオプションで数値IDをホストとコンテナで同一視させる。
     # データディレクトリはbtrfs、環境ファイルはtmpfs上にありどちらもidmap対応。

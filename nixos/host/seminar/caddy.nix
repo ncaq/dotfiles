@@ -1,9 +1,9 @@
 { lib, config, ... }:
 let
-  garageAddr = config.machineAddresses.garage.guest;
-  garageHostAddr = config.machineAddresses.garage.host;
-  niks3PublicHostAddr = config.machineAddresses.niks3-public.host;
-  niks3PrivateHostAddr = config.machineAddresses.niks3-private.host;
+  garageAddr = config.machineAddresses.garage.guest6;
+  garageHostAddr = config.machineAddresses.garage.host6;
+  niks3PublicHostAddr = config.machineAddresses.niks3-public.host6;
+  niks3PrivateHostAddr = config.machineAddresses.niks3-private.host6;
   containerIfname = name: import ../../../lib/container-ifname.nix { inherit lib name; };
 in
 {
@@ -63,8 +63,8 @@ in
       virtualHosts."garage.ncaq.net" = {
         useACMEHost = "garage.ncaq.net";
         extraConfig = ''
-          bind ${garageHostAddr} ${niks3PublicHostAddr} ${niks3PrivateHostAddr}
-          reverse_proxy http://${garageAddr}:3900
+          bind [${garageHostAddr}] [${niks3PublicHostAddr}] [${niks3PrivateHostAddr}]
+          reverse_proxy http://[${garageAddr}]:3900
         '';
       };
     };
@@ -98,6 +98,9 @@ in
     # vethインターフェースはコンテナ起動時に作成されるため、
     # Caddy起動時にはまだバインド先IPが存在しない場合がある。
     # ip_nonlocal_bindを有効にして未割当アドレスへのバインドを許可する。
-    boot.kernel.sysctl."net.ipv4.ip_nonlocal_bind" = 1;
+    # IPv6ではアドレスが付いた直後の重複検出(DAD)が終わるまでの間も、
+    # これが無いとバインドに失敗する。
+    # vethのホスト側に待ち受けるアドレスはIPv6だけなので、IPv6の側だけを有効にする。
+    boot.kernel.sysctl."net.ipv6.ip_nonlocal_bind" = 1;
   };
 }

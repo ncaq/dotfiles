@@ -71,10 +71,10 @@ in
     # PostgreSQLのpeer認証がホストと同一のUIDでの接続を要求するため、
     # pickにはできずidentity(UID分離なし、capability分離のみ)にする。
     privateUsers = "identity";
-    hostAddress = addr.host;
-    localAddress = addr.guest;
     hostAddress6 = addr.host6;
     localAddress6 = addr.guest6;
+    hostAddress = addr.host4;
+    localAddress = addr.guest4;
     bindMounts = {
       # DBとベクトルはPostgreSQLへ移したため、
       # ここに残るのはアップロードされたファイルや埋め込みモデルのキャッシュなどで、
@@ -117,7 +117,8 @@ in
         services.open-webui = {
           enable = true;
           inherit package stateDir port;
-          host = "0.0.0.0";
+          # ホスト側のCaddyからIPv6で繋ぐ。
+          host = "::";
           # 認証を無効化するため、全接続元へfirewallを開かない。
           openFirewall = false;
           # `environment`を定義すると既定値は丸ごと置き換わり、
@@ -188,7 +189,7 @@ in
               PGVECTOR_POOL_SIZE = "5";
               PGVECTOR_POOL_MAX_OVERFLOW = "10";
               # ホスト側のCaddyがbullet優先でOllamaへ振り分ける。
-              OLLAMA_BASE_URL = "http://${addr.host}:${toString ollamaPort}";
+              OLLAMA_BASE_URL = "http://[${addr.host6}]:${toString ollamaPort}";
             };
         };
         # 埋め込みモデルの取得などで名前解決が必要になる。
@@ -203,7 +204,7 @@ in
           # iptables backendでは何の警告もなく無視される。
           nftables.enable = true;
           firewall.extraInputRules = ''
-            ip saddr ${addr.host} tcp dport ${toString port} accept
+            ip6 saddr ${addr.host6} tcp dport ${toString port} accept
           '';
         };
         # 送信元の制限が黙って無効化されることは評価時に防げる。

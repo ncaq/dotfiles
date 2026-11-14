@@ -11,7 +11,7 @@
     systemd = config.systemd.package;
     container = "ollama";
     label = "Ollama";
-    localAddress = config.containers.ollama.localAddress;
+    localAddress6 = config.containers.ollama.localAddress6;
     port = config.containers.ollama.config.services.ollama.port;
     healthPath = "/api/tags";
   };

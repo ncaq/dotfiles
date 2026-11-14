@@ -22,10 +22,10 @@ in
     # PostgreSQLのpeer認証がホストと同一のUIDでの接続を要求するため、
     # pickにはできずidentity(UID分離なし、capability分離のみ)のまま。
     privateUsers = "identity";
-    hostAddress = addr.host;
-    localAddress = addr.guest;
     hostAddress6 = addr.host6;
     localAddress6 = addr.guest6;
+    hostAddress = addr.host4;
+    localAddress = addr.guest4;
     bindMounts = {
       "/run/postgresql" = {
         hostPath = "/run/postgresql";
@@ -62,7 +62,7 @@ in
           # GarageへはHTTPで転送します。
           # presigned URLはhttps://garage.ncaq.net/...のままなので、
           # 外部クライアントはCloudflare Tunnel経由でアクセスできます。
-          hosts."${addr.host}" = [ "garage.ncaq.net" ];
+          hosts."${addr.host6}" = [ "garage.ncaq.net" ];
         };
         users = {
           users.niks3-public = niks3User // {

@@ -13,7 +13,7 @@
     systemd = config.systemd.package;
     container = "ollama";
     label = "Ollama";
-    localAddress = config.containers.ollama.localAddress;
+    localAddress6 = config.containers.ollama.localAddress6;
     port = config.containers.ollama.config.services.ollama.port;
     healthPath = "/api/tags";
   };
@@ -31,7 +31,8 @@
     `container@<container>.service`への依存と、
     `<container>-proxy`というユニット名の両方に使う
   - `label`: ユニットのdescriptionに出る人間向けの表示名
-  - `localAddress`: コンテナ側のIPアドレス
+  - `localAddress6`: コンテナ側のIPv6アドレス。
+    ホストとコンテナの間はIPv6で繋ぐ(`lib/machine-address4.nix`)
   - `port`: コンテナ側とホスト側で共通のポート番号
   - `healthPath`: 疎通確認に叩くHTTPのパス
 
@@ -44,7 +45,7 @@
   systemd,
   container,
   label,
-  localAddress,
+  localAddress6,
   port,
   healthPath,
 }:
@@ -58,7 +59,7 @@ in
     after = [ containerService ];
     # コンテナのready通知より後にサービスがlistenを開始するため、疎通まで待つ。
     preStart = ''
-      until ${pkgs.lib.getExe pkgs.curl} --fail --silent --output /dev/null "http://${localAddress}:${toString port}${healthPath}"; do
+      until ${pkgs.lib.getExe pkgs.curl} --fail --silent --output /dev/null "http://[${localAddress6}]:${toString port}${healthPath}"; do
         ${pkgs.coreutils}/bin/sleep 1
       done
     '';
@@ -67,7 +68,11 @@ in
     serviceConfig = hardening.network // {
       # systemd-socket-proxydは`bin/`ではなく`lib/systemd/`に配置されるため、
       # `lib.getExe'`は使えない。
-      ExecStart = "${systemd}/lib/systemd/systemd-socket-proxyd ${localAddress}:${toString port}";
+      #
+      # IPv6アドレスを角括弧で囲まずに書くのは間違いではない。
+      # systemd-socket-proxydは最後の`:`より前をそのまま名前解決に渡すので、
+      # `[::1]:80`は`[::1]`という名前として引かれて失敗し、`::1:80`なら通る。
+      ExecStart = "${systemd}/lib/systemd/systemd-socket-proxyd ${localAddress6}:${toString port}";
       DynamicUser = true;
       # 初回のDB migrationや埋め込みモデル取得を許容しつつ、疎通待ちに上限を設ける。
       TimeoutStartSec = "5min";

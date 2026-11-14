@@ -44,7 +44,7 @@ in
   # キーファイルの書き出し先は`RuntimeDirectory`からsystemdが`RUNTIME_DIRECTORY`として渡します。
   environment = {
     GARAGE_SETUP_NAME = name;
-    GARAGE_SETUP_API = "http://${config.machineAddresses.garage.guest}:3903";
+    GARAGE_SETUP_API = "http://[${config.machineAddresses.garage.guest6}]:3903";
     GARAGE_SETUP_ADMIN_TOKEN_FILE = config.sops.secrets."garage-admin-token".path;
   };
 }

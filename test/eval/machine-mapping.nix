@@ -7,6 +7,7 @@
 #
 # - 書き方だけが違う同じアドレスを、重複として扱うこと
 # - IPv4を導けない形のアドレスを止めること
+# - IPv6として読めないアドレスでも、形の検査だけが落ちて評価全体は止まらないこと
 # - インターネットへ出ないマシンにIPv4を持たせたら止めること
 #
 # `machine-mapping.nix`だけを`lib.evalModules`で読み込み、
@@ -88,6 +89,11 @@ let
     host6 = "fdf2:a855:5a3f:100::20";
     guest6 = "fdf2:a855:5a3f:100::1a";
   });
+  # 重複の検査は読めないアドレスを揃えずにそのまま比べるので、そちらも巻き込まれない。
+  unparsableResult = failures (withInside {
+    host6 = "fdf2:a855:5a3f:100::20";
+    guest6 = "fdf2::g";
+  });
   ipv4WithoutInternetResult = failures (
     valid
     // {
@@ -102,6 +108,8 @@ assert lib.assertMsg (failsOnlyWith "must be unique" duplicateResult)
   "書き方だけが違う同じアドレスを重複として扱いません: ${lib.concatStringsSep "; " duplicateResult}";
 assert lib.assertMsg (failsOnlyWith "must be written as" malformedResult)
   "IPv4を導けない形のアドレスを止めません: ${lib.concatStringsSep "; " malformedResult}";
+assert lib.assertMsg (failsOnlyWith "must be written as" unparsableResult)
+  "IPv6として読めないアドレスを形の検査だけで止めません: ${lib.concatStringsSep "; " unparsableResult}";
 assert lib.assertMsg (failsOnlyWith "IPv4 is only for" ipv4WithoutInternetResult)
   "インターネットへ出ないマシンのIPv4を止めません: ${lib.concatStringsSep "; " ipv4WithoutInternetResult}";
 true

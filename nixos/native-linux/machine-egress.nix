@@ -188,9 +188,7 @@ in
                       # プレフィックス長は許すと範囲で許せてしまうので受け付けない。
                       type =
                         lib.types.addCheck lib.types.str (
-                          address:
-                          !(lib.hasInfix "/" address)
-                          && (builtins.tryEval (lib.network.ipv6.fromString address).address).success
+                          address: import ../../lib/parse-ipv6.nix { inherit lib; } address != null
                         )
                         // {
                           description = "IPv6 address without prefix length";

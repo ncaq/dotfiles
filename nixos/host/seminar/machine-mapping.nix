@@ -1,6 +1,7 @@
 { lib, config, ... }:
 let
   toAddress4 = ipv6: import ../../../lib/machine-address4.nix { inherit lib ipv6; };
+  parseIpv6 = import ../../../lib/parse-ipv6.nix { inherit lib; };
   addressType = lib.types.submodule (
     { config, ... }:
     {
@@ -233,14 +234,14 @@ in
         # IPv4はIPv6から単射で導くので、IPv6が重ならなければIPv4も重ならない。
         # IPv6だけを見れば足りる。
         # 同じアドレスでも書き方が違うと文字列としては重ならないので、
-        # `lib.network.ipv6.fromString`で省略しない形に揃えてから比べる。
+        # `lib/parse-ipv6.nix`で省略しない形に揃えてから比べる。
         # 読めないアドレスは揃えずにそのまま比べて、下の形の検査で報告する。
         normalizeAddress =
           address:
           let
-            result = builtins.tryEval (lib.network.ipv6.fromString address).address;
+            parsed = parseIpv6 address;
           in
-          if result.success then result.value else address;
+          if parsed == null then address else parsed;
         addressEntries = lib.concatLists (
           lib.mapAttrsToList (name: entry: [
             {

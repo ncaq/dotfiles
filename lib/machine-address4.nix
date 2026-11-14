@@ -44,7 +44,7 @@
   サブネットとホストをそのまま写すので対応は単射で、
   IPv6が互いに違えばIPv4も互いに違う。
 
-  IPv6アドレスの読み取りはnixpkgsの`lib.network.ipv6.fromString`に任せる。
+  IPv6アドレスの読み取りは`lib/parse-ipv6.nix`に任せる。
   0の省略や大文字小文字や各部分の先頭の0のような書き方の違いは、
   省略しない小文字の形へ揃えてから見るので、
   同じアドレスなら書き方によらず同じIPv4になる。
@@ -79,26 +79,17 @@ let
     "a855"
     "5a3f"
   ];
-  # 読めない入力は`fromString`が`throw`するので、
-  # 下の検査で自分のメッセージを出せるように捕まえる。
-  # 返り値の属性は遅延評価されるので、中まで評価して捕まえる。
-  parsed =
-    let
-      address = lib.network.ipv6.fromString ipv6;
-      result = builtins.tryEval (builtins.deepSeq address address);
-    in
-    if result.success then result.value else null;
-  pieces = if parsed == null then [ ] else lib.splitString ":" parsed.address;
+  # 読めない入力やプレフィックス長付きの入力は`null`になるので、
+  # 下の検査で自分のメッセージを出せる。
+  parsed = import ./parse-ipv6.nix { inherit lib; } ipv6;
+  pieces = if parsed == null then [ ] else lib.splitString ":" parsed;
   subnet = lib.elemAt pieces 3;
   host = lib.elemAt pieces 7;
   # 揃えた後の各部分は先頭に0を持たないので、
   # 10進の数字だけで書かれていれば10進の字面としても曖昧さが無い。
   isOctet = s: builtins.match "[0-9]{1,3}" s != null && lib.toIntBase10 s <= 255;
   valid =
-    # `fromString`はプレフィックス長を省くと128とみなすので、
-    # 付いていたかは入力の字面で見る。
-    !(lib.hasInfix "/" ipv6)
-    && lib.length pieces == 8
+    lib.length pieces == 8
     && lib.take 3 pieces == prefix
     &&
       lib.sublist 4 3 pieces == [

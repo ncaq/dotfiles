@@ -43,4 +43,5 @@ judge now alertWindow (Just events) =
                 : fmap render recent
             )
       | otherwise ->
-          Critical ("certspotter CRITICAL: new certificate transparency events" : fmap render recent)
+          Critical
+            ("certspotter CRITICAL: new certificate transparency events" : fmap render recent)

@@ -74,7 +74,8 @@ tests = describe "judge" do
     judged [backlogAgo (window + 1)] `shouldBe` Ok "certspotter OK"
   it "監視の不調と証明書のイベントが混ざっていたらCRITICALにして、両方をログの順に出す" do
     judged [backlogAgo 100, ago 50, backlogAgo 10]
-      `shouldBe` Critical [headline, render (backlogAgo 100), render (ago 50), render (backlogAgo 10)]
+      `shouldBe` Critical
+        [headline, render (backlogAgo 100), render (ago 50), render (backlogAgo 10)]
   it "古い証明書のイベントと新しい監視の不調ならWARNING" do
     judged [ago (window + 1), backlogAgo 10]
       `shouldBe` Warning [degradedHeadline, render (backlogAgo 10)]

@@ -76,7 +76,7 @@ tests = describe "check" do
         ( notificationFrom
             ( variables
                 [ ("EVENT", "error")
-                , ("SUMMARY", "Backlog of size 92920662 from https://eszigno2027h1.mon.ct.e-szigno.hu/")
+                , ("SUMMARY", "Backlog of size 92920662 from https://mon.ct.example.com/")
                 , ("TEXT_FILENAME", "/var/lib/certspotter/healthchecks/2026-11-13T15:44:08Z.txt")
                 ]
             )

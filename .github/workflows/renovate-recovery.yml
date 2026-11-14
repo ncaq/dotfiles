@@ -194,7 +194,7 @@ jobs:
             cat "${config}/plugins.txt"
             echo "END_OF_PLUGINS"
           } >>"$GITHUB_OUTPUT"
-      - uses: anthropics/claude-code-action@4fa93a88de49bbef68b10eb15aabedf28ca0e1ed # v1.0.271
+      - uses: anthropics/claude-code-action@4d75e5f390ee76b2e09c1980ecc99ff3a2e088c8 # v1.0.275
         id: claude
         env:
           # `use_commit_signing`のコミット先のブランチです。

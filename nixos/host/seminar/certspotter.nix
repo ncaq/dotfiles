@@ -8,7 +8,8 @@
 let
   # certspotterのhookが検知したイベントを1行のJSONとして追記するログ。
   eventsLog = "/var/lib/certspotter/events.log";
-  # この時間以内のイベントがあればMackerelのチェックをCRITICALにします。
+  # この時間以内のイベントがあればMackerelのチェックをWARNINGかCRITICALにします。
+  # 証明書の発見はCRITICALで、追従できないCTログがあるといった監視の不調だけならWARNINGです。
   # アラートが一定期間開いたままになることで見落としを防ぎます。
   alertWindowSeconds = 24 * 60 * 60;
 

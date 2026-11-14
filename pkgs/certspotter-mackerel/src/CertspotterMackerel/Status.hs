@@ -14,7 +14,9 @@ import Himari
 
 data Status
   = Ok Text
-  | -- | 見出しと、イベントごとの行。
+  | -- | 監視の一部が不調である。見出しと、イベントごとの行。
+    Warning [Text]
+  | -- | 人が確かめるべきイベントがある。見出しと、イベントごとの行。
     Critical [Text]
   | -- | 監視そのものができていない。OKにもCRITICALにもしない。
     Unknown Text
@@ -24,6 +26,7 @@ data Status
 statusLines :: Status -> [Text]
 statusLines = \case
   Ok message -> [message]
+  Warning messages -> messages
   Critical messages -> messages
   Unknown message -> [message]
 
@@ -31,6 +34,7 @@ statusLines = \case
 statusExitCode :: Status -> ExitCode
 statusExitCode = \case
   Ok _ -> ExitSuccess
+  Warning _ -> ExitFailure 1
   Critical _ -> ExitFailure 2
   Unknown _ -> ExitFailure 3
 

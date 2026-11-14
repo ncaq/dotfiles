@@ -76,6 +76,23 @@ tests = do
         result `shouldBe` Left @ExitCode @() (ExitFailure 1)
         gitText repository ["status", "--porcelain"] >>= (`shouldBe` "")
         doesPathExist (repository </> lastCommitFile) >>= (`shouldBe` False)
+    it "注入の途中でGitが失敗したら、失敗を伝えて書いたファイルを残さない" do
+      withRepository \repository -> do
+        -- indexのロックを置いて、ファイルを書いた後の`git add`を失敗させる。
+        write repository ".git/index.lock" ""
+        result <- try (quietly (withStagedLastCommit repository (pure ())))
+        result
+          `shouldBe` Left @GitFailure @()
+            (GitFailed ["add", "-f", "--", convert lastCommitFile] (ExitFailure 128))
+        doesPathExist (repository </> lastCommitFile) >>= (`shouldBe` False)
+    it "indexから外せなくても、処理の結果を返してファイルを消す" do
+      withRepository \repository -> do
+        -- 処理の中でindexのロックを置いて、後片付けの`git reset`を失敗させる。
+        result <-
+          quietly . withStagedLastCommit repository $
+            "done" <$ write repository ".git/index.lock" ""
+        result `shouldBe` ("done" :: Text)
+        doesPathExist (repository </> lastCommitFile) >>= (`shouldBe` False)
     it "元からあった変更は後片付けで失わない" do
       withRepository \repository -> do
         write repository "tracked" "changed\n"

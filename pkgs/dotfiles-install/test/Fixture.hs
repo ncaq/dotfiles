@@ -13,12 +13,14 @@ import Himari
 -- | コミットを1つ持つリポジトリを用意して渡し、終わったら一時ディレクトリごと消す。
 --
 -- ブランチは`master`で、コミットの件名は`feat(test): initial`にする。
--- 追跡しているファイルは`tracked`だけである。
+-- 追跡しているファイルは`tracked`と`.gitignore`である。
+-- 実際のリポジトリと同じく、注入するファイルは`.gitignore`で無視しておく。
 withRepository :: (MonadUnliftIO m) => (FilePath -> m a) -> m a
 withRepository action = withSystemTempDirectory "dotfiles-install" \repository -> do
   git repository ["init", "--quiet", "--initial-branch=master"]
   write repository "tracked" "initial\n"
-  git repository ["add", "tracked"]
+  write repository ".gitignore" "/last-commit.json\n"
+  git repository ["add", "tracked", ".gitignore"]
   git repository ["commit", "--quiet", "-m", "feat(test): initial"]
   action repository
 

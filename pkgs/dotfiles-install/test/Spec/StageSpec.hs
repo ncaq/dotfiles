@@ -14,6 +14,10 @@ stagedContent repository =
   quietly . withStagedLastCommit repository . liftIO $
     eitherDecodeFileStrict (repository </> lastCommitFile)
 
+-- | 実際のリポジトリの件名と同じく日本語を含み、JSONでエスケープが要る文字も含む件名。
+japaneseSubject :: Text
+japaneseSubject = "feat(test): 日本語の件名と\"引用符\"と\\バックスラッシュ"
+
 tests :: TopSpec
 tests = do
   describe "readLastCommit" do
@@ -61,6 +65,20 @@ tests = do
                   Right
                     [aesonQQ|{
                       "subject": "feat(test): initial",
+                      "dirty": false,
+                      "branch": "master"
+                    }|]
+              )
+    it "件名の日本語や引用符やバックスラッシュをそのまま伝える" do
+      withRepository \repository -> do
+        write repository "tracked" "changed\n"
+        git repository ["commit", "--quiet", "-am", convert japaneseSubject]
+        readLastCommit repository >>= (`shouldBe` LastCommit japaneseSubject False "master")
+        stagedContent repository
+          >>= ( `shouldBe`
+                  Right
+                    [aesonQQ|{
+                      "subject": "feat(test): 日本語の件名と\"引用符\"と\\バックスラッシュ",
                       "dirty": false,
                       "branch": "master"
                     }|]

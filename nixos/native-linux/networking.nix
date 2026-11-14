@@ -2,8 +2,12 @@
 let
   publicDns = import ../../lib/public-dns.nix;
   # systemd-resolvedへ渡す、DNS over TLSで確かめる名前付きの形。
-  withName = servers: map (server: "${server.address}#${server.name}") servers;
-  encryptedDns = withName publicDns;
+  # IPv6のサーバを先に並べ、IPv4を持つ時だけIPv4のサーバを後ろに足す。
+  encryptedDns =
+    hasIpv4:
+    map (server: "${server.address}#${server.name}") (
+      publicDns.ipv6 ++ lib.optionals hasIpv4 publicDns.ipv4
+    );
 in
 {
   # コンテナのsystemd-resolvedもホストと同じ公開DNSを使う。
@@ -14,10 +18,12 @@ in
     type = lib.types.attrsOf (
       lib.types.submodule (
         { config, ... }:
+        let
+          # 自分のネットワークを持たないコンテナはホストのIPv4をそのまま使える。
+          hasIpv4 = !config.privateNetwork || config.localAddress != null;
+        in
         {
-          config.config.services.resolved.settings.Resolve.FallbackDNS = withName (
-            lib.filter (server: config.localAddress != null || lib.hasInfix ":" server.address) publicDns
-          );
+          config.config.services.resolved.settings.Resolve.FallbackDNS = encryptedDns hasIpv4;
         }
       )
     );
@@ -34,7 +40,7 @@ in
     # NetworkManagerが既定で有効にするが、
     # モデムを持つホストは無いので動かさない。
     modemmanager.enable = false;
-    nameservers = encryptedDns;
+    nameservers = encryptedDns true;
   };
 
   config.programs = {
@@ -54,7 +60,7 @@ in
         # しかし念の為Tailscaleが外れた時も比較的安全にDNSが解決できるように、
         # 本体の設定でもDNS over TLSを利用するようにします。
         DNSOverTLS = "true";
-        FallbackDNS = encryptedDns;
+        FallbackDNS = encryptedDns true;
         # LLMNRはDNSで引けなかった名前をリンクローカルにマルチキャストで問い合わせて、
         # 名乗り出た相手を認証無しに信じる仕組みなので、
         # 同じLANにいる攻撃者が任意の名前を自分に向けられる(Responder系の攻撃)。

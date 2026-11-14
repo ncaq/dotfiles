@@ -50,10 +50,8 @@
 let
   hasIpv4 = addr.guest4 != null;
   ipv4 = list: if hasIpv4 then list else [ ];
-  isIpv6 = address: builtins.match ".*:.*" address != null;
-  dns = builtins.filter (address: hasIpv4 || isIpv6 address) (
-    map (server: server.address) (import ./public-dns.nix)
-  );
+  publicDns = import ./public-dns.nix;
+  dns = map (server: server.address) (publicDns.ipv6 ++ ipv4 publicDns.ipv4);
 in
 {
   host."20-${tap}" = {

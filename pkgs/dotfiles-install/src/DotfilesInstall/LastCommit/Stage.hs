@@ -36,22 +36,23 @@ withStagedLastCommit
   :: (MonadLogger m, MonadThrow m, MonadUnliftIO m) => FilePath -> m a -> m a
 withStagedLastCommit repository action = do
   lastCommit <- readLastCommit repository
-  (stage lastCommit *> action) `finally` unstage
+  -- ファイルを書くことと消すこと、stagingすることと外すことを、それぞれ対にする。
+  -- 書いた後のstagingで失敗しても、外側の対がファイルを消す。
+  bracket_ (write lastCommit) discard (bracket_ add reset action)
  where
   path = repository </> lastCommitFile
-  stage lastCommit = do
+  write lastCommit = do
     logInfoN ("最新のコミットの情報を注入します: " <> convert lastCommitFile)
     writeBinaryFile path (convert (encode lastCommit))
-    gitChecked repository ["add", "-f", "--", convert lastCommitFile]
+  add = gitChecked repository ["add", "-f", "--", convert lastCommitFile]
   -- 戻せなくても害の無いファイルが残るだけなので、記録だけして続ける。
-  unstage = do
-    reset <- gitRun repository ["reset", "--quiet", "--", convert lastCommitFile]
-    unless (reset == ExitSuccess) $
-      logWarnN ("注入したファイルをindexから外せませんでした: " <> convert (show reset))
-    exists <- doesFileExist path
-    when exists discard
+  reset = do
+    code <- gitRun repository ["reset", "--quiet", "--", convert lastCommitFile]
+    unless (code == ExitSuccess) $
+      logWarnN ("注入したファイルをindexから外せませんでした: " <> convert (show code))
+  discard = doesFileExist path >>= (`when` remove)
   -- `trash`があればそちらで消して、無い環境ではそのまま消す。
-  discard =
+  remove =
     findExecutable "trash" >>= \case
       Just trash -> do
         code <- runProcess (proc trash [path])

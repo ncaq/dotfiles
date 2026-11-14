@@ -3,7 +3,7 @@
 -- NixOSモジュールが包むラッパーが設定する。
 --
 -- * `CERTSPOTTER_EVENTS_LOG`: hookが追記してチェックが読むログのパス。
--- * `CERTSPOTTER_ALERT_WINDOW_SECONDS`: この秒数以内のイベントがあればチェックをCRITICALにする。
+-- * `CERTSPOTTER_ALERT_WINDOW_SECONDS`: この秒数以内のイベントがあればチェックをWARNINGかCRITICALにする。
 -- * `CERTSPOTTER_SERVICE_UNIT`: チェックが動いていることを確かめるsystemdのユニット。
 --   無いか空ならば確かめない。
 module CertspotterMackerel.Config

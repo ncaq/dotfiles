@@ -37,7 +37,16 @@ inputs.nix-on-droid.lib.nixOnDroidConfiguration {
         # 自動でリネームするのは合理的。
         etcBackupExtension = ".bak";
         # Tailscale前提のDNS設定。
-        etc."resolv.conf".source = ./resolv.conf;
+        # MagicDNSのリゾルバはIPv4とIPv6の両方のアドレスで待ち受けているので、
+        # IPv6を先に並べてIPv4を予備にする。
+        # 検索ドメインはtailnetの名前から組み立てる(`lib/tailnet.nix`)。
+        # nix-on-droid自身が公開DNSを書いた`text`を定義していて、
+        # `text`で書くと行が連結されるので、`source`で丸ごと置き換える。
+        etc."resolv.conf".source = pkgs.writeText "resolv.conf" ''
+          search ${import ../lib/tailnet.nix}
+          nameserver fd7a:115c:a1e0::53
+          nameserver 100.100.100.100
+        '';
       };
       # Nix-on-Droid特有のAndroid連携設定。
       android-integration = {

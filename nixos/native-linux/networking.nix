@@ -1,27 +1,29 @@
-_:
+{ lib, ... }:
 let
-  # DNS over TLSが利用できるPublic DNSサーバーのリスト。
-  # CloudflareのDNSリゾルバが稀に不調になることがあるためGoogleでも解決できるように、
-  # 両者を混在させます。
-  encryptedDns = [
-    # Cloudflare
-    # IPv4
-    "1.1.1.1#one.one.one.one"
-    "1.0.0.1#one.one.one.one"
-    # IPv6
-    "2606:4700:4700::1111#one.one.one.one"
-    "2606:4700:4700::1001#one.one.one.one"
-    # Google
-    # IPv4
-    "8.8.8.8#dns.google"
-    "8.8.4.4#dns.google"
-    # IPv6
-    "2001:4860:4860::8888#dns.google"
-    "2001:4860:4860::8844#dns.google"
-  ];
+  publicDns = import ../../lib/public-dns.nix;
+  # systemd-resolvedへ渡す、DNS over TLSで確かめる名前付きの形。
+  withName = servers: map (server: "${server.address}#${server.name}") servers;
+  encryptedDns = withName publicDns;
 in
 {
-  networking = {
+  # コンテナのsystemd-resolvedもホストと同じ公開DNSを使う。
+  # コンテナはDNSサーバを教わらないので、フォールバックの一覧がそのまま使われる。
+  # 何も書かないとsystemdに組み込まれた一覧になり、IPv4のサーバが先に並ぶ。
+  # IPv4を持たないコンテナからはIPv4のサーバに届かないので外す。
+  options.containers = lib.mkOption {
+    type = lib.types.attrsOf (
+      lib.types.submodule (
+        { config, ... }:
+        {
+          config.config.services.resolved.settings.Resolve.FallbackDNS = withName (
+            lib.filter (server: config.localAddress != null || lib.hasInfix ":" server.address) publicDns
+          );
+        }
+      )
+    );
+  };
+
+  config.networking = {
     networkmanager = {
       enable = true;
       # NMが「Wired connection 1」のような一時プロファイル(nm-generated=true)を、
@@ -35,13 +37,13 @@ in
     nameservers = encryptedDns;
   };
 
-  programs = {
+  config.programs = {
     nm-applet = {
       enable = true;
     };
   };
 
-  services.resolved = {
+  config.services.resolved = {
     enable = true;
     settings = {
       Resolve = {

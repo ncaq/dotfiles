@@ -11,14 +11,13 @@
   ホストとゲストはTAPで1対1に繋がるだけなので、
   ホスト側は/128のアドレスにゲストへのルートを足す。
   ゲスト側はホストをゲートウェイにして、
-  名前解決は公開DNSへ投げる。
+  名前解決は`lib/public-dns.nix`の公開DNSへ投げる。
   ゲストの出口はホストの`local.machineEgress`で絞るので、
   LANのDNSは使わせない。
 
   IPv4は`addr`がIPv4のアドレスを持つ時だけ同じ形で足す。
   持たせる基準は`lib/machine-address4.nix`に書いてある。
-  ホストとゲストの間はIPv6で繋ぐので、
-  公開DNSもIPv6のものを先に並べる。
+  IPv4を持たないゲストからはIPv4の公開DNSにも届かないので、それも外す。
 
   `host`は`systemd.network.networks`へマージできる属性セットを、
   `guest`はゲストの`systemd.network`にそのまま渡せる属性セットを返す。
@@ -51,6 +50,10 @@
 let
   hasIpv4 = addr.guest4 != null;
   ipv4 = list: if hasIpv4 then list else [ ];
+  isIpv6 = address: builtins.match ".*:.*" address != null;
+  dns = builtins.filter (address: hasIpv4 || isIpv6 address) (
+    map (server: server.address) (import ./public-dns.nix)
+  );
 in
 {
   host."20-${tap}" = {
@@ -71,18 +74,7 @@ in
       networkConfig = {
         Address = [ "${addr.guest6}/64" ] ++ ipv4 [ "${addr.guest4}/24" ];
         Gateway = [ addr.host6 ] ++ ipv4 [ addr.host4 ];
-        DNS = [
-          "2606:4700:4700::1111"
-          "2606:4700:4700::1001"
-          "2001:4860:4860::8888"
-          "2001:4860:4860::8844"
-        ]
-        ++ ipv4 [
-          "1.1.1.1"
-          "1.0.0.1"
-          "8.8.8.8"
-          "8.8.4.4"
-        ];
+        DNS = dns;
       };
     };
   };

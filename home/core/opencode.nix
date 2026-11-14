@@ -23,27 +23,9 @@ let
     hostName = ollamaHostName;
     tailnet = import ../../lib/tailnet.nix;
   };
-  # providerへ載せるモデル。
-  # 接続先のgeneralに定義しているものだけを載せます。
-  # freedom側のモデルはコーディング向きではないためです。
-  #
-  # `limit`を書かないとOpenCodeは接続先が扱える長さを知りません。
-  # models.devに載っていない素のproviderなので、
-  # 他所から引いてくる当てもありません。
-  # `context`はモデルが一度に保持できるトークンの総数で、
-  # `output`は1回の応答の上限です。
-  # 配分の考え方は`lib/ollama-context.nix`にあります。
-  ollamaModels =
-    let
-      ollamaContext = import ../../lib/ollama-context.nix;
-      budget = ollamaContext.budget ollamaContext.length.${ollamaAccelerator};
-      modelNames = import ../../lib/ollama-model-names.nix;
-    in
-    lib.genAttrs modelNames.${ollamaAccelerator}.general (_: {
-      limit = {
-        inherit (budget) context output;
-      };
-    });
+  # providerのモデルごとのcontextの長さ。
+  # 全てのモデルに付ける理由は`lib/ollama-model-limit.nix`にあります。
+  ollamaModels = import ../../lib/ollama-model-limit.nix { inherit lib; } ollamaAccelerator;
 in
 {
   programs.opencode = {

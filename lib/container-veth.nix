@@ -2,16 +2,12 @@
   NixOS Containerのvethへ、
   ホスト側からアドレスとルートを設定する定義を生成する関数。
 
-  何も宣言しないとsystemdに同梱の`80-container-ve.network`が適用されて、
-  link localアドレスと動的な/28がvethに乗る。
-  `hostAddress`は/32でしか乗らないため、
-  コンテナ宛の送信元アドレスがlink local側から選ばれてしまい、
-  コンテナ側でホスト側のアドレスからの接続だけを許可しているルールにマッチしない。
-
   NixOSコンテナモジュールのExecStartPostはコンテナのdefault target到達後に実行されるため、
   コンテナ内のサービスが起動する時点ではホスト側のネットワーク設定が終わっていない。
   ネットワークを必要とするサービスがコンテナ内にあるとデッドロックする。
   systemd-networkdはvethの作成直後に設定を適用するのでこの順序問題も起きない。
+  ここで宣言する`.network`が先に一致するので、
+  systemdに同梱の`80-container-ve.network`はこのvethには使われない。
 
   NixOSコンテナモジュールが生成する`postStart`は`ip addr add`と`ip route add`を使うため、
   systemd-networkdが先に設定済みだとEEXISTで失敗する。

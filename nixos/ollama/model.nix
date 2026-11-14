@@ -87,7 +87,7 @@ let
   # Ollamaにはその引数を渡す手段が無い。
   # 長さはOpenCodeの設定も必要とするので`lib/ollama-context.nix`が持っている。
   plamoTranslateParameters = {
-    num_ctx = (import ../../lib/ollama-context.nix).length.translate;
+    num_ctx = (import ../../lib/ollama-context.nix).translateLength;
     stop = "<|plamo:tag|>";
     temperature = 0;
   };

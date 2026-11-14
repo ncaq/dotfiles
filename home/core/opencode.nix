@@ -58,7 +58,7 @@ let
     lib.genAttrs (modelNames.general ++ modelNames.freedom) (
       _: limitOf ollamaContext.length.${ollamaAccelerator}
     )
-    // lib.genAttrs modelNames.translate (_: limitOf ollamaContext.length.translate);
+    // lib.genAttrs modelNames.translate (_: limitOf ollamaContext.translateLength);
 in
 {
   programs.opencode = {

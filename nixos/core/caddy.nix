@@ -39,10 +39,10 @@
     #
     # `:2020`はadmin APIの既定の`2019`の隣というだけの番号です。
     # ホスト名を書くとlocal CAによる自動HTTPSの対象になってしまうため、
-    # ポートだけを書いて`bind`で127.0.0.1に限定し、
+    # ポートだけを書いて`bind`でIPv6のloopbackの`::1`に限定し、
     # 同じホストの監視エージェントからのみ届くようにします。
     services.caddy.virtualHosts.":2020".extraConfig = ''
-      bind 127.0.0.1
+      bind [::1]
       respond /health 200
     '';
   };

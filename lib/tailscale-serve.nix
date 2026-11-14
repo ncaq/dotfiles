@@ -156,8 +156,10 @@ in
           RemainAfterExit = true;
           # Tailscale Serviceは設定をtailscaledへ永続化してコマンド自体は終了する。
           ExecStart = [
-            (serialize "${tailscale}/bin/tailscale serve --service=${serveCfg.service} --https=443 http://127.0.0.1:${toString serveCfg.port}")
-            (serialize "${tailscale}/bin/tailscale serve --service=${serveCfg.service} --http=80 http://127.0.0.1:${toString cfg.redirectPort}")
+            # 転送先はIPv6のloopbackで書く。
+            # `tailscale serve`は`::1`も`127.0.0.1`や`localhost`と同じくローカルの転送先として扱う。
+            (serialize "${tailscale}/bin/tailscale serve --service=${serveCfg.service} --https=443 http://[::1]:${toString serveCfg.port}")
+            (serialize "${tailscale}/bin/tailscale serve --service=${serveCfg.service} --http=80 http://[::1]:${toString cfg.redirectPort}")
           ];
           # endpoint設定は残して、次回起動時にそのまま再advertiseできるようにする。
           ExecStop = serialize "${tailscale}/bin/tailscale serve drain ${serveCfg.service}";
@@ -185,7 +187,7 @@ in
     services.caddy = {
       enable = true;
       virtualHosts.":${toString cfg.redirectPort}".extraConfig = ''
-        bind 127.0.0.1
+        bind [::1]
         # クライアントが送ったHostをそのままリダイレクト先に使うと、
         # tailnet内の任意のプロセスから外部のホストへ誘導できるオープンリダイレクトになる。
         # 正規のService名を起点にしたフィッシングの踏み台にされうるので、

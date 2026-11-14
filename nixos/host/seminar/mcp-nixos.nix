@@ -111,7 +111,7 @@ in
         enable = true;
         virtualHosts.":8080".extraConfig = ''
           handle /mcp* {
-            reverse_proxy http://127.0.0.1:8081
+            reverse_proxy http://[::1]:8081
           }
           handle {
             root * ${webRoot}
@@ -134,7 +134,7 @@ in
             # 外部からはCaddy経由でアクセスするのでループバックのみで待ち受けます。
             Environment = [
               "MCP_NIXOS_TRANSPORT=http"
-              "MCP_NIXOS_HOST=127.0.0.1"
+              "MCP_NIXOS_HOST=::1"
               "MCP_NIXOS_PORT=8081"
             ];
             ExecStart = "${pkgs.mcp-nixos}/bin/mcp-nixos";

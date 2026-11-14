@@ -22,12 +22,12 @@ let
   # 死活監視用のエンドポイントを確認します。
   # 監視エージェントがここを叩いているので、
   # パスやポートが変わると監視だけが静かに落ちます。
-  # 127.0.0.1に限定できているかも合わせて見ます。
+  # `::1`に限定できているかも合わせて見ます。
   health = # python
     ''
-      machine.wait_for_open_port(2020, "127.0.0.1")
-      machine.succeed("${curl} --fail --silent --max-time 3 http://127.0.0.1:2020/health")
-      machine.fail("${curl} --fail --silent --max-time 3 http://[::1]:2020/health")
+      machine.wait_for_open_port(2020, "::1")
+      machine.succeed("${curl} --fail --silent --max-time 3 http://[::1]:2020/health")
+      machine.fail("${curl} --fail --silent --max-time 3 http://127.0.0.1:2020/health")
     '';
 in
 lib.optionalString config.services.caddy.enable (admin + health)

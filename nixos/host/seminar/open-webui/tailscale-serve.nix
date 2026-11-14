@@ -33,7 +33,7 @@ in
   # `text/event-stream`を検出するとバッファリングも無効にするため、
   # チャットのストリーミング表示のための追加設定は要らない。
   services.caddy.virtualHosts.":${toString port}".extraConfig = ''
-    bind 127.0.0.1
+    bind [::1]
     reverse_proxy http://[${addr.guest6}]:${toString port} {
       # コンテナのnspawnがbootを終えた時点では、
       # 中のOpen WebUIはまだlistenしていないので接続は拒否される。

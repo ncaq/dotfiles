@@ -46,7 +46,7 @@ in
         environment = {
           # 渡すのはホストとポートだけにして、スキームはプログラムの側で固定する。
           # comfy-workflowの`COMFYUI_AUTHORITY`と同じ形に揃える。
-          COMFYUI_AUTHORITY = "127.0.0.1:${toString config.services.comfyui.port}";
+          COMFYUI_AUTHORITY = "[::1]:${toString config.services.comfyui.port}";
           # 確認の間隔。
           # 活動時刻はComfyUI自身の記録から取るので、
           # 間隔を詰めても取りこぼしは減らない。

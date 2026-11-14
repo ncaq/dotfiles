@@ -43,7 +43,7 @@ in
   # ホスト名なしのアドレスにしてHTTPだけで待ち受ける。
   # ホスト名を書くとCaddyが自動HTTPSを有効にしてしまう。
   services.caddy.virtualHosts.":${toString port}".extraConfig = ''
-    bind 127.0.0.1
+    bind [::1]
     reverse_proxy http://[${addr.guest6}]:${toString port}
   '';
 

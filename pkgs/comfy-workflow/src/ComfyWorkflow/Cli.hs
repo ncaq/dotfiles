@@ -132,7 +132,10 @@ typeName (OtherWidget other) = other
 -- | ワークフローの名前とUI形式のJSONのパスと、残りのコマンドライン引数を受けて実行する。
 run :: (MonadLogger m, MonadThrow m, MonadUnliftIO m) => Text -> FilePath -> [String] -> m ()
 run name workflowPath argv = do
-  authority <- fromMaybe "127.0.0.1:8188" <$> lookupEnv "COMFYUI_AUTHORITY"
+  -- 既定の接続先はアドレスファミリを決めずに`localhost`で書く。
+  -- ComfyUI自身の既定の待ち受けは127.0.0.1なので、
+  -- `::1`に決め打ちすると何も設定していないComfyUIへ繋がらない。
+  authority <- fromMaybe "localhost:8188" <$> lookupEnv "COMFYUI_AUTHORITY"
   target <- either (throwM . ComfyFailure) pure (parseAuthority (convert authority))
   outputDir <- lookupEnv "COMFYUI_OUTPUT_DIR"
   workflowValue <- readWorkflow workflowPath

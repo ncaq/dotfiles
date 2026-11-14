@@ -91,7 +91,11 @@ in
               db_engine = "lmdb";
               metadata_auto_snapshot_interval = "6h";
               replication_factor = 1;
-              rpc_bind_addr = "127.0.0.1:3901";
+              rpc_bind_addr = "[::1]:3901";
+              # 他のノードと`garage`のCLIがこのノードへ繋ぐ先。
+              # 省くとCLIは`rpc_bind_addr`ではなく既定の`127.0.0.1:3901`へ繋ぎに行って失敗する。
+              # 単一ノードなので待ち受けと同じloopbackを書く。
+              rpc_public_addr = "[::1]:3901";
               s3_api = {
                 s3_region = "garage";
                 api_bind_addr = "[::]:3900";

@@ -4,6 +4,7 @@
 module DotfilesInstall.Git
   ( gitRun
   , gitChecked
+  , gitDiffers
   , gitText
   ) where
 
@@ -23,6 +24,16 @@ gitChecked :: (MonadIO m, MonadThrow m) => FilePath -> [Text] -> m ()
 gitChecked repository args = do
   code <- gitRun repository args
   unless (code == ExitSuccess) (throwM (GitFailed args code))
+
+-- | `git diff --quiet`のように、差分の有無を終了コードで答えるコマンドを実行する。
+--
+-- 差分が無い時の0と、ある時の1だけを答えとして受け取り、それ以外は失敗として例外にする。
+gitDiffers :: (MonadIO m, MonadThrow m) => FilePath -> [Text] -> m Bool
+gitDiffers repository args =
+  gitRun repository args >>= \case
+    ExitSuccess -> pure False
+    ExitFailure 1 -> pure True
+    code -> throwM (GitFailed args code)
 
 -- | Gitを実行して、標準出力を末尾の改行を除いた文字列として返す。失敗したら例外にする。
 gitText :: (MonadIO m, MonadThrow m) => FilePath -> [Text] -> m Text

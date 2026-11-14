@@ -8,7 +8,7 @@ module DotfilesInstall.LastCommit.Stage
   , withStagedLastCommit
   ) where
 
-import DotfilesInstall.Git (gitChecked, gitRun, gitText)
+import DotfilesInstall.Git (gitChecked, gitDiffers, gitRun, gitText)
 import DotfilesInstall.LastCommit (LastCommit (..))
 import Himari
 
@@ -25,10 +25,9 @@ readLastCommit repository =
     <*> gitText repository ["rev-parse", "--abbrev-ref", "HEAD"]
 
 -- | 追跡しているファイルに、コミットしていない変更があるか。
-hasChanges :: (MonadIO m) => FilePath -> m Bool
+hasChanges :: (MonadIO m, MonadThrow m) => FilePath -> m Bool
 hasChanges repository =
-  any (/= ExitSuccess)
-    <$> traverse (gitRun repository) [["diff", "--quiet"], ["diff", "--cached", "--quiet"]]
+  or <$> traverse (gitDiffers repository) [["diff", "--quiet"], ["diff", "--cached", "--quiet"]]
 
 -- | 最新のコミットの情報を注入してから処理を走らせ、どう終わっても元に戻す。
 --

@@ -266,7 +266,9 @@ NixOSでは適用前に最新コミットの情報を`last-commit.json`として
 
 - NixOSではsudoを使いますがユーザ側によって解決されるので気にしなくても良いです
 - 実行中は`last-commit.json`のstagingにより一時的にgitがdirty状態に見えますが、
-  終了時に自動でクリーンアップされます
+  正常に終わった時も、失敗した時やCtrl-Cで止めた時も、終了時に自動でクリーンアップされます
+- SIGTERMやSIGHUPで止められた時はクリーンアップされず、`last-commit.json`がstagingされたまま残ります。
+  その時は`git reset -- last-commit.json`で外してからファイルを消してください
 
 # リポジトリ構成
 

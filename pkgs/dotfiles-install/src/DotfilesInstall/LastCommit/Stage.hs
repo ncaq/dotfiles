@@ -29,7 +29,10 @@ hasChanges :: (MonadIO m, MonadThrow m) => FilePath -> m Bool
 hasChanges repository =
   or <$> traverse (gitDiffers repository) [["diff", "--quiet"], ["diff", "--cached", "--quiet"]]
 
--- | 最新のコミットの情報を注入してから処理を走らせ、どう終わっても元に戻す。
+-- | 最新のコミットの情報を注入してから処理を走らせ、終わったら元に戻す。
+--
+-- 処理が正常に終わった時と、例外で終わった時は元に戻す。Ctrl-Cで止めた時も例外になるので戻す。
+-- SIGTERMやSIGHUPで止められた時は戻さず、注入したファイルがindexにも作業ツリーにも残る。
 --
 -- 注入すると必ず変更がある状態になるので、情報は注入の前に集める。
 withStagedLastCommit

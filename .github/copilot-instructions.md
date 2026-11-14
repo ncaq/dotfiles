@@ -247,7 +247,11 @@ CHECK_OUTPUT=ciJobs ./check.sh
 ./install.sh
 ```
 
-このスクリプトは実行環境を自動判別して適切な適用コマンドを呼び分けます。
+`install.sh`は入口で、
+処理の本体である`pkgs/dotfiles-install`のHaskell実装を`nix run`でビルドして切り替えるだけです。
+適用の振る舞いを変える時は`install.sh`ではなく`pkgs/dotfiles-install`を編集してください。
+
+本体は実行環境を自動判別して適切な適用コマンドを呼び分けます。
 
 - NixOS: `sudo nixos-rebuild switch --flake ".#$(hostname)"`
 - Termux(nix-on-droid): `nix-on-droid switch --flake .`

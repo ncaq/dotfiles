@@ -49,7 +49,7 @@ test_runs/
 
 # Project
 
-# `install.sh`がrebuild時に一時的にstagingするファイル。
+# `install.sh`が呼ぶ`dotfiles-install`がrebuild時に一時的にstagingするファイル。
 # flakeはstagingされたファイルを見るため、
 # `git add -f`で注入します。
 /last-commit.json

@@ -11,9 +11,9 @@ import Himari
 -- | 指定のリポジトリのflakeの設定を、環境の種類に合ったコマンドで適用する。
 --
 -- NixOSではブートエントリのラベルに使うコミットの情報を、適用の間だけ注入する。
--- 適用のコマンドの終了コードをそのまま返す。
+-- 適用のコマンドが失敗した時は、その終了コードを例外として投げる。
 install
-  :: (MonadLogger m, MonadThrow m, MonadUnliftIO m) => FilePath -> Platform -> m ExitCode
+  :: (MonadLogger m, MonadThrow m, MonadUnliftIO m) => FilePath -> Platform -> m ()
 install repository platform = case platform of
   NixOS _ -> withStagedLastCommit repository switch
   NixOnDroid -> switch
@@ -22,5 +22,7 @@ install repository platform = case platform of
   command = switchCommand platform
   switch = do
     logInfoN ("設定を適用します: " <> commandLine command)
-    runProcess . setWorkingDir repository $
-      proc (convert command.program) (convert <$> command.arguments)
+    code <-
+      runProcess . setWorkingDir repository $
+        proc (convert command.program) (convert <$> command.arguments)
+    unless (code == ExitSuccess) (throwM code)

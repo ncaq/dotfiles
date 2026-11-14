@@ -15,16 +15,14 @@ import Options.Applicative
 -- | 今の環境を調べて、作業ディレクトリのflakeの設定を適用する。
 --
 -- 適用のコマンドが失敗した時は、説明はコマンド自身が既に出しているので、
--- 終了コードをそのまま返す。
+-- `install`が投げる終了コードをそのまま伝える。
 -- それ以外の想定している失敗は理由をログに出して`ExitFailure 1`にする。
 -- 引数が誤っている時は、使い方を標準エラー出力へ出して`ExitFailure 1`にする。
 run :: (MonadLogger m, MonadThrow m, MonadUnliftIO m) => [String] -> m ()
 run argv = do
   liftIO . handleParseResult $ execParserPure defaultPrefs parserInfo argv
-  handle (report @UnsupportedArchitecture) . handle (report @GitFailure) $ do
-    platform <- detectPlatform =<< probe
-    code <- install "." platform
-    unless (code == ExitSuccess) (throwM code)
+  handle (report @UnsupportedArchitecture) . handle (report @GitFailure) $
+    install "." =<< detectPlatform =<< probe
  where
   report :: forall e m a. (Exception e, MonadLogger m, MonadThrow m) => e -> m a
   report failure = do

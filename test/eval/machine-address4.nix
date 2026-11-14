@@ -45,6 +45,7 @@ assert lib.assertMsg (rejects "192.168.100.11") "IPv4アドレスを通しまし
 assert lib.assertMsg (rejects "fdf2:a855:5a3f:100::1a") "16進の文字を通しました";
 assert lib.assertMsg (rejects "fdf2:a855:5a3f:100::256") "255を超える部分を通しました";
 assert lib.assertMsg (rejects "fdf2:a855:5a3f:256::11") "255を超えるサブネットを通しました";
+assert lib.assertMsg (rejects "fdf2:a855:5a3f:1a::11") "16進の文字を含むサブネットを通しました";
 # IPv6アドレスとして読めない入力を拒否する。
 assert lib.assertMsg (rejects "fdf2:a855:5a3f:100::11::1") "`::`が2つある入力を通しました";
 assert lib.assertMsg (rejects "fdf2:a855:5a3f:100::g") "16進でない文字を通しました";

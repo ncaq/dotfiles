@@ -32,7 +32,7 @@ let
   # 接続先。
   # ソケットアクティベーションのプロキシがホスト側で待ち受けているので、
   # コンテナのアドレスではなくループバックを指す。
-  authority = "127.0.0.1:${toString config.containers.comfyui.config.services.comfyui.port}";
+  authority = "[::1]:${toString config.containers.comfyui.config.services.comfyui.port}";
 
   mkCommand =
     name: workflow:

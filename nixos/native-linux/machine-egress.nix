@@ -40,8 +40,9 @@
 
   # IPv6
 
-  コンテナとmicroVMにはULA(`lib/machine-address6.nix`)が付いていて、
+  コンテナとmicroVMにはULA(`lib/machine-address4.nix`)が付いていて、
   NATモジュールの`enableIPv6`でmasqueradeされて外へ出る。
+  IPv4はIPv4だけのインターネットの宛先へ出るマシンにしか持たせていない。
   IPv4の`private-networks`に当たる集合はIPv6では`private-networks6`で、
   tailnetと他のコンテナを含むULA全体とリンクローカルが入る。
 
@@ -75,12 +76,13 @@
   ブートテストはルールの形だけを見る。
 
   `destinations`で個別に許す宛先は同じホスト上の他のマシンで、
-  そちらへはIPv4で繋いでいるのでIPv6の宛先は受け付けない。
+  マシン同士はIPv6で繋ぐのでIPv4の宛先は受け付けない。
 */
 { lib, config, ... }:
 let
   cfg = config.local.machineEgress;
   tailscale = config.local.tailscale;
+  parseIpv6 = import ../../lib/parse-ipv6.nix { inherit lib; };
 
   # 宣言を名前付きのリストにして、インターフェイスのパターンごとにまとめる。
   # `lib/container-ifname.nix`のワイルドカードで複数のコンテナが同じパターンに一致する時、
@@ -98,9 +100,10 @@ let
 
   # 宣言を要求するマシンの一覧。
   # アドレスを持たないコンテナ(postgresqlなど)はそもそも転送されるパケットを出せないので要求しない。
+  # IPv6だけを持つコンテナもあるので、どちらかを持っていれば対象にする。
   # microVMのホストモジュールを取り込んでいないホストでは`config.microvm`自体が無い。
   networkedContainers = lib.attrNames (
-    lib.filterAttrs (_: c: c.localAddress != null) config.containers
+    lib.filterAttrs (_: c: c.localAddress != null || c.localAddress6 != null) config.containers
   );
   vms = lib.attrNames (config.microvm.vms or { });
   expected = networkedContainers ++ vms;
@@ -133,7 +136,7 @@ let
     in
     map (
       d:
-      ''${match} ip daddr ${d.address} tcp dport { ${
+      ''${match} ip6 daddr ${d.address} tcp dport { ${
         lib.concatMapStringsSep ", " toString d.tcpPorts
       } } accept comment "${names}: to ${d.address}"''
     ) m.destinations
@@ -180,8 +183,14 @@ in
                 lib.types.submodule {
                   options = {
                     address = lib.mkOption {
-                      type = lib.types.str;
-                      description = "許す宛先のIPv4アドレス。他のマシンのゲスト側アドレスなど。";
+                      # IPv4アドレスや読めないアドレスを書くと評価で止める。
+                      # nftablesの`ip6 daddr`に渡すので、
+                      # 通してしまうとルールセットの検査で初めて失敗する。
+                      # プレフィックス長は許すと範囲で許せてしまうので受け付けない。
+                      type = lib.types.addCheck lib.types.str (address: parseIpv6 address != null) // {
+                        description = "IPv6 address without prefix length";
+                      };
+                      description = "許す宛先のIPv6アドレス。他のマシンのゲスト側アドレスなど。";
                     };
                     tcpPorts = lib.mkOption {
                       type = lib.types.nonEmptyListOf lib.types.port;

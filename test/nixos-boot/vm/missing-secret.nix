@@ -7,10 +7,17 @@
 # ユニットごと無効化しないのは、
 # 無効化すると依存するユニットからは失敗ではなく存在しないユニットに見えるからです。
 # 秘密情報が無いテストVMで起きる失敗を、そのまま残します。
+#
+# 他のユニットから依存されていない、
+# 必ず失敗するだけのユニットは無効化します。
+# 失敗がログに残るだけのノイズで、無効化しても他のユニットの振る舞いは変わりません。
 { lib, config, ... }:
 let
   noRestart = {
     serviceConfig.Restart = lib.mkForce "no";
+  };
+  disabled = {
+    enable = false;
   };
 in
 {
@@ -31,5 +38,10 @@ in
     # 秘密情報から作る環境変数のファイルを資格情報としてコンテナへ渡しています。
     // lib.optionalAttrs (config.containers ? open-webui) {
       "container@open-webui" = noRestart;
+    }
+    # Sambaのパスワードを秘密情報から読んで登録します。
+    # oneshotなので再起動はせず、smbdもこれを待たずに起動します。
+    // lib.optionalAttrs config.services.samba.enable {
+      samba-password-setup = disabled;
     };
 }

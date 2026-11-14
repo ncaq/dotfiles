@@ -15,6 +15,10 @@
 # - `internet`から除く集合に、LANとDNAT後のコンテナを含む`192.168.0.0/16`とtailnetの範囲が入っていること
 # - IPv6で`internet`から除く集合に、tailnetと他のコンテナを含むULA全体とリンクローカルが入っていること
 # - 各マシンのacceptが宣言した宛先の数だけあり、`internet`はIPv4とIPv6の1つずつで除く集合の否定で書かれていること
+# - 宣言した宛先はIPv6の`ip6 daddr`で許されていること。
+#   マシン同士はIPv6で繋ぐので、`ip daddr`に戻ると宛先へ届かなくなります。
+#   宛先の型は省略しない書き方や大文字も受け付け、nftは省略した小文字で出力するので、
+#   文字列ではなくアドレスの値として比べます
 # - 各マシンのルールの末尾と、チェイン全体の末尾がdropであること
 {
   lib,
@@ -51,6 +55,24 @@ lib.optionalString (machineEgress != { }) (
         if line.strip() and not line.strip().startswith(("table ", "chain ", "}"))
     ]
     assert "drop" in egress_rules[-1].split(), egress
+
+    import ipaddress
+
+    def ip6_daddrs(rules):
+        """ルールの行の`ip6 daddr`の直後に書かれたアドレスを値として読みます。
+
+        `ip6 daddr != @private-networks6`のようにアドレスでないものは飛ばします。
+        """
+        addresses = []
+        for rule in rules:
+            tokens = rule.split()
+            for i in range(len(tokens) - 2):
+                if tokens[i] == "ip6" and tokens[i + 1] == "daddr":
+                    try:
+                        addresses.append(ipaddress.IPv6Address(tokens[i + 2]))
+                    except ValueError:
+                        pass
+        return addresses
   ''
   + lib.concatMapStrings (
     m: # python
@@ -69,5 +91,12 @@ lib.optionalString (machineEgress != { }) (
           "@private-networks6" in r.split() and "nexthop fe80::/10" in r for r in machine_accepts
       ), machine_rules
       assert "drop" in machine_rules[-1].split(), machine_rules
-    '') (lib.attrValues machineEgress)
+      machine_daddrs = ip6_daddrs(machine_accepts)
+    ''
+    + lib.concatMapStrings (
+      d: # python
+      ''
+        assert ipaddress.IPv6Address("${d.address}") in machine_daddrs, machine_rules
+      '') m.destinations
+  ) (lib.attrValues machineEgress)
 )

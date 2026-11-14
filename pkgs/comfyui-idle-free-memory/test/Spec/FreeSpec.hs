@@ -72,7 +72,7 @@ tests = describe "freeIfNeeded" do
     -- 接続先の値が壊れている時にしか起きず、待っても直らない。
     runSimpleNoLogEnv
       ( freeIfNeeded
-          (throwM (InvalidUrlException "http://127.0.0.1:8188/free" "テスト"))
+          (throwM (InvalidUrlException "http://[::1]:8188/free" "テスト"))
           RequestFree
           idleState
       )

@@ -115,8 +115,8 @@ in
               name = "check-caddy";
               runtimeInputs = [ pkgs.curl ];
               text = ''
-                # `nixos/core/caddy.nix`が127.0.0.1限定で立てているヘルスエンドポイント。
-                if curl -f -s --max-time 3 http://127.0.0.1:2020/health > /dev/null 2>&1; then
+                # `nixos/core/caddy.nix`が`::1`限定で立てているヘルスエンドポイント。
+                if curl -f -s --max-time 3 "http://[::1]:2020/health" > /dev/null 2>&1; then
                   echo "Caddy OK"
                   exit 0
                 else
@@ -190,7 +190,7 @@ in
                 # admin APIの軽量なlivenessエンドポイント/healthを使います。
                 # /healthは認証不要で、quorumを満たせば200、不足すれば503を返します。
                 http_code=$(curl -s --max-time 3 -o /dev/null -w "%{http_code}" \
-                  http://${config.machineAddresses.garage.guest}:3903/health || true)
+                  "http://[${config.machineAddresses.garage.guest6}]:3903/health" || true)
                 if [[ "$http_code" == "200" ]]; then
                   echo "Garage OK (health HTTP $http_code)"
                   exit 0
@@ -212,7 +212,7 @@ in
               name = "check-forgejo";
               runtimeInputs = [ pkgs.curl ];
               text = ''
-                forgejo_url=http://${config.machineAddresses.forgejo.guest}:8080
+                forgejo_url="http://[${config.machineAddresses.forgejo.guest6}]:8080"
                 if curl -f -s --max-time 3 "$forgejo_url" > /dev/null 2>&1; then
                   echo "Forgejo OK"
                   exit 0
@@ -235,7 +235,7 @@ in
               runtimeInputs = [ pkgs.curl ];
               text = ''
                 http_code=$(curl -s --max-time 3 -o /dev/null -w "%{http_code}" \
-                  http://${config.machineAddresses.niks3-public.guest}:5751 || true)
+                  "http://[${config.machineAddresses.niks3-public.guest6}]:5751" || true)
                 if [[ "$http_code" =~ ^[23][0-9][0-9]$ ]]; then
                   echo "niks3-public OK (HTTP $http_code)"
                   exit 0
@@ -258,7 +258,7 @@ in
               runtimeInputs = [ pkgs.curl ];
               text = ''
                 http_code=$(curl -s --max-time 3 -o /dev/null -w "%{http_code}" \
-                  http://${config.machineAddresses.niks3-private.guest}:5751 || true)
+                  "http://[${config.machineAddresses.niks3-private.guest6}]:5751" || true)
                 if [[ "$http_code" =~ ^[23][0-9][0-9]$ ]]; then
                   echo "niks3-private OK (HTTP $http_code)"
                   exit 0
@@ -284,7 +284,7 @@ in
                 # 2xx/4xxレスポンスならサーバは動作している
                 # それ以外は異常とみなす
                 http_code=$(curl -s --max-time 3 -o /dev/null -w "%{http_code}" \
-                  http://${config.machineAddresses.mcp-nixos.guest}:8080/mcp || true)
+                  "http://[${config.machineAddresses.mcp-nixos.guest6}]:8080/mcp" || true)
                 if [[ "$http_code" =~ ^[24][0-9][0-9]$ ]]; then
                   echo "mcp-nixos OK (HTTP $http_code)"
                   exit 0
@@ -306,7 +306,7 @@ in
               name = "check-github-runner-dotfiles-x64";
               runtimeInputs = [ pkgs.iputils ];
               text = ''
-                runner_host=${config.machineAddresses.github-runner-dotfiles-x64.guest}
+                runner_host=${config.machineAddresses.github-runner-dotfiles-x64.guest6}
                 if ping -c 1 -W 2 "$runner_host" > /dev/null 2>&1; then
                   echo "GitHub Runner x64 dotfiles OK"
                   exit 0
@@ -328,7 +328,7 @@ in
               name = "check-github-runner-cdn-ncaq-net-x64";
               runtimeInputs = [ pkgs.iputils ];
               text = ''
-                runner_host=${config.machineAddresses.github-runner-cdn-ncaq-net-x64.guest}
+                runner_host=${config.machineAddresses.github-runner-cdn-ncaq-net-x64.guest6}
                 if ping -c 1 -W 2 "$runner_host" > /dev/null 2>&1; then
                   echo "GitHub Runner x64 cdn.ncaq.net OK"
                   exit 0

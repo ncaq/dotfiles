@@ -43,8 +43,8 @@ in
   # ホスト名なしのアドレスにしてHTTPだけで待ち受ける。
   # ホスト名を書くとCaddyが自動HTTPSを有効にしてしまう。
   services.caddy.virtualHosts.":${toString port}".extraConfig = ''
-    bind 127.0.0.1
-    reverse_proxy http://${addr.guest}:${toString port}
+    bind [::1]
+    reverse_proxy http://[${addr.guest6}]:${toString port}
   '';
 
   containers.niks3-private = {
@@ -54,10 +54,10 @@ in
     # PostgreSQLのpeer認証がホストと同一のUIDでの接続を要求するため、
     # pickにはできずidentity(UID分離なし、capability分離のみ)のまま。
     privateUsers = "identity";
-    hostAddress = addr.host;
-    localAddress = addr.guest;
     hostAddress6 = addr.host6;
     localAddress6 = addr.guest6;
+    hostAddress = addr.host4;
+    localAddress = addr.guest4;
     bindMounts = {
       "/run/postgresql" = {
         hostPath = "/run/postgresql";
@@ -94,7 +94,7 @@ in
           # GarageへはHTTPで転送します。
           # presigned URLはhttps://garage.ncaq.net/...のままなので、
           # 外部クライアントはCloudflare Tunnel経由でアクセスできます。
-          hosts."${addr.host}" = [ "garage.ncaq.net" ];
+          hosts."${addr.host6}" = [ "garage.ncaq.net" ];
         };
         users = {
           users.niks3-private = niks3User // {

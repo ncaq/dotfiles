@@ -25,7 +25,7 @@ in
   # `lib/tailscale-serve.nix`のリダイレクタと同じく、ホスト名なしのアドレスにしてHTTPだけで待ち受ける。
   # ホスト名を書くとCaddyが自動HTTPSを有効にしてしまう。
   services.caddy.virtualHosts.":${toString port}".extraConfig = ''
-    bind ${addr.host}
+    bind [${addr.host6}]
     reverse_proxy ${upstream} {
       # connectに失敗した時に同じ上流へ張り直す猶予。
       #

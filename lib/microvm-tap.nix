@@ -9,11 +9,15 @@
   `network.target`より後に作成されるTAPインターフェイスと相性が悪い。
 
   ホストとゲストはTAPで1対1に繋がるだけなので、
-  ホスト側は/32と/128のアドレスにゲストへのルートを足す。
+  ホスト側は/128のアドレスにゲストへのルートを足す。
   ゲスト側はホストをゲートウェイにして、
-  名前解決は公開DNSへ投げる。
+  名前解決は`lib/public-dns.nix`の公開DNSへ投げる。
   ゲストの出口はホストの`local.machineEgress`で絞るので、
   LANのDNSは使わせない。
+
+  IPv4は`addr`がIPv4のアドレスを持つ時だけ同じ形で足す。
+  持たせる基準は`lib/machine-address4.nix`に書いてある。
+  IPv4を持たないゲストからはIPv4の公開DNSにも届かないので、それも外す。
 
   `host`は`systemd.network.networks`へマージできる属性セットを、
   `guest`はゲストの`systemd.network`にそのまま渡せる属性セットを返す。
@@ -35,48 +39,40 @@
 
   - `tap`: ホスト側のTAPインターフェイス名。
     VMの`microvm.interfaces`の`id`と同じ名前を渡す
-  - `addr`: `host`と`guest`とIPv6の`host6`と`guest6`を持つアドレスの組。
+  - `addr`: IPv6の`host6`と`guest6`、IPv4の`host4`と`guest4`を持つアドレスの組。
+    IPv4を持たないマシンでは`host4`と`guest4`は`null`。
     `machineAddresses`の同名エントリをそのまま渡す
 */
 {
   tap,
   addr,
 }:
+let
+  hasIpv4 = addr.guest4 != null;
+  ipv4 = list: if hasIpv4 then list else [ ];
+  publicDns = import ./public-dns.nix;
+  dns = map (server: server.address) (publicDns.ipv6 ++ ipv4 publicDns.ipv4);
+in
 {
   host."20-${tap}" = {
     matchConfig.Name = tap;
     addresses = [
-      { Address = "${addr.host}/32"; }
       { Address = "${addr.host6}/128"; }
-    ];
+    ]
+    ++ ipv4 [ { Address = "${addr.host4}/32"; } ];
     routes = [
-      { Destination = "${addr.guest}/32"; }
       { Destination = "${addr.guest6}/128"; }
-    ];
+    ]
+    ++ ipv4 [ { Destination = "${addr.guest4}/32"; } ];
   };
   guest = {
     enable = true;
     networks."20-lan" = {
       matchConfig.Type = "ether";
       networkConfig = {
-        Address = [
-          "${addr.guest}/24"
-          "${addr.guest6}/64"
-        ];
-        Gateway = [
-          addr.host
-          addr.host6
-        ];
-        DNS = [
-          "1.1.1.1"
-          "1.0.0.1"
-          "8.8.8.8"
-          "8.8.4.4"
-          "2606:4700:4700::1111"
-          "2606:4700:4700::1001"
-          "2001:4860:4860::8888"
-          "2001:4860:4860::8844"
-        ];
+        Address = [ "${addr.guest6}/64" ] ++ ipv4 [ "${addr.guest4}/24" ];
+        Gateway = [ addr.host6 ] ++ ipv4 [ addr.host4 ];
+        DNS = dns;
       };
     };
   };

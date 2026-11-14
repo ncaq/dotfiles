@@ -3,7 +3,7 @@
 -- * `GARAGE_SETUP_NAME`: バケットのグローバルエイリアス。
 --   キーの名前と、キーファイルを渡すユーザとグループの名前も兼ねる。
 --   この名前のユーザとグループがホストに無いと、キーファイルの所有者を変えるところで失敗する。
--- * `GARAGE_SETUP_API`: GarageのAdmin APIのURL。`http://192.0.2.1:3903`のようにパスを付けずに書く。
+-- * `GARAGE_SETUP_API`: GarageのAdmin APIのURL。`http://[2001:db8::1]:3903`のようにパスを付けずに書く。
 -- * `GARAGE_SETUP_ADMIN_TOKEN_FILE`: Admin APIのトークンが書かれたファイル。
 -- * `RUNTIME_DIRECTORY`: キーファイルを書き出すディレクトリ。systemdの`RuntimeDirectory`が設定する。
 module GarageSetup.Config

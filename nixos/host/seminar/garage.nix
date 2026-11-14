@@ -51,10 +51,10 @@ in
     # identityと違いコンテナ内rootがホストのUID 0を持たなくなる。
     # garageはUNIXソケットのpeer認証を使わないためpickにできる。
     privateUsers = "pick";
-    hostAddress = addr.host;
-    localAddress = addr.guest;
     hostAddress6 = addr.host6;
     localAddress6 = addr.guest6;
+    hostAddress = addr.host4;
+    localAddress = addr.guest4;
     # pickでは素のbind mountだと所有者が無効なUIDに見えてアクセスできないため、
     # idmapオプションで数値IDをホストとコンテナで同一視させる。
     # データディレクトリはbtrfs、環境ファイルはtmpfs上にありどちらもidmap対応。
@@ -91,7 +91,11 @@ in
               db_engine = "lmdb";
               metadata_auto_snapshot_interval = "6h";
               replication_factor = 1;
-              rpc_bind_addr = "127.0.0.1:3901";
+              rpc_bind_addr = "[::1]:3901";
+              # 他のノードと`garage`のCLIがこのノードへ繋ぐ先。
+              # 省くとCLIは`rpc_bind_addr`ではなく既定の`127.0.0.1:3901`へ繋ぎに行って失敗する。
+              # 単一ノードなので待ち受けと同じloopbackを書く。
+              rpc_public_addr = "[::1]:3901";
               s3_api = {
                 s3_region = "garage";
                 api_bind_addr = "[::]:3900";

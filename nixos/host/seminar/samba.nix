@@ -17,18 +17,34 @@ in
       enable = true;
       # 全インターフェイスではなく、LANとtailnetのインターフェイスだけに開ける(下のnetworking.firewall)。
       openFirewall = false;
+      # NetBIOSの名前解決とブラウズを担うデーモン。
+      # NetBIOSを使わない理由は下の`disable netbios`に書いてある。
+      nmbd.enable = false;
       settings = {
         global = {
           # 基本設定
-          "workgroup" = "WORKGROUP";
+          # NetBIOSの名前とワークグループは書かない。
+          # 既定ではホスト名から導いた`SEMINAR`と`WORKGROUP`になり、
+          # NetBIOSを使わないので他の値にする理由も無い。
           "server string" = "Seminar Home Server";
-          "netbios name" = "SEMINAR";
           # セキュリティ設定
           "security" = "user"; # ユーザー認証必須
           "map to guest" = "never"; # ゲストアクセス禁止
           # 待ち受け先の制限は`bind interfaces only`ではなくfirewallで行う(下のnetworking.firewall)。
           # Sambaはbroadcastできないインターフェイスをbind候補から外すので、
           # point-to-pointのtailscale0には`interfaces`でどう書いてもbindできない。
+          #
+          # NetBIOSは使わない。
+          # SMB2以降は445番へ直接繋ぐので、NetBIOSのセッション(139番)が要るのはSMB1の時代のクライアントだけで、
+          # Sambaは既定でSMB1を受け付けないのでそういうクライアントはどのみち繋がらない。
+          # 名前の解決はtailnetのMagicDNSかmDNS(下のavahi)で、
+          # Windowsのエクスプローラーへの表示はWS-Discovery(下のsamba-wsdd)で足りる。
+          # NetBIOSはIPv4だけのプロトコルで、
+          # nmbdはコンテナのvethも含む全てのインターフェイスへ届かないブロードキャストを投げ続けていた。
+          "disable netbios" = "yes";
+          # 既定の待ち受けは`tcp, nbt`で、`disable netbios`だけでは`nbt`(139番)が残るので、
+          # 445番へ直接繋ぐ`tcp`だけにする。
+          "server smb transports" = "tcp";
         };
         "chihiro" = {
           "path" = "/mnt/noa/chihiro";
@@ -70,10 +86,8 @@ in
   };
 
   # SMB本体はLANとtailnetの両方から、
-  # NetBIOSやWS-Discoveryなどの探索系はLANからだけ受け付ける。
+  # WS-Discoveryの探索はLANからだけ受け付ける。
   # tailnetの端末はMagicDNS名で直接繋ぐので探索は要らない。
-  # 139(NetBIOS session)は445(direct SMB)が使えない古いクライアント用なので、
-  # tailnet側には開けない。
   #
   # インターフェイスだけでなく送信元アドレスでも絞る。
   # LANのインターフェイスにはグローバルIPv6アドレスも付いていて、
@@ -82,11 +96,10 @@ in
   # wsddはIPv6のマルチキャストでも探索に応答し、
   # LAN内のWindowsが探索で見つけた相手へIPv6で繋ぎに来ることがあるが、
   # リンクローカルならインターネットからは届かない。
-  # NetBIOS(137/138)はIPv4だけのプロトコルなのでIPv6側には無い。
   networking.firewall.extraInputRules = ''
-    iifname "${lanInterface}" ip saddr ${lanIpv4Subnet} tcp dport { 139, 445, 5357 } accept comment "SMB and wsdd from LAN"
-    iifname "${lanInterface}" ip saddr ${lanIpv4Subnet} udp dport { 137, 138, 3702 } accept comment "NetBIOS and wsdd from LAN"
-    iifname "${lanInterface}" ip6 saddr fe80::/10 tcp dport { 139, 445, 5357 } accept comment "SMB and wsdd from LAN link-local IPv6"
+    iifname "${lanInterface}" ip saddr ${lanIpv4Subnet} tcp dport { 445, 5357 } accept comment "SMB and wsdd from LAN"
+    iifname "${lanInterface}" ip saddr ${lanIpv4Subnet} udp dport 3702 accept comment "wsdd from LAN"
+    iifname "${lanInterface}" ip6 saddr fe80::/10 tcp dport { 445, 5357 } accept comment "SMB and wsdd from LAN link-local IPv6"
     iifname "${lanInterface}" ip6 saddr fe80::/10 udp dport 3702 accept comment "wsdd from LAN link-local IPv6"
     iifname "${tailscaleInterface}" ip saddr ${tailscaleIpv4Range} tcp dport 445 accept comment "SMB from tailnet"
     iifname "${tailscaleInterface}" ip6 saddr ${tailscaleIpv6Range} tcp dport 445 accept comment "SMB from tailnet"

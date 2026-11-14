@@ -30,7 +30,7 @@
     default = 11434;
     description = ''
       Open WebUIがOllamaを探しに行くホスト側のポート。
-      コンテナのvethのhostAddressでCaddyが待ち受けて、
+      コンテナのvethのホスト側のIPv6アドレスでCaddyが待ち受けて、
       bulletとseminarのOllamaへ優先順位付きで振り分ける。
       ホストのloopbackで待つOllamaのproxyとはbindアドレスが違うので衝突しない。
     '';
@@ -43,7 +43,7 @@
     description = ''
       Open WebUIがComfyUIを探しに行くホスト側のポート。
 
-      コンテナのvethのhostAddressでCaddyが待ち受けて、
+      コンテナのvethのホスト側のIPv6アドレスでCaddyが待ち受けて、
       bulletのComfyUIへTailscale Service経由で中継する。
       コンテナは自分のnetnsを持っていてtailnetへの経路を持たないため、
       Service名を直接引くことはできない。
@@ -59,9 +59,9 @@
   options.local.openWebui.comfyuiUrl = lib.mkOption {
     type = lib.types.str;
     readOnly = true;
-    default = "http://${config.machineAddresses.open-webui.host}:${toString config.local.openWebui.comfyuiPort}";
+    default = "http://[${config.machineAddresses.open-webui.host6}]:${toString config.local.openWebui.comfyuiPort}";
     defaultText = lib.literalMD ''
-      コンテナのvethのhostAddressと`comfyuiPort`から組み立てたURL。
+      コンテナのvethのホスト側のIPv6アドレスと`comfyuiPort`から組み立てたURL。
     '';
     description = ''
       コンテナのOpen WebUIから見たComfyUIの接続先。

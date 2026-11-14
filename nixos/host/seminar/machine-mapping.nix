@@ -1,31 +1,44 @@
 { lib, config, ... }:
 let
-  toAddress6 = ipv4: import ../../../lib/machine-address6.nix { inherit lib ipv4; };
+  toAddress4 = ipv6: import ../../../lib/machine-address4.nix { inherit lib ipv6; };
+  parseIpv6 = import ../../../lib/parse-ipv6.nix { inherit lib; };
   addressType = lib.types.submodule (
     { config, ... }:
     {
       options = {
-        host = lib.mkOption {
-          type = lib.types.str;
-          description = "Host-side IP address";
-        };
-        guest = lib.mkOption {
-          type = lib.types.str;
-          description = "Guest-side IP address (container or microVM)";
-        };
-        # IPv6はIPv4から導くので宣言しない。
-        # 導き方と、ULAにしている理由は`lib/machine-address6.nix`に書いてある。
         host6 = lib.mkOption {
           type = lib.types.str;
-          default = toAddress6 config.host;
-          defaultText = lib.literalMD "`lib/machine-address6.nix`で`host`から導いたULA";
-          description = "Host-side IPv6 address (ULA derived from `host`)";
+          description = "Host-side IPv6 address (ULA)";
         };
         guest6 = lib.mkOption {
           type = lib.types.str;
-          default = toAddress6 config.guest;
-          defaultText = lib.literalMD "`lib/machine-address6.nix`で`guest`から導いたULA";
-          description = "Guest-side IPv6 address (ULA derived from `guest`)";
+          description = "Guest-side IPv6 address (ULA, container or microVM)";
+        };
+        # IPv4はIPv6から導くので宣言せず、持たせるかどうかだけを選ぶ。
+        # 導き方と、ULAにしている理由は`lib/machine-address4.nix`に書いてある。
+        ipv4 = lib.mkOption {
+          type = lib.types.bool;
+          default = false;
+          description = ''
+            Whether to give the machine IPv4 addresses as well.
+            Only for machines that must reach IPv4-only destinations on the internet,
+            which also requires `local.machineEgress.<name>.internet`.
+            The host and other machines always talk to it over IPv6.
+          '';
+        };
+        host4 = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
+          readOnly = true;
+          default = if config.ipv4 then toAddress4 config.host6 else null;
+          defaultText = lib.literalMD "`ipv4`の時は`lib/machine-address4.nix`で`host6`から導いたアドレス、それ以外は`null`";
+          description = "Host-side IPv4 address derived from `host6`, or null without `ipv4`";
+        };
+        guest4 = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
+          readOnly = true;
+          default = if config.ipv4 then toAddress4 config.guest6 else null;
+          defaultText = lib.literalMD "`ipv4`の時は`lib/machine-address4.nix`で`guest6`から導いたアドレス、それ以外は`null`";
+          description = "Guest-side IPv4 address derived from `guest6`, or null without `ipv4`";
         };
       };
     }
@@ -49,45 +62,65 @@ in
       type = lib.types.attrsOf addressType;
       default = {
         # ソートは重要度にするか悩ましいですが、IPアドレス剥き出しなここでは、IPアドレスでソートしておきます。
+        #
+        # `ipv4`を有効にしているマシンには、
+        # IPv4でしか繋がらないインターネットの宛先へ出る用事があります。
+        # その宛先を横に書いておきます。
         forgejo = {
-          host = "192.168.100.10";
-          guest = "192.168.100.11";
+          host6 = "fdf2:a855:5a3f:100::10";
+          guest6 = "fdf2:a855:5a3f:100::11";
+          # ミラーの取得元やwebhookの送信先のgithub.com。
+          ipv4 = true;
         };
+        # 実際のアドレスは`nixos/ollama/container.nix`がbulletと共通の値で持っています。
+        # ここでは他のマシンと重ならないように同じ値を予約しています。
         ollama = {
-          host = "192.168.100.20";
-          guest = "192.168.100.21";
+          host6 = "fdf2:a855:5a3f:100::20";
+          guest6 = "fdf2:a855:5a3f:100::21";
+          # 手でpullするhf.coのモデルの配信元のcas-bridge.xethub.hf.co。
+          ipv4 = true;
         };
         mcp-nixos = {
-          host = "192.168.100.30";
-          guest = "192.168.100.31";
+          host6 = "fdf2:a855:5a3f:100::30";
+          guest6 = "fdf2:a855:5a3f:100::31";
+          # nixpkgsのコミットを引くapi.github.com。
+          ipv4 = true;
         };
         github-runner-dotfiles-x64 = {
-          host = "192.168.100.40";
-          guest = "192.168.100.41";
+          host6 = "fdf2:a855:5a3f:100::40";
+          guest6 = "fdf2:a855:5a3f:100::41";
+          # github.comそのもの。
+          ipv4 = true;
         };
         github-runner-cdn-ncaq-net-x64 = {
-          host = "192.168.100.50";
-          guest = "192.168.100.51";
+          host6 = "fdf2:a855:5a3f:100::50";
+          guest6 = "fdf2:a855:5a3f:100::51";
+          # github.comそのもの。
+          ipv4 = true;
         };
         garage = {
-          host = "192.168.100.60";
-          guest = "192.168.100.61";
+          host6 = "fdf2:a855:5a3f:100::60";
+          guest6 = "fdf2:a855:5a3f:100::61";
         };
         niks3-public = {
-          host = "192.168.100.70";
-          guest = "192.168.100.71";
+          host6 = "fdf2:a855:5a3f:100::70";
+          guest6 = "fdf2:a855:5a3f:100::71";
+          # GitHub ActionsのOIDCのissuerのtoken.actions.githubusercontent.com。
+          ipv4 = true;
         };
         niks3-private = {
-          host = "192.168.100.80";
-          guest = "192.168.100.81";
+          host6 = "fdf2:a855:5a3f:100::80";
+          guest6 = "fdf2:a855:5a3f:100::81";
         };
         open-webui = {
-          host = "192.168.100.90";
-          guest = "192.168.100.91";
+          host6 = "fdf2:a855:5a3f:100::90";
+          guest6 = "fdf2:a855:5a3f:100::91";
+          # web検索で開く任意のページ。
+          ipv4 = true;
         };
         cdn = {
-          host = "192.168.100.100";
-          guest = "192.168.100.101";
+          host6 = "fdf2:a855:5a3f:100::100";
+          guest6 = "fdf2:a855:5a3f:100::101";
         };
       };
       description = "Network addresses for containers and microVMs";
@@ -165,9 +198,9 @@ in
   config = {
     networking.nat = {
       enable = true;
-      # ULAを持つコンテナとmicroVMをIPv6でも外へ出す。
+      # ULAを持つコンテナとmicroVMをIPv6で外へ出す。
       # ホストにはLANの/64しか無くprefix delegationも無いので、
-      # IPv4と同じくmasqueradeで出すしかない(`lib/machine-address6.nix`)。
+      # IPv4と同じくmasqueradeで出すしかない(`lib/machine-address4.nix`)。
       enableIPv6 = true;
       internalInterfaces = [
         "ve-*" # container veth interfaces
@@ -198,16 +231,19 @@ in
         cidValues = map (e: e.value) cidEntries;
         duplicateCidValues = findDuplicates cidValues;
 
+        # IPv4はIPv6から単射で導くので、IPv6が重ならなければIPv4も重ならない。
+        # IPv6だけを見れば足りる。
+        # 同じアドレスでも書き方が違うと文字列としては重ならないので、
+        # `lib/parse-ipv6.nix`で省略しない形に揃えてから比べる。
+        # 読めないアドレスは揃えずにそのまま比べて、下の形の検査で報告する。
+        normalizeAddress =
+          address:
+          let
+            parsed = parseIpv6 address;
+          in
+          if parsed == null then address else parsed;
         addressEntries = lib.concatLists (
           lib.mapAttrsToList (name: entry: [
-            {
-              name = "${name}.host";
-              value = entry.host;
-            }
-            {
-              name = "${name}.guest";
-              value = entry.guest;
-            }
             {
               name = "${name}.host6";
               value = entry.host6;
@@ -218,8 +254,21 @@ in
             }
           ]) config.machineAddresses
         );
-        addressValues = map (e: e.value) addressEntries;
-        duplicateAddressValues = findDuplicates addressValues;
+        normalizedAddressEntries = map (e: e // { value = normalizeAddress e.value; }) addressEntries;
+        duplicateAddressValues = findDuplicates (map (e: e.value) normalizedAddressEntries);
+        # IPv4を持たないマシンのアドレスも、IPv4を導ける形に揃えておく。
+        # 後から`ipv4`を有効にした時に初めて評価で止まることが無いようにする。
+        malformedAddressEntries = lib.filter (
+          e: !(builtins.tryEval (builtins.deepSeq (toAddress4 e.value) true)).success
+        ) addressEntries;
+
+        # IPv4はインターネットのIPv4だけの宛先へ出るためだけに持たせるので、
+        # インターネットへ出られないマシンに付いていたら外し忘れ。
+        ipv4WithoutInternet = lib.attrNames (
+          lib.filterAttrs (
+            name: entry: entry.ipv4 && !(config.local.machineEgress.${name}.internet or false)
+          ) config.machineAddresses
+        );
 
         uidEntries = lib.mapAttrsToList (name: user: {
           inherit name;
@@ -261,7 +310,7 @@ in
         duplicateMacValues = findDuplicates (map (e: e.value) macEntries);
 
         cidDups = formatDuplicates toString cidEntries;
-        addrDups = formatDuplicates lib.id addressEntries;
+        addrDups = formatDuplicates lib.id normalizedAddressEntries;
         uidDups = formatDuplicates toString uidEntries;
         gidDups = formatDuplicates toString gidEntries;
       in
@@ -273,6 +322,16 @@ in
         {
           assertion = duplicateAddressValues == [ ];
           message = "machineAddresses must be unique, but found duplicates: ${addrDups}";
+        }
+        {
+          assertion = malformedAddressEntries == [ ];
+          message = "machineAddresses must be written as fdf2:a855:5a3f:<0-255>::<0-255> (see lib/machine-address4.nix), but found: ${
+            lib.concatMapStringsSep ", " (e: "${e.value} (${e.name})") malformedAddressEntries
+          }";
+        }
+        {
+          assertion = ipv4WithoutInternet == [ ];
+          message = "machineAddresses: IPv4 is only for reaching IPv4-only destinations on the internet, but these machines have it without local.machineEgress.<name>.internet: ${lib.concatStringsSep ", " ipv4WithoutInternet}";
         }
         {
           assertion = duplicateUidValues == [ ];

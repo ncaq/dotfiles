@@ -108,7 +108,7 @@ in
       deployStamp = "${deployRoot}/deployed";
       syncUser = "cdn-ncaq-net";
       syncService = "cdn-ncaq-net-sync";
-      origin = "http://${addr.guest}:${toString cdnPort}";
+      origin = "http://[${addr.guest6}]:${toString cdnPort}";
     };
     description = "cdn.ncaq.netのデプロイの受け渡しと配信の定義。";
   };
@@ -135,10 +135,10 @@ in
       # 毎起動ランダムな高位UID範囲へマップして、
       # コンテナを脱出されてもホスト上では無権限のUIDになるようにします。
       privateUsers = "pick";
-      hostAddress = addr.host;
-      localAddress = addr.guest;
       hostAddress6 = addr.host6;
       localAddress6 = addr.guest6;
+      hostAddress = addr.host4;
+      localAddress = addr.guest4;
       # 配信ディレクトリは同期で`D755,F644`に揃えているので、
       # UIDがマップされないpickでもotherのパーミッションで読めます。
       # 書く必要は無いのでidmapは付けずに読み取り専用で渡します。

@@ -13,7 +13,7 @@ let
   budget = (import ../../lib/ollama-context.nix).budget config.local.ollama.contextLength;
   ollama-client = pkgs.writeShellApplication {
     name = "ollama";
-    runtimeEnv.OLLAMA_HOST = "127.0.0.1:${toString ollama.port}";
+    runtimeEnv.OLLAMA_HOST = "[::1]:${toString ollama.port}";
     # `ollama launch claude`がClaude Codeへ渡さない値をここで補う。
     # ollamaはクラウドのモデルを選んだ時しかこれらを設定しないため、
     # ローカルのモデルではClaude Codeが自分の既定値で動いてしまう。

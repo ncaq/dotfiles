@@ -21,7 +21,7 @@ let
       exec nixos-container run forgejo -- forgejo "$@"
     '';
   };
-  garageAddr = config.machineAddresses.garage.guest;
+  garageAddr = config.machineAddresses.garage.guest6;
   # LFSオブジェクトをgarage(S3互換)に保存するためのバケットとキーをidempotentに作成します。
   # name = "forgejo" なので/run/garage-setup/forgejoにキーが書き出され、forgejoユーザーが所有します。
   garageSetup = import ../../../lib/garage-setup.nix {
@@ -37,10 +37,10 @@ in
     # PostgreSQLのpeer認証がホストと同一のUIDでの接続を要求するため、
     # pickにはできずidentity(UID分離なし、capability分離のみ)のまま。
     privateUsers = "identity";
-    hostAddress = addr.host;
-    localAddress = addr.guest;
     hostAddress6 = addr.host6;
     localAddress6 = addr.guest6;
+    hostAddress = addr.host4;
+    localAddress = addr.guest4;
     forwardPorts = [
       {
         containerPort = 2222;
@@ -123,7 +123,7 @@ in
               lfs = {
                 # LFSオブジェクトのストレージにgarage(S3互換)を使用。
                 STORAGE_TYPE = "minio";
-                MINIO_ENDPOINT = "${garageAddr}:3900";
+                MINIO_ENDPOINT = "[${garageAddr}]:3900";
                 MINIO_BUCKET = "forgejo";
                 MINIO_LOCATION = "garage";
                 # 内部のIP直アクセスのためSSLは不要。

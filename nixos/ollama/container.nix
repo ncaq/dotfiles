@@ -8,11 +8,15 @@
 }:
 let
   port = 11434;
-  hostAddress = "192.168.100.20";
-  localAddress = "192.168.100.21";
-  toAddress6 = ipv4: import ../../lib/machine-address6.nix { inherit lib ipv4; };
-  hostAddress6 = toAddress6 hostAddress;
-  localAddress6 = toAddress6 localAddress;
+  # コンテナのvethのアドレス。
+  # ホストとの間はIPv6で繋ぐ。
+  # seminarではホストの`machineAddresses`にも同じ値を予約している。
+  hostAddress6 = "fdf2:a855:5a3f:100::20";
+  localAddress6 = "fdf2:a855:5a3f:100::21";
+  # IPv4は出口のためだけに持たせる(下の`local.machineEgress`を参照)。
+  toAddress4 = ipv6: import ../../lib/machine-address4.nix { inherit lib ipv6; };
+  hostAddress = toAddress4 hostAddress6;
+  localAddress = toAddress4 localAddress6;
   ollamaUid = 501;
   ollamaGid = ollamaUid;
   dataDir = config.local.ollama.dataDir;
@@ -92,7 +96,8 @@ in
           inherit package;
           user = "ollama";
           group = "ollama";
-          host = "0.0.0.0";
+          # ホストからはIPv6で繋ぐ。
+          host = "[::]";
           inherit port;
           # コンテナのIPはホスト内に閉じているため、tailnet外のLANからは到達できない。
           # 他のコンテナからはホストの`local.machineEgress`でこのアドレスを宛先に許した時だけ届く。
@@ -197,7 +202,7 @@ in
   networking = {
     nat = {
       enable = true;
-      # ULAを持つコンテナをIPv6でも外へ出す(`lib/machine-address6.nix`)。
+      # ULAを持つコンテナをIPv6で外へ出す(`lib/machine-address4.nix`)。
       enableIPv6 = true;
       internalInterfaces = [ "ve-*" ];
     };
@@ -208,5 +213,9 @@ in
   # モデルの取得(`ollama pull`)でregistry.ollama.aiへ繋ぐ。
   # 推論のクライアントはTailscale Serviceからホストの中継を経て繋ぎに来る側なので、
   # 自宅LANやtailnetや他のコンテナへ出る理由は無い。
+  #
+  # registry.ollama.aiとモデルの実体を置くCloudflare R2はIPv6で届くが、
+  # 手で`ollama pull hf.co/...`する時のHugging Faceの配信元(cas-bridge.xethub.hf.co)はIPv4にしか無い。
+  # そのためにIPv4も持たせている。
   local.machineEgress.ollama.internet = true;
 }

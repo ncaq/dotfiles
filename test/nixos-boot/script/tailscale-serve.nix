@@ -26,7 +26,7 @@ let
   redirect = # python
     ''
       machine.wait_for_unit("caddy.service")
-      machine.wait_for_open_port(${toString tailscaleServe.redirectPort}, "127.0.0.1")
+      machine.wait_for_open_port(${toString tailscaleServe.redirectPort}, "::1")
 
       tailnet = "${config.local.tailscale.tailnet}"
       redirect_port = ${toString tailscaleServe.redirectPort}
@@ -44,7 +44,7 @@ let
               "${curl} --silent --show-error --output /dev/null"
               f" --request {method} --header 'Host: {host}'"
               " --write-out '%{http_code} %{redirect_url}'"
-              f" 'http://127.0.0.1:{redirect_port}{path}'"
+              f" 'http://[::1]:{redirect_port}{path}'"
           )
           assert actual == expected, f"Host: {host} ({method}) -> {actual}"
 
@@ -67,7 +67,8 @@ let
       assert_response("evil.example.com", rejected)
     '';
 
-  # Tailscale Serveの転送先がホストのloopbackで待ち受けているかを確認します。
+  # Tailscale Serveの転送先がホストのIPv6のloopbackで待ち受けているかを確認します。
+  # Serveは`[::1]`へ転送するので、127.0.0.1だけで待ち受けていても繋がりません。
   # 転送先はsocket activationのproxyだったり常時起動のCaddyのvhostだったりしますが、
   # どちらもwants関係で引き込まれるだけなので、
   # ポートの衝突やbindの書き間違いで上がらなくてもboot自体は成功してしまいます。
@@ -85,7 +86,7 @@ let
     ''
       machine.wait_until_succeeds(
           "ss -Hltn 'sport = :${toString serveCfg.port}'"
-          " | grep -qF '127.0.0.1:${toString serveCfg.port}'"
+          " | grep -qF '[::1]:${toString serveCfg.port}'"
       )
     '') (lib.attrValues services);
 in

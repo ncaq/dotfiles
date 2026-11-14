@@ -47,12 +47,14 @@ let
   # コンテナ内のComfyUIへ転送する。
   port = 8188;
   # コンテナのvethアドレス。
-  # LANの192.168.10.0/24と重複しない範囲を使う。
-  hostAddress = "192.168.100.10";
-  localAddress = "192.168.100.11";
-  toAddress6 = ipv4: import ../../../../lib/machine-address6.nix { inherit lib ipv4; };
-  hostAddress6 = toAddress6 hostAddress;
-  localAddress6 = toAddress6 localAddress;
+  # ホストとの間はIPv6で繋ぐ。
+  hostAddress6 = "fdf2:a855:5a3f:100::10";
+  localAddress6 = "fdf2:a855:5a3f:100::11";
+  # IPv4は出口のためだけに持たせる(下の`local.machineEgress`を参照)。
+  # 導いた先はLANの192.168.10.0/24と重複しない範囲になる。
+  toAddress4 = ipv6: import ../../../../lib/machine-address4.nix { inherit lib ipv6; };
+  hostAddress = toAddress4 hostAddress6;
+  localAddress = toAddress4 localAddress6;
   # コンテナ内のcomfyuiユーザのID。
   # ephemeralコンテナでは動的割り当ての記録が起動ごとに消えるため、
   # bind mountした`/var/lib/comfyui`の所有権がずれないように固定する。
@@ -148,9 +150,10 @@ in
           packageSet.cuda = lib.mkForce comfyPackages.default;
           enableManager = true;
           inherit port;
-          # ホストからvethを通してアクセスするので全インターフェースでlistenする。
+          # ホストからvethを通してIPv6でアクセスするので全インターフェースでlistenする。
           # privateNetworkなのでLANには露出しない。
-          listenAddress = "0.0.0.0";
+          # ComfyUIはaiohttpでlistenするので、`::`はIPv6だけを受ける。
+          listenAddress = "::";
           inherit dataDir;
           # コンテナ内のfirewallを開ける。到達できるのはvethを持つホストのみ。
           openFirewall = true;
@@ -230,7 +233,7 @@ in
     # コンテナから外(モデルやカスタムノードのダウンロードなど)へ出られるようにする。
     nat = {
       enable = true;
-      # ULAを持つコンテナをIPv6でも外へ出す(`lib/machine-address6.nix`)。
+      # ULAを持つコンテナをIPv6で外へ出す(`lib/machine-address4.nix`)。
       enableIPv6 = true;
       internalInterfaces = [ "ve-*" ];
     };
@@ -242,6 +245,10 @@ in
   # 利用者はTailscale Serviceからホストの中継を経て繋ぎに来る側なので、
   # 自宅LANやtailnetや他のコンテナへ出る理由は無い。
   # カスタムノードは任意のPythonコードなので、出口を絞る価値はCIランナーと変わらない。
+  #
+  # カスタムノードの取得元のgithub.comや、
+  # Hugging Faceのモデルの配信元のcas-bridge.xethub.hf.coはIPv4にしか無いので、
+  # IPv4も持たせている。
   local.machineEgress.comfyui.internet = true;
   systemd = {
     services."container@comfyui".serviceConfig = {

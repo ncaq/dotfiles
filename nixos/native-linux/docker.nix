@@ -19,7 +19,7 @@
     # dockerd側でIPv6を有効にしないとコンテナにはIPv6アドレスも経路も付かず、
     # IPv6でしか繋がらない宛先に届かない。
     # プレフィックスはRFC 4193のULAで、
-    # NixOSコンテナの`lib/machine-address6.nix`やtailnetと重ならない値を乱数で決めた。
+    # NixOSコンテナの`lib/machine-address4.nix`やtailnetと重ならない値を乱数で決めた。
     # コンテナから外へはdockerdが名前空間の側のアドレスへ付け替えて出すので、
     # この値はホストの外からは見えない。
     daemon.settings = {

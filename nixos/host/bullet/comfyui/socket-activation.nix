@@ -12,7 +12,7 @@
     systemd = config.systemd.package;
     container = "comfyui";
     label = "ComfyUI";
-    localAddress = config.containers.comfyui.localAddress;
+    localAddress6 = config.containers.comfyui.localAddress6;
     port = config.containers.comfyui.config.services.comfyui.port;
     # ComfyUIには専用のヘルスチェック用エンドポイントがないのでルートを使う。
     healthPath = "/";

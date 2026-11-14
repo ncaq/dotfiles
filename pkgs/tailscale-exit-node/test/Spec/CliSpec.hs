@@ -48,10 +48,10 @@ calledWith answer pingOutput argv = do
   readIORef calls
 
 localPong :: Text
-localPong = "pong from seminar (100.82.4.93) via 192.168.10.88:41641 in 4ms"
+localPong = "pong from seminar (fd7a:115c:a1e0::b934:6c4a) via [2001:db8::1]:41641 in 4ms"
 
 externalPong :: Text
-externalPong = "pong from seminar (100.82.4.93) via DERP(tok) in 38ms"
+externalPong = "pong from seminar (fd7a:115c:a1e0::b934:6c4a) via DERP(tok) in 38ms"
 
 tests :: TopSpec
 tests = describe "runWith" do

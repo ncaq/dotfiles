@@ -105,6 +105,7 @@ test-suite dotfiles-install-test
   other-modules:
     Fixture
     Spec
+    Spec.InstallSpec
     Spec.LastCommitSpec
     Spec.PlatformSpec
     Spec.StageSpec

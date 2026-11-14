@@ -85,8 +85,9 @@ let
   # 長文では配布元の想定と少しずれた訳になる場合がある。
   # 公式のCLIはllama-serverへyarnの引数を直接渡して回避しているが、
   # Ollamaにはその引数を渡す手段が無い。
+  # 長さはOpenCodeの設定も必要とするので`lib/ollama-context.nix`が持っている。
   plamoTranslateParameters = {
-    num_ctx = 32768;
+    num_ctx = (import ../../lib/ollama-context.nix).length.translate;
     stop = "<|plamo:tag|>";
     temperature = 0;
   };

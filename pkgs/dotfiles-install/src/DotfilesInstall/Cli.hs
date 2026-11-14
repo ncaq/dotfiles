@@ -19,8 +19,8 @@ import Options.Applicative
 -- それ以外の想定している失敗は理由をログに出して`ExitFailure 1`にする。
 -- 引数が誤っている時は、使い方を標準エラー出力へ出して`ExitFailure 1`にする。
 run :: (MonadLogger m, MonadThrow m, MonadUnliftIO m) => [String] -> m ()
-run argv = do
-  liftIO . handleParseResult $ execParserPure defaultPrefs parserInfo argv
+run args = do
+  liftIO . handleParseResult $ execParserPure defaultPrefs parserInfo args
   handle (report @UnsupportedArchitecture) . handle (report @GitFailure) $
     install "." =<< detectPlatform =<< probe
  where

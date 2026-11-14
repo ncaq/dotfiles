@@ -7,7 +7,7 @@ module DotfilesInstall.Probe
   ) where
 
 import Himari
-import System.Posix.Unistd (getSystemID, machine, nodeName)
+import System.Posix.Unistd (SystemID (..), getSystemID)
 
 data Probe = Probe
   { isNixos :: Bool
@@ -24,10 +24,16 @@ data Probe = Probe
 -- | 今の環境を調べる。
 probe :: (MonadIO m) => m Probe
 probe =
-  Probe
+  fromSystemId
     <$> doesFileExist "/etc/NIXOS"
     <*> ((`notElem` [Nothing, Just ""]) <$> lookupEnv "TERMUX_VERSION")
-    <*> (convert . nodeName <$> systemId)
-    <*> (convert . machine <$> systemId)
+    <*> liftIO getSystemID
  where
-  systemId = liftIO getSystemID
+  -- `uname`は1回だけ呼んで、その結果から2つのフィールドを作る。
+  fromSystemId isNixos isTermux systemId =
+    Probe
+      { isNixos
+      , isTermux
+      , hostName = convert systemId.nodeName
+      , machineName = convert systemId.machine
+      }

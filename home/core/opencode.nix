@@ -30,8 +30,8 @@ let
   # 発見したモデルの`context`には`/api/show`の`*.context_length`を使いますが、
   # これはGGUFに書かれたモデルの最大長で、
   # Ollamaが実際に確保する長さではありません。
-  # Qwen3.8では262144と報告されますが実際は`OLLAMA_CONTEXT_LENGTH`の長さで動いているため、
-  # `limit`を書かないとOpenCodeが使用率50%と見ている時点でcontextが溢れ、
+  # Qwen3.8では262144と報告されますが実際は`OLLAMA_CONTEXT_LENGTH`やモデルの`num_ctx`の長さで動いているため、
+  # `limit`を書かないとOpenCodeが使用率がまだ低いと見ている時点でcontextが溢れ、
   # 会話の圧縮も始まりません。
   # なので発見される役割のモデルは全て、
   # 実際に動かしている長さを`limit`で教えます。

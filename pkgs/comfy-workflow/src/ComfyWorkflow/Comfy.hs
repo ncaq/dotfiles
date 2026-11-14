@@ -13,6 +13,7 @@
 module ComfyWorkflow.Comfy
   ( Target (..)
   , parseAuthority
+  , authorityOf
   , ComfyFailure (..)
   , comfyJson
   , postPrompt

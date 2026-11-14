@@ -45,12 +45,18 @@ withStagedLastCommit repository action = do
     logInfoN ("最新のコミットの情報を注入します: " <> convert lastCommitFile)
     writeBinaryFile path (convert (encode lastCommit))
   add = gitChecked repository ["add", "-f", "--", convert lastCommitFile]
-  -- 戻せなくても害の無いファイルが残るだけなので、記録だけして続ける。
+  -- 外せないとstagingされたまま残り、次のコミットに入る恐れがある。
+  -- 適用の結果は変えずに続けるが、手で戻す方法を警告に入れる。
   reset = do
     code <- gitRun repository ["reset", "--quiet", "--", convert lastCommitFile]
-    unless (code == ExitSuccess) $
-      logWarnN ("注入したファイルをindexから外せませんでした: " <> convert (show code))
+    unless (code == ExitSuccess) . logWarnN $
+      "注入したファイルをindexから外せませんでした("
+        <> convert (show code)
+        <> ")。次のコミットに入らないように、`git reset -- "
+        <> convert lastCommitFile
+        <> "`で外してください"
   discard = doesFileExist path >>= (`when` remove)
+  -- 消せなくても、無視されているファイルが残るだけなので、記録だけして続ける。
   -- `trash`があればそちらで消して、無い環境ではそのまま消す。
   remove =
     findExecutable "trash" >>= \case

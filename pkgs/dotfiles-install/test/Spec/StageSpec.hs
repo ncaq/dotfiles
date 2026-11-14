@@ -1,6 +1,7 @@
 -- | 最新のコミットの情報の注入と、後片付けのテスト。
 module Spec.StageSpec (tests) where
 
+import DotfilesInstall.Failure (GitFailure (..))
 import DotfilesInstall.LastCommit (LastCommit (..))
 import DotfilesInstall.LastCommit.Stage
 import Fixture
@@ -40,6 +41,12 @@ tests = do
         git repository ["switch", "--quiet", "-c", "feature/branch"]
         readLastCommit repository
           >>= (`shouldBe` LastCommit "feat(test): initial" False "feature/branch")
+    it "変更の有無を調べるGitが失敗したら、dirtyにせず失敗を伝える" do
+      withRepository \repository -> do
+        write repository ".git/index" "broken"
+        result <- try (readLastCommit repository)
+        result
+          `shouldBe` Left @GitFailure @LastCommit (GitFailed ["diff", "--quiet"] (ExitFailure 128))
   describe "withStagedLastCommit" do
     it "処理の間はファイルをstagingしている" do
       withRepository \repository -> do

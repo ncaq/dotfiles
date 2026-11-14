@@ -1,12 +1,17 @@
 /**
   Ollamaのcontextの長さと、その配分。
 
-  型: { length = { cuda = Int; cpu = Int; }; budget = Int -> { context, output, history }; }
+  型: { length = { cuda = Int; cpu = Int; }; translateLength = Int; budget = Int -> { context, output, history }; }
 
   `length`はアクセラレータごとの既定のcontextの長さ。
   `nixos/ollama/container.nix`が`OLLAMA_CONTEXT_LENGTH`へ設定する値で、
   この大きさにした根拠の実測はそちらのコメントにある。
   NixOSモジュールからは`local.ollama.contextLength`を参照すること。
+
+  `translateLength`は翻訳の役割のモデルだけが使うcontextの長さ。
+  `nixos/ollama/model.nix`がモデルの`num_ctx`へ焼き込む値で、
+  この大きさにした理由はそちらのコメントにある。
+  アクセラレータ名で引く`length`とは軸が違うので同じ表には入れない。
 
   `budget`はその長さを1回の応答と会話の履歴へ配分する。
   llama.cppのcontextはプロンプトと生成したトークンの両方を含むため、
@@ -16,8 +21,8 @@
   長い会話で長い応答を生成した瞬間に合計が溢れる。
 
   比率の1/4はCUDAのホストを基準に選んだ。
-  `length.cuda`の131072に対して`output`が32768になり、
-  Claude Codeが未知のモデルに使う既定の32000をわずかに上回る。
+  `length.cuda`の147456に対して`output`が36864になり、
+  Claude Codeが未知のモデルに使う既定の32000より多めになる。
   思考を出力するモデルでも1回の応答が収まる大きさとして、
   既定を下回らせない範囲で最も履歴へ回せる比率である。
 
@@ -32,14 +37,18 @@
   8192トークンでも書き切るのに数分かかる。
 
   home-managerの設定もこれらを必要とするため実体をここへ置く。
+  OpenCodeはOllamaのモデルの長さを`/api/show`のGGUFの最大長から推測するため、
+  実際に動かしている長さを`limit`で教える必要がある。
   home-managerからNixOSの`config`を引けない理由は、
   `lib/ollama-model-names.nix`の先頭に書いてある。
 */
 {
   length = {
-    cuda = 131072;
+    cuda = 147456;
     cpu = 32768;
   };
+
+  translateLength = 32768;
 
   budget =
     contextLength:

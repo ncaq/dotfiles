@@ -1,0 +1,122 @@
+cabal-version: 3.12
+name: dotfiles-install
+version: 0.1.0.0
+synopsis: dotfilesの設定を今の環境に合ったコマンドで適用する
+license: Apache-2.0
+author: ncaq <ncaq@ncaq.net>
+maintainer: ncaq <ncaq@ncaq.net>
+build-type: Simple
+
+source-repository head
+  type: git
+  location: https://github.com/ncaq/dotfiles
+
+common basic
+  ghc-options:
+    -Wall
+    -Wcompat
+    -Widentities
+    -Wincomplete-record-updates
+    -Wincomplete-uni-patterns
+    -Wpartial-fields
+    -Wredundant-constraints
+
+  default-language: GHC2024
+  default-extensions:
+    ApplicativeDo
+    BlockArguments
+    CPP
+    DefaultSignatures
+    DerivingVia
+    DuplicateRecordFields
+    FunctionalDependencies
+    LexicalNegation
+    LinearTypes
+    MonadComprehensions
+    MultiWayIf
+    NegativeLiterals
+    NoFieldSelectors
+    NoImplicitPrelude
+    OverloadedLabels
+    OverloadedRecordDot
+    OverloadedStrings
+    ParallelListComp
+    PatternSynonyms
+    QualifiedDo
+    QuantifiedConstraints
+    QuasiQuotes
+    RecordWildCards
+    RecursiveDo
+    StrictData
+    TemplateHaskell
+    TypeData
+    TypeFamilies
+    TypeFamilyDependencies
+    ViewPatterns
+
+library
+  import: basic
+  hs-source-dirs: src
+  -- cabal-gild: discover ./src
+  exposed-modules:
+    DotfilesInstall.Architecture
+    DotfilesInstall.Cli
+    DotfilesInstall.Failure
+    DotfilesInstall.Git
+    DotfilesInstall.Install
+    DotfilesInstall.LastCommit
+    DotfilesInstall.LastCommit.Stage
+    DotfilesInstall.Platform
+    DotfilesInstall.Probe
+    DotfilesInstall.SwitchCommand
+
+  build-depends:
+    base >=4.20.0.0 && <4.23,
+    himari >=1.1.6 && <1.2,
+    optparse-applicative >=0.18 && <0.20,
+    text >=2.1 && <2.2,
+    unix >=2.8 && <2.9,
+
+executable dotfiles-install
+  import: basic
+  hs-source-dirs: app
+  main-is: Main.hs
+  ghc-options:
+    -threaded
+    -rtsopts
+    -with-rtsopts=-N
+
+  build-depends:
+    base,
+    dotfiles-install,
+    himari,
+
+test-suite dotfiles-install-test
+  import: basic
+  type: exitcode-stdio-1.0
+  hs-source-dirs: test
+  main-is: Main.hs
+  ghc-options:
+    -threaded
+    -rtsopts
+    -with-rtsopts=-N
+
+  -- cabal-gild: discover ./test --exclude ./test/Main.hs
+  other-modules:
+    Fixture
+    Spec
+    Spec.InstallSpec
+    Spec.LastCommitSpec
+    Spec.PlatformSpec
+    Spec.StageSpec
+    Spec.SwitchCommandSpec
+
+  build-tool-depends:
+    sandwich:sandwich-discover
+
+  build-depends:
+    base,
+    dotfiles-install,
+    himari,
+    sandwich >=0.3.0.5,
+    text,

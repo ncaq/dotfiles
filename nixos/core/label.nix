@@ -11,12 +11,14 @@
 }:
 let
   # コミットリビジョン。
-  # `install.sh`が最後のコミット情報ファイルをstagingするため必ずdirtyになります。
+  # `install.sh`が呼ぶ`pkgs/dotfiles-install`が、
+  # 最後のコミット情報ファイルをstagingするため必ずdirtyになります。
   # "-dirty"サフィックスは自前の注入によるものなので除去します。
   shortRev =
     lib.strings.removeSuffix "-dirty"
       inputs.self.dirtyShortRev or inputs.self.shortRev or "nothing-rev";
-  # `install.sh`が最新コミットの情報を`last-commit.json`に保存してstagingします。
+  # `dotfiles-install`が最新コミットの情報を`last-commit.json`に保存してstagingします。
+  # 形は`pkgs/dotfiles-install/src/DotfilesInstall/LastCommit.hs`と揃えます。
   lastCommitFile = "${inputs.self}/last-commit.json";
   lastCommit =
     if builtins.pathExists lastCommitFile then
@@ -24,9 +26,9 @@ let
     else
       null;
   lastCommitSubject = if lastCommit != null then lastCommit.subject else null;
-  # install.shが注入前に記録した本来のdirty状態。
+  # `dotfiles-install`が注入前に記録した本来のdirty状態。
   dirtySuffix = if lastCommit != null && lastCommit.dirty then "-dirty" else "";
-  # install.shが記録したブランチ名。
+  # `dotfiles-install`が記録したブランチ名。
   branchLabel =
     if lastCommit != null && lastCommit.branch != "" then
       "-${builtins.replaceStrings [ "/" ] [ "." ] lastCommit.branch}"

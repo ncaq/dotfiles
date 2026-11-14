@@ -104,6 +104,9 @@ jobs:
       - uses: ./.github/actions/setup-nix
       # Nix-on-Droidのビルドはimpureモードで行う必要があります
       - run: nix build -L .#nixOnDroidConfigurations.default.activationPackage --impure
+      # `install.sh`が呼ぶ本体です。
+      # 実機ではソースを展開できずビルドできないので、ここでビルドしてキャッシュから取れるようにします。
+      - run: nix build -L --no-link .#dotfiles-install
 
   nvd-diff:
     name: nvd-diff

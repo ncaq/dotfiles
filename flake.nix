@@ -421,6 +421,12 @@
           nvd-pr-diff = pkgs.callPackage ./pkgs/nvd-pr-diff {
             inherit (inputs) himari-src;
           };
+          # このdotfilesの設定を今の環境に合ったコマンドで適用するコマンド。
+          # `install.sh`が`nix run`で呼ぶ。
+          # ビルドの中でsandwichのテストが走る。
+          dotfiles-install = pkgs.callPackage ./pkgs/dotfiles-install {
+            inherit (inputs) himari-src;
+          };
           # certspotterが検知したイベントをMackerelのチェックへ繋ぐコマンド。
           # ビルドの中でsandwichのテストが走る。
           certspotter-mackerel = pkgs.callPackage ./pkgs/certspotter-mackerel {
@@ -611,6 +617,7 @@
               git-repo-subscribe = git-repo-subscribe.override { werror = true; };
               patch-gguf-chat-template = patch-gguf-chat-template.override { werror = true; };
               nvd-pr-diff = nvd-pr-diff.override { werror = true; };
+              dotfiles-install = dotfiles-install.override { werror = true; };
               inherit renovate-recovery;
               # 同じワークフローのClaude Codeへ渡す設定一式。
               # 使われるのはRenovateのPRが失敗した時だけなので、
@@ -646,6 +653,8 @@
             inherit git-repo-subscribe;
             # PRコメントにnvd diffを投稿するコマンド。
             inherit nvd-pr-diff;
+            # このdotfilesの設定を今の環境に合ったコマンドで適用するコマンド。
+            inherit dotfiles-install;
             # safetensorsのF32テンソルをF16へ変換するコマンド。
             inherit safetensors-fp16;
             # Comfy-Orgの公式CLIと、それを包んでワークフローを名前で呼ぶコマンド。

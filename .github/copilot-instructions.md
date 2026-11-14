@@ -247,7 +247,11 @@ CHECK_OUTPUT=ciJobs ./check.sh
 ./install.sh
 ```
 
-このスクリプトは実行環境を自動判別して適切な適用コマンドを呼び分けます。
+`install.sh`は入口で、
+処理の本体である`pkgs/dotfiles-install`のHaskell実装を`nix run`でビルドして切り替えるだけです。
+適用の振る舞いを変える時は`install.sh`ではなく`pkgs/dotfiles-install`を編集してください。
+
+本体は実行環境を自動判別して適切な適用コマンドを呼び分けます。
 
 - NixOS: `sudo nixos-rebuild switch --flake ".#$(hostname)"`
 - Termux(nix-on-droid): `nix-on-droid switch --flake .`
@@ -262,7 +266,9 @@ NixOSでは適用前に最新コミットの情報を`last-commit.json`として
 
 - NixOSではsudoを使いますがユーザ側によって解決されるので気にしなくても良いです
 - 実行中は`last-commit.json`のstagingにより一時的にgitがdirty状態に見えますが、
-  終了時に自動でクリーンアップされます
+  正常に終わった時も、失敗した時やCtrl-Cで止めた時も、終了時に自動でクリーンアップされます
+- SIGTERMやSIGHUPで止められた時はクリーンアップされず、`last-commit.json`がstagingされたまま残ります。
+  その時は`git reset -- last-commit.json`で外してからファイルを消してください
 
 # リポジトリ構成
 

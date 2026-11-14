@@ -40,7 +40,8 @@ tests = describe "Comfy" do
         parseAuthority authority `shouldBe` Right target
     for_ invalid \authority ->
       it (convert authority <> "を読まない") do
-        isLeft (parseAuthority authority) `shouldBe` True
+        parseAuthority authority
+          `shouldBe` Left ("接続先は`host:port`の形で指定してください: " <> authority)
   describe "authorityOf" do
     for_ valid \(authority, target) ->
       it (convert authority <> "へ戻す") do

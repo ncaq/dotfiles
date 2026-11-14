@@ -42,8 +42,19 @@ lib.concatStrings (
       targetParts = lib.splitString ":" target;
       targetPort = lib.last targetParts;
       targetAddress = lib.concatStringsSep ":" (lib.init targetParts);
+      # 読み取りが崩れると、VMの中のアドレスの追加やサーバの起動で落ちて原因が分かりにくいので、
+      # 読み取った値をコンテナの宣言と突き合わせて評価時に止めます。
+      # ポートはホスト側とコンテナ側で共通です。
+      expectedAddress = config.containers.${lib.removeSuffix "-proxy" name}.localAddress6;
+      expectedPort = lib.last (lib.splitString ":" (lib.head socket.listenStreams));
       port = checkPort index;
     in
+    assert lib.assertMsg (
+      targetAddress == expectedAddress
+    ) "${name}: ExecStartから読んだ転送先のアドレス${targetAddress}がコンテナのアドレス${expectedAddress}と一致しません";
+    assert lib.assertMsg (
+      targetPort == expectedPort
+    ) "${name}: ExecStartから読んだ転送先のポート${targetPort}が待ち受けのポート${expectedPort}と一致しません";
     lib.concatMapStrings (
       stream: # python
       ''

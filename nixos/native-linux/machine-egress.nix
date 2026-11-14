@@ -82,6 +82,7 @@
 let
   cfg = config.local.machineEgress;
   tailscale = config.local.tailscale;
+  parseIpv6 = import ../../lib/parse-ipv6.nix { inherit lib; };
 
   # 宣言を名前付きのリストにして、インターフェイスのパターンごとにまとめる。
   # `lib/container-ifname.nix`のワイルドカードで複数のコンテナが同じパターンに一致する時、
@@ -186,13 +187,9 @@ in
                       # nftablesの`ip6 daddr`に渡すので、
                       # 通してしまうとルールセットの検査で初めて失敗する。
                       # プレフィックス長は許すと範囲で許せてしまうので受け付けない。
-                      type =
-                        lib.types.addCheck lib.types.str (
-                          address: import ../../lib/parse-ipv6.nix { inherit lib; } address != null
-                        )
-                        // {
-                          description = "IPv6 address without prefix length";
-                        };
+                      type = lib.types.addCheck lib.types.str (address: parseIpv6 address != null) // {
+                        description = "IPv6 address without prefix length";
+                      };
                       description = "許す宛先のIPv6アドレス。他のマシンのゲスト側アドレスなど。";
                     };
                     tcpPorts = lib.mkOption {

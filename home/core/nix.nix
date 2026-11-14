@@ -18,12 +18,16 @@ in
   home.packages = with pkgs; [
     cachix
     cachix-push-ncaq
+    hydra-check # Hydraでのビルド状況を調べます。
     niks3-push-ncaq
     nix-diff
     nix-fast-build-wrapper
     nix-init
+    nix-output-monitor # ビルドの進捗を見やすく表示します。
+    nix-tree # 依存関係とクロージャのサイズを対話的に調べます。
     nix-update
     nixfmt
+    nixpkgs-review # nixpkgsのPRの影響を受けるパッケージをまとめてビルドします。
     nvd
     update-nix-fetchgit
   ];

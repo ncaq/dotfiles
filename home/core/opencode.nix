@@ -24,41 +24,8 @@ let
     tailnet = import ../../lib/tailnet.nix;
   };
   # providerのモデルごとのcontextの長さ。
-  #
-  # OpenCodeは`ollama`というproviderのモデルを接続先の`/api/tags`から自動で発見するので、
-  # ここに書かなかったモデルも一覧に現れます。
-  # 発見したモデルの`context`には`/api/show`の`*.context_length`を使いますが、
-  # これはGGUFに書かれたモデルの最大長で、
-  # Ollamaが実際に確保する長さではありません。
-  # Qwen3.8では262144と報告されますが実際は`OLLAMA_CONTEXT_LENGTH`やモデルの`num_ctx`の長さで動いているため、
-  # `limit`を書かないとOpenCodeが使用率がまだ低いと見ている時点でcontextが溢れ、
-  # 会話の圧縮も始まりません。
-  # なので発見される役割のモデルは全て、
-  # 実際に動かしている長さを`limit`で教えます。
-  # 埋め込みのモデルは`completion`の能力を持たず発見されないので除きます。
-  #
-  # `context`はモデルが一度に保持できるトークンの総数で、
-  # `output`は1回の応答の上限です。
-  # 配分の考え方は`lib/ollama-context.nix`にあります。
-  ollamaModels =
-    let
-      ollamaContext = import ../../lib/ollama-context.nix;
-      modelNames = (import ../../lib/ollama-model-names.nix).${ollamaAccelerator};
-      limitOf =
-        contextLength:
-        let
-          budget = ollamaContext.budget contextLength;
-        in
-        {
-          limit = {
-            inherit (budget) context output;
-          };
-        };
-    in
-    lib.genAttrs (modelNames.general ++ modelNames.freedom) (
-      _: limitOf ollamaContext.length.${ollamaAccelerator}
-    )
-    // lib.genAttrs modelNames.translate (_: limitOf ollamaContext.translateLength);
+  # 全てのモデルに付ける理由は`lib/ollama-model-limit.nix`にあります。
+  ollamaModels = import ../../lib/ollama-model-limit.nix { inherit lib; } ollamaAccelerator;
 in
 {
   programs.opencode = {

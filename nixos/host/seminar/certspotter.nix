@@ -112,58 +112,61 @@ in
     ];
   };
 
-  # certspotterにはCTログを個別に除く設定が無く、監視するログは`-logs`の一覧だけで決まります。
-  # 上流の一覧をそのまま読ませる代わりに、取得して加工したファイルを読ませます。
-  # certspotterは一覧のファイルを30分から90分おきに読み直すので、
-  # 置き換えるだけで反映されて、消えたログの監視も止まります。
-  systemd.services.certspotter-loglist = {
-    description = "Fetch the Certificate Transparency log list for Cert Spotter";
-    wants = [ "network-online.target" ];
-    after = [ "network-online.target" ];
-    environment.CERTSPOTTER_LOGLIST_URL = logListUrl;
-    serviceConfig = hardening.network // {
-      Type = "oneshot";
-      ExecStart = lib.getExe logListUpdate;
-      User = "certspotter";
-      Group = "certspotter";
-      StateDirectory = "certspotter-loglist";
-      # 回線が繋がる前のブート時やDNSの一時的な障害に備えます。
-      Restart = "on-failure";
-      RestartSec = "1min";
-    };
-  };
+  systemd = {
+    services = {
+      # certspotterにはCTログを個別に除く設定が無く、監視するログは`-logs`の一覧だけで決まります。
+      # 上流の一覧をそのまま読ませる代わりに、取得して加工したファイルを読ませます。
+      # certspotterは一覧のファイルを30分から90分おきに読み直すので、
+      # 置き換えるだけで反映されて、消えたログの監視も止まります。
+      certspotter-loglist = {
+        description = "Fetch the Certificate Transparency log list for Cert Spotter";
+        wants = [ "network-online.target" ];
+        after = [ "network-online.target" ];
+        environment.CERTSPOTTER_LOGLIST_URL = logListUrl;
+        serviceConfig = hardening.network // {
+          Type = "oneshot";
+          ExecStart = lib.getExe logListUpdate;
+          User = "certspotter";
+          Group = "certspotter";
+          StateDirectory = "certspotter-loglist";
+          # 回線が繋がる前のブート時やDNSの一時的な障害に備えます。
+          Restart = "on-failure";
+          RestartSec = "1min";
+        };
+      };
 
-  # 上流の一覧は新しいCTログが増えたり古いログが消えたりして変わるので、定期的に取り直します。
-  # certspotter自身が上流を読み直す間隔と同じくらいにします。
-  systemd.timers.certspotter-loglist = {
-    wantedBy = [ "timers.target" ];
-    timerConfig = {
-      OnCalendar = "hourly";
-      RandomizedDelaySec = "10min";
+      # certspotterは起動時に一覧を読めないとすぐ終了します。
+      # 起動の前に一覧を取り直しますが、
+      # 取得に失敗しても前の一覧で監視を続けたいので、`requires`ではなく`wants`にします。
+      # 一覧がまだ一度も取得できていない時は起動に失敗するので、再起動させます。
+      # 監視が止まったままだと気づけないためです。
+      #
+      # nixpkgsのモジュールは`network.target`しか待たないので、
+      # 回線が繋がってから起動するようにもします。
+      certspotter = {
+        wants = [
+          "network-online.target"
+          "certspotter-loglist.service"
+        ];
+        after = [
+          "network-online.target"
+          "certspotter-loglist.service"
+        ];
+        serviceConfig = {
+          Restart = "on-failure";
+          RestartSec = "30s";
+        };
+      };
     };
-  };
 
-  # certspotterは起動時にログリストを取得して、
-  # 名前解決に失敗するとすぐ終了します。
-  # nixpkgsのモジュールは`network.target`しか待たないので、
-  # ブート時に回線が繋がる前に起動して失敗してしまいます。
-  # 監視が止まったままだと気づけないので、
-  # DNSの一時的な障害に備えて再起動もさせます。
-  #
-  # 起動の前に一覧を取り直します。
-  # 取得に失敗しても前の一覧で監視を続けたいので、`requires`ではなく`wants`にします。
-  systemd.services.certspotter = {
-    wants = [
-      "network-online.target"
-      "certspotter-loglist.service"
-    ];
-    after = [
-      "network-online.target"
-      "certspotter-loglist.service"
-    ];
-    serviceConfig = {
-      Restart = "on-failure";
-      RestartSec = "30s";
+    # 上流の一覧は新しいCTログが増えたり古いログが消えたりして変わるので、定期的に取り直します。
+    # certspotter自身が上流を読み直す間隔と同じくらいにします。
+    timers.certspotter-loglist = {
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        OnCalendar = "hourly";
+        RandomizedDelaySec = "10min";
+      };
     };
   };
 

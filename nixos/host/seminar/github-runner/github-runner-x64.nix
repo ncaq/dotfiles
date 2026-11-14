@@ -76,20 +76,30 @@ let
       # コンテナの頃は評価だけがコンテナのメモリの制限に入り、
       # ビルドはホストのnix-daemonの側で動いていました。
       # VMでは評価もビルドもVMのメモリを使うので、
-      # 同時に動かすジョブを絞ります。
+      # 同時に動かすジョブを1つに絞ります。
       # ワークフローの側は重い処理を1つのジョブにまとめて`nvd-diff`をその後に動かすので、
-      # 1回の実行が同時に動かすジョブは1つです。
-      # 2つあるのは、別のPRの実行と重なっても待たせないためです。
-      runnerNum = 2;
+      # 1回の実行が同時に動かすジョブは元から1つです。
+      # 別のPRの実行と重なった時は後の方が待ちますが、
+      # その代わりに1つのジョブがVMのメモリを全て評価のワーカーに使えます。
+      runnerNum = 1;
       url = "https://github.com/ncaq/dotfiles";
       # ホスト側のTAPインターフェイス名。
       # インターフェイス名は15文字までなので、VMの名前より短くします。
       tap = "vm-gh-dotfiles";
       mac = "02:00:00:00:00:41"; # 末尾バイトはゲストIPアドレスに対応
       vcpu = config.local.cpuBudgetThreads;
-      # `./check.sh`だけで32GiBを使いました。
-      # 24GiBでは`nix-eval-jobs`のワーカーがOOMで落ちました。
-      mem = 40 * 1024;
+      # `nix-fast-build`のラッパーが評価のワーカーを3つにする大きさにしています。
+      # ラッパーはVMから見えるメモリの半分を`runnerNum`で割り、
+      # さらにワーカー1つあたりの4GiBで割ります。
+      # ランナーが1つなら、VMから見えるメモリが24GiB以上32GiB未満でワーカーは3つです。
+      #
+      # その幅の中で上の方にしているのは、ワーカーが実際には4GiBより多く使うためです。
+      # seminarの構成の評価は1つで7GiBほど使い、
+      # 評価の途中でブートテストのVMも動きます。
+      # ランナーが2つでワーカーも2つずつだった頃は、24GiBでは`nix-eval-jobs`のワーカーがOOMで落ちました。
+      # VMから見えるメモリはカーネルが自分で使う分だけ割り当てより1GiBほど減るので、
+      # 32GiBを割り当ててもワーカーは4つにはなりません。
+      mem = 32 * 1024;
       # CIでNixOS TestのVMを動かします。
       nestedVirt = true;
       # ジョブの中でbubblewrapを動かせるように、
@@ -237,6 +247,9 @@ let
           ];
           # VMが使っていないメモリをホストへ返させます。
           # 返させないと、一度使ったメモリはVMが止まるまでホストに戻りません。
+          # バルーンが返すのは空いているメモリだけで、
+          # ファイルのキャッシュは使っているメモリとして残ります。
+          # ジョブが終わった後にキャッシュを空ける処理は下の`reclaim-idle-memory`です。
           balloon = true;
           interfaces = [
             {
@@ -343,6 +356,55 @@ let
         systemd = {
           tmpfiles.rules = [ "d ${overlayMount}/builds 0755 root root -" ];
           network = (tapNetworkOf name tap).guest;
+          # ジョブが動いていない間、VMのメモリをホストへ返します。
+          #
+          # ジョブが読み書きしたファイルのキャッシュは、ジョブが終わってもVMのメモリに残ります。
+          # バルーンのfree page reportingがホストへ返すのは空いているメモリだけなので、
+          # そのままだとVMはジョブが無い間も十数GiBを持ち続けます。
+          # キャッシュを捨てて空きメモリにすれば、バルーンがホストへ返します。
+          #
+          # 返すのは2MiB単位でまとまった空きだけなので、
+          # 断片化した空きもまとめてから返させます。
+          #
+          # キャッシュを捨てても失うものは小さいです。
+          # ストアの大半はホストからvirtiofsで読んでいて、ホストの側にもキャッシュがあります。
+          #
+          # 間隔は10分です。
+          # 短くすると、続けて動くジョブの合間にキャッシュを捨ててしまい、
+          # 次のジョブが同じファイルを読み直すことになります。
+          # 長くしても、ホストがメモリを取り戻すのがその分遅れるだけです。
+          timers.reclaim-idle-memory = {
+            wantedBy = [ "timers.target" ];
+            timerConfig = {
+              OnBootSec = "10min";
+              OnUnitInactiveSec = "10min";
+            };
+          };
+          services.reclaim-idle-memory = {
+            description = "Return memory to the host while no job is running";
+            serviceConfig = {
+              Type = "oneshot";
+              ExecStart = lib.getExe (
+                pkgs.writeShellApplication {
+                  name = "reclaim-idle-memory";
+                  runtimeInputs = [
+                    pkgs.coreutils
+                    pkgs.procps
+                  ];
+                  text = ''
+                    # ジョブの実行中はランナーが`Runner.Worker`のプロセスを持ちます。
+                    # 実行中にキャッシュを捨てるとビルドが遅くなるだけなので、何もしません。
+                    if pgrep --full Runner.Worker >/dev/null; then
+                      exit 0
+                    fi
+                    sync
+                    echo 3 >/proc/sys/vm/drop_caches
+                    echo 1 >/proc/sys/vm/compact_memory
+                  '';
+                }
+              );
+            };
+          };
           # ホストのNixのデータベースの写しを、VMのデータベースとして置きます。
           # nix-daemonが動き出す前に済ませる必要があるので、
           # ソケットより前に順序付けます。

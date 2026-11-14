@@ -4,7 +4,7 @@
 # その間ずっと`multi-user.target`への到達を止めます。
 # 結果が決まっているものを待つだけなので、ユニットごと無効化します。
 # home-managerの構成がビルドできることは、
-# 実機の構成をビルドするCIの`build-nixos`ジョブが確かめています。
+# CIが`ciJobs`の中で実機の構成をビルドして確かめています。
 { lib, username, ... }:
 {
   systemd.services."home-manager-${username}".enable = lib.mkForce false;

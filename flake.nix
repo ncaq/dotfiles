@@ -314,6 +314,9 @@
 
       inherit systems;
 
+      # `perSystem`の`ciJobs`を、flakeの出力の`ciJobs.<system>`にします。
+      transposition.ciJobs.adHoc = true;
+
       flake = {
         inherit
           nixosConfigurations
@@ -325,11 +328,44 @@
 
       perSystem =
         {
+          config,
           pkgs,
           system,
           ...
         }:
         let
+          # このシステムで動くホスト。
+          # 属性名を数えるだけでホストの構成を評価しないように、
+          # 構成の中の`pkgs`ではなく静的な`hostDefs`の`system`で絞る。
+          hostDefsOfSystem = lib.filterAttrs (_: def: def.system == system) hostDefs;
+          # NixOS構成の評価チェック(評価のみ、ビルドしない)。
+          # env属性の中の`builtins.seq`がinstantiation時にのみ完全評価を強制する。
+          # この形には2つの理由がある。
+          # チェック対象の値自体を`builtins.seq`や`writeText`のtextで強制すると、
+          # `nix flake show`のような属性値に触れるだけのコマンドでも、
+          # 全ホストの完全評価が走り数GBのメモリを消費してしまう。
+          # (`writeText`は関数適用の時点でtextを強制評価する。)
+          # かといって`drvPath`の文字列をそのままenv属性に含めると、
+          # 文字列コンテキスト経由でtoplevelへのビルド依存が発生してしまい、
+          # チェックのビルドがシステム全体の実ビルドになってしまう。
+          nixosEvalChecks = lib.mapAttrs' (
+            name: def:
+            lib.nameValuePair "nixos-eval-${name}" (
+              pkgs.runCommand "nixos-eval-${name}" {
+                evaluated = builtins.seq def.nixosSystem.config.system.build.toplevel.drvPath name;
+              } ''echo "$evaluated" > "$out"''
+            )
+          ) hostDefsOfSystem;
+          # home-manager構成の評価チェック
+          hmEvalChecks = lib.optionalAttrs (homeConfigurations ? ${system}) {
+            "hm-eval" = pkgs.runCommand "hm-eval-${system}" {
+              evaluated = builtins.seq homeConfigurations.${system}.activationPackage.drvPath system;
+            } ''echo "$evaluated" > "$out"'';
+          };
+          # 評価だけを確かめるチェック。
+          # 手元の`./check.sh`を軽くするためのもので、
+          # 実際にビルドする`ciJobs`では要らなくなる。
+          evalChecks = nixosEvalChecks // hmEvalChecks;
           # `renovate-recovery`ワークフローのClaude Codeへ渡すプラグインやプロンプトなどの設定一式。
           renovate-recovery-claude-config = pkgs.callPackage ./pkgs/renovate-recovery/claude-config.nix {
             konokaPlugins = inputs.konoka.packages.${system};
@@ -517,46 +553,35 @@
             };
           };
 
+          # CIのセルフホステッドランナーが1回の`nix-fast-build`でまとめて処理するもの。
+          # `CHECK_OUTPUT=ciJobs ./check.sh`で実行する。
+          #
+          # `checks`との違いは、ホストとhome-managerの構成を評価するだけでなく実際にビルドして、
+          # ホストのブートテストも走らせること。
+          # 手元の`./check.sh`でこれらを毎回ビルドするのは重いので`checks`とは分けている。
+          #
+          # 1回にまとめる理由は、ホストの構成の評価が重いこと。
+          # 評価のチェック、ビルド、ブートテストを別々のジョブに分けると、
+          # 同じホストをジョブごとに評価し直すことになる。
+          # まとめれば評価は1回で済み、`nix-eval-jobs`のワーカーへ並列に割り振られる。
+          #
+          # `nix-eval-jobs`は属性を名前の順に評価して、評価が済んだものからビルドが始まる。
+          # 全体の時間を決めるのは評価、ビルド、VMのブートが直列に並ぶブートテストなので、
+          # 先頭で評価されるように`boot-test-`という名前にしている。
+          ciJobs =
+            removeAttrs config.checks (builtins.attrNames evalChecks)
+            // lib.mapAttrs' (
+              name: def: lib.nameValuePair "nixos-${name}" def.nixosSystem.config.system.build.toplevel
+            ) hostDefsOfSystem
+            // lib.optionalAttrs (homeConfigurations ? ${system}) {
+              home-manager = homeConfigurations.${system}.activationPackage;
+            }
+            // lib.mapAttrs' (name: lib.nameValuePair "boot-test-${name}") (
+              lib.filterAttrs (name: _: hostDefsOfSystem ? ${name}) testNixosBoot
+            );
+
           checks =
-            let
-              # NixOS構成の評価チェック(評価のみ、ビルドしない)。
-              # env属性の中の`builtins.seq`がinstantiation時にのみ完全評価を強制する。
-              # この形には2つの理由がある。
-              # チェック対象の値自体を`builtins.seq`や`writeText`のtextで強制すると、
-              # `nix flake show`のような属性値に触れるだけのコマンドでも、
-              # 全ホストの完全評価が走り数GBのメモリを消費してしまう。
-              # (`writeText`は関数適用の時点でtextを強制評価する。)
-              # かといって`drvPath`の文字列をそのままenv属性に含めると、
-              # 文字列コンテキスト経由でtoplevelへのビルド依存が発生してしまい、
-              # チェックのビルドがシステム全体の実ビルドになってしまう。
-              nixosEvalChecks =
-                lib.mapAttrs'
-                  (
-                    name: nixosConfig:
-                    lib.nameValuePair "nixos-eval-${name}" (
-                      pkgs.runCommand "nixos-eval-${name}" {
-                        evaluated = builtins.seq nixosConfig.config.system.build.toplevel.drvPath name;
-                      } ''echo "$evaluated" > "$out"''
-                    )
-                  )
-                  (
-                    lib.filterAttrs (
-                      _: nixosConfig: nixosConfig.pkgs.stdenv.hostPlatform.system == system
-                    ) nixosConfigurations
-                  );
-              # home-manager構成の評価チェック
-              hmEvalChecks =
-                let
-                  hmConfig = homeConfigurations.${system} or null;
-                in
-                lib.optionalAttrs (hmConfig != null) {
-                  "hm-eval" = pkgs.runCommand "hm-eval-${system}" {
-                    evaluated = builtins.seq hmConfig.activationPackage.drvPath system;
-                  } ''echo "$evaluated" > "$out"'';
-                };
-            in
-            nixosEvalChecks
-            // hmEvalChecks
+            evalChecks
             // nixTests
             // {
               # `nix-fast-build`が見るのは`.#checks`だけで、

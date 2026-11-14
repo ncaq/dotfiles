@@ -54,60 +54,21 @@ jobs:
           echo "Untrusted source: self-hosted runner jobs will not run"
           exit 1
 
-  nvd-diff:
-    name: nvd-diff
-    # baseとPRのseminarのシステムをnvdで比べて、差分をPRのコメントとして投稿します。
+  nix-fast-build:
+    name: nix-fast-build
+    # セルフホステッドランナーで確かめるものを、1回の`nix-fast-build`でまとめて処理します。
+    # チェック、全ホストとhome-managerの構成のビルド、ホストのブートテストです。
     #
-    # 他のセルフホステッドランナーのジョブより先に動かします。
-    # ここでseminarのシステムをビルドするので、
-    # 後ろのジョブはその成果物を使えて、
-    # 重い評価とビルドが同時に走る山も崩せます。
-    #
-    # 差分を出すのはPRの時だけですが、
-    # ジョブごと飛ばすと、
-    # これを`needs`に持つ後ろのジョブまで全て飛ばされてしまいます。
-    # pushやmerge_groupでも後ろのジョブが動くように、
-    # ジョブは毎回動かして、
-    # 中のステップだけをPRの時に限ります。
+    # 以前はこれらを別々のジョブに分けていましたが、
+    # ジョブごとに同じホストの構成を評価し直すことになり、
+    # 評価の重複が実行時間の大半を占めていました。
+    # 何を処理するかはflakeの`ciJobs`に書いています。
     needs: is-trusted
     permissions:
       contents: read # リポジトリコンテンツの読み取り
       id-token: write # `ncaq/nix-composite-action`内のniks3-publicとのOIDC認証に使用
-      pull-requests: write # PRコメントのupsert
     # セルフホステッドランナーは未認証のソースからは実行しない。
     # フォークからのPRは`is-trusted`が失敗するので、ここも後ろのジョブも動きません。
-    if: needs.is-trusted.result == 'success'
-    runs-on: [self-hosted, Linux]
-    timeout-minutes: 360 # キャッシュが切れている時は時間がかかるため長めに設定。
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        if: github.event_name == 'pull_request'
-        with:
-          # base refのworktree展開のために全オブジェクトを要求。
-          # 履歴の浅さに依存しない安全側に倒しています。
-          # そこまで重いリポジトリでもないのでフルに要求しても問題はありません。
-          fetch-depth: 0
-          persist-credentials: false
-      - uses: ./.github/actions/setup-nix
-        if: github.event_name == 'pull_request'
-      - name: Run nvd-pr-diff
-        if: github.event_name == 'pull_request'
-        env:
-          BASE_REF: ${{ github.event.pull_request.base.ref }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: nix run .#nvd-pr-diff
-
-  nix-fast-build:
-    name: nix-fast-build
-    needs:
-      - is-trusted
-      # 重い評価とビルドの山を崩すため、先に`nvd-diff`を終わらせます。
-      - nvd-diff
-    permissions:
-      contents: read # リポジトリコンテンツの読み取り
-      id-token: write # `ncaq/nix-composite-action`内のniks3-publicとのOIDC認証に使用
-    # セルフホステッドランナーは未認証のソースからは実行しない。
     if: needs.is-trusted.result == 'success'
     runs-on: [self-hosted, Linux]
     timeout-minutes: 360 # キャッシュが切れている時は時間がかかるため長めに設定。
@@ -117,33 +78,8 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/setup-nix
       - run: ./check.sh
-
-  build-home-manager:
-    name: build-home-manager
-    needs:
-      - is-trusted
-      # 無駄なビルドを避けるため事前にキャッシュを貯めるために先に`build-nixos`を実行。
-      # 普段は並列に実行した方が効率が良いですが、
-      # パッケージに大きな変動が起きてビルドが必要になった時は、
-      # CPUのスレッド数が足りなくなるため、
-      # 先にビルドだけを済ませてキャッシュにビルド結果を貯めておくほうが効率が良いです。
-      # 普段はそんなに時間がかからず、
-      # 大きな変動が起きた時だけ異様に時間がかかるので、
-      # そちらを優先してケアするほうがリソース配分的に合理的です。
-      - build-nixos
-    permissions:
-      contents: read # リポジトリコンテンツの読み取り
-      id-token: write # `ncaq/nix-composite-action`内のniks3-publicとのOIDC認証に使用
-    # セルフホステッドランナーは未認証のソースからは実行しない。
-    if: needs.is-trusted.result == 'success'
-    runs-on: [self-hosted, Linux]
-    timeout-minutes: 360 # キャッシュが切れている時は時間がかかるため長めに設定。
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/setup-nix
-      - run: nix build -L .#homeConfigurations.x86_64-linux.activationPackage
+        env:
+          CHECK_OUTPUT: ciJobs
 
   build-nix-on-droid:
     name: build-nix-on-droid
@@ -169,29 +105,46 @@ jobs:
       # Nix-on-Droidのビルドはimpureモードで行う必要があります
       - run: nix build -L .#nixOnDroidConfigurations.default.activationPackage --impure
 
-  build-nixos:
-    name: build-nixos
+  nvd-diff:
+    name: nvd-diff
+    # baseとPRのseminarのシステムをnvdで比べて、差分をPRのコメントとして投稿します。
+    #
+    # `nix-fast-build`の後に動かします。
+    # 同時に動かすと重い評価が重なって、ランナーのVMのメモリが足りなくなります。
+    # 後に動かせば、PRのseminarのシステムは`nix-fast-build`がビルドしたものを使えます。
+    # マージに必須のチェックではないので、後ろに置いてもマージできるまでの時間は延びません。
+    #
+    # ビルドは通ってブートテストだけが落ちた時などにも差分は役に立つので、
+    # `nix-fast-build`が失敗しても動かします。
     needs:
       - is-trusted
-      # `nvd-diff`がビルドしたseminarのシステムを使うため、先に終わらせます。
-      - nvd-diff
+      - nix-fast-build
     permissions:
       contents: read # リポジトリコンテンツの読み取り
       id-token: write # `ncaq/nix-composite-action`内のniks3-publicとのOIDC認証に使用
+      pull-requests: write # PRコメントのupsert
     # セルフホステッドランナーは未認証のソースからは実行しない。
-    if: needs.is-trusted.result == 'success'
+    if: >-
+      !cancelled() &&
+      needs.is-trusted.result == 'success' &&
+      github.event_name == 'pull_request'
     runs-on: [self-hosted, Linux]
     timeout-minutes: 360 # キャッシュが切れている時は時間がかかるため長めに設定。
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          # base refのworktree展開のために全オブジェクトを要求。
+          # 履歴の浅さに依存しない安全側に倒しています。
+          # そこまで重いリポジトリでもないのでフルに要求しても問題はありません。
+          fetch-depth: 0
           persist-credentials: false
       - uses: ./.github/actions/setup-nix
-      - name: nix build
-        run: >-
-          nix eval --json .#nixosConfigurations --apply builtins.attrNames |
-          jq -r '.[] | ".#nixosConfigurations.\(.).config.system.build.toplevel"' |
-          xargs nix build -L --keep-going
+      - name: Run nvd-pr-diff
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: nix run .#nvd-pr-diff
 
   renovate-recovery:
     name: renovate-recovery
@@ -199,10 +152,7 @@ jobs:
     # 復旧のPRはRenovateのPRではないので、そのチェックが失敗してもここは動きません。
     needs:
       - nix-fast-build
-      - build-home-manager
       - build-nix-on-droid
-      - build-nixos
-      - test-nixos-boot
     # `failure()`は実行がキャンセルされた時には成立しません。
     if: >-
       failure() &&
@@ -222,29 +172,3 @@ jobs:
       run-id: ${{ github.run_id }}
     secrets:
       CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-
-  test-nixos-boot:
-    name: test-nixos-boot
-    needs:
-      - is-trusted
-      # 無駄なビルドを避けるため事前にキャッシュを貯めるために先に`build-nixos`を実行。
-      - build-nixos
-    permissions:
-      contents: read # リポジトリコンテンツの読み取り
-      id-token: write # `ncaq/nix-composite-action`内のniks3-publicとのOIDC認証に使用
-    # セルフホステッドランナーは未認証のソースからは実行しない。
-    if: needs.is-trusted.result == 'success'
-    runs-on: [self-hosted, Linux]
-    timeout-minutes: 360 # キャッシュが切れている時は時間がかかるため長めに設定。
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/setup-nix
-      # `nix build`は1つのプロセスでホストを1つずつ評価しますが、
-      # `nix-fast-build`はホストごとに評価のワーカーへ割り振るので評価も並列に進みます。
-      # ランナーのVMのPATHにある、メモリに合わせてワーカー数を抑えるラッパーを使います。
-      # `--no-link`と`--skip-cached`はラッパーが常に付けます。
-      # ここで渡すオプションの意味は`./check.sh`と同じです。
-      - name: nix-fast-build
-        run: nix-fast-build --flake .#testNixosBoot --option eval-cache false --no-nom

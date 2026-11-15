@@ -1,4 +1,4 @@
-_: {
+{
   services = {
     # xserverを有効にするとNixOSの`graphical-desktop.nix`が、
     # `services.speechd.enable`を既定でtrueにして、

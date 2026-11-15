@@ -16,7 +16,7 @@
 #
 # - `ErP Ready`を`Disabled`にして、電源オフ状態でもNICへ給電する
 # - `Resume By PCI-E Device`を`Enabled`にして、NICからの起床を許可する
-_: {
+{
   networking.networkmanager.ensureProfiles.profiles.basic-ethernet.ethernet = {
     # NetworkManagerのkeyfileではフラグを数値で指定します。
     # 64(0x40)は`magic`を意味し、magic packetを受信した時だけ起床します。

@@ -49,8 +49,10 @@ metadataが確保できずに書き込めなくなります。
 btrfsの空き容量は`btrfs filesystem usage`のDevice unallocatedで見ます。
 上の割合とは別に、
 デバイスごとに数GiB以上の未割り当て領域を残します。
-dataチャンクは最大1GiB、metadataチャンクは最大256MiBなので、
-それぞれを何度か確保できる量です。
+dataとmetadataのチャンクはデバイスあたり最大1GiB程度なので、
+それを何度か確保できる量です。
+50GiB以下の小さなファイルシステムでは、
+metadataのチャンクは256MiBになります。
 
 未割り当て領域が減った時は、
 `-dusage`や`-musage`で使用率の低いチャンクに絞ったbalanceで回収します。

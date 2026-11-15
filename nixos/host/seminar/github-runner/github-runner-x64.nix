@@ -40,6 +40,8 @@
   VMを起動するたびに作り直します。
   VMは起動し直すまで使い回すので、
   ジョブをまたいで書き込み用の層のビルド結果が残ります。
+  層が埋まらないように、
+  起動から1日経つとジョブが無い時にVMが自分で止まって作り直されます。
   ジョブはVMの中のnix-daemonの`trusted-users`なので、
   後のジョブが使うストアを書き換えることはできます。
   守っているのはホストと他のVMで、
@@ -295,7 +297,14 @@ let
             {
               image = overlayImage;
               mountPoint = overlayMount;
-              size = 100 * 1024;
+              # nixpkgsを上げると全ホストの閉包のほとんどがホストのストアに無いものになり、
+              # 取得だけで40GiB近くになります。
+              # さらにカーネルが上がると、
+              # CPU最適化したホストごとのカーネルを並べてビルドする作業ディレクトリも、
+              # この層に置かれます。
+              # 100GiBではlockの更新の1回で使い切りました。
+              # イメージは起動のたびに作り直すので、ホストのディスクを使い続けることはありません。
+              size = 200 * 1024;
             }
           ];
         };
@@ -400,6 +409,56 @@ let
                     sync
                     echo 3 >/proc/sys/vm/drop_caches
                     echo 1 >/proc/sys/vm/compact_memory
+                  '';
+                }
+              );
+            };
+          };
+          # 起動から1日経ったら、ジョブが無い時にVMを止めて書き込み用の層を作り直させます。
+          #
+          # VMの中ではGCできないので、
+          # 何もしないと書き込み用の層はホストのGCで起動し直す週1回まで増え続けます。
+          # ジョブをまたいで残った結果で層が埋まり、
+          # 後のジョブがディスク不足で落ちます。
+          #
+          # VMが自分で電源を切ると、
+          # ホストの`microvm@`が`Restart=always`で起動し直します。
+          # 自動の起動し直しでも`Requires`のストアの準備のサービスは動くので、
+          # 層とデータベースの写しは新しくなります。
+          #
+          # 1日ごとにしているのは、
+          # 続けて動くジョブ同士でビルドの結果を使い回せるようにするためです。
+          # 1時間ごとに確かめるので、
+          # ジョブが続いている間は終わるまで待ってから作り直します。
+          timers.regenerate-idle-vm = {
+            wantedBy = [ "timers.target" ];
+            timerConfig = {
+              OnBootSec = "1h";
+              OnUnitInactiveSec = "1h";
+            };
+          };
+          services.regenerate-idle-vm = {
+            description = "Power off the VM to regenerate its store overlay while no job is running";
+            serviceConfig = {
+              Type = "oneshot";
+              ExecStart = lib.getExe (
+                pkgs.writeShellApplication {
+                  name = "regenerate-idle-vm";
+                  runtimeInputs = [
+                    pkgs.coreutils
+                    pkgs.procps
+                    config.systemd.package
+                  ];
+                  text = ''
+                    uptime_seconds=$(cut --delimiter=. --fields=1 /proc/uptime)
+                    if [[ $uptime_seconds -lt 86400 ]]; then
+                      exit 0
+                    fi
+                    # ジョブの実行中はランナーが`Runner.Worker`のプロセスを持ちます。
+                    if pgrep --full Runner.Worker >/dev/null; then
+                      exit 0
+                    fi
+                    systemctl poweroff
                   '';
                 }
               );

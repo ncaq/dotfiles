@@ -28,13 +28,29 @@ in
       '';
     };
 
+    cpuThreads = lib.mkOption {
+      type = lib.types.nullOr lib.types.ints.positive;
+      default = if cpuTarget == null then null else cpuTargets.targets.${cpuTarget}.threads;
+      defaultText = lib.literalMD ''
+        `cpuTarget`の論理スレッド数。
+        `cpuTarget`が`null`なら`null`。
+      '';
+      description = ''
+        ホストの全論理スレッド数(SMT込み、`nproc`相当)。
+        負荷の目安など、
+        予約分を引かないCPU全体の量が欲しい箇所の単一の出典として使う。
+        `cpuTarget`未登録のホストでは`null`になるため、
+        この値を使う側は`cpuTarget`が設定済みであることを前提にする。
+      '';
+    };
+
     cpuBudgetThreads = lib.mkOption {
       type = lib.types.nullOr lib.types.ints.positive;
       default =
-        if cpuTarget == null then null else cpuTargets.targets.${cpuTarget}.threads - reservedThreads;
+        if config.local.cpuThreads == null then null else config.local.cpuThreads - reservedThreads;
       defaultText = lib.literalMD ''
-        `cpuTarget`の論理スレッド数から予約分(${toString reservedThreads}スレッド)を引いた値。
-        `cpuTarget`が`null`なら`null`。
+        `cpuThreads`から予約分(${toString reservedThreads}スレッド)を引いた値。
+        `cpuThreads`が`null`なら`null`。
       '';
       description = ''
         CIジョブやテストVMなどに割り当ててよいスレッド数。

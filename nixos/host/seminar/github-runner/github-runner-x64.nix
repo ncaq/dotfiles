@@ -428,12 +428,13 @@ let
           #
           # 1日ごとにしているのは、
           # 続けて動くジョブ同士でビルドの結果を使い回せるようにするためです。
-          # 1時間ごとに確かめるので、
+          # 起動から1日後に初めて確かめて、
+          # その後は1時間ごとに確かめるので、
           # ジョブが続いている間は終わるまで待ってから作り直します。
           timers.regenerate-idle-vm = {
             wantedBy = [ "timers.target" ];
             timerConfig = {
-              OnBootSec = "1h";
+              OnBootSec = "1d";
               OnUnitInactiveSec = "1h";
             };
           };
@@ -445,15 +446,10 @@ let
                 pkgs.writeShellApplication {
                   name = "regenerate-idle-vm";
                   runtimeInputs = [
-                    pkgs.coreutils
                     pkgs.procps
                     config.systemd.package
                   ];
                   text = ''
-                    uptime_seconds=$(cut --delimiter=. --fields=1 /proc/uptime)
-                    if [[ $uptime_seconds -lt 86400 ]]; then
-                      exit 0
-                    fi
                     # ジョブの実行中はランナーが`Runner.Worker`のプロセスを持ちます。
                     if pgrep --full Runner.Worker >/dev/null; then
                       exit 0

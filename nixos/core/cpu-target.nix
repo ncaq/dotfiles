@@ -7,6 +7,8 @@
 
   defaultの`null`では何も適用されないため、
   未対応CPUのホストは何も書かなくてよい。
+  ただし`cpuThreads`や`cpuBudgetThreads`を前提にするモジュール(beesなど)を使うホストでは、
+  CPUを登録した上で`cpuTarget`を設定する必要がある。
 */
 { lib, config, ... }:
 let

@@ -40,6 +40,8 @@
   VMを起動するたびに作り直します。
   VMは起動し直すまで使い回すので、
   ジョブをまたいで書き込み用の層のビルド結果が残ります。
+  層が埋まらないように、
+  起動から1日経つとジョブが無い時にVMが自分で止まって作り直されます。
   ジョブはVMの中のnix-daemonの`trusted-users`なので、
   後のジョブが使うストアを書き換えることはできます。
   守っているのはホストと他のVMで、
@@ -196,6 +198,25 @@ let
   overlayMount = "/nix/.rw-store";
   # Nixのデータベースの置き場所。ホストでもVMの中でも同じパスです。
   nixDbDir = "/nix/var/nix/db";
+  # VMの中でジョブが動いているかを確かめるシェルの関数`job_running`の定義。
+  # `procps`の`pgrep`を使います。
+  #
+  # ジョブの実行中はランナーの`Runner.Listener`が子の`Runner.Worker`を持ちます。
+  # どちらもnixpkgsではラッパーではない実行ファイルなので、
+  # プロセス名がそのまま実行ファイルの名前になり、`--exact`で一致します。
+  #
+  # ジョブは任意のコードを実行できるので、
+  # 名前だけで探すと、同じ名前のプロセスを残してジョブが動いているように見せられます。
+  # ジョブのプロセスは`Runner.Listener`の子にはなれないので、
+  # ランナーのユーザーの`Runner.Listener`の子だけを探します。
+  jobRunningFunction = ''
+    job_running() {
+      local listeners
+      # `Runner.Listener`が居なければ、ジョブも動いていません。
+      listeners=$(pgrep --exact --uid github-runner --delimiter , Runner.Listener) || return 1
+      pgrep --exact --uid github-runner --parent "$listeners" Runner.Worker >/dev/null
+    }
+  '';
   # TAPのホスト側とゲスト側のネットワークの定義。
   # アドレスはVMの名前で`machineAddresses`のエントリを引きます。
   tapNetworkOf =
@@ -295,7 +316,15 @@ let
             {
               image = overlayImage;
               mountPoint = overlayMount;
-              size = 100 * 1024;
+              # nixpkgsを上げると全ホストの閉包のほとんどがホストのストアに無いものになり、
+              # 取得だけで40GiB近くになります。
+              # さらにカーネルが上がると、
+              # CPU最適化したホストごとのカーネルを並べてビルドする作業ディレクトリも、
+              # この層に置かれます。
+              # 前のジョブの結果が残った状態でlockの更新を1回走らせると、
+              # 100GiBでは足りなくなりました。
+              # イメージは起動のたびに作り直すので、ホストのディスクを使い続けることはありません。
+              size = 200 * 1024;
             }
           ];
         };
@@ -392,14 +421,68 @@ let
                     pkgs.procps
                   ];
                   text = ''
-                    # ジョブの実行中はランナーが`Runner.Worker`のプロセスを持ちます。
+                    ${jobRunningFunction}
                     # 実行中にキャッシュを捨てるとビルドが遅くなるだけなので、何もしません。
-                    if pgrep --full Runner.Worker >/dev/null; then
+                    if job_running; then
                       exit 0
                     fi
                     sync
                     echo 3 >/proc/sys/vm/drop_caches
                     echo 1 >/proc/sys/vm/compact_memory
+                  '';
+                }
+              );
+            };
+          };
+          # 起動から1日経ったら、ジョブが無い時にVMを止めて書き込み用の層を作り直させます。
+          #
+          # VMの中ではGCできないので、
+          # 何もしないと書き込み用の層はホストのGCで起動し直す週1回まで増え続けます。
+          # ジョブをまたいで残った結果で層が埋まり、
+          # 後のジョブがディスク不足で落ちます。
+          #
+          # VMが自分で電源を切ると、
+          # ホストの`microvm@`が`Restart=always`で起動し直します。
+          # 自動の起動し直しでも`Requires`のストアの準備のサービスは動くので、
+          # 層とデータベースの写しは新しくなります。
+          #
+          # 1日ごとにしているのは、
+          # 続けて動くジョブ同士でビルドの結果を使い回せるようにするためです。
+          # 起動から1日後に初めて確かめて、
+          # その後は1時間ごとに確かめるので、
+          # ジョブが続いている間は終わるまで待ってから作り直します。
+          #
+          # ジョブが無いと確かめてから電源を切るまでの間に、
+          # 待っているランナーがジョブを受け取ると、そのジョブは落ちます。
+          # 先にランナーのサービスを止めても、
+          # 止めた時に受け取ったばかりのジョブはランナーと一緒に終わるので、
+          # 隙間は止めるまでの間に移るだけで狭くなりません。
+          # 起きるのは1日1回の確かめの直後の一瞬だけで、
+          # 落ちたジョブは実行し直せば済むので、この隙間は許容します。
+          timers.regenerate-idle-vm = {
+            wantedBy = [ "timers.target" ];
+            timerConfig = {
+              OnBootSec = "1d";
+              OnUnitInactiveSec = "1h";
+            };
+          };
+          services.regenerate-idle-vm = {
+            description = "Power off the VM to regenerate its store overlay while no job is running";
+            serviceConfig = {
+              Type = "oneshot";
+              ExecStart = lib.getExe (
+                pkgs.writeShellApplication {
+                  name = "regenerate-idle-vm";
+                  runtimeInputs = [
+                    pkgs.procps
+                    config.systemd.package
+                  ];
+                  text = ''
+                    ${jobRunningFunction}
+                    if job_running; then
+                      exit 0
+                    fi
+                    systemctl poweroff
                   '';
                 }
               );

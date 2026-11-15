@@ -1,4 +1,4 @@
-_: {
+{
   services.snapper = {
     configs = {
       noa = {

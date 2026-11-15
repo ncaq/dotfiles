@@ -11,7 +11,7 @@
   実際に`boot.kernelPackages`で参照されない限りビルドコストは発生しない。
   そのためclient向けホストにoverlayを登録しても無害。
 */
-_: {
+{
   nixpkgs.overlays = [
     (import ../../lib/xanmod-server-overlay.nix)
   ];

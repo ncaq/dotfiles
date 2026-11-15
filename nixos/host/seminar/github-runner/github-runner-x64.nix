@@ -198,6 +198,25 @@ let
   overlayMount = "/nix/.rw-store";
   # Nixのデータベースの置き場所。ホストでもVMの中でも同じパスです。
   nixDbDir = "/nix/var/nix/db";
+  # VMの中でジョブが動いているかを確かめるシェルの関数`job_running`の定義。
+  # `procps`の`pgrep`を使います。
+  #
+  # ジョブの実行中はランナーの`Runner.Listener`が子の`Runner.Worker`を持ちます。
+  # どちらもnixpkgsではラッパーではない実行ファイルなので、
+  # プロセス名がそのまま実行ファイルの名前になり、`--exact`で一致します。
+  #
+  # ジョブは任意のコードを実行できるので、
+  # 名前だけで探すと、同じ名前のプロセスを残してジョブが動いているように見せられます。
+  # ジョブのプロセスは`Runner.Listener`の子にはなれないので、
+  # ランナーのユーザーの`Runner.Listener`の子だけを探します。
+  jobRunningFunction = ''
+    job_running() {
+      local listeners
+      # `Runner.Listener`が居なければ、ジョブも動いていません。
+      listeners=$(pgrep --exact --uid github-runner --delimiter , Runner.Listener) || return 1
+      pgrep --exact --uid github-runner --parent "$listeners" Runner.Worker >/dev/null
+    }
+  '';
   # TAPのホスト側とゲスト側のネットワークの定義。
   # アドレスはVMの名前で`machineAddresses`のエントリを引きます。
   tapNetworkOf =
@@ -401,9 +420,9 @@ let
                     pkgs.procps
                   ];
                   text = ''
-                    # ジョブの実行中はランナーが`Runner.Worker`のプロセスを持ちます。
+                    ${jobRunningFunction}
                     # 実行中にキャッシュを捨てるとビルドが遅くなるだけなので、何もしません。
-                    if pgrep --full Runner.Worker >/dev/null; then
+                    if job_running; then
                       exit 0
                     fi
                     sync
@@ -450,8 +469,8 @@ let
                     config.systemd.package
                   ];
                   text = ''
-                    # ジョブの実行中はランナーが`Runner.Worker`のプロセスを持ちます。
-                    if pgrep --full Runner.Worker >/dev/null; then
+                    ${jobRunningFunction}
+                    if job_running; then
                       exit 0
                     fi
                     systemctl poweroff

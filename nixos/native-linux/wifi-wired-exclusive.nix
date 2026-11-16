@@ -2,7 +2,6 @@
   pkgs,
   lib,
   config,
-  inputs,
   ...
 }:
 let
@@ -12,8 +11,7 @@ let
   # デバイスの`up`/`down`イベントごとに呼ばれる。
   #
   # 中身は`pkgs/wifi-wired-exclusive`にある。
-  wifiWiredExclusive = pkgs.callPackage ../../pkgs/wifi-wired-exclusive {
-    inherit (inputs) himari-src;
+  wifiWiredExclusive = pkgs.wifi-wired-exclusive.override {
     networkmanager = config.networking.networkmanager.package;
   };
 in

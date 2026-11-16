@@ -75,7 +75,7 @@ let
       llama-cpp = pkgs-unstable.llama-cpp-vulkan;
       model = null;
     };
-  plamo-translate-cli = pkgs.callPackage ../../pkgs/plamo-translate-cli setting;
+  plamo-translate-cli = pkgs.plamo-translate-cli.override setting;
 in
 {
   home.packages = [ plamo-translate-cli ];

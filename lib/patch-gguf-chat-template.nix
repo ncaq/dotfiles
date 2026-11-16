@@ -1,16 +1,15 @@
 /**
   patchGgufChatTemplate: GGUFの`tokenizer.chat_template`へ差分を当てた派生GGUFを作る関数。
 
-  型: { pkgs, himari-src } -> { gguf, patch, hash } -> derivation
+  型: { pkgs } -> { gguf, patch, hash } -> derivation
 
   引数:
-    pkgs       - `runCommand`と`pkgs/patch-gguf-chat-template`を組むためのnixpkgs
-    himari-src - `pkgs/patch-gguf-chat-template`が依存するhimariのソース(flakeのinput)
-    gguf       - 元になるGGUF(`fetchHuggingFace`の結果など)
-    patch      - チャットテンプレートに当てるunified diffのファイル。
-                 `patch`コマンドがヘッダより前の文章を読み飛ばすので、
-                 差分の意図はファイルの先頭に書いておける。
-    hash       - 差分を当てた後のファイルのSRI形式sha256ハッシュ
+    pkgs  - `runCommand`と`pkgs/patch-gguf-chat-template`を取るnixpkgs
+    gguf  - 元になるGGUF(`fetchHuggingFace`の結果など)
+    patch - チャットテンプレートに当てるunified diffのファイル。
+            `patch`コマンドがヘッダより前の文章を読み飛ばすので、
+            差分の意図はファイルの先頭に書いておける。
+    hash  - 差分を当てた後のファイルのSRI形式sha256ハッシュ
 
   なぜ必要か:
     Hugging Faceで配布されるGGUFのチャットテンプレートには、
@@ -64,10 +63,7 @@
     `hash = ""`で一度ビルドして、
     hash mismatchのエラーに出る実際の値を書き写す。
 */
-{ pkgs, himari-src }:
-let
-  patchGgufChatTemplate = pkgs.callPackage ../pkgs/patch-gguf-chat-template { inherit himari-src; };
-in
+{ pkgs }:
 {
   gguf,
   patch,
@@ -75,7 +71,7 @@ in
 }:
 pkgs.runCommand "${gguf.name}-patched-template"
   {
-    nativeBuildInputs = [ patchGgufChatTemplate ];
+    nativeBuildInputs = [ pkgs.patch-gguf-chat-template ];
 
     outputHashMode = "flat";
     outputHashAlgo = "sha256";

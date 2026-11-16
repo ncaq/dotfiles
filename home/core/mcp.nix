@@ -5,8 +5,6 @@
   ...
 }:
 let
-  backlog-mcp-server = pkgs.callPackage ../../pkgs/backlog-mcp-server.nix { };
-  mackerel-mcp-server = pkgs.callPackage ../../pkgs/mackerel-mcp-server.nix { };
   # リモートのHTTP MCPサーバにはファイルベースのシークレットを渡せる`env`が使えません。
   # 代わりにClaude Codeの`headersHelper`から呼び出して、
   # 接続時にsops-nixが復号したトークンを読み出しBearerヘッダを組み立てます。
@@ -63,7 +61,7 @@ in
     enable = true;
     servers = {
       backlog = {
-        command = lib.getExe backlog-mcp-server;
+        command = lib.getExe pkgs.backlog-mcp-server;
         env = {
           BACKLOG_API_KEY.file = config.sops.secrets."backlog-mcp-server/api-key".path;
           BACKLOG_DOMAIN.file = config.sops.secrets."backlog-mcp-server/domain".path;
@@ -101,7 +99,7 @@ in
       };
       mackerel = {
         # 自宅インフラの監視に使っているMackerelを常に見られるようにします。
-        command = lib.getExe mackerel-mcp-server;
+        command = lib.getExe pkgs.mackerel-mcp-server;
         env = {
           MACKEREL_APIKEY.file = config.sops.secrets."mackerel-mcp-server/api-key".path;
         };

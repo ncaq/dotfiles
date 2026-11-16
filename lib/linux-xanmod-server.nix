@@ -24,6 +24,11 @@
   `callPackage`で包むと外側の`makeOverridable`に隠されて、
   下流の`cpu-optimized-kernel-overlay.nix`が`kernelPatches`を、
   追加するための`.override`が機能しなくなる。
+
+  `pkgs/`に置くと`local-packages-overlay.nix`が`callPackage`で拾ってしまう。
+  そうすると`.override`で`kernelPatches`を足せない`pkgs.linux-xanmod-server`が生え、
+  flakeの`checks`でCPU最適化のパッチを当てていない誰も使わない版をビルドすることになるので、
+  `lib/`に置いている。
 */
 { lib, linuxKernel }:
 linuxKernel.kernels.linux_xanmod.override (oldArgs: {

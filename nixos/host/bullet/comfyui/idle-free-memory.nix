@@ -19,7 +19,6 @@
 {
   lib,
   pkgs,
-  inputs,
   hardening,
   ...
 }:
@@ -27,9 +26,7 @@ let
   # ホスト側の`pkgs`で組む。
   # コンテナの中もホストと同じnixpkgsなので、
   # `nixos/host/bullet/comfyui/workflow/cli.nix`が組むcomfy-workflowと依存の閉包を共有できる。
-  comfyui-idle-free-memory = pkgs.callPackage ../../../../pkgs/comfyui-idle-free-memory {
-    inherit (inputs) himari-src;
-  };
+  inherit (pkgs) comfyui-idle-free-memory;
 in
 {
   containers.comfyui.config =

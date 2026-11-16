@@ -222,9 +222,7 @@ let
 
   # 同期の中身は`pkgs/open-webui-user-settings-sync`にある。
   # 宣言はJSONのファイルにして、下のサービスの環境変数でパスを渡す。
-  sync = pkgs.callPackage ../../../../pkgs/open-webui-user-settings-sync {
-    inherit (inputs) himari-src;
-  };
+  sync = pkgs.open-webui-user-settings-sync;
 in
 {
   systemd.services.open-webui-user-settings-sync = {

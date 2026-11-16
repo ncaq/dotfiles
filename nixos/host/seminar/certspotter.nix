@@ -2,7 +2,6 @@
   pkgs,
   lib,
   config,
-  inputs,
   hardening,
   ...
 }:
@@ -68,9 +67,7 @@ let
 
   # hookとチェックの中身は`pkgs/certspotter-mackerel`にあります。
   # hookが書いた行をチェックがそのまま読めることは、そのビルドの中のテストが検査します。
-  certspotter-mackerel = pkgs.callPackage ../../../pkgs/certspotter-mackerel {
-    inherit (inputs) himari-src;
-  };
+  inherit (pkgs) certspotter-mackerel;
 
   # サブコマンドと設定の環境変数を付けて、hookとチェックのそれぞれのコマンドにします。
   # certspotterのhookは引数無しで呼ばれるパスしか受け付けないので、ラッパーで包みます。

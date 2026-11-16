@@ -1,7 +1,6 @@
 {
   config,
   hardening,
-  inputs,
   lib,
   pkgs,
   ...
@@ -26,8 +25,7 @@ let
   # デプロイ済みのflakeを参照するため作業ツリーには依存しません。
   #
   # 中身は`pkgs/nix-gc-root-hosts`にあります。
-  nix-gc-root-hosts = pkgs.callPackage ../../../pkgs/nix-gc-root-hosts {
-    inherit (inputs) himari-src;
+  nix-gc-root-hosts = pkgs.nix-gc-root-hosts.override {
     nix = config.nix.package;
   };
 in

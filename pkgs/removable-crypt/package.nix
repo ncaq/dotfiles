@@ -3,10 +3,6 @@
 # `mount`と`unmount`のサブコマンドを持つ。
 # `lib/removable-crypt.nix`がデバイスごとに引数を付けて、`mnt-<名前>`と`umnt-<名前>`として包む。
 # 手順は`src/RemovableCrypt/Mount.hs`と`src/RemovableCrypt/Unmount.hs`に書いてある。
-#
-# `callPackage`の結果に`haskell.lib`の関数を重ねると、
-# `override`がこのファイルを`mkDerivation`付きで呼び直して壊れる。
-# CIで警告をエラーにしたい時は`werror`で指定する。
 {
   lib,
   haskell,
@@ -17,7 +13,6 @@
   systemd,
   util-linux,
   himari-src,
-  werror ? false,
 }:
 let
   packages = haskellPackages.extend (
@@ -55,6 +50,5 @@ lib.pipe package [
         }
     '';
   }))
-  (haskell.lib.compose.appendConfigureFlags (lib.optional werror "--ghc-options=-Werror"))
   haskell.lib.compose.justStaticExecutables
 ]

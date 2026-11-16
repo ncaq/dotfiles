@@ -7,10 +7,6 @@
 # Gitの操作は`git`コマンドに任せるので、PATHへ足して包む。
 # `sudo`や`nixos-rebuild`のような適用のコマンドは、
 # 利用者の環境に入っているものを使うので包まない。
-#
-# `callPackage`の結果に`haskell.lib`の関数を重ねると、
-# `override`がこのファイルを`mkDerivation`付きで呼び直して壊れる。
-# CIで警告をエラーにしたい時は`werror`で指定する。
 {
   lib,
   haskell,
@@ -18,7 +14,6 @@
   makeWrapper,
   git,
   himari-src,
-  werror ? false,
 }:
 let
   packages = haskellPackages.extend (
@@ -51,6 +46,5 @@ lib.pipe package [
         --suffix PATH : ${lib.makeBinPath [ git ]}
     '';
   }))
-  (haskell.lib.compose.appendConfigureFlags (lib.optional werror "--ghc-options=-Werror"))
   haskell.lib.compose.justStaticExecutables
 ]

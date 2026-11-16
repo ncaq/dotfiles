@@ -341,27 +341,19 @@
           # `pkgs/`の自作パッケージ。
           # overlayを`pkgs`に当てた結果から、overlayが生やした名前の分だけを取り出す。
           # `localPackagesOverlay`をここで呼ぶのは名前を知るためだけで、値には触れない。
-          #
-          # XanModはx86_64以外ではbrokenなので、他のシステムでは外す。
-          # `meta.available`で一律に絞ると名前を並べるだけで値の評価が要り、
-          # Haskellのパッケージの`callCabal2nix`のIFDまで走ってしまうので、名前で外す。
-          localPackages =
-            removeAttrs (lib.intersectAttrs (localPackagesOverlay pkgs pkgs) pkgs) (
-              lib.optional (system != "x86_64-linux") "linux-xanmod-server"
-            )
-            // {
-              # NextN層を持つアーキテクチャを扱うgguf-pyはunstableにしか無く、
-              # モデルの量子化からもunstableのものを呼ぶので揃える。
-              inherit (pkgsUnstable) merge-gguf-nextn;
-              # CIでCUDAをビルドしないようCPU版のllama.cppを渡す。
-              # モデルとドラフトはラッパーの検査の分岐を通すためだけの値で、
-              # 検査は推論しないので実在しなくてよい。
-              plamo-translate-cli = pkgs.plamo-translate-cli.override {
-                inherit (pkgsUnstable) llama-cpp;
-                model = "pfnet/plamo-3-translate-8b-GGUF:Q4_K_M";
-                draftModel = "pfnet/plamo-3-translate-0.8b-GGUF:Q4_0";
-              };
+          localPackages = lib.intersectAttrs (localPackagesOverlay pkgs pkgs) pkgs // {
+            # NextN層を持つアーキテクチャを扱うgguf-pyはunstableにしか無く、
+            # モデルの量子化からもunstableのものを呼ぶので揃える。
+            inherit (pkgsUnstable) merge-gguf-nextn;
+            # CIでCUDAをビルドしないようCPU版のllama.cppを渡す。
+            # モデルとドラフトはラッパーの検査の分岐を通すためだけの値で、
+            # 検査は推論しないので実在しなくてよい。
+            plamo-translate-cli = pkgs.plamo-translate-cli.override {
+              inherit (pkgsUnstable) llama-cpp;
+              model = "pfnet/plamo-3-translate-8b-GGUF:Q4_K_M";
+              draftModel = "pfnet/plamo-3-translate-0.8b-GGUF:Q4_0";
             };
+          };
           # このシステムで動くホスト。
           # 属性名を数えるだけでホストの構成を評価しないように、
           # 構成の中の`pkgs`ではなく静的な`hostDefs`の`system`で絞る。

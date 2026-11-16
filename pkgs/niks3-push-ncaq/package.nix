@@ -20,7 +20,7 @@ let
     };
     private = {
       defaultSecretsFile = ../../secrets/niks3-private.yaml;
-      # home-managerからcallPackageされるためNixOSの`config`は読めない。
+      # overlayで全環境共通のパッケージとして生やすためNixOSの`config`は読めない。
       # `lib/tailnet.nix`の案内通りtailnet名を直接importして渡す。
       defaultServerUrl = import ../../lib/niks3-private-tailscale-url.nix {
         inherit lib;

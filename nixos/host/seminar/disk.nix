@@ -116,6 +116,15 @@
                   mountOptions = [
                     "noatime"
                     "compress=zstd"
+                    # TODO: noa2(WD121PURZ)が2026-11-14にSATAリンクから脱落したための一時的な措置。
+                    # https://github.com/ncaq/dotfiles/issues/1732
+                    # `nofail`は欠けたまま起動してもemergency modeに落ちないようにする。
+                    # `degraded`は欠けたままマウントできるようにする。
+                    # 自動でマウントするには`noa-degraded-automount.nix`のudevルールも要る。
+                    # noa2の再同期か交換が済んだら、そのファイルと一緒に外す。
+                    # 常に付けているとディスクの脱落に気付きにくくなる。
+                    "nofail"
+                    "degraded"
                   ];
                   subvolumes = {
                     # snapperスナップショットの転送先。
@@ -213,6 +222,9 @@
           device = "/dev/disk/by-partlabel/disk-noa2-luks";
           crypttabExtraOpts = [
             "tpm2-device=auto"
+            # TODO: noa2の脱落に対する一時的な措置。
+            # 外す条件は`/mnt/noa`の`degraded`と同じ。
+            "nofail"
           ];
         };
       };
@@ -222,6 +234,9 @@
     # writebackモードを有効化
     "w /sys/block/bcache0/bcache/cache_mode - - - - writeback"
     "w /sys/block/bcache1/bcache/cache_mode - - - - writeback"
-    "w /sys/block/bcache2/bcache/cache_mode - - - - writeback"
+    # TODO: noa2の脱落に対する一時的な措置。
+    # bcache2が無くてもsystemd-tmpfilesを失敗させない。
+    # 外す条件は`/mnt/noa`の`degraded`と同じ。
+    "w- /sys/block/bcache2/bcache/cache_mode - - - - writeback"
   ];
 }

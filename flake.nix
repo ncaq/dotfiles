@@ -354,6 +354,24 @@
               draftModel = "pfnet/plamo-3-translate-0.8b-GGUF:Q4_0";
             };
           };
+          # 自作のパッケージの名前がnixpkgsの属性と重なっていないかのチェック。
+          # overlayは`prev`を見ずに上書きするので、
+          # 重なるとnixpkgsの中でそれに依存するパッケージまで自作の版に差し替わる。
+          # 黙って差し替わらないように評価を止めて、移行するか名前を変えるかを決める。
+          # overlayはunstableにも当てるので、unstableの属性とも比べる。
+          # 強制をenv属性の中に置く理由は下の`nixosEvalChecks`と同じ。
+          localPackagesNameCollision =
+            let
+              collisions = lib.filter (
+                name:
+                nixpkgs.legacyPackages.${system} ? ${name} || nixpkgs-unstable.legacyPackages.${system} ? ${name}
+              ) (builtins.attrNames (localPackagesOverlay pkgs pkgs));
+            in
+            pkgs.runCommand "local-packages-name-collision" {
+              checked = builtins.seq (lib.assertMsg (
+                collisions == [ ]
+              ) "自作のパッケージの名前がnixpkgsの属性と重なっています: ${lib.concatStringsSep ", " collisions}") system;
+            } ''echo "$checked" > "$out"'';
           # このシステムで動くホスト。
           # 属性名を数えるだけでホストの構成を評価しないように、
           # 構成の中の`pkgs`ではなく静的な`hostDefs`の`system`で絞る。
@@ -522,6 +540,7 @@
             # 自作のパッケージは全てビルドとderivationの中のテストを確かめる。
             // localPackages
             // {
+              local-packages-name-collision = localPackagesNameCollision;
               # 同じワークフローのClaude Codeへ渡す設定一式。
               # 使われるのはRenovateのPRが失敗した時だけなので、
               # konokaやgit-hooksの更新で壊れたことに普段のCIで気付けるようにします。

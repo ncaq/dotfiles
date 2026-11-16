@@ -338,10 +338,12 @@
         }:
         let
           pkgsUnstable = importPkgsUnstable system;
+          # overlayが生やす`pkgs/`の自作パッケージの名前。
+          # `localPackagesOverlay`をここで呼ぶのは名前を知るためだけで、値には触れない。
+          localPackageNames = builtins.attrNames (localPackagesOverlay pkgs pkgs);
           # `pkgs/`の自作パッケージ。
           # overlayを`pkgs`に当てた結果から、overlayが生やした名前の分だけを取り出す。
-          # `localPackagesOverlay`をここで呼ぶのは名前を知るためだけで、値には触れない。
-          localPackages = lib.intersectAttrs (localPackagesOverlay pkgs pkgs) pkgs // {
+          localPackages = lib.getAttrs localPackageNames pkgs // {
             # NextN層を持つアーキテクチャを扱うgguf-pyはunstableにしか無く、
             # モデルの量子化からもunstableのものを呼ぶので揃える。
             inherit (pkgsUnstable) merge-gguf-nextn;
@@ -365,7 +367,7 @@
               collisions = lib.filter (
                 name:
                 nixpkgs.legacyPackages.${system} ? ${name} || nixpkgs-unstable.legacyPackages.${system} ? ${name}
-              ) (builtins.attrNames (localPackagesOverlay pkgs pkgs));
+              ) localPackageNames;
             in
             pkgs.runCommand "local-packages-name-collision" {
               checked = builtins.seq (lib.assertMsg (

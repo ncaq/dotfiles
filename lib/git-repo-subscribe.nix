@@ -2,15 +2,12 @@
   lib,
   pkgs,
   config,
-  inputs,
   isTermux,
   ...
 }:
 let
   cfg = config.programs.git-repo-subscribe;
-  git-repo-subscribe = pkgs.callPackage ../pkgs/git-repo-subscribe {
-    inherit (inputs) himari-src;
-  };
+  inherit (pkgs) git-repo-subscribe;
 
   # ここでは評価時の基本的な誤りだけを検出し、完全な入力検証は実行時のHaskell側で行います。
   gitRemoteType = lib.types.addCheck lib.types.str (

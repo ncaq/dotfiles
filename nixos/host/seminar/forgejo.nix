@@ -1,6 +1,5 @@
 {
   config,
-  inputs,
   pkgs,
   ...
 }:
@@ -25,7 +24,7 @@ let
   # LFSオブジェクトをgarage(S3互換)に保存するためのバケットとキーをidempotentに作成します。
   # name = "forgejo" なので/run/garage-setup/forgejoにキーが書き出され、forgejoユーザーが所有します。
   garageSetup = import ../../../lib/garage-setup.nix {
-    inherit pkgs config inputs;
+    inherit pkgs config;
     name = "forgejo";
   };
 in

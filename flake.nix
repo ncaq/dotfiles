@@ -198,8 +198,11 @@
       hardening = import ./lib/systemd-hardening.nix;
       # nixpkgsの共通設定。
       nixpkgsConfig = import ./lib/nixpkgs-config.nix { inherit lib; };
+      # `pkgs/`の自作パッケージをトップレベルに生やすoverlay。
+      localPackagesOverlay = import ./lib/local-packages-overlay.nix { inherit lib inputs; };
       # 全環境で共通のoverlays。
       overlays = [
+        localPackagesOverlay
         (import ./lib/snapper-btrfs-bin-overlay.nix)
         inputs.utensils-comfyui-nix.overlays.default
         inputs.firge-nix.overlays.default
@@ -334,6 +337,31 @@
           ...
         }:
         let
+          pkgsUnstable = importPkgsUnstable system;
+          # `pkgs/`の自作パッケージ。
+          # overlayを`pkgs`に当てた結果から、overlayが生やした名前の分だけを取り出す。
+          # `localPackagesOverlay`をここで呼ぶのは名前を知るためだけで、値には触れない。
+          #
+          # XanModはx86_64以外ではbrokenなので、他のシステムでは外す。
+          # `meta.available`で一律に絞ると名前を並べるだけで値の評価が要り、
+          # Haskellのパッケージの`callCabal2nix`のIFDまで走ってしまうので、名前で外す。
+          localPackages =
+            removeAttrs (lib.intersectAttrs (localPackagesOverlay pkgs pkgs) pkgs) (
+              lib.optional (system != "x86_64-linux") "linux-xanmod-server"
+            )
+            // {
+              # NextN層を持つアーキテクチャを扱うgguf-pyはunstableにしか無く、
+              # モデルの量子化からもunstableのものを呼ぶので揃える。
+              inherit (pkgsUnstable) merge-gguf-nextn;
+              # CIでCUDAをビルドしないようCPU版のllama.cppを渡す。
+              # モデルとドラフトはラッパーの検査の分岐を通すためだけの値で、
+              # 検査は推論しないので実在しなくてよい。
+              plamo-translate-cli = pkgs.plamo-translate-cli.override {
+                inherit (pkgsUnstable) llama-cpp;
+                model = "pfnet/plamo-3-translate-8b-GGUF:Q4_K_M";
+                draftModel = "pfnet/plamo-3-translate-0.8b-GGUF:Q4_0";
+              };
+            };
           # このシステムで動くホスト。
           # 属性名を数えるだけでホストの構成を評価しないように、
           # 構成の中の`pkgs`ではなく静的な`hostDefs`の`system`で絞る。
@@ -370,109 +398,13 @@
           renovate-recovery-claude-config = pkgs.callPackage ./pkgs/renovate-recovery/claude-config.nix {
             konokaPlugins = inputs.konoka.packages.${system};
             git-hooks = inputs.git-hooks.packages.${system}.default;
-            inherit renovate-recovery;
-          };
-          # `renovate-recovery`ワークフローが直接実行するTypeScriptの型検査とテスト。
-          renovate-recovery = pkgs.callPackage ./pkgs/renovate-recovery { };
-          # Gitリポジトリを購読するためのツール。
-          # ビルドの中でsandwichのテストが走る。
-          git-repo-subscribe = pkgs.callPackage ./pkgs/git-repo-subscribe {
-            inherit (inputs) himari-src;
           };
           # 評価時にしか走らない純粋なNixのテストを、ファイルごとにderivationへ包んだもの。
           nixTests = import ./test/eval {
             inherit lib;
             inherit (pkgs) runCommand;
           };
-          safetensors-fp16 = pkgs.callPackage ./pkgs/safetensors-fp16 { };
-          # Comfy-Orgの公式CLI。
-          comfy-cli = pkgs.callPackage ./pkgs/comfy-cli { };
-          # PLaMo Translateでローカル翻訳するCLI。
-          # CIでCUDAをビルドしないようCPU版のllama.cppを渡す。
-          # モデルとドラフトはラッパーの検査の分岐を通すためだけの値で、
-          # 検査は推論しないので実在しなくてよい。
-          plamo-translate-cli = pkgs.callPackage ./pkgs/plamo-translate-cli {
-            inherit ((importPkgsUnstable system)) llama-cpp;
-            model = "pfnet/plamo-3-translate-8b-GGUF:Q4_K_M";
-            draftModel = "pfnet/plamo-3-translate-0.8b-GGUF:Q4_0";
-          };
-          # ワークフローを名前で呼ぶコマンド。
-          # ビルドの中でsandwichのテストが走る。
-          comfy-workflow = pkgs.callPackage ./pkgs/comfy-workflow {
-            inherit comfy-cli;
-            inherit (inputs) himari-src;
-          };
-          # アイドル中のComfyUIにメモリを解放させる常駐プロセス。
-          # ビルドの中でsandwichのテストが走る。
-          comfyui-idle-free-memory = pkgs.callPackage ./pkgs/comfyui-idle-free-memory {
-            inherit (inputs) himari-src;
-          };
-          # GGUFのチャットテンプレートを取り出して書き戻すコマンド。
-          # ビルドの中でsandwichのテストが走る。
-          patch-gguf-chat-template = pkgs.callPackage ./pkgs/patch-gguf-chat-template {
-            inherit (inputs) himari-src;
-          };
-          # GGUFの本体へ別ファイルのMTPのNextN層を足すコマンド。
-          # ビルドの中でpytestのテストが走る。
-          # モデルの量子化から呼ぶのと同じunstableのgguf-pyで組む。
-          merge-gguf-nextn = (importPkgsUnstable system).callPackage ./pkgs/merge-gguf-nextn { };
-          # PRコメントにnvd diffを投稿するコマンド。
-          # ビルドの中でsandwichのテストが走る。
-          nvd-pr-diff = pkgs.callPackage ./pkgs/nvd-pr-diff {
-            inherit (inputs) himari-src;
-          };
-          # このdotfilesの設定を今の環境に合ったコマンドで適用するコマンド。
-          # `install.sh`が`nix run`で呼ぶ。
-          # ビルドの中でsandwichのテストが走る。
-          dotfiles-install = pkgs.callPackage ./pkgs/dotfiles-install {
-            inherit (inputs) himari-src;
-          };
-          # certspotterが検知したイベントをMackerelのチェックへ繋ぐコマンド。
-          # ビルドの中でsandwichのテストが走る。
-          certspotter-mackerel = pkgs.callPackage ./pkgs/certspotter-mackerel {
-            inherit (inputs) himari-src;
-          };
-          # Open WebUIの利用者ごとの設定とプロフィールを宣言へ揃えるコマンド。
-          # ビルドの中でsandwichのテストが走る。
-          open-webui-user-settings-sync = pkgs.callPackage ./pkgs/open-webui-user-settings-sync {
-            inherit (inputs) himari-src;
-          };
-          # 暗号化されたリムーバブルデバイスをマウントしてアンマウントするコマンド。
-          # ビルドの中でsandwichのテストが走る。
-          removable-crypt = pkgs.callPackage ./pkgs/removable-crypt {
-            inherit (inputs) himari-src;
-          };
-          # GarageのS3バケットとキーを用意するコマンド。
-          # ビルドの中でsandwichのテストが走る。
-          garage-setup = pkgs.callPackage ./pkgs/garage-setup {
-            inherit (inputs) himari-src;
-          };
-          # GitHub Actionsのランナーの登録トークンを発行してファイルに置くコマンド。
-          # ビルドの中でsandwichのテストが走る。
-          github-runner-registration-token = pkgs.callPackage ./pkgs/github-runner-registration-token {
-            inherit (inputs) himari-src;
-          };
-          # flakeに定義された全ホストの閉包をGC rootとして登録するコマンド。
-          # ビルドの中でsandwichのテストが走る。
-          nix-gc-root-hosts = pkgs.callPackage ./pkgs/nix-gc-root-hosts {
-            inherit (inputs) himari-src;
-          };
-          # seminarへのレイテンシを見てTailscaleのexit nodeを切り替えるdispatcherスクリプト。
-          # ビルドの中でsandwichのテストが走る。
-          tailscale-exit-node = pkgs.callPackage ./pkgs/tailscale-exit-node {
-            inherit (inputs) himari-src;
-          };
-          # 有線接続中はWiFiの接続を切るNetworkManagerのdispatcherスクリプト。
-          # ビルドの中でsandwichのテストが走る。
-          wifi-wired-exclusive = pkgs.callPackage ./pkgs/wifi-wired-exclusive {
-            inherit (inputs) himari-src;
-          };
           # リポジトリ内のPythonをpyrightで型検査するためのderivation群。
-          # ComfyUIのパッケージはoverlay経由でしか生えないが、
-          # perSystemの`pkgs`にはoverlayが載っていないため、
-          # overlayを載せる`importPkgsStable`から取る。
-          # overlayが返すのはcomfyui-nix自身が固定したnixpkgsで組んだ成果物で、
-          # 適用先の`pkgs`には依存しないため、どのpkgsから取っても結果は同じ。
           #
           # 取るのはCUDA版の`comfy-ui-cuda`にする。
           # bulletの`services.comfyui.gpuSupport = "cuda"`がこれを選ぶので、
@@ -484,7 +416,7 @@
           # bulletが使う環境そのものにはならない。
           pythonPyright = import ./lib/python-pyright.nix {
             inherit pkgs;
-            comfyui = (importPkgsStable system).comfy-ui-cuda;
+            comfyui = pkgs.comfy-ui-cuda;
           };
           # ComfyUIの自作カスタムノードのうち、
           # ComfyUI本体に触れない部分のpytest。
@@ -492,13 +424,17 @@
           # 型検査と同じcomfyuiからインタプリタを取る。
           comfyui-custom-node-test = import ./test/comfyui-custom-node.nix {
             inherit pkgs;
-            comfyui = (importPkgsStable system).comfy-ui-cuda;
+            comfyui = pkgs.comfy-ui-cuda;
           };
           # CUDA版torchを含むcomfyuiはaarch64では現実的にビルドできないため、
           # 型検査とテストもx86_64-linuxでだけ提供します。
           hasComfyui = system == "x86_64-linux";
         in
         {
+          # flake-partsが渡す既定の`pkgs`はoverlayを載せていないので、
+          # ホストと同じ設定とoverlayのものに差し替える。
+          _module.args.pkgs = importPkgsStable system;
+
           treefmt.config = {
             projectRootFile = "flake.nix";
             programs = {
@@ -589,36 +525,11 @@
           checks =
             evalChecks
             // nixTests
+            # `nix-fast-build`が見るのは`.#checks`だけで、
+            # `packages`へ置いただけではCIでビルドされないので、
+            # 自作のパッケージは全てビルドとderivationの中のテストを確かめる。
+            // localPackages
             // {
-              # `nix-fast-build`が見るのは`.#checks`だけで、
-              # `packages`へ置いただけではCIでビルドされません。
-              # ビルドが通ることと、
-              # derivationの中で走るテストが通ることをCIで保証したいパッケージは、
-              # `packages`と両方に並べます。
-              inherit
-                comfy-cli
-                merge-gguf-nextn
-                plamo-translate-cli
-                safetensors-fp16
-                ;
-              # 警告を残さないために、CIでだけ`-Werror`で組む。
-              certspotter-mackerel = certspotter-mackerel.override { werror = true; };
-              open-webui-user-settings-sync = open-webui-user-settings-sync.override { werror = true; };
-              removable-crypt = removable-crypt.override { werror = true; };
-              garage-setup = garage-setup.override { werror = true; };
-              github-runner-registration-token = github-runner-registration-token.override {
-                werror = true;
-              };
-              nix-gc-root-hosts = nix-gc-root-hosts.override { werror = true; };
-              tailscale-exit-node = tailscale-exit-node.override { werror = true; };
-              wifi-wired-exclusive = wifi-wired-exclusive.override { werror = true; };
-              comfy-workflow = comfy-workflow.override { werror = true; };
-              comfyui-idle-free-memory = comfyui-idle-free-memory.override { werror = true; };
-              git-repo-subscribe = git-repo-subscribe.override { werror = true; };
-              patch-gguf-chat-template = patch-gguf-chat-template.override { werror = true; };
-              nvd-pr-diff = nvd-pr-diff.override { werror = true; };
-              dotfiles-install = dotfiles-install.override { werror = true; };
-              inherit renovate-recovery;
               # 同じワークフローのClaude Codeへ渡す設定一式。
               # 使われるのはRenovateのPRが失敗した時だけなので、
               # konokaやgit-hooksの更新で壊れたことに普段のCIで気付けるようにします。
@@ -630,65 +541,33 @@
               inherit comfyui-custom-node-test;
             };
 
-          packages = {
-            # flake.lockの管理バージョンをre-exportすることで安定した利用を促進。
-            inherit (pkgs)
-              disko
-              fastfetch
-              git
-              home-manager
-              ;
-            # メモリに合わせて評価のワーカー数を抑える`nix-fast-build`のラッパー。
-            # `./check.sh`がPATHに無い環境で`nix run`する対象です。
-            nix-fast-build = pkgs.callPackage ./pkgs/nix-fast-build-wrapper.nix { };
-            # `renovate-recovery`ワークフローが`claude-code-action`へ渡す実行ファイル。
-            # NixOSのセルフホステッドランナーでは、
-            # アクションが自分でダウンロードするバイナリは動的リンクを解決できず動かないため、
-            # Nixでビルドしたものを指定します。
-            inherit (pkgs) bun;
-            inherit (importPkgsUnstable system) claude-code;
-            # 同じワークフローのClaude Codeへ渡すプラグインやプロンプトなどの設定一式。
-            inherit renovate-recovery-claude-config;
-            # Gitリポジトリを購読するためのツール。
-            inherit git-repo-subscribe;
-            # PRコメントにnvd diffを投稿するコマンド。
-            inherit nvd-pr-diff;
-            # このdotfilesの設定を今の環境に合ったコマンドで適用するコマンド。
-            inherit dotfiles-install;
-            # safetensorsのF32テンソルをF16へ変換するコマンド。
-            inherit safetensors-fp16;
-            # Comfy-Orgの公式CLIと、それを包んでワークフローを名前で呼ぶコマンド。
-            inherit comfy-cli comfy-workflow;
-            # PLaMo Translateでローカル翻訳するCLI。
-            inherit plamo-translate-cli;
-            # アイドル中のComfyUIにメモリを解放させる常駐プロセス。
-            inherit comfyui-idle-free-memory;
-            # certspotterが検知したイベントをMackerelのチェックへ繋ぐコマンド。
-            inherit certspotter-mackerel;
-            # Open WebUIの利用者ごとの設定とプロフィールを宣言へ揃えるコマンド。
-            inherit open-webui-user-settings-sync;
-            # 暗号化されたリムーバブルデバイスをマウントしてアンマウントするコマンド。
-            inherit removable-crypt;
-            # GarageのS3バケットとキーを用意するコマンド。
-            inherit garage-setup;
-            # GitHub Actionsのランナーの登録トークンを発行してファイルに置くコマンド。
-            inherit github-runner-registration-token;
-            # flakeに定義された全ホストの閉包をGC rootとして登録するコマンド。
-            inherit nix-gc-root-hosts;
-            # seminarへのレイテンシを見てTailscaleのexit nodeを切り替えるdispatcherスクリプト。
-            inherit tailscale-exit-node;
-            # 有線接続中はWiFiの接続を切るNetworkManagerのdispatcherスクリプト。
-            inherit wifi-wired-exclusive;
-            # GGUFのチャットテンプレートを取り出して書き戻すコマンド。
-            inherit patch-gguf-chat-template;
-            # GGUFの本体へ別ファイルのMTPのNextN層を足すコマンド。
-            inherit merge-gguf-nextn;
-          }
-          // lib.optionalAttrs hasComfyui {
-            # pyrightがPython環境とComfyUIのソースを辿るためのディレクトリ。
-            # `.envrc`が`.typecheck`という名前のout-linkを張ります。
-            typecheck = pythonPyright.typecheckDir;
-          };
+          packages =
+            localPackages
+            // {
+              # flake.lockの管理バージョンをre-exportすることで安定した利用を促進。
+              inherit (pkgs)
+                disko
+                fastfetch
+                git
+                home-manager
+                ;
+              # メモリに合わせて評価のワーカー数を抑える`nix-fast-build`のラッパー。
+              # `./check.sh`がPATHに無い環境で`nix run`する対象です。
+              nix-fast-build = pkgs.nix-fast-build-wrapper;
+              # `renovate-recovery`ワークフローが`claude-code-action`へ渡す実行ファイル。
+              # NixOSのセルフホステッドランナーでは、
+              # アクションが自分でダウンロードするバイナリは動的リンクを解決できず動かないため、
+              # Nixでビルドしたものを指定します。
+              inherit (pkgs) bun;
+              inherit (importPkgsUnstable system) claude-code;
+              # 同じワークフローのClaude Codeへ渡すプラグインやプロンプトなどの設定一式。
+              inherit renovate-recovery-claude-config;
+            }
+            // lib.optionalAttrs hasComfyui {
+              # pyrightがPython環境とComfyUIのソースを辿るためのディレクトリ。
+              # `.envrc`が`.typecheck`という名前のout-linkを張ります。
+              typecheck = pythonPyright.typecheckDir;
+            };
 
           devShells.default = pkgs.mkShell {
             buildInputs = with pkgs; [

@@ -24,6 +24,9 @@
   `callPackage`で包むと外側の`makeOverridable`に隠されて、
   下流の`cpu-optimized-kernel-overlay.nix`が`kernelPatches`を、
   追加するための`.override`が機能しなくなる。
+  `local-packages-overlay.nix`も`pkgs.linux-xanmod-server`として`callPackage`で生やすが、
+  それはflakeの`checks`でビルドを確かめるためのもので、
+  ホストのカーネルには`xanmod-server-overlay.nix`が`import`したものを使う。
 */
 { lib, linuxKernel }:
 linuxKernel.kernels.linux_xanmod.override (oldArgs: {

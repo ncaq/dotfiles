@@ -4,7 +4,6 @@
   pkgs,
   pkgs-unstable,
   config,
-  inputs,
   ...
 }:
 let
@@ -14,10 +13,7 @@ let
   quantizeGgufWithNextn = import ../../lib/quantize-gguf-with-nextn.nix { pkgs = pkgs-unstable; };
   # CLIと同じstoreのパスを使うため、取得の定義は`lib/`で共有している。
   plamoTranslateModel = import ../../lib/plamo-translate-model.nix { inherit pkgs; };
-  patchGgufChatTemplate = import ../../lib/patch-gguf-chat-template.nix {
-    inherit pkgs;
-    inherit (inputs) himari-src;
-  };
+  patchGgufChatTemplate = import ../../lib/patch-gguf-chat-template.nix { inherit pkgs; };
   # registryのQwen3.8が同梱しているパラメータ。
   # GGUFから自前で組み立てるとparamsレイヤーが付いてこないので明示する。
   # `draft_num_predict`が特に重要で、

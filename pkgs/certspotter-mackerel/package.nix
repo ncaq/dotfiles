@@ -14,16 +14,11 @@
 # シェルで制御文字を潰すだけでは漏れが出やすいためである。
 # aesonに記録と読み取りの両方を任せれば、
 # 改行やタブが入っても列ずれや偽の行は構造的に起きない。
-#
-# `callPackage`の結果に`haskell.lib`の関数を重ねると、
-# `override`がこのファイルを`mkDerivation`付きで呼び直して壊れる。
-# CIで警告をエラーにしたい時は`werror`で指定する。
 {
   lib,
   haskell,
   haskellPackages,
   himari-src,
-  werror ? false,
 }:
 let
   packages = haskellPackages.extend (
@@ -46,7 +41,6 @@ let
   package = packages.callCabal2nix "certspotter-mackerel" source { };
 in
 lib.pipe package [
-  (haskell.lib.compose.appendConfigureFlags (lib.optional werror "--ghc-options=-Werror"))
   # seminarの閉包へGHCを持ち込まない。
   haskell.lib.compose.justStaticExecutables
 ]

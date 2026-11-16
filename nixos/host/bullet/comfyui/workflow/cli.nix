@@ -17,17 +17,12 @@
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 let
   jsonFormat = pkgs.formats.json { };
 
-  comfy-cli = pkgs.callPackage ../../../../../pkgs/comfy-cli { };
-  comfy-workflow = pkgs.callPackage ../../../../../pkgs/comfy-workflow {
-    inherit comfy-cli;
-    inherit (inputs) himari-src;
-  };
+  inherit (pkgs) comfy-cli comfy-workflow;
 
   # 接続先。
   # ソケットアクティベーションのプロキシがホスト側で待ち受けているので、

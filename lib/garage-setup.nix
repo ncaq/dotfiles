@@ -9,7 +9,6 @@
 {
   pkgs,
   config,
-  inputs,
   name,
 }:
 let
@@ -36,9 +35,7 @@ in
       "~@privileged"
       "@chown"
     ];
-    ExecStart = pkgs.lib.getExe (
-      pkgs.callPackage ../pkgs/garage-setup { inherit (inputs) himari-src; }
-    );
+    ExecStart = pkgs.lib.getExe pkgs.garage-setup;
   };
   # 環境変数の意味は`pkgs/garage-setup/src/GarageSetup/Config.hs`に書いてあります。
   # キーファイルの書き出し先は`RuntimeDirectory`からsystemdが`RUNTIME_DIRECTORY`として渡します。

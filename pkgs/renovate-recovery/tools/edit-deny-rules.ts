@@ -56,7 +56,7 @@ export const MUST_BE_WRITABLE: readonly string[] = [
   ".renovate-recovery/pr-body.md",
   "flake.lock",
   "flake.nix",
-  "pkgs/renovate-recovery/default.nix",
+  "pkgs/renovate-recovery/package.nix",
   "pkgs/renovate-recovery/package-lock.json",
 ];
 

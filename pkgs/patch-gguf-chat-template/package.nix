@@ -4,16 +4,11 @@
 # なぜテンプレートを差し替えるのかはそちらに、
 # どうやって位置を求めるのかは`src/PatchGgufChatTemplate/Gguf/`の各モジュールの冒頭に、
 # どうやって長さを保つのかは`src/PatchGgufChatTemplate/Pad.hs`の冒頭に書いてある。
-#
-# `callPackage`の結果に`haskell.lib`の関数を重ねると、
-# `override`がこのファイルを`mkDerivation`付きで呼び直して壊れる。
-# CIで警告をエラーにしたい時は`werror`で指定する。
 {
   lib,
   haskell,
   haskellPackages,
   himari-src,
-  werror ? false,
 }:
 let
   packages = haskellPackages.extend (
@@ -36,7 +31,6 @@ let
   package = packages.callCabal2nix "patch-gguf-chat-template" source { };
 in
 lib.pipe package [
-  (haskell.lib.compose.appendConfigureFlags (lib.optional werror "--ghc-options=-Werror"))
   # GGUFを組むderivationの閉包へGHCを持ち込まない。
   haskell.lib.compose.justStaticExecutables
 ]

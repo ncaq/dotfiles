@@ -144,7 +144,7 @@ describe("checkEditDenyRules", () => {
   it("作業ツリーのNixのファイルを拒否すると、直下のものも深い階層のものも報告する", () => {
     expect(checkEditDenyRules([...baselineRules, "Edit(./**/*.nix)"])).toStrictEqual([
       "Edit(./**/*.nix) が作業ツリーの flake.nix への書き込みを拒否しています",
-      "Edit(./**/*.nix) が作業ツリーの pkgs/renovate-recovery/default.nix への書き込みを拒否しています",
+      "Edit(./**/*.nix) が作業ツリーの pkgs/renovate-recovery/package.nix への書き込みを拒否しています",
     ]);
   });
 

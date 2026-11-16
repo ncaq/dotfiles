@@ -9,17 +9,17 @@
   jq,
   niks3,
   sops,
-  publicSecretsFile,
-  privateSecretsFile,
 }:
 let
+  # シークレットファイルはsops暗号化済みなので、
+  # Nix storeに取り込んでビルド時に解決します。
   variants = {
     public = {
-      defaultSecretsFile = publicSecretsFile;
+      defaultSecretsFile = ../../secrets/niks3-public.yaml;
       defaultServerUrl = "https://niks3-public.ncaq.net/";
     };
     private = {
-      defaultSecretsFile = privateSecretsFile;
+      defaultSecretsFile = ../../secrets/niks3-private.yaml;
       # home-managerからcallPackageされるためNixOSの`config`は読めない。
       # `lib/tailnet.nix`の案内通りtailnet名を直接importして渡す。
       defaultServerUrl = import ../../lib/niks3-private-tailscale-url.nix {

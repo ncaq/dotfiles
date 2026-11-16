@@ -18,7 +18,7 @@ let
       # `./check.sh`はPATHにあるこのラッパーを使います。
       # メモリに合わせて評価のワーカー数を抑えるので、
       # 評価だけでメモリを食い尽くすのを防げます。
-      (pkgs.callPackage ../../../../pkgs/nix-fast-build-wrapper.nix { })
+      nix-fast-build-wrapper
     ];
   # runnerが使うTypeScriptコードをビルドしてGitHub Actionsで利用できるようにします。
   # 吐き出されるコードはピュアなJavaScriptなのでアーキテクチャ非依存です。
@@ -55,11 +55,7 @@ let
   # VMにはランナーの登録にしか使えない登録トークンだけを渡すための仲介です。
   # 環境変数の意味は、
   # `pkgs/github-runner-registration-token/src/GithubRunnerRegistrationToken/Config.hs`に書いてあります。
-  registrationTokenBroker = lib.getExe (
-    pkgs.callPackage ../../../../pkgs/github-runner-registration-token {
-      inherit (inputs) himari-src;
-    }
-  );
+  registrationTokenBroker = lib.getExe pkgs.github-runner-registration-token;
   # ランナーのVMとホストで統一されたユーザ値を使います。
   user = config.serviceUser.github-runner;
   # ユーザーとグループ定義。

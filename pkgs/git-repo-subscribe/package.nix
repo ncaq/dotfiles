@@ -1,20 +1,15 @@
-# ComfyUIのワークフローを名前付きのオプションで投げるコマンド。
+# Gitリポジトリをcloneして、安全な時だけfast-forwardで更新するコマンド。
 #
-# `nixos/host/bullet/comfyui/workflow/cli.nix`が、
-# ワークフローごとの`comfy-<名前>`ラッパーから呼ぶ。
-# 中身は公式の`comfy-cli`を呼ぶので、PATHへ足して包む。
-#
-# `callPackage`の結果に`haskell.lib`の関数を重ねると、
-# `override`がこのファイルを`mkDerivation`付きで呼び直して壊れる。
-# CIで警告をエラーにしたい時は`werror`で指定する。
+# `lib/git-repo-subscribe.nix`のhome-managerモジュールが、
+# 購読するリポジトリごとに呼ぶ。
+# Gitの操作は`git`コマンドに任せるので、PATHへ足して包む。
 {
   lib,
   haskell,
   haskellPackages,
   makeWrapper,
-  comfy-cli,
+  git,
   himari-src,
-  werror ? false,
 }:
 let
   packages = haskellPackages.extend (
@@ -28,22 +23,23 @@ let
   source = lib.fileset.toSource {
     root = ./.;
     fileset = lib.fileset.unions [
-      ./comfy-workflow.cabal
+      ./git-repo-subscribe.cabal
       ./app
       ./src
       ./test
     ];
   };
-  package = packages.callCabal2nix "comfy-workflow" source { };
+  package = packages.callCabal2nix "git-repo-subscribe" source { };
 in
 lib.pipe package [
   (haskell.lib.compose.overrideCabal (old: {
     buildTools = (old.buildTools or [ ]) ++ [ makeWrapper ];
+    # テストは一時ディレクトリに実際のリポジトリを作って確かめる。
+    testToolDepends = (old.testToolDepends or [ ]) ++ [ git ];
     postInstall = (old.postInstall or "") + ''
-      wrapProgram "$out/bin/comfy-workflow" \
-        --prefix PATH : ${lib.makeBinPath [ comfy-cli ]}
+      wrapProgram "$out/bin/git-repo-subscribe" \
+        --prefix PATH : ${lib.makeBinPath [ git ]}
     '';
   }))
-  (haskell.lib.compose.appendConfigureFlags (lib.optional werror "--ghc-options=-Werror"))
   haskell.lib.compose.justStaticExecutables
 ]

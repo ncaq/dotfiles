@@ -4,10 +4,6 @@
 # 入力は全て環境変数で、何が要るかは`src/NvdPrDiff/Target.hs`に書いてある。
 # nvdの出力をどう読むかは`src/NvdPrDiff/Report.hs`に、
 # コメントの形は`src/NvdPrDiff/Markdown.hs`にある。
-#
-# `callPackage`の結果に`haskell.lib`の関数を重ねると、
-# `override`がこのファイルを`mkDerivation`付きで呼び直して壊れる。
-# CIで警告をエラーにしたい時は`werror`で指定する。
 {
   lib,
   haskell,
@@ -17,7 +13,6 @@
   nix,
   nvd,
   himari-src,
-  werror ? false,
 }:
 let
   packages = haskellPackages.extend (
@@ -55,6 +50,5 @@ lib.pipe package [
         }
     '';
   }))
-  (haskell.lib.compose.appendConfigureFlags (lib.optional werror "--ghc-options=-Werror"))
   haskell.lib.compose.justStaticExecutables
 ]

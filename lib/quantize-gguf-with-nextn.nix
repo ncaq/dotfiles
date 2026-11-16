@@ -49,9 +49,6 @@
     hash mismatchのエラーに出る実際の値を書き写す。
 */
 { pkgs }:
-let
-  mergeGgufNextn = pkgs.callPackage ../pkgs/merge-gguf-nextn { };
-in
 {
   name,
   model,
@@ -62,7 +59,7 @@ in
 pkgs.runCommand name
   {
     nativeBuildInputs = [
-      mergeGgufNextn
+      pkgs.merge-gguf-nextn
       pkgs.llama-cpp
     ];
 

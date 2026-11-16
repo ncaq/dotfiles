@@ -7,9 +7,6 @@
   systemdPackage,
   ...
 }:
-let
-  ccstatusline = pkgs.callPackage ../../pkgs/ccstatusline.nix { };
-in
 {
   programs.claude-code = {
     enable = true;
@@ -87,7 +84,7 @@ in
       # ccstatuslineを使用して豪華な表示にします。
       statusLine = {
         type = "command";
-        command = lib.getExe ccstatusline;
+        command = lib.getExe pkgs.ccstatusline;
       };
       inputNeededNotifEnabled = true; # 入力待ちのときに通知を出す。
       sandbox = {

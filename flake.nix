@@ -339,8 +339,7 @@
         let
           pkgsUnstable = importPkgsUnstable system;
           # overlayが生やす`pkgs/`の自作パッケージの名前。
-          # `localPackagesOverlay`をここで呼ぶのは名前を知るためだけで、値には触れない。
-          localPackageNames = builtins.attrNames (localPackagesOverlay pkgs pkgs);
+          localPackageNames = pkgs.localPackagesInfo.names;
           # `pkgs/`の自作パッケージ。
           # overlayを`pkgs`に当てた結果から、overlayが生やした名前の分だけを取り出す。
           localPackages = lib.getAttrs localPackageNames pkgs // {
@@ -357,17 +356,15 @@
             };
           };
           # 自作のパッケージの名前がnixpkgsの属性と重なっていないかのチェック。
-          # overlayは`prev`を見ずに上書きするので、
-          # 重なるとnixpkgsの中でそれに依存するパッケージまで自作の版に差し替わる。
+          # 重なった時に何が起きるかは`lib/local-packages-overlay.nix`に書いてある。
           # 黙って差し替わらないように評価を止めて、移行するか名前を変えるかを決める。
           # overlayはunstableにも当てるので、unstableの属性とも比べる。
           # 強制をenv属性の中に置く理由は下の`nixosEvalChecks`と同じ。
           localPackagesNameCollision =
             let
-              collisions = lib.filter (
-                name:
-                nixpkgs.legacyPackages.${system} ? ${name} || nixpkgs-unstable.legacyPackages.${system} ? ${name}
-              ) localPackageNames;
+              collisions = lib.unique (
+                pkgs.localPackagesInfo.collisions ++ pkgsUnstable.localPackagesInfo.collisions
+              );
             in
             pkgs.runCommand "local-packages-name-collision" {
               checked = builtins.seq (lib.assertMsg (

@@ -8,11 +8,8 @@
 # `local.comfyui.workflows`を走査するので、
 # `workflow/`へモジュールを1つ置けばコマンドも一緒に増える。
 #
-# ラッパーが渡すのは、
-# API形式ではなくUI形式のワークフローそのものである。
-# API形式は公式CLIが実行時に組み立てる。
-# 二重管理を作らないためで、
-# UIで開くものとコマンドで投げるものが必ず同じ内容になる。
+# ラッパーの作り方は`pkgs/comfy-workflow`の`mkCommand`にあり、
+# ここが決めるのは接続先と出力先だけである。
 {
   config,
   lib,
@@ -20,8 +17,6 @@
   ...
 }:
 let
-  jsonFormat = pkgs.formats.json { };
-
   inherit (pkgs) comfy-cli comfy-workflow;
 
   # 接続先。
@@ -31,16 +26,10 @@ let
 
   mkCommand =
     name: workflow:
-    pkgs.writeShellScriptBin "comfy-${name}" ''
-      # 環境変数が既にあればそちらを優先する。
-      # bullet以外から`COMFYUI_AUTHORITY=bullet:8188`で叩けるようにするため。
-      export COMFYUI_AUTHORITY="''${COMFYUI_AUTHORITY:-${authority}}"
-      export COMFYUI_OUTPUT_DIR="''${COMFYUI_OUTPUT_DIR:-${config.local.comfyui.outputDir}}"
-      # 名前を別に渡す。
-      # storeのファイル名は頭にハッシュが付くので、
-      # パスからはワークフローの名前を取れない。
-      exec ${lib.getExe comfy-workflow} ${name} ${jsonFormat.generate "${name}.json" workflow} "$@"
-    '';
+    comfy-workflow.mkCommand {
+      inherit name workflow authority;
+      inherit (config.local.comfyui) outputDir;
+    };
 in
 {
   environment.systemPackages = [

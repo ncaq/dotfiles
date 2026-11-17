@@ -1,7 +1,7 @@
 # Animaによる通常のimg2img画像編集。
 # 入力画像をQwen-Image VAEでlatent化し、start_at_stepで元画像を残す強さを調整する。
 # 入力画像はアスペクト比を維持して約1MPへスケールし、
-# Animaのlatent寸法制約を満たすように各辺を16の倍数へ揃える。
+# VAEEncodeが端を切り落とさないように各辺を8の倍数へ揃える。
 # 目標画素数はApp Modeのmegapixels入力で変更できる。
 # 指示箇所だけを変更するqwen-editと違い、画像全体をプロンプトに沿って描き直す。
 #
@@ -28,7 +28,6 @@ let
     mkWorkflow
     mkFilenamePrefix
     seedWidgets
-    animaSizeMultiple
     animaBaseSteps
     startStepForDenoise
     ;
@@ -193,7 +192,7 @@ in
         ];
       })
       # ImageScaleToTotalPixelsのresolution_stepsはComfyUI 0.28.2の定義に合わせている。
-      # アスペクト比を維持して約1MPへスケールし、Animaの要求する16の倍数へ丸める。
+      # アスペクト比を維持して約1MPへスケールし、Qwen-Image VAEの8倍圧縮に合わせて8の倍数へ丸める。
       (mkNode {
         id = 7;
         type = "ImageScaleToTotalPixels";
@@ -212,7 +211,7 @@ in
         widgets = [
           "lanczos" # upscale_method
           1.0 # megapixels
-          animaSizeMultiple # resolution_steps
+          8 # resolution_steps
         ];
       })
       (mkNode {

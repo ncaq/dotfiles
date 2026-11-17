@@ -1,7 +1,6 @@
 # TODO: noa2(WD121PURZ)が2026-11-14にSATAリンクから脱落したための一時的な措置。
-# noa2の再同期か交換が済んだら、このファイルごと消す。
-# その時は`disk.nix`で足した`/mnt/noa`の`nofail`と`degraded`、
-# noa2のcrypttabの`nofail`、bcache2のtmpfilesの`w-`も一緒に外す。
+# 障害対応が終わったら、このファイルごと消す。
+# その時は`disk.nix`で足した`/mnt/noa`の`degraded`も一緒に外す。
 # https://github.com/ncaq/dotfiles/issues/1732
 #
 # systemdの`64-btrfs.rules`は複数デバイスのbtrfsの全メンバーが揃うまで、

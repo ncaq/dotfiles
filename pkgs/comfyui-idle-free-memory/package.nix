@@ -86,17 +86,35 @@ let
       Install.WantedBy = "multi-user.target";
     }
   );
+  # 実行ファイルとは別のderivationで包んでユニットを足す。
+  # Haskellのderivationの中に置くと、
+  # ユニットやハードニングの設定を変えるだけでGHCのビルドとテストがやり直しになる。
+  package =
+    runCommand executable.name
+      {
+        inherit (executable) pname version;
+        passthru.tests.unit = unitCheck;
+        meta.mainProgram = mainProgram;
+      }
+      ''
+        mkdir -p "$out/bin"
+        ln -s ${lib.getExe executable} "$out/bin/${mainProgram}"
+        install -D -m 444 ${unit} "$out/lib/systemd/system/${mainProgram}.service"
+      '';
+  # 同梱したユニットが、使う側の`systemd.packages`から読める形で入っていることを確かめる。
+  #
+  # ユニットが欠けても、使う側の構成は評価もビルドも通ってしまう。
+  # NixOSは`systemd.services`に書いた`wantedBy`と`environment`だけから自前のユニットを作るので、
+  # `ExecStart`の無いユニットになり、適用して初めて起動しないと分かる。
+  unitCheck = runCommand "${mainProgram}-unit-check" { } ''
+    unit=${package}/lib/systemd/system/${mainProgram}.service
+    test -f "$unit"
+    # `ExecStart`が指す先が実行できること。
+    exec_start=$(grep -E '^ExecStart=' "$unit")
+    test -x "''${exec_start#ExecStart=}"
+    # `systemd-analyze verify`は走らせない。
+    # ビルドのサンドボックスの中では`/run/systemd`を作れずに失敗する。
+    touch "$out"
+  '';
 in
-# 実行ファイルとは別のderivationで包んでユニットを足す。
-# Haskellのderivationの中に置くと、
-# ユニットやハードニングの設定を変えるだけでGHCのビルドとテストがやり直しになる。
-runCommand executable.name
-  {
-    inherit (executable) pname version;
-    meta.mainProgram = mainProgram;
-  }
-  ''
-    mkdir -p "$out/bin"
-    ln -s ${lib.getExe executable} "$out/bin/${mainProgram}"
-    install -D -m 444 ${unit} "$out/lib/systemd/system/${mainProgram}.service"
-  ''
+package

@@ -77,7 +77,7 @@ in
           DynamicUser = true;
           # 終了は全て異常なので再起動する。
           # 待っても直らない原因で繰り返さないよう、
-          # `idle-free-memory.nix`と同じ指数バックオフで抑える。
+          # `pkgs/comfyui-idle-free-memory`の同梱ユニットと同じ指数バックオフで抑える。
           Restart = "always";
           RestartSec = "10s";
           RestartMaxDelaySec = "2h";

@@ -188,8 +188,7 @@ def test_reuses_translation_of_same_arguments(healthy_server: StubServer) -> Non
 def test_retries_after_failure(rejecting_server: StubServer) -> None:
     """失敗は覚えずに、次の呼び出しでもう一度サーバへ投げる。
 
-    翻訳サーバの起動が間に合わなかっただけの失敗を、
-    ComfyUIを再起動するまで引きずらないためである。
+    一時的な失敗を、ComfyUIを再起動するまで引きずらないためである。
     """
     for _ in range(2):
         with pytest.raises(RuntimeError):

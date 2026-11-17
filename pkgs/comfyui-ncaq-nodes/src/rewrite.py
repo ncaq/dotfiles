@@ -1,7 +1,7 @@
 """指示文をQwen-Image-2.1向けの英文の編集命令へ書き換えるための、入出力の組み立てと解析。
 
 ComfyUIやtorchに触れないので、
-`custom-node/tests/`のpytestからそのままimportできる。
+`tests/`のpytestからそのままimportできる。
 
 書き換えそのものはQwen-Image-2.1公式の編集指示リライト用モデルPE-I2Iが担う。
 PE-I2IはQwen3.5 9Bを公式のシステムプロンプトと回答形式で学習させたもので、
@@ -14,7 +14,7 @@ PE-I2IはQwen3.5 9Bを公式のシステムプロンプトと回答形式で学�
 
 公式のシステムプロンプトとコードはQwen Research Licenseなので、
 このリポジトリには取り込まず、
-ノードのderivationがビルド時に公式リポジトリから配置する(`custom-node.nix`)。
+`package.nix`がビルド時に公式リポジトリから配置する。
 ここにある組み立てと解析は、公式リポジトリの`prompt_rewrite/`の説明に合わせて書き起こしたものである。
 https://github.com/QwenLM/Qwen-Image-2.1/tree/fb7ae1d1f9611cd91524d03c53c5246b36ac8577
 """

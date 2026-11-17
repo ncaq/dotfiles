@@ -393,9 +393,6 @@ Nixで書いたテストのうち、
 - トピックを分ける時は`nixos/native-linux/networking.container-dns.test.nix`のように`<実装の名前>.<トピック>.test.nix`
 - `importDirModules`は`.test.nix`をモジュールとして読まない
 
-ComfyUIの自作カスタムノードのpytestを走らせるderivationは、
-pytestと同じ`nixos/host/bullet/comfyui/custom-node/tests/`に置いています。
-
 各言語のパッケージのテスト(`pkgs/*/test`など)は、
 その言語のツールが期待する場所に置いたままにします。
 

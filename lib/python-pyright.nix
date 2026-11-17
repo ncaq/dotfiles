@@ -156,8 +156,6 @@ in
         # リポジトリと同じ相対パスの並びを再現する。
         # `pyrightconfig.json`の`include`と`executionEnvironments`が相対パスで書かれていて、
         # そのまま解決できる必要がある。
-        # カスタムノードの共有モジュールは`../share_encode.py`のようなsymlinkなので、
-        # symlinkのまま複製すれば複製先でも同じように解決される。
         cp -r ${source} work
         chmod -R u+w work
         ln -s ${typecheckDir} work/.typecheck

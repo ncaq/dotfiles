@@ -56,14 +56,11 @@ ignore = [
 # ffmpegやoxipngやSeedVR2 CLIの起動はこのリポジトリの目的そのものなので、
 # 実際に外部コマンドを起動しているファイルでだけ許可する。
 # 全体で落とすと、新しくプロセスを起動するコードを書いた時に何も言われなくなる。
-#
-# 共有モジュールは使う側のノードディレクトリへのsymlinkとしても現れるので、
-# ディレクトリを固定せずファイル名で拾う。
 [lint.per-file-ignores]
-"**/optimize_png.py" = ["S603"]
-"**/share_encode.py" = ["S603"]
-"**/anime-video-quick/__init__.py" = ["S603"]
-"**/seedvr2-streaming/__init__.py" = ["S603"]
+"pkgs/comfyui-ncaq-nodes/src/anime_video_quick.py" = ["S603"]
+"pkgs/comfyui-ncaq-nodes/src/optimize_png.py" = ["S603"]
+"pkgs/comfyui-ncaq-nodes/src/seedvr2_streaming.py" = ["S603"]
+"pkgs/comfyui-ncaq-nodes/src/share_encode.py" = ["S603"]
 
 # 以下は検討した上で採らなかったもの。
 #

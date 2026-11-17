@@ -28,7 +28,7 @@ let
   #
   # App Modeから参照するノード型だけを載せれば良い。
   widgetNames = {
-    # 自作ノード。`custom-node/anime-video-quick/__init__.py`。
+    # 自作ノード。`pkgs/comfyui-ncaq-nodes/src/anime_video_quick.py`。
     AnimeVideoQuick = [
       "prompts"
       "wan_model_high"
@@ -70,18 +70,18 @@ let
       "return_with_leftover_noise"
     ];
     LoadImage = [ "image" ];
-    # 自作ノード。`custom-node/load-image-optional/__init__.py`。
+    # 自作ノード。`pkgs/comfyui-ncaq-nodes/src/load_image_optional.py`。
     LoadImageOptional = [ "image" ];
     # 動画を選ぶウィジェットは画像と違って`file`。
     LoadVideo = [ "file" ];
     PrimitiveInt = [ "value" ];
-    # 自作ノード。`custom-node/rewrite-edit-prompt/__init__.py`。
+    # 自作ノード。`pkgs/comfyui-ncaq-nodes/src/rewrite_edit_prompt.py`。
     RewriteEditPrompt = [
       "text"
       "seed"
       "resolution"
     ];
-    # 自作ノード。`custom-node/translate-text/__init__.py`。
+    # 自作ノード。`pkgs/comfyui-ncaq-nodes/src/translate_text.py`。
     TranslateTextToEnglish = [ "text" ];
     UNETLoader = [
       "unet_name"

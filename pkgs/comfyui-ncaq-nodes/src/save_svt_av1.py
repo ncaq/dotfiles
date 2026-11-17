@@ -249,4 +249,3 @@ NODE_CLASS_MAPPINGS: dict[str, type[SaveSvtAv1]] = {"SaveSvtAv1": SaveSvtAv1}
 NODE_DISPLAY_NAME_MAPPINGS: dict[str, str] = {
     "SaveSvtAv1": "Save SVT-AV1 Lossless 10-bit WebM"
 }
-WEB_DIRECTORY = "./web"

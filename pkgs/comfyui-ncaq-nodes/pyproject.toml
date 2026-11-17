@@ -1,0 +1,9 @@
+# ComfyUIはディレクトリをそのまま読み込むので、配布物としてビルドする設定は持たない。
+# ここにあるのはテストの設定だけである。
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# ComfyUI本体やtorchに触れないモジュールを、素のモジュールとしてimportする。
+# `src`をパッケージとして読むと`__init__.py`が全てのノードをimportして、
+# 読み込むだけでGPUを持つ実行環境が要る。
+pythonpath = ["src"]

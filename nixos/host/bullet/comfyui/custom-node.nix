@@ -19,237 +19,126 @@ let
   # ComfyUI-Autocomplete-PlusがタグCSVをダウンロードする先。
   # Nix storeは読み取り専用なので可変領域に逃がす。
   autocompletePlusDataDir = "${dataDir}/autocomplete-plus";
+  loraManager = pkgs.fetchFromGitHub {
+    owner = "willmiao";
+    repo = "ComfyUI-Lora-Manager";
+    tag = "v1.2.0";
+    hash = "sha256-xwAXjD5/Yxlmz5F1bKlw6iksiRf+SuNAoeeUnhohfM4=";
+  };
+  # ComfyUI-Lora-ManagerのPython依存をrequirements.txtから自動導出する。
+  # 手書きのリストだとtag更新時に依存の増減へ追随し忘れて、
+  # 実行時のImportErrorになるまで気付けない。
+  # PyPI名をnixpkgsの属性名へ正規化して参照するので、
+  # nixpkgsに存在しない依存が増えた場合は評価エラーで検出される。
+  # バージョン制約は無視してnixpkgsのバージョンをそのまま使う。
+  loraManagerPythonPackages =
+    pythonPkgs:
+    lib.pipe (builtins.readFile "${loraManager}/requirements.txt") [
+      (lib.splitString "\n")
+      # 行頭のパッケージ名だけを取り出す。
+      # コメント行と空行はマッチしないのでnullになる。
+      (map (line: builtins.match "[[:space:]]*([A-Za-z0-9._-]+).*" line))
+      (lib.filter (matched: matched != null))
+      (map (matched: lib.toLower (builtins.replaceStrings [ "_" "." ] [ "-" "-" ] (lib.head matched))))
+      # requirements.txt内の並び替えだけで環境が再ビルドされないように順序を正規化する。
+      (lib.sort lib.lessThan)
+      (map (name: pythonPkgs.${name}))
+    ];
 in
 {
-  containers.comfyui.config =
-    { config, ... }:
-    let
-      comfyuiPython = config.services.comfyui.package.pythonRuntime.python;
-      # Pythonソースをビルド時に構文検査するシェルコマンドを組み立てる。
-      # 文法エラーがあってもコンテナ起動時のノード読み込み失敗まで気付けないため、
-      # 自作ノードの配置でこれを通す。
-      #
-      # ast.parseは構文木さえ作れれば通してしまい、
-      # 関数の外へ出たreturnやループ外のbreakを見逃す。
-      # py_compileと同じcompile()まで通しつつ、
-      # 書き込み不可のstoreの隣へバイトコードを出さないよう自前で呼ぶ。
-      #
-      # ソースはbytesで読む。
-      # テキストモードだとロケール未設定のビルド環境ではASCII扱いになり、
-      # 日本語コメントで構文と無関係な復号エラーになる。
-      # bytesならcompile()がPEP 263に従いUTF-8として解釈する。
-      #
-      # 引数の全ファイルを1プロセスで検査する。
-      # CUDA版torchを持つComfyUI環境のPythonは起動が軽くないので、
-      # ファイルごとに起動し直さずまとめて渡す。
-      checkPythonSyntax = "${comfyuiPython}/bin/python -c 'import sys; [compile(open(path, \"rb\").read(), path, \"exec\") for path in sys.argv[1:]]'";
-      # 自作カスタムノードのディレクトリを丸ごと配置して、配置先を構文検査する。
-      #
-      # `share_encode.py`のような複数のノードで共有するモジュールは、
-      # 実体を`custom-node/`直下に置き、
-      # 使う側のノードディレクトリには`../share_encode.py`へのsymlinkを置いている。
-      # ディレクトリ構造がそのまま相対importの解決になるので、
-      # ComfyUIが読む配置とpyrightが見る配置を別々に組み立てずに済む。
-      # `cp -rL`でsymlinkを実体化して配置するため、
-      # 読み込み側から見た`custom_nodes/`配下の見え方は実体を並べた場合と変わらない。
-      writeCheckedNode =
-        dirName:
-        let
-          nodeDir = ./custom-node + "/${dirName}";
-          # このノードが使う共有モジュールをsymlinkから導出する。
-          # symlinkは`../share_encode.py`のように対象と同じ名前なので、
-          # ノードディレクトリ内のsymlinkの名前を`custom-node/`直下から拾えば揃う。
-          # 対応表を別に持たないことで、
-          # ディレクトリ構造を唯一の真実にした方針が保たれる。
-          # 拾い損ねた場合はsymlinkが宙に浮いて下のcpが落ちるので、
-          # 黙って壊れることはない。
-          sharedModules = lib.pipe (builtins.readDir nodeDir) [
-            (lib.filterAttrs (_: type: type == "symlink"))
-            builtins.attrNames
-            (map (name: ./custom-node + "/${name}"))
-          ];
-          # ディレクトリ全体をstoreへ取り込むと、
-          # 全てのノードのderivationが配下の全ファイルへ依存して、
-          # 1ノードの変更で無関係なノードまで再ビルドされてしまう。
-          # このノードのディレクトリと、使う共有モジュールだけを入力にする。
-          source = lib.fileset.toSource {
-            root = ./custom-node;
-            fileset = lib.fileset.unions ([ nodeDir ] ++ sharedModules);
-          };
-        in
-        pkgs.runCommand "comfyui-${dirName}" { } ''
-          cp -rL ${source}/${dirName} $out
-          # ComfyUIはこのファイルの有無でカスタムノードとして読み込むかを決める。
-          # findが1件も見つけないまま成功する状態もこれで防ぐ。
-          test -f $out/__init__.py
-          find $out -name '*.py' -exec ${checkPythonSyntax} {} +
-        '';
-      loraManager = pkgs.fetchFromGitHub {
-        owner = "willmiao";
-        repo = "ComfyUI-Lora-Manager";
-        tag = "v1.2.0";
-        hash = "sha256-xwAXjD5/Yxlmz5F1bKlw6iksiRf+SuNAoeeUnhohfM4=";
-      };
-      # ComfyUI-Lora-ManagerのPython依存をrequirements.txtから自動導出する。
-      # 手書きのリストだとtag更新時に依存の増減へ追随し忘れて、
-      # 実行時のImportErrorになるまで気付けない。
-      # PyPI名をnixpkgsの属性名へ正規化して参照するので、
-      # nixpkgsに存在しない依存が増えた場合は評価エラーで検出される。
-      # バージョン制約は無視してnixpkgsのバージョンをそのまま使う。
-      loraManagerPythonPackages =
-        pythonPkgs:
-        lib.pipe (builtins.readFile "${loraManager}/requirements.txt") [
-          (lib.splitString "\n")
-          # 行頭のパッケージ名だけを取り出す。
-          # コメント行と空行はマッチしないのでnullになる。
-          (map (line: builtins.match "[[:space:]]*([A-Za-z0-9._-]+).*" line))
-          (lib.filter (matched: matched != null))
-          (map (matched: lib.toLower (builtins.replaceStrings [ "_" "." ] [ "-" "-" ] (lib.head matched))))
-          # requirements.txt内の並び替えだけで環境が再ビルドされないように順序を正規化する。
-          (lib.sort lib.lessThan)
-          (map (name: pythonPkgs.${name}))
-        ];
-    in
-    {
-      services.comfyui = {
-        extraPythonPackages =
-          pythonPkgs: [ pythonPkgs.rotary-embedding-torch ] ++ loraManagerPythonPackages pythonPkgs;
-        # FaceDetailerなどディテール修復ノード群のImpact Pack(ADetailer相当)は、
-        # comfyui-nixが同梱して配置するものを使うので、ここでは宣言しない。
-        # ランチャーはExecStartで同梱ノードを`ln -sfn`するため、
-        # 同梱ノードと同じ名前を`customNodes`に書いても同梱版で上書きされる。
-        customNodes = {
-          # Civitaiからの取得、プレビュー、トリガーワード、レシピを一元管理する。
-          # Civitaiにはpickle形式(.pt/.ckpt)のモデルもあり読み込み時の任意コード実行が懸念されるが、
-          # ComfyUI本体は非safetensorsも`torch.load(weights_only=True)`固定で読むことと、
-          # そもそも外部取得物の実行を想定したコンテナ隔離があることから受容する。
-          "ComfyUI-Lora-Manager" = loraManager;
-          # 複数フレームを同時に参照して時間的一貫性を保つ動画超解像。
-          # RTX 5090では7B FP16モデルをBlockSwapとVAE tiling付きで使う。
-          # 依存はextraPythonPackagesからComfyUI本体と同じCUDA版torchを使う。
-          "ComfyUI-SeedVR2_VideoUpscaler" = pkgs.applyPatches {
-            src = pkgs.fetchFromGitHub {
-              owner = "numz";
-              repo = "ComfyUI-SeedVR2_VideoUpscaler";
-              rev = "4490bd1f482e026674543386bb2a4d176da245b9";
-              hash = "sha256-6nsqFflLw9vYH/du35ET46fdAm1NMjjTe2bA8JmaBE4=";
-            };
-            patches = [ ./seedvr2-lossless.patch ];
-            # GNU patchの既定はfuzz 2とオフセット探索で文脈のずれを黙って許容する。
-            # 上流のrev更新でパッチの文脈が一致しなくなった時に、
-            # 意味の違う位置へ適用されるより確実にビルド失敗させたい。
-            patchFlags = [
-              "-p1"
-              "-F0"
-            ];
-          };
-          # SeedVR2 CLIのチャンク処理をComfyUIから起動し、長尺動画をRAM上限付きで処理する。
-          # 解像度の自動計算に使う、VIDEOから幅と高さを取り出す汎用ノードGetVideoSizeも同梱する。
-          "ComfyUI-SeedVR2-Streaming" = writeCheckedNode "seedvr2-streaming";
-          # UltralyticsDetectorProvider(YOLOによる顔検出)を提供する。
-          # FaceDetailerに検出器を渡すために必要。
-          "ComfyUI-Impact-Subpack" = pkgs.fetchFromGitHub {
-            owner = "ltdrdata";
-            repo = "ComfyUI-Impact-Subpack";
-            tag = "1.3.4";
-            hash = "sha256-BHtfkaqCPf/YXfGbF/xyryjt+M8izkdoUAKNJLfyvqI=";
-          };
-          # 指示文を英語へ翻訳する自作ノード。
-          # Wanなど指示文の公式サポートが英語と中国語のみのモデルに対して、
-          # 日本語で指示を書けるようにする。
-          # 依存はComfyUI環境に同梱済みのrequestsのみ。
-          # customNodesの型はpackageなのでプレーンなパスは渡せず、
-          # derivationに包んで渡す。
-          "ComfyUI-Translate-Text" = writeCheckedNode "translate-text";
-          # 日本語の編集指示をQwen-Image-2.1公式のPE-I2Iで英文の編集命令へ書き換える自作ノード。
-          # 画像も一緒に渡して、対象を特定した指示文にさせる。
-          #
-          # PE-I2Iは公式のシステムプロンプトと組で学習されているので、
-          # そのファイルを公式リポジトリから取ってノードの隣へ置く。
-          # Qwen Research Licenseのファイルなので、
-          # 本文をこのリポジトリへ取り込んで再配布することはしない。
-          "ComfyUI-Rewrite-Edit-Prompt" =
-            let
-              qwenImage21 = pkgs.fetchFromGitHub {
-                owner = "QwenLM";
-                repo = "Qwen-Image-2.1";
-                rev = "fb7ae1d1f9611cd91524d03c53c5246b36ac8577";
-                hash = "sha256-iXaBv6x0cDooNBRBemGQbrChZ96xLgYjgxThTYBmtKU=";
-              };
-            in
-            pkgs.runCommand "comfyui-rewrite-edit-prompt" { } ''
-              cp -r ${writeCheckedNode "rewrite-edit-prompt"} $out
-              chmod u+w $out
-              cp ${qwenImage21}/prompt_rewrite/prompts/system_prompt_edit.txt $out/system_prompt_edit.txt
-            '';
-          # 画像を選ばないことも許可する自作LoadImage。
-          # (none)のままなら出力がNoneになり、optional入力が未接続扱いになる。
-          # WanFirstLastFrameToVideoのend_imageなど任意入力の有効・無効を、
-          # バイパス操作なしで画像指定の有無だけで切り替えるために使う。
-          "ComfyUI-Load-Image-Optional" = writeCheckedNode "load-image-optional";
-          # 元fpsと音声を維持し、RGB48から10-bit SVT-AV1 losslessのWebMへ保存するノード。
-          "ComfyUI-Save-SVT-AV1" = writeCheckedNode "save-svt-av1";
-          # 複数行の指示からQwen編集画像を先に全て作り、
-          # そのキーフレーム間をWan FLF2Vで順番に動画化する。
-          # 各成果物を都度保存するため、長さに比例して画像テンソルをRAMへ蓄積しない。
-          "ComfyUI-Anime-Video-Quick" = writeCheckedNode "anime-video-quick";
-          # 生成が終わった後にComfyUIの重みをVRAMから降ろす自作ノード。
-          # 同じGPUでOllamaも動くため、掴んだままだと汎用モデルがCUDAのOOMで載らない。
-          # 連続生成では載せ直しが効いてくるのでトグルにしてあり、
-          # 生成のたびに人が戻ってこないOpen WebUI経由でだけ有効にする。
-          "ComfyUI-Free-Vram" = writeCheckedNode "free-vram";
-          # 本体のSaveImageが書き出したPNGを保存後に縮める自作ノード。
-          # ノードは提供せず、保存処理を包む副作用だけを持つ。
-          "ComfyUI-Optimize-Png" = writeCheckedNode "optimize-png";
-          # danbooruタグのオートコンプリート。
-          # 日本語からの検索とpost count表示に対応していて、
-          # メジャーなタグかどうかを確認しながら入力できる。
-          "ComfyUI-Autocomplete-Plus" = pkgs.stdenv.mkDerivation (finalAttrs: {
-            pname = "comfyui-autocomplete-plus";
-            version = "1.11.0";
-            src = pkgs.fetchFromGitHub {
-              owner = "newtextdoc1111";
-              repo = "ComfyUI-Autocomplete-Plus";
-              tag = "v${finalAttrs.version}";
-              hash = "sha256-MjhGd38G5Wz46t1AchTe/IqmTzVO43mlXPDHie5i3EE=";
-            };
-            # 新しいComfyUIフロントエンド(1.43以降)では、
-            # keyupの時点でカーソル位置がリセットされていて候補が表示されない。
-            # upstreamのissueコメントで提示されている修正パッチを適用する。
-            # https://github.com/newtextdoc1111/ComfyUI-Autocomplete-Plus/issues/73#issuecomment-4761276962
-            # 修正がリリースされたらこのパッチは削除する。
-            #
-            # なおパッチとは別に、
-            # フロントエンド設定のVue DOMモード(Vueノード描画)が有効だと、
-            # この拡張はテキスト欄にattachできず一切動作しないので無効にしておくこと。
-            patches = [ ./autocomplete-plus-new-frontend.patch ];
-            # タグCSVを起動時に自ディレクトリ配下へダウンロードする作りだが、
-            # Nix storeは読み取り専用なので、書き込み先を可変領域に差し替える。
-            postPatch = ''
-              substituteInPlace modules/api.py modules/downloader.py \
-                --replace-fail \
-                'os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "data"))' \
-                '"${autocompletePlusDataDir}/data"'
-              substituteInPlace modules/downloader.py \
-                --replace-fail \
-                'os.path.normpath(os.path.join(os.path.dirname(__file__), "..", CSV_META_FILE_NAME))' \
-                'os.path.join("${autocompletePlusDataDir}", CSV_META_FILE_NAME)'
-            '';
-            installPhase = ''
-              runHook preInstall
-              mkdir -p $out
-              cp -r . $out/
-              runHook postInstall
-            '';
-            meta = {
-              description = "Danbooru tag autocomplete with Japanese search support for ComfyUI";
-              homepage = "https://github.com/newtextdoc1111/ComfyUI-Autocomplete-Plus";
-              license = pkgs.lib.licenses.mit;
-            };
-          });
+  containers.comfyui.config.services.comfyui = {
+    extraPythonPackages =
+      pythonPkgs: [ pythonPkgs.rotary-embedding-torch ] ++ loraManagerPythonPackages pythonPkgs;
+    # FaceDetailerなどディテール修復ノード群のImpact Pack(ADetailer相当)は、
+    # comfyui-nixが同梱して配置するものを使うので、ここでは宣言しない。
+    # ランチャーはExecStartで同梱ノードを`ln -sfn`するため、
+    # 同梱ノードと同じ名前を`customNodes`に書いても同梱版で上書きされる。
+    customNodes = {
+      # 自作のノードをまとめたもの。
+      # どのノードがあって何をするかは`pkgs/comfyui-ncaq-nodes/src`の各ファイルに書いてある。
+      "ComfyUI-Ncaq-Nodes" = pkgs.comfyui-ncaq-nodes;
+      # Civitaiからの取得、プレビュー、トリガーワード、レシピを一元管理する。
+      # Civitaiにはpickle形式(.pt/.ckpt)のモデルもあり読み込み時の任意コード実行が懸念されるが、
+      # ComfyUI本体は非safetensorsも`torch.load(weights_only=True)`固定で読むことと、
+      # そもそも外部取得物の実行を想定したコンテナ隔離があることから受容する。
+      "ComfyUI-Lora-Manager" = loraManager;
+      # 複数フレームを同時に参照して時間的一貫性を保つ動画超解像。
+      # RTX 5090では7B FP16モデルをBlockSwapとVAE tiling付きで使う。
+      # 依存はextraPythonPackagesからComfyUI本体と同じCUDA版torchを使う。
+      # 自作ノードの`seedvr2_streaming.py`が、
+      # このディレクトリ名を辿って同梱のCLIを起動する。
+      "ComfyUI-SeedVR2_VideoUpscaler" = pkgs.applyPatches {
+        src = pkgs.fetchFromGitHub {
+          owner = "numz";
+          repo = "ComfyUI-SeedVR2_VideoUpscaler";
+          rev = "4490bd1f482e026674543386bb2a4d176da245b9";
+          hash = "sha256-6nsqFflLw9vYH/du35ET46fdAm1NMjjTe2bA8JmaBE4=";
         };
+        patches = [ ./seedvr2-lossless.patch ];
+        # GNU patchの既定はfuzz 2とオフセット探索で文脈のずれを黙って許容する。
+        # 上流のrev更新でパッチの文脈が一致しなくなった時に、
+        # 意味の違う位置へ適用されるより確実にビルド失敗させたい。
+        patchFlags = [
+          "-p1"
+          "-F0"
+        ];
       };
+      # UltralyticsDetectorProvider(YOLOによる顔検出)を提供する。
+      # FaceDetailerに検出器を渡すために必要。
+      "ComfyUI-Impact-Subpack" = pkgs.fetchFromGitHub {
+        owner = "ltdrdata";
+        repo = "ComfyUI-Impact-Subpack";
+        tag = "1.3.4";
+        hash = "sha256-BHtfkaqCPf/YXfGbF/xyryjt+M8izkdoUAKNJLfyvqI=";
+      };
+      # danbooruタグのオートコンプリート。
+      # 日本語からの検索とpost count表示に対応していて、
+      # メジャーなタグかどうかを確認しながら入力できる。
+      "ComfyUI-Autocomplete-Plus" = pkgs.stdenv.mkDerivation (finalAttrs: {
+        pname = "comfyui-autocomplete-plus";
+        version = "1.11.0";
+        src = pkgs.fetchFromGitHub {
+          owner = "newtextdoc1111";
+          repo = "ComfyUI-Autocomplete-Plus";
+          tag = "v${finalAttrs.version}";
+          hash = "sha256-MjhGd38G5Wz46t1AchTe/IqmTzVO43mlXPDHie5i3EE=";
+        };
+        # 新しいComfyUIフロントエンド(1.43以降)では、
+        # keyupの時点でカーソル位置がリセットされていて候補が表示されない。
+        # upstreamのissueコメントで提示されている修正パッチを適用する。
+        # https://github.com/newtextdoc1111/ComfyUI-Autocomplete-Plus/issues/73#issuecomment-4761276962
+        # 修正がリリースされたらこのパッチは削除する。
+        #
+        # なおパッチとは別に、
+        # フロントエンド設定のVue DOMモード(Vueノード描画)が有効だと、
+        # この拡張はテキスト欄にattachできず一切動作しないので無効にしておくこと。
+        patches = [ ./autocomplete-plus-new-frontend.patch ];
+        # タグCSVを起動時に自ディレクトリ配下へダウンロードする作りだが、
+        # Nix storeは読み取り専用なので、書き込み先を可変領域に差し替える。
+        postPatch = ''
+          substituteInPlace modules/api.py modules/downloader.py \
+            --replace-fail \
+            'os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "data"))' \
+            '"${autocompletePlusDataDir}/data"'
+          substituteInPlace modules/downloader.py \
+            --replace-fail \
+            'os.path.normpath(os.path.join(os.path.dirname(__file__), "..", CSV_META_FILE_NAME))' \
+            'os.path.join("${autocompletePlusDataDir}", CSV_META_FILE_NAME)'
+        '';
+        installPhase = ''
+          runHook preInstall
+          mkdir -p $out
+          cp -r . $out/
+          runHook postInstall
+        '';
+        meta = {
+          description = "Danbooru tag autocomplete with Japanese search support for ComfyUI";
+          homepage = "https://github.com/newtextdoc1111/ComfyUI-Autocomplete-Plus";
+          license = pkgs.lib.licenses.mit;
+        };
+      });
     };
+  };
   systemd.tmpfiles.rules = [
     "d ${autocompletePlusDataDir} 0755 comfyui comfyui - -"
     "d ${autocompletePlusDataDir}/data 0755 comfyui comfyui - -"

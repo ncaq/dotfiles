@@ -427,16 +427,8 @@
             inherit pkgs;
             comfyui = pkgs.comfy-ui-cuda;
           };
-          # ComfyUIの自作カスタムノードのうち、
-          # ComfyUI本体に触れない部分のpytest。
-          # PythonのバージョンをComfyUIに揃えるため、
-          # 型検査と同じcomfyuiからインタプリタを取る。
-          comfyui-custom-node-test = import ./nixos/host/bullet/comfyui/custom-node/tests {
-            inherit pkgs;
-            comfyui = pkgs.comfy-ui-cuda;
-          };
           # CUDA版torchを含むcomfyuiはaarch64では現実的にビルドできないため、
-          # 型検査とテストもx86_64-linuxでだけ提供します。
+          # 型検査はx86_64-linuxでだけ提供します。
           hasComfyui = system == "x86_64-linux";
         in
         {
@@ -548,7 +540,6 @@
             // lib.optionalAttrs hasComfyui {
               # リポジトリ内のPythonの型検査。
               pyright = pythonPyright.check;
-              inherit comfyui-custom-node-test;
             };
 
           packages =

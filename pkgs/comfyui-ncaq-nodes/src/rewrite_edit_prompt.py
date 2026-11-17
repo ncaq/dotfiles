@@ -1,7 +1,7 @@
 # 日本語の編集指示を、Qwen-Image-2.1向けの英文の編集命令へ書き換えるノード。
 #
 # qwen-editワークフローの前段には元々TranslateTextToEnglishを置いていた。
-# あれはGoogle翻訳へ投げるだけで、訳文の構造は元の文のままである。
+# あれは翻訳するだけで、訳文の構造は元の文のままである。
 # ノード自体は`translate_text.py`に残っていて、
 # anime-videoとanime-video-extendのワークフローでは今も使っている。
 # Qwen公式は翻訳ではなくリライトを前段に置いていて、
@@ -19,10 +19,8 @@
 # 「この子の服装を変えて」のような曖昧な指示でも、
 # 画像を見て実際に着ている服を指した指示文に書き下せる。
 #
-# 失敗しても生成そのものは続けたいので、2段階で退避する。
-# 書き換えに失敗すればGoogle翻訳で英語にし、
-# それも駄目なら原文をそのまま通す。
-# どちらもstderrへ理由を残す。
+# 書き換えに失敗すれば、stderrへ理由を残して翻訳モデルで英語にする。
+# 翻訳にも失敗した時は原文で続けずに、ノードのエラーにする。
 #
 # ComfyUI本体は型注釈をほとんど持たないので、
 # CLIPのメソッドの型が決まらず、torchのスタブにも不明な部分がある。
@@ -181,14 +179,7 @@ class RewriteEditPrompt:
                 file=sys.stderr,
             )
         size = canvas_size(None, image_sizes, resolution)
-        try:
-            return (translate_to_english(text), *size)
-        except Exception as error:
-            print(
-                f"[RewriteEditPrompt] 翻訳にも失敗したので原文をそのまま使います: {error}",
-                file=sys.stderr,
-            )
-        return (text, *size)
+        return (translate_to_english(text, "image-edit"), *size)
 
 
 NODE_CLASS_MAPPINGS: dict[str, type[RewriteEditPrompt]] = {

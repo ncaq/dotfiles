@@ -2,9 +2,9 @@
   PFNの翻訳特化モデルPLaMo 3 Translateの重みを、
   Hugging Faceのrevとhashで固定して取得する。
 
-  OllamaとCLIの両方が同じstoreのパスを使い、
-  同じモデルを2か所に持たないようにするために共通化している。
-  CLIにHugging Faceの`repo:quant`の形で渡すと、
+  このモデルを使う全ての場所が同じstoreのパスを使い、
+  同じモデルを複数持たないようにするために共通化している。
+  公式CLIにHugging Faceの`repo:quant`の形で渡すと、
   初回の実行時に最新のrevisionが検証なしでキャッシュへ取得されてしまう。
 
   型: { pkgs } -> { "31b-q4_k_m"; "8b-q4_k_m"; "2b-q4_k_m"; "0.8b-q4_0"; }

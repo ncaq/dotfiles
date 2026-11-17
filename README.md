@@ -55,44 +55,6 @@ nix fmt
 As a general approach,
 I prefer home-manager and only use NixOS options when they are the simpler or only choice.
 
-# Directory Structure
-
-## [flake.nix](./flake.nix)
-
-The entry point of the flake.
-
-## [home/](./home/)
-
-The home-manager configuration files.
-
-`home/` contains the home-manager configuration files.
-
-### [home/link.nix](./home/link.nix), [home/linked/](./home/linked/)
-
-Create symbolic links from filepath.
-`link.nix` is the program that creates them.
-`linked/` contains the linked files.
-
-### [home/package/](./home/package/)
-
-To install packages.
-
-### [home/prompt/](./home/prompt/)
-
-Prompts directly used by chat LLMs and coding agents.
-
-## [lib/](./lib/)
-
-The library files for Nix expressions.
-
-## [nixos/](./nixos/)
-
-NixOS configuration files.
-
-## [pkgs/](./pkgs/)
-
-Custom Nix packages.
-
 # Related external config repo
 
 - [ncaq/.emacs.d: My Emacs config](https://github.com/ncaq/.emacs.d)

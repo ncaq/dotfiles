@@ -49,14 +49,14 @@
 }:
 let
   publicDns = import ./public-dns.nix;
-  addresses = map (server: server.address);
+  dnsAddresses = map (server: server.address);
 
   network =
     tap: addr:
     let
       hasIpv4 = addr.guest4 != null;
       ipv4 = list: if hasIpv4 then list else [ ];
-      dns = addresses (publicDns.ipv6 ++ ipv4 publicDns.ipv4);
+      dns = dnsAddresses (publicDns.ipv6 ++ ipv4 publicDns.ipv4);
     in
     {
       host."20-${tap}" = {
@@ -123,7 +123,7 @@ assert
   ]
   || throw "IPv4を持つゲストのゲートウェイが違います";
 assert
-  (guestConfig dual).DNS == addresses publicDns.ipv6 ++ addresses publicDns.ipv4
+  (guestConfig dual).DNS == dnsAddresses publicDns.ipv6 ++ dnsAddresses publicDns.ipv4
   || throw "IPv4を持つゲストのDNSがIPv6を先にした両方になっていません";
 assert
   (hostOf dual).addresses == [
@@ -142,7 +142,7 @@ assert
 assert
   (guestConfig ipv6Only).Gateway == [ "fdf2:a855:5a3f:100::30" ] || throw "IPv4を持たないゲストのゲートウェイが違います";
 assert
-  (guestConfig ipv6Only).DNS == addresses publicDns.ipv6 || throw "IPv4を持たないゲストにIPv6以外のDNSがあります";
+  (guestConfig ipv6Only).DNS == dnsAddresses publicDns.ipv6 || throw "IPv4を持たないゲストにIPv6以外のDNSがあります";
 assert
   (hostOf ipv6Only).addresses == [ { Address = "fdf2:a855:5a3f:100::30/128"; } ]
   || throw "IPv4を持たないマシンのホスト側のアドレスが違います";

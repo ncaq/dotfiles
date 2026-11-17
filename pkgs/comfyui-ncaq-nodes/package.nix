@@ -17,14 +17,17 @@
   stdenvNoCC,
   fetchFromGitHub,
   # comfyui-nixのoverlayが生やすCPU版のComfyUI。
-  # 全てのシステムにあって、インタプリタはCUDA版と同じものである。
+  # 全てのシステムにある。
+  # 今はCUDA版と同じ版のPythonを使っているが、揃っていることは検査していない。
   comfy-ui,
 }:
 let
-  # 実際にノードを読み込むのと同じインタプリタでバイトコンパイルしてテストする。
+  # comfyui-nixが使うPythonでバイトコンパイルしてテストする。
   # 版を手で書くと、comfyui-nixがPythonを上げた時に追従し忘れて、
-  # 配ったバイトコードが使われなくなり、
   # ComfyUIのPythonに無い構文に依存してもテストで気付けなくなる。
+  #
+  # 実際にノードを読み込むCUDA版と版がずれても、動作は変わらない。
+  # 配ったバイトコードが使われず、起動のたびにコンパイルし直されるだけである。
   python = comfy-ui.pythonRuntime.python.withPackages (
     pythonPkgs: with pythonPkgs; [
       pytest

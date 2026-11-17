@@ -39,12 +39,7 @@ let
     runCommand "comfyui-ncaq-nodes-pytest"
       {
         nativeBuildInputs = [
-          (python.withPackages (
-            pythonPkgs: with pythonPkgs; [
-              pytest
-              requests
-            ]
-          ))
+          (python.withPackages (pythonPkgs: [ pythonPkgs.pytest ]))
         ];
         src = lib.fileset.toSource {
           root = ./.;

@@ -1,7 +1,7 @@
 # 日本語の編集指示を、Qwen-Image-2.1向けの英文の編集命令へ書き換えるノード。
 #
 # qwen-editワークフローの前段には元々TranslateTextToEnglishを置いていた。
-# あれはGoogle翻訳へ投げるだけで、訳文の構造は元の文のままである。
+# あれは翻訳するだけで、訳文の構造は元の文のままである。
 # ノード自体は`translate_text.py`に残っていて、
 # anime-videoとanime-video-extendのワークフローでは今も使っている。
 # Qwen公式は翻訳ではなくリライトを前段に置いていて、
@@ -20,7 +20,7 @@
 # 画像を見て実際に着ている服を指した指示文に書き下せる。
 #
 # 失敗しても生成そのものは続けたいので、2段階で退避する。
-# 書き換えに失敗すればGoogle翻訳で英語にし、
+# 書き換えに失敗すれば翻訳モデルで英語にし、
 # それも駄目なら原文をそのまま通す。
 # どちらもstderrへ理由を残す。
 #
@@ -58,6 +58,12 @@ MAX_IMAGE_PIXELS = 1024 * 1024
 # 思考が上限で切れると回答が無くなり翻訳へ退避することになるので、
 # テキストの生成でしかない分を削って公式から外れる理由は無い。
 MAX_NEW_TOKENS = 24000
+
+# リライトに失敗して翻訳へ退避する時に、翻訳モデルへ渡す参照文脈。
+TRANSLATE_CONTEXT = (
+    "This is an instruction for an AI image editing model "
+    "that edits an anime-style illustration of characters."
+)
 
 
 def prepare_image(image: torch.Tensor) -> torch.Tensor:
@@ -182,7 +188,7 @@ class RewriteEditPrompt:
             )
         size = canvas_size(None, image_sizes, resolution)
         try:
-            return (translate_to_english(text), *size)
+            return (translate_to_english(text, TRANSLATE_CONTEXT), *size)
         except Exception as error:
             print(
                 f"[RewriteEditPrompt] 翻訳にも失敗したので原文をそのまま使います: {error}",

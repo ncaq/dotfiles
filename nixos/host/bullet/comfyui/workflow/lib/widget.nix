@@ -82,7 +82,10 @@ let
       "resolution"
     ];
     # 自作ノード。`pkgs/comfyui-ncaq-nodes/src/translate_text.py`。
-    TranslateTextToEnglish = [ "text" ];
+    TranslateTextToEnglish = [
+      "text"
+      "context"
+    ];
     UNETLoader = [
       "unet_name"
       "weight_dtype"

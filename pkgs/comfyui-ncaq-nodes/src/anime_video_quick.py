@@ -81,10 +81,18 @@ def split_prompts(text: str) -> list[Segment]:
     return segments
 
 
+# 翻訳モデルへ渡す参照文脈。
+# 訳した指示はキーフレームの編集と区間の動画化の両方へ渡る。
+translate_context = (
+    "This is an instruction for AI models that edit an anime-style image "
+    "and then animate it into a video clip."
+)
+
+
 def translate(text: str) -> str:
     """指示文を英語へ訳す。失敗した場合は原文をそのまま使う。"""
     try:
-        return translate_to_english(text)
+        return translate_to_english(text, translate_context)
     except Exception:
         print("[anime-video-quick] translation failed, using original text")
         traceback.print_exc()

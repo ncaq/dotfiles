@@ -59,6 +59,9 @@ let
     mkFilenamePrefixWith
     seedWidgets
     ;
+  # 動きの指示を翻訳するモデルへ渡す参照文脈。
+  # anime-videoと同じ値。
+  translateContext = "This is a prompt for an AI video generation model. It describes the motion in an anime-style video clip.";
   # 実写バイアスを打ち消すために常にプロンプトへ前置するスタイル指定。
   # anime-videoと同じ値。
   animeStylePrefix = "Anime style, 2D cel animation, flat colors.";
@@ -347,7 +350,10 @@ in
         ];
         order = 12;
         outputs = [ (mkOutput "english_text" "STRING" [ 19 ]) ];
-        widgets = [ "カメラはゆっくりと近づく。キャラクターは穏やかに微笑み、髪と服が風に揺れる。" ];
+        widgets = [
+          "カメラはゆっくりと近づく。キャラクターは穏やかに微笑み、髪と服が風に揺れる。"
+          translateContext
+        ];
       })
       # アニメスタイル指定を動きの指示の前に固定で結合する。
       (mkNode {

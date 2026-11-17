@@ -1,76 +1,212 @@
 """翻訳の共有モジュールの単体テスト。
 
-ネットワークを叩くのは`session.get`だけで、
-レスポンスの解釈は入れ子の配列を辿るだけの純粋な処理である。
+推論そのものは`llama-server`の仕事なので、
+ここで固定するのは送る本体の形と、レスポンスのどの形を弾くのかである。
 
-壊れたレスポンスの扱いはノードの統合で変わっている。
-以前のanime-video-quickは壊れた区間を黙って読み飛ばして残りを繋げていたが、
-今は1つでも壊れていれば`ValueError`になり、
-呼び出し側が訳文全体を捨てて日本語の原文をそのままプロンプトにする。
-生成結果に直接効くので、どの形を弾くのかをここで固定する。
+1つでも壊れていれば例外になり、
+呼び出し側が訳文を捨てて日本語の原文をそのままプロンプトにする。
+生成結果に直接効くので、受け付ける形を固定する。
+
+`translate_to_english`は標準ライブラリのHTTPサーバを相手に通しで確かめる。
 """
 
-from typing import Any
+import http.server
+import json
+import socket
+import threading
+from collections.abc import Iterator
 
 import pytest
 import translate
 
 
-def test_joins_segments() -> None:
-    """入れ子の配列から訳文を順に繋げる。"""
-    payload = [[["Hello", "こんにちは"], [" world", " 世界"]], None, "ja"]
-    assert translate.translated_text(payload) == "Hello world"
+def completion(content: object, finish_reason: str = "stop") -> dict[str, object]:
+    """`/v1/chat/completions`の成功時のレスポンスの形。"""
+    return {
+        "choices": [
+            {
+                "finish_reason": finish_reason,
+                "message": {"role": "assistant", "content": content},
+            }
+        ]
+    }
+
+
+def test_request_body_puts_context_in_system_message() -> None:
+    """文脈はsystemメッセージに、訳す文はuserメッセージに入れる。"""
+    body = translate.request_body("女の子が微笑む", "This is a prompt.")
+    assert body["messages"] == [
+        {"role": "system", "content": "This is a prompt."},
+        {"role": "user", "content": "女の子が微笑む"},
+    ]
+
+
+def test_request_body_omits_empty_context() -> None:
+    """文脈が空ならsystemメッセージを付けない。
+
+    テンプレートは空のsystemメッセージも受け付けるが、
+    文脈なしで訳させる意図が送る本体から読めるようにする。
+    """
+    body = translate.request_body("女の子が微笑む", "")
+    assert body["messages"] == [{"role": "user", "content": "女の子が微笑む"}]
+
+
+def test_request_body_fixes_target_language() -> None:
+    """訳す先を英語に固定する。
+
+    省略するとモデルが言語を判定して逆へ訳すので、
+    英語で書いた指示が日本語になってしまう。
+    """
+    body = translate.request_body("A girl smiles.", "")
+    assert body["chat_template_kwargs"] == {"target_lang": "en"}
+
+
+def test_returns_translation() -> None:
+    """レスポンスが正常なら前後の空白を落とした訳文を返す。"""
+    assert (
+        translate.translated_text(completion(" A girl smiles.\n")) == "A girl smiles."
+    )
 
 
 broken_payloads: list[tuple[object, str]] = [
-    ({"translation": "Hello"}, "invalid response"),
     ([], "invalid response"),
-    ([[]], "invalid segments"),
-    ([[[]]], "invalid segment"),
-    ([[[42]]], "non-text translation data"),
+    ({"error": "busy"}, "invalid choices"),
+    ({"choices": []}, "invalid choices"),
+    ({"choices": ["text"]}, "invalid choice"),
+    ({"choices": [{"finish_reason": "stop"}]}, "invalid message"),
+    (completion(42), "non-text translation data"),
+    (completion("  "), "empty translation"),
+    (completion("A girl", finish_reason="length"), "stopped with 'length'"),
 ]
 
 
 @pytest.mark.parametrize(("payload", "message"), broken_payloads)
 def test_rejects_broken_payload(payload: object, message: str) -> None:
-    """期待した形をしていないレスポンスは、どこで壊れているか分かる形で拒否する。"""
+    """期待した形をしていないレスポンスは、どこで壊れているか分かる形で拒否する。
+
+    訳文が空の場合と、上限で切れた場合も拒否する。
+    原文へ倒すのは呼び出し側の判断なので、
+    ここで中途半端な訳文を返すと訳せなかったことが伝わらない。
+    """
     with pytest.raises(ValueError, match=message):
         translate.translated_text(payload)
 
 
-class StubResponse:
-    """`session.get`の戻り値の代わり。"""
+class StubServer(http.server.HTTPServer):
+    """受け取った本体を覚えて、決めておいたレスポンスを返すサーバ。
 
-    def __init__(self, payload: object) -> None:
-        self.payload = payload
-
-    def raise_for_status(self) -> None:
-        pass
-
-    def json(self) -> object:
-        return self.payload
-
-
-def test_rejects_empty_translation(monkeypatch: pytest.MonkeyPatch) -> None:
-    """訳文が空文字列であれば拒否する。
-
-    原文へ倒すのは呼び出し側の判断なので、
-    ここで空文字列を返すと訳せなかったことが伝わらない。
+    本番と同じ`[::1]:ポート`の形の宛先を通すために、IPv6のループバックで待つ。
     """
 
-    def get(*_args: object, **_kwargs: object) -> Any:
-        return StubResponse([[["", "こんにちは"]]])
+    address_family = socket.AF_INET6
 
-    monkeypatch.setattr(translate.session, "get", get)
-    with pytest.raises(ValueError, match="empty translation"):
-        translate.translate_to_english("こんにちは")
+    def __init__(self, status: int, payload: object) -> None:
+        super().__init__(("::1", 0), StubHandler)
+        self.status = status
+        self.payload = payload
+        self.received: list[tuple[str, object]] = []
 
 
-def test_returns_translation(monkeypatch: pytest.MonkeyPatch) -> None:
-    """レスポンスが正常なら訳文を返す。"""
+class StubHandler(http.server.BaseHTTPRequestHandler):
+    def do_POST(self) -> None:
+        assert isinstance(self.server, StubServer)
+        length = int(self.headers["Content-Length"])
+        self.server.received.append((self.path, json.loads(self.rfile.read(length))))
+        body = json.dumps(self.server.payload).encode()
+        self.send_response(self.server.status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
 
-    def get(*_args: object, **_kwargs: object) -> Any:
-        return StubResponse([[["Hello", "こんにちは"]]])
 
-    monkeypatch.setattr(translate.session, "get", get)
-    assert translate.translate_to_english("こんにちは") == "Hello"
+@pytest.fixture(autouse=True)
+def clear_translation_cache() -> None:
+    """訳文のキャッシュを、前のテストから持ち越さない。"""
+    translate.translate_to_english.cache_clear()
+
+
+def serve(
+    monkeypatch: pytest.MonkeyPatch, status: int, payload: object
+) -> Iterator[StubServer]:
+    """サーバを別スレッドで動かして、翻訳の宛先をそこへ向ける。"""
+    server = StubServer(status, payload)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    monkeypatch.setenv("PLAMO_TRANSLATE_AUTHORITY", f"[::1]:{server.server_port}")
+    try:
+        yield server
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join()
+
+
+@pytest.fixture
+def healthy_server(monkeypatch: pytest.MonkeyPatch) -> Iterator[StubServer]:
+    yield from serve(monkeypatch, 200, completion("A girl smiles."))
+
+
+@pytest.fixture
+def rejecting_server(monkeypatch: pytest.MonkeyPatch) -> Iterator[StubServer]:
+    yield from serve(
+        monkeypatch,
+        500,
+        {"error": {"message": "user message content must not be empty."}},
+    )
+
+
+def test_translates_through_server(healthy_server: StubServer) -> None:
+    """環境変数の宛先へ本体をPOSTして、返ってきた訳文を返す。"""
+    translated = translate.translate_to_english("女の子が微笑む", "This is a prompt.")
+    assert translated == "A girl smiles."
+    assert healthy_server.received == [
+        (
+            "/v1/chat/completions",
+            translate.request_body("女の子が微笑む", "This is a prompt."),
+        )
+    ]
+
+
+def test_reuses_translation_of_same_arguments(healthy_server: StubServer) -> None:
+    """同じ文と文脈の2回目は、サーバへ投げずに前の訳文を返す。
+
+    seedだけ変えて生成を試すたびに、同じ指示を訳し直さないためである。
+    文脈が違えば訳語の選び方が変わるので、別のものとして訳す。
+    """
+    first = translate.translate_to_english("女の子が微笑む", "This is a prompt.")
+    second = translate.translate_to_english("女の子が微笑む", "This is a prompt.")
+    assert first == second == "A girl smiles."
+    assert len(healthy_server.received) == 1
+    translate.translate_to_english("女の子が微笑む", "This is an instruction.")
+    assert len(healthy_server.received) == 2
+
+
+def test_retries_after_failure(rejecting_server: StubServer) -> None:
+    """失敗は覚えずに、次の呼び出しでもう一度サーバへ投げる。
+
+    翻訳サーバの起動が間に合わなかっただけの失敗を、
+    ComfyUIを再起動するまで引きずらないためである。
+    """
+    for _ in range(2):
+        with pytest.raises(RuntimeError):
+            translate.translate_to_english("女の子が微笑む", "")
+    assert len(rejecting_server.received) == 2
+
+
+def test_reports_server_error_with_detail(rejecting_server: StubServer) -> None:
+    """サーバがエラーを返した時は、本体に書かれた理由を例外に含める。
+
+    テンプレートが入力を拒否した理由はレスポンスの本体にしか無いので、
+    ステータスだけを伝えるとログから原因が分からない。
+    """
+    with pytest.raises(RuntimeError, match="500.*must not be empty"):
+        translate.translate_to_english("女の子が微笑む", "")
+    assert len(rejecting_server.received) == 1
+
+
+def test_fails_without_authority(monkeypatch: pytest.MonkeyPatch) -> None:
+    """宛先の環境変数が無ければ、黙って別の宛先へ繋がずに落とす。"""
+    monkeypatch.delenv("PLAMO_TRANSLATE_AUTHORITY", raising=False)
+    with pytest.raises(KeyError, match="PLAMO_TRANSLATE_AUTHORITY"):
+        translate.translate_to_english("女の子が微笑む", "")

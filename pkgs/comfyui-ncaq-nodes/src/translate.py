@@ -58,8 +58,7 @@ def request_body(text: str, context: str) -> dict[str, object]:
             {"role": "user", "content": text},
         ],
         "chat_template_kwargs": {"target_lang": "en"},
-        # 同じ指示は同じ訳文にする。
-        # anime-video-quickは訳文を記録して再開時の照合に使う。
+        # 同じ指示は同じ訳文にして、`lru_cache`が返す訳文と訳し直した結果を揃える。
         "temperature": 0,
     }
 
@@ -112,7 +111,7 @@ def translated_text(payload: object) -> str:
 
 # 同じ指示のままseedだけ変えて生成を試す時に、訳し直さずに済ませる。
 # ComfyUIは入力の変わらないノードの出力を使い回すが、
-# anime-video-quickのようにノードの中から呼ぶ翻訳は、seedが変わるたびに走り直す。
+# ノードの中から呼ぶ翻訳は、seedが変わるたびに走り直す。
 # `temperature`が0なので、同じ引数の訳文は同じになる。
 # 例外は覚えないので、失敗した翻訳は次の呼び出しでやり直す。
 @functools.lru_cache(maxsize=256)

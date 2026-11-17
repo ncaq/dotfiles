@@ -73,8 +73,9 @@ let
     lib.concatLines (
       map (ua: "User-agent: ${ua}") userAgents ++ map (path: "Disallow: ${path}") disallow
     );
-  # Metaのクローラは既定のrobots.txtを取得しているのに、
-  # 断っている履歴のビューを大量に読みに来ます。
+  # Metaの`facebookexternalhit`は既定のrobots.txtを取得していますが、
+  # `meta-externalagent`と`meta-webindexer`のUser-Agentでの取得は見えていません。
+  # それでもこの2つは、断っている履歴のビューを大量に読みに来ます。
   # 同じ規則を、Metaを名指ししたグループでもう一度書きます。
   # 既定のものはグループの途中に空行があり、古い解釈ではそこでグループが終わるので、
   # 空行も入れません。

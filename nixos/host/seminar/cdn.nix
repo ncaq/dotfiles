@@ -250,6 +250,14 @@ in
           BindPaths = [ cdnRoot ];
           ReadWritePaths = [ cdnRoot ];
         };
+        # `/mnt/noa`は`nofail`なので、
+        # マウントに失敗してもブートは進みます。
+        # マウントされていない時にルートのSSDの上の空のディレクトリへ写さないように、
+        # マウントを必須にします。
+        unitConfig.RequiresMountsFor = [
+          deployRoot
+          cdnRoot
+        ];
         # 同期の途中にジョブがファイルをリンクへ差し替えた時や、
         # 何かの理由で`public`自体がリンクになった時に、
         # 辿った先にホストのファイルが無いようにします。

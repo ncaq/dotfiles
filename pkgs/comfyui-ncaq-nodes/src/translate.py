@@ -22,18 +22,41 @@ from typing import cast
 # 1回の翻訳を待つ秒数。CPUで推論するので長い指示では数秒かかる。
 TIMEOUT_SECONDS = 60
 
+# 翻訳モデルへ渡す参照文脈を、用途の名前から引く表。
+#
+# 呼び出し側には自由な文を書かせず、ここにある名前から選ばせる。
+# 文脈はsystemメッセージになるので、
+# ワークフローから任意の文を渡せると訳文を好きな方向へ誘導できてしまう。
+CONTEXTS: dict[str, str] = {
+    "generic": (
+        "This is a prompt for a generative AI model "
+        "that creates anime-style images or videos."
+    ),
+    "video": (
+        "This is a prompt for an AI video generation model. "
+        "It describes the motion in an anime-style video clip."
+    ),
+    "image-edit": (
+        "This is an instruction for an AI image editing model "
+        "that edits an anime-style illustration of characters."
+    ),
+    "image-edit-to-video": (
+        "This is an instruction for AI models that edit an anime-style image "
+        "and then animate it into a video clip."
+    ),
+}
+
 
 def request_body(text: str, context: str) -> dict[str, object]:
     """`/v1/chat/completions`へ送る本体を組み立てる。
 
-    文脈が空なら参照文脈なしで訳させる。
+    `context`は参照文脈の英文そのもの。
     """
-    messages: list[dict[str, str]] = []
-    if context:
-        messages.append({"role": "system", "content": context})
-    messages.append({"role": "user", "content": text})
     return {
-        "messages": messages,
+        "messages": [
+            {"role": "system", "content": context},
+            {"role": "user", "content": text},
+        ],
         "chat_template_kwargs": {"target_lang": "en"},
         # 同じ指示は同じ訳文にする。
         # anime-video-quickは訳文を記録して再開時の照合に使う。
@@ -96,12 +119,13 @@ def translated_text(payload: object) -> str:
 def translate_to_english(text: str, context: str) -> str:
     """テキストを英語へ翻訳する。
 
-    `context`は訳さない参照文脈で、
-    何のための文なのかを英語で書く。
-    空文字列なら文脈なしで訳す。
+    `context`は`CONTEXTS`にある用途の名前で、
+    何のための文なのかを翻訳モデルへ伝える。
 
     元の言語は自動判定なので、日本語でも英語の原文でもそのまま渡してよい。
     """
+    # 表に無い名前は、サーバへ投げる前に`KeyError`で落とす。
+    body = json.dumps(request_body(text, CONTEXTS[context]))
     # `[::1]:8189`のようなホストとポート。
     # スキームはここで固定して、平文のHTTP以外へは繋がない。
     authority = os.environ["PLAMO_TRANSLATE_AUTHORITY"]
@@ -110,15 +134,15 @@ def translate_to_english(text: str, context: str) -> str:
         connection.request(
             "POST",
             "/v1/chat/completions",
-            body=json.dumps(request_body(text, context)),
+            body=body,
             headers={"Content-Type": "application/json"},
         )
         response = connection.getresponse()
-        body = response.read()
+        response_body = response.read()
     finally:
         connection.close()
     if response.status != http.client.OK:
         # テンプレートが入力を拒否した理由などは本体にしか書かれていない。
-        detail = body[:1000].decode("utf-8", errors="replace")
+        detail = response_body[:1000].decode("utf-8", errors="replace")
         raise RuntimeError(f"llama-server returned {response.status}: {detail}")
-    return translated_text(json.loads(body))
+    return translated_text(json.loads(response_body))

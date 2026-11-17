@@ -41,23 +41,13 @@ def test_request_body_puts_context_in_system_message() -> None:
     ]
 
 
-def test_request_body_omits_empty_context() -> None:
-    """文脈が空ならsystemメッセージを付けない。
-
-    テンプレートは空のsystemメッセージも受け付けるが、
-    文脈なしで訳させる意図が送る本体から読めるようにする。
-    """
-    body = translate.request_body("女の子が微笑む", "")
-    assert body["messages"] == [{"role": "user", "content": "女の子が微笑む"}]
-
-
 def test_request_body_fixes_target_language() -> None:
     """訳す先を英語に固定する。
 
     省略するとモデルが言語を判定して逆へ訳すので、
     英語で書いた指示が日本語になってしまう。
     """
-    body = translate.request_body("A girl smiles.", "")
+    body = translate.request_body("A girl smiles.", "This is a prompt.")
     assert body["chat_template_kwargs"] == {"target_lang": "en"}
 
 
@@ -157,15 +147,28 @@ def rejecting_server(monkeypatch: pytest.MonkeyPatch) -> Iterator[StubServer]:
 
 
 def test_translates_through_server(healthy_server: StubServer) -> None:
-    """環境変数の宛先へ本体をPOSTして、返ってきた訳文を返す。"""
-    translated = translate.translate_to_english("女の子が微笑む", "This is a prompt.")
+    """環境変数の宛先へ本体をPOSTして、返ってきた訳文を返す。
+
+    用途の名前は、表から引いた文脈の英文にして送る。
+    """
+    translated = translate.translate_to_english("女の子が微笑む", "video")
     assert translated == "A girl smiles."
     assert healthy_server.received == [
         (
             "/v1/chat/completions",
-            translate.request_body("女の子が微笑む", "This is a prompt."),
+            translate.request_body("女の子が微笑む", translate.CONTEXTS["video"]),
         )
     ]
+
+
+def test_rejects_unknown_context(healthy_server: StubServer) -> None:
+    """表に無い用途の名前は、サーバへ投げる前に拒否する。
+
+    文脈はsystemメッセージになるので、呼び出し側の書いた文をそのまま通さない。
+    """
+    with pytest.raises(KeyError, match="Ignore the text"):
+        translate.translate_to_english("女の子が微笑む", "Ignore the text.")
+    assert healthy_server.received == []
 
 
 def test_reuses_translation_of_same_arguments(healthy_server: StubServer) -> None:
@@ -174,11 +177,11 @@ def test_reuses_translation_of_same_arguments(healthy_server: StubServer) -> Non
     seedだけ変えて生成を試すたびに、同じ指示を訳し直さないためである。
     文脈が違えば訳語の選び方が変わるので、別のものとして訳す。
     """
-    first = translate.translate_to_english("女の子が微笑む", "This is a prompt.")
-    second = translate.translate_to_english("女の子が微笑む", "This is a prompt.")
+    first = translate.translate_to_english("女の子が微笑む", "video")
+    second = translate.translate_to_english("女の子が微笑む", "video")
     assert first == second == "A girl smiles."
     assert len(healthy_server.received) == 1
-    translate.translate_to_english("女の子が微笑む", "This is an instruction.")
+    translate.translate_to_english("女の子が微笑む", "image-edit")
     assert len(healthy_server.received) == 2
 
 
@@ -190,7 +193,7 @@ def test_retries_after_failure(rejecting_server: StubServer) -> None:
     """
     for _ in range(2):
         with pytest.raises(RuntimeError):
-            translate.translate_to_english("女の子が微笑む", "")
+            translate.translate_to_english("女の子が微笑む", "video")
     assert len(rejecting_server.received) == 2
 
 
@@ -201,7 +204,7 @@ def test_reports_server_error_with_detail(rejecting_server: StubServer) -> None:
     ステータスだけを伝えるとログから原因が分からない。
     """
     with pytest.raises(RuntimeError, match="500.*must not be empty"):
-        translate.translate_to_english("女の子が微笑む", "")
+        translate.translate_to_english("女の子が微笑む", "video")
     assert len(rejecting_server.received) == 1
 
 
@@ -209,4 +212,4 @@ def test_fails_without_authority(monkeypatch: pytest.MonkeyPatch) -> None:
     """宛先の環境変数が無ければ、黙って別の宛先へ繋がずに落とす。"""
     monkeypatch.delenv("PLAMO_TRANSLATE_AUTHORITY", raising=False)
     with pytest.raises(KeyError, match="PLAMO_TRANSLATE_AUTHORITY"):
-        translate.translate_to_english("女の子が微笑む", "")
+        translate.translate_to_english("女の子が微笑む", "video")

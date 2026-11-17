@@ -59,12 +59,6 @@ MAX_IMAGE_PIXELS = 1024 * 1024
 # テキストの生成でしかない分を削って公式から外れる理由は無い。
 MAX_NEW_TOKENS = 24000
 
-# リライトに失敗して翻訳へ退避する時に、翻訳モデルへ渡す参照文脈。
-TRANSLATE_CONTEXT = (
-    "This is an instruction for an AI image editing model "
-    "that edits an anime-style illustration of characters."
-)
-
 
 def prepare_image(image: torch.Tensor) -> torch.Tensor:
     """先頭の1枚をRGBにして、総画素が`MAX_IMAGE_PIXELS`を超えれば縮める。
@@ -188,7 +182,7 @@ class RewriteEditPrompt:
             )
         size = canvas_size(None, image_sizes, resolution)
         try:
-            return (translate_to_english(text, TRANSLATE_CONTEXT), *size)
+            return (translate_to_english(text, "image-edit"), *size)
         except Exception as error:
             print(
                 f"[RewriteEditPrompt] 翻訳にも失敗したので原文をそのまま使います: {error}",

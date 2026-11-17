@@ -8,10 +8,8 @@
 # 翻訳モデルが訳語を選ぶ時の参照文脈になり、訳文には含まれない。
 # 選べる用途と、自由な文を書かせない理由は`translate.py`に書いてある。
 #
-# 翻訳に失敗した場合はエラーをログに残した上で原文をそのまま返す。
-# 指示文を受け取るモデルは多言語対応なので原文でもある程度は機能するため。
-import traceback
-
+# 翻訳に失敗した場合は原文で続けずに、ノードのエラーにする。
+# 原文で続けると、翻訳が効いていないことに生成結果を見るまで気付けない。
 from .translate import CONTEXTS, translate_to_english
 
 # `context`を繋がなかった時の用途。
@@ -42,12 +40,7 @@ class TranslateTextToEnglish:
     def translate(self, text: str, context: str = DEFAULT_CONTEXT) -> tuple[str]:
         if not text.strip():
             return ("",)
-        try:
-            return (translate_to_english(text, context),)
-        except Exception:
-            print("[translate-text] translation failed, using original text")
-            traceback.print_exc()
-            return (text,)
+        return (translate_to_english(text, context),)
 
 
 NODE_CLASS_MAPPINGS: dict[str, type[TranslateTextToEnglish]] = {

@@ -19,10 +19,8 @@
 # 「この子の服装を変えて」のような曖昧な指示でも、
 # 画像を見て実際に着ている服を指した指示文に書き下せる。
 #
-# 失敗しても生成そのものは続けたいので、2段階で退避する。
-# 書き換えに失敗すれば翻訳モデルで英語にし、
-# それも駄目なら原文をそのまま通す。
-# どちらもstderrへ理由を残す。
+# 書き換えに失敗すれば、stderrへ理由を残して翻訳モデルで英語にする。
+# 翻訳にも失敗した時は原文で続けずに、ノードのエラーにする。
 #
 # ComfyUI本体は型注釈をほとんど持たないので、
 # CLIPのメソッドの型が決まらず、torchのスタブにも不明な部分がある。
@@ -181,14 +179,7 @@ class RewriteEditPrompt:
                 file=sys.stderr,
             )
         size = canvas_size(None, image_sizes, resolution)
-        try:
-            return (translate_to_english(text, "image-edit"), *size)
-        except Exception as error:
-            print(
-                f"[RewriteEditPrompt] 翻訳にも失敗したので原文をそのまま使います: {error}",
-                file=sys.stderr,
-            )
-        return (text, *size)
+        return (translate_to_english(text, "image-edit"), *size)
 
 
 NODE_CLASS_MAPPINGS: dict[str, type[RewriteEditPrompt]] = {

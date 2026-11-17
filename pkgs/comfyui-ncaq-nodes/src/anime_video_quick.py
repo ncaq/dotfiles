@@ -15,7 +15,6 @@ import math
 import os
 import re
 import subprocess
-import traceback
 from datetime import datetime
 from fractions import Fraction
 from pathlib import Path
@@ -79,17 +78,6 @@ def split_prompts(text: str) -> list[Segment]:
     if not segments:
         raise ValueError("少なくとも1行の動画指示が必要です")
     return segments
-
-
-def translate(text: str) -> str:
-    """指示文を英語へ訳す。失敗した場合は原文をそのまま使う。"""
-    try:
-        # 訳した指示はキーフレームの編集と区間の動画化の両方へ渡る。
-        return translate_to_english(text, "image-edit-to-video")
-    except Exception:
-        print("[anime-video-quick] translation failed, using original text")
-        traceback.print_exc()
-        return text
 
 
 def image_hash(image: torch.Tensor) -> str:
@@ -512,7 +500,10 @@ class AnimeVideoQuick:
                 TranslatedSegment(
                     scene=segment["scene"],
                     prompt=segment["prompt"],
-                    english=translate(segment["prompt"]),
+                    # 訳した指示はキーフレームの編集と区間の動画化の両方へ渡る。
+                    english=translate_to_english(
+                        segment["prompt"], "image-edit-to-video"
+                    ),
                 )
                 for segment in segments
             ]

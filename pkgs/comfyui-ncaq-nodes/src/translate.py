@@ -11,8 +11,8 @@
 # 訳す先は英語に固定する。
 # 省略するとモデルが言語を判定して逆へ訳すので、英語で書いた指示が日本語になる。
 #
-# 翻訳できなかった時に原文へ倒すかどうかは呼び出し側の判断なので、
-# ここでは倒さずに落とす。
+# 翻訳できなかった時は例外にして、呼び出したノードのエラーにする。
+# 原文で続けると、翻訳が効いていないことに生成結果を見るまで気付けない。
 import functools
 import http.client
 import json
@@ -93,7 +93,7 @@ def translated_text(payload: object) -> str:
     )
     choice = json_object(choices[0], "llama-server returned an invalid choice")
     # 訳文が上限で切れた時は`length`になる。
-    # 途中までの訳を使うより、呼び出し側に原文へ倒させる。
+    # 途中までの訳は使わずに失敗にする。
     finish_reason = choice.get("finish_reason")
     if finish_reason != "stop":
         raise ValueError(f"llama-server stopped with {finish_reason!r}")

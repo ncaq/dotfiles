@@ -133,8 +133,7 @@ def parse_rewrite(generated: str) -> Rewrite:
     公式の実装に倣い、学習データの一部にあった綴り違いの`rewrited_prompt`も受け付ける。
 
     期待した形でなければ例外にする。
-    呼び出し側が翻訳へ回すか原文へ倒すかを決めるので、
-    ここでは倒さずに落とす。
+    呼び出し側が翻訳へ回すので、ここでは倒さずに落とす。
     """
     answer = answer_section(generated)
     if not answer:

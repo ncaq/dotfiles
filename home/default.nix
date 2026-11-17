@@ -1,3 +1,4 @@
+# [home-manager](https://github.com/nix-community/home-manager)が使う設定ファイルを管理します。
 {
   lib,
   config,

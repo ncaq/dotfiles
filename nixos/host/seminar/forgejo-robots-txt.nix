@@ -78,13 +78,16 @@ let
   # それでもこの2つは、断っている履歴のビューを大量に読みに来ます。
   # 同じ規則を、Metaを名指ししたグループでもう一度書きます。
   # 既定のものはグループの途中に空行があり、古い解釈ではそこでグループが終わるので、
-  # 空行も入れません。
-  robotsTxt = pkgs.writeText "robots.txt" ''
-    ${group [ "*" ]}
-    ${group [
-      "meta-externalagent"
-      "meta-webindexer"
-    ]}'';
+  # グループの中には空行を入れず、グループの間だけを空行1つで区切ります。
+  robotsTxt = pkgs.writeText "robots.txt" (
+    lib.concatStringsSep "\n" [
+      (group [ "*" ])
+      (group [
+        "meta-externalagent"
+        "meta-webindexer"
+      ])
+    ]
+  );
 in
 {
   # Forgejoは`custom/public/robots.txt`があると既定のrobots.txtの代わりに返します。

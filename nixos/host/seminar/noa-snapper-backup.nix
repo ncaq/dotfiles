@@ -13,6 +13,18 @@ let
     IOSchedulingClass=idle
     IOWeight=10
   '';
+  targetPath = "/mnt/noa/snapshot-backup/seminar/root";
+  # `/mnt/noa`は`nofail`なので、
+  # マウントに失敗してもブートは進みます。
+  # マウントされていない時に転送すると、
+  # ルートのSSDの上の空のディレクトリへrootのスナップショットを丸ごと書き込むので、
+  # マウントを必須にします。
+  # `lowPriority`と同じ理由で`[Unit]`セクションを追記します。
+  requireMount = ''
+
+    [Unit]
+    RequiresMountsFor=${targetPath}
+  '';
 in
 {
   # snapperが取得済みのrootスナップショットを、
@@ -26,7 +38,7 @@ in
     target-mode = "local";
     automatic = true;
     source-path = "/";
-    target-path = "/mnt/noa/snapshot-backup/seminar/root";
+    target-path = targetPath;
   };
 
   systemd = {
@@ -35,7 +47,9 @@ in
     # `automatic: true`のbackup-configを転送しつつリテンションに基づく削除も行う。
     units = {
       "snapper-backup.service".text =
-        builtins.readFile "${pkgs.snapper}/lib/systemd/system/snapper-backup.service" + lowPriority;
+        builtins.readFile "${pkgs.snapper}/lib/systemd/system/snapper-backup.service"
+        + lowPriority
+        + requireMount;
       "snapper-backup.timer" = {
         text = builtins.readFile "${pkgs.snapper}/lib/systemd/system/snapper-backup.timer";
         wantedBy = [ "timers.target" ];

@@ -652,6 +652,22 @@ in
         }
       ) runnerVmDefs)
 
+      (lib.mapAttrs' (
+        name: def:
+        lib.nameValuePair "microvm-virtiofsd@${name}" {
+          overrideStrategy = "asDropin";
+          # 共有するディレクトリのマウントを待ちます。
+          # `/mnt/noa`は`nofail`なので、
+          # マウントに失敗してもブートは進みます。
+          # 待たないと、
+          # マウントされていない時にルートのSSDの上の空のディレクトリを共有して、
+          # ジョブがそこへ書き込みます。
+          # `microvm@`はこのユニットを`Requires`しているので、
+          # マウントされていなければVMも起動しません。
+          unitConfig.RequiresMountsFor = map (share: share.source) (def.extraShares or [ ]);
+        }
+      ) runnerVmDefs)
+
       {
         # ホストのGCがパスを消すと、
         # VMのデータベースには有効なパスとして残るのに実体が無くなります。

@@ -5,7 +5,7 @@
   ...
 }:
 let
-  inherit (config.containers.forgejo.config.services.forgejo) customDir;
+  inherit (config.containers.forgejo.config.services) forgejo;
   # Forgejo 15の既定のrobots.txtが`User-agent: *`に断っているパス。
   # 手で写したものなので、Forgejoの更新で既定のものが変わっても追従せず、漏れが出ます。
   # クロールを断るのはセキュリティのためではなく、漏れても大した問題にならないので、
@@ -92,7 +92,7 @@ in
 {
   # Forgejoは`custom/public/robots.txt`があると既定のrobots.txtの代わりに返します。
   containers.forgejo.config.systemd.tmpfiles.rules = [
-    "d ${customDir}/public 0750 forgejo forgejo - -"
-    "L+ ${customDir}/public/robots.txt - - - - ${robotsTxt}"
+    "d ${forgejo.customDir}/public 0750 ${forgejo.user} ${forgejo.group} - -"
+    "L+ ${forgejo.customDir}/public/robots.txt - - - - ${robotsTxt}"
   ];
 }

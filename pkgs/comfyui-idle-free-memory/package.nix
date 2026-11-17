@@ -10,6 +10,7 @@
   lib,
   haskell,
   haskellPackages,
+  runCommand,
   writeText,
   himari-src,
 }:
@@ -31,11 +32,14 @@ let
       ./test
     ];
   };
-  package = packages.callCabal2nix "comfyui-idle-free-memory" source { };
+  mainProgram = "comfyui-idle-free-memory";
+  executable = lib.pipe (packages.callCabal2nix mainProgram source { }) [
+    # コンテナの閉包へGHCを持ち込まない。
+    haskell.lib.compose.justStaticExecutables
+  ];
   hardening = import ../../lib/systemd-hardening.nix;
   # 同梱するユニット。
-  # `ExecStart`の`@out@`は、インストールする時にこのパッケージ自身のパスへ置き換える。
-  unit = writeText "comfyui-idle-free-memory.service" (
+  unit = writeText "${mainProgram}.service" (
     lib.generators.toINI { listsAsDuplicateKeys = true; } {
       Unit = {
         Description = "Free ComfyUI memory while idle";
@@ -46,7 +50,7 @@ let
         # 縛って止めるより、動いていない相手を叩き続けて勝手に復帰する方が単純である。
       };
       Service = hardening.network // {
-        ExecStart = "@out@/bin/comfyui-idle-free-memory";
+        ExecStart = lib.getExe executable;
         DynamicUser = true;
         Environment = [
           # 渡すのはホストとポートだけにして、スキームはプログラムの側で固定する。
@@ -83,16 +87,16 @@ let
     }
   );
 in
-lib.pipe package [
-  # コンテナの閉包へGHCを持ち込まない。
-  haskell.lib.compose.justStaticExecutables
-  # `justStaticExecutables`は`postFixup`で`$out/lib`を丸ごと消すので、
-  # ユニットはその後に置く。
-  (haskell.lib.compose.overrideCabal (old: {
-    postFixup = (old.postFixup or "") + ''
-      install -D -m 444 ${unit} "$out/lib/systemd/system/comfyui-idle-free-memory.service"
-      substituteInPlace "$out/lib/systemd/system/comfyui-idle-free-memory.service" \
-        --replace-fail @out@ "$out"
-    '';
-  }))
-]
+# 実行ファイルとは別のderivationで包んでユニットを足す。
+# Haskellのderivationの中に置くと、
+# ユニットやハードニングの設定を変えるだけでGHCのビルドとテストがやり直しになる。
+runCommand executable.name
+  {
+    inherit (executable) pname version;
+    meta.mainProgram = mainProgram;
+  }
+  ''
+    mkdir -p "$out/bin"
+    ln -s ${lib.getExe executable} "$out/bin/${mainProgram}"
+    install -D -m 444 ${unit} "$out/lib/systemd/system/${mainProgram}.service"
+  ''

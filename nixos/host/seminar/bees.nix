@@ -1,3 +1,4 @@
+{ lib, ... }:
 {
   # 負荷の調整は`nixos/native-linux/bees.nix`の共通の設定に任せる。
   #
@@ -36,7 +37,10 @@
   # ディスクの追加や取り外しとscrubがまだ残っているので、
   # その間はHDDへの書き込みとシークを増やすものを減らします。
   # 設定は残して、
-  # ユニットだけを無効にします。
+  # 自動で起動しないようにだけします。
+  # `enable = false`だとドロップインの中身だけが消えて、
+  # `multi-user.target`からの依存は残り、
+  # 上流のテンプレートのまま起動して失敗します。
   # 障害対応が終わったらこの行を消して元に戻します。
-  systemd.services."beesd@noa".enable = false;
+  systemd.services."beesd@noa".wantedBy = lib.mkForce [ ];
 }

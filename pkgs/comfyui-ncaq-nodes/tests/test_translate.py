@@ -111,7 +111,9 @@ class StubHandler(http.server.BaseHTTPRequestHandler):
         assert isinstance(self.server, StubServer)
         length = int(self.headers["Content-Length"])
         self.server.received.append((self.path, json.loads(self.rfile.read(length))))
-        body = json.dumps(self.server.payload).encode()
+        # 日本語を`\u`の形に逃がさずに返す。
+        # 逃がすと、本体に指示文が入っていても文字列としては一致しなくなる。
+        body = json.dumps(self.server.payload, ensure_ascii=False).encode()
         self.send_response(self.server.status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
@@ -151,7 +153,8 @@ def rejecting_server(monkeypatch: pytest.MonkeyPatch) -> Iterator[StubServer]:
     yield from serve(
         monkeypatch,
         500,
-        {"error": {"message": "user message content must not be empty."}},
+        # 入力をそのまま含めて返すサーバを模す。
+        {"error": {"message": "failed to render the template: 女の子が微笑む"}},
     )
 
 
@@ -214,7 +217,7 @@ def test_reports_server_error_without_body(rejecting_server: StubServer) -> None
     """
     with pytest.raises(RuntimeError, match="500") as error:
         translate.translate_to_english("女の子が微笑む", "video")
-    assert "must not be empty" not in str(error.value)
+    assert "女の子が微笑む" not in str(error.value)
     assert len(rejecting_server.received) == 1
 
 

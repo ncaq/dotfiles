@@ -1,6 +1,6 @@
 # アイドル中のComfyUIにメモリを解放させる常駐プロセスを、コンテナの中で動かす。
 #
-# 中身は`pkgs/comfyui-idle-free-memory`で、
+# 中身は`pkgs/comfyui-idle-free-memory`で、systemdのユニットもパッケージに同梱されている。
 # 何をどう判断して解放するかはそちらの`src/IdleFreeMemory/Run.hs`の冒頭に書いてある。
 #
 # ホスト側のサービスにしない理由は寿命の管理である。
@@ -16,66 +16,20 @@
 #
 # 宛先がループバックになるので、
 # vethのアドレスもコンテナのfirewallも関係しなくなる。
-{
-  lib,
-  pkgs,
-  hardening,
-  ...
-}:
-let
-  # ホスト側の`pkgs`で組む。
-  # コンテナの中もホストと同じnixpkgsなので、
-  # `nixos/host/bullet/comfyui/workflow/cli.nix`が組むcomfy-workflowと依存の閉包を共有できる。
-  inherit (pkgs) comfyui-idle-free-memory;
-in
+{ pkgs, ... }:
 {
   containers.comfyui.config =
     { config, ... }:
     {
+      # ホスト側の`pkgs`で組んだものを渡す。
+      # コンテナの中もホストと同じnixpkgsなので、
+      # `nixos/host/bullet/comfyui/workflow/cli.nix`が組むcomfy-workflowと依存の閉包を共有できる。
+      systemd.packages = [ pkgs.comfyui-idle-free-memory ];
       systemd.services.comfyui-idle-free-memory = {
-        description = "Free ComfyUI memory while idle";
+        # NixOSは`systemd.packages`のユニットの`[Install]`を見ないので、ここで有効にする。
         wantedBy = [ "multi-user.target" ];
-        after = [ "comfyui.service" ];
-        # 依存関係で縛らない。
-        # ComfyUIが落ちている間はHTTPが失敗するだけで、
-        # プログラムはそれを記録して次の周回へ進む。
-        # 縛って止めるより、動いていない相手を叩き続けて勝手に復帰する方が単純である。
-        environment = {
-          # 渡すのはホストとポートだけにして、スキームはプログラムの側で固定する。
-          # comfy-workflowの`COMFYUI_AUTHORITY`と同じ形に揃える。
-          COMFYUI_AUTHORITY = "[::1]:${toString config.services.comfyui.port}";
-          # 確認の間隔。
-          # 活動時刻はComfyUI自身の記録から取るので、
-          # 間隔を詰めても取りこぼしは減らない。
-          # 解放が実際に走るのが最後の活動から`IDLE_SECONDS`後ちょうどではなく、
-          # そこから最大でこの秒数だけ遅れる、という意味しか持たない。
-          POLL_INTERVAL_SECONDS = "300";
-          # これだけ何もしていなければ解放する。
-          # 短くすると、少し考えてから次の生成を回す間に降ろされて載せ直しになる。
-          IDLE_SECONDS = "600";
-        };
-        # `hardening`はこのファイル自身がホスト側のモジュールとして受け取ったものである。
-        # コンテナの中のモジュールへはモジュール引数としては渡らないが、
-        # ここはクロージャの内側なのでそのまま参照できる。
-        serviceConfig = hardening.network // {
-          ExecStart = lib.getExe comfyui-idle-free-memory;
-          DynamicUser = true;
-          # 待ち続けるのが仕事なので、終了は全て異常である。
-          #
-          # HTTPの失敗はプログラムが周回の中で吸収するので、
-          # ここまで来る終了は環境変数の欠落や不正な値、プログラム自体の不具合など、
-          # 待っても直らないものが基本になる。
-          # 10秒固定のままだと、
-          # systemdの既定の起動レート制限(10秒に5回)に掛からないため、
-          # 直らない状態で10秒間隔の再起動を永久に繰り返す。
-          #
-          # `lib/container-socket-activation.nix`が`comfyui-proxy`へ入れているものと同じ、
-          # nixpkgsの`ollama-model-loader`由来の指数バックオフで抑える。
-          Restart = "always";
-          RestartSec = "10s";
-          RestartMaxDelaySec = "2h";
-          RestartSteps = 10;
-        };
+        # ユニットの既定は8188なので今は同じ値だが、ポートを変えた時に追従させる。
+        environment.COMFYUI_AUTHORITY = "[::1]:${toString config.services.comfyui.port}";
       };
     };
 }

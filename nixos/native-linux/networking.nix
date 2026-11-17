@@ -54,11 +54,11 @@ in
     settings = {
       Resolve = {
         DNSSEC = "true";
-        # Tailscaleが有効な環境ではDNSクエリはTailscaleの内部DNSサーバに流れます。
-        # Tailscale側は同じくCloudflareかGoogleのDNSを使うように設定しています。
-        # その時にDNS over HTTPSが利用されます。
-        # しかし念の為Tailscaleが外れた時も比較的安全にDNSが解決できるように、
-        # 本体の設定でもDNS over TLSを利用するようにします。
+        # tailnetはシステムのDNS設定を上書きしないようにしているので、
+        # Tailscaleの内部DNSサーバに流れるのはtailnetの名前だけです。
+        # それ以外の問い合わせはここの設定で解決するので、
+        # DNS over TLSで暗号化して、DNSSECも手元で検証します。
+        # exit nodeを使っている間だけは全ての問い合わせがTailscaleへ流れます。
         DNSOverTLS = "true";
         FallbackDNS = encryptedDns true;
         # LLMNRはDNSで引けなかった名前をリンクローカルにマルチキャストで問い合わせて、

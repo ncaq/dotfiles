@@ -51,14 +51,14 @@ CONTEXTS: dict[ContextName, str] = {
 }
 
 
-def request_body(text: str, context: str) -> dict[str, object]:
+def request_body(text: str, reference: str) -> dict[str, object]:
     """`/v1/chat/completions`へ送る本体を組み立てる。
 
-    `context`は参照文脈の英文そのもの。
+    `reference`は参照文脈の英文そのもので、用途の名前ではない。
     """
     return {
         "messages": [
-            {"role": "system", "content": context},
+            {"role": "system", "content": reference},
             {"role": "user", "content": text},
         ],
         "chat_template_kwargs": {"target_lang": "en"},

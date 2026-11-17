@@ -1,7 +1,7 @@
 # job IDごとの進捗の記録を読み書きするモジュール。
 #
 # ノード本体から分けているのはテストのため。
-# `__init__.py`はComfyUI本体とtorchとPyAVをimportするので、
+# `anime_video_quick.py`はComfyUI本体とtorchとPyAVをimportするので、
 # 読み込むだけでGPUを持つ実行環境が要る。
 # 記録の読み書きはファイルとJSONだけで完結していて、
 # 壊れた記録を読んだ時の振る舞いこそ実際の中断ジョブでしか通らない経路なので、

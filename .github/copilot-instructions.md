@@ -333,6 +333,12 @@ flakeの`packages`と`checks`にも加わります。
 `flake.nix`やモジュールでパスを指定して`callPackage`する必要はありません。
 ホストの設定に合わせた引数を渡したい時は`pkgs.<名前>.override`を使います。
 
+パッケージの`passthru.tests`に置いたderivationも、
+`<名前>-test-<テストの名前>`として`checks`に加わります。
+`pkgs/comfyui-ncaq-nodes`のように、
+テストを書き換えただけで配るもののstoreパスが変わると困る時に、
+`checkPhase`の代わりに使います。
+
 `himari-src`のようなnixpkgsに無いflakeのinputは、
 overlayが`callPackage`の自動で渡す引数に足しています。
 
@@ -392,9 +398,6 @@ Nixで書いたテストのうち、
 - `nixos/host/seminar/machine-mapping.nix`のテストは`nixos/host/seminar/machine-mapping.test.nix`
 - トピックを分ける時は`nixos/native-linux/networking.container-dns.test.nix`のように`<実装の名前>.<トピック>.test.nix`
 - `importDirModules`は`.test.nix`をモジュールとして読まない
-
-ComfyUIの自作カスタムノードのpytestを走らせるderivationは、
-pytestと同じ`nixos/host/bullet/comfyui/custom-node/tests/`に置いています。
 
 各言語のパッケージのテスト(`pkgs/*/test`など)は、
 その言語のツールが期待する場所に置いたままにします。

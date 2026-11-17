@@ -7,10 +7,6 @@
 # 形が違えばどこで壊れているのか分かるように`ValueError`にする。
 # 翻訳できなかった時に原文へ倒すかどうかは呼び出し側の判断なので、
 # ここでは倒さずに落とす。
-#
-# 使う側のノードディレクトリへ`../translate.py`へのsymlinkを置き、
-# ノードのderivationが`cp -rL`で実体化して配る。
-# `from .translate import translate_to_english`と相対importで使う。
 from typing import cast
 
 import requests

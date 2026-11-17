@@ -355,6 +355,13 @@
               draftModel = "pfnet/plamo-3-translate-0.8b-GGUF:Q4_0";
             };
           };
+          # 自作のパッケージが`passthru.tests`に置いたテスト。
+          # パッケージ自身の`checkPhase`に入れると、
+          # テストを書き換えただけでパッケージのstoreパスが変わってしまう時に使う。
+          # `<パッケージの名前>-test-<テストの名前>`という名前にする。
+          localPackageTests = lib.concatMapAttrs (
+            name: package: lib.mapAttrs' (test: lib.nameValuePair "${name}-test-${test}") (package.tests or { })
+          ) localPackages;
           # 自作のパッケージの名前がnixpkgsの属性と重なっていないかのチェック。
           # 重なった時に何が起きるかは`lib/local-packages-overlay.nix`に書いてある。
           # 黙って差し替わらないように評価を止めて、移行するか名前を変えるかを決める。
@@ -427,16 +434,8 @@
             inherit pkgs;
             comfyui = pkgs.comfy-ui-cuda;
           };
-          # ComfyUIの自作カスタムノードのうち、
-          # ComfyUI本体に触れない部分のpytest。
-          # PythonのバージョンをComfyUIに揃えるため、
-          # 型検査と同じcomfyuiからインタプリタを取る。
-          comfyui-custom-node-test = import ./nixos/host/bullet/comfyui/custom-node/tests {
-            inherit pkgs;
-            comfyui = pkgs.comfy-ui-cuda;
-          };
           # CUDA版torchを含むcomfyuiはaarch64では現実的にビルドできないため、
-          # 型検査とテストもx86_64-linuxでだけ提供します。
+          # 型検査はx86_64-linuxでだけ提供します。
           hasComfyui = system == "x86_64-linux";
         in
         {
@@ -538,6 +537,7 @@
             # `packages`へ置いただけではCIでビルドされないので、
             # 自作のパッケージは全てビルドとderivationの中のテストを確かめる。
             // localPackages
+            // localPackageTests
             // {
               local-packages-name-collision = localPackagesNameCollision;
               # 同じワークフローのClaude Codeへ渡す設定一式。
@@ -548,7 +548,6 @@
             // lib.optionalAttrs hasComfyui {
               # リポジトリ内のPythonの型検査。
               pyright = pythonPyright.check;
-              inherit comfyui-custom-node-test;
             };
 
           packages =

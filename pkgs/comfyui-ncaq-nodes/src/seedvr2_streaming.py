@@ -57,7 +57,7 @@ class DitArgs(TypedDict):
 
     上流には型注釈が無いので、
     このノードが読むキーをこちらで書き起こす。
-    上流のrevは`custom-node.nix`で固定しているので形は動かない。
+    上流のrevは`nixos/host/bullet/comfyui/custom-node.nix`で固定しているので形は動かない。
     """
 
     model: str

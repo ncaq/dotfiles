@@ -68,7 +68,7 @@ let
 
   evaluated = lib.evalModules {
     modules = [
-      ../../nixos/native-linux/networking.nix
+      ./networking.nix
       stub
       {
         containers = {

@@ -30,6 +30,7 @@ ASCIIに対応する全角形(Fullwidth Forms)は使用禁止。
 指定ディレクトリ内の`.nix`ファイルと`default.nix`を持つサブディレクトリを自動的に収集し、
 NixOSモジュールやhome-managerモジュールの`imports`に渡せるパスのリストを返します。
 `default.nix`は呼び出し元自身の再帰importを防ぐため除外されます。
+`.test.nix`で終わるファイルはモジュールの隣に置いた評価のテストなので除外されます。
 `default.nix`を持たないサブディレクトリはモジュールではないので無視されます。
 サブディレクトリの中身は走査しません(そのサブディレクトリの`default.nix`が自身で管理します)。
 
@@ -356,17 +357,44 @@ CIで確かめる時だけの例外があります。
 
 ## testディレクトリ
 
-Nixで書いたテストのディレクトリです。
-`lib/`や`nixos/`の中にはテストを置かず、ここへまとめます。
+Nixで書いたテストのうち、
+実装のファイルに書けないものと、テストを集める仕組みのディレクトリです。
 1つのファイルには1つのトピックだけを書きます。
 
-- `eval/`: 評価時にしか走らない純粋なNixのテスト。
-  1ファイルが`checks`の1つの`nix-test-*`になり、`nix-fast-build`が並列に評価する。
-  ファイルを足すだけで加わり、共有する入力は`fixture.nix`に置く
+- `collect-nix-tests.nix`: 実装のファイルに書けない評価のテスト(`*.test.nix`)を集める仕組み
 - `nixos-boot/`: ホストごとにNixOSの構成をVMでブートするテスト(`testNixosBoot`)。
   `script/`はブート後に確かめるトピック、
   `vm/`はテストVMで動かないものを無効化したりモックにしたりするモジュール
-- `comfyui-custom-node.nix`: ComfyUIの自作カスタムノードのpytest
+
+## 実装のファイルに書くテスト
+
+評価時にしか走らない純粋なNixのテストは、
+実装のファイルの末尾に`assert`としてそのまま書きます。
+`lib/parse-ipv6.nix`のように、
+実装を`let`で束縛して、`assert`を並べた後に実装を返します。
+ファイルを読み込むたびに表明が走るので、使っているホストの評価がそのままテストになります。
+`lib`を受け取らないファイルでは`assert 条件 || throw "メッセージ";`と書きます。
+
+トピックが複数ある時は、
+`lib/comfyui-api-workflow.nix`のように、
+トピックごとの`let ... in assert ...; true`を`tests`の属性として並べて、
+まとめて`assert`します。
+トピックごとに束縛の名前が分かれるので、入力の名前が重なりません。
+
+実装のファイルに書けないのは、
+モジュール自身を`lib.evalModules`で読み込むテストだけです。
+モジュールのファイルの中に書くと、
+テストが読み込んだ自分自身の中でまたテストが走って無限再帰になります。
+そのテストは隣に`.test.nix`で終わる名前のファイルとして置きます。
+リポジトリのどこに置いても`test/collect-nix-tests.nix`が集めて、
+1ファイルが`checks`の1つの`nix-test-*`になります。
+
+- `nixos/host/seminar/machine-mapping.nix`のテストは`nixos/host/seminar/machine-mapping.test.nix`
+- トピックを分ける時は`nixos/native-linux/networking.container-dns.test.nix`のように`<実装の名前>.<トピック>.test.nix`
+- `importDirModules`は`.test.nix`をモジュールとして読まない
+
+ComfyUIの自作カスタムノードのpytestを走らせるderivationは、
+pytestと同じ`nixos/host/bullet/comfyui/custom-node/tests/`に置いています。
 
 各言語のパッケージのテスト(`pkgs/*/test`など)は、
 その言語のツールが期待する場所に置いたままにします。

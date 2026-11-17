@@ -48,32 +48,109 @@
   addr,
 }:
 let
-  hasIpv4 = addr.guest4 != null;
-  ipv4 = list: if hasIpv4 then list else [ ];
   publicDns = import ./public-dns.nix;
-  dns = map (server: server.address) (publicDns.ipv6 ++ ipv4 publicDns.ipv4);
-in
-{
-  host."20-${tap}" = {
-    matchConfig.Name = tap;
-    addresses = [
-      { Address = "${addr.host6}/128"; }
-    ]
-    ++ ipv4 [ { Address = "${addr.host4}/32"; } ];
-    routes = [
-      { Destination = "${addr.guest6}/128"; }
-    ]
-    ++ ipv4 [ { Destination = "${addr.guest4}/32"; } ];
-  };
-  guest = {
-    enable = true;
-    networks."20-lan" = {
-      matchConfig.Type = "ether";
-      networkConfig = {
-        Address = [ "${addr.guest6}/64" ] ++ ipv4 [ "${addr.guest4}/24" ];
-        Gateway = [ addr.host6 ] ++ ipv4 [ addr.host4 ];
-        DNS = dns;
+  addresses = map (server: server.address);
+
+  network =
+    tap: addr:
+    let
+      hasIpv4 = addr.guest4 != null;
+      ipv4 = list: if hasIpv4 then list else [ ];
+      dns = addresses (publicDns.ipv6 ++ ipv4 publicDns.ipv4);
+    in
+    {
+      host."20-${tap}" = {
+        matchConfig.Name = tap;
+        addresses = [
+          { Address = "${addr.host6}/128"; }
+        ]
+        ++ ipv4 [ { Address = "${addr.host4}/32"; } ];
+        routes = [
+          { Destination = "${addr.guest6}/128"; }
+        ]
+        ++ ipv4 [ { Destination = "${addr.guest4}/32"; } ];
+      };
+      guest = {
+        enable = true;
+        networks."20-lan" = {
+          matchConfig.Type = "ether";
+          networkConfig = {
+            Address = [ "${addr.guest6}/64" ] ++ ipv4 [ "${addr.guest4}/24" ];
+            Gateway = [ addr.host6 ] ++ ipv4 [ addr.host4 ];
+            DNS = dns;
+          };
+        };
       };
     };
+
+  # 以下は末尾の`assert`のための入力。
+  dualAddr = {
+    host6 = "fdf2:a855:5a3f:100::30";
+    guest6 = "fdf2:a855:5a3f:100::31";
+    host4 = "192.168.100.30";
+    guest4 = "192.168.100.31";
   };
-}
+  dual = network "vm-test" dualAddr;
+  ipv6Only = network "vm-test" (
+    dualAddr
+    // {
+      host4 = null;
+      guest4 = null;
+    }
+  );
+  guestConfig = n: n.guest.networks."20-lan".networkConfig;
+  hostOf = n: n.host."20-vm-test";
+in
+# IPv4を持つマシンにはIPv6とIPv4の両方を、
+# 持たないマシンにはIPv6だけを設定することを確かめる。
+#
+# IPv4を持つかどうかで出し分けているので、
+# 条件を取り違えると、
+# IPv4を持たないゲストに`null/24`のような壊れた値やIPv4のDNSが入ったり、
+# IPv4を持つゲストからIPv4が抜けたりする。
+# どちらも評価は通るので、実機でVMを起動するまで気付けない。
+# `lib`を受け取らないファイルなので、メッセージは`throw`で出す。
+assert
+  (guestConfig dual).Address == [
+    "fdf2:a855:5a3f:100::31/64"
+    "192.168.100.31/24"
+  ]
+  || throw "IPv4を持つゲストのアドレスが違います";
+assert
+  (guestConfig dual).Gateway == [
+    "fdf2:a855:5a3f:100::30"
+    "192.168.100.30"
+  ]
+  || throw "IPv4を持つゲストのゲートウェイが違います";
+assert
+  (guestConfig dual).DNS == addresses publicDns.ipv6 ++ addresses publicDns.ipv4
+  || throw "IPv4を持つゲストのDNSがIPv6を先にした両方になっていません";
+assert
+  (hostOf dual).addresses == [
+    { Address = "fdf2:a855:5a3f:100::30/128"; }
+    { Address = "192.168.100.30/32"; }
+  ]
+  || throw "IPv4を持つマシンのホスト側のアドレスが違います";
+assert
+  (hostOf dual).routes == [
+    { Destination = "fdf2:a855:5a3f:100::31/128"; }
+    { Destination = "192.168.100.31/32"; }
+  ]
+  || throw "IPv4を持つマシンのホスト側の経路が違います";
+assert
+  (guestConfig ipv6Only).Address == [ "fdf2:a855:5a3f:100::31/64" ] || throw "IPv4を持たないゲストのアドレスが違います";
+assert
+  (guestConfig ipv6Only).Gateway == [ "fdf2:a855:5a3f:100::30" ] || throw "IPv4を持たないゲストのゲートウェイが違います";
+assert
+  (guestConfig ipv6Only).DNS == addresses publicDns.ipv6 || throw "IPv4を持たないゲストにIPv6以外のDNSがあります";
+assert
+  (hostOf ipv6Only).addresses == [ { Address = "fdf2:a855:5a3f:100::30/128"; } ]
+  || throw "IPv4を持たないマシンのホスト側のアドレスが違います";
+assert
+  (hostOf ipv6Only).routes == [ { Destination = "fdf2:a855:5a3f:100::31/128"; } ]
+  || throw "IPv4を持たないマシンのホスト側の経路が違います";
+# 個別の値を見落としても、`null`が値や文字列に紛れ込めばここで分かる。
+assert
+  builtins.match ".*null.*" (builtins.toJSON ipv6Only) == null
+  || throw "IPv4を持たないマシンの設定に`null`が紛れ込んでいます";
+network tap addr

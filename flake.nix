@@ -409,7 +409,7 @@
             git-hooks = inputs.git-hooks.packages.${system}.default;
           };
           # 評価時にしか走らない純粋なNixのテストを、ファイルごとにderivationへ包んだもの。
-          nixTests = import ./test/eval {
+          nixTests = import ./test/collect-nix-tests.nix {
             inherit lib;
             inherit (pkgs) runCommand;
           };
@@ -431,7 +431,7 @@
           # ComfyUI本体に触れない部分のpytest。
           # PythonのバージョンをComfyUIに揃えるため、
           # 型検査と同じcomfyuiからインタプリタを取る。
-          comfyui-custom-node-test = import ./test/comfyui-custom-node.nix {
+          comfyui-custom-node-test = import ./nixos/host/bullet/comfyui/custom-node/tests {
             inherit pkgs;
             comfyui = pkgs.comfy-ui-cuda;
           };

@@ -11,7 +11,7 @@
 # 呼び出し元と共有部品でIDの割り当てを分担している構造では、
 # 片方が使う範囲を広げた時に静かに衝突するため機械的に検出する。
 { lib }:
-{
+let
   # ノードIDとリンクIDの重複のメッセージのリストを返す。
   # 問題がなければ空リスト。
   duplicateIdErrors =
@@ -33,4 +33,48 @@
       ) (duplicatedBy lib.head workflow.links);
     in
     nodeErrors ++ linkErrors;
+
+  # 以下は末尾の`assert`のための入力。
+  validWorkflow = {
+    nodes = [
+      {
+        id = 1;
+        type = "TestNode";
+      }
+      {
+        id = 2;
+        type = "TestNode";
+      }
+    ];
+    links = [
+      [
+        1
+        1
+        0
+        2
+        0
+        "TEST"
+      ]
+      [
+        2
+        1
+        1
+        2
+        1
+        "TEST"
+      ]
+    ];
+  };
+  duplicatedNodeWorkflow = validWorkflow // {
+    nodes = map (node: if node.id == 2 then node // { id = 1; } else node) validWorkflow.nodes;
+  };
+  duplicatedLinkWorkflow = validWorkflow // {
+    links = map (link: [ 1 ] ++ lib.tail link) validWorkflow.links;
+  };
+in
+assert lib.assertMsg (duplicateIdErrors validWorkflow == [ ]) "重複のないワークフローを拒否しました";
+assert lib.assertMsg (duplicateIdErrors duplicatedNodeWorkflow != [ ]) "重複したノードIDを検出できませんでした";
+assert lib.assertMsg (duplicateIdErrors duplicatedLinkWorkflow != [ ]) "重複したリンクIDを検出できませんでした";
+{
+  inherit duplicateIdErrors;
 }

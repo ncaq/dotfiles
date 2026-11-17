@@ -197,14 +197,15 @@ def test_retries_after_failure(rejecting_server: StubServer) -> None:
     assert len(rejecting_server.received) == 2
 
 
-def test_reports_server_error_with_detail(rejecting_server: StubServer) -> None:
-    """サーバがエラーを返した時は、本体に書かれた理由を例外に含める。
+def test_reports_server_error_without_body(rejecting_server: StubServer) -> None:
+    """サーバがエラーを返した時は、ステータスを例外に含めて、本体の文面は含めない。
 
-    テンプレートが入力を拒否した理由はレスポンスの本体にしか無いので、
-    ステータスだけを伝えるとログから原因が分からない。
+    サーバが入力をそのまま含めて返すと、指示文がComfyUIのログへ出てしまう。
+    拒否の理由は`llama-server`が自分のログへ出している。
     """
-    with pytest.raises(RuntimeError, match="500.*must not be empty"):
+    with pytest.raises(RuntimeError, match="500") as error:
         translate.translate_to_english("女の子が微笑む", "video")
+    assert "must not be empty" not in str(error.value)
     assert len(rejecting_server.received) == 1
 
 

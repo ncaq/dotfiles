@@ -142,7 +142,11 @@ def translate_to_english(text: str, context: str) -> str:
     finally:
         connection.close()
     if response.status != http.client.OK:
-        # テンプレートが入力を拒否した理由などは本体にしか書かれていない。
-        detail = response_body[:1000].decode("utf-8", errors="replace")
-        raise RuntimeError(f"llama-server returned {response.status}: {detail}")
+        # 本体は例外へ入れない。
+        # サーバが入力をそのまま含めて返すと、指示文がログへ出てしまう。
+        # 拒否の理由は`llama-server`が自分のログへ出すので、
+        # 同じコンテナのjournal(`machine-log comfyui`)で追える。
+        raise RuntimeError(
+            f"llama-server returned {response.status} ({len(response_body)} bytes)"
+        )
     return translated_text(json.loads(response_body))

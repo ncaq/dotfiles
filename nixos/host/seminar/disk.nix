@@ -116,14 +116,20 @@
                   mountOptions = [
                     "noatime"
                     "compress=zstd"
+                    # ディスクが欠けてマウントできなくても、
+                    # emergency modeに落ちずに起動を続ける。
+                    # noaは起動に必須ではないので、
+                    # sshで入って調べられる方を優先する。
+                    # マウントされていない時にルートのSSDへ書き込まれないための対策は、
+                    # `noa.nix`と使う側のユニットの`RequiresMountsFor`にある。
+                    "nofail"
                     # TODO: noa2(WD121PURZ)が2026-11-14にSATAリンクから脱落したための一時的な措置。
                     # https://github.com/ncaq/dotfiles/issues/1732
-                    # `nofail`は欠けたまま起動してもemergency modeに落ちないようにする。
-                    # `degraded`は欠けたままマウントできるようにする。
+                    # ディスクが欠けたままマウントできるようにする。
                     # 自動でマウントするには`noa-degraded-automount.nix`のudevルールも要る。
-                    # noa2の再同期か交換が済んだら、そのファイルと一緒に外す。
-                    # 常に付けているとディスクの脱落に気付きにくくなる。
-                    "nofail"
+                    # 障害対応が終わったら、そのファイルと一緒に外す。
+                    # 常に付けているとディスクの脱落に気付きにくくなり、
+                    # 欠けている間の書き込みは冗長性が落ちる。
                     "degraded"
                   ];
                   subvolumes = {
@@ -205,25 +211,27 @@
     initrd = {
       availableKernelModules = [ "bcache" ];
       # TPM2による復号の脅威モデルは`boot.nix`の`nixos-root`と同じ。
+      # `nofail`は`/mnt/noa`のマウントオプションの`nofail`と同じ理由で、
+      # ディスクが欠けて解錠できなくても起動を続けるために付ける。
       luks.devices = {
         "noa0" = {
           device = "/dev/disk/by-partlabel/disk-noa0-luks";
           crypttabExtraOpts = [
             "tpm2-device=auto"
+            "nofail"
           ];
         };
         "noa1" = {
           device = "/dev/disk/by-partlabel/disk-noa1-luks";
           crypttabExtraOpts = [
             "tpm2-device=auto"
+            "nofail"
           ];
         };
         "noa2" = {
           device = "/dev/disk/by-partlabel/disk-noa2-luks";
           crypttabExtraOpts = [
             "tpm2-device=auto"
-            # TODO: noa2の脱落に対する一時的な措置。
-            # 外す条件は`/mnt/noa`の`degraded`と同じ。
             "nofail"
           ];
         };
@@ -232,11 +240,10 @@
   };
   systemd.tmpfiles.rules = [
     # writebackモードを有効化
-    "w /sys/block/bcache0/bcache/cache_mode - - - - writeback"
-    "w /sys/block/bcache1/bcache/cache_mode - - - - writeback"
-    # TODO: noa2の脱落に対する一時的な措置。
-    # bcache2が無くてもsystemd-tmpfilesを失敗させない。
-    # 外す条件は`/mnt/noa`の`degraded`と同じ。
+    # `-`を付けて、
+    # ディスクが欠けてbcacheのデバイスが無くてもsystemd-tmpfilesを失敗させない。
+    "w- /sys/block/bcache0/bcache/cache_mode - - - - writeback"
+    "w- /sys/block/bcache1/bcache/cache_mode - - - - writeback"
     "w- /sys/block/bcache2/bcache/cache_mode - - - - writeback"
   ];
 }

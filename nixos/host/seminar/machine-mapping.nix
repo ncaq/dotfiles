@@ -1,6 +1,6 @@
 { lib, config, ... }:
 let
-  toAddress4 = ipv6: import ../../../lib/machine-address4.nix { inherit lib ipv6; };
+  toAddress4 = import ../../../lib/machine-address4.nix { inherit lib; };
   parseIpv6 = import ../../../lib/parse-ipv6.nix { inherit lib; };
   addressType = lib.types.submodule (
     { config, ... }:

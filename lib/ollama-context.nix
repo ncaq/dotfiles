@@ -41,8 +41,12 @@
   実際に動かしている長さを`limit`で教える必要がある。
   home-managerからNixOSの`config`を引けない理由は、
   `lib/ollama-model-names.nix`の先頭に書いてある。
+
+  長さを変えた時に上の前提が崩れても評価は黙って通ってしまうので、
+  末尾の`assert`で確かめている。
+  `lib`を受け取らないファイルなので、メッセージは`throw`で出す。
 */
-{
+let
   length = {
     cuda = 147456;
     cpu = 32768;
@@ -66,4 +70,22 @@
       # 両方に比率を書くと、片方だけ直した時に合計が溢れる。
       history = contextLength - output;
     };
+
+  lengths = builtins.attrValues length ++ [ translateLength ];
+in
+# ハーネスへ伝える圧縮の閾値と応答の上限は、
+# 足してcontextに収まらないと長い会話で長い応答を生成した瞬間に溢れる。
+assert builtins.all (
+  contextLength:
+  let
+    b = budget contextLength;
+  in
+  b.context == contextLength && b.output + b.history == b.context
+  || throw "長さ${toString contextLength}の配分の合計がcontextと一致しません"
+) lengths;
+# 比率の1/4は、
+# CUDAのホストで応答の上限がClaude Codeの既定の32000を下回らないことを根拠に選んでいる。
+assert (budget length.cuda).output >= 32000 || throw "CUDAのホストの応答の上限がClaude Codeの既定の32000を下回っています";
+{
+  inherit length translateLength budget;
 }

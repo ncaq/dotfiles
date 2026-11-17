@@ -53,14 +53,24 @@
   サブネットとホストが16進として読んだ時に10進の0-255にも見えるものだけ。
   `::1a`のような16進の文字を含むものや`::256`を写すと、
   評価は通るのに実機で`ip`が拒否して初めて壊れる。
-  検査は`test/eval/machine-address4.nix`で固定している。
+  検査は末尾の`assert`で固定している。
+
+  `lib`を渡すと表明が走り、IPv6アドレスを受け取る関数が返る。
+  呼び出し側は関数を1度だけ束縛して使い回す。
+  アドレスごとに`lib`から渡し直すと、変換のたびに表明が走り直す。
+
+  ```nix
+  toAddress4 = import ../../lib/machine-address4.nix { inherit lib; };
+  toAddress4 "fdf2:a855:5a3f:100::11"
+  => "192.168.100.11"
+  ```
 
   # 引数
 
   - `lib`: IPv6アドレスの読み取りと文字列操作に使う
-  - `ipv6`: 同じマシンのIPv6アドレス。プレフィックス長は付けない
+  - 返る関数の引数: 同じマシンのIPv6アドレス。プレフィックス長は付けない
 */
-{ lib, ipv6 }:
+{ lib }:
 let
   # コンテナとmicroVMに配るULAの/48のプレフィックス`fdf2:a855:5a3f::/48`を、
   # `fromString`が揃えた形の先頭3つの部分として並べたもの。
@@ -79,27 +89,81 @@ let
     "a855"
     "5a3f"
   ];
-  # 読めない入力やプレフィックス長付きの入力は`null`になるので、
-  # 下の検査で自分のメッセージを出せる。
-  parsed = import ./parse-ipv6.nix { inherit lib; } ipv6;
-  pieces = if parsed == null then [ ] else lib.splitString ":" parsed;
-  subnet = lib.elemAt pieces 3;
-  host = lib.elemAt pieces 7;
+  parseIpv6 = import ./parse-ipv6.nix { inherit lib; };
   # 揃えた後の各部分は先頭に0を持たないので、
   # 10進の数字だけで書かれていれば10進の字面としても曖昧さが無い。
   isOctet = s: builtins.match "[0-9]{1,3}" s != null && lib.toIntBase10 s <= 255;
-  valid =
-    lib.length pieces == 8
-    && lib.take 3 pieces == prefix
-    &&
-      lib.sublist 4 3 pieces == [
-        "0"
-        "0"
-        "0"
-      ]
-    && isOctet subnet
-    && isOctet host;
+
+  toAddress4 =
+    address:
+    let
+      # 読めない入力やプレフィックス長付きの入力は`null`になるので、
+      # 下の検査で自分のメッセージを出せる。
+      parsed = parseIpv6 address;
+      pieces = if parsed == null then [ ] else lib.splitString ":" parsed;
+      subnet = lib.elemAt pieces 3;
+      host = lib.elemAt pieces 7;
+      valid =
+        lib.length pieces == 8
+        && lib.take 3 pieces == prefix
+        &&
+          lib.sublist 4 3 pieces == [
+            "0"
+            "0"
+            "0"
+          ]
+        && isOctet subnet
+        && isOctet host;
+    in
+    assert lib.assertMsg valid
+      "machine-address4: `${address}`は`${lib.concatStringsSep ":" prefix}:<サブネット>::<ホスト>`の形ではありません。サブネットとホストは10進の0-255に見える数字で書きます";
+    "192.168.${subnet}.${host}";
+
+  rejects = address: !(builtins.tryEval (toAddress4 address)).success;
 in
-assert lib.assertMsg valid
-  "machine-address4: `${ipv6}`は`${lib.concatStringsSep ":" prefix}:<サブネット>::<ホスト>`の形ではありません。サブネットとホストは10進の0-255に見える数字で書きます";
-"192.168.${subnet}.${host}"
+# この関数は`machineAddresses`を通らない呼び出し(bulletのcomfyuiやollama)もあるので、
+# `machine-mapping.nix`の重複assertionには頼れない。
+# サブネットの写し忘れや、
+# 10進でない部分の素通りは実機に適用するまで見えないため、
+# 評価時に固定しておく。
+assert lib.assertMsg (
+  toAddress4 "fdf2:a855:5a3f:100::11" == "192.168.100.11"
+) "ドキュメントの例と違う結果になりました: ${toAddress4 "fdf2:a855:5a3f:100::11"}";
+# サブネットはIPv6のサブネットの部分から導く。
+# 固定にすると`101::11`と`100::11`が同じIPv4になって、一意性が崩れる。
+assert lib.assertMsg (
+  toAddress4 "fdf2:a855:5a3f:101::11" == "192.168.101.11"
+) "サブネットが第3オクテットに写されていません: ${toAddress4 "fdf2:a855:5a3f:101::11"}";
+assert lib.assertMsg (toAddress4 "fdf2:a855:5a3f:0::1" == "192.168.0.1") "0を扱えません";
+assert lib.assertMsg (toAddress4 "fdf2:a855:5a3f:255::255" == "192.168.255.255") "255を扱えません";
+# 同じアドレスの別の書き方は同じIPv4へ写す。
+# 字面のまま写すと、
+# 同じマシンのつもりの2つの宣言が別のIPv4になったり、
+# `::011`の先頭の0がIPv4で8進として読まれたりする。
+assert lib.assertMsg (
+  toAddress4 "fdf2:a855:5a3f:100:0:0:0:11" == "192.168.100.11"
+) "0を省略しない書き方を同じアドレスとして扱えません";
+assert lib.assertMsg (
+  toAddress4 "FDF2:A855:5A3F:100::11" == "192.168.100.11"
+) "大文字の書き方を同じアドレスとして扱えません";
+assert lib.assertMsg (
+  toAddress4 "fdf2:a855:5a3f:0100::011" == "192.168.100.11"
+) "先頭に0を持つ書き方を同じアドレスとして扱えません";
+# 決めた形でないアドレスを拒否する。
+assert lib.assertMsg (rejects "fdf2:a855:5a3f:100:1::11") "サブネットとホストの間が0でない入力を通しました";
+assert lib.assertMsg (rejects "fdf2:a855:5a3f:100::1:11") "ホストの部分が2つある入力を通しました";
+assert lib.assertMsg (rejects "fdf2:a855:5a3f:100::11/128") "プレフィックス長付きの入力を通しました";
+assert lib.assertMsg (rejects "192.168.100.11") "IPv4アドレスを通しました";
+# 10進の0-255でない部分を拒否する。
+# `::1a`は`192.168.100.1a`に、`::256`は`192.168.100.256`になってしまう。
+assert lib.assertMsg (rejects "fdf2:a855:5a3f:100::1a") "16進の文字を通しました";
+assert lib.assertMsg (rejects "fdf2:a855:5a3f:100::256") "255を超える部分を通しました";
+assert lib.assertMsg (rejects "fdf2:a855:5a3f:256::11") "255を超えるサブネットを通しました";
+assert lib.assertMsg (rejects "fdf2:a855:5a3f:1a::11") "16進の文字を含むサブネットを通しました";
+# IPv6アドレスとして読めない入力を拒否する。
+assert lib.assertMsg (rejects "fdf2:a855:5a3f:100::11::1") "`::`が2つある入力を通しました";
+assert lib.assertMsg (rejects "fdf2:a855:5a3f:100::g") "16進でない文字を通しました";
+# 写せるのはこのプレフィックスだけ。
+# プレフィックスは捨てるので、それ以外を通すと別のネットワークと衝突する。
+assert lib.assertMsg (rejects "fd7a:115c:a1e0:100::11") "別のプレフィックスを通しました";
+toAddress4

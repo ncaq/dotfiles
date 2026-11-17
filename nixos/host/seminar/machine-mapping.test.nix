@@ -41,7 +41,7 @@ let
     let
       evaluated = lib.evalModules {
         modules = [
-          ../../nixos/host/seminar/machine-mapping.nix
+          ./machine-mapping.nix
           stub
           {
             inherit machineAddresses;

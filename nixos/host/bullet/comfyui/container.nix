@@ -52,7 +52,7 @@ let
   localAddress6 = "fdf2:a855:5a3f:100::11";
   # IPv4は出口のためだけに持たせる(下の`local.machineEgress`を参照)。
   # 導いた先はLANの192.168.10.0/24と重複しない範囲になる。
-  toAddress4 = ipv6: import ../../../../lib/machine-address4.nix { inherit lib ipv6; };
+  toAddress4 = import ../../../../lib/machine-address4.nix { inherit lib; };
   hostAddress = toAddress4 hostAddress6;
   localAddress = toAddress4 localAddress6;
   # コンテナ内のcomfyuiユーザのID。

@@ -8,8 +8,7 @@
 # `local.comfyui.workflows`を横断して検証するので、
 # ワークフローを追加するだけで自動的に検証対象になる。
 #
-# 検証に使う`lib/`の関数自体のテストは`test/eval/comfyui-workflow/`にあり、
-# flakeの`checks`として走る。
+# 検証に使う`lib/`の関数自体のテストは、それぞれのファイルの末尾の`assert`にある。
 { config, lib, ... }:
 let
   duplicate = import ./lib/duplicate.nix { inherit lib; };

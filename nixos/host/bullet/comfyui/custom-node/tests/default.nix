@@ -43,12 +43,13 @@
 let
   inherit (pkgs) lib;
 
-  customNode = ../nixos/host/bullet/comfyui/custom-node;
+  customNode = ../.;
 
   source = lib.fileset.toSource {
     root = customNode;
     fileset = lib.fileset.unions [
-      (customNode + "/tests")
+      # このファイル自身はpytestが読まないので、変更でcheckが作り直されないように除く。
+      (lib.fileset.fileFilter (file: file.hasExt "py") ./.)
       (customNode + "/translate.py")
       (customNode + "/anime-video-quick/manifest.py")
       (customNode + "/rewrite-edit-prompt/rewrite.py")

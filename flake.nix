@@ -408,7 +408,7 @@
             konokaPlugins = inputs.konoka.packages.${system};
             git-hooks = inputs.git-hooks.packages.${system}.default;
           };
-          # 評価時にしか走らない純粋なNixのテストを、ファイルごとにderivationへ包んだもの。
+          # 実装のファイルに書けない評価のテスト(`*.test.nix`)を、ファイルごとにderivationへ包んだもの。
           nixTests = import ./test/collect-nix-tests.nix {
             inherit lib;
             inherit (pkgs) runCommand;

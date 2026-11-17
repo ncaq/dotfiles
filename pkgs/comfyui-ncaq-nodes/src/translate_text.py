@@ -10,11 +10,13 @@
 #
 # 翻訳に失敗した場合は原文で続けずに、ノードのエラーにする。
 # 原文で続けると、翻訳が効いていないことに生成結果を見るまで気付けない。
-from .translate import CONTEXTS, translate_to_english
+from typing import cast
+
+from .translate import CONTEXTS, ContextName, translate_to_english
 
 # `context`を繋がなかった時の用途。
 # 用途を決め打ちできないノードなので、生成モデル向けの指示文だということだけを伝える。
-DEFAULT_CONTEXT = "generic"
+DEFAULT_CONTEXT: ContextName = "generic"
 
 InputTypes = dict[str, dict[str, tuple[str | list[str], dict[str, bool | str]]]]
 
@@ -40,7 +42,8 @@ class TranslateTextToEnglish:
     def translate(self, text: str, context: str = DEFAULT_CONTEXT) -> tuple[str]:
         if not text.strip():
             return ("",)
-        return (translate_to_english(text, context),)
+        # ComfyUIが選択肢にある値かを検証してから渡してくる。
+        return (translate_to_english(text, cast(ContextName, context)),)
 
 
 NODE_CLASS_MAPPINGS: dict[str, type[TranslateTextToEnglish]] = {

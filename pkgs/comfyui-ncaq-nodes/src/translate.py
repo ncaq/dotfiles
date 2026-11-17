@@ -17,7 +17,7 @@ import functools
 import http.client
 import json
 import os
-from typing import cast
+from typing import Literal, cast
 
 # 1回の翻訳を待つ秒数。CPUで推論するので長い指示では数秒かかる。
 TIMEOUT_SECONDS = 60
@@ -27,7 +27,11 @@ TIMEOUT_SECONDS = 60
 # 呼び出し側には自由な文を書かせず、ここにある名前から選ばせる。
 # 文脈はsystemメッセージになるので、
 # ワークフローから任意の文を渡せると訳文を好きな方向へ誘導できてしまう。
-CONTEXTS: dict[str, str] = {
+#
+# 名前を型にしておくと、固定の名前を渡す呼び出し側の打ち間違いを型検査が拾う。
+ContextName = Literal["generic", "video", "image-edit", "image-edit-to-video"]
+
+CONTEXTS: dict[ContextName, str] = {
     "generic": (
         "This is a prompt for a generative AI model "
         "that creates anime-style images or videos."
@@ -115,16 +119,9 @@ def translated_text(payload: object) -> str:
 # `temperature`が0なので、同じ引数の訳文は同じになる。
 # 例外は覚えないので、失敗した翻訳は次の呼び出しでやり直す。
 @functools.lru_cache(maxsize=256)
-def translate_to_english(text: str, context: str) -> str:
-    """テキストを英語へ翻訳する。
-
-    `context`は`CONTEXTS`にある用途の名前で、
-    何のための文なのかを翻訳モデルへ伝える。
-
-    元の言語は自動判定なので、日本語でも英語の原文でもそのまま渡してよい。
-    """
-    # 表に無い名前は、サーバへ投げる前に`KeyError`で落とす。
-    body = json.dumps(request_body(text, CONTEXTS[context]))
+def request_translation(text: str, reference: str) -> str:
+    """参照文脈の英文を付けて、翻訳サーバへテキストを訳させる。"""
+    body = json.dumps(request_body(text, reference))
     # `[::1]:8189`のようなホストとポート。
     # スキームはここで固定して、平文のHTTP以外へは繋がない。
     authority = os.environ["PLAMO_TRANSLATE_AUTHORITY"]
@@ -149,3 +146,18 @@ def translate_to_english(text: str, context: str) -> str:
             f"llama-server returned {response.status} ({len(response_body)} bytes)"
         )
     return translated_text(json.loads(response_body))
+
+
+def translate_to_english(text: str, context: ContextName) -> str:
+    """テキストを英語へ翻訳する。
+
+    `context`は`CONTEXTS`にある用途の名前で、
+    何のための文なのかを翻訳モデルへ伝える。
+
+    元の言語は自動判定なので、日本語でも英語の原文でもそのまま渡してよい。
+    """
+    # `lru_cache`は包んだ関数の引数の型を消すので、型のある入口をここに分けている。
+    #
+    # 表に無い名前は、サーバへ投げる前に`KeyError`で落とす。
+    # ComfyUIから届く名前は実行時の文字列なので、型だけには頼らない。
+    return request_translation(text, CONTEXTS[context])

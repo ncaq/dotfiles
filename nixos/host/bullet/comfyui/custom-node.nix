@@ -54,8 +54,6 @@ in
     # ランチャーはExecStartで同梱ノードを`ln -sfn`するため、
     # 同梱ノードと同じ名前を`customNodes`に書いても同梱版で上書きされる。
     customNodes = {
-      # 自作のノードをまとめたもの。
-      # どのノードがあって何をするかは`pkgs/comfyui-ncaq-nodes/src`の各ファイルに書いてある。
       "ComfyUI-Ncaq-Nodes" = pkgs.comfyui-ncaq-nodes;
       # Civitaiからの取得、プレビュー、トリガーワード、レシピを一元管理する。
       # Civitaiにはpickle形式(.pt/.ckpt)のモデルもあり読み込み時の任意コード実行が懸念されるが、

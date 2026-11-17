@@ -15,6 +15,7 @@
 {
   lib,
   stdenvNoCC,
+  runCommand,
   fetchFromGitHub,
   # comfyui-nixのoverlayが生やすCPU版のComfyUI。
   # 全てのシステムにある。
@@ -28,12 +29,38 @@ let
   #
   # 実際にノードを読み込むCUDA版と版がずれても、動作は変わらない。
   # 配ったバイトコードが使われず、起動のたびにコンパイルし直されるだけである。
-  python = comfy-ui.pythonRuntime.python.withPackages (
-    pythonPkgs: with pythonPkgs; [
-      pytest
-      requests
-    ]
-  );
+  inherit (comfy-ui.pythonRuntime) python;
+  # ComfyUI本体やtorchに触れないモジュールのpytest。
+  #
+  # 配るderivationの`checkPhase`では走らせない。
+  # テストを入力に含めると、テストを書き換えただけで配るノードのstoreパスが変わり、
+  # 適用のたびにComfyUIのコンテナが再起動してモデルを読み直すことになる。
+  pytestCheck =
+    runCommand "comfyui-ncaq-nodes-pytest"
+      {
+        nativeBuildInputs = [
+          (python.withPackages (
+            pythonPkgs: with pythonPkgs; [
+              pytest
+              requests
+            ]
+          ))
+        ];
+        src = lib.fileset.toSource {
+          root = ./.;
+          fileset = lib.fileset.unions [
+            ./pyproject.toml
+            ./src
+            ./tests
+          ];
+        };
+      }
+      ''
+        cd $src
+        # storeは読み取り専用なので、キャッシュを書かせない。
+        PYTHONDONTWRITEBYTECODE=1 pytest -p no:cacheprovider
+        touch $out
+      '';
   # RewriteEditPromptが使うPE-I2Iは公式のシステムプロンプトと組で学習されているので、
   # そのファイルを公式リポジトリから取ってノードの隣へ置く。
   # Qwen Research Licenseのファイルなので、
@@ -49,13 +76,10 @@ stdenvNoCC.mkDerivation {
   pname = "comfyui-ncaq-nodes";
   version = "0.1.0";
 
+  # 配るものだけを入力にする。
   src = lib.fileset.toSource {
     root = ./.;
-    fileset = lib.fileset.unions [
-      ./pyproject.toml
-      ./src
-      ./tests
-    ];
+    fileset = ./src;
   };
 
   nativeBuildInputs = [ python ];
@@ -76,14 +100,6 @@ stdenvNoCC.mkDerivation {
     runHook postBuild
   '';
 
-  doCheck = true;
-  checkPhase = ''
-    runHook preCheck
-    # `src`はそのまま`$out`へ複製するので、テストがキャッシュを書き足さないようにする。
-    PYTHONDONTWRITEBYTECODE=1 pytest -p no:cacheprovider
-    runHook postCheck
-  '';
-
   installPhase = ''
     runHook preInstall
 
@@ -92,6 +108,9 @@ stdenvNoCC.mkDerivation {
 
     runHook postInstall
   '';
+
+  # flakeが自作パッケージの`tests`を`checks`へ加える。
+  passthru.tests.pytest = pytestCheck;
 
   meta.description = "ComfyUIの自作カスタムノードをまとめたもの";
 }

@@ -51,6 +51,16 @@ def test_request_body_fixes_target_language() -> None:
     assert body["chat_template_kwargs"] == {"target_lang": "en"}
 
 
+def test_request_body_fixes_temperature() -> None:
+    """同じ指示を同じ訳文にするために、`temperature`を0に固定する。
+
+    `translate_to_english`は訳文を覚えて使い回すので、
+    訳し直した時に違う訳文が出る設定では前提が崩れる。
+    """
+    body = translate.request_body("女の子が微笑む", "This is a prompt.")
+    assert body["temperature"] == 0
+
+
 def test_returns_translation() -> None:
     """レスポンスが正常なら前後の空白を落とした訳文を返す。"""
     assert (

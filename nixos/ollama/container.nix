@@ -14,7 +14,7 @@ let
   hostAddress6 = "fdf2:a855:5a3f:100::20";
   localAddress6 = "fdf2:a855:5a3f:100::21";
   # IPv4は出口のためだけに持たせる(下の`local.machineEgress`を参照)。
-  toAddress4 = ipv6: import ../../lib/machine-address4.nix { inherit lib ipv6; };
+  toAddress4 = import ../../lib/machine-address4.nix { inherit lib; };
   hostAddress = toAddress4 hostAddress6;
   localAddress = toAddress4 localAddress6;
   ollamaUid = 501;

@@ -28,12 +28,6 @@ let
   #
   # App Modeから参照するノード型だけを載せれば良い。
   widgetNames = {
-    # 自作ノード。`custom-node/align-image-size/__init__.py`。
-    AlignImageDimensions = [
-      "width"
-      "height"
-      "multiple"
-    ];
     # 自作ノード。`custom-node/anime-video-quick/__init__.py`。
     AnimeVideoQuick = [
       "prompts"
@@ -46,6 +40,11 @@ let
       "job_id"
     ];
     CLIPTextEncode = [ "text" ];
+    EmptyLatentImage = [
+      "width"
+      "height"
+      "batch_size"
+    ];
     ImageScaleToTotalPixels = [
       "upscale_method"
       "megapixels"

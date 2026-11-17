@@ -97,7 +97,7 @@
     # SeedVR2のカスタムノードが読み込めません。
     # comfyui-nixのパッケージと一緒に実行するプログラムは、
     # 同じnixpkgsから取る必要があります。
-    # 詳細は`nixos/host/bullet/comfyui/container.nix`の`comfyPkgs`のコメントを参照。
+    # 詳細は`nixos/host/bullet/comfyui/container.nix`の`systemd.services.comfyui.path`のコメントを参照。
     utensils-comfyui-nix = {
       url = "github:utensils/comfyui-nix";
       inputs = {

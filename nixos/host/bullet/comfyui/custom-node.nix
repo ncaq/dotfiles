@@ -27,10 +27,10 @@ in
       comfyuiPython = config.services.comfyui.package.pythonRuntime.python;
       # Pythonソースをビルド時に構文検査するシェルコマンドを組み立てる。
       # 文法エラーがあってもコンテナ起動時のノード読み込み失敗まで気付けないため、
-      # 自作ノードの配置とパッチ適用の両方でこれを通す。
+      # 自作ノードの配置でこれを通す。
       #
       # ast.parseは構文木さえ作れれば通してしまい、
-      # パッチのインデント崩れで関数の外へ出たreturnやループ外のbreakを見逃す。
+      # 関数の外へ出たreturnやループ外のbreakを見逃す。
       # py_compileと同じcompile()まで通しつつ、
       # 書き込み不可のstoreの隣へバイトコードを出さないよう自前で呼ぶ。
       #
@@ -114,39 +114,11 @@ in
       services.comfyui = {
         extraPythonPackages =
           pythonPkgs: [ pythonPkgs.rotary-embedding-torch ] ++ loraManagerPythonPackages pythonPkgs;
-        # comfyui-nixが同梱するサードパーティのカスタムノードは配置しない。
+        # FaceDetailerなどディテール修復ノード群のImpact Pack(ADetailer相当)は、
+        # comfyui-nixが同梱して配置するものを使うので、ここでは宣言しない。
         # ランチャーはExecStartで同梱ノードを`ln -sfn`するため、
-        # preStartが張る`customNodes`のリンクを名前の衝突した分だけ上書きする。
-        # 実際にbulletの`ComfyUI-Impact-Pack`は同梱版を指していて、
-        # 下で当てているAnima補正パッチが効いていなかった。
-        #
-        # 宣言的ワークフローが使う同梱ノードはImpact PackのFaceDetailerだけで、
-        # KJNodesやWanVideoWrapperなど残りはどのワークフローも参照していない。
-        # 必要なものはこの`customNodes`で宣言する方に寄せる。
-        #
-        # `model_downloader`はcomfyui-nix自身のAPIルートを提供するため、
-        # この設定に関わらず常に配置される。
-        bundledCustomNodes = false;
+        # 同梱ノードと同じ名前を`customNodes`に書いても同梱版で上書きされる。
         customNodes = {
-          # FaceDetailerなどディテール修復ノード群。ADetailer相当。
-          # comfyui-nixがパッケージ済みのものを使う。
-          # Impact Packの顔cropは任意寸法になり、Cosmos系のAnimaではlatentが、
-          # spatial patch sizeで割り切れずFaceDetailerが失敗する。
-          # 上流で修正されたら補正パッチを削除する。
-          # https://github.com/ltdrdata/ComfyUI-Impact-Pack/issues/1186
-          "ComfyUI-Impact-Pack" = pkgs.comfyui-custom-nodes.impact-pack.overrideAttrs (old: {
-            patches = (old.patches or [ ]) ++ [ ./impact-pack-anima-size.patch ];
-            # 上流更新で文脈がずれた場合に別の関数へ黙って適用しないようfuzzを無効化する。
-            # overrideAttrsで指定するため、上流パッケージにpatchesが追加された場合も同じフラグが適用される。
-            patchFlags = [
-              "-p1"
-              "-F0"
-            ];
-            # パッチのインデント崩れをComfyUI起動前のビルド時に検出する。
-            postPatch = (old.postPatch or "") + ''
-              ${checkPythonSyntax} modules/impact/core.py
-            '';
-          });
           # Civitaiからの取得、プレビュー、トリガーワード、レシピを一元管理する。
           # Civitaiにはpickle形式(.pt/.ckpt)のモデルもあり読み込み時の任意コード実行が懸念されるが、
           # ComfyUI本体は非safetensorsも`torch.load(weights_only=True)`固定で読むことと、
@@ -215,10 +187,6 @@ in
           # WanFirstLastFrameToVideoのend_imageなど任意入力の有効・無効を、
           # バイパス操作なしで画像指定の有無だけで切り替えるために使う。
           "ComfyUI-Load-Image-Optional" = writeCheckedNode "load-image-optional";
-          # Animaなどlatent寸法に制約があるモデル向けの自作ノード群。
-          # 画像を指定した倍数へ中央cropするノードと、
-          # EmptyLatentImageへ渡す幅と高さを指定した倍数へ切り下げるノードを提供する。
-          "ComfyUI-Align-Image-Size" = writeCheckedNode "align-image-size";
           # 元fpsと音声を維持し、RGB48から10-bit SVT-AV1 losslessのWebMへ保存するノード。
           "ComfyUI-Save-SVT-AV1" = writeCheckedNode "save-svt-av1";
           # 複数行の指示からQwen編集画像を先に全て作り、

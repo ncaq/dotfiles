@@ -5,7 +5,7 @@
   # ツールキット非依存の唯一の共通基盤であるXcursorに対して、
   # 明示的にテーマとサイズを指定します。
   # `home.pointerCursor`は以下を一括で設定してくれるため、
-  # GTKでもQtでもFirefoxでもXmonadのルートウィンドウでも同じサイズになります。
+  # GTKでもQtでもFirefoxでもXMonadのルートウィンドウでも同じサイズになります。
   #
   # - 環境変数`XCURSOR_THEME`と`XCURSOR_SIZE`
   # - Xリソースの`Xcursor.theme`と`Xcursor.size`

@@ -51,7 +51,7 @@ GnuPGで管理している鍵をThunderbirdのOpenPGP機能でPCでもAndroid環
 設定は、
 [ncaq/.zsh.d](https://github.com/ncaq/.zsh.d)
 で管理されています。
-`~/.zsh.d`に`git clone`されています。
+`~/.config/zsh/.zsh.d`に`git clone`されています。
 
 ## ターミナルエミュレータ
 

@@ -10,7 +10,7 @@
     # 自分のniks3サーバに`niks3 push`するラッパ。
     niks3-push-ncaq
     nix-diff
-    # メモリに合わせて評価のワーカ数を抑える`nix-fast-build`のラッパ。
+    # 既定の引数を足した`nix-fast-build`のラッパ。
     nix-fast-build-wrapper
     nix-init
     nix-output-monitor # ビルドの進捗を見やすく表示します。

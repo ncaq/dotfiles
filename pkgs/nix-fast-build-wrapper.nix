@@ -5,18 +5,12 @@
 # チェックするだけで`result`リンクが作成されるのを回避するものです。
 # `--skip-cached`は、
 # ビルドキャッシュがあるものはスキップして高速化するものです。
-# `--eval-workers`は、
-# 評価フェーズで生成される`nix-eval-jobs`ワーカ数の上限です。
-# `nix-fast-build`がメモリを食い尽くさないように、
-# ランタイムにシステム搭載メモリの50%を予算として計算して、
-# `nix-eval-jobs`の`--max-memory-size`デフォルトである`4GiB`/workerで割って算出します。
-# 同時にCPUコア数も上限とすることで、
-# メモリに余裕がある環境で評価ワーカがCPU数を超えて無駄に増えるのを防ぎます。
 #
-# 環境変数`NIX_FAST_BUILD_CONCURRENT_JOBS`に、
-# 同じマシンで同時に動き得る`nix-fast-build`の数を渡すと、
-# メモリの予算をその数で割ります。
-# 渡さなければ1つだけ動くものとして扱います。
+# 評価のワーカ数は指定しません。
+# `nix-fast-build`の既定のCPUスレッド数になります。
+# 評価に使うメモリは評価する構成の重さで決まり、このラッパからは分からないので、
+# 抑える必要があるリポジトリは自分で`--eval-workers`を渡します。
+# このリポジトリは`check.sh`で渡しています。
 #
 # home-managerの環境と、
 # GitHub ActionsのセルフホステッドランナのVMに入れます。
@@ -24,47 +18,15 @@
 # `./check.sh`はPATHに無い環境でも同じラッパを使います。
 {
   writeShellApplication,
-  coreutils,
-  gawk,
   nix-fast-build,
 }:
 writeShellApplication {
   name = "nix-fast-build";
-  runtimeInputs = [
-    coreutils
-    gawk
-    nix-fast-build
-  ];
+  runtimeInputs = [ nix-fast-build ];
   text = ''
-    # メモリ(swapは除く)の合計量(KiB)。
-    mem_total_kib=$(awk '/^MemTotal:/ { print $2 }' /proc/meminfo)
-    # 同じマシンで同時に動き得る`nix-fast-build`の数。
-    # このラッパは他のジョブがメモリを使っていることを知らないので、
-    # 複数のジョブが重なる環境では呼び出す側が数を教えます。
-    concurrent_jobs=''${NIX_FAST_BUILD_CONCURRENT_JOBS:-1}
-    if ! [[ "$concurrent_jobs" =~ ^[1-9][0-9]*$ ]]; then
-      echo "NIX_FAST_BUILD_CONCURRENT_JOBSが正の整数ではないので1として扱います: $concurrent_jobs" >&2
-      concurrent_jobs=1
-    fi
-    # 利用して良いメモリの予算(MiB)。
-    budget_mib=$(( mem_total_kib / 2 / 1024 / concurrent_jobs ))
-    # 4GiBのデフォルト値と予算から求められる利用可能なワーカ数。
-    workers=$(( budget_mib / 4096 ))
-    # CPUスレッド数も考えて上限にする。
-    nproc_value=$(nproc)
-    if [ "$workers" -gt "$nproc_value" ]; then
-      # メモリ予算から求めたワーカ数がCPUコア数を上回ったらコア数を上限にする。
-      workers=$nproc_value
-    fi
-    if [ "$workers" -lt 1 ]; then
-      # 最低限1つのワーカは保証。
-      workers=1
-    fi
-
     exec nix-fast-build \
       --no-link \
       --skip-cached \
-      --eval-workers "$workers" \
       "$@"
   '';
 }

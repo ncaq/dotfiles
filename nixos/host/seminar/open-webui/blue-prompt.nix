@@ -75,7 +75,7 @@ in
     # `mcp-nixos.nix`の`mcp-nixos-traffic-control`も同じ形で追従させている。
     wantedBy = [ "container@open-webui.service" ];
     bindsTo = [ "container@open-webui.service" ];
-    # Knowledgeのアップロードでは1ファイルごとに埋め込みがコンテナ内で走る。
+    # Knowledgeのアップロードでは1ファイルごとに埋め込みが走る。
     # 断片の数だけ時間が積み上がるため、
     # oneshotの既定のタイムアウトで中断されて中途半端な状態が残るのを念のため避ける。
     #

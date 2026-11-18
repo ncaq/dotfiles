@@ -6,7 +6,7 @@
   ...
 }:
 let
-  # GitHub Actionsのホステッドランナーをある程度互換しているパッケージリスト。
+  # GitHub Actionsのホステッドランナーとある程度互換にするためのパッケージリスト。
   githubActionsRunnerPackages = import ../../../../lib/github-actions-runner-packages.nix;
   # GitHubの標準ランナーにはないけれど個人的に含まれていて欲しいパッケージリスト。
   selfHostRunnerPackages =

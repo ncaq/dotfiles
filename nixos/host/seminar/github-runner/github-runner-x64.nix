@@ -314,7 +314,7 @@ let
             {
               image = overlayImage;
               mountPoint = overlayMount;
-              # nixpkgsを上げると全ホストの閉包のほとんどがホストのストアに無いものになり、
+              # nixpkgsを上げると全ホストのクロージャのほとんどがホストのストアに無いものになり、
               # 取得だけで40GiB近くになります。
               # さらにカーネルが上がると、
               # CPU最適化したホストごとのカーネルを並べてビルドする作業ディレクトリも、
@@ -509,8 +509,8 @@ let
               Type = "oneshot";
               RemainAfterExit = true;
               ExecStart = [
-                # microvm.nixがVMのシステムの閉包だけを登録したデータベースを先に作っています。
-                # ホストのデータベースにはその閉包も入っているので、丸ごと置き換えます。
+                # microvm.nixがVMのシステムのクロージャだけを登録したデータベースを先に作っています。
+                # ホストのデータベースにはそのクロージャも入っているので、丸ごと置き換えます。
                 "${lib.getExe' pkgs.coreutils "rm"} --force ${nixDbDir}/db.sqlite-wal ${nixDbDir}/db.sqlite-shm"
                 "${lib.getExe' pkgs.coreutils "install"} --mode=644 /run/host-nix-db/db.sqlite ${nixDbDir}/db.sqlite"
               ];

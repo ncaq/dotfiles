@@ -9,7 +9,7 @@ let
   # PostgreSQLのバージョンによってdataDirなどが変更される。
   # `stateVersion`依存でデフォルトバージョンは定まりますが、
   # 明示的に指定して意図しないアップグレードを防ぎます。
-  # JITコンパイラは単純なクエリには使われないためデメリットが薄いため、
+  # JITコンパイラは単純なクエリには使われずデメリットが薄いため、
   # 有効にしておくメリットの方が大きいと判断して雑に有効化しておきます。
   postgresql = pkgs.postgresql_18_jit;
   postgresUser = config.serviceUser.postgres;

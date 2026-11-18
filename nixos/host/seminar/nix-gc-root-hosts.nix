@@ -9,18 +9,18 @@ let
   # サービス名はユニット属性名・StateDirectory・CacheDirectoryなど各所で使うため、
   # リネーム時の取りこぼしが起きないよう一箇所から導出します。
   serviceName = "nix-gc-root-hosts";
-  # flakeに定義された全nixosConfigurationsとhomeConfigurationsの閉包を、
+  # flakeに定義された全nixosConfigurationsとhomeConfigurationsのクロージャを、
   # GCから保護するGC rootを登録するスクリプト。
   #
   # セルフホストランナーはこのホストのnix storeを共有していますが、
   # `nix build`のresultリンクはジョブごとに作り直されるランナーの隔離環境の中にあるため、
-  # ジョブ終了後は他ホスト向けの閉包(特にbulletの巨大なモデルファイル)を守るrootが残りません。
+  # ジョブ終了後は他ホスト向けのクロージャ(特にbulletの巨大なモデルファイル)を守るrootが残りません。
   # そのままnix-gcに回収されると、
   # 次のCIで巨大なパスをHDD RAID上のキャッシュから取得し直すことになります。
   # https://github.com/ncaq/dotfiles/issues/1535
   #
   # デプロイ時に配置される`/etc/nixos-flake`(nix-daemon.nix参照)から、
-  # 全nixosConfigurationsのtoplevelとhome-managerの閉包をビルドして、
+  # 全nixosConfigurationsのtoplevelとhome-managerのクロージャをビルドして、
   # `--out-link`でGC rootとして保持します。
   # デプロイ済みのflakeを参照するため作業ツリーには依存しません。
   #

@@ -17,7 +17,7 @@ jobs:
     name: is-trusted
     # 信頼できるソースからのトリガかを判定します。
     # セルフホステッドランナの利用を制御するために使用します。
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 5
     steps:
       - name: Log trust conditions and decide
@@ -95,7 +95,7 @@ jobs:
     permissions:
       contents: read # リポジトリコンテンツの読み取り
       id-token: write # `ncaq/nix-composite-action`内のniks3-publicとのOIDC認証に使用
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-26.04-arm
     timeout-minutes: 360 # キャッシュが切れている時は時間がかかるため長めに設定。
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7

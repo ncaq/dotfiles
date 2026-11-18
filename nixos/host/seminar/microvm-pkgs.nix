@@ -19,8 +19,25 @@
 # コンテナの分は`nixos/core/container-pkgs.nix`です。
 # 別のファイルにしているのは、
 # `microvm.vms`のオプションがmicroVMのホストモジュールを取り込んだホストにしか無いためです。
-{ lib, ... }:
+{ lib, config, ... }:
+let
+  # ハイパーバイザが`stratovirt`のmicroVMの名前。
+  stratovirtVms = lib.attrNames (
+    lib.filterAttrs (_: vm: vm.config.config.microvm.hypervisor == "stratovirt") config.microvm.vms
+  );
+in
 {
+  # overlayを空にして良い前提が崩れたら評価を止めます。
+  config.assertions = [
+    {
+      assertion = stratovirtVms == [ ];
+      message = ''
+        ハイパーバイザが`stratovirt`のmicroVMがあります: ${lib.concatStringsSep ", " stratovirtVms}
+        `nixos/host/seminar/microvm-pkgs.nix`がmicrovm.nixの`stratovirt`用のoverlayを消しているので、見直してください。
+      '';
+    }
+  ];
+
   options.microvm.vms = lib.mkOption {
     type = lib.types.attrsOf (
       lib.types.submodule {

@@ -1,7 +1,10 @@
 # PLaMo Translateでローカル翻訳するCLI。
 #
 # 推論を任せる`llama-server`とモデルはホストのハードウェアに合わせて選ぶ。
-# stableのllama.cppはPLaMo 3に対応する前の版なのでどれもunstableから取る。
+# PLaMo 3を読み込むllama.cppはunstableから取る。
+# トークナイザ`plamo3`を読めるのはv0.7.0からである。
+# stableの9190は上流がタグを`b9190`の連番から`v0.1.0`以降の形式へ変える前の版で、v0.7.0より古い。
+# <https://github.com/ggml-org/llama.cpp/pull/30045>
 #
 # 知っているホストではOllamaと同じstoreのGGUFをパスで渡す。
 # パスで渡すと上流は既定のドラフトを自動では付けないので、

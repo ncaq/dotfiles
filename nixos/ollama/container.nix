@@ -21,8 +21,9 @@ let
   ollamaGid = ollamaUid;
   dataDir = config.local.ollama.dataDir;
   enableCuda = config.local.ollama.enableCuda;
-  # 古いOllamaでは`ollama pull`が412で拒否されることがあるため、
   # unstableのOllamaを使う。
+  # stableの0.40.3が同梱するllama.cppはPLaMo 3のトークナイザ`plamo3`を読めず、
+  # unstableの0.40.15は読める。
   package = if enableCuda then pkgs-unstable.ollama-cuda else pkgs-unstable.ollama-cpu;
   # 推論に必要な最小限だけを渡す。
   # NVIDIAのcharデバイスはioctl経由の攻撃面が広く、

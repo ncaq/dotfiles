@@ -357,9 +357,7 @@ nixpkgsと同じ名前のパッケージを置くとnixpkgsの中の依存まで
 
 `flake.nix`の`localPackages`には、
 CIで確かめる時だけの例外があります。
-
-- `merge-gguf-nextn`はモデルの量子化から呼ぶのと同じunstableのものにする
-- `plamo-translate-cli`はCUDAをビルドしないCPU版のllama.cppとモデルの名前を渡す
+`plamo-translate-cli`はCUDAをビルドしないCPU版のllama.cppとモデルの名前を渡します。
 
 ## testディレクトリ
 

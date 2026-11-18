@@ -12,6 +12,8 @@ flakeの`packages`と`checks`にも加わります。
 
 `himari-src`のようなnixpkgsに無いflakeのinputは、
 overlayが`callPackage`の自動で渡す引数に足しています。
+`home-manager`のように、
+nixpkgsにあってもinputと版を揃えたいものも同じように足しています。
 
 新しく書く時の言語の選び方は`docs/helper-program-language-policy.md`に書いてあります。
 

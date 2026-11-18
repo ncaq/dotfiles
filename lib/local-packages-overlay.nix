@@ -8,8 +8,10 @@
 
   パッケージ同士の依存は普通の引数として書けば、
   overlayの不動点を通して他の自作パッケージも受け取れる。
-  nixpkgsに無いflakeのinputから取るものは、
+  flakeのinputから取るものは、
   `callPackage`が自動で渡す引数にここで足す。
+  nixpkgsに無いものの他に、
+  `home-manager`のようにnixpkgsにあってもinputと版を揃えたいものも含む。
 
   パッケージの他に`localPackagesInfo`を1つ生やす。
   パッケージではなく、flakeが`packages`と`checks`を集めるための情報である。
@@ -29,6 +31,9 @@ let
       // {
         inherit (inputs) himari-src;
         inherit (inputs.niks3.packages.${final.stdenv.hostPlatform.system}) niks3;
+        # nixpkgsの`home-manager`はmasterのスナップショットなので、
+        # 構成の評価に使うinputと同じ版のCLIを渡す。
+        inherit (inputs.home-manager.packages.${final.stdenv.hostPlatform.system}) home-manager;
       }
     );
     directory = ../pkgs;

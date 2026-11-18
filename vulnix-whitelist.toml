@@ -135,10 +135,6 @@ comment = "CVE-2021-4336はITRS monitor-ninjaのもの"
 cve = ["CVE-2025-47436"]
 comment = "GStreamerのorc。CVE-2025-47436はApache ORCのもの"
 
-["ruby"]
-cve = ["CVE-2026-97229"]
-comment = "CVE-2026-97229はGitLabのもの"
-
 ["shellcheck"]
 cve = ["CVE-2021-28794"]
 comment = "CVE-2021-28794はVS Codeの非公式ShellCheck拡張のもの"
@@ -184,16 +180,6 @@ comment = "CVE-2022-26691はmacOS側の修正"
 ["gimp"]
 cve = ["CVE-2025-8672", "CVE-2026-78465"]
 comment = ["CVE-2025-8672はmacOS版のTCC権限の問題", "CVE-2026-78465は32bitビルド限定"]
-
-# NVDが別製品のCVEに無関係なパッケージのCPEを付けてしまったもの。
-# 上と同様に `["pname"]` に `cve` を列挙する。
-
-["game-music-emu"]
-cve = ["CVE-2026-0016", "CVE-2026-0017", "CVE-2026-0018"]
-comment = [
-  "どれもAndroidのframeworkのCVE。NVDが同じ番号のNotCVE-2026-0016から0018のlibgmeのCPEを混ぜた",
-  "libgme側の欠陥は別物でCVEが付いていない。CVEが付けば別の番号で報告される",
-]
 
 # derivation名からのバージョン切り出しが壊れていて、実在しないバージョンとして照合されるもの。
 # その壊れた名前そのものを `["pname-version"]` で `cve` 無しで隠す。
@@ -282,7 +268,6 @@ cve = [
   "CVE-2025-12343",
   "CVE-2025-25468",
   "CVE-2025-25469",
-  "CVE-2026-107698",
   "CVE-2026-30754",
   "CVE-2026-30997",
   "CVE-2026-30999",
@@ -432,15 +417,6 @@ issue_url = "https://github.com/NixOS/nixpkgs/pull/575360"
 until = "2026-12-06"
 comment = "上流コミット7a089e03をパッチとして当てるPRがstaging向けにopen。2.46.1でも直らない"
 
-["brotli-1.2.0"]
-cve = ["CVE-2026-111497"]
-issue_url = [
-  "https://github.com/NixOS/nixpkgs/pull/577208",
-  "https://github.com/NixOS/nixpkgs/pull/580394",
-]
-until = "2026-12-06"
-comment = "unstable由来。1.2.1への更新はstagingにマージ済みでstaging-nextからmasterへの降下待ち"
-
 ["bun-1.3.13"]
 cve = ["CVE-2026-111497"]
 issue_url = "https://github.com/NixOS/nixpkgs/pull/582258"
@@ -548,15 +524,6 @@ issue_url = "https://github.com/NixOS/nixpkgs/pull/551328"
 until = "2026-12-06"
 comment = "ラッパのderivation名のバージョンが 25.8.5.2-wrapped と切り出されるので別に書く"
 
-["libsndfile-1.2.2"]
-cve = ["CVE-2024-50612", "CVE-2026-37555"]
-issue_url = "https://github.com/NixOS/nixpkgs/pull/575364"
-until = "2026-12-06"
-comment = [
-  "stable由来のderivationはバックポート(#576771)でパッチ済み",
-  "unstable由来のderivation向けのパッチはstagingにマージ済みでstaging-nextからの降下待ち",
-]
-
 ["libusb-1.0.29"]
 cve = ["CVE-2026-23679", "CVE-2026-47104"]
 issue_url = "https://github.com/NixOS/nixpkgs/pull/521420"
@@ -595,12 +562,6 @@ issue_url = [
 ]
 until = "2026-12-06"
 comment = "CVEパッチと2.8.1への更新がstagingにマージ済みでstaging-next待ち。26.05向けは無い"
-
-["rsync-3.5.0"]
-cve = ["CVE-2026-119741"]
-issue_url = "https://github.com/NixOS/nixpkgs/pull/583133"
-until = "2026-12-06"
-comment = "3.5.2への更新PRがstaging向けにopenで、release-26.05へのバックポートのラベル付き"
 
 ["sqlite-3.53.3"]
 cve = [

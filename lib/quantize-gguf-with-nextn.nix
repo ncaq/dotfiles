@@ -5,8 +5,7 @@
 
   引数:
     pkgs  - `merge-gguf-nextn`とllama.cppを取るnixpkgs。
-            NextN層を持つアーキテクチャを量子化できる程度に新しいllama.cppが要るので、
-            呼び出し側はunstableを渡す。
+            NextN層を持つアーキテクチャを量子化できる程度に新しいllama.cppが要る。
     name  - 出力のファイル名
     model - NextN層を持たない本体のGGUF。量子化前のBF16などを渡す。
     draft - 本体と同じ変換で切り出されたNextN層を持つGGUF

@@ -10,6 +10,8 @@
 {
   programs.claude-code = {
     enable = true;
+    # コーディングエージェントは更新が早くサーバも最新バージョンを要求しがちなのでunstableを使います。
+    #
     # nixpkgsはネイティブバイナリを`wrapProgram`で包んで環境変数を設定しています。
     # home-managerはさらにその上を`--plugin-dir`を付けるシェルスクリプトで包み、
     # `exec -a "$0"`でargv[0]を引き継ごうとしますが、

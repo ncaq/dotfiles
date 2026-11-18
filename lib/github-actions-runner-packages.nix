@@ -23,8 +23,9 @@ let
 
   # ビルドに手間がかかるパッケージ。
   extendLanguageAndRuntime = [
-    # ghcupは現在nixpkgsでbroken指定されているので除外します。
-    # swiftは現在ビルドに失敗するため除外します。
+    # ghcupは除外します。
+    # NixOSで動くghcのビルド済み配布物が無いので、
+    # nixpkgsが`haskellPackages.ghcup`を評価時にエラーにしています。
     cabal-install
     cargo
     clippy
@@ -44,18 +45,16 @@ let
     rustc
     rustfmt
     stack
+    swift
+    swiftPackages.swiftpm
   ];
 
   packageManagement = [
     # npmはnodejsに同梱。
     lerna
-    yarn
-
-    # ビルドが壊れているため除外。
-    # 使うことも少ない。
-    # pipx
-
+    pipx
     vcpkg
+    yarn
 
     # HomebrewはNix環境では不要/非推奨。
   ];

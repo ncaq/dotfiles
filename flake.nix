@@ -51,7 +51,7 @@
 
     nixos-hardware = {
       url = "github:NixOS/nixos-hardware";
-      inputs.nixpkgs.follows = "nixpkgs-unstable";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     disko = {
@@ -85,19 +85,16 @@
     xremap-flake = {
       url = "github:xremap/nix-flake";
       inputs = {
-        nixpkgs.follows = "nixpkgs-unstable"; # オリジナルで最新のRustのためにunstableを使っている。
+        nixpkgs.follows = "nixpkgs";
         flake-parts.follows = "flake-parts";
       };
     };
 
-    # 上流のREADMEはfollowsなしを標準構成としていますが、
-    # unstableへfollowさせても評価とビルドは通り、画像と動画の生成も動きます。
-    # stableだとtransformersが古く、
-    # flash_attnが無い環境で辞書参照がKeyErrorになる不具合を踏んで、
-    # SeedVR2のカスタムノードが読み込めません。
-    # comfyui-nixのパッケージと一緒に実行するプログラムは、
-    # 同じnixpkgsから取る必要があります。
-    # 詳細は`nixos/host/bullet/comfyui/container.nix`の`systemd.services.comfyui.path`のコメントを参照。
+    # stableのtransformers 5.5.4では、
+    # flash_attnが無い環境でSeedVR2のカスタムノードがKeyErrorで読み込めないので、
+    # 直っている5.16.1以上を持つunstableへfollowさせます。
+    # followする先を変える時は、
+    # `nixos/host/bullet/comfyui/container.nix`が同じnixpkgsから取っているプログラムも揃えます。
     utensils-comfyui-nix = {
       url = "github:utensils/comfyui-nix";
       inputs = {
@@ -343,9 +340,6 @@
           # `pkgs/`の自作パッケージ。
           # overlayを`pkgs`に当てた結果から、overlayが生やした名前の分だけを取り出す。
           localPackages = lib.getAttrs localPackageNames pkgs // {
-            # NextN層を持つアーキテクチャを扱うgguf-pyはunstableにしか無く、
-            # モデルの量子化からもunstableのものを呼ぶので揃える。
-            inherit (pkgsUnstable) merge-gguf-nextn;
             # CIでCUDAをビルドしないようCPU版のllama.cppを渡す。
             # モデルとドラフトはラッパーの検査の分岐を通すためだけの値で、
             # 検査は推論しないので実在しなくてよい。

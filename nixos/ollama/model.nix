@@ -2,15 +2,13 @@
 {
   lib,
   pkgs,
-  pkgs-unstable,
   config,
   ...
 }:
 let
   enableCuda = config.local.ollama.enableCuda;
   fetchHuggingFace = import ../../lib/fetch-hugging-face.nix { inherit pkgs; };
-  # NextN層を持つQwen3.8を量子化できるのはunstableのllama.cppだけなのでunstableを渡す。
-  quantizeGgufWithNextn = import ../../lib/quantize-gguf-with-nextn.nix { pkgs = pkgs-unstable; };
+  quantizeGgufWithNextn = import ../../lib/quantize-gguf-with-nextn.nix { inherit pkgs; };
   # CLIと同じstoreのパスを使うため、取得の定義は`lib/`で共有している。
   plamoTranslateModel = import ../../lib/plamo-translate-model.nix { inherit pkgs; };
   patchGgufChatTemplate = import ../../lib/patch-gguf-chat-template.nix { inherit pkgs; };

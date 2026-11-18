@@ -1,3 +1,14 @@
+# Claude Codeの全ホストに共通の設定。
+#
+# プラグイン、権限、フックなどを`programs.claude-code`で宣言して、
+# ユーザの`~/.claude/settings.json`として展開する。
+# `settings.json`では表せない種類の設定は、
+# home-managerが生成するラッパプログラムの引数として渡す。
+#
+# このリポジトリに固有の設定はリポジトリルートの`.claude/settings.json`にあり、
+# dotfilesでClaude Codeを起動している時はここの設定とマージされる。
+#
+# スキルに類するものの読み込みは`llm-skill.nix`にある。
 {
   lib,
   pkgs,

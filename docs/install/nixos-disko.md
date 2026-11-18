@@ -1,14 +1,14 @@
-# NixOS Installation with disko (Automatic)
+# diskoを使ったNixOSのインストール(自動)
 
-This guide describes the automated installation process using disko.
+diskoを使って自動でインストールする手順です。
 
-## Prerequisites
+## 前提
 
-- NixOS installation media booted
-- Network and keyboard layout configured
-- Terminal access
+- NixOSのインストールメディアで起動している
+- ネットワークとキーボードレイアウトを設定してある
+- ターミナルを開ける
 
-## Installation Steps
+## インストールの手順
 
 ```bash
 NEW_HOST=please-input-new-hostname
@@ -17,7 +17,7 @@ nix run 'nixpkgs#git' -- clone https://github.com/ncaq/dotfiles.git
 cd dotfiles
 sudo -E nix run '.#disko' -- --mode format,mount --flake ".#${NEW_HOST}"
 
-# workaround nixos-install
+# nixos-installの回避策
 
 sudo mkdir -p /mnt/build
 
@@ -36,10 +36,10 @@ sudo nix copy --to /mnt "$TOPLEVEL" --no-check-sigs \
 sudo nixos-install --system "$TOPLEVEL" --root /mnt --no-channel-copy
 ```
 
-Please reboot after installation.
+インストールが終わったら再起動してください。
 
-## Notes
+## 補足
 
-- This method uses disko to automatically handle disk partitioning and formatting
-- The disk configuration is defined in the flake configuration
-- No manual partitioning is required
+- ディスクのパーティション分割とフォーマットはdiskoが自動で行います
+- ディスクの構成はflakeの設定で定義しています
+- 手動でのパーティション分割は要りません

@@ -1,27 +1,28 @@
-# NixOS Installation (Manual Partitioning)
+# NixOSのインストール(手動のパーティション分割)
 
-This guide describes the manual installation process with custom disk partitioning,
-suitable for dual-boot setups where Windows is already installed.
+ディスクのパーティションを手で切ってインストールする手順です。
+Windowsが既にインストールされているマシンでデュアルブートにする場合に向いています。
 
-The partition layout of a preinstalled Windows differs from machine to machine,
-so this guide cannot tell you which partition numbers or offsets to use.
-It describes what to create,
-and leaves where to create it to you.
+プリインストールされたWindowsのパーティションの配置は機種ごとに違うので、
+どの番号のパーティションをどの位置に作るのかは、
+この手順書では決められません。
+何を作るのかだけを書いて、
+どこに作るのかは作業する人に任せます。
 
-`nixos/host/creep` is a host installed this way.
-Use it as a reference.
+`nixos/host/creep`はこの方法でインストールしたホストです。
+参考にしてください。
 
-## Prerequisites
+## 前提
 
-- (For dual boot) Windows partition already shrunk to make space.
-  Free at least 100GB for NixOS (500GB+ recommended).
-- NixOS installation media booted
-- Network and keyboard layout configured
-- Terminal access
+- (デュアルブートの場合)Windowsのパーティションを縮めて空きを作ってある。
+  NixOSには100GB以上、できれば500GB以上を空けます。
+- NixOSのインストールメディアで起動している
+- ネットワークとキーボードレイアウトを設定してある
+- ターミナルを開ける
 
-## Disk Partitioning
+## パーティションの作成
 
-Look at the current layout first.
+最初に今の配置を確かめます。
 
 ```bash
 lsblk -o NAME,SIZE,FSTYPE,LABEL,PARTLABEL
@@ -29,36 +30,45 @@ ls -l /dev/disk/by-id/
 sudo fdisk -l /dev/disk/by-id/your-disk
 ```
 
-Create two partitions in the free space.
+空き領域に2つのパーティションを作ります。
 
-- An EFI System Partition of 1GiB, which will be mounted at `/efi`.
-  Do not reuse the ESP that Windows created.
-  It is usually too small for the kernels of multiple generations.
-- A root partition that takes the rest of the free space.
+- 1GiBのEFIシステムパーティション(ESP)。`/efi`にマウントします。
+  Windowsが作ったESPは使い回しません。
+  複数の世代のカーネルを置くには、
+  たいてい小さすぎます。
+- 残りの空き領域を全て使うルートパーティション
 
-Do not delete or move the existing Windows partitions.
+既存のWindowsのパーティションは、
+消したり動かしたりしないでください。
 
 ```bash
 sudo fdisk /dev/disk/by-id/your-disk
 ```
 
-The following is a guide to the `fdisk` commands, not a script to type as is.
-`fdisk` asks for a partition number and sectors on each step,
-and the right answers depend on the layout.
+以下は`fdisk`のコマンドの説明で、
+そのまま打ち込む手順ではありません。
+`fdisk`は操作のたびにパーティションの番号やセクタを尋ねてきて、
+正しい答えは配置によって変わります。
 
-- `p` prints the partition table. Use it before and after each step.
-- `n` creates a partition.
-  For the ESP, accept the default partition number and first sector,
-  and answer `+1G` for the last sector.
-  For the root partition, accept all defaults to use the rest of the free space.
-- `t` changes the type of a partition.
-  Select the ESP you just created and set the type to `1` (`EFI System`).
-  The root partition can stay `Linux filesystem`.
-- `w` writes the changes and exits. Nothing is written until then.
-- `q` exits without writing.
+- `p`: パーティションテーブルを表示します。
+  操作の前後で毎回確かめます。
+- `n`: パーティションを作ります。
+  ESPは、
+  番号と開始セクタを既定のままにして、
+  終了セクタに`+1G`と答えます。
+  ルートパーティションは、
+  全て既定のままにすると残りの空き領域を使います。
+- `t`: パーティションの種類を変えます。
+  作ったESPを選んで、
+  種類を`1`(`EFI System`)にします。
+  ルートパーティションは`Linux filesystem`のままで構いません。
+- `w`: 変更を書き込んで終了します。
+  それまでは何も書き込まれません。
+- `q`: 書き込まずに終了します。
 
-Find the two new partitions under `/dev/disk/by-id/` and keep them in variables.
-The following steps use these variables.
+作った2つのパーティションを`/dev/disk/by-id/`から探して、
+変数に入れます。
+以降の手順はこの変数を使います。
 
 ```bash
 ESP_PART=/dev/disk/by-id/your-disk-partN
@@ -66,13 +76,14 @@ ROOT_PART=/dev/disk/by-id/your-disk-partM
 lsblk -o NAME,SIZE,FSTYPE,LABEL "$ESP_PART" "$ROOT_PART"
 ```
 
-Check the sizes and that neither of them has a file system yet.
-Formatting the wrong partition destroys Windows.
+サイズが合っていることと、
+どちらにもまだファイルシステムが無いことを確かめてください。
+間違ったパーティションをフォーマットするとWindowsが壊れます。
 
-## File System Creation
+## ファイルシステムの作成
 
-The host configuration refers to the partitions by label,
-so the labels must be `nixos-esp` and `nixos-root-crypt`.
+ホストの設定はパーティションをラベルで参照するので、
+ラベルは`nixos-esp`と`nixos-root-crypt`にする必要があります。
 
 ```bash
 sudo mkfs.vfat -F32 -n nixos-esp "$ESP_PART"
@@ -88,10 +99,11 @@ sudo btrfs subvolume create /mnt/@snapshots
 sudo umount /mnt
 ```
 
-`cryptsetup luksFormat` asks for a passphrase.
-Keep it even if you enroll a FIDO2 device later, as the fallback.
+`cryptsetup luksFormat`はパスフレーズを尋ねてきます。
+後でFIDO2のデバイスを登録しても、
+予備の手段としてパスフレーズは控えておいてください。
 
-## Mount
+## マウント
 
 ```bash
 sudo mount -o noatime,compress=zstd,subvol=@ /dev/mapper/nixos-root /mnt
@@ -109,7 +121,7 @@ sudo mount -o noatime,compress=zstd,subvol=@var-log /dev/mapper/nixos-root /mnt/
 sudo mount -o noatime,compress=zstd,subvol=@snapshots /dev/mapper/nixos-root /mnt/.snapshots
 ```
 
-## Host Configuration
+## ホストの設定
 
 ```bash
 NEW_HOST=please-input-new-hostname
@@ -118,66 +130,72 @@ nix run 'nixpkgs#git' -- clone https://github.com/ncaq/dotfiles.git
 cd dotfiles
 ```
 
-If the host is already defined in this repository and the hardware has not changed,
-skip to [Installation](#installation).
+ホストが既にこのリポジトリに定義されていて、
+ハードウェアも変わっていないなら、
+[インストール](#インストール)へ進んでください。
 
-For a new host, the configuration has to exist before `nixos-install` can build it.
-Create it on the installation media.
+新しいホストの場合は、
+`nixos-install`がビルドする前に設定が存在している必要があります。
+インストールメディアの上で作ります。
 
-- Add the host to `hostInfo` in `flake.nix`.
-- Create `nixos/host/${NEW_HOST}.nix` and `nixos/host/${NEW_HOST}/`.
-  Copy them from `nixos/host/creep.nix` and `nixos/host/creep/`,
-  and remove what is specific to that machine.
-- Rewrite the Windows chainload entry in `boot.nix`.
-  It points to the ESP that Windows created by its GPT partition GUID.
-  Find the GUID with `lsblk -o NAME,SIZE,FSTYPE,PARTUUID`.
+- `flake.nix`の`hostInfo`にホストを足します。
+- `nixos/host/${NEW_HOST}.nix`と`nixos/host/${NEW_HOST}/`を作ります。
+  `nixos/host/creep.nix`と`nixos/host/creep/`からコピーして、
+  そのマシンに固有の部分を消します。
+- `boot.nix`のWindowsへのチェインロードのエントリを書き換えます。
+  Windowsが作ったESPをGPTのパーティションGUIDで指しています。
+  GUIDは`lsblk -o NAME,SIZE,FSTYPE,PARTUUID`で調べられます。
 
-Generate the hardware configuration from the installation media.
-The file systems are declared in `disk.nix`, so leave them out.
+ハードウェアの設定はインストールメディアから生成します。
+ファイルシステムは`disk.nix`で宣言するので除きます。
 
 ```bash
 sudo nixos-generate-config --root /mnt --show-hardware-config --no-filesystems \
   > "nixos/host/${NEW_HOST}/hardware-configuration.nix"
 ```
 
-A flake only sees files that Git tracks.
-Stage the new files, or the build will not find them.
+flakeにはGitが追跡しているファイルしか見えません。
+新しいファイルをステージングしないと、
+ビルドがファイルを見つけられません。
 
 ```bash
 git add flake.nix nixos/host
 ```
 
-## Installation
+## インストール
 
 ```bash
 sudo nixos-install --flake ".#${NEW_HOST}" --root /mnt
 ```
 
-The installed system does not have the changes made on the installation media.
-If you created a new host, copy the repository into the new system before rebooting.
-Commit the changes after the first boot.
+インストールしたシステムには、
+インストールメディアの上で行った変更が入っていません。
+新しいホストを作った場合は、
+再起動する前にリポジトリを新しいシステムへコピーしてください。
+変更は最初の起動の後でコミットします。
 
 ```bash
 sudo cp -a . /mnt/root/dotfiles
 ```
 
-Please reboot.
+再起動してください。
 
-## After the First Boot
+## 最初の起動の後
 
 ### FIDO2
 
-The root partition can be unlocked with a FIDO2 device such as a YubiKey
-when the host sets `fido2-device=auto` like `nixos/host/creep/boot.nix`.
-Until a device is enrolled, the passphrase is asked on every boot.
+`nixos/host/creep/boot.nix`のようにホストが`fido2-device=auto`を設定していると、
+YubiKeyなどのFIDO2のデバイスでルートパーティションを復号できます。
+デバイスを登録するまでは、
+起動のたびにパスフレーズを尋ねられます。
 
 ```bash
 sudo systemd-cryptenroll --fido2-device=auto /dev/disk/by-label/nixos-root-crypt
 ```
 
-## Notes
+## 補足
 
-- This method provides full control over disk partitioning
-- Suitable for dual-boot configurations with Windows
-- Uses LUKS encryption for the root partition
-- Uses btrfs with multiple subvolumes for better snapshot management
+- ディスクのパーティションを全て自分で決められます
+- Windowsとのデュアルブートの構成に向いています
+- ルートパーティションはLUKSで暗号化します
+- スナップショットを管理しやすいように、btrfsを複数のサブボリュームに分けて使います

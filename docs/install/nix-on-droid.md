@@ -1,24 +1,25 @@
-# Nix-on-Droid Installation
+# Nix-on-Droidでのインストール
 
-This guide describes how to install this dotfiles configuration on Android using Nix-on-Droid.
+Nix-on-Droidを使って、
+このdotfilesの設定をAndroidへインストールする手順です。
 
-## Prerequisites
+## 前提
 
-- Android device (aarch64 architecture)
-- F-Droid installed on the device
+- Androidの端末(aarch64)
+- 端末にF-Droidがインストールされている
 
-## Installation Steps
+## インストールの手順
 
-### Install Nix-on-Droid
+### Nix-on-Droidをインストールする
 
-Install Nix-on-Droid from the F-Droid repository.
+F-DroidのリポジトリからNix-on-Droidをインストールします。
 
 [Nix-on-Droid | F-Droid](https://f-droid.org/packages/com.termux.nix/)
 
-### Clone and Apply Configuration
+### cloneして設定を適用する
 
-After the initial Nix-on-Droid setup completes,
-run the following commands in the Nix-on-Droid terminal.
+Nix-on-Droidの初期設定が終わったら、
+Nix-on-Droidのターミナルで以下のコマンドを実行します。
 
 ```bash
 cd ~
@@ -27,17 +28,18 @@ cd dotfiles
 ./install.sh
 ```
 
-### Restart the App
+### アプリを再起動する
 
-After the switch completes, restart the Nix-on-Droid app completely to apply all changes.
+切り替えが終わったら、
+全ての変更を反映するためにNix-on-Droidのアプリを完全に再起動します。
 
-## Updating
+## 更新
 
 ```zsh
 cd ~/dotfiles
 ./install.sh
 ```
 
-## Notes
+## 補足
 
-- Timezone is explicitly set to Asia/Tokyo
+- タイムゾーンは明示的にAsia/Tokyoへ設定しています

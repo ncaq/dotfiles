@@ -108,47 +108,6 @@ jobs:
       # 実機ではソースを展開できずビルドできないので、ここでビルドしてキャッシュから取れるようにします。
       - run: nix build -L --no-link .#dotfiles-install
 
-  nvd-diff:
-    name: nvd-diff
-    # baseとPRのseminarのシステムをnvdで比べて、差分をPRのコメントとして投稿します。
-    #
-    # `nix-fast-build`の後に動かします。
-    # 同時に動かすと重い評価が重なって、ランナーのVMのメモリが足りなくなります。
-    # 後に動かせば、PRのseminarのシステムは`nix-fast-build`がビルドしたものを使えます。
-    # マージに必須のチェックではないので、後ろに置いてもマージできるまでの時間は延びません。
-    #
-    # ビルドは通ってブートテストだけが落ちた時などにも差分は役に立つので、
-    # `nix-fast-build`が失敗しても動かします。
-    needs:
-      - is-trusted
-      - nix-fast-build
-    permissions:
-      contents: read # リポジトリコンテンツの読み取り
-      id-token: write # `ncaq/nix-composite-action`内のniks3-publicとのOIDC認証に使用
-      pull-requests: write # PRコメントのupsert
-    # セルフホステッドランナーは未認証のソースからは実行しない。
-    if: >-
-      !cancelled() &&
-      needs.is-trusted.result == 'success' &&
-      github.event_name == 'pull_request'
-    runs-on: [self-hosted, Linux]
-    timeout-minutes: 360 # キャッシュが切れている時は時間がかかるため長めに設定。
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          # base refのworktree展開のために全オブジェクトを要求。
-          # 履歴の浅さに依存しない安全側に倒しています。
-          # そこまで重いリポジトリでもないのでフルに要求しても問題はありません。
-          fetch-depth: 0
-          persist-credentials: false
-      - uses: ./.github/actions/setup-nix
-      - name: Run nvd-pr-diff
-        env:
-          BASE_REF: ${{ github.event.pull_request.base.ref }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: nix run .#nvd-pr-diff
-
   renovate-recovery:
     name: renovate-recovery
     # RenovateのPRでチェックが失敗した時に、Claude Codeが原因を調べて代わりのPRを作ります。

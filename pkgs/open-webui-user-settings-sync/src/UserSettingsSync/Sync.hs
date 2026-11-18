@@ -42,7 +42,8 @@ data Environment m = Environment
 data Declaration = Declaration
   { settings :: Map Text Value
   -- ^ `settings.ui`へ重ねる鍵。
-  , systemPrompt :: Text
+  , systemPrompt :: Maybe Text
+  -- ^ 無ければ、システムプロンプトを持たないという宣言。
   , profile :: Map Text Value
   -- ^ プロフィールの画像以外の列。
   , profileImage :: ByteString

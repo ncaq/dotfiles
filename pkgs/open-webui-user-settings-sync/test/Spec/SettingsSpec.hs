@@ -27,13 +27,13 @@ tests = do
       currentUi [aesonQQ|{"ui": null}|] `shouldBe` mempty
   describe "mergeUi" do
     it "今の設定が空なら、宣言とシステムプロンプトだけになる" do
-      mergeUi mempty declared "こんにちは\n"
+      mergeUi mempty declared (Just "こんにちは\n")
         `shouldBe` fields [aesonQQ|{"ctrlEnterToSend": true, "system": "こんにちは"}|]
     it "宣言した鍵は上書きして、宣言していない鍵は保つ" do
       mergeUi
         (fields [aesonQQ|{"ctrlEnterToSend": false, "models": ["gpt-oss:120b"]}|])
         declared
-        "こんにちは\n"
+        (Just "こんにちは\n")
         `shouldBe` fields
           [aesonQQ|{
             "ctrlEnterToSend": true,
@@ -41,15 +41,27 @@ tests = do
             "system": "こんにちは"
           }|]
     it "合成の結果をもう一度合成しても変わらない" do
-      let merged = mergeUi (fields [aesonQQ|{"models": ["gpt-oss:120b"]}|]) declared "こんにちは\n"
-      mergeUi merged declared "こんにちは\n" `shouldBe` merged
+      let merged =
+            mergeUi (fields [aesonQQ|{"models": ["gpt-oss:120b"]}|]) declared (Just "こんにちは\n")
+      mergeUi merged declared (Just "こんにちは\n") `shouldBe` merged
     it "UIから書き換えられたシステムプロンプトを宣言へ戻す" do
-      mergeUi (fields [aesonQQ|{"system": "書き換えた"}|]) mempty "こんにちは\n"
+      mergeUi (fields [aesonQQ|{"system": "書き換えた"}|]) mempty (Just "こんにちは\n")
         `shouldBe` fields [aesonQQ|{"system": "こんにちは"}|]
     it "システムプロンプトの末尾の改行は1つだけ落とす" do
-      mergeUi mempty mempty "こんにちは\n\n" `shouldBe` fields [aesonQQ|{"system": "こんにちは\n"}|]
+      mergeUi mempty mempty (Just "こんにちは\n\n")
+        `shouldBe` fields [aesonQQ|{"system": "こんにちは\n"}|]
     it "末尾に改行が無いシステムプロンプトはそのまま使う" do
-      mergeUi mempty mempty "こんにちは" `shouldBe` fields [aesonQQ|{"system": "こんにちは"}|]
+      mergeUi mempty mempty (Just "こんにちは") `shouldBe` fields [aesonQQ|{"system": "こんにちは"}|]
     it "途中の改行は保つ" do
-      mergeUi mempty mempty "1行目\n2行目\n"
+      mergeUi mempty mempty (Just "1行目\n2行目\n")
         `shouldBe` fields [aesonQQ|{"system": "1行目\n2行目"}|]
+    it "システムプロンプトの宣言が無ければ、残っているものを取り除く" do
+      mergeUi (fields [aesonQQ|{"system": "こんにちは", "models": ["gpt-oss:120b"]}|]) declared Nothing
+        `shouldBe` fields [aesonQQ|{"ctrlEnterToSend": true, "models": ["gpt-oss:120b"]}|]
+    it "宣言した鍵にsystemを書いても、システムプロンプトの引数の方を使う" do
+      mergeUi mempty (fields [aesonQQ|{"system": "鍵に書いた"}|]) (Just "こんにちは\n")
+        `shouldBe` fields [aesonQQ|{"system": "こんにちは"}|]
+    it "宣言した鍵にsystemを書いても、システムプロンプトの宣言が無ければ取り除く" do
+      mergeUi mempty (fields [aesonQQ|{"system": "鍵に書いた"}|]) Nothing `shouldBe` mempty
+    it "システムプロンプトの宣言が無く、残ってもいなければ、宣言だけを重ねる" do
+      mergeUi mempty declared Nothing `shouldBe` declared

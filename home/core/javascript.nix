@@ -30,6 +30,7 @@ in
     # Denoは`$HOME`の`.npmrc`を読み、
     # Deno 2.8.0からは`min-release-age`にも従います。
     # [.npmrc configuration - Node and npm Compatibility](https://docs.deno.com/runtime/fundamentals/node/#.npmrc-configuration)
+    # [Release v2.8.0 - denoland/deno](https://github.com/denoland/deno/releases/tag/v2.8.0)
     file.".npmrc".text = ''
       min-release-age=${toString releaseAgeDays}
     '';

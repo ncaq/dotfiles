@@ -33,16 +33,14 @@
     # immutable属性が付いていてもその上へのマウントはできて、
     # マウントした後に見えるのはnoaのトップレベルなので影響は無い。
     #
-    # マウントされた後に実行するとnoaのトップレベルに属性を付けてしまうので、
-    # マウントより前に順序付けた上で、
-    # マウントされていない時にだけ動くようにする。
-    #
     # ブートテストのVMのように`/mnt/noa`のマウントが無い構成では、
     # 通常のディレクトリとして使うので定義しない。
     services.noa-mountpoint-immutable = lib.mkIf (config.fileSystems ? "/mnt/noa") {
       description = "Make the mountpoint directory of /mnt/noa immutable";
       wantedBy = [ "local-fs.target" ];
       before = [
+        # マウントされた後に実行するとnoaのトップレベルに属性を付けてしまうので、
+        # マウントより前に順序付ける。
         "mnt-noa.mount"
         "shutdown.target"
       ];
@@ -50,6 +48,7 @@
       conflicts = [ "shutdown.target" ];
       unitConfig = {
         DefaultDependencies = false;
+        # 順序付けた上で、マウントされていない時にだけ動くようにする。
         ConditionPathIsMountPoint = "!/mnt/noa";
       };
       serviceConfig = {

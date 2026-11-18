@@ -112,26 +112,26 @@ jobs:
     name: nvd-diff
     # baseとPRのseminarのシステムをnvdで比べて、差分をPRのコメントとして投稿します。
     #
-    # `nix-fast-build`の後に動かします。
-    # 同時に動かすと重い評価が重なって、ランナーのVMのメモリが足りなくなります。
-    # 後に動かせば、PRのseminarのシステムは`nix-fast-build`がビルドしたものを使えます。
-    # マージに必須のチェックではないので、後ろに置いてもマージできるまでの時間は延びません。
+    # GitHubホステッドのランナーで、`nix-fast-build`と並べて動かします。
+    # セルフホステッドランナーの負担を減らすためです。
+    # 重い評価を`nix-fast-build`と取り合わずに済み、差分も`nix-fast-build`の終わりを待たずに出ます。
+    # セルフホステッドランナーを使わないので`is-trusted`の結果は待ちません。
     #
-    # ビルドは通ってブートテストだけが落ちた時などにも差分は役に立つので、
-    # `nix-fast-build`が失敗しても動かします。
-    needs:
-      - is-trusted
-      - nix-fast-build
+    # ランナーのストアは空なので、baseとPRのseminarのクロージャをキャッシュから全て取ります。
+    # クロージャは60GiB近くありますが、`setup-nix`が空きを100GiBほどに増やすので収まります。
+    # baseの側はmasterの`nix-fast-build`がキャッシュへ登録済みです。
+    # PRの側でまだキャッシュに無いものは、`nix-fast-build`を待たずにここでビルドします。
+    # カーネルのように重いものが変わるPRでは、4コアのランナーでのビルドになって時間がかかります。
+    # マージに必須のチェックではないので、その時に遅れるのは差分のコメントだけです。
     permissions:
       contents: read # リポジトリコンテンツの読み取り
       id-token: write # `ncaq/nix-composite-action`内のniks3-publicとのOIDC認証に使用
       pull-requests: write # PRコメントのupsert
-    # セルフホステッドランナーは未認証のソースからは実行しない。
+    # フォークからのPRではトークンが読み取り専用でコメントを投稿できないので、動かしません。
     if: >-
-      !cancelled() &&
-      needs.is-trusted.result == 'success' &&
-      github.event_name == 'pull_request'
-    runs-on: [self-hosted, Linux]
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
     timeout-minutes: 360 # キャッシュが切れている時は時間がかかるため長めに設定。
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7

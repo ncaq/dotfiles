@@ -36,7 +36,7 @@ run =
       target <- readTarget
       withSystemTempDirectory "nvd-pr-diff" \dir -> do
         (before, after) <- withBaseWorktree (dir </> "base") target.baseRef \baseTree ->
-          concurrently (buildToplevel Base baseTree attr) (buildToplevel Head "." attr)
+          (,) <$> buildToplevel Base baseTree attr <*> buildToplevel Head "." attr
         output <- nvdDiff before after
         parsed <- either throwM pure (parseReport output)
         upsertComment target marker (render host target.baseRef parsed)

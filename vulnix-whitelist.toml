@@ -447,10 +447,13 @@ cve = [
   "CVE-2026-55480",
   "CVE-2026-61702",
 ]
-issue_url = "https://github.com/NixOS/nixpkgs/pull/583991"
+issue_url = [
+  "https://github.com/NixOS/nixpkgs/pull/583991",
+  "https://github.com/NixOS/nixpkgs/pull/586508",
+]
 until = "2026-12-06"
 comment = [
-  "2.4.20への更新PRがstaging向けにopen。26.05へのバックポートはまだ無い",
+  "2.4.20への更新とそのバックポートがstagingとstaging-26.05にマージ済みで、チャンネルへの降下待ち",
   "CVE-2026-107885は2.4.20でも直らないので列挙していない",
 ]
 
@@ -484,14 +487,20 @@ issue_url = "https://github.com/NixOS/nixpkgs/pull/559510"
 until = "2026-12-06"
 comment = [
   "上流の修正は2.89.0以降にしか無く、26.05の2.88.4への更新(#575749)では直らない",
-  "glib 2.90を含むGNOME 51はstagingにマージ済みで、unstableと26.11で追い付く",
+  "glib 2.90を含むGNOME 51はunstableにあり、26.11で追い付く",
 ]
 
 ["gst-plugins-good-1.26.11"]
 cve = ["CVE-2026-46469", "CVE-2026-46470"]
-issue_url = "https://github.com/NixOS/nixpkgs/pull/514056"
+issue_url = [
+  "https://github.com/NixOS/nixpkgs/pull/514056",
+  "https://github.com/NixOS/nixpkgs/pull/588689",
+]
 until = "2026-12-06"
-comment = "GStreamer-SA-2026-0018。1.28.2で修正済みでunstableにだけある。26.11待ち"
+comment = [
+  "GStreamer-SA-2026-0018。1.28.2で修正済みでunstableにだけある",
+  "1.28.9へのstaging-26.05向けバックポートPR(#588689)がopen",
+]
 
 # ["gstreamer-1.26.11"] は誤検知の判定で使っているので、バージョン無しで書く。
 ["gstreamer"]
@@ -507,11 +516,12 @@ cve = [
 issue_url = [
   "https://github.com/NixOS/nixpkgs/pull/541369",
   "https://github.com/NixOS/nixpkgs/pull/549902",
+  "https://github.com/NixOS/nixpkgs/pull/588689",
 ]
 until = "2026-12-06"
 comment = [
   "GStreamer-SA-2026-0050から0053は1.28.5、SA-2026-0072は1.28.6で修正済みでunstableにだけある",
-  "メンテナは26.05にバックポートしないと明言しているので26.11待ち",
+  "1.28.9へのstaging-26.05向けバックポートPR(#588689)がopen",
 ]
 
 ["kotlin-2.3.21"]
@@ -569,7 +579,7 @@ issue_url = [
   "https://github.com/NixOS/nixpkgs/pull/578579",
 ]
 until = "2026-12-06"
-comment = "CVEパッチと2.8.1への更新がstagingにマージ済みでstaging-next待ち。26.05向けは無い"
+comment = "CVEパッチと2.8.1への更新はunstableにだけある。26.05へのバックポートは無く26.11待ち"
 
 ["sqlite-3.53.3"]
 cve = [
@@ -587,6 +597,6 @@ cve = [
 issue_url = "https://github.com/NixOS/nixpkgs/pull/572495"
 until = "2026-12-06"
 comment = [
-  "3.54.0への更新がstagingにマージ済みでstaging-next待ち。26.05へのバックポートは無い",
+  "3.54.0で修正済みでunstableにだけある。26.05へのバックポートは無く26.11待ち",
   "CVE-2026-119586は3.54.1以下が対象で3.54.0でも直らないので列挙していない",
 ]

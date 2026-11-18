@@ -7,6 +7,9 @@
   ...
 }:
 let
+  # 作業ディレクトリの名前。
+  # 渡すパスと作るディレクトリが食い違わないように、ここだけで決めます。
+  dirName = "coding-agent-work";
   # konokaプラグインは`${XDG_RUNTIME_DIR:-/tmp}/coding-agent-work/`を使用します。
   # NixOS環境では`osConfig`からUIDを取得し、非NixOS環境では`/tmp`へフォールバックします。
   # この仕様は調査した上で変更する予定です。
@@ -16,7 +19,7 @@ let
       uid = if osConfig != null then osConfig.users.users.${username}.uid else null;
       base = if uid != null then "/run/user/${toString uid}" else "/tmp";
     in
-    "${base}/coding-agent-work/";
+    "${base}/${dirName}/";
 in
 {
   _module.args = { inherit codingAgentWorkDirFullPath; };
@@ -31,6 +34,6 @@ in
   # 大きな問題にはなりません。
   # tmpをクリーンアップしないOSはサポート外です。
   systemd.user.tmpfiles.rules = [
-    "d %t/coding-agent-work 0700 - -"
+    "d %t/${dirName} 0700 - -"
   ];
 }

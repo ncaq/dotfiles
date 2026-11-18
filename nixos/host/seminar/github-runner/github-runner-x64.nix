@@ -88,17 +88,14 @@ let
       tap = "vm-gh-dotfiles";
       mac = "02:00:00:00:00:41"; # 末尾バイトはゲストIPアドレスに対応
       vcpu = config.local.cpuBudgetThreads;
-      # `nix-fast-build`のラッパが評価のワーカを3つにする大きさにしています。
-      # ラッパはVMから見えるメモリの半分を`runnerNum`で割り、
-      # さらにワーカ1つあたりの4GiBで割ります。
-      # ランナが1つなら、VMから見えるメモリが24GiB以上32GiB未満でワーカは3つです。
-      #
-      # その幅の中で上の方にしているのは、ワーカが実際には4GiBより多く使うためです。
-      # seminarの構成の評価は1つで7GiBほど使い、
-      # 評価の途中でブートテストのVMも動きます。
-      # ランナが2つでワーカも2つずつだった頃は、24GiBでは`nix-eval-jobs`のワーカがOOMで落ちました。
+      # `./check.sh`が評価のワーカを4つにする大きさにしています。
+      # `check.sh`はVMから見えるメモリの半分を、ワーカ1つあたりの3400MiBで割ります。
       # VMから見えるメモリはカーネルが自分で使う分だけ割り当てより1GiBほど減るので、
-      # 32GiBを割り当ててもワーカは4つにはなりません。
+      # 32GiBを割り当てると31GiBほどになり、ワーカは4つです。
+      #
+      # ワーカ4つでの`ciJobs`の評価のピークは、実測で13GiBほどでした。
+      # 残りは、評価の途中から動き出すビルドとブートテストのVMが使います。
+      # ランナが2つでワーカも2つずつだった頃は、24GiBでは`nix-eval-jobs`のワーカがOOMで落ちました。
       mem = 32 * 1024;
       # CIでNixOS TestのVMを動かします。
       nestedVirt = true;
@@ -370,9 +367,6 @@ let
                   inherit url;
                   extraEnvironment = {
                     ACTIONS_RUNNER_HOOK_JOB_STARTED = jobStartedHook;
-                    # 同じVMで`./check.sh`が重なり得る数。
-                    # `nix-fast-build`のラッパが、評価に使うメモリの予算をこの数で割ります。
-                    NIX_FAST_BUILD_CONCURRENT_JOBS = toString runnerNum;
                   };
                 }
                 // extraRunnerOptions;

@@ -21,9 +21,6 @@ let
   ollamaPort = config.local.openWebui.ollamaPort;
   # `environment.nix`が集めた設定。これもホスト側の`config`から取る。
   extraEnvironment = config.local.openWebui.environment;
-  # unfreeの許可はホスト側のnixpkgsの設定にしかないため、
-  # コンテナ内のpkgsではなくホスト側から取る。
-  #
   # 上流はPostgreSQL接続の同期エンジンにpsycopg2を使うが、
   # nixpkgsはpsycopg2-binaryとpgvectorを`optional-dependencies.postgres`へ
   # 分離しているため、依存へ加えて構築する。
@@ -92,7 +89,6 @@ in
     config =
       {
         lib,
-        pkgs,
         config,
         options,
         ...

@@ -24,7 +24,6 @@
   pkgs,
   config,
   inputs,
-  username,
   hardening,
   ...
 }:
@@ -79,8 +78,7 @@ let
 
   # 人がブラウザで新しい会話を始めた時に既定で効くシステムプロンプト。
   #
-  # home-managerはNixOSのホストではシステムへ統合されているため、
-  # `lib/mk-nixos-system.nix`が読み込んだhome-manager側のオプションを直接引ける。
+  # 下で読み込む`prompt`のモジュールはhome-managerも同じものを読み込んでいる。
   # 素材を二重に持たずに、他のサービスへ貼るのと同じプロンプトを渡せる。
   #
   # 値はderivationなので、評価時に`readFile`で開くとIFDになる。
@@ -91,7 +89,7 @@ let
   # `middleware.py`はModel側のシステムプロンプトを先に、
   # ブラウザが積んだこちらを後に連結するので、両方が同時に効く。
   # 人格を演じている最中にも噛み合う分量に絞っておきたい。
-  systemPromptFile = config.home-manager.users.${username}.prompt.chatAssistantMini;
+  systemPromptFile = config.prompt.chatAssistantMini;
 
   # システムプロンプト以外に宣言する設定。
   #
@@ -225,6 +223,8 @@ let
   sync = pkgs.open-webui-user-settings-sync;
 in
 {
+  imports = [ ../../../../prompt ];
+
   systemd.services.open-webui-user-settings-sync = {
     description = "Sync declarative Open WebUI user settings";
 

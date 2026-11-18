@@ -554,7 +554,7 @@
                 git
                 home-manager
                 ;
-              # メモリに合わせて評価のワーカ数を抑える`nix-fast-build`のラッパ。
+              # 既定の引数を足した`nix-fast-build`のラッパ。
               # `./check.sh`がPATHに無い環境で`nix run`する対象です。
               nix-fast-build = pkgs.nix-fast-build-wrapper;
               # `renovate-recovery`ワークフローが`claude-code-action`へ渡す実行ファイル。

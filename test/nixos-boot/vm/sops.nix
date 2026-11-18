@@ -8,9 +8,6 @@
       sshKeyPaths = lib.mkForce [ ];
     };
   };
-  home-manager.sharedModules = lib.mkAfter [
-    { sops.validateSopsFiles = false; }
-  ];
   systemd.services.sops-install-secrets.serviceConfig = lib.mkForce {
     Type = "oneshot";
     ExecStart = "${pkgs.coreutils}/bin/true";

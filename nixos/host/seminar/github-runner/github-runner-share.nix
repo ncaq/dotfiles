@@ -16,8 +16,7 @@ let
       cachix
       inputs.niks3.packages.${pkgs.stdenv.hostPlatform.system}.niks3
       # `./check.sh`はPATHにあるこのラッパを使います。
-      # メモリに合わせて評価のワーカ数を抑えるので、
-      # 評価だけでメモリを食い尽くすのを防げます。
+      # PATHにあればflakeを評価して取り出す手間を省けます。
       nix-fast-build-wrapper
     ];
   # runnerが使うTypeScriptコードをビルドしてGitHub Actionsで利用できるようにします。

@@ -159,7 +159,7 @@ flakeにはGitが追跡しているファイルしか見えません。
 ビルドがファイルを見つけられません。
 
 ```bash
-git add flake.nix nixos/host
+nix run 'nixpkgs#git' -- add flake.nix nixos/host
 ```
 
 ## インストール

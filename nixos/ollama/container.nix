@@ -86,12 +86,13 @@ in
       {
         system.stateVersion = "26.05";
         time.timeZone = "Asia/Tokyo";
-        networking.useHostResolvConf = lib.mkForce false;
         users = {
           users.ollama.uid = ollamaUid;
           groups.ollama.gid = ollamaGid;
         };
+        networking.useHostResolvConf = lib.mkForce false;
         services = {
+          # ホストのresolv.confを使わないので、コンテナの中の名前解決はresolvedに任せる。
           resolved.enable = true;
           ollama = {
             enable = true;

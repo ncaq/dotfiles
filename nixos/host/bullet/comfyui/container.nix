@@ -100,12 +100,13 @@ in
         # コンテナにはホストのタイムゾーンが伝播しないため明示する。
         # 未設定だとUTCになり、出力ファイル名の生成日時がJSTとずれる。
         time.timeZone = "Asia/Tokyo";
-        networking.useHostResolvConf = lib.mkForce false;
         users = {
           users.comfyui.uid = comfyuiUid;
           groups.comfyui.gid = comfyuiGid;
         };
+        networking.useHostResolvConf = lib.mkForce false;
         services = {
+          # ホストのresolv.confを使わないので、コンテナの中の名前解決はresolvedに任せる。
           resolved.enable = true;
           comfyui = {
             enable = true;

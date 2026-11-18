@@ -28,7 +28,7 @@ jobs:
       pull-requests: write # PRコメントのupsert
     # フォークからのPRではトークンが読み取り専用でコメントを投稿できないので、動かしません。
     if: github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 360 # キャッシュが切れている時は時間がかかるため長めに設定。
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7

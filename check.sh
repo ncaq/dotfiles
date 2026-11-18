@@ -39,6 +39,7 @@ if [ ! -t 1 ]; then
   arguments+=(--no-nom)
 fi
 
+# このスクリプトへの追加の引数は、そのまま`nix-fast-build`へ渡します。
 arguments+=("$@")
 
 # `nix-fast-build`は、メモリに合わせて評価のワーカ数を抑えるラッパを使います。

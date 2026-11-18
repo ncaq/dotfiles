@@ -91,27 +91,29 @@
   }";
 
   sops = {
-    # nix.confのfragmentを生成することでクライアント側にも読める設定ファイルにします。
-    # 自分のアカウントだけのFine-grained personal access tokensで、
-    # Fine-grainedの最小限の権限であるPublic Repository権限だけを持ちます。
-    # 万が一漏れても大した問題はないので、
-    # 権限は緩めで問題ありません。
-    templates."github-nix-avoid-rate-limit-token.conf" = {
-      content = ''
-        access-tokens = github.com=${config.sops.placeholder."github-nix-avoid-rate-limit-token"}
-      '';
-      owner = "root";
-      group = "wheel"; # 信頼できるとしたユーザも読めるようにしておきます。
-      mode = "0440"; # グループ所属のユーザも読み取れます。
-    };
-    # nix-daemonのsystemdサービスに読ませる環境変数ファイルです。
-    templates."nix-daemon-huggingface-token.env" = {
-      content = ''
-        HF_TOKEN=${config.sops.placeholder."huggingface/read-only"}
-      '';
-      owner = "root";
-      group = "root";
-      mode = "0400";
+    templates = {
+      # nix.confのfragmentを生成することでクライアント側にも読める設定ファイルにします。
+      # 自分のアカウントだけのFine-grained personal access tokensで、
+      # Fine-grainedの最小限の権限であるPublic Repository権限だけを持ちます。
+      # 万が一漏れても大した問題はないので、
+      # 権限は緩めで問題ありません。
+      "github-nix-avoid-rate-limit-token.conf" = {
+        content = ''
+          access-tokens = github.com=${config.sops.placeholder."github-nix-avoid-rate-limit-token"}
+        '';
+        owner = "root";
+        group = "wheel"; # 信頼できるとしたユーザも読めるようにしておきます。
+        mode = "0440"; # グループ所属のユーザも読み取れます。
+      };
+      # nix-daemonのsystemdサービスに読ませる環境変数ファイルです。
+      "nix-daemon-huggingface-token.env" = {
+        content = ''
+          HF_TOKEN=${config.sops.placeholder."huggingface/read-only"}
+        '';
+        owner = "root";
+        group = "root";
+        mode = "0400";
+      };
     };
     secrets = {
       # 最小限の権限で`access-tokens`を設定します。

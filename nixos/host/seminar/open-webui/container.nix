@@ -110,86 +110,88 @@ in
             postgres.gid = postgresGid;
           };
         };
-        services.open-webui = {
-          enable = true;
-          inherit package stateDir port;
-          # ホスト側のCaddyからIPv6で繋ぐ。
-          host = "::";
-          # 認証を無効化するため、全接続元へfirewallを開かない。
-          openFirewall = false;
-          # `environment`を定義すると既定値は丸ごと置き換わり、
-          # 匿名の利用統計を外部送信しない設定が失われる。
-          # 値を書き写すと二重管理になるので、オプションの既定値からマージする。
-          #
-          # ここに直接書くのはコンテナの構造そのものを決める変数だけにして、
-          # 管理画面や設定画面から触る類の設定は`environment.nix`へ集める。
-          # あちらを先に重ねるのは、
-          # 認証や永続化の方針が設定の一項目として上書きされるのを防ぐためである。
-          environment =
-            options.services.open-webui.environment.default
-            // extraEnvironment
-            // {
-              # 所有する端末だけのtailnetとACLを認証境界にするsingle-user mode。
-              WEBUI_AUTH = "False";
-              # 接続先をUIのDBへ保存させず、常に宣言したOllamaだけを使う。
-              ENABLE_PERSISTENT_CONFIG = "False";
-              # チャット履歴などのDBを既定のSQLiteではなくPostgreSQLに置く。
-              # `postgresql.nix`のコンテナへUnixソケット経由のpeer認証で接続する。
-              # sameuserルールに合わせてユーザ名とデータベース名を一致させる。
-              DATABASE_URL = "postgresql://open-webui@/open-webui?host=/run/postgresql";
-              # RAGのベクトルも既定のchroma(コンテナ内のSQLite)ではなく、
-              # 本体と同じデータベースのpgvector拡張に置く。
-              # `PGVECTOR_DB_URL`は未指定なら`DATABASE_URL`を使う。
-              #
-              # 公式が継続メンテナンスするエンジンはchromaとpgvectorだけで、
-              # chromaはfork-safeではなく並行アップロードでワーカが落ちる問題も知られている。
-              # ref https://github.com/ncaq/blue-prompt/issues/183
-              VECTOR_DB = "pgvector";
-              # pgvector拡張はtrustedではなくアプリのユーザでは作成できないため、
-              # `postgresql.nix`のsetupサービスがsuperuserで作成する。
-              PGVECTOR_CREATE_EXTENSION = "False";
-              # 既定のivfflatは空のテーブルへ索引を作るとリストの割り当てが偏り、
-              # 後から方式を変えるには手動での索引の削除も要求される。
-              # 逐次の追記に強くパラメータ調整も不要なHNSWを最初から選ぶ。
-              PGVECTOR_INDEX_METHOD = "hnsw";
-              # DB接続のプール設定。
-              # 未設定でもSQLAlchemy既定のQueuePool(プール5+オーバフロー10)で動くため、
-              # この宣言の目的は既定プールの明示的な拡大と、
-              # 接続数の予算をこの場で見える化することである。
-              #
-              # 数値は必要量と上限の挟み撃ちで決めた推定値である。
-              # UIのページロード時に並列で飛ぶAPI(10本前後)をプールで吸収し、
-              # Knowledge同期の書き込みと重なるバーストをオーバフローで逃がす。
-              #
-              # `DATABASE_POOL_*`は実行時のasyncエンジンだけでなく、
-              # 起動時の処理が使うsyncエンジンにも同じ値が適用される。
-              # そのため理論上の最悪合計は(10+20)x2に、
-              # 後述のpgvector側の(5+10)を足した75で、
-              # PostgreSQLのmax_connections(既定100)を全クライアントで共有しても収まる。
-              # QueuePoolの接続は遅延生成なので、
-              # 実行時に育つのはasync側だけでsyncエンジンは起動時の数本で止まり、
-              # 定常の実接続数は最悪合計よりずっと少ない。
-              DATABASE_POOL_SIZE = "10";
-              DATABASE_POOL_MAX_OVERFLOW = "20";
-              # RAG検索が使うpgvector側のエンジンは別プール。
-              # `PGVECTOR_DB_URL`は未指定でも`DATABASE_URL`へフォールバックして真になるため、
-              # 本体のセッションを使い回す分岐には入らず独立エンジンが作られ、
-              # この値が実際に効く。
-              #
-              # オーバフローの既定は本体側の10と違い0で、
-              # サイズだけを設定するとバーストの逃げ道が無いハードキャップになる。
-              # RAG検索はクエリ数xコレクション数をスレッドでファンアウトするため、
-              # 複数Knowledgeを紐付けたチャットで容易に5本を超え、
-              # 超過分がPGVECTOR_POOL_TIMEOUT(既定30秒)まで待たされてしまう。
-              # SQLAlchemy既定と同じ10を明示してバーストを吸収させる。
-              PGVECTOR_POOL_SIZE = "5";
-              PGVECTOR_POOL_MAX_OVERFLOW = "10";
-              # ホスト側のCaddyがbullet優先でOllamaへ振り分ける。
-              OLLAMA_BASE_URL = "http://[${addr.host6}]:${toString ollamaPort}";
-            };
+        services = {
+          open-webui = {
+            enable = true;
+            inherit package stateDir port;
+            # ホスト側のCaddyからIPv6で繋ぐ。
+            host = "::";
+            # 認証を無効化するため、全接続元へfirewallを開かない。
+            openFirewall = false;
+            # `environment`を定義すると既定値は丸ごと置き換わり、
+            # 匿名の利用統計を外部送信しない設定が失われる。
+            # 値を書き写すと二重管理になるので、オプションの既定値からマージする。
+            #
+            # ここに直接書くのはコンテナの構造そのものを決める変数だけにして、
+            # 管理画面や設定画面から触る類の設定は`environment.nix`へ集める。
+            # あちらを先に重ねるのは、
+            # 認証や永続化の方針が設定の一項目として上書きされるのを防ぐためである。
+            environment =
+              options.services.open-webui.environment.default
+              // extraEnvironment
+              // {
+                # 所有する端末だけのtailnetとACLを認証境界にするsingle-user mode。
+                WEBUI_AUTH = "False";
+                # 接続先をUIのDBへ保存させず、常に宣言したOllamaだけを使う。
+                ENABLE_PERSISTENT_CONFIG = "False";
+                # チャット履歴などのDBを既定のSQLiteではなくPostgreSQLに置く。
+                # `postgresql.nix`のコンテナへUnixソケット経由のpeer認証で接続する。
+                # sameuserルールに合わせてユーザ名とデータベース名を一致させる。
+                DATABASE_URL = "postgresql://open-webui@/open-webui?host=/run/postgresql";
+                # RAGのベクトルも既定のchroma(コンテナ内のSQLite)ではなく、
+                # 本体と同じデータベースのpgvector拡張に置く。
+                # `PGVECTOR_DB_URL`は未指定なら`DATABASE_URL`を使う。
+                #
+                # 公式が継続メンテナンスするエンジンはchromaとpgvectorだけで、
+                # chromaはfork-safeではなく並行アップロードでワーカが落ちる問題も知られている。
+                # ref https://github.com/ncaq/blue-prompt/issues/183
+                VECTOR_DB = "pgvector";
+                # pgvector拡張はtrustedではなくアプリのユーザでは作成できないため、
+                # `postgresql.nix`のsetupサービスがsuperuserで作成する。
+                PGVECTOR_CREATE_EXTENSION = "False";
+                # 既定のivfflatは空のテーブルへ索引を作るとリストの割り当てが偏り、
+                # 後から方式を変えるには手動での索引の削除も要求される。
+                # 逐次の追記に強くパラメータ調整も不要なHNSWを最初から選ぶ。
+                PGVECTOR_INDEX_METHOD = "hnsw";
+                # DB接続のプール設定。
+                # 未設定でもSQLAlchemy既定のQueuePool(プール5+オーバフロー10)で動くため、
+                # この宣言の目的は既定プールの明示的な拡大と、
+                # 接続数の予算をこの場で見える化することである。
+                #
+                # 数値は必要量と上限の挟み撃ちで決めた推定値である。
+                # UIのページロード時に並列で飛ぶAPI(10本前後)をプールで吸収し、
+                # Knowledge同期の書き込みと重なるバーストをオーバフローで逃がす。
+                #
+                # `DATABASE_POOL_*`は実行時のasyncエンジンだけでなく、
+                # 起動時の処理が使うsyncエンジンにも同じ値が適用される。
+                # そのため理論上の最悪合計は(10+20)x2に、
+                # 後述のpgvector側の(5+10)を足した75で、
+                # PostgreSQLのmax_connections(既定100)を全クライアントで共有しても収まる。
+                # QueuePoolの接続は遅延生成なので、
+                # 実行時に育つのはasync側だけでsyncエンジンは起動時の数本で止まり、
+                # 定常の実接続数は最悪合計よりずっと少ない。
+                DATABASE_POOL_SIZE = "10";
+                DATABASE_POOL_MAX_OVERFLOW = "20";
+                # RAG検索が使うpgvector側のエンジンは別プール。
+                # `PGVECTOR_DB_URL`は未指定でも`DATABASE_URL`へフォールバックして真になるため、
+                # 本体のセッションを使い回す分岐には入らず独立エンジンが作られ、
+                # この値が実際に効く。
+                #
+                # オーバフローの既定は本体側の10と違い0で、
+                # サイズだけを設定するとバーストの逃げ道が無いハードキャップになる。
+                # RAG検索はクエリ数xコレクション数をスレッドでファンアウトするため、
+                # 複数Knowledgeを紐付けたチャットで容易に5本を超え、
+                # 超過分がPGVECTOR_POOL_TIMEOUT(既定30秒)まで待たされてしまう。
+                # SQLAlchemy既定と同じ10を明示してバーストを吸収させる。
+                PGVECTOR_POOL_SIZE = "5";
+                PGVECTOR_POOL_MAX_OVERFLOW = "10";
+                # ホスト側のCaddyがbullet優先でOllamaへ振り分ける。
+                OLLAMA_BASE_URL = "http://[${addr.host6}]:${toString ollamaPort}";
+              };
+          };
+          # web検索や書き起こしのモデルの取得などで名前解決が必要になる。
+          resolved.enable = true;
         };
-        # web検索や書き起こしのモデルの取得などで名前解決が必要になる。
-        services.resolved.enable = true;
         networking = {
           useHostResolvConf = lib.mkForce false;
           # Tailscale Serveの転送先として中継する、ホスト側のCaddyからの接続だけを許可する。

@@ -377,137 +377,139 @@ let
         systemd = {
           tmpfiles.rules = [ "d ${overlayMount}/builds 0755 root root -" ];
           network = (tapNetworkOf name tap).guest;
-          # ジョブが動いていない間、VMのメモリをホストへ返します。
-          #
-          # ジョブが読み書きしたファイルのキャッシュは、ジョブが終わってもVMのメモリに残ります。
-          # バルーンのfree page reportingがホストへ返すのは空いているメモリだけなので、
-          # そのままだとVMはジョブが無い間も十数GiBを持ち続けます。
-          # キャッシュを捨てて空きメモリにすれば、バルーンがホストへ返します。
-          #
-          # 返すのは2MiB単位でまとまった空きだけなので、
-          # 断片化した空きもまとめてから返させます。
-          #
-          # キャッシュを捨てても失うものは小さいです。
-          # ストアの大半はホストからvirtiofsで読んでいて、ホストの側にもキャッシュがあります。
-          #
-          # 間隔は10分です。
-          # 短くすると、続けて動くジョブの合間にキャッシュを捨ててしまい、
-          # 次のジョブが同じファイルを読み直すことになります。
-          # 長くしても、ホストがメモリを取り戻すのがその分遅れるだけです。
-          timers.reclaim-idle-memory = {
-            wantedBy = [ "timers.target" ];
-            timerConfig = {
-              OnBootSec = "10min";
-              OnUnitInactiveSec = "10min";
+          services = {
+            # ジョブが動いていない間、VMのメモリをホストへ返します。
+            #
+            # ジョブが読み書きしたファイルのキャッシュは、ジョブが終わってもVMのメモリに残ります。
+            # バルーンのfree page reportingがホストへ返すのは空いているメモリだけなので、
+            # そのままだとVMはジョブが無い間も十数GiBを持ち続けます。
+            # キャッシュを捨てて空きメモリにすれば、バルーンがホストへ返します。
+            #
+            # 返すのは2MiB単位でまとまった空きだけなので、
+            # 断片化した空きもまとめてから返させます。
+            #
+            # キャッシュを捨てても失うものは小さいです。
+            # ストアの大半はホストからvirtiofsで読んでいて、ホストの側にもキャッシュがあります。
+            reclaim-idle-memory = {
+              description = "Return memory to the host while no job is running";
+              serviceConfig = {
+                Type = "oneshot";
+                ExecStart = lib.getExe (
+                  pkgs.writeShellApplication {
+                    name = "reclaim-idle-memory";
+                    runtimeInputs = [
+                      pkgs.coreutils
+                      pkgs.procps
+                    ];
+                    text = ''
+                      ${jobRunningFunction}
+                      # 実行中にキャッシュを捨てるとビルドが遅くなるだけなので、何もしません。
+                      if job_running; then
+                        exit 0
+                      fi
+                      sync
+                      echo 3 >/proc/sys/vm/drop_caches
+                      echo 1 >/proc/sys/vm/compact_memory
+                    '';
+                  }
+                );
+              };
             };
-          };
-          services.reclaim-idle-memory = {
-            description = "Return memory to the host while no job is running";
-            serviceConfig = {
-              Type = "oneshot";
-              ExecStart = lib.getExe (
-                pkgs.writeShellApplication {
-                  name = "reclaim-idle-memory";
-                  runtimeInputs = [
-                    pkgs.coreutils
-                    pkgs.procps
-                  ];
-                  text = ''
-                    ${jobRunningFunction}
-                    # 実行中にキャッシュを捨てるとビルドが遅くなるだけなので、何もしません。
-                    if job_running; then
-                      exit 0
-                    fi
-                    sync
-                    echo 3 >/proc/sys/vm/drop_caches
-                    echo 1 >/proc/sys/vm/compact_memory
-                  '';
-                }
-              );
+            # 起動から1日経ったら、ジョブが無い時にVMを止めて書き込み用の層を作り直させます。
+            #
+            # VMの中ではGCできないので、
+            # 何もしないと書き込み用の層はホストのGCで起動し直す週1回まで増え続けます。
+            # ジョブをまたいで残った結果で層が埋まり、
+            # 後のジョブがディスク不足で落ちます。
+            #
+            # VMが自分で電源を切ると、
+            # ホストの`microvm@`が`Restart=always`で起動し直します。
+            # 自動の起動し直しでも`Requires`のストアの準備のサービスは動くので、
+            # 層とデータベースの写しは新しくなります。
+            #
+            # ジョブが無いと確かめてから電源を切るまでの間に、
+            # 待っているランナがジョブを受け取ると、そのジョブは落ちます。
+            # 先にランナのサービスを止めても、
+            # 止めた時に受け取ったばかりのジョブはランナと一緒に終わるので、
+            # 隙間は止めるまでの間に移るだけで狭くなりません。
+            # 起きるのは1日1回の確かめの直後の一瞬だけで、
+            # 落ちたジョブは実行し直せば済むので、この隙間は許容します。
+            regenerate-idle-vm = {
+              description = "Power off the VM to regenerate its store overlay while no job is running";
+              serviceConfig = {
+                Type = "oneshot";
+                ExecStart = lib.getExe (
+                  pkgs.writeShellApplication {
+                    name = "regenerate-idle-vm";
+                    runtimeInputs = [
+                      pkgs.procps
+                      config.systemd.package
+                    ];
+                    text = ''
+                      ${jobRunningFunction}
+                      if job_running; then
+                        exit 0
+                      fi
+                      systemctl poweroff
+                    '';
+                  }
+                );
+              };
             };
-          };
-          # 起動から1日経ったら、ジョブが無い時にVMを止めて書き込み用の層を作り直させます。
-          #
-          # VMの中ではGCできないので、
-          # 何もしないと書き込み用の層はホストのGCで起動し直す週1回まで増え続けます。
-          # ジョブをまたいで残った結果で層が埋まり、
-          # 後のジョブがディスク不足で落ちます。
-          #
-          # VMが自分で電源を切ると、
-          # ホストの`microvm@`が`Restart=always`で起動し直します。
-          # 自動の起動し直しでも`Requires`のストアの準備のサービスは動くので、
-          # 層とデータベースの写しは新しくなります。
-          #
-          # 1日ごとにしているのは、
-          # 続けて動くジョブ同士でビルドの結果を使い回せるようにするためです。
-          # 起動から1日後に初めて確かめて、
-          # その後は1時間ごとに確かめるので、
-          # ジョブが続いている間は終わるまで待ってから作り直します。
-          #
-          # ジョブが無いと確かめてから電源を切るまでの間に、
-          # 待っているランナがジョブを受け取ると、そのジョブは落ちます。
-          # 先にランナのサービスを止めても、
-          # 止めた時に受け取ったばかりのジョブはランナと一緒に終わるので、
-          # 隙間は止めるまでの間に移るだけで狭くなりません。
-          # 起きるのは1日1回の確かめの直後の一瞬だけで、
-          # 落ちたジョブは実行し直せば済むので、この隙間は許容します。
-          timers.regenerate-idle-vm = {
-            wantedBy = [ "timers.target" ];
-            timerConfig = {
-              OnBootSec = "1d";
-              OnUnitInactiveSec = "1h";
-            };
-          };
-          services.regenerate-idle-vm = {
-            description = "Power off the VM to regenerate its store overlay while no job is running";
-            serviceConfig = {
-              Type = "oneshot";
-              ExecStart = lib.getExe (
-                pkgs.writeShellApplication {
-                  name = "regenerate-idle-vm";
-                  runtimeInputs = [
-                    pkgs.procps
-                    config.systemd.package
-                  ];
-                  text = ''
-                    ${jobRunningFunction}
-                    if job_running; then
-                      exit 0
-                    fi
-                    systemctl poweroff
-                  '';
-                }
-              );
-            };
-          };
-          # ホストのNixのデータベースの写しを、VMのデータベースとして置きます。
-          # nix-daemonが動き出す前に済ませる必要があるので、
-          # ソケットより前に順序付けます。
-          # ソケットは`basic.target`より前に起動するので、
-          # 既定の依存関係を付けると順序が循環します。
-          services.nix-db-seed = {
-            description = "Seed Nix database from host";
-            unitConfig.DefaultDependencies = false;
-            after = [ "local-fs.target" ];
-            before = [
-              "nix-daemon.socket"
-              "nix-daemon.service"
-              "shutdown.target"
-            ];
-            conflicts = [ "shutdown.target" ];
-            requiredBy = [
-              "nix-daemon.socket"
-              "nix-daemon.service"
-            ];
-            serviceConfig = {
-              Type = "oneshot";
-              RemainAfterExit = true;
-              ExecStart = [
-                # microvm.nixがVMのシステムのクロージャだけを登録したデータベースを先に作っています。
-                # ホストのデータベースにはそのクロージャも入っているので、丸ごと置き換えます。
-                "${lib.getExe' pkgs.coreutils "rm"} --force ${nixDbDir}/db.sqlite-wal ${nixDbDir}/db.sqlite-shm"
-                "${lib.getExe' pkgs.coreutils "install"} --mode=644 /run/host-nix-db/db.sqlite ${nixDbDir}/db.sqlite"
+            # ホストのNixのデータベースの写しを、VMのデータベースとして置きます。
+            # nix-daemonが動き出す前に済ませる必要があるので、
+            # ソケットより前に順序付けます。
+            # ソケットは`basic.target`より前に起動するので、
+            # 既定の依存関係を付けると順序が循環します。
+            nix-db-seed = {
+              description = "Seed Nix database from host";
+              unitConfig.DefaultDependencies = false;
+              after = [ "local-fs.target" ];
+              before = [
+                "nix-daemon.socket"
+                "nix-daemon.service"
+                "shutdown.target"
               ];
+              conflicts = [ "shutdown.target" ];
+              requiredBy = [
+                "nix-daemon.socket"
+                "nix-daemon.service"
+              ];
+              serviceConfig = {
+                Type = "oneshot";
+                RemainAfterExit = true;
+                ExecStart = [
+                  # microvm.nixがVMのシステムのクロージャだけを登録したデータベースを先に作っています。
+                  # ホストのデータベースにはそのクロージャも入っているので、丸ごと置き換えます。
+                  "${lib.getExe' pkgs.coreutils "rm"} --force ${nixDbDir}/db.sqlite-wal ${nixDbDir}/db.sqlite-shm"
+                  "${lib.getExe' pkgs.coreutils "install"} --mode=644 /run/host-nix-db/db.sqlite ${nixDbDir}/db.sqlite"
+                ];
+              };
+            };
+          };
+          timers = {
+            # 間隔は10分です。
+            # 短くすると、続けて動くジョブの合間にキャッシュを捨ててしまい、
+            # 次のジョブが同じファイルを読み直すことになります。
+            # 長くしても、ホストがメモリを取り戻すのがその分遅れるだけです。
+            reclaim-idle-memory = {
+              wantedBy = [ "timers.target" ];
+              timerConfig = {
+                OnBootSec = "10min";
+                OnUnitInactiveSec = "10min";
+              };
+            };
+            # 1日ごとにしているのは、
+            # 続けて動くジョブ同士でビルドの結果を使い回せるようにするためです。
+            # 起動から1日後に初めて確かめて、
+            # その後は1時間ごとに確かめるので、
+            # ジョブが続いている間は終わるまで待ってから作り直します。
+            regenerate-idle-vm = {
+              wantedBy = [ "timers.target" ];
+              timerConfig = {
+                OnBootSec = "1d";
+                OnUnitInactiveSec = "1h";
+              };
             };
           };
         };
@@ -520,27 +522,29 @@ in
 {
   microvm.vms = lib.mapAttrs mkRunnerVm runnerVmDefs;
 
-  # ブートテストがストアの準備とGCの前後の処理を確かめるために読みます。
-  local.githubRunnerVms = lib.mapAttrs (name: _: {
-    storeService = "${storeServiceOf name}.service";
-    storeDatabase = "${storeDirOf name}/db.sqlite";
-    overlayImage = overlayImageOf name;
-  }) runnerVmDefs;
+  local = {
+    # ブートテストがストアの準備とGCの前後の処理を確かめるために読みます。
+    githubRunnerVms = lib.mapAttrs (name: _: {
+      storeService = "${storeServiceOf name}.service";
+      storeDatabase = "${storeDirOf name}/db.sqlite";
+      overlayImage = overlayImageOf name;
+    }) runnerVmDefs;
 
-  # CIランナの出口はインターネットだけ。
-  #
-  # ランナの中ではリポジトリのワークフローが持ち込んだコードが動く。
-  # 必要な通信先はGitHubやcache.nixos.orgで、
-  # niks3-public.ncaq.netへのキャッシュの登録も、
-  # VMの中では公開DNSで引いてCloudflare Tunnel経由で届く。
-  #
-  # 自宅LAN、tailnet、他のコンテナ(forgejoの2222のようにホストでDNATされる経路も含む)に、
-  # CIジョブを触らせる理由は無い。
-  # TAPはコンテナのvethと違って名前を導けないので、VMの定義と同じ名前を明示する。
-  local.machineEgress = lib.mapAttrs (_: def: {
-    interface = def.tap;
-    internet = true;
-  }) runnerVmDefs;
+    # CIランナの出口はインターネットだけ。
+    #
+    # ランナの中ではリポジトリのワークフローが持ち込んだコードが動く。
+    # 必要な通信先はGitHubやcache.nixos.orgで、
+    # niks3-public.ncaq.netへのキャッシュの登録も、
+    # VMの中では公開DNSで引いてCloudflare Tunnel経由で届く。
+    #
+    # 自宅LAN、tailnet、他のコンテナ(forgejoの2222のようにホストでDNATされる経路も含む)に、
+    # CIジョブを触らせる理由は無い。
+    # TAPはコンテナのvethと違って名前を導けないので、VMの定義と同じ名前を明示する。
+    machineEgress = lib.mapAttrs (_: def: {
+      interface = def.tap;
+      internet = true;
+    }) runnerVmDefs;
+  };
 
   systemd = {
     network.networks = lib.mkMerge (

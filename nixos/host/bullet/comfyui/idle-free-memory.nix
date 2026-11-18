@@ -21,12 +21,14 @@
   containers.comfyui.config =
     { config, ... }:
     {
-      systemd.packages = [ pkgs.comfyui-idle-free-memory ];
-      systemd.services.comfyui-idle-free-memory = {
-        # NixOSは`systemd.packages`のユニットの`[Install]`を見ないので、ここで有効にする。
-        wantedBy = [ "multi-user.target" ];
-        # ユニットの既定は8188なので今は同じ値だが、ポートを変えた時に追従させる。
-        environment.COMFYUI_AUTHORITY = "[::1]:${toString config.services.comfyui.port}";
+      systemd = {
+        packages = [ pkgs.comfyui-idle-free-memory ];
+        services.comfyui-idle-free-memory = {
+          # NixOSは`systemd.packages`のユニットの`[Install]`を見ないので、ここで有効にする。
+          wantedBy = [ "multi-user.target" ];
+          # ユニットの既定は8188なので今は同じ値だが、ポートを変えた時に追従させる。
+          environment.COMFYUI_AUTHORITY = "[::1]:${toString config.services.comfyui.port}";
+        };
       };
     };
 }

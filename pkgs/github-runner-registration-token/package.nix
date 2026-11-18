@@ -32,6 +32,6 @@ let
   package = packages.callCabal2nix "github-runner-registration-token" source { };
 in
 lib.pipe package [
-  # seminarの閉包へGHCを持ち込まない。
+  # seminarのクロージャへGHCを持ち込まない。
   haskell.lib.compose.justStaticExecutables
 ]

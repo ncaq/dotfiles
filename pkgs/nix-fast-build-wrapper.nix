@@ -53,7 +53,7 @@ writeShellApplication {
     # CPUスレッド数も考えて上限にする。
     nproc_value=$(nproc)
     if [ "$workers" -gt "$nproc_value" ]; then
-      # CPUコア数がメモリ予算を上回ったらコア数を上限にする。
+      # メモリ予算から求めたワーカー数がCPUコア数を上回ったらコア数を上限にする。
       workers=$nproc_value
     fi
     if [ "$workers" -lt 1 ]; then

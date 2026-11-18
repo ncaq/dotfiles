@@ -55,7 +55,7 @@ system =
 
 tests :: TopSpec
 tests = describe "render" do
-  it "目印と見出しと表と閉包の行を並べる" do
+  it "目印と見出しと表とクロージャの行を並べる" do
     render
       "seminar"
       "master"

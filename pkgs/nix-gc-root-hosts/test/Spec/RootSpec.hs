@@ -15,7 +15,7 @@ tests = do
               "/etc/nixos-flake#nixosConfigurations.bullet.config.system.build.toplevel"
           }
   describe "homeRoot" do
-    it "システムのhome-managerの閉包を指す" do
+    it "システムのhome-managerのクロージャを指す" do
       homeRoot "/etc/nixos-flake" "x86_64-linux"
         `shouldBe` Root
           { name = "home-manager-x86_64-linux"

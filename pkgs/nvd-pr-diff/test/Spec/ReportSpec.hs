@@ -23,7 +23,7 @@ closureLine :: Text
 closureLine =
   "Closure size: 1234 -> 1240 (10 paths added, 4 paths removed, delta +6, disk usage +1.2 MiB)."
 
--- | パッケージが減った時の閉包の行。差もディスク使用量も負になる。
+-- | パッケージが減った時のクロージャの行。差もディスク使用量も負になる。
 shrinkingClosureLine :: Text
 shrinkingClosureLine =
   "Closure size: 10 -> 8 (1 paths added, 3 paths removed, delta -2, disk usage -1.2 MiB)."

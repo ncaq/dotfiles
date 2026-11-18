@@ -24,7 +24,7 @@ if [ ! -f "$secrets_file" ]; then
   exit 1
 fi
 
-# トークン取得時のみ環境に露出させ、cachixのサブプロセスに継承させます。
+# 復号したトークンはファイルに書かず、環境変数で`cachix`へ渡します。
 CACHIX_AUTH_TOKEN=$(sops decrypt --extract '["CACHIX_AUTH_TOKEN"]' "$secrets_file")
 export CACHIX_AUTH_TOKEN
 

@@ -34,7 +34,7 @@ let
   };
   mainProgram = "comfyui-idle-free-memory";
   executable = lib.pipe (packages.callCabal2nix mainProgram source { }) [
-    # コンテナの閉包へGHCを持ち込まない。
+    # コンテナのクロージャへGHCを持ち込まない。
     haskell.lib.compose.justStaticExecutables
   ];
   hardening = import ../../lib/systemd-hardening.nix;

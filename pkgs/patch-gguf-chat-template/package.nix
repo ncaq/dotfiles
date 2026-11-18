@@ -31,6 +31,6 @@ let
   package = packages.callCabal2nix "patch-gguf-chat-template" source { };
 in
 lib.pipe package [
-  # GGUFを組むderivationの閉包へGHCを持ち込まない。
+  # GGUFを組むderivationのクロージャへGHCを持ち込まない。
   haskell.lib.compose.justStaticExecutables
 ]

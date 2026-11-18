@@ -64,7 +64,7 @@ tests = describe "freeIfNeeded" do
         runSimpleNoLogEnv (freeIfNeeded (throwM failure) RequestFree idleState)
           >>= (`shouldBe` idleState)
   it "想定していない失敗は握り潰さない" do
-    -- 通信の失敗だけを吸収する。
+    -- 吸収するのは`transientFailure`が認める一時的な失敗だけである。
     -- それ以外はこちらの不具合なので、握り潰さずにユニットごと落とす。
     runSimpleNoLogEnv (freeIfNeeded (throwM Unexpected) RequestFree idleState)
       `shouldThrow` \Unexpected -> True

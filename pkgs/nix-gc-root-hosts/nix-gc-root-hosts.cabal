@@ -1,7 +1,7 @@
 cabal-version: 3.12
 name: nix-gc-root-hosts
 version: 0.1.0.0
-synopsis: flakeに定義された全ホストの閉包をGC rootとして登録するコマンド
+synopsis: flakeに定義された全ホストのクロージャをGC rootとして登録するコマンド
 license: Apache-2.0
 author: ncaq <ncaq@ncaq.net>
 maintainer: ncaq <ncaq@ncaq.net>

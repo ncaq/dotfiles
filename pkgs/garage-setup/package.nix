@@ -32,6 +32,6 @@ let
   package = packages.callCabal2nix "garage-setup" source { };
 in
 lib.pipe package [
-  # seminarの閉包へGHCを持ち込まない。
+  # seminarのクロージャへGHCを持ち込まない。
   haskell.lib.compose.justStaticExecutables
 ]

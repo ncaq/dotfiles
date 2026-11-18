@@ -76,23 +76,6 @@ let
       sha256 = oid;
     };
 
-  # 人がブラウザで新しい会話を始めた時に既定で効くシステムプロンプト。
-  #
-  # 下で読み込む`prompt`のモジュールはhome-managerも同じものを読み込んでいる。
-  # 素材を二重に持たずに、他のサービスへ貼るのと同じプロンプトを渡せる。
-  #
-  # 値はderivationなので、評価時に`readFile`で開くとIFDになる。
-  # 同期のスクリプトが`jq --rawfile`で読めば評価は中身を知らずに済む。
-  #
-  # ミニ版を使うのは文字数の制約があるからではなく、
-  # `blue-prompt.nix`が登録する人格のModelと合わさるためである。
-  # `middleware.py`はModel側のシステムプロンプトを先に、
-  # ブラウザが積んだこちらを後に連結するので、両方が同時に効く。
-  # 人格を演じている最中にも噛み合う分量に絞っておきたい。
-  systemPromptFile = config.prompt.chatAssistantMini;
-
-  # システムプロンプト以外に宣言する設定。
-  #
   # ここに書いた鍵だけが上書きされ、書いていない鍵は実体のまま残る。
   # 全置換にしないのは、最後に選んだModelを覚える`models`のように、
   # 人が触った結果をそのまま持たせたい鍵が同じ階層に同居しているためである。
@@ -223,8 +206,6 @@ let
   sync = pkgs.open-webui-user-settings-sync;
 in
 {
-  imports = [ ../../../../prompt ];
-
   systemd.services.open-webui-user-settings-sync = {
     description = "Sync declarative Open WebUI user settings";
 
@@ -257,7 +238,6 @@ in
       OPEN_WEBUI_DECLARED_SETTINGS_FILE = pkgs.writeText "open-webui-declared-settings.json" (
         builtins.toJSON declared
       );
-      OPEN_WEBUI_SYSTEM_PROMPT_FILE = systemPromptFile;
       OPEN_WEBUI_DECLARED_PROFILE_FILE = pkgs.writeText "open-webui-declared-profile.json" (
         builtins.toJSON profile
       );

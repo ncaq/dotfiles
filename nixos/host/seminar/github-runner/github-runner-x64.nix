@@ -449,15 +449,15 @@ let
               };
             };
             # ホストのNixのデータベースの写しを、VMのデータベースとして置きます。
-            # nix-daemonが動き出す前に済ませる必要があるので、
-            # ソケットより前に順序付けます。
-            # ソケットは`basic.target`より前に起動するので、
-            # 既定の依存関係を付けると順序が循環します。
             nix-db-seed = {
               description = "Seed Nix database from host";
+              # ソケットは`basic.target`より前に起動するので、
+              # 既定の依存関係を付けると順序が循環します。
               unitConfig.DefaultDependencies = false;
               after = [ "local-fs.target" ];
               before = [
+                # nix-daemonが動き出す前に済ませる必要があるので、
+                # ソケットより前に順序付けます。
                 "nix-daemon.socket"
                 "nix-daemon.service"
                 "shutdown.target"

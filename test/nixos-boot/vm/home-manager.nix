@@ -1,11 +1,16 @@
-# home-managerによるユーザ環境の有効化を止めます。
+# テストVMからhome-managerのユーザ環境を外します。
+#
 # テストVMには秘密情報が無いので、有効化は最後のsops-nixの復号で必ず失敗します。
 # 失敗するまでにホームのファイルのリンクやEmacsのデーモンの起動で3分半ほどかかり、
 # その間ずっと`multi-user.target`への到達を止めます。
-# 結果が決まっているものを待つだけなので、ユニットごと無効化します。
-# home-managerの構成がビルドできることは、
-# CIが`ciJobs`の中で実機の構成をビルドして確かめています。
-{ lib, username, ... }:
+#
+# 有効化のユニットを無効にするだけでは、home-managerの構成の評価は残ります。
+# NixOSはユニットの警告を集める時に無効なユニットの`ExecStart`も読むので、
+# 有効化のパッケージとユーザのパッケージが全て評価されます。
+# ホスト1つあたり2GiB以上を確保する評価で、
+# 同じ構成は`ciJobs`の中で実機の構成と単独のhome-managerとしてビルドして確かめています。
+# 重複なので、ユーザごと外して評価もビルドもしないようにします。
+{ lib, ... }:
 {
-  systemd.services."home-manager-${username}".enable = lib.mkForce false;
+  home-manager.users = lib.mkForce { };
 }

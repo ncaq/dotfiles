@@ -11,13 +11,13 @@ import UserSettingsSync.Sync (Declaration (..))
 
 -- | 設定が指すファイルから宣言を読む。
 --
--- システムプロンプトをファイルで受け取るのは、値がNixのderivationだからである。
+-- システムプロンプトをファイルで受け取るのは、値がNixのderivationになりうるからである。
 -- Nixの評価の中で中身を開かずに、実行時に読む。
 readDeclaration :: (MonadIO m, MonadThrow m) => Config -> m Declaration
 readDeclaration config =
   Declaration
     <$> object config.declaredSettingsFile
-    <*> (convert <$> bytes config.systemPromptFile)
+    <*> traverse (fmap convert . bytes) config.systemPromptFile
     <*> object config.declaredProfileFile
     <*> bytes config.profileImageFile
  where

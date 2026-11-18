@@ -16,7 +16,7 @@ in
       settings.solver.min-release-age = releaseAgeDays;
     };
     # uvの`exclude-newer`は、
-    # RFC 3339、ISO 8601、フレンドリな期間文字列(`"3 days"`)を受け付けます。
+    # RFC 3339、ISO 8601、フレンドリーな期間文字列(`"3 days"`)を受け付けます。
     uv = {
       enable = true;
       settings.exclude-newer = isoDuration;

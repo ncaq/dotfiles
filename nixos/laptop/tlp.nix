@@ -19,7 +19,7 @@
         CPU_DRIVER_OPMODE_ON_AC = "active";
         CPU_DRIVER_OPMODE_ON_BAT = "active";
 
-        # ガバナも明示。
+        # ガバナーも明示。
         # amd-pstateのactive modeでは`powersave`一択。
         # `performance`は無意味に発熱します。
         # 負荷が高いときはCPUが自律的に周波数を上げるので、

@@ -166,7 +166,7 @@
     # バッチにできない分がそのまま往復と起動の待ち時間になる。
     RAG_EMBEDDING_BATCH_SIZE = "32";
 
-    # ノートやカレンダなどの組み込みツールを既定で渡さない。
+    # ノートやカレンダーなどの組み込みツールを既定で渡さない。
     # Open WebUIはOllamaが申告するcapabilitiesを見ないため、
     # tools非対応のモデルにもfunction callingを要求してしまい、
     # `does not support tools`で会話そのものが失敗する。

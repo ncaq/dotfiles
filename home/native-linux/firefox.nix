@@ -15,7 +15,7 @@ let
     #main-window:not([tabsintitlebar="true"]) #TabsToolbar {
       visibility: collapse !important;
     }
-    /* サイドバーのボーダは領域を無駄に食うので消去。どのコンテンツでも幅を弄ったりはしない。 */
+    /* サイドバーのボーダーは領域を無駄に食うので消去。どのコンテンツでも幅を弄ったりはしない。 */
     #sidebar-splitter {
       display: none !important;
     }
@@ -37,7 +37,7 @@ let
     "browser.urlbar.maxRichResults" = 16; # URLバーの候補表示数
     "devtools.browsertoolbox.scope" = "everything"; # ブラウザツールボックスのスコープ
     "devtools.command-button-measure.enabled" = true; # 測定ツールボタン有効
-    "devtools.command-button-rulers.enabled" = true; # ルーラボタン有効
+    "devtools.command-button-rulers.enabled" = true; # ルーラーボタン有効
     "devtools.command-button-screenshot.enabled" = true; # スクリーンショットボタン有効
     "devtools.debugger.map-scopes-enabled" = true; # デバッガのスコープマッピング有効
     "devtools.debugger.pause-on-caught-exceptions" = false; # キャッチされた例外で一時停止しない
@@ -83,22 +83,22 @@ in
         builtins.listToAttrs (
           map normalInstall [
             "@react-devtools" # 設定不要
-            "@ublacklist" # ポリシ非対応
-            "aws-extend-switch-roles@toshi.tilfin.com" # ポリシ非対応
+            "@ublacklist" # ポリシー非対応
+            "aws-extend-switch-roles@toshi.tilfin.com" # ポリシー非対応
             "chatgpt-ctrl-enter-sender@chatgpt-extension.io" # 設定不要
             "extension@redux.devtools" # 設定不要
             "goodbye-rfc-2822-date-time@ncaq.net" # 設定不要
             "google-search-title-qualified@ncaq.net" # 設定不要
-            "keepassxc-browser@keepassxc.org" # ポリシ対応
-            "treestyletab@piro.sakura.ne.jp" # ポリシ非対応
-            "uBlock0@raymondhill.net" # ポリシ対応
-            "weautopagerize@wantora.github.io" # ポリシ非対応
-            "{1be309c5-3e4f-4b99-927d-bb500eb4fa88}" # Augmented Steam - ポリシ非対応
+            "keepassxc-browser@keepassxc.org" # ポリシー対応
+            "treestyletab@piro.sakura.ne.jp" # ポリシー非対応
+            "uBlock0@raymondhill.net" # ポリシー対応
+            "weautopagerize@wantora.github.io" # ポリシー非対応
+            "{1be309c5-3e4f-4b99-927d-bb500eb4fa88}" # Augmented Steam - ポリシー非対応
             "{2e5ff8c8-32fe-46d0-9fc8-6b8986621f3c}" # Search by Image - 設定不要
             "{37aa84f3-dfba-43ee-8da6-875ec5af3072}" # AWS Favicon - 設定不要
-            "{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}" # Stylus - ポリシ非対応
-            "{a4c4eda4-fb84-4a84-b4a1-f7c1cbf2a1ad}" # Refined GitHub - ポリシ非対応
-            "{a8332c60-5b6d-41ee-bfc8-e9bb331d34ad}" # Surfingkeys - ポリシ非対応
+            "{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}" # Stylus - ポリシー非対応
+            "{a4c4eda4-fb84-4a84-b4a1-f7c1cbf2a1ad}" # Refined GitHub - ポリシー非対応
+            "{a8332c60-5b6d-41ee-bfc8-e9bb331d34ad}" # Surfingkeys - ポリシー非対応
             "{bd97f89b-17ba-4539-9fec-06852d07f917}" # Checkmarks - 設定不要
             "{d07ccf11-c0cd-4938-a265-2a4d6ad01189}" # Web Archives - 設定不要
           ]

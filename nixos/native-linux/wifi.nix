@@ -4,7 +4,7 @@ let
   # systemdの`EnvironmentFile`経由で、
   # NetworkManager-ensure-profilesに渡され、
   # envsubstでkeyfileに展開される。
-  # 環境変数名にはハイフンを使えないためアンダスコアに変換し大文字化する。
+  # 環境変数名にはハイフンを使えないためアンダースコアに変換し大文字化する。
   pskEnvName = id: "WIFI_${lib.toUpper (builtins.replaceStrings [ "-" ] [ "_" ] id)}_PSK";
 
   # 各WiFiプロファイル共通の構造を生成するヘルパ。

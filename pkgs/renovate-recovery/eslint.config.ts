@@ -46,7 +46,7 @@ const config: ReturnType<typeof defineConfig> = defineConfig(
   tseslint.configs.stylisticTypeChecked,
   {
     rules: {
-      // 使ってないシンボルはアンダスコア始めにすることで警告を回避します。
+      // 使ってないシンボルはアンダースコア始めにすることで警告を回避します。
       "@typescript-eslint/no-unused-vars": [
         "warn",
         {

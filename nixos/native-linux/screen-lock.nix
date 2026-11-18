@@ -57,7 +57,7 @@ let
     "${lib.getExe' config.systemd.package "systemctl"} --user kill --kill-whom=main --signal=${signal} grobi.service";
 
   # 猶予時間内の復帰でロックされていなければgrobiを再開します。
-  # 猶予超過でロックに進んだ場合はロッカ側が解除後に再開するため、
+  # 猶予超過でロックに進んだ場合はロッカー側が解除後に再開するため、
   # ここでは再開しません。
   grobiResumeIfUnlocked = pkgs.writeShellApplication {
     name = "grobi-resume-if-unlocked";
@@ -166,7 +166,7 @@ in
     services.xsecurelock.u2fAuth = true;
   };
 
-  # xss-lock: systemdのlock-session/suspend等のイベントでロッカを自動起動。
+  # xss-lock: systemdのlock-session/suspend等のイベントでロッカーを自動起動。
   # notifierとlockerの2段階の仕組みで画面ロックに猶予時間を設けています。
   # - 無操作で`xset s TIMEOUT CYCLE`のTIMEOUTに達するとnotifierが起動され、
   #   活動再開かlockerの起動時にSIGTERMで殺されます。

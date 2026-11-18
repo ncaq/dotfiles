@@ -45,7 +45,7 @@ in
     };
   };
 
-  # gamemodedはCPUガバナ変更などの特権操作をpkexecで行う。
+  # gamemodedはCPUガバナー変更などの特権操作をpkexecで行う。
   # gamemodeが同梱するpolkitルールは`gamemode`グループのユーザにだけ認証なしで許可するので、
   # ユーザをグループに追加する。
   users.users.${username}.extraGroups = [ "gamemode" ];

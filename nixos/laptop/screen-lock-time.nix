@@ -42,7 +42,7 @@ in
               pkgs.coreutils
             ];
             # xss-lockがsleep inhibitor lockを取得するため、
-            # ロッカが起動するまでsuspendはブロックされます。
+            # ロッカーが起動するまでsuspendはブロックされます。
             # 念のためsleepも挟んでいます。
             text = ''
               loginctl lock-sessions

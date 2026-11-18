@@ -12,15 +12,18 @@ let
   # flakeに定義された全nixosConfigurationsとhomeConfigurationsのクロージャを、
   # GCから保護するGC rootを登録するスクリプト。
   #
-  # セルフホステッドランナはこのホストのnix storeを共有していますが、
-  # `nix build`のresultリンクはジョブごとに作り直されるランナの隔離環境の中にあるため、
-  # ジョブ終了後は他ホスト向けのクロージャ(特にbulletの巨大なモデルファイル)を守るrootが残りません。
-  # そのままnix-gcに回収されると、
-  # 次のCIで巨大なパスをHDD RAID上のキャッシュから取得し直すことになります。
+  # セルフホステッドランナのmicroVMはこのホストのnix storeを読み取り専用で共有していて、
+  # ホストのストアにあるパスは取り直さずに使えます。
+  # しかしCIのジョブがビルドしたり取得したりしたパスは、
+  # VMだけが持つ書き込み用の層に入り、
+  # VMを作り直すと消えるので、
+  # ホストのストアには残りません。
+  # ホストのストアに他ホスト向けのクロージャ(特にbulletの巨大なモデルファイル)が無いと、
+  # CIは巨大なパスをHDD RAID上のキャッシュから取得し直すことになります。
   # https://github.com/ncaq/dotfiles/issues/1535
   #
-  # デプロイ時に配置される`/etc/nixos-flake`(nix-daemon.nix参照)から、
-  # 全nixosConfigurationsのtoplevelとhome-managerのクロージャをビルドして、
+  # そこでデプロイ時に配置される`/etc/nixos-flake`(nix-daemon.nix参照)から、
+  # 全nixosConfigurationsのtoplevelとhome-managerのクロージャをホストでビルドして、
   # `--out-link`でGC rootとして保持します。
   # デプロイ済みのflakeを参照するため作業ツリーには依存しません。
   #

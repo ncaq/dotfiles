@@ -223,7 +223,8 @@ NixOSではブートエントリのラベルに使う最新コミットの情報
 それぞれのディレクトリの`README.md`に書いています。
 
 - `home/README.md`: home-managerの設定
-- `nixos/README.md`: NixOSのシステム設定と、自宅サーバのseminarの概要
+- `nixos/README.md`: NixOSのシステム設定
+- `nixos/host/seminar/README.md`: 自宅サーバのseminarの概要
 - `pkgs/README.md`: 自作のパッケージ。置くだけで拾われる仕組みと、その制約
 - `test/README.md`: Nixのテストの書き方と置き場所
 

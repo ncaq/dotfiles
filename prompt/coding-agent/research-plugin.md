@@ -1,4 +1,4 @@
-# research
+# 調べものにはresearchスキルを使う
 
 調べものをする時は、
 [research:research](https://github.com/ncaq/konoka/blob/master/plugins/research/skills/research/SKILL.md)

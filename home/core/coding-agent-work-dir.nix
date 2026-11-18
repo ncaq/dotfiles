@@ -1,3 +1,6 @@
+# コーディングエージェント用の一時作業ディレクトリを用意するモジュール。
+# ディレクトリを作成して、
+# そのパスを`codingAgentWorkDirFullPath`として他のモジュールへ渡します。
 {
   username,
   osConfig ? null,
@@ -6,7 +9,8 @@
 let
   # konokaプラグインは`${XDG_RUNTIME_DIR:-/tmp}/coding-agent-work/`を使用します。
   # NixOS環境では`osConfig`からUIDを取得し、非NixOS環境では`/tmp`へフォールバックします。
-  # そのうち仕様を変更します。
+  # この仕様は調査した上で変更する予定です。
+  # どう変更するかの詳細はまだ決まっていません。
   codingAgentWorkDirFullPath =
     let
       uid = if osConfig != null then osConfig.users.users.${username}.uid else null;

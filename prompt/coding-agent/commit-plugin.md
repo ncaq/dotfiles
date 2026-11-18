@@ -1,4 +1,4 @@
-# commit
+# コミットにはcommitスキルを使う
 
 Gitにコミットする時は、
 [commit:commit](https://github.com/ncaq/konoka/blob/master/plugins/commit/skills/commit/SKILL.md)

@@ -22,7 +22,7 @@ let
   };
   garageAddr = config.machineAddresses.garage.guest6;
   # LFSオブジェクトをgarage(S3互換)に保存するためのバケットとキーをidempotentに作成します。
-  # name = "forgejo" なので/run/garage-setup/forgejoにキーが書き出され、forgejoユーザーが所有します。
+  # name = "forgejo" なので/run/garage-setup/forgejoにキーが書き出され、forgejoユーザが所有します。
   garageSetup = import ../../../lib/garage-setup.nix {
     inherit pkgs config;
     name = "forgejo";

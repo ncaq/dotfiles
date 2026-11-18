@@ -28,7 +28,7 @@ in
           # NetBIOSを使わないので他の値にする理由も無い。
           "server string" = "Seminar Home Server";
           # セキュリティ設定
-          "security" = "user"; # ユーザー認証必須
+          "security" = "user"; # ユーザ認証必須
           "map to guest" = "never"; # ゲストアクセス禁止
           # 待ち受け先の制限は`bind interfaces only`ではなくfirewallで行う(下のnetworking.firewall)。
           # Sambaはbroadcastできないインターフェイスをbind候補から外すので、

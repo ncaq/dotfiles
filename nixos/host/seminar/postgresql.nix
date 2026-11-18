@@ -27,7 +27,7 @@ in
     postgresClient = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ ];
-      description = "PostgreSQLへpeer認証で接続するクライアントユーザー名のリスト";
+      description = "PostgreSQLへpeer認証で接続するクライアントユーザ名のリスト";
     };
     postgresExtension = lib.mkOption {
       type = lib.types.attrsOf (lib.types.listOf lib.types.str);
@@ -139,7 +139,7 @@ in
         };
     };
 
-    # ホスト側にもpostgresユーザーを作成。
+    # ホスト側にもpostgresユーザを作成。
     # bindMountディレクトリの所有権とtmpfilesルールに必要。
     users = {
       users = {

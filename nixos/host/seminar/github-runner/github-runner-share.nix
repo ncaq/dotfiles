@@ -58,7 +58,7 @@ let
   registrationTokenBroker = lib.getExe pkgs.github-runner-registration-token;
   # ランナーのVMとホストで統一されたユーザ値を使います。
   user = config.serviceUser.github-runner;
-  # ユーザーとグループ定義。
+  # ユーザとグループ定義。
   # ランナーのVMは共有したホストのディレクトリへ書き込むことがあります。
   # virtiofsはUIDとGIDをそのまま通すので、
   # ホストの側の所有者と合うように明示的に定義します。
@@ -98,7 +98,7 @@ in
       ;
   };
 
-  # ホストにも同じユーザーを置きます。
+  # ホストにも同じユーザを置きます。
   # ランナーのVMと共有するディレクトリの所有者として使います。
   # ホストのnix-daemonの`trusted-users`には入れません。
   inherit users;

@@ -203,7 +203,7 @@ in
     systemd = {
       tmpfiles.rules = [
         # ステージングのディレクトリ。
-        # cdn.ncaq.netのGitHub Actionsのセルフホストランナーが、
+        # cdn.ncaq.netのGitHub Actionsのセルフホステッドランナーが、
         # `public`へrsyncで書き込んでから`deployed`をtouchします。
         # ランナーのVMへvirtiofsで共有するディレクトリなので、
         # VMの起動前に存在している必要があります。

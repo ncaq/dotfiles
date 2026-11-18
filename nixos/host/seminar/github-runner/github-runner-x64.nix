@@ -4,7 +4,7 @@
   ランナーの中ではリポジトリのワークフローが持ち込んだコードが動きます。
   以前はNixOSコンテナで動かして、
   ホストのnix-daemonのソケットを共有していました。
-  ランナーのユーザーはホストのnix-daemonの`trusted-users`で、
+  ランナーのユーザはホストのnix-daemonの`trusted-users`で、
   これはホストのrootを渡すのと変わりません。
   VMの中にnix-daemonを持たせて、
   ホストのnix-daemonには触れさせないようにします。
@@ -64,7 +64,7 @@ let
     users
     ciNixSettings
     ;
-  # ランナーのユーザーのUIDとGID。ホストとVMで同じ値です。
+  # ランナーのユーザのUIDとGID。ホストとVMで同じ値です。
   runnerUser = config.serviceUser.github-runner;
   # cdn.ncaq.netのランナーへ共有するステージングのディレクトリ。
   cdnDeployRoot = config.local.cdnDeploy.deployRoot;
@@ -206,7 +206,7 @@ let
   # ジョブは任意のコードを実行できるので、
   # 名前だけで探すと、同じ名前のプロセスを残してジョブが動いているように見せられます。
   # ジョブのプロセスは`Runner.Listener`の子にはなれないので、
-  # ランナーのユーザーの`Runner.Listener`の子だけを探します。
+  # ランナーのユーザの`Runner.Listener`の子だけを探します。
   jobRunningFunction = ''
     job_running() {
       local listeners
@@ -625,7 +625,7 @@ in
               nixDbDir
               "${config.microvm.stateDir}/${name}"
             ];
-            # イメージとその親のディレクトリはmicrovmユーザーの所有なので、
+            # イメージとその親のディレクトリはmicrovmユーザの所有なので、
             # rootでも所有者の検査を越える権限が無いと消せません。
             CapabilityBoundingSet = [ "CAP_DAC_OVERRIDE" ];
           };

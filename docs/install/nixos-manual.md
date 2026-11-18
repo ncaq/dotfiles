@@ -57,9 +57,8 @@ w
 
 ```bash
 sudo mkfs.vfat -F32 -n nixos-esp /dev/disk/by-id/your-disk-nixos-esp
-sudo e2label /dev/disk/by-id/your-disk-root-for-crypt nixos-root-crypt
-sudo cryptsetup luksFormat /dev/disk/by-id/nixos-root-crypt
-sudo cryptsetup open /dev/disk/by-id/nixos-root-crypt nixos-root
+sudo cryptsetup luksFormat --label nixos-root-crypt /dev/disk/by-id/your-disk-root-for-crypt
+sudo cryptsetup open /dev/disk/by-label/nixos-root-crypt nixos-root
 sudo mkfs.btrfs /dev/mapper/nixos-root
 sudo mount /dev/mapper/nixos-root /mnt
 sudo btrfs subvolume create /mnt/@

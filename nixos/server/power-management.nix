@@ -5,11 +5,12 @@
     # デフォルトで`enable`ですが、
     # わかりやすさのために明示的に有効にします。
     enable = true;
-    # amd-pstateが有効になっている場合は、
-    # governorはEPP(Energy Performance Preference)ヒントとして利用されます。
-    # CPUに自律的に決めるヒントを与えているだけなので、
-    # それで性能が固定されるというわけではありません。
-    # デフォルトで`powersave`ですが念の為に明示的に設定します。
+    # amd-pstate-eppドライバではgovernorは`performance`と`powersave`の2択で、
+    # カーネルデフォルトは`performance`です。
+    # `performance`だとEPP(Energy Performance Preference)も`performance`に固定されます。
+    # `powersave`でもクロック制御はCPUが自律的に行い、
+    # EPPはそのヒントでしかないので、
+    # 性能が低く固定されるわけではありません。
     cpuFreqGovernor = "powersave";
     powertop = {
       # USBデバイスはサーバには常時接続していないので、

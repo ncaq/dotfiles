@@ -51,7 +51,7 @@ in
 
   # Open WebUIの出口はインターネットだけ。
   # web検索(`web-search.nix`)のAPIと検索結果のページの取得、
-  # 埋め込みモデルのHugging Faceからの取得に要る。
+  # 書き起こしのモデル(`WHISPER_MODEL`)のHugging Faceからの取得に要る。
   # OllamaとComfyUIへはホストのCaddy(`ollama-backend.nix`と`comfyui-backend.nix`)へ繋ぐので、
   # 転送ではなくinputで届く。
   # PostgreSQLはUnixソケット。
@@ -77,7 +77,7 @@ in
     localAddress = addr.guest4;
     bindMounts = {
       # DBとベクトルはPostgreSQLへ移したため、
-      # ここに残るのはアップロードされたファイルや埋め込みモデルのキャッシュなどで、
+      # ここに残るのはアップロードされたファイルや書き起こしのモデルのキャッシュなどで、
       # それらをコンテナの再作成後も保持する。
       "${stateDir}" = {
         hostPath = stateDir;
@@ -192,7 +192,7 @@ in
               OLLAMA_BASE_URL = "http://[${addr.host6}]:${toString ollamaPort}";
             };
         };
-        # 埋め込みモデルの取得などで名前解決が必要になる。
+        # web検索や書き起こしのモデルの取得などで名前解決が必要になる。
         services.resolved.enable = true;
         networking = {
           useHostResolvConf = lib.mkForce false;
@@ -243,8 +243,7 @@ in
         requires = [ "postgresql-ready.service" ];
         after = [ "postgresql-ready.service" ];
         serviceConfig = {
-          # RAGの文書取り込みでは埋め込みモデルがプロセス内で動き、
-          # torchがコア数分のスレッドを立てて数GiB規模のRSSが数分続く。
+          # 音声の書き起こしではfaster-whisperがプロセス内でCPU推論する。
           # 常時起動のホストで他のワークロードを巻き添えにしないよう上限を設ける。
           # OSや他の処理のために2スレッド分を残す既存のCPU予算を使う。
           CPUQuota = "${toString (config.local.cpuBudgetThreads * 100)}%";

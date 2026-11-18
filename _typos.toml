@@ -20,3 +20,5 @@ passt = "passt"
 rewrited = "rewrited"
 # `gst-thumbnailers`はGStreamerベースのサムネイラ
 thumbnailers = "thumbnailers"
+# MP4/MOVのトラックを表すボックスの名前。FFmpegの関数名`mov_read_trak`など
+trak = "trak"

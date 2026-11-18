@@ -32,6 +32,8 @@
     default.nixを持つサブディレクトリが自動的にimportされる。
     新しい.nixファイルやモジュールディレクトリを追加するだけでモジュールが有効になり、
     default.nixのimportsリストを手動で更新する必要がない。
+    `importDirModules`は`specialArgs`と`extraSpecialArgs`で全てのモジュールに渡している
+    (`lib/mk-nixos-system.nix`と`lib/mk-linux-home-manager.nix`と`nix-on-droid/default.nix`)。
 
   制約:
     - サブディレクトリの走査は1階層のみ。

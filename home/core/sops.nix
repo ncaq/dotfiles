@@ -61,7 +61,7 @@ lib.mkMerge [
     # sops-nixモジュールの`home.activation.sops-nix`は`systemctl`を呼び出しますが、
     # Termux環境ではsystemdが動作しないため、
     # 直接`sops-install-secrets`を実行します。
-    # `lib.mkForce`で元のactivation hookを上書きします
+    # `lib.mkForce`で元のactivation hookを上書きします。
     # 実際のパスはmanifestで明示的に指定済み。
     # GPGの鍵インポート完了後に`sops-install-secrets`を実行します。
     # `importGpgKeys`への依存を明示しないと、

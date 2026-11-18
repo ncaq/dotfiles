@@ -3,7 +3,7 @@ let
   user = config.serviceUser.healthcheck;
 in
 {
-  # ヘルスチェックに使うシステムユーザー。
+  # ヘルスチェックに使うシステムユーザ。
   users = {
     users.healthcheck = {
       inherit (user) uid;

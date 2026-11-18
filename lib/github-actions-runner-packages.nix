@@ -1,5 +1,5 @@
 /**
-  GitHub ActionsのUbuntu 24.04ランナー互換Nixパッケージリスト。
+  GitHub ActionsのUbuntu 24.04ランナ互換Nixパッケージリスト。
 
   - バージョンはnixpkgsのリビジョンに依存するため完全一致ではありません。
   - ひとまずは標準的なバージョンだけを有効にしています。

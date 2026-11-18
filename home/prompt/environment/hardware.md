@@ -27,7 +27,7 @@ fastfetchの機能でGB単位系で表示させようとすると管理領域な
 デスクトップです。
 自作組み立てです。
 
-3つの2TBのNVMe SSDを刺していて、
+3つの2TBのNVMe SSDを挿していて、
 それぞれ個別のOSがブートしています。
 
 - SN8100: bullet: NixOSネイティブブート環境
@@ -86,7 +86,7 @@ fastfetchの機能でGB単位系で表示させようとすると管理領域な
 [ThinkPad P16s Gen 2](https://www.lenovo.com/jp/ja/p/laptops/thinkpad/thinkpad-p-series/thinkpad-p16s-gen-2-16-inch-amd-mobile-workstation/len101t0075)
 です。
 
-ThinkPadですが組み込みの指紋センサーはありません。
+ThinkPadですが組み込みの指紋センサはありません。
 代わりにYubiKey Bioを差し込んで、
 FIDO認証としてディスクの復号化やパスキーなどに使っています。
 

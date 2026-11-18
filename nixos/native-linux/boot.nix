@@ -43,7 +43,7 @@
         extraConfig = ''
           # 最後に起動したエントリを記憶して次回起動時に自動選択します。
           remember_last_entry: yes
-          # ブートローダーでも慣れたdvorak入力を使ってトラブルシューティングを楽にします。
+          # ブートローダでも慣れたdvorak入力を使ってトラブルシューティングを楽にします。
           keyboard_layout: dvorak
         '';
       };

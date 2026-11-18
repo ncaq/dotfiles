@@ -13,7 +13,7 @@ let
   plamoTranslateModel = import ../../lib/plamo-translate-model.nix { inherit pkgs; };
   patchGgufChatTemplate = import ../../lib/patch-gguf-chat-template.nix { inherit pkgs; };
   # registryのQwen3.8が同梱しているパラメータ。
-  # GGUFから自前で組み立てるとparamsレイヤーが付いてこないので明示する。
+  # GGUFから自前で組み立てるとparamsレイヤが付いてこないので明示する。
   # `draft_num_predict`が特に重要で、
   # MTPのドラフトヘッドを埋め込んだGGUFでもこれを指定しないと投機的デコーディングが動かない。
   # bulletでの実測では、
@@ -116,16 +116,16 @@ let
       # unslothのQ6_Kをそのまま使わないのは、
       # ggml-orgと同じくMTPのドラフトヘッドを`MTP/mtp-*.gguf`として別ファイルに切り出しているからである。
       # 本体と一緒に`FROM`へ並べると`ollama create`は取り込みこそするものの、
-      # マニフェストに`model`のレイヤーが2つ並ぶ形になり、
-      # ollamaは最後の`model`レイヤーを本体だと解釈する。
+      # マニフェストに`model`のレイヤが2つ並ぶ形になり、
+      # ollamaは最後の`model`レイヤを本体だと解釈する。
       # bulletではドラフトヘッドが後ろに来て、
       # 1.28GiBのドラフトを本体としてロードしたllama-serverがsegmentation faultで落ちた。
-      # レイヤーの並びは`FROM`の順番では制御できないため、
+      # レイヤの並びは`FROM`の順番では制御できないため、
       # 別ファイルのドラフトヘッドは`FROM`では使えない。
       # 今のOllamaにはドラフトを指定する`DRAFT`があるが、
       # NextN層だけのGGUFを渡せるかは確かめていない。
       #
-      # visionはregistry版がマニフェストの別レイヤーとして同梱しているだけなので、
+      # visionはregistry版がマニフェストの別レイヤとして同梱しているだけなので、
       # 本体のGGUFを取るだけでは付いてこず、clipの投影器を自分で足す必要がある。
       # 投影器はunslothのF16を使う。
       # registry版の投影器も888MiBでF16相当なので、それに揃える。
@@ -277,7 +277,7 @@ let
     }
     // {
       # RAGの埋め込み用モデル。CUDAの有無に関係なく全てのOllamaホストへ登録する。
-      # Open WebUIからの埋め込み要求はCaddyのフェイルオーバーがホストを選ぶため、
+      # Open WebUIからの埋め込み要求はCaddyのフェイルオーバがホストを選ぶため、
       # どちらのホストでも同じモデルが引ける必要がある。
       #
       # registryのpullではなくGGUFから組むのは`num_gpu 0`を焼き込むためである。

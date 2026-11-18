@@ -1,6 +1,6 @@
 # Open WebUIの設定のうち、環境変数で宣言できるものをまとめる。
 #
-# Open WebUIの設定は`configs`テーブルにドット区切りのキーで入るが、
+# Open WebUIの設定は`config`テーブルにドット区切りのキーで入るが、
 # コンテナは`ENABLE_PERSISTENT_CONFIG = "False"`で動いているため、
 # 読み取りは常に環境変数から組み立てた既定値を向く。
 # つまりここに書いた値がインスタンスの設定そのものになり、
@@ -117,15 +117,16 @@
     #
     # 同じ効果は`OFFLINE_MODE`でも得られるが、そちらは使わない。
     # あちらは`HF_HUB_OFFLINE`も立てる。
-    # 埋め込みをOllamaへ移した今のコンテナはHugging Faceから何も取得しないが、
-    # コンテナ内で推論する設定へ戻した時に離れた場所で壊れて原因を探すことになるので、
+    # 埋め込みをOllamaへ移した今もfaster-whisperは、
+    # 初めて書き起こす時に`WHISPER_MODEL`をHugging Faceから取得する。
+    # それが離れた場所で壊れて原因を探すことになるので、
     # 止めたい挙動だけを狙えるこちらを使い続ける。
     ENABLE_VERSION_UPDATE_CHECK = "False";
 
     # 埋め込みはコンテナ内のsentence-transformersではなくOllamaで行う。
     #
     # 接続先の`RAG_OLLAMA_BASE_URL`は未指定なら`OLLAMA_BASE_URL`を使うので、
-    # チャットと同じCaddyのフェイルオーバー(bullet優先、seminarへ退避)をそのまま通る。
+    # チャットと同じCaddyのフェイルオーバ(bullet優先、seminarへ退避)をそのまま通る。
     # モデルはGGUFに`num_gpu 0`を焼き込んで登録しているため、
     # bulletで受けてもGPUには載らず、デスクトップ用途とVRAMを取り合わない。
     #

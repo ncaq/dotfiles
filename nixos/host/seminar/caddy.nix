@@ -14,9 +14,9 @@ in
   # 障害の切り分けが素直になるようにします。
   #
   # niks3-public.ncaq.netはここへ向けません。
-  # 以前はCIランナーがホストのnix-daemonを使っていたので、
+  # 以前はCIランナがホストのnix-daemonを使っていたので、
   # ホストで名前を内部へ向ければCIのキャッシュの出し入れがマシン内で完結しました。
-  # 今のランナーはmicroVMの中のnix-daemonを使い、公開DNSで引いてCloudflare Tunnel経由で届きます。
+  # 今のランナはmicroVMの中のnix-daemonを使い、公開DNSで引いてCloudflare Tunnel経由で届きます。
   # ホスト自身はniks3-privateを優先して使うので、内部の経路を持つ意味が無くなりました。
   #
   # ここに書いた名前は、seminarをexit nodeにしている端末にも内部アドレスとして見えます。
@@ -74,13 +74,13 @@ in
       # garage.ncaq.netをホストのCaddy経由で使うniks3の2つのコンテナのvethからだけ、
       # Caddyの443への接続を許可する。
       # 他のコンテナがvethのホスト側アドレスの443へ繋ぐ用途は無い。
-      # CIランナーの中のniks3クライアントも公開DNSで引いてCloudflare Tunnel経由で届く。
-      # インターフェイス名は`ve-niks3-private`が15文字に収まらず縮められるので、
+      # CIランナの中のniks3クライアントも公開DNSで引いてCloudflare Tunnel経由で届く。
+      # インタフェース名は`ve-niks3-private`が15文字に収まらず縮められるので、
       # `lib/container-ifname.nix`でパターンにする。
       #
       # Tailscale経由の接続はここでは開けない。
       # tailscaledが`INPUT`の先頭に挿す`ts-input`チェインが、
-      # Tailscaleインターフェースから入る全パケットを先にACCEPTするので、
+      # Tailscaleインタフェースから入る全パケットを先にACCEPTするので、
       # NixOSのfirewallはそもそも評価されない。
       # exit node経由の端末からこのアドレスへ届くかどうかは、
       # tailscaledのパケットフィルタとtailnetのACLで決まる。
@@ -95,7 +95,7 @@ in
             allowedTCPPorts = [ 443 ];
           });
     };
-    # vethインターフェースはコンテナ起動時に作成されるため、
+    # vethインタフェースはコンテナ起動時に作成されるため、
     # Caddy起動時にはまだバインド先IPが存在しない場合がある。
     # ip_nonlocal_bindを有効にして未割当アドレスへのバインドを許可する。
     # IPv6ではアドレスが付いた直後の重複検出(DAD)が終わるまでの間も、

@@ -14,6 +14,6 @@ newtype Flake = Flake Text
 -- | デプロイ時に配置されるflake。
 --
 -- 作業ツリーではなくこれを参照するので、
--- 登録されるのは今動いている構成と同じリビジョンの閉包になる。
+-- 登録されるのは今動いている構成と同じリビジョンのクロージャになる。
 deployedFlake :: Flake
 deployedFlake = "/etc/nixos-flake"

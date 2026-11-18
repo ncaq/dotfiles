@@ -17,7 +17,7 @@ let
   # 設定は`options.containers`と`options.microvm.vms`のsubmoduleへ足した定義が、
   # 各マシンの定義と合成されることで入るので、
   # 合成が崩れても起動しないマシンでは評価もブートも通ってしまいます。
-  # GitHub ActionsのランナーのVMがちょうど起動しないマシンです。
+  # GitHub ActionsのランナのVMがちょうど起動しないマシンです。
   #
   # 以下を見ます。
   #

@@ -94,7 +94,7 @@
     # nix.confのfragmentを生成することでクライアント側にも読める設定ファイルにします。
     # 自分のアカウントだけのFine-grained personal access tokensで、
     # Fine-grainedの最小限の権限であるPublic Repository権限だけを持ちます。
-    # なので万が一漏れても大した問題はないので、
+    # 万が一漏れても大した問題はないので、
     # 権限は緩めで問題ありません。
     templates."github-nix-avoid-rate-limit-token.conf" = {
       content = ''
@@ -114,7 +114,7 @@
       mode = "0400";
     };
     secrets = {
-      # 最小権限の権限で`access-tokens`を設定します。
+      # 最小限の権限で`access-tokens`を設定します。
       # こちらはtemplatesが作れれば良いため、
       # rootさえ読めれば問題ありません。
       "github-nix-avoid-rate-limit-token" = {

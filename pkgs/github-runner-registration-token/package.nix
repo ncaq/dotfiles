@@ -1,6 +1,6 @@
-# GitHub Actionsのランナーの登録トークンを発行してファイルに置くコマンド。
+# GitHub Actionsのランナの登録トークンを発行してファイルに置くコマンド。
 #
-# seminarのランナーの隔離環境ごとのサービスから呼ばれる。
+# seminarのランナの隔離環境ごとのサービスから呼ばれる。
 # 何をするかは`src/GithubRunnerRegistrationToken/Cli.hs`に、
 # 入力の環境変数は`src/GithubRunnerRegistrationToken/Config.hs`に書いてある。
 #
@@ -32,6 +32,6 @@ let
   package = packages.callCabal2nix "github-runner-registration-token" source { };
 in
 lib.pipe package [
-  # seminarの閉包へGHCを持ち込まない。
+  # seminarのクロージャへGHCを持ち込まない。
   haskell.lib.compose.justStaticExecutables
 ]

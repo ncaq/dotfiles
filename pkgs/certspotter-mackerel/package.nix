@@ -5,7 +5,7 @@
 # - `certspotter-mackerel hook`: certspotterのhookとして、イベントを1行のJSONでログへ追記する
 # - `certspotter-mackerel check`: Mackerelのチェックとして、ログに最近のイベントがあればWARNINGかCRITICALにする
 #
-# `nixos/host/seminar/certspotter.nix`が設定の環境変数を付けたラッパーで包んで使う。
+# `nixos/host/seminar/certspotter.nix`が設定の環境変数を付けたラッパで包んで使う。
 # 入力は全て環境変数で、何が要るかは`src/CertspotterMackerel/Config.hs`と
 # `src/CertspotterMackerel/Notification.hs`に書いてある。
 #
@@ -41,6 +41,6 @@ let
   package = packages.callCabal2nix "certspotter-mackerel" source { };
 in
 lib.pipe package [
-  # seminarの閉包へGHCを持ち込まない。
+  # seminarのクロージャへGHCを持ち込まない。
   haskell.lib.compose.justStaticExecutables
 ]

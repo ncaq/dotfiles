@@ -42,7 +42,7 @@ linuxKernel.kernels.linux_xanmod.override (oldArgs: {
         # mainlineデフォルトは`PREEMPT_RT=y`の時のみ`y`、それ以外は`n`。
         RCU_BOOST = lib.mkForce no;
         # `RCU_BOOST_DELAY`はxanmodが`"0"`(即時ブースト)に設定しているが、
-        # `RCU_BOOST=n`に依存するKconfigなので無効化される。
+        # `RCU_BOOST`に依存するKconfigなので`RCU_BOOST=n`では無効化される。
         # ただしxanmodの設定が`optional=false`(必須)のままだと、
         # nixpkgsの`generate-config.pl`が依存切れによるunused optionをエラー扱いするため、
         # `option`でoptional化(`?`付き)してwarning扱いに留める。

@@ -68,7 +68,7 @@ const execution = [
 describe("summarizeExecution", () => {
   const lines = summarizeExecution(execution);
 
-  it("プラグインとMCPサーバーの状態を出す", () => {
+  it("プラグインとMCPサーバの状態を出す", () => {
     expect(lines).toContain("init: claude_code_version=2.1.318 model=claude-opus-5-5");
     expect(lines).toContain("plugin: commit@3.1.1");
     expect(lines).toContain("plugin: research@?");

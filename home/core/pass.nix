@@ -75,7 +75,7 @@ in
     # `programs.password-store`による変数設定は、
     # GUIアプリやsystemdサービス(`emacs.service`など)には届かない。
     # その結果magit経由のpushなどが失敗していました。
-    # ここで設定すればsystemdユーザーマネージャ配下の全プロセスに伝播します。
+    # ここで設定すればsystemdユーザマネージャ配下の全プロセスに伝播します。
     sessionVariables = {
       inherit
         PASSWORD_STORE_DIR

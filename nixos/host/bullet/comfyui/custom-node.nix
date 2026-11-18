@@ -31,7 +31,7 @@ in
       ++ pkgs.comfyui-lora-manager.pythonDependencies pythonPkgs;
     # FaceDetailerなどディテール修復ノード群のImpact Pack(ADetailer相当)は、
     # comfyui-nixが同梱して配置するものを使うので、ここでは宣言しない。
-    # ランチャーはExecStartで同梱ノードを`ln -sfn`するため、
+    # ランチャはExecStartで同梱ノードを`ln -sfn`するため、
     # 同梱ノードと同じ名前を`customNodes`に書いても同梱版で上書きされる。
     customNodes = {
       "ComfyUI-Ncaq-Nodes" = pkgs.comfyui-ncaq-nodes;

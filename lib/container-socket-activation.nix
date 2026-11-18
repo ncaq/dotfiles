@@ -86,7 +86,7 @@ in
   };
   sockets."${container}-proxy" = {
     description = "Socket for on-demand ${label} activation";
-    # このリポジトリの中から繋ぐもの(Tailscale Serveや各ラッパー)は`[::1]`を指す。
+    # このリポジトリの中から繋ぐもの(Tailscale Serveや各ラッパ)は`[::1]`を指す。
     # 127.0.0.1でも待ち受けるのは、
     # OllamaやComfyUIを叩く外部のツールの多くが既定の接続先を`127.0.0.1`で持っていて、
     # 設定せずに使うとIPv4のloopbackへ繋ぎに来るため。

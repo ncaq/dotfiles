@@ -10,11 +10,11 @@
     // libが未指定ならデフォルトlibもこの値から導出されます。
     "target": "es2024",
     // 出力するモジュール形式。
-    // バンドラに委ねる`preserve`、Node.jsの解決に委ねる`node20`、純粋ESMの`es2022`。
+    // バンドラに委ねる`preserve`、Node.jsの解決に委ねる`node20`、純粋ESMの`es2022`
     // あたりから大抵は選択することになります。
     "module": "node20",
     // import文のパス解決アルゴリズム。
-    // バンドラを想定した寛容な解決を行う`bundler`、Node.js公式の解決を行う`node16`。
+    // バンドラを想定した寛容な解決を行う`bundler`、Node.js公式の解決を行う`node16`
     // あたりから大抵は選択することになります。
     "moduleResolution": "node16",
     // JSONファイルをimportできるようになります。
@@ -51,7 +51,7 @@
      */
     "noEmit": true, // JSを出力せず、型チェックのみ行う設定ができます。
     // `noEmit`が`true`の場合は何も出力されないのでこれ以下の設定は意味はないですが害もありません。
-    // `noEmit`を`false`の場合の設定も残したいので常に記述します。
+    // `noEmit`が`false`の場合の設定も残したいので常に記述します。
     "declaration": true, // 型定義ファイル(.d.ts)を生成できます。
     "declarationMap": true, // `.d.ts`からソースへのソースマップを生成できます。
     "outDir": "dist", // 出力先ディレクトリを指定できます。

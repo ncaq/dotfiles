@@ -35,7 +35,7 @@
   priorityを`filter - 1`にしてnixos-fwより先に評価させるのは、
   dropが決まっているパケットに他のチェインの評価を費やさないため。
 
-  送信元アドレスではなくインターフェイス名で見るのは、
+  送信元アドレスではなくインタフェース名で見るのは、
   コンテナのrootは自分のnetns内で任意の送信元アドレスを名乗れるため。
 
   # IPv6
@@ -66,7 +66,7 @@
     前提が崩れたかは`ip -6 route`に`proto ra`の/64があるかで分かる。
   - 自宅LANが1つのセグメントであること。
     IPv4の`192.168.0.0/16`はルータ越しの別セグメントも含めて落とすが、
-    IPv6ではルータの先にある別セグメントやルータの別インターフェイスのグローバルアドレスは、
+    IPv6ではルータの先にある別セグメントやルータの別インタフェースのグローバルアドレスは、
     インターネット宛と区別が付かず通る。
     今の自宅LANにそのような宛先は無い。
 
@@ -84,7 +84,7 @@ let
   tailscale = config.local.tailscale;
   parseIpv6 = import ../../lib/parse-ipv6.nix { inherit lib; };
 
-  # 宣言を名前付きのリストにして、インターフェイスのパターンごとにまとめる。
+  # 宣言を名前付きのリストにして、インタフェースのパターンごとにまとめる。
   # `lib/container-ifname.nix`のワイルドカードで複数のコンテナが同じパターンに一致する時、
   # マシンごとにルールを並べると先のマシンのdropで後のマシンのacceptが届かなくなる。
   # 同じパターンのマシンは同じ方針でなければならない(assertionで検査する)ので、
@@ -110,9 +110,9 @@ let
   undeclared = lib.subtractLists (lib.attrNames cfg) expected;
   unknown = lib.subtractLists expected (lib.attrNames cfg);
 
-  # NATモジュールが転送を通すインターフェイスの集合。
+  # NATモジュールが転送を通すインタフェースの集合。
   # ベースチェインでこの集合からのパケットだけを許可リストへ回すので、
-  # 宣言したインターフェイスがこの集合に入っていなければ許可リストは評価すらされない。
+  # 宣言したインタフェースがこの集合に入っていなければ許可リストは評価すらされない。
   internalInterfaces = config.networking.nat.internalInterfaces;
   matchesPattern =
     pattern: ifname:
@@ -126,7 +126,7 @@ let
 
   nftSet = list: lib.concatMapStringsSep ", " (x: ''"${x}"'') list;
 
-  # インターフェイスのパターン1つ分のルールの行のリスト。
+  # インタフェースのパターン1つ分のルールの行のリスト。
   renderGroup =
     group:
     let
@@ -159,7 +159,7 @@ in
               default = import ../../lib/container-ifname.nix { inherit lib name; };
               defaultText = lib.literalMD "`lib/container-ifname.nix`でコンテナ名から導いたvethの名前";
               description = ''
-                このマシンからのパケットが入ってくるホスト側のインターフェイス名。
+                このマシンからのパケットが入ってくるホスト側のインタフェース名。
                 nftablesの`iifname`に渡すので末尾の`*`でワイルドカードにできる。
                 コンテナはvethの名前が既定で導けるが、
                 microVMはTAPの名前を`microvm.vms.<name>.config.microvm.interfaces`で決めているので、
@@ -279,7 +279,7 @@ in
       }
       {
         assertion = conflictingInterfaces == { };
-        message = "local.machineEgress: 同じインターフェイスのパターンに一致するマシンの方針が食い違っています: ${
+        message = "local.machineEgress: 同じインタフェースのパターンに一致するマシンの方針が食い違っています: ${
           lib.concatStringsSep "; " (
             lib.mapAttrsToList (
               iface: group: "${iface} (${lib.concatMapStringsSep ", " (m: m.name) group})"
@@ -289,7 +289,7 @@ in
       }
       {
         assertion = uncovered == [ ];
-        message = "local.machineEgress: networking.nat.internalInterfacesに含まれないインターフェイスは許可リストが評価されません: ${
+        message = "local.machineEgress: networking.nat.internalInterfacesに含まれないインタフェースは許可リストが評価されません: ${
           lib.concatMapStringsSep ", " (m: "${m.name} (${m.interface})") uncovered
         }";
       }

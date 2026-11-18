@@ -9,7 +9,7 @@ let
   # PostgreSQLのバージョンによってdataDirなどが変更される。
   # `stateVersion`依存でデフォルトバージョンは定まりますが、
   # 明示的に指定して意図しないアップグレードを防ぎます。
-  # JITコンパイラは単純なクエリには使われないためデメリットが薄いため、
+  # JITコンパイラは単純なクエリには使われずデメリットが薄いため、
   # 有効にしておくメリットの方が大きいと判断して雑に有効化しておきます。
   postgresql = pkgs.postgresql_18_jit;
   postgresUser = config.serviceUser.postgres;
@@ -27,7 +27,7 @@ in
     postgresClient = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ ];
-      description = "PostgreSQLへpeer認証で接続するクライアントユーザー名のリスト";
+      description = "PostgreSQLへpeer認証で接続するクライアントユーザ名のリスト";
     };
     postgresExtension = lib.mkOption {
       type = lib.types.attrsOf (lib.types.listOf lib.types.str);
@@ -139,7 +139,7 @@ in
         };
     };
 
-    # ホスト側にもpostgresユーザーを作成。
+    # ホスト側にもpostgresユーザを作成。
     # bindMountディレクトリの所有権とtmpfilesルールに必要。
     users = {
       users = {

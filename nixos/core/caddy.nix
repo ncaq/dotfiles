@@ -32,7 +32,7 @@
     # 死活監視用のエンドポイント。
     # Caddyには`/health`のようなヘルスチェック専用のエンドポイントが公式には存在せず、
     # admin APIの`/config/`を叩くのが慣習的な代用になっていますが、
-    # あれは設定を返すAPIであってHTTPリスナーが実際に応答できるかは分かりません。
+    # あれは設定を返すAPIであってHTTPリスナが実際に応答できるかは分かりません。
     # admin APIがUNIXソケットに移ってTCPから叩けなくなったこともあり、
     # 公式ドキュメントが案内している`respond`で自前のエンドポイントを立てます。
     # https://caddyserver.com/docs/caddyfile/directives/respond

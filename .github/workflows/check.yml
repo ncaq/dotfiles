@@ -15,8 +15,8 @@ concurrency:
 jobs:
   is-trusted:
     name: is-trusted
-    # 信頼できるソースからのトリガーかを判定します。
-    # セルフホステッドランナーの利用を制御するために使用します。
+    # 信頼できるソースからのトリガかを判定します。
+    # セルフホステッドランナの利用を制御するために使用します。
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -56,7 +56,7 @@ jobs:
 
   nix-fast-build:
     name: nix-fast-build
-    # セルフホステッドランナーで確かめるものを、1回の`nix-fast-build`でまとめて処理します。
+    # セルフホステッドランナで確かめるものを、1回の`nix-fast-build`でまとめて処理します。
     # チェック、全ホストとhome-managerの構成のビルド、ホストのブートテストです。
     #
     # 以前はこれらを別々のジョブに分けていましたが、
@@ -67,7 +67,7 @@ jobs:
     permissions:
       contents: read # リポジトリコンテンツの読み取り
       id-token: write # `ncaq/nix-composite-action`内のniks3-publicとのOIDC認証に使用
-    # セルフホステッドランナーは未認証のソースからは実行しない。
+    # セルフホステッドランナは未認証のソースからは実行しない。
     # フォークからのPRは`is-trusted`が失敗するので、ここも後ろのジョブも動きません。
     if: needs.is-trusted.result == 'success'
     runs-on: [self-hosted, Linux]
@@ -84,10 +84,10 @@ jobs:
   build-nix-on-droid:
     name: build-nix-on-droid
     # ビルドするものはaarch64なので、
-    # GitHubホステッドのaarch64のランナーでエミュレーション無しにビルドします。
-    # セルフホステッドランナーはx86_64なので、
-    # そちらで動かすとQEMUのユーザーモードでのエミュレーションが要ります。
-    # セルフホステッドランナーを使わないので`is-trusted`の結果は待ちません。
+    # GitHubホステッドのaarch64のランナでエミュレーション無しにビルドします。
+    # セルフホステッドランナはx86_64なので、
+    # そちらで動かすとQEMUのユーザモードでのエミュレーションが要ります。
+    # セルフホステッドランナを使わないので`is-trusted`の結果は待ちません。
     # そのためフォークからのPRでも動きます。
     # その時はOIDCのトークンが発行されませんが、
     # `Mic92/niks3-action`はキャッシュへの登録を飛ばして取得だけを設定するので、

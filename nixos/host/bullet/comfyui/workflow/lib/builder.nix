@@ -190,7 +190,7 @@ let
           outputs = [
             (mkOutput "MODEL" "MODEL" modelLinks)
             (mkOutput "CLIP" "CLIP" clipLinks)
-            # LoRAのトリガーワードと適用したLoRAの一覧を文字列で出す補助出力。
+            # LoRAのトリガワードと適用したLoRAの一覧を文字列で出す補助出力。
             # プロンプトへ繋ぐ使い方があるが、ここでは使わないので未接続にする。
             (mkOutput "trigger_words" "STRING" [ ])
             (mkOutput "loaded_loras" "STRING" [ ])
@@ -569,7 +569,7 @@ let
         appWorkflow.extra.linearMode == false && appWorkflow.extra.linearData == appMeta
       ) "App Mode定義がextraへ反映されていません";
       true;
-    # denoiseの強さがサンプラーの選択とステップ数へ変換されることを検証する。
+    # denoiseの強さがサンプラの選択とステップ数へ変換されることを検証する。
     denoise =
       let
         builder = self;
@@ -710,7 +710,7 @@ let
           "loaded_loras"
         ]
       ) "出力スロットの名前か並びが想定と違います";
-      # LoRA一覧の内部状態、テキスト、有効なLoRAのリストの順。
+      # テキスト補完のメタデータ、テキスト、LoRAのリストの順。
       assert lib.assertMsg (
         withClip.widgets_values == [
           {

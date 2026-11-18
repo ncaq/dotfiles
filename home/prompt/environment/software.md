@@ -51,7 +51,7 @@ GnuPGで管理している鍵をThunderbirdのOpenPGP機能でPCでもAndroid環
 設定は、
 [ncaq/.zsh.d](https://github.com/ncaq/.zsh.d)
 で管理されています。
-`~/.zsh.d`に`git clone`されています。
+`~/.config/zsh/.zsh.d`に`git clone`されています。
 
 ## ターミナルエミュレータ
 
@@ -76,7 +76,7 @@ PCでは[KeePassXC](https://keepassxc.org/)を使っています。
 
 Androidでは[KeePassDX](https://github.com/Kunzisoft/KeePassDX)を使っています。
 
-KeePassのデータベースファイルはマスターデータです。
+KeePassのデータベースファイルはマスタデータです。
 
 Firefoxのパスワードマネージャはキャッシュとして使っていて、
 そのまま入力できる簡単なフォームならFirefoxに入力を任せています。

@@ -147,7 +147,7 @@ let
 
           # Open WebUI側のフォームに無い`type`。
           #
-          # このPRで2回踏んだ不具合はどちらもこの形だった。
+          # 実際に2回踏んだ不具合はどちらもこの形だった。
           # `negative_prompt`は`ComfyUIEditImageForm`が属性を持たないため実行時に落ち、
           # `steps`はフィールドはあっても既定が`None`のまま誰も値を入れなかった。
           # 接続の整合性だけを見る検査では両方とも素通りする。
@@ -233,7 +233,7 @@ let
     inherit (self) checks assertions;
 
     # 実際のワークフローの構造を最小限に写したもの。
-    # ローダーからサンプラーを経て保存ノードへ至る、という骨格は同じにする。
+    # ローダからサンプラを経て保存ノードへ至る、という骨格は同じにする。
     validWorkflow = {
       "1" = {
         class_type = "UNETLoader";
@@ -261,7 +261,7 @@ let
       };
     };
 
-    # 2つ目のサンプラー。
+    # 2つ目のサンプラ。
     # `seed`のように1つの入力を複数のノードへ配る形を再現するために置く。
     # 実際の`image-generation.nix`は`seed`を`[ "7" "14" "17" ]`の3つへ、
     # `image-edit.nix`は`image`を`[ "4" "17" "18" ]`の3つへ配っている。
@@ -522,7 +522,7 @@ let
         inherit (fixture) validNodes requiredTypes run;
       in
       # Open WebUI側のフォームに無い`type`を書いた場合。
-      # このPRで踏んだ`negative_prompt`と`steps`がこの形だった。
+      # 実際に踏んだ`negative_prompt`と`steps`がこの形だった。
       assert lib.assertMsg (
         (run {
           workflowNodes = validNodes ++ [

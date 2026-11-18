@@ -83,7 +83,7 @@ fn f32_values(data: &[u8]) -> impl Iterator<Item = f32> + '_ {
 /// F32をF16へ変換しながら書き出すためのテンソル。
 ///
 /// `View::data`は`Result`を返せないので、
-/// オーバーフローは`overflow`へ記録しておき書き終えてから失敗させる。
+/// オーバフローは`overflow`へ記録しておき書き終えてから失敗させる。
 struct Fp16View<'a> {
     name: &'a str,
     tensor: TensorView<'a>,
@@ -153,7 +153,7 @@ pub fn convert(src: &Path, dst: &Path, allow_overflow: bool) -> Result<()> {
         .with_context(|| format!("failed to write {}", dst.display()))?;
     // `serialize_to_file`は隣の一時ファイルへ書いてからrenameするので、
     // 書き込みの途中で失敗した時は一時ファイルが消えてdstは作られない。
-    // 消す必要があるのは、書き終えてからオーバーフローが分かったここだけ。
+    // 消す必要があるのは、書き終えてからオーバフローが分かったここだけ。
     if let Some(name) = overflow.get() {
         std::fs::remove_file(dst).with_context(|| format!("failed to remove {}", dst.display()))?;
         bail!("{name}: F32 values overflow to infinity in F16; pass --allow-overflow to accept");

@@ -30,7 +30,7 @@
 
   - `lib`: `mkForce`と末尾の`assert`に使う
   - `name`: 対象のコンテナ名。
-    vethのインターフェース名とユニット名の両方を導く
+    vethのインタフェース名とユニット名の両方を導く
   - `addr`: IPv6の`host6`と`guest6`、IPv4の`host4`と`guest4`を持つアドレスの組。
     IPv4を持たないマシンでは`host4`と`guest4`は`null`で、IPv4の設定を出さない。
     `machineAddresses`の同名エントリをそのまま渡す
@@ -59,8 +59,8 @@ let
           ip route add ${addr.guest4} dev "$ifaceHost" 2>/dev/null || true
         ''
       );
-      # Linuxのインターフェース名はIFNAMSIZ(15文字)制限があるため、
-      # 実際のインターフェース名は`ve-github-rRhHH`のように短縮されることがある。
+      # Linuxのインタフェース名はIFNAMSIZ(15文字)制限があるため、
+      # 実際のインタフェース名は`ve-github-rRhHH`のように短縮されることがある。
       # しかしsystemd-networkdの`matchConfig.Name`はaltname(代替名)もマッチするため、
       # コンテナ名から生成される完全な名前で正しくマッチする。
       network.networks."20-${name}-veth" = {

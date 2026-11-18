@@ -1,6 +1,6 @@
 -- | 起動時に受け取る設定。環境変数から受け取る。
 --
--- * `GITHUB_RUNNER_REGISTRATION_TOKEN_REPOSITORY`: ランナーを登録するリポジトリ。
+-- * `GITHUB_RUNNER_REGISTRATION_TOKEN_REPOSITORY`: ランナを登録するリポジトリ。
 --   `ncaq/dotfiles`のように所有者と名前を`/`で繋いで書く。
 -- * `GITHUB_RUNNER_REGISTRATION_TOKEN_API`: GitHubのAPIのURL。
 --   `https://api.github.com`のようにパスを付けずに書く。

@@ -43,7 +43,7 @@ in
           description = "画像に含めたくない内容";
         })
         (mkAppInputWith 5 "start_at_step" {
-          description = "全28ステップ中のどこから描き直すか。20で微調整、14で描き直し、8以下で大胆に変更";
+          description = "全28ステップ中のどこから描き直すか。20で微調整、14で描き直し、9以下で大胆に変更";
         })
         (mkAppInput 5 "noise_seed")
       ];

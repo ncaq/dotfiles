@@ -16,7 +16,7 @@ import { parse } from "yaml";
 /** 範囲の無い`Bash`と同じ意味になる書き方。 */
 const UNRESTRICTED_BASH: ReadonlySet<string> = new Set(["Bash", "Bash(*)", "Bash(*:*)"]);
 
-/** バイト順マーク。ソースに直接書くとリンターが不正な空白として扱うので、コードポイントから作ります。 */
+/** バイト順マーク。ソースに直接書くとリンタが不正な空白として扱うので、コードポイントから作ります。 */
 export const BOM = String.fromCodePoint(0xfeff);
 
 /** frontmatterの区切りの行か。行末の空白は許します。 */

@@ -1,6 +1,6 @@
 # mackerel-mcp-server - Mackerel MCP Server
 # https://github.com/mackerelio-labs/mcp-server
-# Mackerel公式のMCPサーバーです。
+# Mackerel公式のMCPサーバです。
 {
   lib,
   buildNpmPackage,

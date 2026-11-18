@@ -1,4 +1,4 @@
-# flakeに定義された全ホストの閉包をGC rootとして登録するコマンド。
+# flakeに定義された全ホストのクロージャをGC rootとして登録するコマンド。
 #
 # `nixos/host/seminar/nix-gc-root-hosts.nix`のサービスから呼ばれる。
 # 何をどう登録するかは`src/NixGcRootHosts/Register.hs`に書いてある。

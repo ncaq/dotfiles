@@ -51,7 +51,7 @@ in
 
   # Open WebUIの出口はインターネットだけ。
   # web検索(`web-search.nix`)のAPIと検索結果のページの取得、
-  # 埋め込みモデルのHugging Faceからの取得に要る。
+  # 書き起こしのモデル(`WHISPER_MODEL`)のHugging Faceからの取得に要る。
   # OllamaとComfyUIへはホストのCaddy(`ollama-backend.nix`と`comfyui-backend.nix`)へ繋ぐので、
   # 転送ではなくinputで届く。
   # PostgreSQLはUnixソケット。
@@ -77,7 +77,7 @@ in
     localAddress = addr.guest4;
     bindMounts = {
       # DBとベクトルはPostgreSQLへ移したため、
-      # ここに残るのはアップロードされたファイルや埋め込みモデルのキャッシュなどで、
+      # ここに残るのはアップロードされたファイルや書き起こしのモデルのキャッシュなどで、
       # それらをコンテナの再作成後も保持する。
       "${stateDir}" = {
         hostPath = stateDir;
@@ -146,7 +146,7 @@ in
               # `PGVECTOR_DB_URL`は未指定なら`DATABASE_URL`を使う。
               #
               # 公式が継続メンテナンスするエンジンはchromaとpgvectorだけで、
-              # chromaはfork-safeではなく並行アップロードでワーカーが落ちる問題も知られている。
+              # chromaはfork-safeではなく並行アップロードでワーカが落ちる問題も知られている。
               # ref https://github.com/ncaq/blue-prompt/issues/183
               VECTOR_DB = "pgvector";
               # pgvector拡張はtrustedではなくアプリのユーザでは作成できないため、
@@ -157,13 +157,13 @@ in
               # 逐次の追記に強くパラメータ調整も不要なHNSWを最初から選ぶ。
               PGVECTOR_INDEX_METHOD = "hnsw";
               # DB接続のプール設定。
-              # 未設定でもSQLAlchemy既定のQueuePool(プール5+オーバーフロー10)で動くため、
+              # 未設定でもSQLAlchemy既定のQueuePool(プール5+オーバフロー10)で動くため、
               # この宣言の目的は既定プールの明示的な拡大と、
               # 接続数の予算をこの場で見える化することである。
               #
               # 数値は必要量と上限の挟み撃ちで決めた推定値である。
               # UIのページロード時に並列で飛ぶAPI(10本前後)をプールで吸収し、
-              # Knowledge同期の書き込みと重なるバーストをオーバーフローで逃がす。
+              # Knowledge同期の書き込みと重なるバーストをオーバフローで逃がす。
               #
               # `DATABASE_POOL_*`は実行時のasyncエンジンだけでなく、
               # 起動時の処理が使うsyncエンジンにも同じ値が適用される。
@@ -180,7 +180,7 @@ in
               # 本体のセッションを使い回す分岐には入らず独立エンジンが作られ、
               # この値が実際に効く。
               #
-              # オーバーフローの既定は本体側の10と違い0で、
+              # オーバフローの既定は本体側の10と違い0で、
               # サイズだけを設定するとバーストの逃げ道が無いハードキャップになる。
               # RAG検索はクエリ数xコレクション数をスレッドでファンアウトするため、
               # 複数Knowledgeを紐付けたチャットで容易に5本を超え、
@@ -192,7 +192,7 @@ in
               OLLAMA_BASE_URL = "http://[${addr.host6}]:${toString ollamaPort}";
             };
         };
-        # 埋め込みモデルの取得などで名前解決が必要になる。
+        # web検索や書き起こしのモデルの取得などで名前解決が必要になる。
         services.resolved.enable = true;
         networking = {
           useHostResolvConf = lib.mkForce false;
@@ -243,8 +243,7 @@ in
         requires = [ "postgresql-ready.service" ];
         after = [ "postgresql-ready.service" ];
         serviceConfig = {
-          # RAGの文書取り込みでは埋め込みモデルがプロセス内で動き、
-          # torchがコア数分のスレッドを立てて数GiB規模のRSSが数分続く。
+          # 音声の書き起こしではfaster-whisperがプロセス内でCPU推論する。
           # 常時起動のホストで他のワークロードを巻き添えにしないよう上限を設ける。
           # OSや他の処理のために2スレッド分を残す既存のCPU予算を使う。
           CPUQuota = "${toString (config.local.cpuBudgetThreads * 100)}%";

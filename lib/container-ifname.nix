@@ -1,9 +1,9 @@
 /**
-  NixOS Containerのvethのホスト側インターフェイス名を、
+  NixOS Containerのvethのホスト側インタフェース名を、
   nftablesの`iifname`や`networking.firewall.interfaces`で使える形で返す関数。
 
   nspawnはvethを`ve-<コンテナ名>`と名付けるが、
-  Linuxのインターフェイス名はIFNAMSIZの制限で15文字までしか持てない。
+  Linuxのインタフェース名はIFNAMSIZの制限で15文字までしか持てない。
   収まらない名前はsystemdの`shorten_ifname`が先頭11文字を残して、
   元の名前のハッシュから作った4文字を足した名前に縮める。
   実機では`ve-niks3-private`が`ve-niks3-preMOW`に、

@@ -1,10 +1,10 @@
 /**
-  GitHub ActionsのセルフホステッドランナーをmicroVMで動かします。
+  GitHub ActionsのセルフホステッドランナをmicroVMで動かします。
 
-  ランナーの中ではリポジトリのワークフローが持ち込んだコードが動きます。
+  ランナの中ではリポジトリのワークフローが持ち込んだコードが動きます。
   以前はNixOSコンテナで動かして、
   ホストのnix-daemonのソケットを共有していました。
-  ランナーのユーザーはホストのnix-daemonの`trusted-users`で、
+  ランナのユーザはホストのnix-daemonの`trusted-users`で、
   これはホストのrootを渡すのと変わりません。
   VMの中にnix-daemonを持たせて、
   ホストのnix-daemonには触れさせないようにします。
@@ -64,11 +64,11 @@ let
     users
     ciNixSettings
     ;
-  # ランナーのユーザーのUIDとGID。ホストとVMで同じ値です。
+  # ランナのユーザのUIDとGID。ホストとVMで同じ値です。
   runnerUser = config.serviceUser.github-runner;
-  # cdn.ncaq.netのランナーへ共有するステージングのディレクトリ。
+  # cdn.ncaq.netのランナへ共有するステージングのディレクトリ。
   cdnDeployRoot = config.local.cdnDeploy.deployRoot;
-  # リポジトリごとのランナーのVMの定義。
+  # リポジトリごとのランナのVMの定義。
   # attr名がそのままVMの名前になります。
   # IPアドレスとvsockのCIDは`machineAddresses`と`microvmCid`の同名のエントリを参照するため、
   # VMを追加する時は`machine-mapping.nix`にも同名のエントリが必要です。
@@ -80,25 +80,25 @@ let
       # VMでは評価もビルドもVMのメモリを使うので、
       # 同時に動かすジョブを1つに絞ります。
       # ジョブが重なった時は後の方が待ちますが、
-      # その代わりに1つのジョブがVMのメモリを全て評価のワーカーに使えます。
+      # その代わりに1つのジョブがVMのメモリを全て評価のワーカに使えます。
       runnerNum = 1;
       url = "https://github.com/ncaq/dotfiles";
-      # ホスト側のTAPインターフェイス名。
-      # インターフェイス名は15文字までなので、VMの名前より短くします。
+      # ホスト側のTAPインタフェース名。
+      # インタフェース名は15文字までなので、VMの名前より短くします。
       tap = "vm-gh-dotfiles";
       mac = "02:00:00:00:00:41"; # 末尾バイトはゲストIPアドレスに対応
       vcpu = config.local.cpuBudgetThreads;
-      # `nix-fast-build`のラッパーが評価のワーカーを3つにする大きさにしています。
-      # ラッパーはVMから見えるメモリの半分を`runnerNum`で割り、
-      # さらにワーカー1つあたりの4GiBで割ります。
-      # ランナーが1つなら、VMから見えるメモリが24GiB以上32GiB未満でワーカーは3つです。
+      # `nix-fast-build`のラッパが評価のワーカを3つにする大きさにしています。
+      # ラッパはVMから見えるメモリの半分を`runnerNum`で割り、
+      # さらにワーカ1つあたりの4GiBで割ります。
+      # ランナが1つなら、VMから見えるメモリが24GiB以上32GiB未満でワーカは3つです。
       #
-      # その幅の中で上の方にしているのは、ワーカーが実際には4GiBより多く使うためです。
+      # その幅の中で上の方にしているのは、ワーカが実際には4GiBより多く使うためです。
       # seminarの構成の評価は1つで7GiBほど使い、
       # 評価の途中でブートテストのVMも動きます。
-      # ランナーが2つでワーカーも2つずつだった頃は、24GiBでは`nix-eval-jobs`のワーカーがOOMで落ちました。
+      # ランナが2つでワーカも2つずつだった頃は、24GiBでは`nix-eval-jobs`のワーカがOOMで落ちました。
       # VMから見えるメモリはカーネルが自分で使う分だけ割り当てより1GiBほど減るので、
-      # 32GiBを割り当ててもワーカーは4つにはなりません。
+      # 32GiBを割り当ててもワーカは4つにはなりません。
       mem = 32 * 1024;
       # CIでNixOS TestのVMを動かします。
       nestedVirt = true;
@@ -109,7 +109,7 @@ let
       # 認証情報をコマンドに渡さないための隔離としてコマンドをbubblewrapの中で実行します。
       # bubblewrapは名前空間を作って`/proc`をマウントし直すので、
       # 以下の制限があると1つのコマンドも実行できません。
-      # ランナーと同じ制限を付けた一時的なユニットで、1つずつ確かめました。
+      # ランナと同じ制限を付けた一時的なユニットで、1つずつ確かめました。
       #
       # - `RestrictNamespaces`: 名前空間を作れない
       # - `SystemCallFilter`の`~@mount`と`~capset`: bubblewrapがシグナルで落ちる
@@ -118,7 +118,7 @@ let
       #
       # ジョブをホストや他のVMから守るのはmicroVMの隔離で、
       # サービス単位の制限はVMの中での多層防御です。
-      # 外すのはこのVMだけで、cdn.ncaq.netのランナーには手を付けません。
+      # 外すのはこのVMだけで、cdn.ncaq.netのランナには手を付けません。
       extraRunnerOptions.serviceOverrides = {
         RestrictNamespaces = false;
         ProtectKernelLogs = false;
@@ -148,7 +148,7 @@ let
       mem = 8 * 1024;
       extraShares = [
         # cdn.ncaq.netのデプロイのステージング。
-        # ランナー上のワークフローがrsyncで書き込み、
+        # ランナ上のワークフローがrsyncで書き込み、
         # ホストの同期のサービスが配信ディレクトリへ写します(cdn.nix参照)。
         #
         # virtiofsdはホストのrootで動いて、何も指定しないとUIDとGIDをそのまま通します。
@@ -199,14 +199,14 @@ let
   # VMの中でジョブが動いているかを確かめるシェルの関数`job_running`の定義。
   # `procps`の`pgrep`を使います。
   #
-  # ジョブの実行中はランナーの`Runner.Listener`が子の`Runner.Worker`を持ちます。
-  # どちらもnixpkgsではラッパーではない実行ファイルなので、
+  # ジョブの実行中はランナの`Runner.Listener`が子の`Runner.Worker`を持ちます。
+  # どちらもnixpkgsではラッパではない実行ファイルなので、
   # プロセス名がそのまま実行ファイルの名前になり、`--exact`で一致します。
   #
   # ジョブは任意のコードを実行できるので、
   # 名前だけで探すと、同じ名前のプロセスを残してジョブが動いているように見せられます。
   # ジョブのプロセスは`Runner.Listener`の子にはなれないので、
-  # ランナーのユーザーの`Runner.Listener`の子だけを探します。
+  # ランナのユーザの`Runner.Listener`の子だけを探します。
   jobRunningFunction = ''
     job_running() {
       local listeners
@@ -223,17 +223,17 @@ let
       inherit tap;
       addr = config.machineAddresses.${name};
     };
-  # GitHub ActionsのランナーのVMを生成する関数。
+  # GitHub ActionsのランナのVMを生成する関数。
   mkRunnerVm =
     name:
     {
-      # ランナー名の基礎となる名前。
+      # ランナ名の基礎となる名前。
       basename,
-      # GitHub Actionsランナーの並列数。
+      # GitHub Actionsランナの並列数。
       runnerNum,
       # リポジトリのURL。
       url,
-      # ホスト側のTAPインターフェイス名。
+      # ホスト側のTAPインタフェース名。
       tap,
       # VMのNICのMACアドレス。
       mac,
@@ -246,7 +246,7 @@ let
       nestedVirt ? false,
       # 追加の共有。
       extraShares ? [ ],
-      # 各ランナー定義にマージする追加オプション。
+      # 各ランナ定義にマージする追加オプション。
       extraRunnerOptions ? { },
     }:
     {
@@ -259,7 +259,7 @@ let
           inherit vcpu mem;
           # cloud-hypervisorは何も指定しないとネストした仮想化をVMへ見せます。
           # モジュールを読み込まないだけではVMのrootが自分で読み込めるので、
-          # 要らないVMではハイパーバイザの側で見せないようにします。
+          # 要らないVMではハイパバイザの側で見せないようにします。
           cloud-hypervisor.extraArgs = lib.optionals (!nestedVirt) [
             "--cpus"
             "nested=off"
@@ -314,7 +314,7 @@ let
             {
               image = overlayImage;
               mountPoint = overlayMount;
-              # nixpkgsを上げると全ホストの閉包のほとんどがホストのストアに無いものになり、
+              # nixpkgsを上げると全ホストのクロージャのほとんどがホストのストアに無いものになり、
               # 取得だけで40GiB近くになります。
               # さらにカーネルが上がると、
               # CPU最適化したホストごとのカーネルを並べてビルドする作業ディレクトリも、
@@ -371,7 +371,7 @@ let
                   extraEnvironment = {
                     ACTIONS_RUNNER_HOOK_JOB_STARTED = jobStartedHook;
                     # 同じVMで`./check.sh`が重なり得る数。
-                    # `nix-fast-build`のラッパーが、評価に使うメモリの予算をこの数で割ります。
+                    # `nix-fast-build`のラッパが、評価に使うメモリの予算をこの数で割ります。
                     NIX_FAST_BUILD_CONCURRENT_JOBS = toString runnerNum;
                   };
                 }
@@ -451,9 +451,9 @@ let
           # ジョブが続いている間は終わるまで待ってから作り直します。
           #
           # ジョブが無いと確かめてから電源を切るまでの間に、
-          # 待っているランナーがジョブを受け取ると、そのジョブは落ちます。
-          # 先にランナーのサービスを止めても、
-          # 止めた時に受け取ったばかりのジョブはランナーと一緒に終わるので、
+          # 待っているランナがジョブを受け取ると、そのジョブは落ちます。
+          # 先にランナのサービスを止めても、
+          # 止めた時に受け取ったばかりのジョブはランナと一緒に終わるので、
           # 隙間は止めるまでの間に移るだけで狭くなりません。
           # 起きるのは1日1回の確かめの直後の一瞬だけで、
           # 落ちたジョブは実行し直せば済むので、この隙間は許容します。
@@ -509,8 +509,8 @@ let
               Type = "oneshot";
               RemainAfterExit = true;
               ExecStart = [
-                # microvm.nixがVMのシステムの閉包だけを登録したデータベースを先に作っています。
-                # ホストのデータベースにはその閉包も入っているので、丸ごと置き換えます。
+                # microvm.nixがVMのシステムのクロージャだけを登録したデータベースを先に作っています。
+                # ホストのデータベースにはそのクロージャも入っているので、丸ごと置き換えます。
                 "${lib.getExe' pkgs.coreutils "rm"} --force ${nixDbDir}/db.sqlite-wal ${nixDbDir}/db.sqlite-shm"
                 "${lib.getExe' pkgs.coreutils "install"} --mode=644 /run/host-nix-db/db.sqlite ${nixDbDir}/db.sqlite"
               ];
@@ -533,9 +533,9 @@ in
     overlayImage = overlayImageOf name;
   }) runnerVmDefs;
 
-  # CIランナーの出口はインターネットだけ。
+  # CIランナの出口はインターネットだけ。
   #
-  # ランナーの中ではリポジトリのワークフローが持ち込んだコードが動く。
+  # ランナの中ではリポジトリのワークフローが持ち込んだコードが動く。
   # 必要な通信先はGitHubやcache.nixos.orgで、
   # niks3-public.ncaq.netへのキャッシュの登録も、
   # VMの中では公開DNSで引いてCloudflare Tunnel経由で届く。
@@ -554,7 +554,7 @@ in
     );
 
     # 登録トークンは1時間で切れます。
-    # ephemeralなランナーはジョブが終わるたびに登録し直すので、
+    # ephemeralなランナはジョブが終わるたびに登録し直すので、
     # 30分ごとに発行し直して、
     # 置いてあるトークンの残り時間が常に30分以上あるようにします。
     timers = lib.mapAttrs' (
@@ -625,7 +625,7 @@ in
               nixDbDir
               "${config.microvm.stateDir}/${name}"
             ];
-            # イメージとその親のディレクトリはmicrovmユーザーの所有なので、
+            # イメージとその親のディレクトリはmicrovmユーザの所有なので、
             # rootでも所有者の検査を越える権限が無いと消せません。
             CapabilityBoundingSet = [ "CAP_DAC_OVERRIDE" ];
           };

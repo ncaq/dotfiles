@@ -50,7 +50,7 @@ class LoadImageOptional(nodes.LoadImage):
 
     # 戻り値の型は基底のLoadImage.VALIDATE_INPUTSに合わせる。
     # 検証を通った場合はTrueだけを返す契約なので、
-    # boolまで広げるとオーバーライドとして基底より緩くなってしまう。
+    # boolまで広げるとオーバライドとして基底より緩くなってしまう。
     @classmethod
     def VALIDATE_INPUTS(cls, image: str) -> str | Literal[True]:
         if image == NONE_CHOICE:

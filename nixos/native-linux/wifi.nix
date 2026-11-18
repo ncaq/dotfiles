@@ -7,10 +7,10 @@ let
   # 環境変数名にはハイフンを使えないためアンダースコアに変換し大文字化する。
   pskEnvName = id: "WIFI_${lib.toUpper (builtins.replaceStrings [ "-" ] [ "_" ] id)}_PSK";
 
-  # 各WiFiプロファイル共通の構造を生成するヘルパー。
+  # 各WiFiプロファイル共通の構造を生成するヘルパ。
   # 各種引数から`ensureProfiles`に渡せるattrsetを返す。
   # interface-nameは敢えて指定せず、
-  # どのWiFiインターフェースでも使えるようにする。
+  # どのWiFiインタフェースでも使えるようにする。
   mkWifi =
     {
       id,

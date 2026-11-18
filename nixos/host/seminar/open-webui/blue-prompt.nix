@@ -75,7 +75,7 @@ in
     # `mcp-nixos.nix`の`mcp-nixos-traffic-control`も同じ形で追従させている。
     wantedBy = [ "container@open-webui.service" ];
     bindsTo = [ "container@open-webui.service" ];
-    # Knowledgeのアップロードでは1ファイルごとに埋め込みがコンテナ内で走る。
+    # Knowledgeのアップロードでは1ファイルごとに埋め込みが走る。
     # 断片の数だけ時間が積み上がるため、
     # oneshotの既定のタイムアウトで中断されて中途半端な状態が残るのを念のため避ける。
     #
@@ -92,7 +92,7 @@ in
       # nspawnがbootしただけで中のOpen WebUIはまだlistenしていない。
       # 上流のヘルス待ちは5秒の試行と2秒の待機を30回で打ち切るため、
       # 猶予は3分半で、
-      # 埋め込みモデルの取得やDB migrationを伴う寒い起動では待ち切れずに諦める。
+      # 更新の後のDB migrationのように起動に時間がかかる時は待ち切れずに諦める。
       # 1試行が5秒を使い切るのは`tailscale-serve.nix`の中継が接続を再試行するからで、
       # 即座に502を返す設定にするとこの猶予はもっと短くなる。
       #

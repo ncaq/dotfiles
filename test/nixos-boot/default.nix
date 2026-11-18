@@ -45,7 +45,7 @@ lib.mapAttrs (
       # テストVMでも起動するmicroVMかどうか。
       # ホスト側のユニットが他のユニットを`requires`しているmicroVMは、
       # 秘密情報から作るものを待っていてテストVMでは起動しない。
-      # GitHub ActionsのランナーのVMがそうで、登録トークンを発行できないと起動しない。
+      # GitHub ActionsのランナのVMがそうで、登録トークンを発行できないと起動しない。
       startsInTestVm =
         vmName: ((config.systemd.services."microvm@${vmName}" or { }).requires or [ ]) == [ ];
     };

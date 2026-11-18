@@ -15,7 +15,7 @@ let
     # Serial number: 9074075
     # Firmware version: 5.1.2
     # 外に持ち出さずにデスクトップPCで使用しています。
-    shiroko = "dYCSbSsCSK8fe3jC3vj139CprL3RP6Bgz6XS4+j5vWGc9ouOGXL9hBtzstKGdqHJK5zj9pvtLEG9xW3uqn9B8Q==,0cHOhDvjY2u8Fh9dAn8M/9xJAKVrYh2oIk1kksECgU7xxjcQJx+vBE9L3VCGRR69QX9+SMGlPB6ohkhdpto+Mg==,es256,+presence%";
+    shiroko = "dYCSbSsCSK8fe3jC3vj139CprL3RP6Bgz6XS4+j5vWGc9ouOGXL9hBtzstKGdqHJK5zj9pvtLEG9xW3uqn9B8Q==,0cHOhDvjY2u8Fh9dAn8M/9xJAKVrYh2oIk1kksECgU7xxjcQJx+vBE9L3VCGRR69QX9+SMGlPB6ohkhdpto+Mg==,es256,+presence";
     # Device type: YubiKey Bio - FIDO Edition
     # Serial number: 34849987
     # Firmware version: 5.7.4
@@ -111,7 +111,7 @@ let
     '';
   };
 
-  # xsecurelockのラッパー。
+  # xsecurelockのラッパ。
   # 手動ロック(loginctl lock-session)やサスペンドでは、
   # notifierを経由せずlockerが直接起動されるため、
   # ここでもgrobiを中断します。
@@ -123,7 +123,7 @@ let
     ];
     text = ''
       # `writeShellApplication`はerrexitを注入するため、
-      # ここでgrobiの中断が失敗するとxsecurelockの起動前にラッパーが終了し、
+      # ここでgrobiの中断が失敗するとxsecurelockの起動前にラッパが終了し、
       # 画面がロックされないまま放置されるfail-openになってしまいます。
       # ロックの起動を最優先するため、
       # 中断の失敗はエラーログを残した上で続行します。

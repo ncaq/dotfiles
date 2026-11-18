@@ -36,7 +36,7 @@ python3Packages.buildPythonApplication rec {
 
   build-system = with python3Packages; [ hatchling ];
 
-  # macOSのMLXの依存は環境マーカーで外れるので、Linuxで要るのはこれだけ。
+  # macOSのMLXの依存は環境マーカで外れるので、Linuxで要るのはこれだけ。
   dependencies =
     with python3Packages;
     [
@@ -63,7 +63,7 @@ python3Packages.buildPythonApplication rec {
   # ドラフトには環境変数が無いので引数で渡す。
   # `--add-flags`は利用者の引数より前に入り、
   # argparseは後に書いた方を採るので利用者の指定が勝つ。
-  # Pythonのラッパーは`makeWrapperArgs`を空白で分割するので、
+  # Pythonのラッパは`makeWrapperArgs`を空白で分割するので、
   # オプション名と値を別々の`--add-flags`で渡す。
   ++ lib.optionals (draftModel != null) [
     "--add-flags"
@@ -78,9 +78,9 @@ python3Packages.buildPythonApplication rec {
   doCheck = true;
   pythonImportsCheck = [ "plamo_translate" ];
   nativeInstallCheckInputs = [ versionCheckHook ];
-  # ラッパーに渡す引数の組み立てが崩れてもビルドと`--version`は通ってしまい、
+  # ラッパに渡す引数の組み立てが崩れてもビルドと`--version`は通ってしまい、
   # 翻訳を実行するまで気付けない。
-  # 推論せずに確かめられるよう、生成されたラッパーに値が入っていることを見る。
+  # 推論せずに確かめられるよう、生成されたラッパに値が入っていることを見る。
   postInstallCheck = ''
     wrapper="$out/bin/plamo-translate"
     grep -F -q -- ${lib.escapeShellArg "PLAMO_TRANSLATE_CLI_LLAMA_SERVER"} "$wrapper"

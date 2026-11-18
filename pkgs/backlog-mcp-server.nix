@@ -1,6 +1,6 @@
 # backlog-mcp-server - Backlog MCP Server
 # https://github.com/nulab/backlog-mcp-server
-# Nulab公式のBacklog用MCPサーバーです。
+# Nulab公式のBacklog用MCPサーバです。
 {
   lib,
   buildNpmPackage,

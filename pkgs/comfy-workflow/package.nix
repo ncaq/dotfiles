@@ -1,7 +1,7 @@
 # ComfyUIのワークフローを名前付きのオプションで投げるコマンド。
 #
-# ワークフローごとの`comfy-<名前>`ラッパーから呼ぶ。
-# ラッパーは`passthru.mkCommand`で作る。
+# ワークフローごとの`comfy-<名前>`ラッパから呼ぶ。
+# ラッパは`passthru.mkCommand`で作る。
 # `nixos/host/bullet/comfyui/workflow/cli.nix`が、宣言したワークフローの全てをそうしている。
 # 中身は公式の`comfy-cli`を呼ぶので、PATHへ足して包む。
 {

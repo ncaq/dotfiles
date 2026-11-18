@@ -98,7 +98,7 @@
       "image/x-bmp" = [ "org.gnome.eog.desktop" ];
       "image/x-ico" = [ "org.gnome.eog.desktop" ];
 
-      # 動画プレーヤー
+      # 動画プレーヤ
       "video/3gpp" = [ "vlc.desktop" ];
       "video/mp4" = [ "vlc.desktop" ];
       "video/mpeg" = [ "vlc.desktop" ];
@@ -110,7 +110,7 @@
       "video/x-matroska" = [ "vlc.desktop" ];
       "video/x-msvideo" = [ "vlc.desktop" ];
 
-      # 音声プレーヤー
+      # 音声プレーヤ
       "audio/aac" = [ "vlc.desktop" ];
       "audio/flac" = [ "vlc.desktop" ];
       "audio/mp3" = [ "vlc.desktop" ];

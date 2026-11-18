@@ -19,7 +19,7 @@ system=$(nix eval --raw --impure --expr builtins.currentSystem)
 output=${CHECK_OUTPUT:-checks}
 
 # `--option eval-cache false`は、
-# 評価のワーカーが評価キャッシュを取り合って出す競合の警告を抑止するものです。
+# 評価のワーカが評価キャッシュを取り合って出す競合の警告を抑止するものです。
 # 警告が大量に出て結果が読みにくくなるのを防ぐだけで、チェックの結果は変わりません。
 # `--no-link`は、
 # チェックするだけで`result`リンクが作成されるのを回避するものです。
@@ -39,12 +39,13 @@ if [ ! -t 1 ]; then
   arguments+=(--no-nom)
 fi
 
+# このスクリプトへの追加の引数は、そのまま`nix-fast-build`へ渡します。
 arguments+=("$@")
 
-# `nix-fast-build`は、メモリに合わせて評価のワーカー数を抑えるラッパーを使います。
-# home-managerの環境やセルフホステッドランナーのVMのようにPATHにあれば、
+# `nix-fast-build`は、メモリに合わせて評価のワーカ数を抑えるラッパを使います。
+# home-managerの環境やセルフホステッドランナのVMのようにPATHにあれば、
 # flakeの評価を省けるのでそれを使います。
-# PATHに無い環境では、flakeが出している同じラッパーを使います。
+# PATHに無い環境では、flakeが出している同じラッパを使います。
 if command -v nix-fast-build >/dev/null 2>&1; then
   exec nix-fast-build "${arguments[@]}"
 else

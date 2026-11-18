@@ -1,4 +1,4 @@
--- | GC rootとして保持する閉包。
+-- | GC rootとして保持するクロージャ。
 module NixGcRootHosts.Root
   ( Root (..)
   , nixosRoot
@@ -25,7 +25,7 @@ nixosRoot (Flake flake) host =
         Installable (flake <> "#nixosConfigurations." <> host <> ".config.system.build.toplevel")
     }
 
--- | `homeConfigurations`のシステムのhome-managerの閉包。
+-- | `homeConfigurations`のシステムのhome-managerのクロージャ。
 homeRoot :: Flake -> Text -> Root
 homeRoot (Flake flake) system =
   Root

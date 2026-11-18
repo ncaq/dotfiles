@@ -76,7 +76,7 @@ in
     # WSL環境ではホストのWindows環境に設定ファイルを書き込みます。
     # ブートストラップ問題は、
     # これのインストール時ぐらいは、
-    # Windows Terminalとか適当なターミナルをを使えばいいので、
+    # Windows Terminalとか適当なターミナルを使えばいいので、
     # 深刻に考えていません。
     lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       if [ -d ${lib.escapeShellArg windowsAppData} ]; then

@@ -4,8 +4,8 @@
 # 本物の脆弱性に対処するかしないかの方針は docs/vulnerability-policy.md を参照。
 # 上流の修正待ち以外の理由で対処しないと決めた本物の脆弱性はここには書かない。
 #
-# 実行例。実行時閉包だけを見るために -C を付ける。
-# 既定の --requisites はビルド時依存まで含む派生物の閉包を見るので、
+# 実行例。実行時クロージャだけを見るために -C を付ける。
+# 既定の --requisites はビルド時依存まで含むderivationのクロージャを見るので、
 # ブートストラップ用のgccやHaskellのビルド依存まで報告されてしまう。
 #
 #   vulnix -C /run/current-system -w vulnix-whitelist.toml
@@ -15,7 +15,7 @@
 #   vulnix -C /run/current-system -w vulnix-whitelist.toml -s
 #
 # vulnixはnix-community/vulnixのmasterを使う。
-# 1.12.5以前は __structuredAttrs を使う派生物の patches を読めず、
+# 1.12.5以前は __structuredAttrs を使うderivationの patches を読めず、
 # パッチ済みのCVEをそのまま報告してしまう。
 #
 # 書式は https://github.com/nix-community/vulnix#whitelist を参照。
@@ -27,7 +27,7 @@
 # 書き方はそれぞれのまとまりの先頭のコメントに書く。
 
 # 名前衝突で、そのNixパッケージ自身がその名前でNVDにCVEを登録されることがまず無いもの。
-# 主にxmonadやhaskell-language-serverの実行時閉包に入るHackageのライブラリ。
+# 主にxmonadやhaskell-language-serverの実行時クロージャに入るHackageのライブラリ。
 # 衝突はバージョンを上げても再発するので、
 # `["pname"]` で全バージョンを `cve` 無しで隠す。
 
@@ -195,14 +195,14 @@ comment = [
   "libgme側の欠陥は別物でCVEが付いていない。CVEが付けば別の番号で報告される",
 ]
 
-# 派生物名からのバージョン切り出しが壊れていて、実在しないバージョンとして照合されるもの。
+# derivation名からのバージョン切り出しが壊れていて、実在しないバージョンとして照合されるもの。
 # その壊れた名前そのものを `["pname-version"]` で `cve` 無しで隠す。
 
 ["dbus-1"]
 comment = "initrdに入る dbus-1 ディレクトリ名。D-Busのバージョン1ではない"
 
 ["lapack-3"]
-comment = "nixpkgsのlapackラッパー(実体はopenblas)。NVDのlapack <= 3.10.0 とは無関係"
+comment = "nixpkgsのlapackラッパ(実体はopenblas)。NVDのlapack <= 3.10.0 とは無関係"
 
 ["libiff-0-unstable-2024-03-02"]
 comment = "0-unstable-... を 20190123 より古いバージョンとして照合している"
@@ -380,7 +380,7 @@ comment = "対象は5.42.3-RC1より前。5.42.3は修正済み"
 
 ["perl-5.42.3-env"]
 cve = ["CVE-2026-13221", "CVE-2026-57432", "CVE-2026-8376"]
-comment = "perl-5.42.3-env という派生物名のバージョンが 5.42.3-env と切り出されるので別に書く"
+comment = "perl-5.42.3-env というderivation名のバージョンが 5.42.3-env と切り出されるので別に書く"
 
 # 本物の脆弱性で、nixpkgsで修正が進んでいてチャンネルに降りてくるのを待つもの。
 # `["pname-version"]` に待っているCVEを `cve` で列挙し、
@@ -546,15 +546,15 @@ comment = "上流は25.8.7と26.2.3で修正。unstableにだけあり26.05へ�
 cve = ["CVE-2026-4430"]
 issue_url = "https://github.com/NixOS/nixpkgs/pull/551328"
 until = "2026-12-06"
-comment = "ラッパーの派生物名のバージョンが 25.8.5.2-wrapped と切り出されるので別に書く"
+comment = "ラッパのderivation名のバージョンが 25.8.5.2-wrapped と切り出されるので別に書く"
 
 ["libsndfile-1.2.2"]
 cve = ["CVE-2024-50612", "CVE-2026-37555"]
 issue_url = "https://github.com/NixOS/nixpkgs/pull/575364"
 until = "2026-12-06"
 comment = [
-  "stable由来の派生物はバックポート(#576771)でパッチ済み",
-  "unstable由来の派生物向けのパッチはstagingにマージ済みでstaging-nextからの降下待ち",
+  "stable由来のderivationはバックポート(#576771)でパッチ済み",
+  "unstable由来のderivation向けのパッチはstagingにマージ済みでstaging-nextからの降下待ち",
 ]
 
 ["libusb-1.0.29"]

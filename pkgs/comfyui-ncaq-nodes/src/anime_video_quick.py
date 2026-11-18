@@ -150,7 +150,7 @@ def generate_keyframe(
         clip, prompt, "", vae, qwen_resolution, {"image_1": image}
     ).args
     # 公式の推奨どおりCFGは1で、negative promptは使わない。
-    # CFGが1ならnegativeは評価されないが、サンプラーの引数としては要る。
+    # CFGが1ならnegativeは評価されないが、サンプラの引数としては要る。
     sampled = nodes.common_ksampler(
         model, seed, 40, 1.0, "euler", "simple", positive, negative, latent, denoise=1.0
     )[0]

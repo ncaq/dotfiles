@@ -14,13 +14,13 @@ tokenFileName = "token"
 
 -- | 所有者だけが読めるファイルとして、前のトークンと置き換える。
 --
--- ランナーは登録し直すたびにこのファイルを読む。
+-- ランナは登録し直すたびにこのファイルを読む。
 -- 書きかけの中身を読まれないように、同じディレクトリに書いてからrenameで置き換える。
 --
 -- 置き場所は`RuntimeDirectory`で、systemdが他のユーザから見えないモードで作っている。
 -- 置き換えてからモードを変えるまでの間に、他のユーザが読むことは無い。
 --
--- 末尾に改行は付けない。ランナーの側はファイルの中身をそのままトークンとして使う。
+-- 末尾に改行は付けない。ランナの側はファイルの中身をそのままトークンとして使う。
 writeTokenFile :: (MonadIO m) => FilePath -> RegistrationToken -> m ()
 writeTokenFile path (RegistrationToken token) = do
   writeBinaryFileAtomic path (convert token)

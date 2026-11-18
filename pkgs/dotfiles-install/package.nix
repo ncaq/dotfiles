@@ -7,12 +7,14 @@
 # Gitの操作は`git`コマンドに任せるので、PATHへ足して包む。
 # `sudo`や`nixos-rebuild`のような適用のコマンドは、
 # 利用者の環境に入っているものを使うので包まない。
+# `home-manager`だけは、最初の適用の時にはまだどこにも入っていないので足す。
 {
   lib,
   haskell,
   haskellPackages,
   makeWrapper,
   git,
+  home-manager,
   himari-src,
 }:
 let
@@ -40,10 +42,15 @@ lib.pipe package [
     buildTools = (old.buildTools or [ ]) ++ [ makeWrapper ];
     # テストは一時ディレクトリに実際のリポジトリを作って確かめる。
     testToolDepends = (old.testToolDepends or [ ]) ++ [ git ];
-    # 利用者の環境にgitがあればそちらを優先するので、後ろへ足す。
+    # 利用者の環境にgitやhome-managerがあればそちらを優先するので、後ろへ足す。
     postInstall = (old.postInstall or "") + ''
       wrapProgram "$out/bin/dotfiles-install" \
-        --suffix PATH : ${lib.makeBinPath [ git ]}
+        --suffix PATH : ${
+          lib.makeBinPath [
+            git
+            home-manager
+          ]
+        }
     '';
   }))
   haskell.lib.compose.justStaticExecutables

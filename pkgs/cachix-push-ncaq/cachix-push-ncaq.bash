@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # `secrets/cachix.yaml`からCachix認証トークンを復号して、
-# `cachix push ncaq`を実行するラッパー。
+# `cachix push ncaq`を実行するラッパ。
 #
 # 自宅サーバのniks3キャッシュが落ちた時のフォールバックとして、
 # 別マシンやCIに手軽にキャッシュを転送するために使います。
@@ -24,7 +24,7 @@ if [ ! -f "$secrets_file" ]; then
   exit 1
 fi
 
-# トークン取得時のみ環境に露出させ、cachixのサブプロセスに継承させます。
+# 復号したトークンはファイルに書かず、環境変数で`cachix`へ渡します。
 CACHIX_AUTH_TOKEN=$(sops decrypt --extract '["CACHIX_AUTH_TOKEN"]' "$secrets_file")
 export CACHIX_AUTH_TOKEN
 

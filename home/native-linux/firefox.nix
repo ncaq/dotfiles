@@ -39,9 +39,9 @@ let
     "devtools.command-button-measure.enabled" = true; # 測定ツールボタン有効
     "devtools.command-button-rulers.enabled" = true; # ルーラーボタン有効
     "devtools.command-button-screenshot.enabled" = true; # スクリーンショットボタン有効
-    "devtools.debugger.map-scopes-enabled" = true; # デバッガーのスコープマッピング有効
+    "devtools.debugger.map-scopes-enabled" = true; # デバッガのスコープマッピング有効
     "devtools.debugger.pause-on-caught-exceptions" = false; # キャッチされた例外で一時停止しない
-    "devtools.dom.enabled" = true; # DOMインスペクター有効
+    "devtools.dom.enabled" = true; # DOMインスペクタ有効
     "devtools.inspector.show_pseudo_elements" = true; # 疑似要素表示
     "devtools.responsive.touchSimulation.enabled" = true; # タッチシミュレーション有効
     "devtools.theme" = "dark"; # 開発者ツールのテーマをダークに
@@ -420,10 +420,10 @@ in
         };
       };
   };
-  # 各種プロファイルの`users.js`はNix管理の読み取り専用ファイルになりますが、
+  # 各種プロファイルの`user.js`はNix管理の読み取り専用ファイルになりますが、
   # アドオン開発のためと考えるとweb-extがエラーを出すので読み取り専用は望ましくありません。
   # 開発のためのほぼ使い捨てのプロファイルであることを考えると、
-  # `users.js`はそんなに真面目に管理する必要がないので、
+  # `user.js`はそんなに真面目に管理する必要がないので、
   # 雑に読み取り専用になっているのを解除します。
   home.activation.firefoxUserJsWritable = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     $DRY_RUN_CMD unlink \

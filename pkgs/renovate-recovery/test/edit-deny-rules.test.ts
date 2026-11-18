@@ -170,7 +170,7 @@ describe("checkEditDenyRules", () => {
     );
   });
 
-  it("自分のランナーの_tempだけを拒否する規則では、他のランナーの分を報告する", () => {
+  it("自分のランナの_tempだけを拒否する規則では、他のランナの分を報告する", () => {
     const rules = baselineRules.map((rule) =>
       rule === "Edit(//run/github-runner/*/_temp/**)"
         ? "Edit(//run/github-runner/dotfiles-x64-0/_temp/**)"

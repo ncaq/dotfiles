@@ -1,4 +1,4 @@
--- | マッパーの名前とデバイスのIDの検査のテスト。
+-- | マッパの名前とデバイスのIDの検査のテスト。
 --
 -- ここを通った値はルートの権限でパスの一部として使われる。
 module Spec.DeviceMapperNameSpec (tests) where

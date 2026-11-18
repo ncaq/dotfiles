@@ -9,7 +9,7 @@
  *
  * - Claude Codeの版とモデル
  * - 読み込まれたプラグインの名前と版、プラグインのエラー
- * - MCPサーバーの名前と接続の状態
+ * - MCPサーバの名前と接続の状態
  * - 呼ばれたツールの名前と、エラーになったかどうか。`Skill`にはスキルの名前を添える
  * - 権限で拒否された呼び出しのツールの名前と、引数の名前
  * - 終了の種別、エラーかどうか、ターン数、拒否された呼び出しの数
@@ -69,7 +69,7 @@ function field(value: unknown): string {
   return sanitizeDetail(asString(value) ?? "?");
 }
 
-/** 初期化のメッセージから、プラグインとMCPサーバーの状態を取り出します。 */
+/** 初期化のメッセージから、プラグインとMCPサーバの状態を取り出します。 */
 function summarizeInit(message: Record<string, unknown>): string[] {
   const version = field(message["claude_code_version"]);
   const model = field(message["model"]);

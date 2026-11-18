@@ -131,7 +131,7 @@ in
       })
       # Qwen-Image-2.1はshiftもCFGもモデル側の既定値で使う。
       # 公式テンプレートもModelSamplingAuraFlowやCFGNormを挟まず、
-      # UNETLoaderのMODELをそのままサンプラーへ渡している。
+      # UNETLoaderのMODELをそのままサンプラへ渡している。
       (mkNode {
         id = 12;
         type = "AnimeVideoQuick";

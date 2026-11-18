@@ -1,5 +1,5 @@
 # `secrets/niks3-{public,private}.yaml`からAPIトークンを復号して、
-# 自分のniks3サーバに`niks3 push`を実行するラッパー。
+# 自分のniks3サーバに`niks3 push`を実行するラッパ。
 # `niks3-push-ncaq-public`と`niks3-push-ncaq-private`の2つのコマンドを提供します。
 {
   lib,

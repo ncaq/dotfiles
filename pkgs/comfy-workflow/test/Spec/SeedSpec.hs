@@ -41,7 +41,7 @@ samplerSlots nodeId =
 tests :: TopSpec
 tests = describe "Seed" do
   it "randomizeのseedを全て拾う" do
-    -- `anima-standard`はサンプラーが3つあり、揃って動く必要がある。
+    -- `anima-standard`はサンプラが3つあり、揃って動く必要がある。
     let nodes = [sampler "7" "randomize", sampler "14" "randomize", sampler "17" "randomize"]
         slots = concatMap samplerSlots ["7", "14", "17"]
     seedTargets nodes slots `shouldBe` [("7", "seed"), ("14", "seed"), ("17", "seed")]

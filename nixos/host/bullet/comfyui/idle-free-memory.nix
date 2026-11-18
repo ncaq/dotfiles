@@ -23,7 +23,7 @@
     {
       # ホスト側の`pkgs`で組んだものを渡す。
       # コンテナの中もホストと同じnixpkgsなので、
-      # `nixos/host/bullet/comfyui/workflow/cli.nix`が組むcomfy-workflowと依存の閉包を共有できる。
+      # `nixos/host/bullet/comfyui/workflow/cli.nix`が組むcomfy-workflowと依存のクロージャを共有できる。
       systemd.packages = [ pkgs.comfyui-idle-free-memory ];
       systemd.services.comfyui-idle-free-memory = {
         # NixOSは`systemd.packages`のユニットの`[Install]`を見ないので、ここで有効にする。

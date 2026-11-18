@@ -68,7 +68,7 @@ tests = describe "Parameter" do
               [textSlot "4", textSlot "5"]
       flagsOf params `shouldBe` Right ["node4-text", "node5-text"]
     it "seedはパラメータにしない" do
-      -- 全体の`--seed`が全てのサンプラーへ配るので、1つのノードを指すフラグは持たない。
+      -- 全体の`--seed`が全てのサンプラへ配るので、1つのノードを指すフラグは持たない。
       let sampler = Node{nodeId = "7", nodeType = "KSampler", title = Nothing, widgetsValues = []}
           params = parameters (workflow [sampler] [input "7" "seed"]) [seedSlot "7"]
       flagsOf params `shouldBe` Right []

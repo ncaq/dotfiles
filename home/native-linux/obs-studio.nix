@@ -18,7 +18,7 @@ in
     enable = true;
     package = obsPackage;
     # プラグインはnixpkgs既定のobs-studioに対してビルドされていて、
-    # そのままだと上で外したCEF込みの既定ビルドが閉包に残る。
+    # そのままだと上で外したCEF込みの既定ビルドがクロージャに残る。
     # こちらのobs-studioに差し替えてビルドし、
     # 実際に起動するOBSと同じビルドにプラグインを揃える。
     plugins = map (plugin: plugin.override { obs-studio = obsPackage; }) (

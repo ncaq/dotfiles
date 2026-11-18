@@ -70,7 +70,7 @@ let
   inherit (pkgs) certspotter-mackerel;
 
   # サブコマンドと設定の環境変数を付けて、hookとチェックのそれぞれのコマンドにします。
-  # certspotterのhookは引数無しで呼ばれるパスしか受け付けないので、ラッパーで包みます。
+  # certspotterのhookは引数無しで呼ばれるパスしか受け付けないので、ラッパで包みます。
   # 環境変数の意味は`pkgs/certspotter-mackerel/src/CertspotterMackerel/Config.hs`に書いてあります。
   commands =
     pkgs.runCommand "certspotter-mackerel-commands" { nativeBuildInputs = [ pkgs.makeWrapper ]; }

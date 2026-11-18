@@ -4,8 +4,8 @@
 # 本物の脆弱性に対処するかしないかの方針は docs/vulnerability-policy.md を参照。
 # 上流の修正待ち以外の理由で対処しないと決めた本物の脆弱性はここには書かない。
 #
-# 実行例。実行時閉包だけを見るために -C を付ける。
-# 既定の --requisites はビルド時依存まで含む派生物の閉包を見るので、
+# 実行例。実行時クロージャだけを見るために -C を付ける。
+# 既定の --requisites はビルド時依存まで含む派生物のクロージャを見るので、
 # ブートストラップ用のgccやHaskellのビルド依存まで報告されてしまう。
 #
 #   vulnix -C /run/current-system -w vulnix-whitelist.toml
@@ -27,7 +27,7 @@
 # 書き方はそれぞれのまとまりの先頭のコメントに書く。
 
 # 名前衝突で、そのNixパッケージ自身がその名前でNVDにCVEを登録されることがまず無いもの。
-# 主にxmonadやhaskell-language-serverの実行時閉包に入るHackageのライブラリ。
+# 主にxmonadやhaskell-language-serverの実行時クロージャに入るHackageのライブラリ。
 # 衝突はバージョンを上げても再発するので、
 # `["pname"]` で全バージョンを `cve` 無しで隠す。
 

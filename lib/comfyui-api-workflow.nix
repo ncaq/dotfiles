@@ -147,7 +147,7 @@ let
 
           # Open WebUI側のフォームに無い`type`。
           #
-          # このPRで2回踏んだ不具合はどちらもこの形だった。
+          # 実際に2回踏んだ不具合はどちらもこの形だった。
           # `negative_prompt`は`ComfyUIEditImageForm`が属性を持たないため実行時に落ち、
           # `steps`はフィールドはあっても既定が`None`のまま誰も値を入れなかった。
           # 接続の整合性だけを見る検査では両方とも素通りする。
@@ -522,7 +522,7 @@ let
         inherit (fixture) validNodes requiredTypes run;
       in
       # Open WebUI側のフォームに無い`type`を書いた場合。
-      # このPRで踏んだ`negative_prompt`と`steps`がこの形だった。
+      # 実際に踏んだ`negative_prompt`と`steps`がこの形だった。
       assert lib.assertMsg (
         (run {
           workflowNodes = validNodes ++ [

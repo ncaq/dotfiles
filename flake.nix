@@ -418,10 +418,10 @@
           #
           # 取るのはCUDA版の`comfy-ui-cuda`にする。
           # bulletの`services.comfyui.gpuSupport = "cuda"`がこれを選ぶので、
-          # 型検査が要求するtorchなどの依存の閉包が、
+          # 型検査が要求するtorchなどの依存のクロージャが、
           # 実際に動かしている環境のものと共有される。
           # overlayの`comfyui`はCPUビルドで、
-          # そちらを取ると誰も実行しない環境の閉包を新たに取得することになる。
+          # そちらを取ると誰も実行しない環境のクロージャを新たに取得することになる。
           # 型検査用の環境は検査専用の依存を足すので、
           # bulletが使う環境そのものにはならない。
           pythonPyright = import ./lib/python-pyright.nix {
@@ -534,7 +534,7 @@
             // localPackageTests
             // {
               local-packages-name-collision = localPackagesNameCollision;
-              # 同じワークフローのClaude Codeへ渡す設定一式。
+              # `renovate-recovery`ワークフローのClaude Codeへ渡す設定一式。
               # 使われるのはRenovateのPRが失敗した時だけなので、
               # konokaやgit-hooksの更新で壊れたことに普段のCIで気付けるようにします。
               inherit renovate-recovery-claude-config;

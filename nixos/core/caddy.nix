@@ -19,31 +19,33 @@
   config = lib.mkIf config.services.caddy.enable {
     # `/run`直下はcaddyユーザに書けないのでsystemdにディレクトリを用意させる。
     systemd.services.caddy.serviceConfig.RuntimeDirectory = "caddy";
-    # スラッシュが2つ並ぶのはタイプミスではない。
-    # `unix/`がCaddyのネットワークアドレス記法のプレフィックスで、
-    # 続く`/run/caddy/admin.sock`が絶対パスなので重なる。
-    # 1つに減らすと`/run`が相対パス扱いになり待ち受け先が変わる。
-    #
-    # `globalConfig`は`types.lines`なので他のモジュールの定義と連結される。
-    # 他所でadminを書くとCaddyfileの中でadminが重複定義になる。
-    services.caddy.globalConfig = ''
-      admin unix//run/caddy/admin.sock
-    '';
-    # 死活監視用のエンドポイント。
-    # Caddyには`/health`のようなヘルスチェック専用のエンドポイントが公式には存在せず、
-    # admin APIの`/config/`を叩くのが慣習的な代用になっていますが、
-    # あれは設定を返すAPIであってHTTPリスナが実際に応答できるかは分かりません。
-    # admin APIがUNIXソケットに移ってTCPから叩けなくなったこともあり、
-    # 公式ドキュメントが案内している`respond`で自前のエンドポイントを立てます。
-    # https://caddyserver.com/docs/caddyfile/directives/respond
-    #
-    # `:2020`はadmin APIの既定の`2019`の隣というだけの番号です。
-    # ホスト名を書くとlocal CAによる自動HTTPSの対象になってしまうため、
-    # ポートだけを書いて`bind`でIPv6のloopbackの`::1`に限定し、
-    # 同じホストの監視エージェントからのみ届くようにします。
-    services.caddy.virtualHosts.":2020".extraConfig = ''
-      bind [::1]
-      respond /health 200
-    '';
+    services.caddy = {
+      # スラッシュが2つ並ぶのはタイプミスではない。
+      # `unix/`がCaddyのネットワークアドレス記法のプレフィックスで、
+      # 続く`/run/caddy/admin.sock`が絶対パスなので重なる。
+      # 1つに減らすと`/run`が相対パス扱いになり待ち受け先が変わる。
+      #
+      # `globalConfig`は`types.lines`なので他のモジュールの定義と連結される。
+      # 他所でadminを書くとCaddyfileの中でadminが重複定義になる。
+      globalConfig = ''
+        admin unix//run/caddy/admin.sock
+      '';
+      # 死活監視用のエンドポイント。
+      # Caddyには`/health`のようなヘルスチェック専用のエンドポイントが公式には存在せず、
+      # admin APIの`/config/`を叩くのが慣習的な代用になっていますが、
+      # あれは設定を返すAPIであってHTTPリスナが実際に応答できるかは分かりません。
+      # admin APIがUNIXソケットに移ってTCPから叩けなくなったこともあり、
+      # 公式ドキュメントが案内している`respond`で自前のエンドポイントを立てます。
+      # https://caddyserver.com/docs/caddyfile/directives/respond
+      #
+      # `:2020`はadmin APIの既定の`2019`の隣というだけの番号です。
+      # ホスト名を書くとlocal CAによる自動HTTPSの対象になってしまうため、
+      # ポートだけを書いて`bind`でIPv6のloopbackの`::1`に限定し、
+      # 同じホストの監視エージェントからのみ届くようにします。
+      virtualHosts.":2020".extraConfig = ''
+        bind [::1]
+        respond /health 200
+      '';
+    };
   };
 }

@@ -114,7 +114,20 @@ in
   };
 
   config = lib.mkIf (selectors != { }) {
-    environment.systemPackages = [ machineLog ];
+    environment = {
+      systemPackages = [ machineLog ];
+
+      etc = lib.genAttrs' vmNames (
+        name:
+        lib.nameValuePair "systemd/journald@${name}.conf" {
+          text = ''
+            [Journal]
+            Storage=persistent
+            SystemMaxUse=${maxUse}
+          '';
+        }
+      );
+    };
 
     systemd.services = lib.genAttrs' vmNames (
       name:
@@ -122,17 +135,6 @@ in
         # `microvm@`はテンプレートなので、このVMの分だけを追加の設定として重ねる。
         overrideStrategy = "asDropin";
         serviceConfig.LogNamespace = name;
-      }
-    );
-
-    environment.etc = lib.genAttrs' vmNames (
-      name:
-      lib.nameValuePair "systemd/journald@${name}.conf" {
-        text = ''
-          [Journal]
-          Storage=persistent
-          SystemMaxUse=${maxUse}
-        '';
       }
     );
 

@@ -87,26 +87,38 @@ let
       '';
 in
 {
-  # Certificate Transparencyログを監視して、
-  # ncaq.net向けに発行された証明書を全て検知します。
-  #
-  # CAAレコードは真面目なCAの誤発行を防ぐだけで、
-  # 秘密鍵が漏洩した中間CAによる発行(2026年10月のeMudhraの事件など)には無力です。
-  # そのような発行はドメイン側で防げないので、
-  # 代わりにCTログで検知して気づけるようにします。
-  #
-  # 発行元によるフィルタはしません。
-  # ncaq.netの証明書はCloudflare Universal SSLとlegoの更新くらいで数が少なく、
-  # 全件を目で見たほうが見落としが無いためです。
-  services.certspotter = {
-    enable = true;
-    # 先頭の`.`でncaq.net自身と全てのサブドメインを対象にします。
-    watchlist = [ ".ncaq.net" ];
-    hooks = [ (lib.getExe' commands "certspotter-hook") ];
-    extraFlags = [
-      "-logs"
-      logListFile
-    ];
+  services = {
+    # Certificate Transparencyログを監視して、
+    # ncaq.net向けに発行された証明書を全て検知します。
+    #
+    # CAAレコードは真面目なCAの誤発行を防ぐだけで、
+    # 秘密鍵が漏洩した中間CAによる発行(2026年10月のeMudhraの事件など)には無力です。
+    # そのような発行はドメイン側で防げないので、
+    # 代わりにCTログで検知して気づけるようにします。
+    #
+    # 発行元によるフィルタはしません。
+    # ncaq.netの証明書はCloudflare Universal SSLとlegoの更新くらいで数が少なく、
+    # 全件を目で見たほうが見落としが無いためです。
+    certspotter = {
+      enable = true;
+      # 先頭の`.`でncaq.net自身と全てのサブドメインを対象にします。
+      watchlist = [ ".ncaq.net" ];
+      hooks = [ (lib.getExe' commands "certspotter-hook") ];
+      extraFlags = [
+        "-logs"
+        logListFile
+      ];
+    };
+
+    # 検知したイベントは既存のMackerelの通知経路に乗せます。
+    # mackerel-agentはrootで動くのでcertspotterのstateディレクトリを直接読めます。
+    mackerel-agent.settings.plugin.checks.certspotter = {
+      command = lib.getExe' commands "check-certspotter";
+      check_interval = 3;
+      # イベントは一定期間残るので連続失敗の判定を待つ意味がなく、
+      # すぐに通知を出します。
+      max_check_attempts = 1;
+    };
   };
 
   systemd = {
@@ -165,15 +177,5 @@ in
         RandomizedDelaySec = "10min";
       };
     };
-  };
-
-  # 検知したイベントは既存のMackerelの通知経路に乗せます。
-  # mackerel-agentはrootで動くのでcertspotterのstateディレクトリを直接読めます。
-  services.mackerel-agent.settings.plugin.checks.certspotter = {
-    command = lib.getExe' commands "check-certspotter";
-    check_interval = 3;
-    # イベントは一定期間残るので連続失敗の判定を待つ意味がなく、
-    # すぐに通知を出します。
-    max_check_attempts = 1;
   };
 }

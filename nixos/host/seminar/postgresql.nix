@@ -162,37 +162,39 @@ in
     };
 
     systemd = {
-      # `postgresql-ready.service`はoneshotなので、
-      # コンテナの初回起動が失敗して依存失敗で止まると、
-      # コンテナがRestartで上がり直しても誰も起動し直さず、
-      # これに依存するサービスが全て止まったままになります。
-      # コンテナが動いている間は`postgresql-ready.service`を起動し続けるようにします。
-      # `RemainAfterExit = true`なので成功後はactiveのままとなり、
-      # 起動のループにはなりません。
-      services."container@postgresql".upholds = [ "postgresql-ready.service" ];
+      services = {
+        # `postgresql-ready.service`はoneshotなので、
+        # コンテナの初回起動が失敗して依存失敗で止まると、
+        # コンテナがRestartで上がり直しても誰も起動し直さず、
+        # これに依存するサービスが全て止まったままになります。
+        # コンテナが動いている間は`postgresql-ready.service`を起動し続けるようにします。
+        # `RemainAfterExit = true`なので成功後はactiveのままとなり、
+        # 起動のループにはなりません。
+        "container@postgresql".upholds = [ "postgresql-ready.service" ];
 
-      # コンテナの起動とPostgreSQLの接続受付開始にはタイムラグがあるため、
-      # `pg_isready`で実際に接続可能になるまで待機するサービスを用意する。
-      # 依存サービスは`container@postgresql.service`ではなくこのサービスをafterに指定する。
-      services.postgresql-ready = {
-        requires = [ "container@postgresql.service" ];
-        after = [ "container@postgresql.service" ];
-        bindsTo = [ "container@postgresql.service" ];
-        # ソケットファイルが未生成の場合`pg_isready`は`--timeout`に関わらず即座に終了するため、
-        # systemdのリスタートでリトライさせます。
-        # 1秒間隔で最大30回リトライし、
-        # それでも接続できなければ失敗とします。
-        startLimitBurst = 30;
-        startLimitIntervalSec = 60;
-        # pg_isreadyはUNIXソケットに接続を試みるだけ。
-        serviceConfig = hardening.unixSocket // {
-          Type = "oneshot";
-          RemainAfterExit = true;
-          User = "postgres";
-          Group = "postgres";
-          ExecStart = "${postgresql}/bin/pg_isready -h /run/postgresql --timeout=5";
-          Restart = "on-failure";
-          RestartSec = "1s";
+        # コンテナの起動とPostgreSQLの接続受付開始にはタイムラグがあるため、
+        # `pg_isready`で実際に接続可能になるまで待機するサービスを用意する。
+        # 依存サービスは`container@postgresql.service`ではなくこのサービスをafterに指定する。
+        postgresql-ready = {
+          requires = [ "container@postgresql.service" ];
+          after = [ "container@postgresql.service" ];
+          bindsTo = [ "container@postgresql.service" ];
+          # ソケットファイルが未生成の場合`pg_isready`は`--timeout`に関わらず即座に終了するため、
+          # systemdのリスタートでリトライさせます。
+          # 1秒間隔で最大30回リトライし、
+          # それでも接続できなければ失敗とします。
+          startLimitBurst = 30;
+          startLimitIntervalSec = 60;
+          # pg_isreadyはUNIXソケットに接続を試みるだけ。
+          serviceConfig = hardening.unixSocket // {
+            Type = "oneshot";
+            RemainAfterExit = true;
+            User = "postgres";
+            Group = "postgres";
+            ExecStart = "${postgresql}/bin/pg_isready -h /run/postgresql --timeout=5";
+            Restart = "on-failure";
+            RestartSec = "1s";
+          };
         };
       };
 

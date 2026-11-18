@@ -29,43 +29,45 @@ in
     );
   };
 
-  config.networking = {
-    networkmanager = {
-      enable = true;
-      # NMが「Wired connection 1」のような一時プロファイル(nm-generated=true)を、
-      # 明示プロファイルのない管理対象NICに自動生成するのを抑止する。
-      # 宣言的に書いたプロファイル以外がランタイムに出現するのを防ぐ。
-      settings.main.no-auto-default = "*";
+  config = {
+    networking = {
+      networkmanager = {
+        enable = true;
+        # NMが「Wired connection 1」のような一時プロファイル(nm-generated=true)を、
+        # 明示プロファイルのない管理対象NICに自動生成するのを抑止する。
+        # 宣言的に書いたプロファイル以外がランタイムに出現するのを防ぐ。
+        settings.main.no-auto-default = "*";
+      };
+      # NetworkManagerが既定で有効にするが、
+      # モデムを持つホストは無いので動かさない。
+      modemmanager.enable = false;
+      nameservers = encryptedDns true;
     };
-    # NetworkManagerが既定で有効にするが、
-    # モデムを持つホストは無いので動かさない。
-    modemmanager.enable = false;
-    nameservers = encryptedDns true;
-  };
 
-  config.programs = {
-    nm-applet = {
-      enable = true;
+    programs = {
+      nm-applet = {
+        enable = true;
+      };
     };
-  };
 
-  config.services.resolved = {
-    enable = true;
-    settings = {
-      Resolve = {
-        DNSSEC = "true";
-        # tailnetはシステムのDNS設定を上書きしないようにしているので、
-        # Tailscaleの内部DNSサーバに流れるのはtailnetの名前だけです。
-        # それ以外の問い合わせはここの設定で解決するので、
-        # DNS over TLSで暗号化して、DNSSECも手元で検証します。
-        # exit nodeを使っている間だけは全ての問い合わせがTailscaleへ流れます。
-        DNSOverTLS = "true";
-        FallbackDNS = encryptedDns true;
-        # LLMNRはDNSで引けなかった名前をリンクローカルにマルチキャストで問い合わせて、
-        # 名乗り出た相手を認証無しに信じる仕組みなので、
-        # 同じLANにいる攻撃者が任意の名前を自分に向けられる(Responder系の攻撃)。
-        # ホストの探索はwsddとavahi(mDNS)で足りているので、問い合わせる側としても無効にする。
-        LLMNR = "false";
+    services.resolved = {
+      enable = true;
+      settings = {
+        Resolve = {
+          DNSSEC = "true";
+          # tailnetはシステムのDNS設定を上書きしないようにしているので、
+          # Tailscaleの内部DNSサーバに流れるのはtailnetの名前だけです。
+          # それ以外の問い合わせはここの設定で解決するので、
+          # DNS over TLSで暗号化して、DNSSECも手元で検証します。
+          # exit nodeを使っている間だけは全ての問い合わせがTailscaleへ流れます。
+          DNSOverTLS = "true";
+          FallbackDNS = encryptedDns true;
+          # LLMNRはDNSで引けなかった名前をリンクローカルにマルチキャストで問い合わせて、
+          # 名乗り出た相手を認証無しに信じる仕組みなので、
+          # 同じLANにいる攻撃者が任意の名前を自分に向けられる(Responder系の攻撃)。
+          # ホストの探索はwsddとavahi(mDNS)で足りているので、問い合わせる側としても無効にする。
+          LLMNR = "false";
+        };
       };
     };
   };

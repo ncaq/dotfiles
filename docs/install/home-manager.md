@@ -13,7 +13,17 @@ home-managerを単体でインストールする手順です。
 ```zsh
 git clone https://github.com/ncaq/dotfiles.git
 cd dotfiles
-nix run '.#home-manager' -- --flake ".#x86_64-linux" -b "hm-bak" init --switch .
+./install.sh
+```
+
+`install.sh`がアーキテクチャを判別して`home-manager switch`を実行します。
+`home-manager`コマンドがまだ入っていなくても動きます。
+
+## 更新
+
+```zsh
+cd dotfiles
+./install.sh
 ```
 
 ## 補足

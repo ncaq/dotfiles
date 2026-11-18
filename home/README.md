@@ -6,7 +6,6 @@ home-managerの設定です。
 - `core/`: 全環境で共通の設定
 - `linked/`: シンボリックリンクで配置する設定ファイル
 - `native-linux/`: ネイティブLinux環境(NixOSなど、WSLやTermuxではない環境)専用の設定
-- `prompt/`: LLM向けのプロンプト
 - `wsl/`: WSL2環境専用の設定
 
 各ディレクトリの`default.nix`は`importDirModules`で中の`.nix`を全て読み込むので、

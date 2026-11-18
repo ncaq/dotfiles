@@ -78,7 +78,7 @@ let
   # `environment/`は手元のマシンの情報なのでランナでは誤解の元になります。
   # `coding-agent/`はスキルの使い方などが対話での利用を前提にしていて、
   # `prompt.md`の手順と食い違うため使いません。
-  outputPromptDir = ../../home/prompt/output;
+  outputPromptDir = ../../prompt/output;
   outputPrompts = map (name: builtins.readFile (outputPromptDir + "/${name}")) (
     lib.attrNames (
       lib.filterAttrs (name: type: type == "regular" && lib.hasSuffix ".md" name) (

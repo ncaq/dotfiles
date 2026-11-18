@@ -30,9 +30,9 @@ in
   _module.args.nativeLinux = nativeLinux;
 
   imports = [
-    ./link.nix
-    ./prompt
+    ../prompt
     ./core
+    ./link.nix
   ]
   ++ lib.optional nativeLinux ./native-linux
   ++ lib.optional isWSL ./wsl;

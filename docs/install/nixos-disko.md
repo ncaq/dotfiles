@@ -17,7 +17,7 @@ nix run 'nixpkgs#git' -- clone https://github.com/ncaq/dotfiles.git
 cd dotfiles
 sudo -E nix run '.#disko' -- --mode format,mount --flake ".#${NEW_HOST}"
 
-# nixos-installの回避策
+# nixos-installのワークアラウンド
 
 sudo mkdir -p /mnt/build
 

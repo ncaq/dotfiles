@@ -390,6 +390,16 @@ comment = [
   "NVDがCVE-2025-25468の修正として挙げるd5873be583はCVE-2025-25469のもの",
 ]
 
+["giflib-5.2.2"]
+cve = [
+  "CVE-2024-45993", # [6.5] gif2rgbのヒープバッファオーバーフロー
+]
+comment = [
+  "nixpkgsが当てているCVE-2025-31344.patchが、同じDumpScreen2RGBに色インデックスの範囲検査を足している",
+  "公開されているPoVは素の5.2.2ではヒープバッファオーバーフローになり、クロージャのgif2rgbではImage is defectiveで止まる",
+  "上流の同じ修正7bbe8eaは6.1.1から含まれる",
+]
+
 ["gimp-3.0.8"]
 cve = [
   "CVE-2026-79902", # [5.5] SFWの読み込みの無制限のスタック確保でクラッシュ
@@ -590,15 +600,11 @@ issue_url = [
   "https://github.com/NixOS/nixpkgs/pull/572684",
 ]
 until = "2026-12-06"
-comment = "0.73.1で修正済みでunstableにだけある。26.05へのバックポートは閉じられたので26.11待ち"
-
-["giflib-5.2.2"]
-cve = [
-  "CVE-2024-45993", # [6.5] gif2rgbのヒープバッファオーバーフロー
+comment = [
+  "CVE-2026-53432は0.73.0、CVE-2026-53433は0.73.1で修正済みでunstableにだけある",
+  "26.05へのバックポートは閉じられたので26.11待ち",
+  "CVE-2026-53432の整数溢れは32bitビルドでしか起きず、x86_64では発現しない",
 ]
-issue_url = "https://github.com/NixOS/nixpkgs/pull/526490"
-until = "2026-12-06"
-comment = "6.1.3で修正済みでunstableにだけある。メジャー更新なのでバックポートは無く26.11待ち"
 
 ["glib-2.88.3"]
 cve = [
@@ -695,7 +701,10 @@ cve = [
 ]
 issue_url = "https://github.com/NixOS/nixpkgs/pull/573327"
 until = "2026-12-06"
-comment = "1.28.5への更新がunstableにある。NVDの範囲は1.27.2以下。26.05へのバックポートは無い"
+comment = [
+  "上流は1.28.0で修正(611f75f0)。1.28.5への更新がunstableにある",
+  "NVDの範囲は1.27.2以下。26.05へのバックポートは無い",
+]
 
 ["nghttp2-1.69.0"]
 cve = [

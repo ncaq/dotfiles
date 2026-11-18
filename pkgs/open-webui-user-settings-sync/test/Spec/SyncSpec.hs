@@ -141,6 +141,13 @@ tests = describe "sync" do
     filter (== (Post, "/api/v1/users/user/settings/update")) calls
       `shouldBe` [(Post, "/api/v1/users/user/settings/update")]
     settings `shouldBe` [aesonQQ|{"ui": {"ctrlEnterToSend": true}}|]
+  it "システムプロンプトの宣言が無く、残ってもいなければ、何も書き込まない" do
+    (result, calls, _, _) <-
+      synchronizedTo
+        declaration{systemPrompt = Nothing}
+        synced{storedSettings = [aesonQQ|{"ui": {"ctrlEnterToSend": true}}|]}
+    isRight result `shouldBe` True
+    calls `shouldBe` readOnly
   it "プロフィールが宣言と違えば書き込んで、収束したことを確かめる" do
     (result, calls, _, profile) <-
       synchronized

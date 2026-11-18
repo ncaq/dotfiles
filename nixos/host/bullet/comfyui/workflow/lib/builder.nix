@@ -710,7 +710,7 @@ let
           "loaded_loras"
         ]
       ) "出力スロットの名前か並びが想定と違います";
-      # LoRA一覧の内部状態、テキスト、有効なLoRAのリストの順。
+      # テキスト補完のメタデータ、テキスト、LoRAのリストの順。
       assert lib.assertMsg (
         withClip.widgets_values == [
           {

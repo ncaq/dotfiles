@@ -119,7 +119,7 @@ lib.mkMerge [
         description = "CIFS Network Mounts";
         wantedBy = [ "multi-user.target" ];
         # systemd.target(5)により、
-        # ターゲットが`Wants=`で引き込んだユニットの両方が`DefaultDependencies=yes`の場合、
+        # ターゲットとそれが`Wants=`で引き込んだユニットの両方が`DefaultDependencies=yes`の場合、
         # 暗黙的に`After=`が追加される。
         # `DefaultDependencies=false`を設定することで、
         # `multi-user.target`が暗黙的に`After=cifs-mount.target`を追加するのを防ぎ、

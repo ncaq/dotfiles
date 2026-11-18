@@ -22,5 +22,5 @@
   #   sopsFile = ../../../secrets/something.yaml;
   #   key = "api_token";
   # };
-  # services.something.tokenFile = config.sops.secrets."api-token".path
+  # services.something.tokenFile = config.sops.secrets."something/api-token".path
 }

@@ -62,8 +62,8 @@ let
       # 個人的な研究、実験、私的娯楽などの非商用かつ非production用途に限られる。
       # 企業内でも非production環境での評価と非商用R&Dまでで、
       # 有料API、公開生成サービス、収益化製品などの機能としての推論には別途商用ライセンスが必要。
-      # 一方、生成画像は派生モデルに含まれず、販売、コミッション、広告、有料ゲーム、
-      # などの素材を含む商用利用が明示的に許可されている。
+      # 一方、生成画像は派生モデルに含まれず、
+      # 販売、コミッション、広告、有料ゲームなどの素材を含む商用利用が明示的に許可されている。
       # https://huggingface.co/circlestone-labs/Anima/blob/f973fc41ec7545364ac9776c2440285f43ff2a30/LICENSE.md
       # NVIDIA Cosmosの派生モデルでもあるため、NVIDIA Open Model Licenseも適用される。
       # https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license/

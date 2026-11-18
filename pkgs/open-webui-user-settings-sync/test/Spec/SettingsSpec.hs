@@ -58,5 +58,10 @@ tests = do
     it "システムプロンプトの宣言が無ければ、残っているものを取り除く" do
       mergeUi (fields [aesonQQ|{"system": "こんにちは", "models": ["gpt-oss:120b"]}|]) declared Nothing
         `shouldBe` fields [aesonQQ|{"ctrlEnterToSend": true, "models": ["gpt-oss:120b"]}|]
+    it "宣言した鍵にsystemを書いても、システムプロンプトの引数の方を使う" do
+      mergeUi mempty (fields [aesonQQ|{"system": "鍵に書いた"}|]) (Just "こんにちは\n")
+        `shouldBe` fields [aesonQQ|{"system": "こんにちは"}|]
+    it "宣言した鍵にsystemを書いても、システムプロンプトの宣言が無ければ取り除く" do
+      mergeUi mempty (fields [aesonQQ|{"system": "鍵に書いた"}|]) Nothing `shouldBe` mempty
     it "システムプロンプトの宣言が無く、残ってもいなければ、宣言だけを重ねる" do
       mergeUi mempty declared Nothing `shouldBe` declared

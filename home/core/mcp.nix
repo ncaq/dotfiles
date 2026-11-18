@@ -9,7 +9,7 @@ let
   # 代わりにClaude Codeの`headersHelper`から呼び出して、
   # 接続時にsops-nixが復号したトークンを読み出しBearerヘッダを組み立てます。
   # トークンをプロセス環境や`.mcp.json`に置かずに済みます。
-  # 401/403が返った時もClaude Codeがヘルパーを再実行するので、
+  # 401/403が返った時もClaude Codeがヘルパを再実行するので、
   # OAuthのように認証が切れて再ログインを求められることがありません。
   mkBearerAuthHeader =
     name: tokenFile:
@@ -84,7 +84,7 @@ in
       github = {
         # GitHub公式のローカル(stdio)MCPサーバを使用します。
         # リモートHTTPサーバ(url)ではenvが使えずファイルベースのシークレットを渡せないためです。
-        # nixpkgsにパッケージがあるので複雑なヘルパー認証ではなくローカル実行を選びます。
+        # nixpkgsにパッケージがあるので複雑なヘルパ認証ではなくローカル実行を選びます。
         command = lib.getExe pkgs.github-mcp-server;
         args = [ "stdio" ];
         env = {

@@ -1,4 +1,4 @@
--- | ランナーを登録するリポジトリ。
+-- | ランナを登録するリポジトリ。
 --
 -- `ncaq/dotfiles`のように所有者と名前を`/`で繋いだ形で持つ。
 module GithubRunnerRegistrationToken.Repository

@@ -3,7 +3,7 @@
 -- base側は`git worktree`で別のディレクトリへ展開して、そこで`nix build`する。
 -- 2つの`nix build`は並べずに順に走らせる。
 -- seminarの評価は1つで6GiBから7GiBほど使うので、
--- 並べるとメモリが16GBのGitHubホステッドのランナーでは足りなくなり得る。
+-- 並べるとメモリが16GBのGitHubホステッドのランナでは足りなくなり得る。
 -- 進捗は標準エラー出力をそのまま継いでCIのログへ流す。
 module NvdPrDiff.Build
   ( Side (..)

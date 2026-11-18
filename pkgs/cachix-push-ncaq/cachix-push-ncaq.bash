@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # `secrets/cachix.yaml`からCachix認証トークンを復号して、
-# `cachix push ncaq`を実行するラッパー。
+# `cachix push ncaq`を実行するラッパ。
 #
 # 自宅サーバのniks3キャッシュが落ちた時のフォールバックとして、
 # 別マシンやCIに手軽にキャッシュを転送するために使います。

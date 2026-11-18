@@ -20,7 +20,7 @@ let
 in
 lib.mkMerge [
   (lib.mkIf (hostName != "seminar") {
-    # seminarサーバーのchihiro共有を自動マウントするための設定。
+    # seminarサーバのchihiro共有を自動マウントするための設定。
     # ネットワーク、Tailscale、sopsシークレットが揃った時点でマウントを試行する。
     systemd = {
       # `fileSystems`ではなく`systemd.mounts`を使用する理由:

@@ -202,7 +202,7 @@ comment = [
 comment = "initrdに入る dbus-1 ディレクトリ名。D-Busのバージョン1ではない"
 
 ["lapack-3"]
-comment = "nixpkgsのlapackラッパー(実体はopenblas)。NVDのlapack <= 3.10.0 とは無関係"
+comment = "nixpkgsのlapackラッパ(実体はopenblas)。NVDのlapack <= 3.10.0 とは無関係"
 
 ["libiff-0-unstable-2024-03-02"]
 comment = "0-unstable-... を 20190123 より古いバージョンとして照合している"
@@ -546,7 +546,7 @@ comment = "上流は25.8.7と26.2.3で修正。unstableにだけあり26.05へ�
 cve = ["CVE-2026-4430"]
 issue_url = "https://github.com/NixOS/nixpkgs/pull/551328"
 until = "2026-12-06"
-comment = "ラッパーのderivation名のバージョンが 25.8.5.2-wrapped と切り出されるので別に書く"
+comment = "ラッパのderivation名のバージョンが 25.8.5.2-wrapped と切り出されるので別に書く"
 
 ["libsndfile-1.2.2"]
 cve = ["CVE-2024-50612", "CVE-2026-37555"]

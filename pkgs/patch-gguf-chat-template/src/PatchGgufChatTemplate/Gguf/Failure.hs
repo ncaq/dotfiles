@@ -12,7 +12,7 @@ import PatchGgufChatTemplate.Gguf.Format (GgufValueType)
 
 -- | 読んでいる途中で分かった、このファイルを扱えない理由。
 data GgufFailure
-  = -- | マジックナンバーが違う。
+  = -- | マジックナンバが違う。
     NotGguf
   | -- | 対応していないバージョン。
     UnexpectedVersion Word32

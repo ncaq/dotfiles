@@ -1,6 +1,6 @@
--- | ランナーの登録トークン。
+-- | ランナの登録トークン。
 --
--- ランナーの登録にしか使えず、発行から1時間で切れる。
+-- ランナの登録にしか使えず、発行から1時間で切れる。
 module GithubRunnerRegistrationToken.RegistrationToken
   ( RegistrationToken (..)
   ) where

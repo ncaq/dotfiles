@@ -189,7 +189,7 @@
         "x86_64-linux"
       ];
 
-      # ディレクトリ内の全`.nix`ファイルをimportするヘルパー関数。
+      # ディレクトリ内の全`.nix`ファイルをimportするヘルパ関数。
       importDirModules = import ./lib/import-dir-modules.nix { inherit lib; };
       # systemdサービス共通のハードニング設定。
       hardening = import ./lib/systemd-hardening.nix;
@@ -211,7 +211,7 @@
           inherit system overlays;
           config = nixpkgsConfig;
         };
-      # systemごとにpkgsをメモ化するヘルパー。
+      # systemごとにpkgsをメモ化するヘルパ。
       # 複数ホストやcheck/test-nixos-bootから同じ`system`で繰り返し呼ばれても、
       # 同じpkgs実体を返すようにして、評価時のメモリ消費を削減する。
       memoizePkgsPerSystem =
@@ -341,7 +341,7 @@
           # overlayを`pkgs`に当てた結果から、overlayが生やした名前の分だけを取り出す。
           localPackages = lib.getAttrs localPackageNames pkgs // {
             # CIでCUDAをビルドしないようCPU版のllama.cppを渡す。
-            # モデルとドラフトはラッパーの検査の分岐を通すためだけの値で、
+            # モデルとドラフトはラッパの検査の分岐を通すためだけの値で、
             # 検査は推論しないので実在しなくてよい。
             plamo-translate-cli = pkgs.plamo-translate-cli.override {
               inherit (pkgsUnstable) llama-cpp;
@@ -497,7 +497,7 @@
             };
           };
 
-          # CIのセルフホステッドランナーが1回の`nix-fast-build`でまとめて処理するもの。
+          # CIのセルフホステッドランナが1回の`nix-fast-build`でまとめて処理するもの。
           # `CHECK_OUTPUT=ciJobs ./check.sh`で実行する。
           #
           # `checks`との違いは、ホストとhome-managerの構成を評価するだけでなく実際にビルドして、
@@ -507,7 +507,7 @@
           # 1回にまとめる理由は、ホストの構成の評価が重いこと。
           # 評価のチェック、ビルド、ブートテストを別々のジョブに分けると、
           # 同じホストをジョブごとに評価し直すことになる。
-          # まとめれば評価は1回で済み、`nix-eval-jobs`のワーカーへ並列に割り振られる。
+          # まとめれば評価は1回で済み、`nix-eval-jobs`のワーカへ並列に割り振られる。
           #
           # `nix-eval-jobs`は属性を名前の順に評価して、評価が済んだものからビルドが始まる。
           # 全体の時間を決めるのは評価、ビルド、VMのブートが直列に並ぶブートテストなので、
@@ -554,11 +554,11 @@
                 git
                 home-manager
                 ;
-              # メモリに合わせて評価のワーカー数を抑える`nix-fast-build`のラッパー。
+              # メモリに合わせて評価のワーカ数を抑える`nix-fast-build`のラッパ。
               # `./check.sh`がPATHに無い環境で`nix run`する対象です。
               nix-fast-build = pkgs.nix-fast-build-wrapper;
               # `renovate-recovery`ワークフローが`claude-code-action`へ渡す実行ファイル。
-              # NixOSのセルフホステッドランナーでは、
+              # NixOSのセルフホステッドランナでは、
               # アクションが自分でダウンロードするバイナリは動的リンクを解決できず動かないため、
               # Nixでビルドしたものを指定します。
               inherit (pkgs) bun;

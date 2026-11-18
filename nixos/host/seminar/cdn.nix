@@ -65,7 +65,7 @@ let
   };
 in
 {
-  # ランナーのVMの共有の定義と`test/nixos-boot`のブートテストが、
+  # ランナのVMの共有の定義と`test/nixos-boot`のブートテストが、
   # ここからパスや名前を参照します。
   options.local.cdnDeploy = lib.mkOption {
     type = lib.types.submodule {
@@ -80,7 +80,7 @@ in
         };
         deployRoot = lib.mkOption {
           type = lib.types.str;
-          description = "cdn.ncaq.netのランナーのVMへ共有するステージングのディレクトリ。";
+          description = "cdn.ncaq.netのランナのVMへ共有するステージングのディレクトリ。";
         };
         deployStamp = lib.mkOption {
           type = lib.types.str;
@@ -203,9 +203,9 @@ in
     systemd = {
       tmpfiles.rules = [
         # ステージングのディレクトリ。
-        # cdn.ncaq.netのGitHub Actionsのセルフホステッドランナーが、
+        # cdn.ncaq.netのGitHub Actionsのセルフホステッドランナが、
         # `public`へrsyncで書き込んでから`deployed`をtouchします。
-        # ランナーのVMへvirtiofsで共有するディレクトリなので、
+        # ランナのVMへvirtiofsで共有するディレクトリなので、
         # VMの起動前に存在している必要があります。
         # 共有を通してVMの誰が書いても、ホストでは`github-runner`の所有になります。
         #
@@ -225,7 +225,7 @@ in
       # ステージングから配信ディレクトリへ写します。
       #
       # Caddyの`file_server`はシンボリックリンクを辿り、辿らない設定もありません。
-      # ランナーのジョブが配信ディレクトリへ直接書けると、
+      # ランナのジョブが配信ディレクトリへ直接書けると、
       # `/etc`などを指すリンクを置くだけで、
       # Caddyが読めるファイルを公開できてしまいます。
       # Caddyはコンテナの中で動くのでホストのファイルには届きませんが、

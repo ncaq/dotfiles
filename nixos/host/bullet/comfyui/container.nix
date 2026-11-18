@@ -111,7 +111,7 @@ in
           gpuSupport = "cuda";
           enableManager = true;
           inherit port;
-          # ホストからvethを通してIPv6でアクセスするので全インターフェースでlistenする。
+          # ホストからvethを通してIPv6でアクセスするので全インタフェースでlistenする。
           # privateNetworkなのでLANには露出しない。
           # ComfyUIはaiohttpでlistenするので、`::`はIPv6だけを受ける。
           listenAddress = "::";
@@ -153,10 +153,10 @@ in
             # 実測でbf16の0.622msに対しfp8は0.253msだった(4096角のGEMM)。
             #
             # 現在使っているモデルには効かない。
-            # 量子化済みモデルは各層に`comfy_quant`マーカーを持つため、
+            # 量子化済みモデルは各層に`comfy_quant`マーカを持つため、
             # `pick_operations`がこのフラグを見る前にmixed precision経路へ抜けて、
             # 層ごとの量子化設定に従うためである。
-            # 効くのはマーカーを持たない素のfp8チェックポイントを足した時で、
+            # 効くのはマーカを持たない素のfp8チェックポイントを足した時で、
             # その時に指定し忘れないよう先に入れておく。
             "fp8_matrix_mult"
             # xformers 0.0.30はBlackwell(sm_120)に対応していないため使わない。
@@ -177,14 +177,14 @@ in
         systemd.services.comfyui = {
           # ComfyUI本体と同じnixpkgsから取る。
           # comfyui-nixのnixpkgsは`flake.nix`でunstableへfollowさせている。
-          # comfyui-nixのランチャーはglibなどのライブラリを`LD_LIBRARY_PATH`で子プロセスにも渡すので、
+          # comfyui-nixのランチャはglibなどのライブラリを`LD_LIBRARY_PATH`で子プロセスにも渡すので、
           # 別のnixpkgsのffmpegを`path`に置くとglibcの版が合わずに起動できなかった。
           path = with pkgs-unstable; [
             ffmpeg-headless
             oxipng
           ];
           # Tritonはsm_100以上へのコンパイルに`ptxas`ではなく`ptxas-blackwell`を探す。
-          # comfyui-nixのランチャーは`TRITON_PTXAS_PATH`しか設定しないため、
+          # comfyui-nixのランチャは`TRITON_PTXAS_PATH`しか設定しないため、
           # RTX 5090(sm_120)では`Cannot find ptxas-blackwell`で止まる。
           # ComfyUI v0.37.0ではAnimaのテキストエンコーダのRoPEがTritonカーネルを通るので、
           # 動画だけでなく画像のワークフローも失敗する。
@@ -208,7 +208,7 @@ in
   # モデルやカスタムノードの取得に要る。
   # 利用者はTailscale Serviceからホストの中継を経て繋ぎに来る側なので、
   # 自宅LANやtailnetや他のコンテナへ出る理由は無い。
-  # カスタムノードは任意のPythonコードなので、出口を絞る価値はCIランナーと変わらない。
+  # カスタムノードは任意のPythonコードなので、出口を絞る価値はCIランナと変わらない。
   #
   # カスタムノードの取得元のgithub.comや、
   # Hugging Faceのモデルの配信元のcas-bridge.xethub.hf.coはIPv4にしか無いので、

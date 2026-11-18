@@ -18,9 +18,9 @@
     # exec先がシェルスクリプトだとカーネルがargv[0]をスクリプトのパスに置き換えるため、
     # 本体に届くargv[0]は`.claude-wrapped`になってしまいます。
     # tmuxの`pane_current_command`などはargv[0]を見るのでウィンドウ名が`.claude-wrapped`と表示されます。
-    # nixpkgs側のラッパーをバイナリラッパーに差し替えると、
+    # nixpkgs側のラッパをバイナリラッパに差し替えると、
     # `wrapProgram`が付ける`--inherit-argv0`が実際に効いてargv[0]が本体まで届きます。
-    # home-manager masterは`--plugin-dir`ラッパー自体を廃止済みなので、
+    # home-manager masterは`--plugin-dir`ラッパ自体を廃止済みなので、
     # そちらが安定版に降りてきたらこの差し替えは不要になります。
     package = pkgs-unstable.claude-code.override {
       makeShellWrapper = pkgs-unstable.makeBinaryWrapper;
@@ -43,7 +43,7 @@
         "fable"
         "sonnet"
       ];
-      # メッセージにCo-Authored-Byフッターを付与しません。
+      # メッセージにCo-Authored-Byフッタを付与しません。
       # 私はAIエージェントはテキストエディタの延長線上だと考えているため、
       # ツール名が書かれるのは不自然だと思っています。
       # セッションURLも付与しません。
@@ -414,7 +414,7 @@
     # Claude Codeがnativeインストール時に`~/.local/bin/claude`が存在していないと警告を出すため、
     # シンボリックリンクを作成して警告を抑制します。
     # またその際に、暴走したセッションが他のアプリをOOM Killerに殺させないように、
-    # セッションごとのメモリ制限を付けて起動するラッパーを挟みます。
+    # セッションごとのメモリ制限を付けて起動するラッパを挟みます。
     file.".local/bin/claude".source = lib.getExe (
       pkgs.writeShellApplication {
         name = "claude";

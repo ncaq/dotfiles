@@ -12,7 +12,7 @@ in
     hashTableSizeMB = 512;
   };
   # 重複排除はそこまで急ぎの処理ではないので、
-  # バッテリー駆動中は停止します。
+  # バッテリ駆動中は停止します。
   # AC電源の時はデスクトップと同じく、
   # 他に何も動いていない時はCPUを使い切ってさっさと終わらせます。
   systemd.services."beesd@root".unitConfig.ConditionACPower = true;

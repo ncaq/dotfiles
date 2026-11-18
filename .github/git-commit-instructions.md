@@ -21,7 +21,7 @@ Conventional Commitsの仕様はコミットメッセージのための軽量の
 
 [任意 本文]
 
-[任意 フッター]
+[任意 フッタ]
 ```
 
 ---
@@ -45,7 +45,7 @@ Conventional Commitsの仕様はコミットメッセージのための軽量の
 
 #### `BREAKING CHANGE`
 
-*フッター*に`BREAKING CHANGE:`が書かれているか、
+*フッタ*に`BREAKING CHANGE:`が書かれているか、
 型/スコープの直後に`!`が追加されているコミットはAPIの破壊的変更を導入します。
 
 Semantic Versioningにおける[`MAJOR`](http://semver.org/#summary)に相当します。
@@ -77,7 +77,7 @@ Semantic Versioningにおける[`MAJOR`](http://semver.org/#summary)に相当し
 を推奨しています。
 
 [git trailer format](https://git-scm.com/docs/git-interpret-trailers)に似た規約に従って、
-`BREAKING CHANGE: <タイトル>`以外の*フッター*が与えられるかもしれません。
+`BREAKING CHANGE: <タイトル>`以外の*フッタ*が与えられるかもしれません。
 
 追加の型たちはConventional Commitsの仕様で義務付けられているものではなく、
 BREAKING CHANGE を含まない限り、
@@ -91,7 +91,7 @@ Semantic Versioning に対する暗黙的な効果を持ちません。
 
 ## 例
 
-### タイトルおよび破壊的変更のフッターを持つコミットメッセージ
+### タイトルおよび破壊的変更のフッタを持つコミットメッセージ
 
 ```markdown
 feat: allow provided config object to extend other configs
@@ -111,7 +111,7 @@ feat!: send an email to the customer when a product is shipped
 feat(api)!: send an email to the customer when a product is shipped
 ```
 
-### `!` と BREAKING CHANGE フッターの両方を持つコミットメッセージ
+### `!` と BREAKING CHANGE フッタの両方を持つコミットメッセージ
 
 ```markdown
 feat!: drop support for Node 6
@@ -131,7 +131,7 @@ docs: correct spelling of CHANGELOG
 feat(lang): add polish language
 ```
 
-### 複数段落からなる本文と複数のフッターを持ったコミットメッセージ
+### 複数段落からなる本文と複数のフッタを持ったコミットメッセージ
 
 ```markdown
 fix: prevent racing of requests
@@ -186,39 +186,39 @@ Reviewed-by: Z
   本文はタイトルの下の1行の空行から始めなければならない(MUST)。
 - コミットの本文は自由な形式であり、
   改行で区切られた複数の段落で構成することができる(MAY)。
-- ひとつ以上のフッターを、
+- ひとつ以上のフッタを、
   本文の下の1行の空行に続けて書くことができる(MAY)。
-  それぞれのフッターは、
+  それぞれのフッタは、
   ひとつの単語トークン、
   それに続く`:<space>`か`<space>#`によるセパレータ、
   そして文字列の値から構成されなければならない(MUST)。
   これは[git trailer convention](https://git-scm.com/docs/git-interpret-trailers)に触発されている。
-- フッターのトークンは空白の代わりに`-`を使わなければならない(MUST)。
+- フッタのトークンは空白の代わりに`-`を使わなければならない(MUST)。
   例えば`Acked-by`とする。
-  これは複数段落からなる本文からフッターを区別するのに役立つ。
+  これは複数段落からなる本文からフッタを区別するのに役立つ。
   例外として`BREAKING CHANGE`があり、
   これをトークンとして使用することができる(MAY)。
-- フッターの値にはスペースと改行を含めることができる(MAY)。
-  そして次のフッターのトークンとセパレータの組が見つかった時、
-  以前のフッターのパースは終了しなければならない(MUST)。
+- フッタの値にはスペースと改行を含めることができる(MAY)。
+  そして次のフッタのトークンとセパレータの組が見つかった時、
+  以前のフッタのパースは終了しなければならない(MUST)。
 - 破壊的変更は、
   コミットの型/スコープの接頭辞か、
-  フッターによって明示されなければならない(MUST)。
-- 破壊的変更がフッターとして含まれる場合は、
+  フッタによって明示されなければならない(MUST)。
+- 破壊的変更がフッタとして含まれる場合は、
   大文字の`BREAKING CHANGE`の後ろにコロンとスペース、
   そしてタイトルを続けなければならない(MUST)。
   例: `BREAKING CHANGE: environment variables now take precedence over config files`。
 - 破壊的変更が型/スコープの接頭辞として含まれる場合は、
   `:` の直前に `!` を用いて明示されねばならない(MUST)。
   `!` が使用された場合には、
-  フッターから `BREAKING CHANGE:`を省略してもよい(MAY)。
+  フッタから `BREAKING CHANGE:`を省略してもよい(MAY)。
   その場合はコミットのタイトル部分で破壊的変更の内容を説明することになる(SHALL)。
 - `feat`と`fix`以外の型を使うことができる(MAY)。
   例: `docs: update ref docs.`。
 - Conventional Commitsを構成する情報の単位は、
   大文字のBREAKING CHANGEを除き、
   実装において大文字と小文字を区別してはならない(MUST NOT)。
-- フッターのトークンにおいて`BREAKING-CHANGE`は`BREAKING CHANGE`と、
+- フッタのトークンにおいて`BREAKING-CHANGE`は`BREAKING CHANGE`と、
   同じトークンとして解釈されなければならない(MUST)。
 
 ## Conventional Commitsは`revert`コミットをどのように扱いますか?
@@ -231,10 +231,10 @@ Reviewed-by: Z
 Conventional Commitsはrevertの振る舞いを定義するための明示的な努力をしません。
 その代わりに、
 revertを処理するためのロジックを、
-型とフッターの柔軟性を利用して開発するようなツールの作者にこれを任せます。
+型とフッタの柔軟性を利用して開発するようなツールの作者にこれを任せます。
 
 我々のおすすめの方法としては、
-ひとつは`revert`型とrevertされるコミットのSHAを参照するフッターを使うようにすることです。
+ひとつは`revert`型とrevertされるコミットのSHAを参照するフッタを使うようにすることです。
 
 ```markdown
 revert: let us never again speak of the noodle incident
@@ -421,7 +421,7 @@ CIが「自動化された検証やデプロイの仕組み」を扱うのに対
 ## revert
 
 以前のコミットを取り消す変更です。
-取り消したコミットのSHAをフッターに記載するのが慣例です。
+取り消したコミットのSHAをフッタに記載するのが慣例です。
 
 例:
 

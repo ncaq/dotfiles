@@ -61,7 +61,7 @@
       #
       # ホストのfirewallは既定で拒否するので、
       # 転送されたポートがそのままLANやインターネットへ開くことは無い。
-      # tailscale0のようにインターフェイス単位で許可している経路からは届き得るので、
+      # tailscale0のようにインタフェース単位で許可している経路からは届き得るので、
       # `--network host`で待ち受けるコンテナはホストで直接動かすのと同じ露出があると考える。
       environment = {
         DOCKERD_ROOTLESS_ROOTLESSKIT_NET = "pasta";

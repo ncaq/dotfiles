@@ -1,6 +1,6 @@
 { lib, ... }:
 {
-  # GitHub ActionsのランナーのVMについて、
+  # GitHub ActionsのランナのVMについて、
   # ホスト側で用意するものの場所をモジュールの外から参照できるようにします。
   # ブートテストがこれを読んで、
   # ストアの準備(`test/nixos-boot/script/github-runner-store.nix`)と、

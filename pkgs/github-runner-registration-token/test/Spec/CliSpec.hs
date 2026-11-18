@@ -34,7 +34,7 @@ data Workspace m = Workspace
 withWorkspace
   :: (MonadUnliftIO m)
   => Text
-  -- ^ ランナーを登録するリポジトリ。
+  -- ^ ランナを登録するリポジトリ。
   -> (Workspace m -> m a)
   -> m a
 withWorkspace repository action =

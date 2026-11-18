@@ -3,7 +3,7 @@
 -- `app/Main.hs`は環境を用意してここを呼ぶだけにする。
 --
 -- NetworkManagerのdispatcherスクリプトとして、デバイスのイベントごとに呼ばれる。
--- 第1引数がインターフェース名、第2引数がアクションである。
+-- 第1引数がインタフェース名、第2引数がアクションである。
 module TailscaleExitNode.Cli
   ( run
   , runWith
@@ -45,7 +45,7 @@ readiness = Readiness{policy = constantDelay 1000000 <> limitRetries 30, limit =
 
 -- | 待ち方と`tailscale`の呼び出しを受け取って実行する。
 --
--- インターフェースが繋がった時でなければ何もしない。
+-- インタフェースが繋がった時でなければ何もしない。
 -- 人が呼ぶコマンドではないので、引数が足りない時も何もせず成功で終わる。
 --
 -- tailscaledが待っても応答しない時も、そのまま先へ進む。

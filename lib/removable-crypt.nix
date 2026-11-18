@@ -66,7 +66,7 @@ let
         "--name"
         name
       ];
-      # `--add-flags`の値はラッパーのスクリプトへそのまま埋まるので、
+      # `--add-flags`の値はラッパのスクリプトへそのまま埋まるので、
       # 引数ごとにクォートしてから、ビルドのシェルに渡すためにもう一度クォートします。
       flags = arguments: lib.escapeShellArg (lib.escapeShellArgs arguments);
     in

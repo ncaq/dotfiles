@@ -1,7 +1,7 @@
 # コンテナ内のOllamaへ接続するCLIをホストから利用可能にする。
 #
 # `ollama launch <ハーネス>`はここで作った環境をそのまま子プロセスへ渡すため、
-# ハーネスへ伝えたい値もこのラッパーで用意する。
+# ハーネスへ伝えたい値もこのラッパで用意する。
 {
   lib,
   pkgs,
@@ -52,7 +52,7 @@ let
     # どちらの丸めにも掛からずそのまま通る。
     #
     # どちらも呼び出し側が既に指定していればそちらを優先する。
-    # 値を変えて試す時にこのラッパーを組み直さずに済ませるためである。
+    # 値を変えて試す時にこのラッパを組み直さずに済ませるためである。
     text = ''
       : "''${CLAUDE_CODE_AUTO_COMPACT_WINDOW:=${toString budget.history}}"
       : "''${CLAUDE_CODE_MAX_OUTPUT_TOKENS:=${toString budget.output}}"

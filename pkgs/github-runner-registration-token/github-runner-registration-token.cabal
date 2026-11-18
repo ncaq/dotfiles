@@ -1,7 +1,7 @@
 cabal-version: 3.12
 name: github-runner-registration-token
 version: 0.1.0.0
-synopsis: GitHub Actionsのランナーの登録トークンを発行してファイルに置くコマンド
+synopsis: GitHub Actionsのランナの登録トークンを発行してファイルに置くコマンド
 license: Apache-2.0
 author: ncaq <ncaq@ncaq.net>
 maintainer: ncaq <ncaq@ncaq.net>

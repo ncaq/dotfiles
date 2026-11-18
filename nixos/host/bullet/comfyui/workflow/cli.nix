@@ -8,7 +8,7 @@
 # `local.comfyui.workflows`を走査するので、
 # `workflow/`へモジュールを1つ置けばコマンドも一緒に増える。
 #
-# ラッパーの作り方は`pkgs/comfy-workflow`の`mkCommand`にあり、
+# ラッパの作り方は`pkgs/comfy-workflow`の`mkCommand`にあり、
 # ここが決めるのは接続先と出力先だけである。
 {
   config,

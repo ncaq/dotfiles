@@ -29,7 +29,7 @@ let
       exec garage "$@"
     '';
   };
-  # コンテナ内のgarage CLIをホストから実行するためのラッパー。
+  # コンテナ内のgarage CLIをホストから実行するためのラッパ。
   # GARAGE_RPC_SECRETなどを渡すために環境ファイルをexportする。
   garageWrapper = pkgs.writeShellApplication {
     name = "garage";

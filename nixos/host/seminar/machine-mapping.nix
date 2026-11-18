@@ -176,7 +176,7 @@ in
       vsock CIDは仮想マシンを識別するための32bit整数値で、
       以下の値が予約されています:
 
-      - 0: ハイパーバイザー
+      - 0: ハイパバイザ
       - 1: ループバック
       - 2: ホスト
       - 0xFFFFFFFF: VMADDR_CID_ANY
@@ -300,7 +300,7 @@ in
           value = i.id;
         }) vmInterfaces;
         duplicateTapValues = findDuplicates (map (e: e.value) tapEntries);
-        # Linuxのインターフェイス名は15文字まで。
+        # Linuxのインタフェース名は15文字まで。
         # 超えると評価は通って、ホストでVMを起動する時にTAPの作成で初めて失敗する。
         longTapEntries = lib.filter (e: lib.stringLength e.value > 15) tapEntries;
         macEntries = map (i: {

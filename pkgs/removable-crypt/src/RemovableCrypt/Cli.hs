@@ -88,9 +88,9 @@ mountParser =
     <*> mountOptions "btrfs-mount-options" "Comma-separated additional mount options for btrfs"
  where
   -- 同じ名前を何度も書ける形にはせず、カンマ区切りの1つの必須のオプションにする。
-  -- デバイスごとのラッパーは宣言した引数の後ろへ呼び出し元の引数をそのまま足すので、
+  -- デバイスごとのラッパは宣言した引数の後ろへ呼び出し元の引数をそのまま足すので、
   -- 何度も書ける形だと、sudo越しに呼ぶ人が宣言に無い`suid`や`dev`を足せてしまう。
-  -- 必須にしておけば、ラッパーが既に指定しているので、2回目の指定として弾かれる。
+  -- 必須にしておけば、ラッパが既に指定しているので、2回目の指定として弾かれる。
   mountOptions name description =
     option
       (splitMountOptions . convert <$> str @String)

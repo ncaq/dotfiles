@@ -12,8 +12,8 @@ let
   # flakeに定義された全nixosConfigurationsとhomeConfigurationsのクロージャを、
   # GCから保護するGC rootを登録するスクリプト。
   #
-  # セルフホステッドランナーはこのホストのnix storeを共有していますが、
-  # `nix build`のresultリンクはジョブごとに作り直されるランナーの隔離環境の中にあるため、
+  # セルフホステッドランナはこのホストのnix storeを共有していますが、
+  # `nix build`のresultリンクはジョブごとに作り直されるランナの隔離環境の中にあるため、
   # ジョブ終了後は他ホスト向けのクロージャ(特にbulletの巨大なモデルファイル)を守るrootが残りません。
   # そのままnix-gcに回収されると、
   # 次のCIで巨大なパスをHDD RAID上のキャッシュから取得し直すことになります。

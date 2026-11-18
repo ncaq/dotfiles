@@ -9,7 +9,7 @@ let
     # monospace系。
     "DejaVu Sans Mono" = "monospace";
     "Liberation Mono" = "monospace";
-    # MS系レガシーフォントを総称フォントにマッピングします。
+    # MS系レガシフォントを総称フォントにマッピングします。
     # PostScript名をだいたいカバーしたものを指定します。
     # ゴシック系のプロポーショナル。
     "MS PGothic" = "sans-serif";

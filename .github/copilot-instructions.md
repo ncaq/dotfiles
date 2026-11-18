@@ -146,7 +146,7 @@ WSL2の環境でbtrfsじゃないとか、
 
 自分で構成するものは全てIPv6で動くようにして、
 アドレスを指定する時はIPv6を使います。
-IPv4はIPv4でしか届かない相手と繋がる時のレガシー対応に限ります。
+IPv4はIPv4でしか届かない相手と繋がる時のレガシ対応に限ります。
 
 詳しい方針は`docs/ip-version-policy.md`に書いています。
 
@@ -179,7 +179,7 @@ ComfyUI自身がPythonのモジュールとしてノードを読み込むため�
 この基準には当てはまりません。
 
 シェルスクリプトにするのは、
-秘密を復号して別のコマンドへ渡すラッパーのように、
+秘密を復号して別のコマンドへ渡すラッパのように、
 外部コマンドを順に呼ぶだけの処理です。
 以下のどれかに当てはまるなら、
 単純とは言えないので他の言語にします。
@@ -267,7 +267,7 @@ CHECK_OUTPUT=ciJobs ./check.sh
 - Termux(nix-on-droid): `nix-on-droid switch --flake .`
 - その他のLinux: アーキテクチャに応じた`home-manager switch`
 
-単なるラッパーではなく、
+単なるラッパではなく、
 NixOSでは適用前に最新コミットの情報を`last-commit.json`として一時的にstagingします。
 この情報は`nixos/core/label.nix`がブートエントリのラベル生成に使うため、
 `nixos-rebuild`を直接実行するとブートエントリからコミット情報が欠落します。
@@ -414,7 +414,7 @@ home-managerの`programs.claude-code`モジュールで全ホスト共通の設�
 ビルド時にユーザの`~/.claude/settings.json`として展開されます。
 
 また、`.claude/settings.json`で管理できないタイプの設定は、
-home-managerによって生成されたラッパープログラムを通じて渡されます。
+home-managerによって生成されたラッパプログラムを通じて渡されます。
 
 ## `home/core/llm-skill.nix`
 

@@ -45,7 +45,7 @@
   その場合は`socket`にそのsocketユニットを渡すとtailnet経由の初回アクセスでも、
   オンデマンド起動が機能する。
 
-  HTTPSに加えて80番のHTTPリスナーも張り、
+  HTTPSに加えて80番のHTTPリスナも張り、
   HTTPSへリダイレクトを返すだけのCaddyへ転送する。
   Serve自体にリダイレクトを返すターゲットが無いため転送先が要る。
   80番が閉じたままだと`http://`で飛んできた時にTCP接続ごと拒否される。
@@ -122,7 +122,7 @@ in
       readOnly = true;
       default = 8880;
       description = ''
-        Tailscale ServeのHTTPリスナーが転送する、HTTPSリダイレクタのポート。
+        Tailscale ServeのHTTPリスナが転送する、HTTPSリダイレクタのポート。
         Caddyがloopbackで待ち受けて、Serveの`--http=80`がここへ転送する。
         待ち受ける側と転送する側の両方が同じ番号を必要とするので1箇所に集める。
       '';
@@ -172,7 +172,7 @@ in
     # Tailscale Serviceの80番へ来たHTTPリクエストをHTTPSへリダイレクトするバックエンド。
     #
     # ブラウザのURL補完やコピーしたリンクからは`http://`で飛ぶことが多いが、
-    # ServeにHTTPSのリスナーしか無いとTCP接続自体が拒否されて到達できない。
+    # ServeにHTTPSのリスナしか無いとTCP接続自体が拒否されて到達できない。
     # `tailscale serve`のターゲットに指定できるのはファイルやディレクトリやURLなどだけで、
     # リダイレクトを返す手段が無いため、転送先として最小のHTTPサーバを用意する。
     #

@@ -2,7 +2,7 @@
 
 ## 前提知識
 
-公開鍵のフィンガープリント: `7DDE3BC405DC58D94BF661D342248C7D0FB73D57`
+公開鍵のフィンガプリント: `7DDE3BC405DC58D94BF661D342248C7D0FB73D57`
 
 ## 秘密鍵の隔離(gpg-vault)
 
@@ -76,7 +76,7 @@ gpg --quick-add-key 7DDE3BC405DC58D94BF661D342248C7D0FB73D57 ed25519 sign,auth 5
 
 鍵一覧を見て発行された副鍵を確認。
 普通は末尾に追加されています。
-副鍵のフィンガープリントをメモしておきます。
+副鍵のフィンガプリントをメモしておきます。
 
 ```zsh
 gpg --list-keys --with-subkey-fingerprint --full-timestrings \
@@ -88,7 +88,7 @@ gpg --list-keys --with-subkey-fingerprint --full-timestrings \
 
 ```zsh
 gpg --export-secret-subkeys \
-  --armor <暗号副鍵のフィンガープリント>! <署名認証副鍵のフィンガープリント>! > \
+  --armor <暗号副鍵のフィンガプリント>! <署名認証副鍵のフィンガプリント>! > \
   subkeys-secret.asc
 ```
 
@@ -194,4 +194,4 @@ nix flake update --commit-lock-file \
 ```
 
 を実行してPRを作って、
-マージしてGitHub Actionsによるデプロイをトリガーしてください。
+マージしてGitHub Actionsによるデプロイをトリガしてください。

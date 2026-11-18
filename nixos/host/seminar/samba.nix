@@ -15,7 +15,7 @@ in
   services = {
     samba = {
       enable = true;
-      # 全インターフェイスではなく、LANとtailnetのインターフェイスだけに開ける(下のnetworking.firewall)。
+      # 全インタフェースではなく、LANとtailnetのインタフェースだけに開ける(下のnetworking.firewall)。
       openFirewall = false;
       # NetBIOSの名前解決とブラウズを担うデーモン。
       # NetBIOSを使わない理由は下の`disable netbios`に書いてある。
@@ -31,16 +31,16 @@ in
           "security" = "user"; # ユーザ認証必須
           "map to guest" = "never"; # ゲストアクセス禁止
           # 待ち受け先の制限は`bind interfaces only`ではなくfirewallで行う(下のnetworking.firewall)。
-          # Sambaはbroadcastできないインターフェイスをbind候補から外すので、
+          # Sambaはbroadcastできないインタフェースをbind候補から外すので、
           # point-to-pointのtailscale0には`interfaces`でどう書いてもbindできない。
           #
           # NetBIOSは使わない。
           # SMB2以降は445番へ直接繋ぐので、NetBIOSのセッション(139番)が要るのはSMB1の時代のクライアントだけで、
           # Sambaは既定でSMB1を受け付けないのでそういうクライアントはどのみち繋がらない。
           # 名前の解決はtailnetのMagicDNSかmDNS(下のavahi)で、
-          # Windowsのエクスプローラーへの表示はWS-Discovery(下のsamba-wsdd)で足りる。
+          # Windowsのエクスプローラへの表示はWS-Discovery(下のsamba-wsdd)で足りる。
           # NetBIOSはIPv4だけのプロトコルで、
-          # nmbdはコンテナのvethも含む全てのインターフェイスへ届かないブロードキャストを投げ続けていた。
+          # nmbdはコンテナのvethも含む全てのインタフェースへ届かないブロードキャストを投げ続けていた。
           "disable netbios" = "yes";
           # 既定の待ち受けは`tcp, nbt`で、`disable netbios`だけでは`nbt`(139番)が残るので、
           # 445番へ直接繋ぐ`tcp`だけにする。
@@ -65,7 +65,7 @@ in
     # Windows 10/11のネットワーク探索で表示されるように
     samba-wsdd = {
       enable = true;
-      # 探索はLANの中でしか意味が無いので、LANのインターフェイスに限定する。
+      # 探索はLANの中でしか意味が無いので、LANのインタフェースに限定する。
       interface = lanInterface;
       openFirewall = false;
     };
@@ -89,9 +89,9 @@ in
   # WS-Discoveryの探索はLANからだけ受け付ける。
   # tailnetの端末はMagicDNS名で直接繋ぐので探索は要らない。
   #
-  # インターフェイスだけでなく送信元アドレスでも絞る。
-  # LANのインターフェイスにはグローバルIPv6アドレスも付いていて、
-  # インターフェイス単位の許可ではインターネットからそこへ届く経路を塞げないため。
+  # インタフェースだけでなく送信元アドレスでも絞る。
+  # LANのインタフェースにはグローバルIPv6アドレスも付いていて、
+  # インタフェース単位の許可ではインターネットからそこへ届く経路を塞げないため。
   # LANのIPv6はリンクローカルだけ許す。
   # wsddはIPv6のマルチキャストでも探索に応答し、
   # LAN内のWindowsが探索で見つけた相手へIPv6で繋ぎに来ることがあるが、

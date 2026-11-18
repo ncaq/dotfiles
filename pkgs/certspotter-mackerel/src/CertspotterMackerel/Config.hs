@@ -1,6 +1,6 @@
 -- | 起動時に受け取る設定。環境変数から受け取る。
 --
--- NixOSモジュールが包むラッパーが設定する。
+-- NixOSモジュールが包むラッパが設定する。
 --
 -- * `CERTSPOTTER_EVENTS_LOG`: hookが追記してチェックが読むログのパス。
 -- * `CERTSPOTTER_ALERT_WINDOW_SECONDS`: この秒数以内のイベントがあればチェックをWARNINGかCRITICALにする。

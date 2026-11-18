@@ -6,7 +6,7 @@
  * 作業ツリーを覆う拒否が入ると、Claude Codeは結果のファイルも修正も書けなくなります。
  * その時もワークフローは成功で終わるので、復旧が要る時まで気付けません。
  * 逆に、後のステップが読む場所の拒否が消えても気付けません。
- * セルフホステッドランナーと同じ配置を仮定して、両方を確かめます。
+ * セルフホステッドランナと同じ配置を仮定して、両方を確かめます。
  *
  * Claude Codeの規則の照合をそのまま再現するものではありません。
  * このリポジトリが使っている3つの書き方だけを扱い、
@@ -19,7 +19,7 @@
  * ファイルシステムに触れない判定だけをここに置いて、テストできるようにしています。
  */
 
-/** 規則を当てはめるランナーの配置。 */
+/** 規則を当てはめるランナの配置。 */
 export interface RunnerLayout {
   /** ホームディレクトリ。 */
   readonly home: string;
@@ -27,23 +27,23 @@ export interface RunnerLayout {
   readonly cwd: string;
 }
 
-/** nixpkgsのgithub-runnerのモジュールが、ランナーごとの作業ディレクトリを置く場所。 */
+/** nixpkgsのgithub-runnerのモジュールが、ランナごとの作業ディレクトリを置く場所。 */
 const RUNNER_ROOT = "/run/github-runner";
 
 /**
- * ランナーのホームディレクトリを返します。
+ * ランナのホームディレクトリを返します。
  * nixpkgsのgithub-runnerのモジュールは、
- * `HOME`とランナーの作業ディレクトリを`/run/github-runner/<ランナーの名前>`にします。
+ * `HOME`とランナの作業ディレクトリを`/run/github-runner/<ランナの名前>`にします。
  */
 function runnerHome(name: string): string {
   return `${RUNNER_ROOT}/${name}`;
 }
 
 /**
- * セルフホステッドランナーの配置。
- * ランナーの名前は`nixos/host/seminar/github-runner/github-runner-x64.nix`が決めています。
+ * セルフホステッドランナの配置。
+ * ランナの名前は`nixos/host/seminar/github-runner/github-runner-x64.nix`が決めています。
  * 作業ツリーをホームディレクトリの下の`<リポジトリ名>/<リポジトリ名>`に置くのは、
- * nixpkgsのモジュールではなく、Actionsのランナーと`actions/checkout`の既定の動きです。
+ * nixpkgsのモジュールではなく、Actionsのランナと`actions/checkout`の既定の動きです。
  */
 export const RUNNER_LAYOUT: RunnerLayout = {
   home: runnerHome("dotfiles-x64-0"),
@@ -73,7 +73,7 @@ export const MUST_BE_DENIED: readonly string[] = [
   `${RUNNER_LAYOUT.home}/.curlrc`,
   `${RUNNER_LAYOUT.home}/.ssh/authorized_keys`,
   `${RUNNER_LAYOUT.home}/.claude/settings.json`,
-  // 同じVMで動く他のランナーの、後のステップが読む場所。
+  // 同じVMで動く他のランナの、後のステップが読む場所。
   `${runnerHome("dotfiles-x64-1")}/_temp/set_env`,
 ];
 

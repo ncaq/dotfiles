@@ -36,7 +36,7 @@ pkgs.runCommand (baseNameOf file)
 
     SSL_CERT_FILE = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
     # Xetの転送並列度を上げます。
-    # 同時接続数とワーカースレッド数と内部バッファが増えるため、
+    # 同時接続数とワーカスレッド数と内部バッファが増えるため、
     # `nixos/core/nix-daemon.nix`の`max-jobs = 3`の下では、
     # コンパイルを含む他のderivationやモデル取得同士と帯域とメモリを奪い合います。
     # それでもモデルの取得は数十GBに達してビルド時間の大半を占めるので、
@@ -49,7 +49,7 @@ pkgs.runCommand (baseNameOf file)
     # 更新を促されても取れる行動がありません。
     HF_HUB_DISABLE_UPDATE_CHECK = "1";
 
-    # ネットワーク待ちが本体なのでリモートビルダーに投げる意味がありません。
+    # ネットワーク待ちが本体なのでリモートビルダに投げる意味がありません。
     preferLocalBuild = true;
   }
   ''

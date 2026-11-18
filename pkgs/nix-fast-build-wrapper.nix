@@ -1,17 +1,17 @@
-# `nix-fast-build`をカスタマイズするラッパー。
-# 設定ファイル機能がないので引数を上書きするラッパーを作ることでカスタマイズしています。
+# `nix-fast-build`をカスタマイズするラッパ。
+# 設定ファイル機能がないので引数を上書きするラッパを作ることでカスタマイズしています。
 #
 # `--no-link`は、
 # チェックするだけで`result`リンクが作成されるのを回避するものです。
 # `--skip-cached`は、
 # ビルドキャッシュがあるものはスキップして高速化するものです。
 # `--eval-workers`は、
-# 評価フェーズで生成される`nix-eval-jobs`ワーカー数の上限です。
+# 評価フェーズで生成される`nix-eval-jobs`ワーカ数の上限です。
 # `nix-fast-build`がメモリを食い尽くさないように、
 # ランタイムにシステム搭載メモリの50%を予算として計算して、
 # `nix-eval-jobs`の`--max-memory-size`デフォルトである`4GiB`/workerで割って算出します。
 # 同時にCPUコア数も上限とすることで、
-# メモリに余裕がある環境で評価ワーカーがCPU数を超えて無駄に増えるのを防ぎます。
+# メモリに余裕がある環境で評価ワーカがCPU数を超えて無駄に増えるのを防ぎます。
 #
 # 環境変数`NIX_FAST_BUILD_CONCURRENT_JOBS`に、
 # 同じマシンで同時に動き得る`nix-fast-build`の数を渡すと、
@@ -19,9 +19,9 @@
 # 渡さなければ1つだけ動くものとして扱います。
 #
 # home-managerの環境と、
-# GitHub ActionsのセルフホステッドランナーのVMに入れます。
+# GitHub ActionsのセルフホステッドランナのVMに入れます。
 # flakeの`packages`の`nix-fast-build`としても出しているので、
-# `./check.sh`はPATHに無い環境でも同じラッパーを使います。
+# `./check.sh`はPATHに無い環境でも同じラッパを使います。
 {
   writeShellApplication,
   coreutils,
@@ -39,7 +39,7 @@ writeShellApplication {
     # メモリ(swapは除く)の合計量(KiB)。
     mem_total_kib=$(awk '/^MemTotal:/ { print $2 }' /proc/meminfo)
     # 同じマシンで同時に動き得る`nix-fast-build`の数。
-    # このラッパーは他のジョブがメモリを使っていることを知らないので、
+    # このラッパは他のジョブがメモリを使っていることを知らないので、
     # 複数のジョブが重なる環境では呼び出す側が数を教えます。
     concurrent_jobs=''${NIX_FAST_BUILD_CONCURRENT_JOBS:-1}
     if ! [[ "$concurrent_jobs" =~ ^[1-9][0-9]*$ ]]; then
@@ -48,16 +48,16 @@ writeShellApplication {
     fi
     # 利用して良いメモリの予算(MiB)。
     budget_mib=$(( mem_total_kib / 2 / 1024 / concurrent_jobs ))
-    # 4GiBのデフォルト値と予算から求められる利用可能なワーカー数。
+    # 4GiBのデフォルト値と予算から求められる利用可能なワーカ数。
     workers=$(( budget_mib / 4096 ))
     # CPUスレッド数も考えて上限にする。
     nproc_value=$(nproc)
     if [ "$workers" -gt "$nproc_value" ]; then
-      # メモリ予算から求めたワーカー数がCPUコア数を上回ったらコア数を上限にする。
+      # メモリ予算から求めたワーカ数がCPUコア数を上回ったらコア数を上限にする。
       workers=$nproc_value
     fi
     if [ "$workers" -lt 1 ]; then
-      # 最低限1つのワーカーは保証。
+      # 最低限1つのワーカは保証。
       workers=1
     fi
 

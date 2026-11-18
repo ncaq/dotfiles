@@ -77,7 +77,7 @@ pkgs.runCommand "${gguf.name}-patched-template"
     outputHashAlgo = "sha256";
     outputHash = hash;
 
-    # ネットワークもコンパイルも無いのでリモートビルダーに投げる意味がない。
+    # ネットワークもコンパイルも無いのでリモートビルダに投げる意味がない。
     preferLocalBuild = true;
     # 出力は数十GBある。
     # 元のGGUFは手元にあるので、substituterから引き直すよりreflinkで作る方が速い。

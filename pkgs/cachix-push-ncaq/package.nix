@@ -1,5 +1,5 @@
 # `secrets/cachix.yaml`から認証トークンを復号して、
-# `cachix push ncaq`を実行するラッパー。
+# `cachix push ncaq`を実行するラッパ。
 {
   lib,
   runCommand,

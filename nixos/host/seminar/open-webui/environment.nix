@@ -126,7 +126,7 @@
     # 埋め込みはコンテナ内のsentence-transformersではなくOllamaで行う。
     #
     # 接続先の`RAG_OLLAMA_BASE_URL`は未指定なら`OLLAMA_BASE_URL`を使うので、
-    # チャットと同じCaddyのフェイルオーバー(bullet優先、seminarへ退避)をそのまま通る。
+    # チャットと同じCaddyのフェイルオーバ(bullet優先、seminarへ退避)をそのまま通る。
     # モデルはGGUFに`num_gpu 0`を焼き込んで登録しているため、
     # bulletで受けてもGPUには載らず、デスクトップ用途とVRAMを取り合わない。
     #
@@ -166,7 +166,7 @@
     # バッチにできない分がそのまま往復と起動の待ち時間になる。
     RAG_EMBEDDING_BATCH_SIZE = "32";
 
-    # ノートやカレンダーなどの組み込みツールを既定で渡さない。
+    # ノートやカレンダなどの組み込みツールを既定で渡さない。
     # Open WebUIはOllamaが申告するcapabilitiesを見ないため、
     # tools非対応のモデルにもfunction callingを要求してしまい、
     # `does not support tools`で会話そのものが失敗する。

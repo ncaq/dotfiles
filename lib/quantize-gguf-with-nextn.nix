@@ -66,7 +66,7 @@ pkgs.runCommand name
     outputHashAlgo = "sha256";
     outputHash = hash;
 
-    # 入力は数十GBあり手元で取得済みのことが多いので、リモートビルダーへ送らない。
+    # 入力は数十GBあり手元で取得済みのことが多いので、リモートビルダへ送らない。
     preferLocalBuild = true;
   }
   ''

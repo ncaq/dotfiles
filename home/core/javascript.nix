@@ -1,3 +1,10 @@
+# JavaScriptの開発ツールと、パッケージマネージャの設定。
+#
+# サプライチェーン攻撃のリスク低減として、
+# 各パッケージマネージャで、
+# リリース後3日経過したバージョンだけをインストールするように設定します。
+# 悪意あるパッケージがpublishされてから検出・取り下げされるまでの猶予を確保する目的です。
+# 設定のキー名と単位はパッケージマネージャごとに異なります。
 { pkgs, ... }:
 let
   releaseAgeDays = 3;
@@ -5,31 +12,38 @@ let
   releaseAgeSeconds = releaseAgeMinutes * 60;
 in
 {
-  # サプライチェーン攻撃のリスク低減として、
-  # 各JavaScriptパッケージマネージャで、
-  # リリース後3日経過したバージョンをインストールするように設定します。
-  # 悪意あるパッケージがpublishされてから検出・取り下げされるまでの猶予を確保する目的です。
-  # 各PMで設定キー名・単位が異なる点に注意。
+  home = {
+    # グローバルにインストールするJavaScript関連ツール。
+    packages = with pkgs; [
+      deno
+      nodejs
+      npm-check-updates
+      prettier
+      typescript
+      yarn-berry
+    ];
 
-  # Denoはユーザグローバルの設定ファイルを公式にはサポートしていませんが、
-  # `.npmrc`の`min-release-age`はDeno 2.8.0から読むようになったので、
-  # 下の`~/.npmrc`でDenoもカバーされます。
-  # [feat(npmrc): support min-release-age by dsherret](https://github.com/denoland/deno/pull/33983)
+    # npm CLIの`min-release-age`(単位: 日)。
+    # home-managerには`programs.npm`がないため`home.file`で直接生成します。
+    #
+    # Denoもこのファイルでカバーされます。
+    # Denoは`$HOME`の`.npmrc`を読み、
+    # Deno 2.8.0からは`min-release-age`にも従います。
+    # [.npmrc configuration - Node and npm Compatibility](https://docs.deno.com/runtime/fundamentals/node/#.npmrc-configuration)
+    file.".npmrc".text = ''
+      min-release-age=${toString releaseAgeDays}
+    '';
+  };
 
-  # npm CLIの`min-release-age`(単位: 日)。
-  # home-managerには`programs.npm`がないため`home.file`で直接生成します。
-  home.file.".npmrc".text = ''
-    min-release-age=${toString releaseAgeDays}
-  '';
-
-  # pnpmはhome-manager専用モジュールがないため設定ファイルを直接書きます。
-  # pnpmは`~/.config/pnpm/config.yaml`を読みます(単位: 分)。
+  # pnpmの`minimumReleaseAge`(単位: 分)。
+  # home-managerには専用のモジュールがないため、
+  # pnpmが読む`~/.config/pnpm/config.yaml`を直接生成します。
   xdg.configFile."pnpm/config.yaml".source = (pkgs.formats.yaml { }).generate "pnpm-config.yaml" {
     minimumReleaseAge = releaseAgeMinutes;
   };
 
-  # Yarn Berryの`npmMinimalAgeGate`(単位: 分)。
   programs = {
+    # Yarn Berryの`npmMinimalAgeGate`(単位: 分)。
     yarn = {
       enable = true;
       settings.npmMinimalAgeGate = releaseAgeMinutes;
@@ -41,14 +55,4 @@ in
       settings.install.minimumReleaseAge = releaseAgeSeconds;
     };
   };
-
-  # グローバルにインストールするJavaScript関連ツール。
-  home.packages = with pkgs; [
-    deno
-    nodejs
-    npm-check-updates
-    prettier
-    typescript
-    yarn-berry
-  ];
 }

@@ -15,14 +15,18 @@ import NixCachePushNcaq.Cachix.Command (Cachix (..), systemCachix)
 import NixCachePushNcaq.Cachix.Config (Config (..), configFrom)
 import NixCachePushNcaq.Report (finish)
 import NixCachePushNcaq.Secrets (authTokenFrom)
+import NixCachePushNcaq.Signal (withTerminationAsExit)
 import NixCachePushNcaq.Sops (Sops, systemSops)
 import NixCachePushNcaq.Variable (processVariables)
 
 -- | プロセスの環境変数を設定として、実際の`sops`と`cachix`で実行する。
 --
 -- 引数は解釈せず、全て`cachix push <cache>`の後ろへ渡す。
+--
+-- SIGTERMやSIGHUPで止められた時は、`cachix`も止めてから終わる。
+-- `cachix`は子プロセスなので、何もしないとこのプロセスだけが終わって転送が続く。
 run :: (MonadLogger m, MonadThrow m, MonadUnliftIO m) => [String] -> m ()
-run args = do
+run args = withTerminationAsExit do
   lookupVariable <- processVariables
   runWith systemSops systemCachix lookupVariable args
 

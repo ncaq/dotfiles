@@ -5,6 +5,9 @@ let
   # diskoの定義とmkfsの引数とbcacheのキャッシュモードの設定が、
   # この一覧から作られる。
   noaMemberIndices = lib.range 0 3;
+  # ファイルシステムの定義を持たせるメンバ。
+  # diskoはこのメンバのマッパを`/mnt/noa`のマウント元にする。
+  noaFirstIndex = lib.head noaMemberIndices;
   noaMappers = map (index: "/dev/mapper/noa${toString index}") noaMemberIndices;
   # メンバ1台分のdiskoの定義。
   # bcacheのデバイスの上にGPTを切って、
@@ -174,7 +177,7 @@ in
       # # 必要な時にだけ別途実行する。
       #
       # ファイルシステムの定義は先頭のメンバのLUKSの中に置く。
-      noa0 = mkNoaMember 0 {
+      "noa${toString noaFirstIndex}" = mkNoaMember noaFirstIndex {
         content = {
           type = "btrfs";
           mountpoint = "/mnt/noa";

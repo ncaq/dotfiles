@@ -311,11 +311,7 @@ let
   settings = writeText "settings.json" (
     builtins.toJSON {
       language = "japanese";
-      attribution = {
-        commit = "";
-        pr = "";
-        sessionUrl = false;
-      };
+      attribution = false;
       permissions = {
         disableBypassPermissionsMode = "disable";
         allow = [

@@ -71,7 +71,7 @@ library
     base >=4.20.0.0 && <4.23,
     himari >=1.1.6 && <1.2,
     http-conduit >=2.3 && <2.4,
-    megaparsec >=9.6 && <9.8,
+    megaparsec >=9.6 && <9.9,
     text >=2.1 && <2.2,
 
 executable nvd-pr-diff

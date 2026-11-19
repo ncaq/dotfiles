@@ -73,6 +73,19 @@ tests = describe "TokenFile" do
         let missing = takeDirectory first </> "missing"
         tokenDirectoryFrom (tmpfsAt [takeDirectory first]) [missing, second]
           >>= (`shouldBe` second)
+    it "tmpfsへのシンボリックリンクは、リンクのパスのまま返す" do
+      withCandidates \first _ -> do
+        let symlink = takeDirectory first </> "symlink"
+        createDirectoryLink first symlink
+        tokenDirectoryFrom (tmpfsAt [first]) [symlink] >>= (`shouldBe` symlink)
+    it "リンクの置き場所がtmpfsでも、リンク先がtmpfsでなければ選ばない" do
+      withCandidates \first _ -> do
+        let holder = takeDirectory first </> "holder"
+            symlink = holder </> "symlink"
+        createDirectory holder
+        createDirectoryLink first symlink
+        tokenDirectoryFrom (tmpfsAt [holder]) [symlink]
+          `shouldThrow` (== NoTmpfsDirectory [symlink])
     it "tmpfsの候補が無ければ失敗にする" do
       withCandidates \first second ->
         tokenDirectoryFrom (tmpfsAt []) [first, second]

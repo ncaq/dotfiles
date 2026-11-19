@@ -1,13 +1,19 @@
 /**
-  GitHub ActionsのUbuntu 24.04ランナ互換Nixパッケージリスト。
+  GitHub ActionsのUbuntu 26.04ランナ互換Nixパッケージリスト。
 
   - バージョンはnixpkgsのリビジョンに依存するため完全一致ではありません。
-  - ひとまずは標準的なバージョンだけを有効にしています。
+  - ひとまずは既定のバージョンだけを有効にしています。
+  - nixpkgsの既定のバージョンがランナの既定より古い言語やデータベースは、
+    ランナの既定に合わせたバージョンを明示して、
+    nixpkgsの既定のバージョンも`nixpkgsDefaultVersions`として後ろに加えます。
+    nixpkgsの既定が追いついた時はそちらを残すだけで済みます。
+  - nixpkgsにランナと同じメジャーバージョンが無いものは、
+    互換性の無いものが入っていて混乱しないように含めません。
   - Android SDKはnixpkgs単体では難しいです。android-nixpkgs等を別途利用推奨。今回非対応。
   - unfreeなパッケージは現在無効にしています。
 
-  参照元: https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md
-  イメージバージョン: 20260201.15.1
+  参照元: https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2604-Readme.md
+  イメージバージョン: 20261111.196.1
 */
 { pkgs, ... }:
 with pkgs;
@@ -18,7 +24,7 @@ let
     go
     nodejs
     perl
-    python3
+    python314
   ];
 
   # ビルドに手間がかかるパッケージ。
@@ -32,26 +38,23 @@ let
     dotnet-sdk
     gcc
     gfortran
-    ghc
-    jdk
-    julia
+    haskell.compiler.ghc914
+    jdk25
     kotlin
     llvmPackages.clang
     llvmPackages.clang-tools
-    php
-    phpPackages.composer
+    php85
+    php85Packages.composer
     powershell
     ruby
     rustc
     rustfmt
     stack
-    swift
-    swiftPackages.swiftpm
+    # swiftはランナが6系でstableのnixpkgsには5系しかないので除外。
   ];
 
   packageManagement = [
     # npmはnodejsに同梱。
-    lerna
     pipx
     vcpkg
     yarn
@@ -96,7 +99,7 @@ let
   kubernetesTools = [
     kind
     kubectl
-    kubernetes-helm
+    # helmはランナが4系でstableのnixpkgsには3系しかないので除外。
     kustomize
     minikube
   ];
@@ -105,7 +108,6 @@ let
     # packerを含むHashiCorp製品はbslなため除外。
     ansible
     bicep
-    pulumi
   ];
 
   cloudClis = [
@@ -120,7 +122,6 @@ let
     git
     git-ftp
     git-lfs
-    mercurial
 
     # GitHub CLI
     gh
@@ -130,10 +131,10 @@ let
     yq-go
 
     # Compression
+    _7zz # 7zip
     brotli
     bzip2
     lz4
-    p7zip
     pigz
     unzip
     upx
@@ -164,9 +165,6 @@ let
     tree
     yamllint
 
-    # Media
-    mediainfo
-
     # Security
     gnupg
     nss.tools # certutil等(libnss3-tools相当)
@@ -187,7 +185,6 @@ let
     acl
     dbus
     fakeroot
-    haveged
   ];
 
   otherDistributionTools = [
@@ -205,8 +202,8 @@ let
   ];
 
   databases = [
-    mariadb # MySQL互換、nixpkgsではこちらがよりよくメンテナンスされています。
-    postgresql
+    mysql84 # nixpkgsにはバージョンの無い`mysql`がありません。
+    postgresql_18
     sqlite
   ];
 
@@ -216,6 +213,8 @@ let
   ];
 
   devLibraries = [
+    jitterentropy # libjitterentropy3-dev
+    libxcrypt # libcrypt-dev
     libyaml
     openssl.dev
     sqlite.dev
@@ -223,12 +222,20 @@ let
 
   additionalTools = [
     azure-storage-azcopy # azcopy
-    fastlane
-    newman
-    sphinxsearch
 
-    # nvm, parcelはnixpkgsにない。
+    # nvmはnixpkgsにない。
     # codeqlはunfreeのため除外。
+  ];
+
+  # 上でランナの既定に合わせたバージョンを明示したもののnixpkgsの既定のバージョン。
+  # `extraPackages`はsystemdの`path`になり先にあるものが優先されるので、
+  # ランナの既定が優先されるように`all`の最後に置きます。
+  nixpkgsDefaultVersions = [
+    ghc
+    jdk
+    php
+    postgresql
+    python3
   ];
 
 in
@@ -252,6 +259,7 @@ in
     webServers
     devLibraries
     additionalTools
+    nixpkgsDefaultVersions
   ];
 
   minimal = builtins.concatLists [
@@ -281,5 +289,6 @@ in
     webServers
     devLibraries
     additionalTools
+    nixpkgsDefaultVersions
     ;
 }

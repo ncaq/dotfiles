@@ -35,10 +35,12 @@ run args = withTerminationAsExit do
 -- 引数が無ければ、標準入力からstoreパスを1行ずつ読んで渡す。
 -- 標準入力にstoreパスが1つも無ければ、`niks3`を呼ばずに成功で終わる。
 -- `niks3`はstoreパスが無いと失敗するので、渡すものが無いだけで失敗に見えるのを避ける。
--- 標準入力を読むのは認証トークンを得た後なので、設定が誤っている時に入力を待たない。
+-- 標準入力を読むのは、一時ファイルの置き場所を選んで認証トークンを得た後である。
+-- 設定が誤っている時に入力を待たない。
 --
 -- 認証トークンは一時ファイルに書いて`niks3`へ渡す。
--- 平文のファイルがある時間を短くするために、標準入力を読み終えてから作る。
+-- 置き場所は先に選ぶが、平文のファイルがある時間を短くするために、
+-- ファイルを作るのは標準入力を読み終えてからにする。
 --
 -- 終了の仕方は`finish`に書いてある。
 runWith
@@ -51,11 +53,10 @@ runWith
   -> m ()
 runWith sops niks3 lookupVariable readInput args = finish do
   config <- configFrom lookupVariable
+  directory <- tokenDirectoryFrom config.runtimeDirectory
   token <- authTokenFrom sops "api_token" config.secretsFile
   paths <- if null args then storePathsFrom <$> readInput else pure args
   if null paths
     then ExitSuccess <$ logInfoN "標準入力にstoreパスが無いので、何も転送しません"
-    else do
-      directory <- tokenDirectoryFrom config.runtimeDirectory
-      withTokenFile directory token \tokenFile ->
-        niks3.push tokenFile config.serverUrl paths
+    else withTokenFile directory token \tokenFile ->
+      niks3.push tokenFile config.serverUrl paths

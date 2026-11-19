@@ -166,6 +166,30 @@ tests = describe "runWith" do
       filter (isInfixOf (convert path)) logs `shouldBe` logs
       readIORef decrypts >>= (`shouldBe` [])
       readIORef pushes >>= (`shouldBe` [])
+  it "置き場所を選べなければ、復号も標準入力も使わずに理由を出して1で終わる" do
+    withSecretsFile \path -> do
+      decrypts <- newIORef []
+      pushes <- newIORef []
+      -- `XDG_RUNTIME_DIR`を渡さないので、`runGiven`は置き場所を選べない。
+      let lookupVariable =
+            variables
+              [ ("NIKS3_PUSH_NCAQ_SECRETS_FILE", convert path)
+              , ("NIKS3_PUSH_NCAQ_SERVER_URL", "https://niks3.example.com/")
+              ]
+      (result, logs) <-
+        runCapturing
+          ( runGiven
+              (recordingSops decrypts)
+              (recordingNiks3 pushes ExitSuccess)
+              lookupVariable
+              unreadInput
+              []
+          )
+      result `shouldBe` Left (ExitFailure 1)
+      length logs `shouldBe` 1
+      filter (isInfixOf "tmpfs") logs `shouldBe` logs
+      readIORef decrypts >>= (`shouldBe` [])
+      readIORef pushes >>= (`shouldBe` [])
   it "復号が失敗したら転送を呼ばずに理由を出して1で終わる" do
     withSecretsFile \path -> do
       pushes <- newIORef []

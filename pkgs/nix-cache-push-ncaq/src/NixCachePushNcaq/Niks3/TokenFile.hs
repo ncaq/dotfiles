@@ -30,8 +30,10 @@ systemTokenDirectory runtimeDirectory = do
 -- シンボリックリンクを辿った先で判定する。返すのは渡された候補のままのパスである。
 tokenDirectoryFrom :: (MonadIO m, MonadThrow m) => [Mount] -> [FilePath] -> m FilePath
 tokenDirectoryFrom mounts candidates =
-  filterM onTmpfs candidates >>= maybe (throwM (NoTmpfsDirectory candidates)) pure . preview _head
+  foldr orNext (throwM (NoTmpfsDirectory candidates)) candidates
  where
+  -- 使える候補が見つかった時点で返して、後ろの候補は調べない。
+  orNext candidate next = onTmpfs candidate >>= bool next (pure candidate)
   onTmpfs candidate = do
     exists <- doesDirectoryExist candidate
     if exists

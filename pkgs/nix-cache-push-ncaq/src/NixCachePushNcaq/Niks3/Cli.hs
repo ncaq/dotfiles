@@ -17,7 +17,7 @@ import NixCachePushNcaq.Niks3.StorePaths (storePathsFrom)
 import NixCachePushNcaq.Niks3.TokenFile (withTokenFile)
 import NixCachePushNcaq.Report (finish)
 import NixCachePushNcaq.Secrets (authTokenFrom)
-import NixCachePushNcaq.Signal (exitOnTermination)
+import NixCachePushNcaq.Signal (withTerminationAsExit)
 import NixCachePushNcaq.Sops (Sops, systemSops)
 import NixCachePushNcaq.Variable (processVariables)
 
@@ -25,8 +25,7 @@ import NixCachePushNcaq.Variable (processVariables)
 --
 -- SIGTERMやSIGHUPで止められた時にも、認証トークンの一時ファイルを消す。
 run :: (MonadLogger m, MonadThrow m, MonadUnliftIO m) => [String] -> m ()
-run args = do
-  exitOnTermination
+run args = withTerminationAsExit do
   lookupVariable <- processVariables
   runWith systemSops systemNiks3 lookupVariable (liftIO Data.Text.IO.Utf8.getContents) args
 

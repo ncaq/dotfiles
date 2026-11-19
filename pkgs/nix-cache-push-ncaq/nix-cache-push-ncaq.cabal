@@ -135,6 +135,7 @@ test-suite nix-cache-push-ncaq-test
     Spec.Niks3.ConfigSpec
     Spec.Niks3.StorePathsSpec
     Spec.Niks3.TokenFileSpec
+    Spec.SignalSpec
 
   build-tool-depends:
     sandwich:sandwich-discover

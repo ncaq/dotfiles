@@ -144,21 +144,6 @@
       skipAutoPermissionPrompt = true; # auto modeをdefaultModeにしているので許可を求めない。
       permissions = {
         defaultMode = "auto";
-        additionalDirectories = [
-          # コーディングエージェント向けに用意した作業ディレクトリは当然読み書きを許可します。
-          codingAgentWorkDirFullPath
-          # nixのビルド結果の`result`はシンボリックリンクで`/nix/store/`を見ているので、
-          # ビルド結果を参照する時いちいち許可を求められないようにします。
-          # トラブル時にプログラムのソースコードを探る時もここから読むので、
-          # 調査時にも許可を求められないようにします。
-          # ファイルシステムレベルで読み取り専用なので壊される心配はありません。
-          "/nix/store/"
-          # dotfilesにグローバルの設定の殆どを置いているので、
-          # 現在の設定を確認しやすいように読み取りを許可します。
-          # 書き込みも許可してしまいますが、
-          # 適切に拒否するのが面倒なのでそのままにしています。
-          "~/dotfiles/"
-        ];
         allow = [
           "Bash($EDITOR:*)"
           "Bash(* --help *)"

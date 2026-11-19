@@ -54,17 +54,16 @@
         "fable"
         "sonnet"
       ];
-      # メッセージにCo-Authored-Byフッタを付与しません。
+      # メッセージに全てのフッタを付与しません。
+      #
+      # Co-Authored-Byは付与しません。
       # 私はAIエージェントはテキストエディタの延長線上だと考えているため、
       # ツール名が書かれるのは不自然だと思っています。
+      #
       # セッションURLも付与しません。
       # セッションは作業した本人にしか見えないので、
       # 他の人が読むコミットメッセージやPRに書いても意味がないためです。
-      attribution = {
-        commit = "";
-        pr = "";
-        sessionUrl = false;
-      };
+      attribution = false;
       # グローバルに有効なhookを設定します。
       hooks = {
         SessionStart = [

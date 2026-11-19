@@ -112,9 +112,10 @@ in
       # sudo make-bcache --bdev --writeback --discard /dev/disk/by-id/ata-WDC_WD121PURZ-85GUCY0_2AGN938Y
       # sudo make-bcache --bdev --writeback --discard /dev/disk/by-id/ata-WDC_WD80EAAZ-00BXBB0_WD-RD2PKLEH
       # sudo make-bcache --bdev --writeback --discard /dev/disk/by-id/ata-WDC_WD80EAZZ-00BKLB0_WD-CA2HPAUK
+      # sudo make-bcache --bdev --writeback --discard /dev/disk/by-id/ata-WDC_WD80EFPX-68C4ZN0_WD-1F1K9E0U
       # # キャッシュセットに接続
       # CACHE_SET_UUID=$(sudo bcache-super-show $CACHE_DEVICE|grep 'cset.uuid'|awk '{print $2}')
-      # for i in 0 1 2; do sudo zsh -c "echo $CACHE_SET_UUID > /sys/block/bcache$i/bcache/attach"; done
+      # for i in 0 1 2 3; do sudo zsh -c "echo $CACHE_SET_UUID > /sys/block/bcache$i/bcache/attach"; done
       # # パスワードファイル作成
       # sudo nano /tmp/secret.password
       # # 初期インストール時以外はフォーマットを手動で済ませる。
@@ -125,6 +126,19 @@ in
       # sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/disk/by-partlabel/disk-noa0-luks
       # sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/disk/by-partlabel/disk-noa1-luks
       # sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/disk/by-partlabel/disk-noa2-luks
+      # sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/disk/by-partlabel/disk-noa3-luks
+      #
+      # # 稼働中のファイルシステムへ後からディスクを足す時は、
+      # # diskoのformatを使わずに手動で作る。
+      # # 上と同じ`make-bcache`とキャッシュセットへの接続の後に、
+      # # 既存のディスクと同じ大きさのパーティションを作ってLUKSで初期化する。
+      # sudo sgdisk --new=1:2048:15628052479 --typecode=1:8300 --change-name=1:disk-noa3-luks /dev/bcache3
+      # sudo cryptsetup luksFormat --type luks2 /dev/disk/by-partlabel/disk-noa3-luks
+      # sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/disk/by-partlabel/disk-noa3-luks
+      # # `settings.allowDiscards`に当たるフラグをLUKSのヘッダへ残す。
+      # sudo systemd-cryptsetup attach noa3 /dev/disk/by-partlabel/disk-noa3-luks - tpm2-device=auto
+      # sudo cryptsetup refresh --allow-discards --persistent noa3
+      # sudo btrfs device add /dev/mapper/noa3 /mnt/noa
       noa0 = {
         type = "disk";
         device = "/dev/bcache0";
@@ -174,14 +188,17 @@ in
                     "/dev/mapper/noa0"
                     "/dev/mapper/noa1"
                     "/dev/mapper/noa2"
+                    "/dev/mapper/noa3"
                     "-m raid1c3"
                     "/dev/mapper/noa0"
                     "/dev/mapper/noa1"
                     "/dev/mapper/noa2"
+                    "/dev/mapper/noa3"
                     "-s raid1c3"
                     "/dev/mapper/noa0"
                     "/dev/mapper/noa1"
                     "/dev/mapper/noa2"
+                    "/dev/mapper/noa3"
                   ];
                 };
               };
@@ -219,6 +236,25 @@ in
               content = {
                 type = "luks";
                 name = "noa2";
+                initrdUnlock = false;
+                settings.allowDiscards = true;
+                passwordFile = "/tmp/secret.password";
+              };
+            };
+          };
+        };
+      };
+      noa3 = {
+        type = "disk";
+        device = "/dev/bcache3";
+        content = {
+          type = "gpt";
+          partitions = {
+            luks = {
+              size = "100%";
+              content = {
+                type = "luks";
+                name = "noa3";
                 initrdUnlock = false;
                 settings.allowDiscards = true;
                 passwordFile = "/tmp/secret.password";
@@ -281,5 +317,6 @@ in
     "w- /sys/block/bcache0/bcache/cache_mode - - - - writeback"
     "w- /sys/block/bcache1/bcache/cache_mode - - - - writeback"
     "w- /sys/block/bcache2/bcache/cache_mode - - - - writeback"
+    "w- /sys/block/bcache3/bcache/cache_mode - - - - writeback"
   ];
 }

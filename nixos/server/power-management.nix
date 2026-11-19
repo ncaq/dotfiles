@@ -1,5 +1,10 @@
 # サーバの性能をあまり犠牲にしないで電力をある程度節約します。
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 {
   powerManagement = {
     # デフォルトで`enable`ですが、
@@ -34,7 +39,6 @@
     # https://github.com/ncaq/dotfiles/issues/1732
     scsiLinkPolicy = "max_performance";
   };
-
   # governorが`powersave`でもEPPはファームウェアの初期値のまま残り、
   # seminarでは`performance`になっていて、
   # アイドル時でもコアが最大クロック近くまでブーストしていました。
@@ -45,4 +49,6 @@
   # サーバはヘッドレスで`multi-user.target`までしか到達しないため、
   # そのままでは自動起動しません。
   systemd.services.power-profiles-daemon.wantedBy = [ "multi-user.target" ];
+  # `powertop`
+  environment.systemPackages = [ pkgs.powertop ];
 }

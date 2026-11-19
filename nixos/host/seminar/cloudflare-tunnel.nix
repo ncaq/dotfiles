@@ -55,4 +55,6 @@ in
       };
     };
   };
+  # `cloudflared tunnel info`など
+  environment.systemPackages = [ config.services.cloudflared.package ];
 }

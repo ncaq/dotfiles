@@ -88,7 +88,6 @@ in
       };
     };
   };
-
   systemd.services.opentelemetry-collector = {
     # 上流モジュールがDynamicUser/ProtectSystem/DevicePolicy/NoNewPrivilegesを設定済みなので、
     # 上流と重複・衝突する属性は外してその上に締めます。
@@ -122,4 +121,7 @@ in
     GARAGE_METRICS_TOKEN=${config.sops.placeholder."garage-metrics-token"}
     MACKEREL_APIKEY=${config.sops.placeholder."mackerel-api-key"}
   '';
+
+  # `otelcol validate`など
+  environment.systemPackages = [ config.services.opentelemetry-collector.package ];
 }

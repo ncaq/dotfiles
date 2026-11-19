@@ -47,5 +47,7 @@
         respond /health 200
       '';
     };
+    # `caddy validate`など
+    environment.systemPackages = [ config.services.caddy.package ];
   };
 }

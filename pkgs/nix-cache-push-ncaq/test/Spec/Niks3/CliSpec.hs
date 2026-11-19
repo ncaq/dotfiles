@@ -86,6 +86,23 @@ tests = describe "runWith" do
         >>= (`shouldBe` (Right (), []))
       readIORef pushes
         >>= (`shouldBe` [["/nix/store/a", "/nix/store/b"]]) . fmap (\call -> call.arguments)
+  it "標準入力が空か空行だけなら転送を呼ばずに成功で終わる" do
+    for_ ["", "\n\n"] \input ->
+      withSecretsFile \path -> do
+        decrypts <- newIORef []
+        pushes <- newIORef []
+        (result, _) <-
+          runCapturing
+            ( runWith
+                (recordingSops decrypts)
+                (recordingNiks3 pushes ExitSuccess)
+                (secretsAt path)
+                (pure input)
+                []
+            )
+        result `shouldBe` Right ()
+        readIORef pushes >>= (`shouldBe` [])
+        listDirectory (takeDirectory path) >>= (`shouldBe` [takeFileName path])
   it "転送が終わったらトークンのファイルを消す" do
     withSecretsFile \path -> do
       decrypts <- newIORef []

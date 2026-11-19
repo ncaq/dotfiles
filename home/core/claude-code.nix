@@ -236,7 +236,8 @@
     };
   };
 
-  # 制限は持たせず、`systemd-cgls`や`systemctl --user status`で
+  # 制限は持たせず、
+  # `systemd-cgls`や`systemctl --user status`で、
   # Claude Codeのセッション群をまとめて観察するためだけのsliceです。
   # Termuxなどsystemdの無い環境では単にスキップされます。
   systemd.user.slices.claude-code = {

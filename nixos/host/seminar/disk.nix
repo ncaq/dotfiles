@@ -1,3 +1,22 @@
+{ config, lib, ... }:
+let
+  # initrdで解錠しないLUKSのパーティション。
+  # `initrdUnlock = false`にしたものは誰も解錠しなくなるので、
+  # 下の`environment.etc.crypttab`へ渡して切り替えの後に解錠する。
+  # マッパ名とデバイスをdiskoの定義から取ることで、
+  # ディスクの追加や改名で片方だけ変えて食い違うことを防ぐ。
+  lateUnlockLuksPartitions =
+    lib.filter
+      (
+        partition:
+        partition.content != null && partition.content.type == "luks" && !partition.content.initrdUnlock
+      )
+      (
+        lib.concatMap (disk: lib.attrValues (disk.content.partitions or { })) (
+          lib.attrValues config.disko.devices.disk
+        )
+      );
+in
 {
   disko.devices = {
     disk = {
@@ -233,11 +252,19 @@
   # 全メンバが揃うまでマウントは始まらない。
   # この待ちを飛ばすudevルールや`degraded`を足すと、
   # 解錠が済んだメンバだけでマウントされる。
-  environment.etc.crypttab.text = ''
-    noa0 /dev/disk/by-partlabel/disk-noa0-luks - tpm2-device=auto,discard,nofail
-    noa1 /dev/disk/by-partlabel/disk-noa1-luks - tpm2-device=auto,discard,nofail
-    noa2 /dev/disk/by-partlabel/disk-noa2-luks - tpm2-device=auto,discard,nofail
-  '';
+  #
+  # `discard`はdiskoの`settings.allowDiscards`に当たる。
+  environment.etc.crypttab.text = lib.concatMapStrings (
+    partition:
+    let
+      options = [
+        "tpm2-device=auto"
+      ]
+      ++ lib.optional (partition.content.settings.allowDiscards or false) "discard"
+      ++ [ "nofail" ];
+    in
+    "${partition.content.name} ${partition.device} - ${lib.concatStringsSep "," options}\n"
+  ) lateUnlockLuksPartitions;
   systemd.tmpfiles.rules = [
     # writebackモードを有効化
     # `-`を付けて、

@@ -68,25 +68,16 @@ let
     "/*sort=*"
     "/*repo-search-archived=*"
   ];
-  group =
-    userAgents:
-    lib.concatLines (
-      map (ua: "User-agent: ${ua}") userAgents ++ map (path: "Disallow: ${path}") disallow
-    );
-  # Metaの`facebookexternalhit`は既定のrobots.txtを取得していますが、
-  # `meta-externalagent`と`meta-webindexer`のUser-Agentでの取得は見えていません。
-  # それでもこの2つは、断っている履歴のビューを大量に読みに来ます。
-  # 同じ規則を、Metaを名指ししたグループでもう一度書きます。
+  # Metaの`meta-externalagent`と`meta-webindexer`は、
+  # 既定のrobots.txtが断っている履歴のビューを大量に読みに来ていました。
   # 既定のものはグループの途中に空行があり、古い解釈ではそこでグループが終わるので、
-  # グループの中には空行を入れず、グループの間だけを空行1つで区切ります。
+  # 同じ規則を空行を入れずに書きます。
+  # 空行を除くことと、Metaを名指ししたグループを足すことを同時に行ったところ、
+  # Metaは履歴のビューを読みに来なくなりました。
+  # どちらが効いたのかを切り分けるために、今は名指しのグループを外して様子を見ています。
+  # ref https://codeberg.org/forgejo/forgejo/issues/15333
   robotsTxt = pkgs.writeText "robots.txt" (
-    lib.concatStringsSep "\n" [
-      (group [ "*" ])
-      (group [
-        "meta-externalagent"
-        "meta-webindexer"
-      ])
-    ]
+    lib.concatLines ([ "User-agent: *" ] ++ map (path: "Disallow: ${path}") disallow)
   );
 in
 {

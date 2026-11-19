@@ -1,4 +1,32 @@
+{ config, lib, ... }:
+let
+  # initrdで解錠しないLUKSのパーティション。
+  # `initrdUnlock = false`にしたものは誰も解錠しなくなるので、
+  # 下の`environment.etc.crypttab`へ渡して切り替えの後に解錠する。
+  # マッパ名とデバイスをdiskoの定義から取ることで、
+  # ディスクの追加や改名で片方だけ変えて食い違うことを防ぐ。
+  lateUnlockLuksPartitions =
+    lib.filter
+      (
+        partition:
+        partition.content != null && partition.content.type == "luks" && !partition.content.initrdUnlock
+      )
+      (
+        lib.concatMap (disk: lib.attrValues (disk.content.partitions or { })) (
+          lib.attrValues config.disko.devices.disk
+        )
+      );
+in
 {
+  assertions = [
+    {
+      # 理由は下の`environment.etc.crypttab`のコメントに書いている。
+      # `boot.nix`の`nixos-root`にならってinitrdへ戻すと、
+      # ディスクが揃っていても`/mnt/noa`がマウントされなくなる。
+      assertion = !lib.any (lib.hasPrefix "noa") (lib.attrNames config.boot.initrd.luks.devices);
+      message = "noaのLUKSはinitrdで解錠しないでください。diskoの定義で`initrdUnlock = false`にします。";
+    }
+  ];
   disko.devices = {
     disk = {
       main = {
@@ -108,6 +136,7 @@
               content = {
                 type = "luks";
                 name = "noa0";
+                initrdUnlock = false;
                 settings.allowDiscards = true;
                 passwordFile = "/tmp/secret.password";
                 content = {
@@ -123,14 +152,12 @@
                     # マウントされていない時にルートのSSDへ書き込まれないための対策は、
                     # `noa.nix`と使う側のユニットの`RequiresMountsFor`にある。
                     "nofail"
-                    # TODO: noa2(WD121PURZ)が2026-11-14にSATAリンクから脱落したための一時的な措置。
-                    # https://github.com/ncaq/dotfiles/issues/1732
-                    # ディスクが欠けたままマウントできるようにする。
-                    # 自動でマウントするには`noa-degraded-automount.nix`のudevルールも要る。
-                    # 障害対応が終わったら、そのファイルと一緒に外す。
-                    # 常に付けているとディスクの脱落に気付きにくくなり、
-                    # 欠けている間の書き込みは冗長性が落ちる。
-                    "degraded"
+                    # `degraded`は付けない。
+                    # 付けていると、
+                    # 解錠が済んだメンバだけで黙ってマウントされて、
+                    # 残りのメンバが古くなる。
+                    # ディスクが欠けた時は、
+                    # 状況を確かめてから手で`-o degraded`を付けてマウントする。
                   ];
                   subvolumes = {
                     # snapperスナップショットの転送先。
@@ -173,6 +200,7 @@
               content = {
                 type = "luks";
                 name = "noa1";
+                initrdUnlock = false;
                 settings.allowDiscards = true;
                 passwordFile = "/tmp/secret.password";
               };
@@ -191,6 +219,7 @@
               content = {
                 type = "luks";
                 name = "noa2";
+                initrdUnlock = false;
                 settings.allowDiscards = true;
                 passwordFile = "/tmp/secret.password";
               };
@@ -208,36 +237,43 @@
   ];
   boot = {
     kernelModules = [ "bcache" ];
-    initrd = {
-      availableKernelModules = [ "bcache" ];
-      # TPM2による復号の脅威モデルは`boot.nix`の`nixos-root`と同じ。
-      # `nofail`は`/mnt/noa`のマウントオプションの`nofail`と同じ理由で、
-      # ディスクが欠けて解錠できなくても起動を続けるために付ける。
-      luks.devices = {
-        "noa0" = {
-          device = "/dev/disk/by-partlabel/disk-noa0-luks";
-          crypttabExtraOpts = [
-            "tpm2-device=auto"
-            "nofail"
-          ];
-        };
-        "noa1" = {
-          device = "/dev/disk/by-partlabel/disk-noa1-luks";
-          crypttabExtraOpts = [
-            "tpm2-device=auto"
-            "nofail"
-          ];
-        };
-        "noa2" = {
-          device = "/dev/disk/by-partlabel/disk-noa2-luks";
-          crypttabExtraOpts = [
-            "tpm2-device=auto"
-            "nofail"
-          ];
-        };
-      };
-    };
+    initrd.availableKernelModules = [ "bcache" ];
   };
+  # noaのLUKSはinitrdではなく、
+  # ルートへ切り替わった後に解錠する。
+  # TPM2による復号の脅威モデルは`boot.nix`の`nixos-root`と同じ。
+  #
+  # `nofail`は`/mnt/noa`のマウントオプションの`nofail`と同じ理由で、
+  # ディスクが欠けて解錠できなくても起動を続けるために付ける。
+  # `nofail`を付けた解錠は`cryptsetup.target`より前に順序付けられないので、
+  # initrdに置くと解錠が終わる前にルートへ切り替わる。
+  # 途中だった解錠は止められたままやり直されず、
+  # ディスクが揃っていてもマウントされなくなる。
+  # noaは起動に必須ではないので、
+  # 解錠が途中で止められない切り替えの後に置く。
+  #
+  # 切り替えの後では全てのメンバがほぼ同時に解錠される。
+  # systemdの`64-btrfs.rules`は、
+  # 複数デバイスのbtrfsの全メンバがカーネルへ登録されるまで、
+  # メンバのデバイスをreadyにしない。
+  # `/mnt/noa`のマウントは`/dev/mapper/noa0`がreadyになるのを待つので、
+  # noa0の解錠が先に済んでも、
+  # 全メンバが揃うまでマウントは始まらない。
+  # この待ちを飛ばすudevルールや`degraded`を足すと、
+  # 解錠が済んだメンバだけでマウントされる。
+  #
+  # `discard`はdiskoの`settings.allowDiscards`に当たる。
+  environment.etc.crypttab.text = lib.concatMapStrings (
+    partition:
+    let
+      options = [
+        "tpm2-device=auto"
+      ]
+      ++ lib.optional (partition.content.settings.allowDiscards or false) "discard"
+      ++ [ "nofail" ];
+    in
+    "${partition.content.name} ${partition.device} - ${lib.concatStringsSep "," options}\n"
+  ) lateUnlockLuksPartitions;
   systemd.tmpfiles.rules = [
     # writebackモードを有効化
     # `-`を付けて、

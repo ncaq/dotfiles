@@ -1,5 +1,5 @@
 -- | 想定している失敗の型。
-module CachixPushNcaq.Failure
+module NixCachePushNcaq.Failure
   ( ConfigFailure (..)
   , SecretsFailure (..)
   ) where
@@ -28,10 +28,7 @@ data SecretsFailure
 
 instance Exception SecretsFailure where
   displayException = \case
-    SecretsFileNotFound path ->
-      "シークレットファイル"
-        <> path
-        <> "がありません。CACHIX_PUSH_NCAQ_SECRETS_FILEで場所を指定できます"
+    SecretsFileNotFound path -> "シークレットファイル" <> path <> "がありません"
     DecryptFailed path code ->
       "シークレットファイル" <> path <> "を復号できませんでした: " <> show code
     EmptyAuthToken -> "復号した認証トークンが空です"

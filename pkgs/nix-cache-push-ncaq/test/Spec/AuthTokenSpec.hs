@@ -1,9 +1,9 @@
 -- | 認証トークンの読み方のテスト。
 module Spec.AuthTokenSpec (tests) where
 
-import CachixPushNcaq.AuthToken (AuthToken, authTokenFromOutput)
-import CachixPushNcaq.Failure (SecretsFailure (..))
 import Himari
+import NixCachePushNcaq.AuthToken (AuthToken, authTokenFromOutput)
+import NixCachePushNcaq.Failure (SecretsFailure (..))
 import Test.Sandwich
 
 tests :: TopSpec

@@ -1,5 +1,5 @@
 -- | Cachixのキャッシュの名前。
-module CachixPushNcaq.CacheName
+module NixCachePushNcaq.Cachix.CacheName
   ( CacheName (..)
   , defaultCacheName
   ) where

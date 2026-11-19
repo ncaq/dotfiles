@@ -1,14 +1,11 @@
--- | 設定の環境変数の読み方のテスト。
-module Spec.ConfigSpec (tests) where
+-- | `cachix-push-ncaq`の設定の環境変数の読み方のテスト。
+module Spec.Cachix.ConfigSpec (tests) where
 
-import CachixPushNcaq.Config (Config (..), configFrom)
-import CachixPushNcaq.Failure (ConfigFailure (..))
+import Fixture (variables)
 import Himari
+import NixCachePushNcaq.Cachix.Config (Config (..), configFrom)
+import NixCachePushNcaq.Failure (ConfigFailure (..))
 import Test.Sandwich
-
--- | 連想リストを、環境変数を引く関数にする。
-variables :: [(Text, Text)] -> Text -> Maybe Text
-variables = flip lookup
 
 tests :: TopSpec
 tests = describe "configFrom" do

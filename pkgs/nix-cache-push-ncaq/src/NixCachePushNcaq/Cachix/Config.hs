@@ -1,16 +1,16 @@
--- | 起動時に受け取る設定。環境変数から受け取る。
+-- | `cachix-push-ncaq`が起動時に受け取る設定。環境変数から受け取る。
 --
 -- * `CACHIX_PUSH_NCAQ_SECRETS_FILE`: sopsで暗号化されたシークレットファイル。
 --   無ければ`$HOME/dotfiles/secrets/cachix.yaml`を使う。
 -- * `CACHIX_PUSH_NCAQ_CACHE`: Cachixのキャッシュの名前。無ければ`ncaq`を使う。
-module CachixPushNcaq.Config
+module NixCachePushNcaq.Cachix.Config
   ( Config (..)
   , configFrom
   ) where
 
-import CachixPushNcaq.CacheName (CacheName (..), defaultCacheName)
-import CachixPushNcaq.Failure (ConfigFailure (..))
 import Himari
+import NixCachePushNcaq.Cachix.CacheName (CacheName (..), defaultCacheName)
+import NixCachePushNcaq.Variable (present, required)
 
 data Config = Config
   { secretsFile :: FilePath
@@ -24,13 +24,9 @@ data Config = Config
 configFrom :: (MonadThrow m) => (Text -> Maybe Text) -> m Config
 configFrom lookupVariable =
   Config
-    <$> maybe defaultSecretsFile (pure . convert) (present "CACHIX_PUSH_NCAQ_SECRETS_FILE")
-    <*> pure (maybe defaultCacheName CacheName (present "CACHIX_PUSH_NCAQ_CACHE"))
+    <$> maybe defaultSecretsFile (pure . convert) (variable "CACHIX_PUSH_NCAQ_SECRETS_FILE")
+    <*> pure (maybe defaultCacheName CacheName (variable "CACHIX_PUSH_NCAQ_CACHE"))
  where
   defaultSecretsFile =
-    maybe
-      (throwM (MissingVariable homeVariable))
-      (pure . (</> "dotfiles" </> "secrets" </> "cachix.yaml") . convert)
-      (present homeVariable)
-  homeVariable = "HOME"
-  present = mfilter (/= mempty) . lookupVariable
+    (</> "dotfiles" </> "secrets" </> "cachix.yaml") . convert <$> required lookupVariable "HOME"
+  variable = present lookupVariable

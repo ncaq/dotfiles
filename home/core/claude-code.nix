@@ -48,9 +48,9 @@
       # 常にフルの表示を要求します。
       verbose = true;
       # 頻繁に最適な値が変わるので設定するその時に最適なものを選びます。
-      model = "opus[1m]"; # Opusのクラスで十分賢いのでデフォルトではfableより安いモデルを使います。
+      model = "fable"; # fableの利用量が割と余るので、デフォルトをfableにします。
       fallbackModel = [
-        "fable"
+        "opus"
         "sonnet"
       ];
       # メッセージに全てのフッタを付与しません。

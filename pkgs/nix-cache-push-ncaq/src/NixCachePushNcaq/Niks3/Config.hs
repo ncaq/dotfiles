@@ -5,7 +5,7 @@
 -- * `NIKS3_PUSH_NCAQ_SECRETS_FILE`: sopsで暗号化されたシークレットファイル。
 -- * `NIKS3_PUSH_NCAQ_SERVER_URL`: niks3サーバのURL。
 -- * `XDG_RUNTIME_DIR`: 認証トークンの一時ファイルを置くディレクトリ。
---   無ければシステムの一時ディレクトリを使う。
+--   無ければ`/dev/shm`を使う。選び方は`NixCachePushNcaq.Niks3.TokenFile`に書いてある。
 module NixCachePushNcaq.Niks3.Config
   ( Config (..)
   , configFrom

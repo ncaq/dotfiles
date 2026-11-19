@@ -14,7 +14,7 @@ import Himari
 import NixCachePushNcaq.Niks3.Command (Niks3 (..), systemNiks3)
 import NixCachePushNcaq.Niks3.Config (Config (..), configFrom)
 import NixCachePushNcaq.Niks3.StorePaths (storePathsFrom)
-import NixCachePushNcaq.Niks3.TokenFile (withTokenFile)
+import NixCachePushNcaq.Niks3.TokenFile (tokenDirectoryFrom, withTokenFile)
 import NixCachePushNcaq.Report (finish)
 import NixCachePushNcaq.Secrets (authTokenFrom)
 import NixCachePushNcaq.Signal (withTerminationAsExit)
@@ -51,6 +51,6 @@ runWith sops niks3 lookupVariable readInput args = finish do
   config <- configFrom lookupVariable
   token <- authTokenFrom sops "api_token" config.secretsFile
   paths <- if null args then storePathsFrom <$> readInput else pure args
-  directory <- maybe getTemporaryDirectory pure config.runtimeDirectory
+  directory <- tokenDirectoryFrom config.runtimeDirectory
   withTokenFile directory token \tokenFile ->
     niks3.push tokenFile config.serverUrl paths

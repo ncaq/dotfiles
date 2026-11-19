@@ -18,6 +18,15 @@ let
       );
 in
 {
+  assertions = [
+    {
+      # 理由は下の`environment.etc.crypttab`のコメントに書いている。
+      # `boot.nix`の`nixos-root`にならってinitrdへ戻すと、
+      # ディスクが揃っていても`/mnt/noa`がマウントされなくなる。
+      assertion = !lib.any (lib.hasPrefix "noa") (lib.attrNames config.boot.initrd.luks.devices);
+      message = "noaのLUKSはinitrdで解錠しないでください。diskoの定義で`initrdUnlock = false`にします。";
+    }
+  ];
   disko.devices = {
     disk = {
       main = {

@@ -10,7 +10,7 @@ import Test.Sandwich
 tests :: TopSpec
 tests = do
   describe "Command" do
-    it "デバイスを復号してマッパーの名前を付ける" do
+    it "デバイスを復号してマッパの名前を付ける" do
       name <- mapperNamed "gideon"
       deviceId <- deviceWithId "usb-SanDisk-0:0-part1"
       attach name deviceId

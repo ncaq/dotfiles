@@ -13,6 +13,7 @@
 module ComfyWorkflow.Comfy
   ( Target (..)
   , parseAuthority
+  , authorityOf
   , ComfyFailure (..)
   , comfyJson
   , postPrompt
@@ -47,6 +48,7 @@ newtype ComfyFailure = ComfyFailure Text
 
 instance Exception ComfyFailure
 
+-- | `Target`を接続先の`host:port`の形に戻す。`parseAuthority`の逆。
 authorityOf :: Target -> Text
 authorityOf target = target.host <> ":" <> convert (show target.port)
 

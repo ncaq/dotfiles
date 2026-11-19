@@ -12,7 +12,7 @@ import RemovableCrypt.DeviceMapperName (validDeviceMapperName)
 newtype DeviceId = DeviceId Text
   deriving stock (Eq, Show)
 
--- | マッパーの名前と同じ規則で検査する。
+-- | マッパの名前と同じ規則で検査する。
 --
 -- udevが作るIDはこの範囲に収まる。
 parseDeviceId :: Text -> Maybe DeviceId

@@ -1,11 +1,11 @@
 { pkgs, config, ... }:
 let
   # AC電源時: 30.5分。
-  # スクリーンセーバーのタイムアウト(screen-lock-time.nixで30分)より後にすることで、
+  # スクリーンセーバのタイムアウト(screen-lock-time.nixで30分)より後にすることで、
   # ロックの起点が常にxss-lockのnotifier経由になり猶予時間が機能します。
   acTimeout = 30 * 60 + 30;
-  # バッテリー時: 15分。
-  # 省電力を優先してスクリーンセーバーのタイムアウトより先に消灯させます。
+  # バッテリ時: 15分。
+  # 省電力を優先してスクリーンセーバのタイムアウトより先に消灯させます。
   battTimeout = 15 * 60;
 in
 {
@@ -52,7 +52,4 @@ in
     };
     wantedBy = [ "graphical-session.target" ];
   };
-  # upower CLIが接続するD-Busサービスを提供。
-  # 無効だとupowerコマンドがcoredumpする。
-  services.upower.enable = true;
 }

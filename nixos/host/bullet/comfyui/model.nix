@@ -62,8 +62,8 @@ let
       # 個人的な研究、実験、私的娯楽などの非商用かつ非production用途に限られる。
       # 企業内でも非production環境での評価と非商用R&Dまでで、
       # 有料API、公開生成サービス、収益化製品などの機能としての推論には別途商用ライセンスが必要。
-      # 一方、生成画像は派生モデルに含まれず、販売、コミッション、広告、有料ゲーム、
-      # などの素材を含む商用利用が明示的に許可されている。
+      # 一方、生成画像は派生モデルに含まれず、
+      # 販売、コミッション、広告、有料ゲームなどの素材を含む商用利用が明示的に許可されている。
       # https://huggingface.co/circlestone-labs/Anima/blob/f973fc41ec7545364ac9776c2440285f43ff2a30/LICENSE.md
       # NVIDIA Cosmosの派生モデルでもあるため、NVIDIA Open Model Licenseも適用される。
       # https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license/
@@ -117,7 +117,7 @@ let
       "qwen_image_2.1_int8_convrot.safetensors" = fetchHuggingFace {
         owner = "Comfy-Org";
         repo = "Qwen-Image-2.1";
-        rev = "0217efd1d9c9452e84f6448903d6e21bfa171ffd";
+        rev = "aacf31a6d48e707f352ecba714cee0680da3479b";
         file = "diffusion_models/qwen_image_2.1_int8_convrot.safetensors";
         hash = "sha256-y3QRPLA/rs15YRsB/X/WQvCqYNbwuVCGq+4hTXXqpX0=";
       };
@@ -176,7 +176,7 @@ let
       "qwen3vl_8b_bf16.safetensors" = fetchHuggingFace {
         owner = "Comfy-Org";
         repo = "Qwen-Image-2.1";
-        rev = "0217efd1d9c9452e84f6448903d6e21bfa171ffd";
+        rev = "aacf31a6d48e707f352ecba714cee0680da3479b";
         file = "text_encoders/qwen3vl_8b_bf16.safetensors";
         hash = "sha256-aL3IK8G2aFEWKuZWIl5+IGgWa2A9sZvV1aO5DrEmaak=";
       };
@@ -234,7 +234,7 @@ let
       "qwen_image_2.1_vae_bf16.safetensors" = fetchHuggingFace {
         owner = "Comfy-Org";
         repo = "Qwen-Image-2.1";
-        rev = "0217efd1d9c9452e84f6448903d6e21bfa171ffd";
+        rev = "aacf31a6d48e707f352ecba714cee0680da3479b";
         file = "vae/qwen_image_2.1_vae_bf16.safetensors";
         hash = "sha256-uyH3RzBR4aw2hRXdPy4VzUTXoRdI7ogj4d3KPkh2t8k=";
       };

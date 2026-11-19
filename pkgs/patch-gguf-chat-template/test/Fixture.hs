@@ -142,7 +142,7 @@ replacing :: ByteString -> ByteString -> [ByteString] -> [ByteString]
 replacing original replacement = fmap \entry -> if entry == original then replacement else entry
 
 -- | ヘッダ。
--- マジックナンバー、バージョン、テンソル数、メタデータ数の順に並ぶ。
+-- マジックナンバ、バージョン、テンソル数、メタデータ数の順に並ぶ。
 header :: Word32 -> Word64 -> ByteString
 header version kvCount = ggufMagic <> encodeWord32 version <> encodeWord64 0 <> encodeWord64 kvCount
 

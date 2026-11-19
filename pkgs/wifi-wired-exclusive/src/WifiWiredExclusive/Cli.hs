@@ -3,7 +3,7 @@
 -- `app/Main.hs`は環境を用意してここを呼ぶだけにする。
 --
 -- NetworkManagerのdispatcherスクリプトとして、デバイスのイベントごとに呼ばれる。
--- 第1引数がインターフェース名、第2引数がアクションである。
+-- 第1引数がインタフェース名、第2引数がアクションである。
 module WifiWiredExclusive.Cli
   ( run
   , runWith

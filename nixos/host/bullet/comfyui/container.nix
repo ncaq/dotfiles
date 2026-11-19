@@ -1,58 +1,25 @@
 # ComfyUI本体を隔離して動かすNixOS Containersの定義。
 {
   lib,
-  pkgs,
+  pkgs-unstable,
   config,
   inputs,
   ...
 }:
 let
-  comfyuiNix = inputs.utensils-comfyui-nix;
-  versions = import "${comfyuiNix}/nix/versions.nix";
-  gpuSupport = "cuda";
-  # comfyui-nixのパッケージと、
-  # サービスがそれと一緒に実行するプログラムを組むためのpkgs。
-  # comfyui-nixのinputsのnixpkgs(flake.nixでfollowsを指定したもの)から作る。
-  #
-  # ホストやコンテナ自身のpkgsと混ぜてはいけない。
-  # comfyui-nixのランチャーはglibなどのライブラリを`LD_LIBRARY_PATH`で子プロセスにも渡すので、
-  # 別のnixpkgsのffmpegを`path`に置くとglibcの版が合わずに起動できなかった。
-  comfyPkgs = import comfyuiNix.inputs.nixpkgs {
-    inherit (pkgs.stdenv.hostPlatform) system;
-    config = {
-      # comfyui-nixのflakeが自身のpkgsに与えている設定と同じもの。
-      allowUnfree = true;
-      allowBrokenPredicate = pkg: (pkg.pname or "") == "open-clip-torch";
-      # このホストのRTX 5090(sm_120)だけに絞る。
-      # 既定ではTuringからBlackwellまで9アーキテクチャ分をnvccに渡すため、
-      # nvshmemのようにソースからビルドするCUDAパッケージのコンパイル時間が膨らむ。
-      # torchなどのwheelは事前ビルドなので影響しない。
-      cudaCapabilities = [ "12.0" ];
-    };
-  };
-  # comfyui-nixの`packages.<system>.cuda`と同じ組み立てを上のpkgsで行う。
-  # flakeの`mkComfyPackages`は公開されていないので中身の`nix/packages.nix`を直接呼ぶ。
-  comfyPackages = import "${comfyuiNix}/nix/packages.nix" {
-    inherit versions gpuSupport;
-    pkgs = comfyPkgs;
-    inherit (comfyPkgs) lib;
-    pythonOverrides = import "${comfyuiNix}/nix/python-overrides.nix" {
-      inherit versions gpuSupport;
-      pkgs = comfyPkgs;
-    };
-  };
-  cudaNvcc = comfyPkgs.cudaPackages_13.cuda_nvcc;
   # ComfyUIがlistenするポート。
   # ホスト側では`comfyui-proxy.socket`が同じ番号でlistenし、
   # コンテナ内のComfyUIへ転送する。
   port = 8188;
   # コンテナのvethアドレス。
-  # LANの192.168.10.0/24と重複しない範囲を使う。
-  hostAddress = "192.168.100.10";
-  localAddress = "192.168.100.11";
-  toAddress6 = ipv4: import ../../../../lib/machine-address6.nix { inherit lib ipv4; };
-  hostAddress6 = toAddress6 hostAddress;
-  localAddress6 = toAddress6 localAddress;
+  # ホストとの間はIPv6で繋ぐ。
+  hostAddress6 = "fdf2:a855:5a3f:100::10";
+  localAddress6 = "fdf2:a855:5a3f:100::11";
+  # IPv4は出口のためだけに持たせる(下の`local.machineEgress`を参照)。
+  # 導いた先はLANの192.168.10.0/24と重複しない範囲になる。
+  toAddress4 = import ../../../../lib/machine-address4.nix { inherit lib; };
+  hostAddress = toAddress4 hostAddress6;
+  localAddress = toAddress4 localAddress6;
   # コンテナ内のcomfyuiユーザのID。
   # ephemeralコンテナでは動的割り当ての記録が起動ごとに消えるため、
   # bind mountした`/var/lib/comfyui`の所有権がずれないように固定する。
@@ -128,101 +95,104 @@ in
     config =
       { lib, ... }:
       {
-        imports = [ comfyuiNix.nixosModules.default ];
+        imports = [ inputs.utensils-comfyui-nix.nixosModules.default ];
         system.stateVersion = "26.05";
         # コンテナにはホストのタイムゾーンが伝播しないため明示する。
         # 未設定だとUTCになり、出力ファイル名の生成日時がJSTとずれる。
         time.timeZone = "Asia/Tokyo";
-        networking.useHostResolvConf = lib.mkForce false;
-        services.resolved.enable = true;
         users = {
           users.comfyui.uid = comfyuiUid;
           groups.comfyui.gid = comfyuiGid;
         };
-        services.comfyui = {
-          enable = true;
-          gpuSupport = "cuda";
-          # 既定の`packageSet`はcomfyui-nixのflake自身のpkgsで組まれていて、
-          # `cudaCapabilities`などのnixpkgsの設定を外から渡せない。
-          # 自前の設定で組み直したものに差し替える。
-          packageSet.cuda = lib.mkForce comfyPackages.default;
-          enableManager = true;
-          inherit port;
-          # ホストからvethを通してアクセスするので全インターフェースでlistenする。
-          # privateNetworkなのでLANには露出しない。
-          listenAddress = "0.0.0.0";
-          inherit dataDir;
-          # コンテナ内のfirewallを開ける。到達できるのはvethを持つホストのみ。
-          openFirewall = true;
-          extraArgs = [
-            # モデルの重みをpinned memoryへコピーせず、
-            # mmapしたディスク上の重みからGPUへ転送する。
-            #
-            # ComfyUIはpinned memoryの上限を、
-            # `max(ram * 0.40, min(ram * 0.90, ram - 4GiB, ram + ディスクswap - 16GiB))`
-            # で決める。
-            # この計算はzramを意図的にディスクswapから除外する。
-            # pinned memoryはカーネルが回収もswap outもできないので、
-            # ホストの他のプロセスやページキャッシュの分が残らない。
-            #
-            # 実際にanime-videoでOOM killerが発動した。
-            # Wan 2.2のhigh/lowが27GiBずつとumt5_xxl_fp16の11GiBで、
-            # プロセスのanon-rssは65.0GiBに達していた。
-            # cgroupの`MemoryMax`(84.3GiB)には届いていないためそちらでは止まらず、
-            # 回収できないinactive_anonを47GiB抱えたままglobal OOMになった。
-            #
-            # このフラグを付けるとdynamic VRAMのsignatureを持つ層で、
-            # `pin_memory`を呼ばずにmmapから直接転送する経路を通るため、
-            # 重みのRAM常駐が消える。
-            # dynamic VRAMはNVIDIAかつtorch 2.8以上かつ非WSLで自動的に有効になり、
-            # このホストは条件を満たす。
-            # 重みの供給がディスク速度に律速するようになるが、
-            # モデルはNVMe(SN8100)上のNix storeにあるので許容できる。
-            "--fast-disk"
-            # WanのRoPEやFP8量子化処理をeager実装からTritonカーネルへ切り替える。
-            "--enable-triton-backend"
-            "--fast"
-            # FP16の行列積で低精度の累積を許可して、LoRAやFP16 fallbackを高速化する。
-            # 丸め誤差が増えるため生成結果は変化する可能性がある。
-            "fp16_accumulation"
-            # 重みがfp8_e4m3fnの層の行列積をTensor Coreのfp8演算で行う。
-            # 実測でbf16の0.622msに対しfp8は0.253msだった(4096角のGEMM)。
-            #
-            # 現在使っているモデルには効かない。
-            # 量子化済みモデルは各層に`comfy_quant`マーカーを持つため、
-            # `pick_operations`がこのフラグを見る前にmixed precision経路へ抜けて、
-            # 層ごとの量子化設定に従うためである。
-            # 効くのはマーカーを持たない素のfp8チェックポイントを足した時で、
-            # その時に指定し忘れないよう先に入れておく。
-            "fp8_matrix_mult"
-            # xformers 0.0.30はBlackwell(sm_120)に対応していないため使わない。
-            # comfy-kitchen同梱のINT8 attentionで、
-            # 動画生成の大半を占めるattentionを近似計算して高速化する。
-            #
-            # 自前ビルドのSageAttention 2.2.0から乗り換えた。
-            # (h=40, s=32760, d=128)のマイクロベンチではRTX 5090上で、
-            # PyTorch SDPAの99.12msに対しSageAttentionが37.65ms、こちらが39.75msで、
-            # ガウス乱数入力の相対誤差は前者0.0385に対しこちらが0.0160だった。
-            # 5%の速度差と引き換えにCUDAソースビルドを1つ丸ごと減らせる。
-            #
-            # 利用不可ならComfyUIは黙って別実装へ落ちずに起動時点で終了するので、
-            # 気付かないまま遅い実装で動き続けることはない。
-            "--use-ck-attention"
-          ];
+        networking.useHostResolvConf = lib.mkForce false;
+        services = {
+          # ホストのresolv.confを使わないので、コンテナの中の名前解決はresolvedに任せる。
+          resolved.enable = true;
+          comfyui = {
+            enable = true;
+            gpuSupport = "cuda";
+            enableManager = true;
+            inherit port;
+            # ホストからvethを通してIPv6でアクセスするので全インタフェースでlistenする。
+            # privateNetworkなのでLANには露出しない。
+            # ComfyUIはaiohttpでlistenするので、`::`はIPv6だけを受ける。
+            listenAddress = "::";
+            inherit dataDir;
+            # コンテナ内のfirewallを開ける。到達できるのはvethを持つホストのみ。
+            openFirewall = true;
+            extraArgs = [
+              # モデルの重みをpinned memoryへコピーせず、
+              # mmapしたディスク上の重みからGPUへ転送する。
+              #
+              # ComfyUIはpinned memoryの上限を、
+              # `max(ram * 0.40, min(ram * 0.90, ram - 4GiB, ram + ディスクswap - 16GiB))`
+              # で決める。
+              # この計算はzramを意図的にディスクswapから除外する。
+              # pinned memoryはカーネルが回収もswap outもできないので、
+              # ホストの他のプロセスやページキャッシュの分が残らない。
+              #
+              # 実際にanime-videoでOOM killerが発動した。
+              # Wan 2.2のhigh/lowが27GiBずつとumt5_xxl_fp16の11GiBで、
+              # プロセスのanon-rssは65.0GiBに達していた。
+              # cgroupの`MemoryMax`(84.3GiB)には届いていないためそちらでは止まらず、
+              # 回収できないinactive_anonを47GiB抱えたままglobal OOMになった。
+              #
+              # このフラグを付けるとdynamic VRAMのsignatureを持つ層で、
+              # `pin_memory`を呼ばずにmmapから直接転送する経路を通るため、
+              # 重みのRAM常駐が消える。
+              # dynamic VRAMはNVIDIAかつtorch 2.8以上かつ非WSLで自動的に有効になり、
+              # このホストは条件を満たす。
+              # 重みの供給がディスク速度に律速するようになるが、
+              # モデルはNVMe(SN8100)上のNix storeにあるので許容できる。
+              "--fast-disk"
+              # WanのRoPEやFP8量子化処理をeager実装からTritonカーネルへ切り替える。
+              "--enable-triton-backend"
+              "--fast"
+              # FP16の行列積で低精度の累積を許可して、LoRAやFP16 fallbackを高速化する。
+              # 丸め誤差が増えるため生成結果は変化する可能性がある。
+              "fp16_accumulation"
+              # 重みがfp8_e4m3fnの層の行列積をTensor Coreのfp8演算で行う。
+              # 実測でbf16の0.622msに対しfp8は0.253msだった(4096角のGEMM)。
+              #
+              # 現在使っているモデルには効かない。
+              # 量子化済みモデルは各層に`comfy_quant`マーカを持つため、
+              # `pick_operations`がこのフラグを見る前にmixed precision経路へ抜けて、
+              # 層ごとの量子化設定に従うためである。
+              # 効くのはマーカを持たない素のfp8チェックポイントを足した時で、
+              # その時に指定し忘れないよう先に入れておく。
+              "fp8_matrix_mult"
+              # xformers 0.0.30はBlackwell(sm_120)に対応していないため使わない。
+              # comfy-kitchen同梱のINT8 attentionで、
+              # 動画生成の大半を占めるattentionを近似計算して高速化する。
+              #
+              # 自前ビルドのSageAttention 2.2.0から乗り換えた。
+              # (h=40, s=32760, d=128)のマイクロベンチではRTX 5090上で、
+              # PyTorch SDPAの99.12msに対しSageAttentionが37.65ms、こちらが39.75msで、
+              # ガウス乱数入力の相対誤差は前者0.0385に対しこちらが0.0160だった。
+              # 5%の速度差と引き換えにCUDAソースビルドを1つ丸ごと減らせる。
+              #
+              # 利用不可ならComfyUIは黙って別実装へ落ちずに起動時点で終了するので、
+              # 気付かないまま遅い実装で動き続けることはない。
+              "--use-ck-attention"
+            ];
+          };
         };
         systemd.services.comfyui = {
-          # ComfyUI本体と同じnixpkgsから取る。理由は`comfyPkgs`のコメントを参照。
-          path = with comfyPkgs; [
+          # ComfyUI本体と同じnixpkgsから取る。
+          # comfyui-nixのnixpkgsは`flake.nix`でunstableへfollowさせている。
+          # comfyui-nixのランチャはglibなどのライブラリを`LD_LIBRARY_PATH`で子プロセスにも渡すので、
+          # 別のnixpkgsのffmpegを`path`に置くとglibcの版が合わずに起動できなかった。
+          path = with pkgs-unstable; [
             ffmpeg-headless
             oxipng
           ];
           # Tritonはsm_100以上へのコンパイルに`ptxas`ではなく`ptxas-blackwell`を探す。
-          # comfyui-nixのランチャーは`TRITON_PTXAS_PATH`しか設定しないため、
+          # comfyui-nixのランチャは`TRITON_PTXAS_PATH`しか設定しないため、
           # RTX 5090(sm_120)では`Cannot find ptxas-blackwell`で止まる。
           # ComfyUI v0.37.0ではAnimaのテキストエンコーダのRoPEがTritonカーネルを通るので、
           # 動画だけでなく画像のワークフローも失敗する。
           # CUDA 13の`ptxas`はsm_120に対応しているのでそれを指す。
-          environment.TRITON_PTXAS_BLACKWELL_PATH = "${cudaNvcc}/bin/ptxas";
+          environment.TRITON_PTXAS_BLACKWELL_PATH = "${pkgs-unstable.cudaPackages_13.cuda_nvcc}/bin/ptxas";
         };
       };
   };
@@ -230,7 +200,7 @@ in
     # コンテナから外(モデルやカスタムノードのダウンロードなど)へ出られるようにする。
     nat = {
       enable = true;
-      # ULAを持つコンテナをIPv6でも外へ出す(`lib/machine-address6.nix`)。
+      # ULAを持つコンテナをIPv6で外へ出す(`lib/machine-address4.nix`)。
       enableIPv6 = true;
       internalInterfaces = [ "ve-*" ];
     };
@@ -241,7 +211,11 @@ in
   # モデルやカスタムノードの取得に要る。
   # 利用者はTailscale Serviceからホストの中継を経て繋ぎに来る側なので、
   # 自宅LANやtailnetや他のコンテナへ出る理由は無い。
-  # カスタムノードは任意のPythonコードなので、出口を絞る価値はCIランナーと変わらない。
+  # カスタムノードは任意のPythonコードなので、出口を絞る価値はCIランナと変わらない。
+  #
+  # カスタムノードの取得元のgithub.comや、
+  # Hugging Faceのモデルの配信元のcas-bridge.xethub.hf.coはIPv4にしか無いので、
+  # IPv4も持たせている。
   local.machineEgress.comfyui.internet = true;
   systemd = {
     services."container@comfyui".serviceConfig = {

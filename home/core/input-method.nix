@@ -11,6 +11,13 @@
   };
 
   xdg.configFile = {
+    # fcitx5はhome-managerのsystemdユーザサービス`fcitx5-daemon`で起動します。
+    # パッケージ自身のXDG Autostartエントリも残っていると二重に起動するため、
+    # 同名のエントリを`Hidden=true`で上書きして無効化します。
+    "autostart/org.fcitx.Fcitx5.desktop".text = ''
+      [Desktop Entry]
+      Hidden=true
+    '';
     # profileは頻繁にfcitxが自動で書き換えるため、強制的に上書きする
     "fcitx5/profile" = {
       force = true;

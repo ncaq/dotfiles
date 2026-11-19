@@ -19,7 +19,7 @@
     # dockerd側でIPv6を有効にしないとコンテナにはIPv6アドレスも経路も付かず、
     # IPv6でしか繋がらない宛先に届かない。
     # プレフィックスはRFC 4193のULAで、
-    # NixOSコンテナの`lib/machine-address6.nix`やtailnetと重ならない値を乱数で決めた。
+    # NixOSコンテナの`lib/machine-address4.nix`やtailnetと重ならない値を乱数で決めた。
     # コンテナから外へはdockerdが名前空間の側のアドレスへ付け替えて出すので、
     # この値はホストの外からは見えない。
     daemon.settings = {
@@ -61,7 +61,7 @@
       #
       # ホストのfirewallは既定で拒否するので、
       # 転送されたポートがそのままLANやインターネットへ開くことは無い。
-      # tailscale0のようにインターフェイス単位で許可している経路からは届き得るので、
+      # tailscale0のようにインタフェース単位で許可している経路からは届き得るので、
       # `--network host`で待ち受けるコンテナはホストで直接動かすのと同じ露出があると考える。
       environment = {
         DOCKERD_ROOTLESS_ROOTLESSKIT_NET = "pasta";

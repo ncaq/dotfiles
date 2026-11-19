@@ -1,7 +1,7 @@
 # コンテナ内のOllamaへ接続するCLIをホストから利用可能にする。
 #
 # `ollama launch <ハーネス>`はここで作った環境をそのまま子プロセスへ渡すため、
-# ハーネスへ伝えたい値もこのラッパーで用意する。
+# ハーネスへ伝えたい値もこのラッパで用意する。
 {
   lib,
   pkgs,
@@ -13,7 +13,7 @@ let
   budget = (import ../../lib/ollama-context.nix).budget config.local.ollama.contextLength;
   ollama-client = pkgs.writeShellApplication {
     name = "ollama";
-    runtimeEnv.OLLAMA_HOST = "127.0.0.1:${toString ollama.port}";
+    runtimeEnv.OLLAMA_HOST = "[::1]:${toString ollama.port}";
     # `ollama launch claude`がClaude Codeへ渡さない値をここで補う。
     # ollamaはクラウドのモデルを選んだ時しかこれらを設定しないため、
     # ローカルのモデルではClaude Codeが自分の既定値で動いてしまう。
@@ -47,12 +47,12 @@ let
     # Claude Codeはモデル名を引けない場合、
     # 圧縮の閾値をモデルのcontextで、
     # 応答の上限を128000で丸める。
-    # CUDAのホストの98304と32768も、
+    # CUDAのホストの110592と36864も、
     # CPUのホストの24576と8192も、
     # どちらの丸めにも掛からずそのまま通る。
     #
     # どちらも呼び出し側が既に指定していればそちらを優先する。
-    # 値を変えて試す時にこのラッパーを組み直さずに済ませるためである。
+    # 値を変えて試す時にこのラッパを組み直さずに済ませるためである。
     text = ''
       : "''${CLAUDE_CODE_AUTO_COMPACT_WINDOW:=${toString budget.history}}"
       : "''${CLAUDE_CODE_MAX_OUTPUT_TOKENS:=${toString budget.output}}"

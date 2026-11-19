@@ -23,6 +23,12 @@ currentUi response = fromMaybe mempty (objectOf response >>= (^? ix "ui") >>= ob
 -- 全置換にしないのは、最後に選んだModelを覚える`models`のように、
 -- 人が触った結果をそのまま持たせたい鍵が同じ階層に同居しているためである。
 --
+-- システムプロンプトだけは、宣言が無ければ今の値を保たずに取り除く。
+-- 宣言をやめた時に、以前の同期が書き込んだ値がDBへ残り続けるのを防ぐためである。
+--
+-- `system`の鍵を決めるのはシステムプロンプトの引数だけである。
+-- 宣言した鍵に`system`を書いても使われず、引数が無ければそれも取り除かれる。
+--
 -- システムプロンプトの末尾の改行を1つ落とすのは、UIのテキストエリアが持つ値と揃えるためで、
 -- 人が入力欄で書いた場合は末尾に改行が付かない。
 mergeUi
@@ -30,11 +36,11 @@ mergeUi
   -- ^ 今の`ui`。
   -> Map Text Value
   -- ^ 宣言した鍵。
-  -> Text
-  -- ^ システムプロンプト。
+  -> Maybe Text
+  -- ^ システムプロンプト。無ければ持たないという宣言。
   -> Map Text Value
 mergeUi current declared systemPrompt =
   -- `Map`の`<>`は左を優先するので、強いものを左に置く。
-  (mempty & at "system" ?~ String trimmed) <> declared <> current
+  (declared <> current) & at "system" .~ (String . trimmed <$> systemPrompt)
  where
-  trimmed = fromMaybe systemPrompt (T.stripSuffix "\n" systemPrompt)
+  trimmed text = fromMaybe text (T.stripSuffix "\n" text)

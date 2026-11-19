@@ -20,7 +20,7 @@ let
   );
   # `programs.emacs.enable`を使うとhome-managerが`emacsWithPackages`で二重ラップし、
   # `.emacs.d/flake.nix`の`extraEmacsPackages`でリンクしたバイナリが消えるため、
-  # `.emacs.d`由来の定義を`service.emacs`や`home.packages`で参照するようにします。
+  # `.emacs.d`由来の定義を`services.emacs`や`home.packages`で参照するようにします。
   emacsPackage = inputs.dot-emacs.lib.mkEmacs {
     inherit (pkgs.stdenv.hostPlatform) system;
     # WSLgはWaylandで動作するためWSL環境では`"pgtk"`を指定します。

@@ -10,7 +10,7 @@ import Test.Sandwich
 complete :: [(Text, Text)]
 complete =
   [ ("GARAGE_SETUP_NAME", "niks3-public")
-  , ("GARAGE_SETUP_API", "http://192.168.100.61:3903")
+  , ("GARAGE_SETUP_API", "http://[fdf2:a855:5a3f:100::61]:3903")
   , ("GARAGE_SETUP_ADMIN_TOKEN_FILE", "/run/secrets/garage-admin-token")
   , ("RUNTIME_DIRECTORY", "/run/garage-setup/niks3-public")
   ]
@@ -22,7 +22,7 @@ tests = describe "configFrom" do
       `shouldBe` Right
         Config
           { name = "niks3-public"
-          , api = "http://192.168.100.61:3903"
+          , api = "http://[fdf2:a855:5a3f:100::61]:3903"
           , adminTokenFile = "/run/secrets/garage-admin-token"
           , runtimeDirectory = "/run/garage-setup/niks3-public"
           }

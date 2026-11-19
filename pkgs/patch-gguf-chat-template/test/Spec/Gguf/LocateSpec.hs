@@ -62,7 +62,7 @@ tests = describe "locateChatTemplate" do
     locate content `shouldThrow` (== ChatTemplateNotString GgufUInt32)
   it "v2以前は読み方から違うので受け付けない" do
     locate (assemble 2 (entries (Just template))) `shouldThrow` (== UnexpectedVersion 2)
-  it "マジックナンバーが違うファイルは読まない" do
+  it "マジックナンバが違うファイルは読まない" do
     locate ("NOTGGUF" <> buildGguf (Just template)) `shouldThrow` (== NotGguf)
   it "知らない型IDは読み飛ばせないので止まる" do
     -- 型IDは0から12まで。

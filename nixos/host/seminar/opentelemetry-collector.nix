@@ -1,8 +1,8 @@
 { config, hardening, ... }:
 let
-  garageAddr = config.machineAddresses.garage.guest;
-  niks3PublicAddr = config.machineAddresses.niks3-public.guest;
-  niks3PrivateAddr = config.machineAddresses.niks3-private.guest;
+  garageAddr = config.machineAddresses.garage.guest6;
+  niks3PublicAddr = config.machineAddresses.niks3-public.guest6;
+  niks3PrivateAddr = config.machineAddresses.niks3-private.guest6;
 in
 {
   # PrometheusメトリクスをOpenTelemetry Collectorでスクレイプし、
@@ -30,21 +30,21 @@ in
             type = "Bearer";
             credentials = "\${env:GARAGE_METRICS_TOKEN}";
           };
-          static_configs = [ { targets = [ "${garageAddr}:3903" ]; } ];
+          static_configs = [ { targets = [ "[${garageAddr}]:3903" ]; } ];
         }
         {
           job_name = "niks3-public";
           scrape_interval = "60s";
           scheme = "http";
           metrics_path = "/metrics";
-          static_configs = [ { targets = [ "${niks3PublicAddr}:5751" ]; } ];
+          static_configs = [ { targets = [ "[${niks3PublicAddr}]:5751" ]; } ];
         }
         {
           job_name = "niks3-private";
           scrape_interval = "60s";
           scheme = "http";
           metrics_path = "/metrics";
-          static_configs = [ { targets = [ "${niks3PrivateAddr}:5751" ]; } ];
+          static_configs = [ { targets = [ "[${niks3PrivateAddr}]:5751" ]; } ];
         }
       ];
       processors = {
@@ -88,7 +88,6 @@ in
       };
     };
   };
-
   systemd.services.opentelemetry-collector = {
     # 上流モジュールがDynamicUser/ProtectSystem/DevicePolicy/NoNewPrivilegesを設定済みなので、
     # 上流と重複・衝突する属性は外してその上に締めます。
@@ -122,4 +121,7 @@ in
     GARAGE_METRICS_TOKEN=${config.sops.placeholder."garage-metrics-token"}
     MACKEREL_APIKEY=${config.sops.placeholder."mackerel-api-key"}
   '';
+
+  # `otelcol validate`など
+  environment.systemPackages = [ config.services.opentelemetry-collector.package ];
 }

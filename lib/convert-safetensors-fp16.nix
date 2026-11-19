@@ -61,9 +61,6 @@
     検証してから配置するのと同じ保証が得られる。
 */
 { pkgs }:
-let
-  safetensorsFp16 = pkgs.callPackage ../pkgs/safetensors-fp16 { };
-in
 { src, hash }:
 let
   # storeパスを見ただけで変換済みだと分かるようにする。
@@ -76,7 +73,7 @@ let
 in
 pkgs.runCommand name
   {
-    nativeBuildInputs = [ safetensorsFp16 ];
+    nativeBuildInputs = [ pkgs.safetensors-fp16 ];
 
     outputHashMode = "flat";
     outputHashAlgo = "sha256";

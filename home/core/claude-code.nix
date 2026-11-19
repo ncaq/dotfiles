@@ -1,27 +1,36 @@
+# Claude Codeの全ホストに共通の設定。
+#
+# 設定を`programs.claude-code`で宣言して、
+# ユーザの`~/.claude/settings.json`として展開する。
+# `settings.json`では表せない種類の設定は、
+# home-managerが生成するラッパプログラムの引数として渡す。
+#
+# このリポジトリに固有の設定はリポジトリルートの`.claude/settings.json`にあり、
+# dotfilesでClaude Codeを起動している時はここの設定とマージされる。
+#
+# スキルに類するものの読み込みは`llm-skill.nix`にある。
 {
   lib,
   pkgs,
   pkgs-unstable,
   config,
-  codingAgentWorkDirFullPath,
   systemdPackage,
   ...
 }:
-let
-  ccstatusline = pkgs.callPackage ../../pkgs/ccstatusline.nix { };
-in
 {
   programs.claude-code = {
     enable = true;
+    # コーディングエージェントは更新が早くサーバも最新バージョンを要求しがちなのでunstableを使います。
+    #
     # nixpkgsはネイティブバイナリを`wrapProgram`で包んで環境変数を設定しています。
     # home-managerはさらにその上を`--plugin-dir`を付けるシェルスクリプトで包み、
     # `exec -a "$0"`でargv[0]を引き継ごうとしますが、
     # exec先がシェルスクリプトだとカーネルがargv[0]をスクリプトのパスに置き換えるため、
     # 本体に届くargv[0]は`.claude-wrapped`になってしまいます。
     # tmuxの`pane_current_command`などはargv[0]を見るのでウィンドウ名が`.claude-wrapped`と表示されます。
-    # nixpkgs側のラッパーをバイナリラッパーに差し替えると、
+    # nixpkgs側のラッパをバイナリラッパに差し替えると、
     # `wrapProgram`が付ける`--inherit-argv0`が実際に効いてargv[0]が本体まで届きます。
-    # home-manager masterは`--plugin-dir`ラッパー自体を廃止済みなので、
+    # home-manager masterは`--plugin-dir`ラッパ自体を廃止済みなので、
     # そちらが安定版に降りてきたらこの差し替えは不要になります。
     package = pkgs-unstable.claude-code.override {
       makeShellWrapper = pkgs-unstable.makeBinaryWrapper;
@@ -39,22 +48,21 @@ in
       # 常にフルの表示を要求します。
       verbose = true;
       # 頻繁に最適な値が変わるので設定するその時に最適なものを選びます。
-      model = "opus[1m]"; # Opusのクラスで十分賢いのでデフォルトではfableより安いモデルを使います。
+      model = "fable"; # fableの利用量が割と余るので、デフォルトをfableにします。
       fallbackModel = [
-        "fable"
+        "opus"
         "sonnet"
       ];
-      # メッセージにCo-Authored-Byフッターを付与しません。
+      # メッセージに全てのフッタを付与しません。
+      #
+      # Co-Authored-Byは付与しません。
       # 私はAIエージェントはテキストエディタの延長線上だと考えているため、
       # ツール名が書かれるのは不自然だと思っています。
+      #
       # セッションURLも付与しません。
       # セッションは作業した本人にしか見えないので、
       # 他の人が読むコミットメッセージやPRに書いても意味がないためです。
-      attribution = {
-        commit = "";
-        pr = "";
-        sessionUrl = false;
-      };
+      attribution = false;
       # グローバルに有効なhookを設定します。
       hooks = {
         SessionStart = [
@@ -84,10 +92,10 @@ in
       # ちらつきが少ないことが期待できる表示方法を選びます。
       tui = "fullscreen";
       # statuslineを設定します。
-      # ccstatuslineを使用して豪華な表示にします。
       statusLine = {
         type = "command";
-        command = lib.getExe ccstatusline;
+        # ccstatuslineを使用して豪華な表示にします。
+        command = lib.getExe pkgs.ccstatusline;
       };
       inputNeededNotifEnabled = true; # 入力待ちのときに通知を出す。
       sandbox = {
@@ -135,159 +143,7 @@ in
       skipAutoPermissionPrompt = true; # auto modeをdefaultModeにしているので許可を求めない。
       permissions = {
         defaultMode = "auto";
-        additionalDirectories = [
-          # コーディングエージェント向けに用意した作業ディレクトリは当然読み書きを許可します。
-          codingAgentWorkDirFullPath
-          # nixのビルド結果の`result`はシンボリックリンクで`/nix/store/`を見ているので、
-          # ビルド結果を参照する時いちいち許可を求められないようにします。
-          # トラブル時にプログラムのソースコードを探る時もここから読むので、
-          # 調査時にも許可を求められないようにします。
-          # ファイルシステムレベルで読み取り専用なので壊される心配はありません。
-          "/nix/store/"
-          # dotfilesにグローバルの設定の殆どを置いているので、
-          # 現在の設定を確認しやすいように読み取りを許可します。
-          # 書き込みも許可してしまいますが、
-          # 適切に拒否するのが面倒なのでそのままにしています。
-          "~/dotfiles/"
-        ];
         allow = [
-          "Bash($EDITOR:*)"
-          "Bash(* --help *)"
-          "Bash(* --version)"
-          "Bash(awk:*)"
-          "Bash(cat:*)"
-          "Bash(chmod:*)"
-          "Bash(coredumpctl:*)"
-          "Bash(curl:*)"
-          "Bash(diff:*)"
-          "Bash(dig:*)"
-          "Bash(direnv:*)"
-          "Bash(docker:*)"
-          "Bash(echo:*)"
-          "Bash(env)"
-          "Bash(fastfetch:*)"
-          "Bash(fd:*)"
-          "Bash(find:*)"
-          "Bash(getent:*)"
-          "Bash(gh * browse*)"
-          "Bash(gh * check*)"
-          "Bash(gh * checkout*)"
-          "Bash(gh * checks*)"
-          "Bash(gh * clone*)"
-          "Bash(gh * diff*)"
-          "Bash(gh * download*)"
-          "Bash(gh * get*)"
-          "Bash(gh * list*)"
-          "Bash(gh * logs*)"
-          "Bash(gh * ports*)"
-          "Bash(gh * search*)"
-          "Bash(gh * status*)"
-          "Bash(gh * verify*)"
-          "Bash(gh * view*)"
-          "Bash(gh * watch*)"
-          "Bash(gh attestation trusted-root:*)"
-          "Bash(gh browse:*)"
-          "Bash(gh completion:*)"
-          "Bash(gh repo gitignore:*)"
-          "Bash(gh repo license:*)"
-          "Bash(gh search:*)"
-          "Bash(gh status:*)"
-          "Bash(git add:*)"
-          "Bash(git checkout:*)"
-          "Bash(git clone:*)"
-          "Bash(git diff:*)"
-          "Bash(git fetch:*)"
-          "Bash(git log:*)"
-          "Bash(git ls-files:*)"
-          "Bash(git ls-remote:*)"
-          "Bash(git ls-tree:*)"
-          "Bash(git mv:*)"
-          "Bash(git restore:*)"
-          "Bash(git show-branch:*)"
-          "Bash(git show:*)"
-          "Bash(git stash:*)"
-          "Bash(git status:*)"
-          "Bash(git switch:*)"
-          "Bash(grep:*)"
-          "Bash(hadolint:*)"
-          "Bash(hash:*)"
-          "Bash(hostname)"
-          "Bash(hostnamectl status:*)"
-          "Bash(infocmp:*)"
-          "Bash(ip:*)"
-          "Bash(journalctl:*)"
-          "Bash(jq:*)"
-          "Bash(ln:*)"
-          "Bash(localectl status:*)"
-          "Bash(ls:*)"
-          "Bash(mkdir:*)"
-          "Bash(mktemp:*)"
-          "Bash(mount)"
-          "Bash(networkctl status:*)"
-          "Bash(nix build:*)"
-          "Bash(nix copy:*)"
-          "Bash(nix derivation show:*)"
-          "Bash(nix eval:*)"
-          "Bash(nix flake check:*)"
-          "Bash(nix flake info:*)"
-          "Bash(nix flake lock:*)"
-          "Bash(nix flake metadata:*)"
-          "Bash(nix flake prefetch:*)"
-          "Bash(nix flake show:*)"
-          "Bash(nix fmt:*)"
-          "Bash(nix hash:*)"
-          "Bash(nix log:*)"
-          "Bash(nix path-info:*)"
-          "Bash(nix search:*)"
-          "Bash(nix store:*)"
-          "Bash(nix why-depends:*)"
-          "Bash(nix-diff:*)"
-          "Bash(nix-fast-build:*)"
-          "Bash(nix-init:*)"
-          "Bash(nix-prefetch-bzr:*)"
-          "Bash(nix-prefetch-cvs:*)"
-          "Bash(nix-prefetch-docker:*)"
-          "Bash(nix-prefetch-git:*)"
-          "Bash(nix-prefetch-github:*)"
-          "Bash(nix-prefetch-hg:*)"
-          "Bash(nix-prefetch-svn:*)"
-          "Bash(nix-prefetch:*)"
-          "Bash(nix-update:*)"
-          "Bash(nixos-option:*)"
-          "Bash(nslookup:*)"
-          "Bash(nurl:*)"
-          "Bash(ping:*)"
-          "Bash(prefetch-npm-deps:*)"
-          "Bash(prefetch-yarn-deps:*)"
-          "Bash(prettier:*)"
-          "Bash(printenv:*)"
-          "Bash(printf:*)"
-          "Bash(readlink:*)"
-          "Bash(rg:*)"
-          "Bash(sops --encrypt:*)"
-          "Bash(sort:*)"
-          "Bash(ss:*)"
-          "Bash(systemctl --user cat:*)"
-          "Bash(systemctl --user list-units:*)"
-          "Bash(systemctl --user show:*)"
-          "Bash(systemctl --user status:*)"
-          "Bash(systemctl cat:*)"
-          "Bash(systemctl list-units:*)"
-          "Bash(systemctl show:*)"
-          "Bash(systemctl status:*)"
-          "Bash(systemd-analyze:*)"
-          "Bash(tailscale status:*)"
-          "Bash(tee:*)"
-          "Bash(timedatectl status:*)"
-          "Bash(touch:*)"
-          "Bash(trash:*)"
-          "Bash(tree:*)"
-          "Bash(true)"
-          "Bash(update-nix-fetchgit:*)"
-          "Bash(wc:*)"
-          "Bash(yq:*)"
-          "WebFetch"
-          "WebSearch"
           "mcp__plugin_claude-code-home-manager_backlog__count_issues"
           "mcp__plugin_claude-code-home-manager_backlog__count_notifications"
           "mcp__plugin_claude-code-home-manager_backlog__get_categories"
@@ -370,41 +226,18 @@ in
           "mcp__plugin_claude-code-home-manager_nixos"
           "mcp__plugin_nix-tasuke_nixos"
         ];
-        ask = [
-          "Bash(docker compose rm:*)"
-          "Bash(docker config:*)"
-          "Bash(docker container rm:*)"
-          "Bash(docker context:*)"
-          "Bash(docker exec:*)"
-          "Bash(docker image rm:*)"
-          "Bash(docker login:*)"
-          "Bash(docker logout:*)"
-          "Bash(docker network rm:*)"
-          "Bash(docker node:*)"
-          "Bash(docker plugin:*)"
-          "Bash(docker push:*)"
-          "Bash(docker rm:*)"
-          "Bash(docker rmi:*)"
-          "Bash(docker run:*)"
-          "Bash(docker secret:*)"
-          "Bash(docker service:*)"
-          "Bash(docker stack:*)"
-          "Bash(docker swarm:*)"
-          "Bash(docker trust:*)"
-          "Bash(docker volume rm:*)"
-        ];
         deny = [
           "Bash(gh * delete*)"
           "Bash(gh repo archive:*)"
           "Bash(gh repo rename:*)"
-          "Bash(git rm:*)"
           "Bash(rm:*)"
         ];
       };
     };
   };
 
-  # 制限は持たせず、`systemd-cgls`や`systemctl --user status`で
+  # 制限は持たせず、
+  # `systemd-cgls`や`systemctl --user status`で、
   # Claude Codeのセッション群をまとめて観察するためだけのsliceです。
   # Termuxなどsystemdの無い環境では単にスキップされます。
   systemd.user.slices.claude-code = {
@@ -415,7 +248,7 @@ in
     # Claude Codeがnativeインストール時に`~/.local/bin/claude`が存在していないと警告を出すため、
     # シンボリックリンクを作成して警告を抑制します。
     # またその際に、暴走したセッションが他のアプリをOOM Killerに殺させないように、
-    # セッションごとのメモリ制限を付けて起動するラッパーを挟みます。
+    # セッションごとのメモリ制限を付けて起動するラッパを挟みます。
     file.".local/bin/claude".source = lib.getExe (
       pkgs.writeShellApplication {
         name = "claude";

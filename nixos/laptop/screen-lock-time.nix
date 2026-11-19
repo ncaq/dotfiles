@@ -10,7 +10,7 @@ in
 {
   systemd = {
     # 画面消灯までの時間を30分に設定。
-    # xss-lockはXのスクリーンセーバータイムアウトをトリガーにするため、
+    # xss-lockはXのスクリーンセーバタイムアウトをトリガにするため、
     # xsetでタイムアウトを設定します。
     # 消灯でnotifierが起動され、
     # サイクル時間の30秒が経過するとロックされます。
@@ -65,7 +65,7 @@ in
     logind.settings.Login.HandleLidSwitch = "ignore";
     acpid = {
       enable = true;
-      # 蓋の開閉イベントでロックタイマーを制御。
+      # 蓋の開閉イベントでロックタイマを制御。
       lidEventCommands = ''
         case "$1" in
           *close)

@@ -27,15 +27,6 @@ in
 {
   imports = [ ../../../lib/tailscale-serve.nix ];
 
-  # tailnet専用のバイナリキャッシュとしてTailscale Serviceで公開する。
-  # Funnelではないのでインターネットには公開されない。
-  # readはTailscaleネットワーク認証、writeはAPIトークン認証。
-  local.tailscaleServe.services.niks3-private = {
-    service = import ../../../lib/niks3-private-tailscale-service.nix;
-    label = "niks3 private";
-    inherit port;
-  };
-
   # privateNetworkのコンテナへはホストのCaddyで中継する。
   # `open-webui/tailscale-serve.nix`と同じ構成で、
   # `tailscale serve`の転送先をリモートのアドレスにするのを避けている。
@@ -43,8 +34,8 @@ in
   # ホスト名なしのアドレスにしてHTTPだけで待ち受ける。
   # ホスト名を書くとCaddyが自動HTTPSを有効にしてしまう。
   services.caddy.virtualHosts.":${toString port}".extraConfig = ''
-    bind 127.0.0.1
-    reverse_proxy http://${addr.guest}:${toString port}
+    bind [::1]
+    reverse_proxy http://[${addr.guest6}]:${toString port}
   '';
 
   containers.niks3-private = {
@@ -54,10 +45,10 @@ in
     # PostgreSQLのpeer認証がホストと同一のUIDでの接続を要求するため、
     # pickにはできずidentity(UID分離なし、capability分離のみ)のまま。
     privateUsers = "identity";
-    hostAddress = addr.host;
-    localAddress = addr.guest;
     hostAddress6 = addr.host6;
     localAddress6 = addr.guest6;
+    hostAddress = addr.host4;
+    localAddress = addr.guest4;
     bindMounts = {
       "/run/postgresql" = {
         hostPath = "/run/postgresql";
@@ -94,7 +85,7 @@ in
           # GarageへはHTTPで転送します。
           # presigned URLはhttps://garage.ncaq.net/...のままなので、
           # 外部クライアントはCloudflare Tunnel経由でアクセスできます。
-          hosts."${addr.host}" = [ "garage.ncaq.net" ];
+          hosts."${addr.host6}" = [ "garage.ncaq.net" ];
         };
         users = {
           users.niks3-private = niks3User // {
@@ -145,13 +136,24 @@ in
     groups.niks3-private.gid = user.gid;
   };
 
-  # niks3-privateは外へ出ない。
-  # niks3-publicと違ってOIDCを使わないので外部へ問い合わせるものが無く、
-  # garageへは上の`hosts`の通りホストのCaddyへ繋ぐので転送ではなくinputで届き、
-  # それは`caddy.nix`が開けている。
-  # 読み書きのクライアントは全てTailscale Serviceからホストの中継を経て繋ぎに来る側なので、
-  # 転送を1つも許さない。
-  local.machineEgress.niks3-private = { };
+  local = {
+    # tailnet専用のバイナリキャッシュとしてTailscale Serviceで公開する。
+    # Funnelではないのでインターネットには公開されない。
+    # readはTailscaleネットワーク認証、writeはAPIトークン認証。
+    tailscaleServe.services.niks3-private = {
+      service = import ../../../lib/niks3-private-tailscale-service.nix;
+      label = "niks3 private";
+      inherit port;
+    };
+
+    # niks3-privateは外へ出ない。
+    # niks3-publicと違ってOIDCを使わないので外部へ問い合わせるものが無く、
+    # garageへは上の`hosts`の通りホストのCaddyへ繋ぐので転送ではなくinputで届き、
+    # それは`caddy.nix`が開けている。
+    # 読み書きのクライアントは全てTailscale Serviceからホストの中継を経て繋ぎに来る側なので、
+    # 転送を1つも許さない。
+    machineEgress.niks3-private = { };
+  };
 
   postgresClient = [ "niks3-private" ];
 
@@ -171,7 +173,7 @@ in
       ];
     };
     garage-setup-niks3-private = import ../../../lib/garage-setup.nix {
-      inherit pkgs config inputs;
+      inherit pkgs config;
       name = "niks3-private";
     };
   };

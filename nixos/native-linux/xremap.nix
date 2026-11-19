@@ -75,7 +75,7 @@ let
     else
       action;
 
-  # remapのトリガーキーと出力アクションを変換する。
+  # remapのトリガキーと出力アクションを変換する。
   convertRemap =
     remap: lib.mapAttrs' (key: action: lib.nameValuePair (convertExp key) (convertAction action)) remap;
 

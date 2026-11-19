@@ -2,7 +2,6 @@
   pkgs,
   lib,
   config,
-  inputs,
   ...
 }:
 let
@@ -40,8 +39,7 @@ let
   };
 
   # マウントとアンマウントの中身。`pkgs/removable-crypt`にあります。
-  removable-crypt = pkgs.callPackage ../pkgs/removable-crypt {
-    inherit (inputs) himari-src;
+  removable-crypt = pkgs.removable-crypt.override {
     systemd = config.systemd.package;
   };
 
@@ -68,7 +66,7 @@ let
         "--name"
         name
       ];
-      # `--add-flags`の値はラッパーのスクリプトへそのまま埋まるので、
+      # `--add-flags`の値はラッパのスクリプトへそのまま埋まるので、
       # 引数ごとにクォートしてから、ビルドのシェルに渡すためにもう一度クォートします。
       flags = arguments: lib.escapeShellArg (lib.escapeShellArgs arguments);
     in

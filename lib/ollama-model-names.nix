@@ -25,36 +25,56 @@
     どの構成からも同じ一覧を引ける。
 */
 {
+  # 互いに同時にはVRAMへ載らないが、
+  # VRAMが足りなければOllamaがアイドル中のモデルを降ろすので入れ替わりで動く。
+  #
+  # 対話を待っていられる速度を出すため、
+  # どのモデルもKVキャッシュまで含めて32GiBのVRAMに乗り切るものを選ぶ。
+  # 少しでもCPUへ溢れると速度が大きく落ちるためである。
+  #
+  # GUIアプリケーションが簡単にクラッシュしないための余裕を考えると、
+  # VRAMの空きは0.5GiB程度はほしい。
   cuda = {
     general = [
-      # bulletは32GiBのVRAMに収まる範囲で汎用品質を優先して27Bのdenseを使う。
-      # registryの`qwen3.8:27b-mtp-q4_K_M`ではなくHugging FaceのGGUFを自前で組むのは、
-      # registryのmtp付きタグがq4_K_Mとq8_0とbf16しか無く、
-      # q8_0は27GiBあってKVキャッシュを載せる余地が無いためである。
-      # bulletでの実測(KVキャッシュq8_0, context 131072)では、
-      # registryのq4_K_Mが23.8GiBで136.8トークン/秒に対し、
-      # このq6_kは28.8GiBで106.2トークン/秒で、
-      # 全層がGPUに載ったままVRAMの空きも2.5GiB残る。
+      # Googleの31Bのdense。visionに対応する。
+      # registryの既定タグ`gemma4:31b`をblobのダイジェストで固定して組み立てたもの。
+      # Q4_K_Mの本体にMTPのドラフトと投影器が付く。
+      #
+      # bulletでの実測(KVキャッシュq8_0, context 131072)は以下の通り。
+      # - llama-server: 28.1GiBで全層がGPUに載る
+      # - VRAMの空き: 1.6GiB
+      # - 生成速度: 同じ条件で2回測って123.3と132.4トークン/秒
+      # 一段上のq8_0は本体だけで30.39GiBあり、KVキャッシュを載せる余地が無い。
+      "gemma4-31b-mtp:q4_k_m"
+      # Alibabaの27Bのdense。visionに対応する。
+      #
+      # bulletでQwen3.8-27Bの量子化違いを同じ条件で測ると以下の通り。
+      # 条件はKVキャッシュq8_0, context 131072で、
+      # 1024トークンの生成を2回測った。
+      # - q4_K_M: 23.1GiBで全層がGPUに載り、114.6と114.4トークン/秒
+      # - q6_k: 28.0GiBで全層がGPUに載り、98.5と104.6トークン/秒
+      # - q8_0: GPUに載りきらず24%がCPUへ溢れ、13.3と12.2トークン/秒
+      # q8_0はcontextを32768まで削ってKVキャッシュを3.2GiB浮かせても載らない。
+      # 全層がGPUに載る中で最も重いq6_kにする。
+      #
+      # registryのmtp付きタグはq4_K_Mとq8_0とbf16しか無いので、
+      # Hugging FaceのGGUFから自前で組む。
       # q6_kは量子化としては事実上無損失の領域なので、
       # これ以上重みに割いても品質はほとんど変わらない。
-      # 実際、一段上のq8_0は本体だけで27GiBあり、
-      # contextを32768まで削ってKVを3.2GiB浮かせても載らない。
-      # 逆に少しでも溢れると代償が大きく、
-      # 8%がCPUへ出ただけの構成では53.5トークン/秒まで落ちた。
       "qwen3.8-27b-mtp:q6_k"
     ];
     freedom = [ "qwen3.8-27b-heretic-rvn:q6_k" ];
     # 配布元の評価ではQ4_K_MとBF16の翻訳精度の差は誤差の範囲に収まる。
     # 19.5GBあるので汎用モデルとは同時にVRAMへ載らないが、
-    # 使わなくなった方がkeep_aliveで降りるので入れ替わりで動く。
+    # 汎用モデル同士と同じく入れ替わりで動く。
     translate = [ "plamo-3-translate-31b:q4_k_m" ];
   };
+  # CPUの推論はメモリ帯域で頭打ちになり、
+  # 1トークンごとに読み出す重みの量がそのまま速度を決める。
+  # 総パラメータではなくactive parameterが効くため、
+  # 基本的に同じ品質帯ならdenseよりMoEの方が圧倒的に速い。
   cpu = {
     general = [
-      # CPUの推論はメモリ帯域で頭打ちになり、
-      # 1トークンごとに読み出す重みの量がそのまま速度を決める。
-      # 総パラメータではなくactive parameterが効くため、
-      # 同じ品質帯ならdenseよりMoEの方が圧倒的に速い。
       # seminarでの実測では9Bのdenseが約10トークン/秒に対し、
       # このactive 3BのMoEは約19トークン/秒だった。
       # CUDAのホストとqwen3.8へ揃えられないのは、
@@ -69,12 +89,11 @@
       # Artificial Analysis Intelligence Indexは24でqwen3.6の32に届かない。
       "qwen3.6:35b-a3b"
     ];
-    # 表現の自由度を優先したモデルはCPUで推論するホストには置かない。
-    # seminarでの実測では24Bのdenseは約4トークン/秒しか出ず、
-    # 対話を待っていられる速度ではないため、
-    # ディスクとロード時間を消費するだけになる。
+    # 表現の自由度を優先したモデルで、
+    # CPUで実用的な速度が出るものは今のところ無いので、
+    # CPUで推論するホストには置かない。
     freedom = [ ];
-    # 31Bのdenseは`freedom`で外した24Bのdenseと同様にCPUでは待っていられる速度が出ないので8Bにする。
+    # 31BのdenseはCPUでは待っていられる速度が出ないので8Bにする。
     # 配布元の評価では8Bと31Bの翻訳精度の差は小さい。
     translate = [ "plamo-3-translate-8b:q4_k_m" ];
   };
@@ -84,9 +103,8 @@
   # モデルの選定はblue-promptのKnowledge 10011チャンクと20問での実測に基づく。
   # multilingual-e5-largeはtop3命中率0.70/MRR 0.605で、
   # sentence-transformersのfp32とGGUFのq8_0で精度は変わらない。
-  # 量子化をq8_0にするのは、f16との精度差が無い一方で、
+  # 量子化をq8_0にするのは、
+  # f16との精度差が無い一方で、
   # 帯域で頭打ちになる6コアのseminarではq8_0の方が速いため。
-  # bge-m3などへの乗り換えの検討はblue-prompt#196で継続している。
-  # ref https://github.com/ncaq/blue-prompt/issues/171
   embedding = [ "multilingual-e5-large:q8_0" ];
 }

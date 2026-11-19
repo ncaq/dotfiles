@@ -36,6 +36,13 @@
       ];
       cores = 0; # `make -j$NIX_BUILD_CORES`のようにコンパイルの並列度に使われます。0だと全コア。
       max-jobs = 3; # Nixが同時に実行するビルド(derivation)の数。
+      # ビルドの途中でストアのファイルシステムの空きがこれを下回ると、
+      # その場でGCして空きを取り戻します。
+      # 定期のGCまで待っていると大きなビルドで埋まりきってしまう事態への緊急用なので、
+      # ディスクの容量に関わらず固定値にしています。
+      # `max-free`は既定のままにして、
+      # 定期のGCと同じく不要なものを全て消します。
+      min-free = 30 * 1024 * 1024 * 1024;
       accept-flake-config = true;
       trusted-users = [
         "root"
@@ -84,30 +91,32 @@
   }";
 
   sops = {
-    # nix.confのfragmentを生成することでクライアント側にも読める設定ファイルにします。
-    # 自分のアカウントだけのFine-grained personal access tokensで、
-    # Fine-grainedの最小限の権限であるPublic Repository権限だけを持ちます。
-    # なので万が一漏れても大した問題はないので、
-    # 権限は緩めで問題ありません。
-    templates."github-nix-avoid-rate-limit-token.conf" = {
-      content = ''
-        access-tokens = github.com=${config.sops.placeholder."github-nix-avoid-rate-limit-token"}
-      '';
-      owner = "root";
-      group = "wheel"; # 信頼できるとしたユーザも読めるようにしておきます。
-      mode = "0440"; # グループ所属のユーザも読み取れます。
-    };
-    # nix-daemonのsystemdサービスに読ませる環境変数ファイルです。
-    templates."nix-daemon-huggingface-token.env" = {
-      content = ''
-        HF_TOKEN=${config.sops.placeholder."huggingface/read-only"}
-      '';
-      owner = "root";
-      group = "root";
-      mode = "0400";
+    templates = {
+      # nix.confのfragmentを生成することでクライアント側にも読める設定ファイルにします。
+      # 自分のアカウントだけのFine-grained personal access tokensで、
+      # Fine-grainedの最小限の権限であるPublic Repository権限だけを持ちます。
+      # 万が一漏れても大した問題はないので、
+      # 権限は緩めで問題ありません。
+      "github-nix-avoid-rate-limit-token.conf" = {
+        content = ''
+          access-tokens = github.com=${config.sops.placeholder."github-nix-avoid-rate-limit-token"}
+        '';
+        owner = "root";
+        group = "wheel"; # 信頼できるとしたユーザも読めるようにしておきます。
+        mode = "0440"; # グループ所属のユーザも読み取れます。
+      };
+      # nix-daemonのsystemdサービスに読ませる環境変数ファイルです。
+      "nix-daemon-huggingface-token.env" = {
+        content = ''
+          HF_TOKEN=${config.sops.placeholder."huggingface/read-only"}
+        '';
+        owner = "root";
+        group = "root";
+        mode = "0400";
+      };
     };
     secrets = {
-      # 最小権限の権限で`access-tokens`を設定します。
+      # 最小限の権限で`access-tokens`を設定します。
       # こちらはtemplatesが作れれば良いため、
       # rootさえ読めれば問題ありません。
       "github-nix-avoid-rate-limit-token" = {

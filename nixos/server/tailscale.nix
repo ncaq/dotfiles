@@ -1,4 +1,4 @@
-_: {
+{
   services.tailscale = {
     # Exit Nodeとして動作するためにサーバでもクライアントでもある設定にする。
     useRoutingFeatures = "both";

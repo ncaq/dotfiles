@@ -1,6 +1,6 @@
 -- | 状態ディレクトリから消すものの決定のテスト。
 --
--- ここを誤ると、守っているはずの閉包がGCで消える。
+-- ここを誤ると、守っているはずのクロージャがGCで消える。
 module Spec.StaleSpec (tests) where
 
 import NixGcRootHosts.Stale (staleEntries)

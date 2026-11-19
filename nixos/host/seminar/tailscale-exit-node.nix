@@ -2,7 +2,7 @@
 let
   # 経路は`caddy.nix`の`local.caddyInternalHosts`のアドレスから組み立てる。
   # 名前の向き先と経路広告を手で揃える必要を無くすため。
-  internalRoutes = map (addr: "${addr}/32") (lib.attrNames config.local.caddyInternalHosts);
+  internalRoutes = map (addr: "${addr}/128") (lib.attrNames config.local.caddyInternalHosts);
 in
 {
   # seminarをexit nodeとして広告する。
@@ -15,27 +15,30 @@ in
   # `--advertise-exit-node`を一緒に指定しないとexit nodeの広告が消える。
   #
   # exit node経由の端末がseminarのCaddyへ届くための経路も一緒に広告する。
-  # `caddy.nix`の`networking.hosts`で`niks3-public.ncaq.net`と`garage.ncaq.net`を、
+  # `caddy.nix`の`networking.hosts`で`garage.ncaq.net`を、
   # コンテナのvethのホスト側アドレスへ向けているが、
   # この名前の解決結果はexit node経由の端末にもそのまま返る。
-  # tailscaledは`0.0.0.0/0`を広告する時、
-  # 自分のインターフェースに直接繋がっているLANの範囲を、
-  # わざとパケットフィルタの対象から外す。
+  # tailscaledはexit nodeとして`0.0.0.0/0`と`::/0`を受ける時、
+  # 自分のインタフェースに直接繋がっているLANの範囲と、
+  # RFC 1918などの予約された範囲を、わざとパケットフィルタの対象から外す。
   # ゲストWi-Fiのようにインターネットだけを提供して、
   # LANへも通したい時はそのLANを別途サブネットルートとして広告させる設計になっている。
-  # vethのホスト側アドレスはこの除外に当たるため、
-  # tailnetのACLで宛先を許可していてもseminarのtailscaledが捨てる。
-  # 広告する経路に該当アドレスを明示的に足して、
-  # フィルタの対象に戻す。
+  # 向き先がIPv4の192.168.0.0/16だった頃はこの除外に当たり、
+  # tailnetのACLで宛先を許可していてもseminarのtailscaledが捨てていた。
+  # 今の向き先のIPv6のULAは予約された範囲に入っておらず、
+  # 自分のアドレスはLANの範囲を外した後で対象へ戻されるので、除外には当たらない。
+  # それでも経路として広告して承認と許可を明示するのは、
+  # exit nodeの`::/0`に任せると、
+  # 届くかどうかがtailnetのACLの`autogroup:internet`にULAが含まれるかどうかに依存するため。
   #
   # 広告した経路はtailnet側で承認されないと有効にならない。
   # 承認とACLはinfra.ncaq.netの`tailscale/subnet-route.tf`と`tailscale/access-policy.tf`にあり、
   # そちらのアドレスはここと同じ値を手で揃えている。
   #
-  # 経路は`local.caddyInternalHosts`で名前を向けているアドレスだけを`/32`で広告する。
-  # Caddyはniks3-privateのホスト側アドレスにもbindしているが、
+  # 経路は`local.caddyInternalHosts`で名前を向けているアドレスだけを`/128`で広告する。
+  # Caddyはniks3-publicとniks3-privateのホスト側アドレスにもbindしているが、
   # そこへ向けている名前は無いので広告しない。
-  # `/24`で広告すると承認した途端にコンテナ側のアドレスまでexit node経由の端末から見えるようになるので、
+  # `/64`で広告すると承認した途端にコンテナ側のアドレスまでexit node経由の端末から見えるようになるので、
   # 必要なものに絞る。
   services.tailscale.extraSetFlags = [
     "--advertise-exit-node"
@@ -43,14 +46,14 @@ in
   ];
 
   # exit nodeとして使う端末のパケットはtailscale0から入って、
-  # LANのインターフェイス(`local.lan.interface`)へ転送される。
+  # LANのインタフェース(`local.lan.interface`)へ転送される。
   # `filterForward`でforwardチェインのpolicyがdropになっているので、
   # tailscale0からの転送を明示的に許可しないと端末がインターネットへ出られない。
   # tailscaledも自前のテーブルで同じ転送を許可しているが、
   # nftablesでは同じフックの全てのベースチェインを通る必要があり、
   # こちらで落とすとそちらの許可は意味を持たない。
   #
-  # 出口はLANのインターフェイスに限定する。
+  # 出口はLANのインタフェースに限定する。
   # 広告しているサブネットルートはvethのホスト側アドレスで、
   # それはINPUTで受けるので転送の出口にはならない。
   # コンテナのvethやmicroVMのTAPへの転送はtailscaledのフィルタとACLが止めているが、

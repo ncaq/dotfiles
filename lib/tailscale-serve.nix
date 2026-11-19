@@ -45,7 +45,7 @@
   その場合は`socket`にそのsocketユニットを渡すとtailnet経由の初回アクセスでも、
   オンデマンド起動が機能する。
 
-  HTTPSに加えて80番のHTTPリスナーも張り、
+  HTTPSに加えて80番のHTTPリスナも張り、
   HTTPSへリダイレクトを返すだけのCaddyへ転送する。
   Serve自体にリダイレクトを返すターゲットが無いため転送先が要る。
   80番が閉じたままだと`http://`で飛んできた時にTCP接続ごと拒否される。
@@ -122,7 +122,7 @@ in
       readOnly = true;
       default = 8880;
       description = ''
-        Tailscale ServeのHTTPリスナーが転送する、HTTPSリダイレクタのポート。
+        Tailscale ServeのHTTPリスナが転送する、HTTPSリダイレクタのポート。
         Caddyがloopbackで待ち受けて、Serveの`--http=80`がここへ転送する。
         待ち受ける側と転送する側の両方が同じ番号を必要とするので1箇所に集める。
       '';
@@ -156,8 +156,10 @@ in
           RemainAfterExit = true;
           # Tailscale Serviceは設定をtailscaledへ永続化してコマンド自体は終了する。
           ExecStart = [
-            (serialize "${tailscale}/bin/tailscale serve --service=${serveCfg.service} --https=443 http://127.0.0.1:${toString serveCfg.port}")
-            (serialize "${tailscale}/bin/tailscale serve --service=${serveCfg.service} --http=80 http://127.0.0.1:${toString cfg.redirectPort}")
+            # 転送先はIPv6のloopbackで書く。
+            # `tailscale serve`は`::1`も`127.0.0.1`や`localhost`と同じくローカルの転送先として扱う。
+            (serialize "${tailscale}/bin/tailscale serve --service=${serveCfg.service} --https=443 http://[::1]:${toString serveCfg.port}")
+            (serialize "${tailscale}/bin/tailscale serve --service=${serveCfg.service} --http=80 http://[::1]:${toString cfg.redirectPort}")
           ];
           # endpoint設定は残して、次回起動時にそのまま再advertiseできるようにする。
           ExecStop = serialize "${tailscale}/bin/tailscale serve drain ${serveCfg.service}";
@@ -170,7 +172,7 @@ in
     # Tailscale Serviceの80番へ来たHTTPリクエストをHTTPSへリダイレクトするバックエンド。
     #
     # ブラウザのURL補完やコピーしたリンクからは`http://`で飛ぶことが多いが、
-    # ServeにHTTPSのリスナーしか無いとTCP接続自体が拒否されて到達できない。
+    # ServeにHTTPSのリスナしか無いとTCP接続自体が拒否されて到達できない。
     # `tailscale serve`のターゲットに指定できるのはファイルやディレクトリやURLなどだけで、
     # リダイレクトを返す手段が無いため、転送先として最小のHTTPサーバを用意する。
     #
@@ -185,7 +187,7 @@ in
     services.caddy = {
       enable = true;
       virtualHosts.":${toString cfg.redirectPort}".extraConfig = ''
-        bind 127.0.0.1
+        bind [::1]
         # クライアントが送ったHostをそのままリダイレクト先に使うと、
         # tailnet内の任意のプロセスから外部のホストへ誘導できるオープンリダイレクトになる。
         # 正規のService名を起点にしたフィッシングの踏み台にされうるので、

@@ -9,7 +9,7 @@
 #
 # `ollama-backend.nix`と同じ構図だが、
 # あちらと違って振り分け先はbulletだけなので、
-# フェイルオーバーもパッシブヘルスチェックも要らない。
+# フェイルオーバもパッシブヘルスチェックも要らない。
 # bulletが落ちていれば画像は生成できない、というだけである。
 { lib, config, ... }:
 let
@@ -25,7 +25,7 @@ in
   # `lib/tailscale-serve.nix`のリダイレクタと同じく、ホスト名なしのアドレスにしてHTTPだけで待ち受ける。
   # ホスト名を書くとCaddyが自動HTTPSを有効にしてしまう。
   services.caddy.virtualHosts.":${toString port}".extraConfig = ''
-    bind ${addr.host}
+    bind [${addr.host6}]
     reverse_proxy ${upstream} {
       # connectに失敗した時に同じ上流へ張り直す猶予。
       #
@@ -54,7 +54,7 @@ in
       # bulletの電源が入っていない時、
       # tailnetのVIPへの接続はRSTを返さず無応答になるので、
       # 長くするとその分だけ失敗の検知が遅れて画像1枚あたりの待ち損になる。
-      # 上流は1つでフェイルオーバー先も無いため、待っても得るものがない。
+      # 上流は1つでフェイルオーバ先も無いため、待っても得るものがない。
       # `ollama-backend.nix`が同じ理由で同じ値を使っている。
       transport http {
         dial_timeout 1s
@@ -65,7 +65,7 @@ in
         # 失敗を検知するまで`response_header_timeout`の5分を待つことになる。
         # 既定の2分は長すぎるので、次のリクエストが繋ぎ直す程度まで縮める。
         # `ollama-backend.nix`が同じ理由で同じ値を使っている。
-        # 生成にかかる時間の長さに比べれば接続確立のオーバーヘッドは誤差レベル。
+        # 生成にかかる時間の長さに比べれば接続確立のオーバヘッドは誤差レベル。
         keepalive 5s
       }
       # Tailscale Serviceは名前ごとに証明書とVIPを持つので、

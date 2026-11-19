@@ -1,4 +1,4 @@
-_: {
+{
   # FORWARDをフィルタする。
   # 既定ではforwardチェインのpolicyがacceptで、
   # NATモジュールがIPv4とIPv6の転送を有効にした時点で、

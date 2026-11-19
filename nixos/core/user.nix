@@ -25,7 +25,9 @@ in
         shell = pkgs.zsh;
         # `home-manager-${username}.service`はboot時に`multi-user.target`の段階で実行されます。
         # 内部で`gpg --edit-key`などgpg-agentに依存する処理を行います。
-        # gpg-agentは`/run/user/$UID/`配下にソケットを作成するため、
+        # gpgクライアントは`/run/user/$UID/gnupg/`のソケットへ繋ぎます。
+        # そこにあるのは`gpg-vault`のgpg-agentのソケットへのリンクで、
+        # `home/core/gpg.nix`のユーザのtmpfilesが置くため、
         # `user@$UID.service`が起動していないとIPC接続に失敗します。
         # lingerを有効にしてログインしなくてもboot時から`user@$UID.service`を起動させ、
         # `After=user@.service`で順序を明示することでこの問題を回避します。
@@ -38,7 +40,7 @@ in
         #
         # 十分なエントロピーのパスワードを設定することは容易です。
         #
-        # デスクトップPCは私を自宅でハンマーで脅す方が楽なので、
+        # デスクトップPCは私を自宅でバールで脅す方が楽なので、
         # オートログインに全任せして問題ありません。
         #
         # 外で人に触られる危険のあるラップトップPCは、

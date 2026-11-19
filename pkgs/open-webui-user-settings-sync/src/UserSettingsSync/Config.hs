@@ -3,6 +3,7 @@
 -- * `OPEN_WEBUI_URL`: Open WebUIのURL。末尾に`/`は付けない。
 -- * `OPEN_WEBUI_DECLARED_SETTINGS_FILE`: `settings.ui`へ重ねる鍵を書いたJSONファイル。
 -- * `OPEN_WEBUI_SYSTEM_PROMPT_FILE`: システムプロンプトのテキストファイル。
+--   これだけは省ける。省くとシステムプロンプトを持たないという宣言になる。
 -- * `OPEN_WEBUI_DECLARED_PROFILE_FILE`: プロフィールの列を書いたJSONファイル。
 -- * `OPEN_WEBUI_PROFILE_IMAGE_FILE`: プロフィールのアイコンにするWebPの画像ファイル。
 module UserSettingsSync.Config
@@ -16,7 +17,7 @@ import UserSettingsSync.Failure (ConfigFailure (..))
 data Config = Config
   { url :: Text
   , declaredSettingsFile :: FilePath
-  , systemPromptFile :: FilePath
+  , systemPromptFile :: Maybe FilePath
   , declaredProfileFile :: FilePath
   , profileImageFile :: FilePath
   }
@@ -28,10 +29,10 @@ configFrom lookupVariable =
   Config
     <$> require "OPEN_WEBUI_URL"
     <*> file "OPEN_WEBUI_DECLARED_SETTINGS_FILE"
-    <*> file "OPEN_WEBUI_SYSTEM_PROMPT_FILE"
+    <*> pure (convert <$> present "OPEN_WEBUI_SYSTEM_PROMPT_FILE")
     <*> file "OPEN_WEBUI_DECLARED_PROFILE_FILE"
     <*> file "OPEN_WEBUI_PROFILE_IMAGE_FILE"
  where
   file variable = convert <$> require variable
-  require variable =
-    maybe (Left (MissingVariable variable)) Right (mfilter (/= mempty) (lookupVariable variable))
+  require variable = maybe (Left (MissingVariable variable)) Right (present variable)
+  present variable = mfilter (/= mempty) (lookupVariable variable)

@@ -6,15 +6,18 @@
   ...
 }:
 let
-  # GitHub Actionsのホステッドランナーをある程度互換しているパッケージリスト。
+  # GitHub Actionsのホステッドランナとある程度互換にするためのパッケージリスト。
   githubActionsRunnerPackages = import ../../../../lib/github-actions-runner-packages.nix;
-  # GitHubの標準ランナーにはないけれど個人的に含まれていて欲しいパッケージリスト。
+  # GitHubの標準ランナにはないけれど個人的に含まれていて欲しいパッケージリスト。
   selfHostRunnerPackages =
     { pkgs, ... }:
     with pkgs;
     [
       cachix
       inputs.niks3.packages.${pkgs.stdenv.hostPlatform.system}.niks3
+      # `./check.sh`はPATHにあるこのラッパを使います。
+      # PATHにあればflakeを評価して取り出す手間を省けます。
+      nix-fast-build-wrapper
     ];
   # runnerが使うTypeScriptコードをビルドしてGitHub Actionsで利用できるようにします。
   # 吐き出されるコードはピュアなJavaScriptなのでアーキテクチャ非依存です。
@@ -31,13 +34,13 @@ let
       runHook postInstall
     '';
   };
-  # ジョブ開始フックを実行する`.sh`ラッパー。
+  # ジョブ開始フックを実行する`.sh`ラッパ。
   # `ACTIONS_RUNNER_HOOK_JOB_STARTED`に`.js`を直接指定すると、
   # github-runner 2.334.0では`.js`フックのセットアップが、
   # .NET由来のパスエラー("Second path fragment must not be a drive or UNC name")で失敗します。
   # GitHubが公式にサポートするフック形式は`.sh`と`.ps1`のみなので、
-  # nixpkgsのnodeでjsを実行する`.sh`ラッパー経由で呼び出します。
-  # これによりランナー内蔵nodeのパス解決にも依存しなくなります。
+  # nixpkgsのnodeでjsを実行する`.sh`ラッパ経由で呼び出します。
+  # これによりランナ内蔵nodeのパス解決にも依存しなくなります。
   jobStartedHook = lib.getExe (
     pkgs.writeShellApplication {
       name = "job-started-hook.sh";
@@ -45,14 +48,19 @@ let
       text = ''exec node ${github-runner}/job-started-hook.js "$@"'';
     }
   );
-  # GitHub Actionsランナーはホストのnixデーモンと通信するため、
-  # 統一されたユーザ値を使います。
+  # リポジトリの管理権限を持つPATで、
+  # 1時間で切れるランナの登録トークンを発行してファイルに置きます。
+  # PATはホストのrootだけが持ち、
+  # VMにはランナの登録にしか使えない登録トークンだけを渡すための仲介です。
+  # 環境変数の意味は、
+  # `pkgs/github-runner-registration-token/src/GithubRunnerRegistrationToken/Config.hs`に書いてあります。
+  registrationTokenBroker = lib.getExe pkgs.github-runner-registration-token;
+  # ランナのVMとホストで統一されたユーザ値を使います。
   user = config.serviceUser.github-runner;
-  # ユーザーとグループ定義。
-  # コンテナのnixコマンドはホストのnixデーモンと通信するため、
-  # UIDとGIDはホストと一致させる必要があります。
-  # なので明示的に定義します。
-  # ホスト側でユーザーを解決できなければ`trusted-users`が機能しません。
+  # ユーザとグループ定義。
+  # ランナのVMは共有したホストのディレクトリへ書き込むことがあります。
+  # virtiofsはUIDとGIDをそのまま通すので、
+  # ホストの側の所有者と合うように明示的に定義します。
   users = {
     users.github-runner = {
       isSystemUser = true;
@@ -61,7 +69,7 @@ let
     };
     groups.github-runner.gid = user.gid;
   };
-  # CI用のnix設定。
+  # ランナのVMの中のnix-daemonに渡すCI用のnix設定。
   # ホストの`nix.settings`をベースにしますが、
   # キャッシュ設定などはCIの設定側で設定するべきなのと、
   # ホスト側のビルドフックは動かないので、
@@ -77,35 +85,35 @@ let
   };
 in
 {
-  # 共有定義を他のランナーモジュールから利用可能にします。
+  # 共有定義を他のランナモジュールから利用可能にします。
   _module.args.githubRunnerShare = {
     inherit
       githubActionsRunnerPackages
       selfHostRunnerPackages
       jobStartedHook
+      registrationTokenBroker
       users
       ciNixSettings
       ;
   };
 
-  # ホストのnixデーモンがコンテナ内のgithub-runnerユーザーを信頼するよう設定します。
+  # ホストにも同じユーザを置きます。
+  # ランナのVMと共有するディレクトリの所有者として使います。
+  # ホストのnix-daemonの`trusted-users`には入れません。
   inherit users;
-  nix.settings.trusted-users = [ "github-runner" ];
-
-  # Nix-on-Droidなどaarch64-linuxのビルドを必要にするものがあるので、
-  # aarch64-linuxバイナリをQEMU user-modeで透過的に実行できるようにします。
-  # ホストのnixデーモンがビルドサンドボックスを作成するため、
-  # コンテナ側ではなくホストレベルで設定が必要です。
-  boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
 
   sops = {
     secrets = {
-      # セルフホストランナーがGitHub Actionsに自身を登録するためのトークン。
-      "runner-registration-token" = {
+      # ランナの登録トークンを発行するためのPAT。
+      # リポジトリの`Administration: Read and write`を持つfine-grained PATです。
+      # ホストの`registrationTokenBroker`だけが読み、
+      # ランナのVMには渡しません。
+      "runner-registration-pat" = {
         sopsFile = ../../../../secrets/seminar/github-runner.yaml;
+        # 暗号化したファイルのキーは、PATをランナの隔離環境へ渡していた頃の名前のままです。
         key = "runner-registration-token";
-        owner = "github-runner";
-        group = "github-runner";
+        owner = "root";
+        group = "root";
         mode = "0400";
       };
     };

@@ -16,7 +16,6 @@ let
     mkWorkflow
     mkFilenamePrefix
     seedWidgets
-    animaSizeMultiple
     animaBaseSteps
     stepsForDenoise
     ;
@@ -36,12 +35,8 @@ in
           height = 140;
           description = "画像に含めたくない内容";
         })
-        (mkAppInputWith 20 "width" {
-          description = "生成幅。Anima向けに16の倍数へ切り下げる";
-        })
-        (mkAppInputWith 20 "height" {
-          description = "生成高。Anima向けに16の倍数へ切り下げる";
-        })
+        (mkAppInput 6 "width")
+        (mkAppInput 6 "height")
         (mkAppInput 7 "seed")
         (mkAppInput 7 "steps")
         (mkAppInput 7 "cfg")
@@ -182,29 +177,6 @@ in
         ];
       })
       (mkNode {
-        id = 20;
-        type = "AlignImageDimensions";
-        title = "Anima生成寸法を16の倍数へ整列";
-        pos = [
-          420
-          550
-        ];
-        size = [
-          315
-          130
-        ];
-        order = 6;
-        outputs = [
-          (mkOutput "width" "INT" [ 30 ])
-          (mkOutput "height" "INT" [ 31 ])
-        ];
-        widgets = [
-          1024 # width
-          1024 # height
-          animaSizeMultiple # multiple
-        ];
-      })
-      (mkNode {
         id = 6;
         type = "EmptyLatentImage";
         pos = [
@@ -215,25 +187,7 @@ in
           315
           106
         ];
-        order = 7;
-        inputs = [
-          (
-            mkInput "width" "INT" 30
-            // {
-              widget = {
-                name = "width";
-              };
-            }
-          )
-          (
-            mkInput "height" "INT" 31
-            // {
-              widget = {
-                name = "height";
-              };
-            }
-          )
-        ];
+        order = 6;
         outputs = [ (mkOutput "LATENT" "LATENT" [ 6 ]) ];
         widgets = [
           1024
@@ -252,7 +206,7 @@ in
           315
           58
         ];
-        order = 8;
+        order = 7;
         outputs = [ (mkOutput "UPSCALE_MODEL" "UPSCALE_MODEL" [ 9 ]) ];
         widgets = [ "2x-AnimeSharpV4_Fast_RCAN_PU.safetensors" ];
       })
@@ -267,7 +221,7 @@ in
           315
           78
         ];
-        order = 9;
+        order = 8;
         outputs = [
           (mkOutput "BBOX_DETECTOR" "BBOX_DETECTOR" [ 26 ])
           (mkOutput "SEGM_DETECTOR" "SEGM_DETECTOR" [ ])
@@ -285,7 +239,7 @@ in
           315
           262
         ];
-        order = 10;
+        order = 9;
         inputs = [
           (mkInput "model" "MODEL" 1)
           (mkInput "positive" "CONDITIONING" 4)
@@ -312,7 +266,7 @@ in
           210
           46
         ];
-        order = 11;
+        order = 10;
         inputs = [
           (mkInput "samples" "LATENT" 7)
           (mkInput "vae" "VAE" 8)
@@ -330,7 +284,7 @@ in
           240
           46
         ];
-        order = 12;
+        order = 11;
         inputs = [
           (mkInput "upscale_model" "UPSCALE_MODEL" 9)
           (mkInput "image" "IMAGE" 11)
@@ -338,7 +292,7 @@ in
         outputs = [ (mkOutput "IMAGE" "IMAGE" [ 12 ]) ];
       })
       # 2倍アップスケール後に0.75倍へ縮小し、全体で1.5倍にする。
-      # 縮小を挟むのはスーパーサンプリングになってエッジが整うため。
+      # 縮小を挟むのはスーパサンプリングになってエッジが整うため。
       (mkNode {
         id = 12;
         type = "ImageScaleBy";
@@ -350,43 +304,26 @@ in
           315
           82
         ];
-        order = 13;
+        order = 12;
         inputs = [ (mkInput "image" "IMAGE" 12) ];
-        outputs = [ (mkOutput "IMAGE" "IMAGE" [ 29 ]) ];
+        outputs = [ (mkOutput "IMAGE" "IMAGE" [ 13 ]) ];
         widgets = [
           "area" # upscale_method
           0.75 # scale_by
         ];
-      })
-      # 1.5倍後の各辺を中央cropし、Animaが要求する16の倍数へ揃える。
-      (mkNode {
-        id = 19;
-        type = "AlignImageSize";
-        pos = [
-          1560
-          420
-        ];
-        size = [
-          210
-          58
-        ];
-        order = 14;
-        inputs = [ (mkInput "image" "IMAGE" 29) ];
-        outputs = [ (mkOutput "IMAGE" "IMAGE" [ 13 ]) ];
-        widgets = [ animaSizeMultiple ];
       })
       (mkNode {
         id = 13;
         type = "VAEEncode";
         pos = [
           1560
-          560
+          420
         ];
         size = [
           210
           46
         ];
-        order = 15;
+        order = 13;
         inputs = [
           (mkInput "pixels" "IMAGE" 13)
           (mkInput "vae" "VAE" 28)
@@ -405,7 +342,7 @@ in
           315
           262
         ];
-        order = 16;
+        order = 14;
         inputs = [
           (mkInput "model" "MODEL" 14)
           (mkInput "positive" "CONDITIONING" 15)
@@ -435,7 +372,7 @@ in
           210
           46
         ];
-        order = 17;
+        order = 15;
         inputs = [
           (mkInput "samples" "LATENT" 18)
           (mkInput "vae" "VAE" 19)
@@ -453,7 +390,7 @@ in
           400
           800
         ];
-        order = 18;
+        order = 16;
         inputs = [
           (mkInput "image" "IMAGE" 20)
           (mkInput "model" "MODEL" 21)
@@ -515,28 +452,12 @@ in
           420
           470
         ];
-        order = 19;
+        order = 17;
         inputs = [ (mkInput "images" "IMAGE" 27) ];
         widgets = [ (mkFilenamePrefix name) ];
       })
     ];
     links = [
-      [
-        30
-        20
-        0
-        6
-        0
-        "INT"
-      ]
-      [
-        31
-        20
-        1
-        6
-        1
-        "INT"
-      ]
       [
         10
         1
@@ -634,16 +555,8 @@ in
         "IMAGE"
       ]
       [
-        29
-        12
-        0
-        19
-        0
-        "IMAGE"
-      ]
-      [
         13
-        19
+        12
         0
         13
         0

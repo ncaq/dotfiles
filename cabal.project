@@ -1,0 +1,9 @@
+with-compiler: ghc-9.10.3
+packages: pkgs/*/*.cabal
+
+package *
+  ghc-options: -j
+
+-- 開発環境にzlibのCライブラリが無くてもビルドできるように、同梱のものを使う。
+package zlib
+  flags: +bundled-c-zlib

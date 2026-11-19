@@ -12,7 +12,7 @@ import CertspotterMackerel.Config (CheckConfig (..))
 import CertspotterMackerel.Event (Event (..))
 import CertspotterMackerel.EventLog (appendEvent)
 import CertspotterMackerel.Hook (recordNotification)
-import CertspotterMackerel.Notification (Notification (..))
+import CertspotterMackerel.Notification (Notification (..), notificationFrom)
 import CertspotterMackerel.Status (Status (..))
 import CertspotterMackerel.Summary (Summary)
 import Data.Text (isInfixOf)
@@ -68,6 +68,25 @@ tests = describe "check" do
       filter (`elem` forbiddenCharacters) (foldMap convert messages) `shouldBe` []
       filter (isInfixOf "(ncaq.net,*.ncaq.net)") messages `shouldNotBe` []
       filter (isInfixOf "error: log unreachable") messages `shouldNotBe` []
+  it "hookが記録したのが監視の不調だけならWARNINGにする" do
+    withWorkspace \workspace -> do
+      -- certspotterが`error`のhookへ渡すのは`EVENT`と`SUMMARY`と`TEXT_FILENAME`だけである。
+      recordNotification
+        workspace.eventLog
+        ( notificationFrom
+            ( variables
+                [ ("EVENT", "error")
+                , ("SUMMARY", "Backlog of size 92920662 from https://mon.ct.example.com/")
+                , ("TEXT_FILENAME", "/var/lib/certspotter/healthchecks/2026-11-13T15:44:08Z.txt")
+                ]
+            )
+        )
+      status <- check (configFor workspace)
+      case status of
+        Warning messages -> do
+          length messages `shouldBe` 2
+          filter (isInfixOf "error: Backlog of size 92920662") messages `shouldNotBe` []
+        other -> expectationFailure ("WARNINGではありません: " <> show other)
   it "証明書のJSONを読めなかった理由を出力に出す" do
     withWorkspace \workspace -> do
       recordNotification

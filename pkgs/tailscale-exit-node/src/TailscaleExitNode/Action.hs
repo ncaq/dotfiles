@@ -13,7 +13,7 @@ import Himari
 data Action = InterfaceUp
   deriving stock (Eq, Show)
 
--- | インターフェースが繋がった時だけを読む。
+-- | インタフェースが繋がった時だけを読む。
 --
 -- どのネットワークにいるかが変わるのは新しく繋がった時だけなので、
 -- それ以外のアクションは`Nothing`にする。
@@ -24,7 +24,7 @@ parseAction = \case
 
 -- | dispatcherスクリプトとして受け取った引数から、アクションを読む。
 --
--- 第1引数がインターフェース名、第2引数がアクションである。
+-- 第1引数がインタフェース名、第2引数がアクションである。
 -- 人が呼ぶコマンドではないので、引数の数が合わない時も失敗にはせず`Nothing`にする。
 requestedAction :: [String] -> Maybe Action
 requestedAction = \case

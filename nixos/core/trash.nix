@@ -1,7 +1,7 @@
 { pkgs, hardening, ... }:
 let
   trashHardening =
-    # 全ユーザーのホーム、全マウント先、ホストの/tmpにあるゴミ箱を掃除するため、
+    # 全ユーザのホーム、全マウント先、ホストの/tmpにあるゴミ箱を掃除するため、
     # それらを不可視またはread-onlyにする隔離は適用できない。
     removeAttrs hardening.isolated [
       "PrivateTmp"
@@ -9,7 +9,7 @@ let
       "ProtectSystem"
     ]
     // {
-      # rootが他ユーザー所有のゴミ箱を走査・削除するために必要な権限だけを残す。
+      # rootが他ユーザ所有のゴミ箱を走査・削除するために必要な権限だけを残す。
       CapabilityBoundingSet = [
         "CAP_DAC_OVERRIDE"
         "CAP_FOWNER"

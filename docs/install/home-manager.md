@@ -1,22 +1,33 @@
-# home-manager Standalone Installation
+# home-manager単体でのインストール
 
-This guide describes how to install home-manager standalone on non-NixOS systems.
+NixOS以外のシステムへ、
+home-managerを単体でインストールする手順です。
 
-## Prerequisites
+## 前提
 
-- Nix package manager installed on your system
-- Git installed
+- Nixパッケージマネージャがインストールされている
+- Gitがインストールされている
 
-## Installation Steps
+## インストールの手順
 
 ```zsh
 git clone https://github.com/ncaq/dotfiles.git
 cd dotfiles
-nix run '.#home-manager' -- --flake ".#x86_64-linux" -b "hm-bak" init --switch .
+./install.sh
 ```
 
-## Notes
+`install.sh`がアーキテクチャを判別して`home-manager switch`を実行します。
+`home-manager`コマンドがまだ入っていなくても動きます。
 
-- This method only uses home-manager without NixOS
-- Suitable for managing user environment on non-NixOS systems
-- Does not require root privileges for most operations
+## 更新
+
+```zsh
+cd dotfiles
+./install.sh
+```
+
+## 補足
+
+- NixOSを使わずにhome-managerだけを使います
+- NixOS以外のシステムでユーザの環境を管理するのに向いています
+- ほとんどの操作にroot権限は要りません

@@ -7,7 +7,7 @@
     pkgs - pyrightとlinkFarmを取るためのnixpkgs
     comfyui - `pythonRuntime`と`comfyuiSrc`と`withExtraPythonPackages`を持つcomfyui-nixのパッケージ
               実際に動かしているホストと同じ変種を渡すこと。
-              違う変種を渡すと誰も実行しない環境の閉包を別に持つことになる。
+              違う変種を渡すと誰も実行しない環境のクロージャを別に持つことになる。
 
   戻り値:
     typecheckDir - pyrightがimport解決に使う`env`と`src`を並べたディレクトリ
@@ -34,14 +34,14 @@
     検査が終わらなくなる。
 
     `result*`は`nix build`のout-linkで、
-    Nix storeのシステム閉包を指している。
+    Nix storeのシステムクロージャを指している。
     pyrightは`.gitignore`を見ないので、
     ここを明示しないとstore内のPythonを数千ファイル検査してしまう。
 
   なぜ必要か:
     型アノテーションが書かれているのに型検査が無かった。
     カスタムノードの誤りはComfyUIがノードを読み込む時まで表面化せず、
-    treefmtのruffは既定ルールのlintだけで型は見ない。
+    treefmtのruffはlintだけで型は見ない。
 
   import解決に何が要るか:
     `comfy`や`nodes`や`folder_paths`はPyPIには無く、
@@ -57,6 +57,10 @@
     `withExtraPythonPackages`で足せば環境を分けずに済む。
     環境が1つなら`venvPath`と`venv`が1組で済み、
     Pythonのバージョン文字列をコミットするファイルへ書かずに済む。
+
+    `pkgs/merge-gguf-nextn`が使う`gguf`も同じ理由で足す。
+    ComfyUIとは関係の無いパッケージだが、
+    環境を1つに保つためにここへ並べる。
 
   なぜuvやuv2nixで依存を用意しないか:
     uv2nixは`uv.lock`のPyPI依存をNixへ持ち込むためのものだが、
@@ -129,7 +133,11 @@ let
   # pyrightがリポジトリルートの`.typecheck`から相対パスで辿る2つをまとめる。
   # `venvPath`が`.typecheck`で`venv`が`env`、`extraPaths`が`.typecheck/src`に対応する。
   typecheckDir = pkgs.linkFarm "typecheck" {
-    env = (comfyui.withExtraPythonPackages (pythonPkgs: [ pythonPkgs.pytest ])).pythonRuntime;
+    env =
+      (comfyui.withExtraPythonPackages (pythonPkgs: [
+        pythonPkgs.gguf
+        pythonPkgs.pytest
+      ])).pythonRuntime;
     src = comfyui.comfyuiSrc;
   };
 in
@@ -148,8 +156,6 @@ in
         # リポジトリと同じ相対パスの並びを再現する。
         # `pyrightconfig.json`の`include`と`executionEnvironments`が相対パスで書かれていて、
         # そのまま解決できる必要がある。
-        # カスタムノードの共有モジュールは`../share_encode.py`のようなsymlinkなので、
-        # symlinkのまま複製すれば複製先でも同じように解決される。
         cp -r ${source} work
         chmod -R u+w work
         ln -s ${typecheckDir} work/.typecheck

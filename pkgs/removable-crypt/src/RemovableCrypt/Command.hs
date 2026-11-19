@@ -23,7 +23,7 @@ data Command = Command
   }
   deriving stock (Eq, Show)
 
--- | 暗号化されたデバイスを復号して、マッパーの名前で見えるようにする。
+-- | 暗号化されたデバイスを復号して、マッパの名前で見えるようにする。
 --
 -- 鍵の入力は`systemd-cryptsetup`が端末やFIDO2デバイスへ求める。
 attach :: MapperName -> DeviceId -> Command

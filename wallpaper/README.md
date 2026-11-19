@@ -1,11 +1,15 @@
 # wallpaper
 
-This directory contains images used as wallpapers for the bootloader, desktop, and so on.
+ブートローダやデスクトップなどの壁紙に使う画像を置くディレクトリです。
 
-## Copyright
+## 著作権
 
-The images in this directory are intentionally treated with ambiguous copyright status from a fair use perspective.
+このディレクトリの画像は、
+フェアユースの観点から、
+著作権の扱いを意図的に曖昧にしています。
 
-The repository owner claims no copyright over these images.
+リポジトリの所有者は、
+これらの画像の著作権を主張しません。
 
-If a legitimate copyright holder raises a claim, the corresponding images will be removed.
+正当な著作権者から申し立てがあった場合は、
+該当する画像を削除します。

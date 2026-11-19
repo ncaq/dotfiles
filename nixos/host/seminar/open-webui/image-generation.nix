@@ -23,13 +23,12 @@
 # 同期する時に写し漏れと誤解して消さないこと。
 { lib, config, ... }:
 let
-  # 寸法の整列単位と素のstepsとその導出はbulletの定義をそのまま引く。
+  # 素のstepsとその導出はbulletの定義をそのまま引く。
   # ワークフローの構造と違ってこれらは式として共有できるので、写す理由がない。
   #
   # `builder.nix`はNixOSモジュールではなく`{ lib }`だけを取る純粋な関数なので、
   # ホストのディレクトリを跨いでimportしても評価の文脈は持ち込まない。
   inherit (import ../../bullet/comfyui/workflow/lib/builder.nix { inherit lib; })
-    animaSizeMultiple
     animaBaseSteps
     stepsForDenoise
     ;
@@ -108,26 +107,11 @@ let
         ];
       };
     };
-    # Open WebUIから来る寸法をAnimaが要求する16の倍数へ切り下げる。
-    "20" = {
-      class_type = "AlignImageDimensions";
-      inputs = {
-        width = 1024;
-        height = 1024;
-        multiple = animaSizeMultiple;
-      };
-    };
     "6" = {
       class_type = "EmptyLatentImage";
       inputs = {
-        width = [
-          "20"
-          0
-        ];
-        height = [
-          "20"
-          1
-        ];
+        width = 1024;
+        height = 1024;
         batch_size = 1;
       };
     };
@@ -193,7 +177,7 @@ let
       };
     };
     # 2倍アップスケール後に0.75倍へ縮小し、全体で1.5倍にする。
-    # 縮小を挟むのはスーパーサンプリングになってエッジが整うため。
+    # 縮小を挟むのはスーパサンプリングになってエッジが整うため。
     "12" = {
       class_type = "ImageScaleBy";
       inputs = {
@@ -205,21 +189,11 @@ let
         ];
       };
     };
-    "19" = {
-      class_type = "AlignImageSize";
-      inputs = {
-        multiple = animaSizeMultiple;
-        image = [
-          "12"
-          0
-        ];
-      };
-    };
     "13" = {
       class_type = "VAEEncode";
       inputs = {
         pixels = [
-          "19"
+          "12"
           0
         ];
         vae = [
@@ -373,7 +347,7 @@ let
 
   # UIの入力をワークフローのどのノードへ流し込むかの対応。
   #
-  # seedは3つのサンプラーへ同じ値を配る。
+  # seedは3つのサンプラへ同じ値を配る。
   # UI形式では各ノードが独立してランダム化されるが、
   # API形式には実行ごとに振り直す仕組みが無いので、
   # ここで配らないと毎回同じノイズから生成することになる。
@@ -401,12 +375,12 @@ let
     {
       type = "width";
       key = "width";
-      node_ids = [ "20" ];
+      node_ids = [ "6" ];
     }
     {
       type = "height";
       key = "height";
-      node_ids = [ "20" ];
+      node_ids = [ "6" ];
     }
     {
       type = "steps";

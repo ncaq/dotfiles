@@ -2,7 +2,7 @@
 --
 -- GitHub Actionsの`github-actions[bot]`が書いた、目印で始まるコメントを探して書き換える。
 -- 無ければ新しく作る。
--- `gh pr comment`にはコメントを編集する機能が無く、
+-- `gh pr comment`が編集できるのは自分の最後のコメントだけで、目印で探したコメントは選べず、
 -- どのみちREST APIを直接叩くので、`gh`を介さずHTTPで話す。
 module NvdPrDiff.GitHub
   ( Comment (..)

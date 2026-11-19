@@ -2,8 +2,8 @@
   コンテナとmicroVMからの転送を、マシンごとに宣言した宛先だけに絞る。
 
   NATモジュールは`internalInterfaces`からの転送を無条件に通すので、
-  何も書かないとコンテナの中のコードは自宅LANにもtailnetにも他のコンテナにも届く。
-  コンテナの中で動くのはCIが持ち込んだコードやブラウザから渡したURLを開くWeb UIで、
+  何も書かないとコンテナやmicroVMの中のコードは自宅LANにもtailnetにも他のコンテナにも届く。
+  それらの中で動くのはCIが持ち込んだコードやブラウザから渡したURLを開くWeb UIで、
   どれも宛先を信用する理由が無い。
 
   マシンごとに`local.machineEgress.<name>`で許す宛先を宣言し、
@@ -35,13 +35,14 @@
   priorityを`filter - 1`にしてnixos-fwより先に評価させるのは、
   dropが決まっているパケットに他のチェインの評価を費やさないため。
 
-  送信元アドレスではなくインターフェイス名で見るのは、
+  送信元アドレスではなくインタフェース名で見るのは、
   コンテナのrootは自分のnetns内で任意の送信元アドレスを名乗れるため。
 
   # IPv6
 
-  コンテナとmicroVMにはULA(`lib/machine-address6.nix`)が付いていて、
+  コンテナとmicroVMにはULA(`lib/machine-address4.nix`)が付いていて、
   NATモジュールの`enableIPv6`でmasqueradeされて外へ出る。
+  IPv4はIPv4だけのインターネットの宛先へ出るマシンにしか持たせていない。
   IPv4の`private-networks`に当たる集合はIPv6では`private-networks6`で、
   tailnetと他のコンテナを含むULA全体とリンクローカルが入る。
 
@@ -65,7 +66,7 @@
     前提が崩れたかは`ip -6 route`に`proto ra`の/64があるかで分かる。
   - 自宅LANが1つのセグメントであること。
     IPv4の`192.168.0.0/16`はルータ越しの別セグメントも含めて落とすが、
-    IPv6ではルータの先にある別セグメントやルータの別インターフェイスのグローバルアドレスは、
+    IPv6ではルータの先にある別セグメントやルータの別インタフェースのグローバルアドレスは、
     インターネット宛と区別が付かず通る。
     今の自宅LANにそのような宛先は無い。
 
@@ -75,14 +76,15 @@
   ブートテストはルールの形だけを見る。
 
   `destinations`で個別に許す宛先は同じホスト上の他のマシンで、
-  そちらへはIPv4で繋いでいるのでIPv6の宛先は受け付けない。
+  マシン同士はIPv6で繋ぐのでIPv4の宛先は受け付けない。
 */
 { lib, config, ... }:
 let
   cfg = config.local.machineEgress;
   tailscale = config.local.tailscale;
+  parseIpv6 = import ../../lib/parse-ipv6.nix { inherit lib; };
 
-  # 宣言を名前付きのリストにして、インターフェイスのパターンごとにまとめる。
+  # 宣言を名前付きのリストにして、インタフェースのパターンごとにまとめる。
   # `lib/container-ifname.nix`のワイルドカードで複数のコンテナが同じパターンに一致する時、
   # マシンごとにルールを並べると先のマシンのdropで後のマシンのacceptが届かなくなる。
   # 同じパターンのマシンは同じ方針でなければならない(assertionで検査する)ので、
@@ -98,18 +100,19 @@ let
 
   # 宣言を要求するマシンの一覧。
   # アドレスを持たないコンテナ(postgresqlなど)はそもそも転送されるパケットを出せないので要求しない。
+  # IPv6だけを持つコンテナもあるので、どちらかを持っていれば対象にする。
   # microVMのホストモジュールを取り込んでいないホストでは`config.microvm`自体が無い。
   networkedContainers = lib.attrNames (
-    lib.filterAttrs (_: c: c.localAddress != null) config.containers
+    lib.filterAttrs (_: c: c.localAddress != null || c.localAddress6 != null) config.containers
   );
   vms = lib.attrNames (config.microvm.vms or { });
   expected = networkedContainers ++ vms;
   undeclared = lib.subtractLists (lib.attrNames cfg) expected;
   unknown = lib.subtractLists expected (lib.attrNames cfg);
 
-  # NATモジュールが転送を通すインターフェイスの集合。
+  # NATモジュールが転送を通すインタフェースの集合。
   # ベースチェインでこの集合からのパケットだけを許可リストへ回すので、
-  # 宣言したインターフェイスがこの集合に入っていなければ許可リストは評価すらされない。
+  # 宣言したインタフェースがこの集合に入っていなければ許可リストは評価すらされない。
   internalInterfaces = config.networking.nat.internalInterfaces;
   matchesPattern =
     pattern: ifname:
@@ -123,7 +126,7 @@ let
 
   nftSet = list: lib.concatMapStringsSep ", " (x: ''"${x}"'') list;
 
-  # インターフェイスのパターン1つ分のルールの行のリスト。
+  # インタフェースのパターン1つ分のルールの行のリスト。
   renderGroup =
     group:
     let
@@ -133,7 +136,7 @@ let
     in
     map (
       d:
-      ''${match} ip daddr ${d.address} tcp dport { ${
+      ''${match} ip6 daddr ${d.address} tcp dport { ${
         lib.concatMapStringsSep ", " toString d.tcpPorts
       } } accept comment "${names}: to ${d.address}"''
     ) m.destinations
@@ -156,7 +159,7 @@ in
               default = import ../../lib/container-ifname.nix { inherit lib name; };
               defaultText = lib.literalMD "`lib/container-ifname.nix`でコンテナ名から導いたvethの名前";
               description = ''
-                このマシンからのパケットが入ってくるホスト側のインターフェイス名。
+                このマシンからのパケットが入ってくるホスト側のインタフェース名。
                 nftablesの`iifname`に渡すので末尾の`*`でワイルドカードにできる。
                 コンテナはvethの名前が既定で導けるが、
                 microVMはTAPの名前を`microvm.vms.<name>.config.microvm.interfaces`で決めているので、
@@ -180,8 +183,14 @@ in
                 lib.types.submodule {
                   options = {
                     address = lib.mkOption {
-                      type = lib.types.str;
-                      description = "許す宛先のIPv4アドレス。他のマシンのゲスト側アドレスなど。";
+                      # IPv4アドレスや読めないアドレスを書くと評価で止める。
+                      # nftablesの`ip6 daddr`に渡すので、
+                      # 通してしまうとルールセットの検査で初めて失敗する。
+                      # プレフィックス長は許すと範囲で許せてしまうので受け付けない。
+                      type = lib.types.addCheck lib.types.str (address: parseIpv6 address != null) // {
+                        description = "IPv6 address without prefix length";
+                      };
+                      description = "許す宛先のIPv6アドレス。他のマシンのゲスト側アドレスなど。";
                     };
                     tcpPorts = lib.mkOption {
                       type = lib.types.nonEmptyListOf lib.types.port;
@@ -270,7 +279,7 @@ in
       }
       {
         assertion = conflictingInterfaces == { };
-        message = "local.machineEgress: 同じインターフェイスのパターンに一致するマシンの方針が食い違っています: ${
+        message = "local.machineEgress: 同じインタフェースのパターンに一致するマシンの方針が食い違っています: ${
           lib.concatStringsSep "; " (
             lib.mapAttrsToList (
               iface: group: "${iface} (${lib.concatMapStringsSep ", " (m: m.name) group})"
@@ -280,7 +289,7 @@ in
       }
       {
         assertion = uncovered == [ ];
-        message = "local.machineEgress: networking.nat.internalInterfacesに含まれないインターフェイスは許可リストが評価されません: ${
+        message = "local.machineEgress: networking.nat.internalInterfacesに含まれないインタフェースは許可リストが評価されません: ${
           lib.concatMapStringsSep ", " (m: "${m.name} (${m.interface})") uncovered
         }";
       }

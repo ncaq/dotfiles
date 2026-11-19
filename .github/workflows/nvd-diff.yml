@@ -12,13 +12,23 @@ concurrency:
 jobs:
   nvd-diff:
     name: nvd-diff
-    # フォークPRは除外されます。
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    # baseとPRのseminarのシステムをnvdで比べて、差分をPRのコメントとして投稿します。
+    #
+    # セルフホステッドランナの負担を減らすために、GitHubホステッドのランナで動かします。
+    #
+    # ランナのストアは空なので、baseとPRのseminarのクロージャをキャッシュから全て取ります。
+    # クロージャは60GiB近くありますが、`setup-nix`が空きを100GiBほどに増やすので収まります。
+    # baseの側は、そのブランチへのpushで動いたCIがキャッシュへ登録済みです。
+    # PRの側でまだキャッシュに無いものは、ここでビルドします。
+    # カーネルのように重いものが変わるPRでは、4コアのランナでのビルドになって時間がかかります。
+    # マージに必須のチェックではないので、その時に遅れるのは差分のコメントだけです。
     permissions:
       contents: read # リポジトリコンテンツの読み取り
       id-token: write # `ncaq/nix-composite-action`内のniks3-publicとのOIDC認証に使用
       pull-requests: write # PRコメントのupsert
-    runs-on: [self-hosted, Linux]
+    # フォークからのPRではトークンが読み取り専用でコメントを投稿できないので、動かしません。
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-26.04
     timeout-minutes: 360 # キャッシュが切れている時は時間がかかるため長めに設定。
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7

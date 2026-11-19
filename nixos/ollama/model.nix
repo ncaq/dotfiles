@@ -3,33 +3,27 @@
   lib,
   pkgs,
   config,
-  inputs,
   ...
 }:
 let
   enableCuda = config.local.ollama.enableCuda;
   fetchHuggingFace = import ../../lib/fetch-hugging-face.nix { inherit pkgs; };
+  quantizeGgufWithNextn = import ../../lib/quantize-gguf-with-nextn.nix { inherit pkgs; };
   # CLIと同じstoreのパスを使うため、取得の定義は`lib/`で共有している。
   plamoTranslateModel = import ../../lib/plamo-translate-model.nix { inherit pkgs; };
-  patchGgufChatTemplate = import ../../lib/patch-gguf-chat-template.nix {
-    inherit pkgs;
-    inherit (inputs) himari-src;
-  };
+  patchGgufChatTemplate = import ../../lib/patch-gguf-chat-template.nix { inherit pkgs; };
   # registryのQwen3.8が同梱しているパラメータ。
-  # GGUFから自前で組み立てるとparamsレイヤーが付いてこないので明示する。
+  # GGUFから自前で組み立てるとparamsレイヤが付いてこないので明示する。
   # `draft_num_predict`が特に重要で、
   # MTPのドラフトヘッドを埋め込んだGGUFでもこれを指定しないと投機的デコーディングが動かない。
   # bulletでの実測では、
   # 指定していなかった`qwen3.8-27b-heretic-rvn:q4_k_m`が80.4トークン/秒だったのに対し、
   # 同じGGUFにこれを足すだけで141.4トークン/秒まで上がった。
   #
-  # 値の4は配布元の推奨より長い。
-  # JackrongのREADMEは`--spec-draft-n-max 2`を勧めているが、
-  # bulletで同じ問いを2回ずつ測ると2が127.0と127.2、
-  # 4が133.6と134.2トークン/秒で4の方が速い。
-  # 投機的デコーディングはドラフトを伸ばすほど末尾の受理率が下がるものの、
-  # 実測の位置ごとの受理率は4本目でも0.369あり、
-  # 外した分の検証コストを補って余る。
+  # 値の4は実測で最も速かったものである。
+  # `qwen3.8-27b-mtp:q6_k`でbulletで同じ問いを2回ずつ測ると、
+  # 2が120.8と124.3、3が135.9と136.8、
+  # 4が137.6と137.9、5が134.6と135.0トークン/秒だった。
   #
   # 残りはQwen3.8公式のThinking Mode向けの推奨サンプリングで、
   # Ollamaの既定値(temperature 0.8, top_k 40, top_p 0.9, repeat_penalty 1.1)とは異なる。
@@ -44,6 +38,20 @@ let
     top_k = 20;
     top_p = 0.95;
   };
+  # Ollama registryのblobを取得する。
+  # blobはダイジェストで指定され中身がそのsha256なので、
+  # ダイジェストをそのままハッシュに使えてタグの差し替えに影響されない。
+  fetchOllamaBlob =
+    {
+      name,
+      model,
+      digest,
+    }:
+    pkgs.fetchurl {
+      inherit name;
+      url = "https://registry.ollama.ai/v2/library/${model}/blobs/sha256:${digest}";
+      hash = "sha256:${digest}";
+    };
   # アクセラレータごとに、役割から実際のモデル名を引く表。
   # home-managerの設定もこれを読むため、実体は`lib/`に置いている。
   # 理由はそのファイルの先頭に書いてある。
@@ -52,7 +60,7 @@ let
   #
   # 学習時の最大長は入力と出力の合計で32768トークンなので、
   # contextをそれ以上伸ばしても長文の翻訳は保証されない。
-  # bulletの既定の131072のままだとKVキャッシュがVRAMを余計に占めるので、
+  # bulletの既定の長さのままだとKVキャッシュがVRAMを余計に占めるので、
   # 学習時の長さに揃える。
   # 長さを超えた分の品質が保証されずKVキャッシュがメモリを余計に使うのは、
   # CPUで推論するホストのメインメモリでも同じなので、
@@ -71,8 +79,9 @@ let
   # 長文では配布元の想定と少しずれた訳になる場合がある。
   # 公式のCLIはllama-serverへyarnの引数を直接渡して回避しているが、
   # Ollamaにはその引数を渡す手段が無い。
+  # 長さはOpenCodeの設定も必要とするので`lib/ollama-context.nix`が持っている。
   plamoTranslateParameters = {
-    num_ctx = 32768;
+    num_ctx = (import ../../lib/ollama-context.nix).translateLength;
     stop = "<|plamo:tag|>";
     temperature = 0;
   };
@@ -82,11 +91,16 @@ let
       # MTPのドラフトヘッドはQwen3.8の公式の重みに元から入っており、
       # 対応したllama.cppで変換すれば`qwen35.nextn_predict_layers=1`として、
       # 本体と同じGGUFの中に15テンソル約451MBで残る。
-      # Jackrongのリポジトリはそれを捨てずに量子化したもので、
-      # 素のQwen3.8に対する改変は入っていない。
       #
-      # 供給元がOllama公式のregistryから個人のリポジトリへ移るため、
-      # 登録した結果が公式のQwen3.8-27Bと噛み合うことを一度確認した。
+      # 公式の重みからggml-orgが変換したBF16を取り、自分でQ6_Kへ量子化する。
+      # ggml-orgはドラフトヘッドを`mtp-*.gguf`として本体から切り離して配っているので、
+      # 量子化の前に本体へまとめ直す。
+      # まとめる方法とその理由は`lib/quantize-gguf-with-nextn.nix`にある。
+      #
+      # ggml-orgの変換のチャットテンプレートはassistantの発話を`{% generation %}`で囲んでいる。
+      # assistantの発話を含む会話をOllamaで生成できることを確かめた。
+      #
+      # 登録した結果が公式のQwen3.8-27Bと噛み合うことを確認した。
       # `ollama show`が返す値は`Qwen/Qwen3.8-27B`の`config.json`と以下の通り一致する。
       #
       # - context lengthの262144が`max_position_embeddings`
@@ -99,22 +113,22 @@ let
       # `rev`と`hash`で固定しているので、
       # 配布元が後から差し替えた場合はビルドが壊れて気付ける。
       #
-      # unslothも同じ量子化を配っているが、
-      # あちらはMTPのドラフトヘッドを`MTP/mtp-*.gguf`として別ファイルに切り出している。
+      # unslothのQ6_Kをそのまま使わないのは、
+      # ggml-orgと同じくMTPのドラフトヘッドを`MTP/mtp-*.gguf`として別ファイルに切り出しているからである。
       # 本体と一緒に`FROM`へ並べると`ollama create`は取り込みこそするものの、
-      # マニフェストに`model`のレイヤーが2つ並ぶ形になり、
-      # ollamaは最後の`model`レイヤーを本体だと解釈する。
+      # マニフェストに`model`のレイヤが2つ並ぶ形になり、
+      # ollamaは最後の`model`レイヤを本体だと解釈する。
       # bulletではドラフトヘッドが後ろに来て、
       # 1.28GiBのドラフトを本体としてロードしたllama-serverがsegmentation faultで落ちた。
-      # レイヤーの並びは`FROM`の順番では制御できず、
-      # Modelfileにドラフトを指定する構文も無いため、
-      # 別ファイルのドラフトヘッドは使えない。
+      # レイヤの並びは`FROM`の順番では制御できないため、
+      # 別ファイルのドラフトヘッドは`FROM`では使えない。
+      # 今のOllamaにはドラフトを指定する`DRAFT`があるが、
+      # NextN層だけのGGUFを渡せるかは確かめていない。
       #
-      # visionはregistry版がマニフェストの別レイヤーとして同梱しているだけなので、
+      # visionはregistry版がマニフェストの別レイヤとして同梱しているだけなので、
       # 本体のGGUFを取るだけでは付いてこず、clipの投影器を自分で足す必要がある。
       # 投影器はunslothのF16を使う。
-      # registry版の投影器も888MiBでF16相当であり、
-      # Jackrongが置いているF32は1.72GiBと倍を占める割に得るものが無い。
+      # registry版の投影器も888MiBでF16相当なので、それに揃える。
       #
       # チャットテンプレートはそのままではコーディングエージェントからの入力を弾くので、
       # `qwen3.8-chat-template.patch`を当てて緩和したものを登録する。
@@ -122,20 +136,32 @@ let
       "qwen3.8-27b-mtp:q6_k" = {
         sources = [
           (patchGgufChatTemplate {
-            gguf = fetchHuggingFace {
-              owner = "Jackrong";
-              repo = "Qwen3.8-27B-MTP-GGUF";
-              rev = "422451108d80df4a55ebd66c3416af42a0ce0b0c";
-              file = "Qwen3.8-27B-MTP-Q6_K.gguf";
-              hash = "sha256-0PqUrycPPeQmll8fn29hQKrp9arZuIu0ZkUkknSNUm4=";
+            gguf = quantizeGgufWithNextn {
+              name = "Qwen3.8-27B-MTP-Q6_K.gguf";
+              model = fetchHuggingFace {
+                owner = "ggml-org";
+                repo = "Qwen3.8-27B-GGUF";
+                rev = "8ccda149192dec5f41450a402e66889e5fd25a24";
+                file = "Qwen3.8-27B-BF16.gguf";
+                hash = "sha256-7hHoaU5cXP+griGJVwbJc2A1DkBTKXkwi3VtIKmnF70=";
+              };
+              draft = fetchHuggingFace {
+                owner = "ggml-org";
+                repo = "Qwen3.8-27B-GGUF";
+                rev = "8ccda149192dec5f41450a402e66889e5fd25a24";
+                file = "mtp-Qwen3.8-27B-BF16.gguf";
+                hash = "sha256-n8QonqUMFvNWcyFBWW8zgOdHcjy5EikaoLj+z9j5Jzw=";
+              };
+              type = "Q6_K";
+              hash = "sha256-T6KMlLIqOin7XqDldVnLh49fg3bdSwLNqm9hwme0mSg=";
             };
             patch = ./qwen3.8-chat-template.patch;
-            hash = "sha256-hNa87dUY35OHeEY34ey9ld0obztOuCy0us4lmgNs6/w=";
+            hash = "sha256-3UfAApLmAbkXsNKXJfV1YhPDRl0VmRTjWbwEiDMzl68=";
           })
           (fetchHuggingFace {
             owner = "unsloth";
             repo = "Qwen3.8-27B-GGUF";
-            rev = "4ca720788d1e01f1bff70c033e0d0028fd02e502";
+            rev = "43f522df59109a037f64f1e29ab1eff5c00e8e1e";
             file = "mmproj-F16.gguf";
             hash = "sha256-y7hBqe4GNrLsFy9buN8uqN/rAekP58YSZYHWYqC05D4=";
           })
@@ -170,9 +196,10 @@ let
       # 投影器は`ggml-org/Qwen3.8-27B-GGUF`にある公式のものと同一で、
       # ARAは言語モデル側の層しか触っていないため素の投影器がそのまま噛み合う。
       #
-      # チャットテンプレートは汎用モデルのものとバイト単位で同一なので、
-      # 同じ`qwen3.8-chat-template.patch`を当てる。
+      # チャットテンプレートには汎用モデルと同じ`qwen3.8-chat-template.patch`を当てる。
       # ARAは重みしか触っておらずテンプレートは素のQwen3.8のままだからである。
+      # 汎用モデルのggml-orgの変換はassistantの発話を`{% generation %}`で囲む点だけが異なるが、
+      # パッチが触る箇所はどちらも同じ形をしている。
       # 今の呼び出し側であるOpen WebUIが弾かれる形を送っているわけではないが、
       # reasoning effortを明示する経路があれば同じ500に当たる。
       # 片方だけ緩和されている状態は、
@@ -200,6 +227,41 @@ let
         ];
         parameters = qwenParameters;
       };
+      # registryの`gemma4:31b`と同じものを、
+      # タグではなくblobのダイジェストで固定して組み立てる。
+      # タグは上流で差し替わり得て、
+      # VRAMの空きが少ないので中身が変わると溢れるかもしれないためである。
+      # 本体と投影器とMTPのドラフトのblob、
+      # およびTEMPLATEとRENDERERとPARSERとparamsは、
+      # 2026-11-13時点のタグのマニフェストと`ollama show --modelfile`の内容に揃えてある。
+      "gemma4-31b-mtp:q4_k_m" = {
+        sources = [
+          (fetchOllamaBlob {
+            name = "gemma4-31b-q4_k_m.gguf";
+            model = "gemma4";
+            digest = "cd20f2b3f2e30239023189c04e65754b0cc7c38959665ac727461ee470df16cf";
+          })
+          (fetchOllamaBlob {
+            name = "gemma4-31b-projector.gguf";
+            model = "gemma4";
+            digest = "6357a8a2d521e7b3b67d5afd3a6f5094b2712736b5bd6e1c9f17f8e4e6fae9b0";
+          })
+        ];
+        draft = fetchOllamaBlob {
+          name = "gemma4-31b-draft.gguf";
+          model = "gemma4";
+          digest = "9ec411cf75f3ab210708dad5adb53d98a151f2c72f0659da97892b8a0a14e3e3";
+        };
+        template = "{{ .Prompt }}";
+        renderer = "gemma4";
+        parser = "gemma4";
+        parameters = {
+          draft_num_predict = 3;
+          temperature = 1;
+          top_k = 64;
+          top_p = 0.95;
+        };
+      };
       # 翻訳特化のPLaMo 3 Translate。
       "plamo-3-translate-31b:q4_k_m" = {
         sources = [ plamoTranslateModel."31b-q4_k_m" ];
@@ -215,7 +277,7 @@ let
     }
     // {
       # RAGの埋め込み用モデル。CUDAの有無に関係なく全てのOllamaホストへ登録する。
-      # Open WebUIからの埋め込み要求はCaddyのフェイルオーバーがホストを選ぶため、
+      # Open WebUIからの埋め込み要求はCaddyのフェイルオーバがホストを選ぶため、
       # どちらのホストでも同じモデルが引ける必要がある。
       #
       # registryのpullではなくGGUFから組むのは`num_gpu 0`を焼き込むためである。

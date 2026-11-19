@@ -1,4 +1,4 @@
-_: {
+{
   programs.keepassxc = {
     enable = true;
     settings = {
@@ -14,16 +14,16 @@ _: {
         RememberLastKeyFiles = true; # 最後に使用したキーファイルを記憶
         ShowToolbar = true; # ツールバーを表示
         SingleInstance = true; # 単一インスタンスで実行
-        UseGroupIconOnEntryCreation = true; # エントリー作成時にグループアイコンを使用
+        UseGroupIconOnEntryCreation = true; # エントリ作成時にグループアイコンを使用
       };
       GUI = {
         AdvancedSettings = true; # 詳細設定を表示
         ApplicationTheme = "dark"; # アプリケーションテーマをdark、light、classicから選択
         CheckForUpdates = false; # アップデートの自動確認を無効化
         ColorPasswords = true; # パスワードの文字種別に色付け
-        EntryListColumnSizes = "400, 350, 1000"; # エントリーリストの列幅
+        EntryListColumnSizes = "400, 350, 1000"; # エントリリストの列幅
         HidePreviewPanel = false; # プレビューパネルを表示
-        HideUsernames = false; # ユーザー名を表示
+        HideUsernames = false; # ユーザ名を表示
         Language = "system"; # 表示言語をシステムの言語に設定
         MinimizeOnClose = false; # 閉じるボタンで最小化しない
         MinimizeOnStartup = false; # 起動時に最小化しない

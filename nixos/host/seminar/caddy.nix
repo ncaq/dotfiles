@@ -1,20 +1,23 @@
 { lib, config, ... }:
 let
-  garageAddr = config.machineAddresses.garage.guest;
-  garageHostAddr = config.machineAddresses.garage.host;
-  niks3PublicAddr = config.machineAddresses.niks3-public.guest;
-  niks3PublicHostAddr = config.machineAddresses.niks3-public.host;
-  niks3PrivateHostAddr = config.machineAddresses.niks3-private.host;
+  garageAddr = config.machineAddresses.garage.guest6;
+  garageHostAddr = config.machineAddresses.garage.host6;
+  niks3PublicHostAddr = config.machineAddresses.niks3-public.host6;
+  niks3PrivateHostAddr = config.machineAddresses.niks3-private.host6;
   containerIfname = name: import ../../../lib/container-ifname.nix { inherit lib name; };
 in
 {
-  # ホスト上でniks3-public.ncaq.netとgarage.ncaq.netをローカルのCaddyへ向けます。
-  # substituteはホストのnix-daemonが行うため、
-  # これによりCIのキャッシュ取得がCloudflare Tunnelを経由しなくなります。
+  # ホスト上でgarage.ncaq.netをローカルのCaddyへ向けます。
   # garage.ncaq.netはniks3が発行するpresigned URLのアップロード先なので、
-  # キャッシュへのアップロードもマシン内で完結します。
-  # 向き先はそれぞれの用途に対応するvethのホスト側アドレスにして、
+  # ホストからniks3-privateへのキャッシュのアップロードがマシン内で完結します。
+  # 向き先は用途に対応するvethのホスト側アドレスにして、
   # 障害の切り分けが素直になるようにします。
+  #
+  # niks3-public.ncaq.netはここへ向けません。
+  # 以前はCIランナがホストのnix-daemonを使っていたので、
+  # ホストで名前を内部へ向ければCIのキャッシュの出し入れがマシン内で完結しました。
+  # 今のランナはmicroVMの中のnix-daemonを使い、公開DNSで引いてCloudflare Tunnel経由で届きます。
+  # ホスト自身はniks3-privateを優先して使うので、内部の経路を持つ意味が無くなりました。
   #
   # ここに書いた名前は、seminarをexit nodeにしている端末にも内部アドレスとして見えます。
   # exit nodeを使う端末は全てのDNSクエリをexit node側のtailscaledへ送り、
@@ -37,7 +40,6 @@ in
     readOnly = true;
     default = {
       ${garageHostAddr} = [ "garage.ncaq.net" ];
-      ${niks3PublicHostAddr} = [ "niks3-public.ncaq.net" ];
     };
     description = ''
       ホスト上のCaddyへ向ける名前の、vethのホスト側アドレスから名前のリストへの対応。
@@ -61,22 +63,8 @@ in
       virtualHosts."garage.ncaq.net" = {
         useACMEHost = "garage.ncaq.net";
         extraConfig = ''
-          bind ${garageHostAddr} ${niks3PublicHostAddr} ${niks3PrivateHostAddr}
-          reverse_proxy http://${garageAddr}:3900
-        '';
-      };
-      # ホスト自身からniks3-publicへのアクセスをマシン内で完結させるproxy。
-      # niks3-public.ncaq.netの公開経路はCloudflare Tunnelのみなので、
-      # そのままだと同じマシン上のキャッシュへCloudflareを往復して到達することになります。
-      # substituteやpost-build-hookはホストのnix-daemonが実行するため、
-      # ホストのnetworking.hostsで名前をこのバインド先へ向けることで、
-      # CIランナーのキャッシュ入出力もマシン内で完結します。
-      # https://github.com/ncaq/dotfiles/issues/1535
-      virtualHosts."niks3-public.ncaq.net" = {
-        useACMEHost = "niks3-public.ncaq.net";
-        extraConfig = ''
-          bind ${niks3PublicHostAddr}
-          reverse_proxy http://${niks3PublicAddr}:5751
+          bind [${garageHostAddr}] [${niks3PublicHostAddr}] [${niks3PrivateHostAddr}]
+          reverse_proxy http://[${garageAddr}]:3900
         '';
       };
     };
@@ -86,13 +74,13 @@ in
       # garage.ncaq.netをホストのCaddy経由で使うniks3の2つのコンテナのvethからだけ、
       # Caddyの443への接続を許可する。
       # 他のコンテナがvethのホスト側アドレスの443へ繋ぐ用途は無い。
-      # CIランナーの中のniks3クライアントも公開DNSで引いてCloudflare Tunnel経由で届く。
-      # インターフェイス名は`ve-niks3-private`が15文字に収まらず縮められるので、
+      # CIランナの中のniks3クライアントも公開DNSで引いてCloudflare Tunnel経由で届く。
+      # インタフェース名は`ve-niks3-private`が15文字に収まらず縮められるので、
       # `lib/container-ifname.nix`でパターンにする。
       #
       # Tailscale経由の接続はここでは開けない。
       # tailscaledが`INPUT`の先頭に挿す`ts-input`チェインが、
-      # Tailscaleインターフェースから入る全パケットを先にACCEPTするので、
+      # Tailscaleインタフェースから入る全パケットを先にACCEPTするので、
       # NixOSのfirewallはそもそも評価されない。
       # exit node経由の端末からこのアドレスへ届くかどうかは、
       # tailscaledのパケットフィルタとtailnetのACLで決まる。
@@ -107,9 +95,12 @@ in
             allowedTCPPorts = [ 443 ];
           });
     };
-    # vethインターフェースはコンテナ起動時に作成されるため、
+    # vethインタフェースはコンテナ起動時に作成されるため、
     # Caddy起動時にはまだバインド先IPが存在しない場合がある。
     # ip_nonlocal_bindを有効にして未割当アドレスへのバインドを許可する。
-    boot.kernel.sysctl."net.ipv4.ip_nonlocal_bind" = 1;
+    # IPv6ではアドレスが付いた直後の重複検出(DAD)が終わるまでの間も、
+    # これが無いとバインドに失敗する。
+    # vethのホスト側に待ち受けるアドレスはIPv6だけなので、IPv6の側だけを有効にする。
+    boot.kernel.sysctl."net.ipv6.ip_nonlocal_bind" = 1;
   };
 }

@@ -5,12 +5,12 @@ let
   yamllintConfig = {
     extends = "default";
     rules = {
-      # デフォルトの行数制限は厳しすぎるので緩和
+      # デフォルトの行の長さの制限は厳しすぎるので緩和
       line-length = {
         max = 200;
         level = "warning";
       };
-      # スタート記号を省略を許可
+      # スタート記号の省略を許可
       document-start = "disable";
       # GitHub Actionsなどで頻出するので単純キーを許可する
       truthy = "disable";

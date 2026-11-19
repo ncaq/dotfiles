@@ -6,7 +6,7 @@
 -- > [U.]  #01  foo  1.0 -> 1.1, 1.2 x2
 --
 -- のように、状態、通し番号、パッケージ名、バージョンの並びである。
--- 状態の1文字目は閉包の中でどう変わったか、2文字目は`environment.systemPackages`に選ばれているかで、
+-- 状態の1文字目はクロージャの中でどう変わったか、2文字目は`environment.systemPackages`に選ばれているかで、
 -- 対応表は'installStateCode'と'selectionStateCode'にある。
 -- バージョンが複数ある時は`, `で並び、同じものが続く分は` xN`でまとまる。
 -- 色は標準出力が端末でなければ付かないが、念のため呼ぶ側で`--color never`を渡している。
@@ -70,7 +70,7 @@ data Package = Package
   }
   deriving stock (Eq, Show)
 
--- | 閉包の中でどう変わったか。
+-- | クロージャの中でどう変わったか。
 data InstallState
   = Installed
   | Added
@@ -119,11 +119,11 @@ data Version = Version
   { label :: Maybe Text
   -- ^ バージョンの文字列。store pathに数字が無いと`<none>`と出るので、その時は無い。
   , count :: Int
-  -- ^ 同じバージョンが閉包に何回あるか。
+  -- ^ 同じバージョンがクロージャに何回あるか。
   }
   deriving stock (Eq, Show)
 
--- | 末尾の閉包の大きさの行。
+-- | 末尾のクロージャの大きさの行。
 data ClosureSize = ClosureSize
   { before :: Int
   , after :: Int

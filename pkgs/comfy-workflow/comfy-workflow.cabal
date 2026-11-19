@@ -104,6 +104,7 @@ test-suite comfy-workflow-test
   other-modules:
     Spec
     Spec.CliSpec
+    Spec.ComfySpec
     Spec.NameSpec
     Spec.ParameterSpec
     Spec.PromptSpec

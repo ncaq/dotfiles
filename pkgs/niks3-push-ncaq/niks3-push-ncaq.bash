@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # sopsで暗号化されたシークレットファイルからAPIトークンを復号して、
-# `niks3 push`を実行する共通ラッパー。
+# `niks3 push`を実行する共通ラッパ。
 #
 # `niks3`の`--auth-token-script`機能を使い、`niks3`が必要なタイミングで、
 # `sops decrypt`を呼び出してトークンを取得します。
@@ -10,7 +10,7 @@ set -euo pipefail
 # 長期トークンなので`expires_at`は遠い未来に固定し、再取得を防ぎます。
 #
 # このスクリプトは`niks3-push-ncaq-public`/`niks3-push-ncaq-private`から呼び出されます。
-# 各ラッパーが`NIKS3_PUSH_NCAQ_SECRETS_FILE`と`NIKS3_PUSH_NCAQ_SERVER_URL`を設定します。
+# 各ラッパが`NIKS3_PUSH_NCAQ_SECRETS_FILE`と`NIKS3_PUSH_NCAQ_SERVER_URL`を設定します。
 #
 # 引数があればそのまま`niks3 push`にstoreパスとして渡します。
 # 引数がなければ標準入力からstoreパスを1行ずつ読みます。

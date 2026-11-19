@@ -20,33 +20,22 @@ ASCIIに対応する全角形(Fullwidth Forms)は使用禁止。
 
 # Nix
 
-## `importDirModules`関数
+## モジュールは置くだけで読み込まれる
 
-`lib/import-dir-modules.nix`で定義されているユーティリティ関数です。
-型は`Path -> [Path]`で、
-ディレクトリパスを受け取り、
-モジュールパスのリストを返します。
-
-指定ディレクトリ内の`.nix`ファイルと`default.nix`を持つサブディレクトリを自動的に収集し、
-NixOSモジュールやhome-managerモジュールの`imports`に渡せるパスのリストを返します。
-`default.nix`は呼び出し元自身の再帰importを防ぐため除外されます。
-`default.nix`を持たないサブディレクトリはモジュールではないので無視されます。
-サブディレクトリの中身は走査しません(そのサブディレクトリの`default.nix`が自身で管理します)。
-
-各ディレクトリの`default.nix`で以下のように使用します:
+各ディレクトリの`default.nix`は以下の形で、
+同じディレクトリの`.nix`ファイルと、
+`default.nix`を持つサブディレクトリを全て読み込みます。
 
 ```nix
 { importDirModules, ... }:
 { imports = importDirModules ./.; }
 ```
 
-これにより新しい`.nix`ファイルやモジュールディレクトリを追加するだけで自動的にimportされ、
-`default.nix`の`imports`リストを手動で更新する必要がありません。
+新しいモジュールはファイルを置くだけで有効になります。
 一貫性のため`default.nix`はなるべくこの形だけにして、
 モジュールが他のモジュールを明示的にimportするのは避けます。
 
-`importDirModules`は`flake.nix`で`specialArgs`/`extraSpecialArgs`経由で、
-全モジュールに渡されています。
+何が除外されるかなどの詳しい動作は`lib/import-dir-modules.nix`に書いています。
 
 # home-manager
 
@@ -55,10 +44,10 @@ NixOSモジュールやhome-managerモジュールの`imports`に渡せるパス
 ### systemd
 
 Termux環境ではsystemdが利用できません。
-しかしサービスが有効にする設定を書いても、
+しかしサービスを有効にする設定を書いても、
 インストール時には単にスキップされるだけでエラーにはなりません。
 
-なのでTermux環境であることを検出して条件分岐をする必要は必須ではありません。
+なのでTermux環境であることを検出して条件分岐をすることは必須ではありません。
 
 # 使用する技術スタックやライブラリ
 
@@ -77,7 +66,7 @@ Termux環境ではsystemdが利用できません。
 なるべく宣言的な方法を使います。
 
 命令的なソリューションを受け入れるのではなく、
-宣言的な回避策を優先してください。
+宣言的なワークアラウンドを優先してください。
 
 ## 既存モジュール調査優先
 
@@ -141,11 +130,26 @@ WSL2の環境でbtrfsじゃないとか、
 
 何をセンシティブとみなすかは`docs/telemetry-policy.md`に書いています。
 
+## IPv6を基本にする
+
+自分で構成するものは全てIPv6で動くようにして、
+アドレスを指定する時はIPv6を使います。
+IPv4はIPv4でしか届かない相手と繋がる時のレガシー対応に限ります。
+
+詳しい方針は`docs/ip-version-policy.md`に書いています。
+
+## SSDは空き容量を保って使う
+
+SSDの上のファイルシステムは容量の10%以上を必ず空けておき、
+普段は15%以上空いている状態を保ちます。
+自動で容量を増やしていくものには、
+自動で空きを取り戻す仕組みを組にします。
+
+詳しい方針は`docs/ssd-policy.md`に書いています。
+
 ## 補助プログラムの言語の選び方
 
-設定だけでは書けない処理のために、
-このリポジトリは`pkgs`などに自作の補助プログラムを持っています。
-新しく書く時の言語は、
+`pkgs`などに自作の補助プログラムを新しく書く時の言語は、
 以下を上から順に当てはめて最初に合ったものにします。
 
 - 問題を明らかに手っ取り早く解決できる優れたライブラリがあり、それをスムーズに使えるなら、その言語
@@ -153,47 +157,13 @@ WSL2の環境でbtrfsじゃないとか、
 - レイテンシが重要ならRust
 - 特に理由が無ければHaskell
 
-ライブラリを理由に言語を選ぶのは、
-そのライブラリが無いと自前で大きな実装を抱えることになる場合です。
-ComfyUIのカスタムノードがPythonなのは、
-ComfyUI自身がPythonのモジュールとしてノードを読み込むためです。
-どの言語にもある程度のライブラリで済むなら、
-この基準には当てはまりません。
-
-シェルスクリプトにするのは、
-秘密を復号して別のコマンドへ渡すラッパーのように、
-外部コマンドを順に呼ぶだけの処理です。
-以下のどれかに当てはまるなら、
-単純とは言えないので他の言語にします。
-
-- 分岐や状態の持ち回りが増えて、読んで追うのが難しい
-- 信頼できない入力を解釈する
-- 構造のあるデータを組み立てたり読んだりするのが処理の中心になる
-- 振る舞いをテストで固定したい
-
-Rustにするのは、
-人の操作のたびに起動されるコマンドのように、
-起動や応答の遅さがそのまま体感に出るものです。
-常駐して数分おきに動くものや、
-ビルドやサービスの起動時に一度だけ走るものは、
-レイテンシが重要とは言えません。
-
-Haskellで書く時は、
-`pkgs/git-repo-subscribe`などの既存のパッケージと同じ構成に揃えます。
-himariを使うcabalプロジェクトにして、
-テストはsandwichで書きます。
-外部コマンドの出力のような複雑な文字列のパースには、
-手書きの分割や再帰ではなくmegaparsecを使います。
-
-これは原則なので例外はあります。
-基準と違う言語を選ぶ時は、
-その理由をパッケージの`default.nix`の冒頭のコメントに書いてください。
+それぞれの基準の詳しい意味は`docs/helper-program-language-policy.md`に書いています。
 
 # 重要コマンド
 
 ## フォーマット
 
-nix fmtでフォーマットとリントを実行できます。
+`nix fmt`でフォーマットとリントを実行できます。
 
 ```console
 nix fmt
@@ -213,12 +183,16 @@ Claudeの応答完了時にStopフックで`nix fmt`が自動実行されます�
 ./check.sh
 ```
 
-このスクリプトは今のマシンのシステムの`checks`だけを`nix-fast-build`で評価してビルドします。
-`nix-fast-build`を直接実行すると全システムの`checks`が評価され、
-`callCabal2nix`のようなIFDを含むパッケージが、
-そのシステムを実行できないマシンでは評価に失敗します。
+既定で処理するのは、
+ホストとhome-managerの構成を評価するだけに留めた軽いものです。
+手元でCIと同じものを確かめたい時だけ、
+構成のビルドとホストのブートテストまで含めて実行してください。
 
-追加の引数はそのまま`nix-fast-build`へ渡されます。
+```console
+CHECK_OUTPUT=ciJobs ./check.sh
+```
+
+直接実行してはいけない理由と引数の意味は`check.sh`のコメントに書いています。
 
 ## 設定の適用は`./install.sh`を使う
 
@@ -230,86 +204,48 @@ Claudeの応答完了時にStopフックで`nix fmt`が自動実行されます�
 ./install.sh
 ```
 
-このスクリプトは実行環境を自動判別して適切な適用コマンドを呼び分けます。
-
-- NixOS: `sudo nixos-rebuild switch --flake ".#$(hostname)"`
-- Termux(nix-on-droid): `nix-on-droid switch --flake .`
-- その他のLinux: アーキテクチャに応じた`home-manager switch`
-
-単なるラッパーではなく、
-NixOSでは適用前に最新コミットの情報を`last-commit.json`として一時的にstagingします。
-この情報は`nixos/core/label.nix`がブートエントリのラベル生成に使うため、
-`nixos-rebuild`を直接実行するとブートエントリからコミット情報が欠落します。
+処理の本体は`pkgs/dotfiles-install`です。
+実行環境を判別して適切な適用コマンドを呼び分けて、
+NixOSではブートエントリのラベルに使う最新コミットの情報を`last-commit.json`として一時的にstagingします。
+適用の振る舞いを変える時は`install.sh`ではなく`pkgs/dotfiles-install`を編集してください。
 
 実行にあたって知っておくべきこと:
 
 - NixOSではsudoを使いますがユーザ側によって解決されるので気にしなくても良いです
 - 実行中は`last-commit.json`のstagingにより一時的にgitがdirty状態に見えますが、
-  終了時に自動でクリーンアップされます
+  正常に終わった時も、失敗した時やCtrl-Cで止めた時も、終了時に自動でクリーンアップされます
+- SIGTERMやSIGHUPで止められた時はクリーンアップされず、`last-commit.json`がstagingされたまま残ります。
+  その時は`git reset -- last-commit.json`で外してからファイルを消してください
 
 # リポジトリ構成
 
-## ルートディレクトリ
+ディレクトリごとの構成と決まりは、
+それぞれのディレクトリの`README.md`に書いています。
 
-### LLM向けのシンボリックリンク
+- `home/README.md`: home-managerの設定
+- `nixos/README.md`: NixOSのシステム設定
+- `nixos/host/seminar/README.md`: 自宅サーバのseminarの概要
+- `pkgs/README.md`: 自作のパッケージ。置くだけで拾われる仕組みと、その制約
+- `test/README.md`: Nixのテストの書き方と置き場所
+
+個々のファイルの役割や理由は、
+そのファイルの冒頭のコメントに書きます。
+ここへ書き足す前に、
+実装の近くに書けないかを考えてください。
+
+## LLM向けのシンボリックリンク
 
 様々なコーディングエージェント向けの`AGENTS.md`と、
 Claude Code向けの`CLAUDE.md`は、
-以下のように`.github/copilot-instructions.md`のシンボリックリンクになっています。
+`.github/copilot-instructions.md`へのシンボリックリンクです。
+編集するのは`.github/copilot-instructions.md`です。
 
-```console
-AGENTS.md -> .github/copilot-instructions.md
-CLAUDE.md -> .github/copilot-instructions.md
-```
+## Claude Codeの設定
 
-これにより各種LLM向けのドキュメントを一元管理しています。
-
-## homeディレクトリ
-
-home-managerの設定ディレクトリです。
-`home/default.nix`がエントリポイントです。
-
-- `core/`: 全環境で共通の設定
-- `linked/`: シンボリックリンクで配置される設定ファイル
-- `native-linux/`: ネイティブLinux環境(NixOSなど、WSLやTermuxではない環境)専用の設定
-- `prompt/`: LLM向けのプロンプト設定
-- `wsl/`: WSL2環境専用の設定
-
-## nixosディレクトリ
-
-NixOSのシステム設定ディレクトリです。
-`nixos/configuration.nix`がエントリポイントで`core/`をimportします。
-各ホストの設定(`host/`)が追加のモジュールを選択的にimportする構造です。
-
-- `core/`: 全NixOSホスト共通の設定
-- `desktop/`: 据え置きデスクトップPC固有の設定、ラップトップPCには適用されない
-- `host/`: ホストごとの個別設定、各ホストがモジュールを組み合わせてimportする
-- `laptop/`: ラップトップPC固有の設定、据え置きデスクトップPCには適用されない
-- `native-linux/`: ネイティブLinux環境(WSLではない)のシステム設定
-- `test/`: テスト用設定
-- `wsl/`: WSL2環境専用のNixOS設定
-
-# Claude Code設定
-
-## `home/core/claude-code.nix`
-
-home-managerの`programs.claude-code`モジュールで全ホスト共通の設定を宣言的に管理します。
-プラグイン、権限、フックなどの主要な設定を管理します。
-
-ビルド時にユーザの`~/.claude/settings.json`として展開されます。
-
-また、`.claude/settings.json`で管理できないタイプの設定は、
-home-managerによって生成されたラッパープログラムを通じて渡されます。
-
-## `home/core/llm-skill.nix`
-
-LLM向けのスキルに類するものを読み込みます。
-
-## `.claude/settings.json`
-
-このリポジトリ(dotfilesプロジェクト)固有の設定です。
-
-dotfilesでclaude codeを起動している時はNix管理のグローバル設定とマージされます。
+全ホストに共通の設定は`home/core/claude-code.nix`で宣言していて、
+`~/.claude/settings.json`として展開されます。
+`~/.claude/settings.json`を直接書き換えないでください。
+`.claude/settings.json`はこのリポジトリに固有の設定です。
 
 # インフラ構築
 
@@ -332,27 +268,21 @@ gpg鍵で暗号化されたyamlファイルが`secrets/`ディレクトリに格
 自分の所有しているデバイスであり、
 信頼できるものです。
 
-# seminarサーバ
+# コンテナとmicroVMのログ
 
-自宅サーバ`seminar`はNixOSで稼働しており、
-このdotfilesリポジトリで管理されています。
+[NixOS Containers](https://wiki.nixos.org/wiki/NixOS_Containers)や、
+[microvm.nix](https://github.com/microvm-nix/microvm.nix)のmicroVMの中のサービスのログは、
+ホストで`machine-log`を使って読みます。
 
-## サービス
+```console
+machine-log
+machine-log forgejo --since=-1h
+machine-log mcp-nixos -f
+```
 
-ローカルネットワーク向けに様々なサービスを公開しています。
-Tailnetを通じるとインターネットからもアクセス可能です。
+引数を付けないとマシンの一覧を出します。
+マシン名より後ろの引数は`journalctl`へそのまま渡ります。
+中のユニット名では絞り込めないので、
+`--grep`で絞ります。
 
-Cloudflare Tunnelでインターネットからアクセス可能なサービスを公開しています。
-
-各種サービスは隔離が容易かつ隔離する意味のあるものは、
-[NixOS Containers](https://wiki.nixos.org/wiki/NixOS_Containers)か、
-[microvm.nix](https://github.com/microvm-nix/microvm.nix)で隔離しています。
-
-## ストレージ
-
-大容量データは`/mnt/noa`にbtrfs RAID1で格納されています。
-
-## データベース
-
-PostgreSQLがコンテナ上で稼働しています。
-各クライアントはbindMountされたUnixソケット(`/run/postgresql`)経由でpeer認証でアクセスします。
+仕組みは`nixos/native-linux/machine-log.nix`に書いています。

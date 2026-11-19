@@ -22,10 +22,10 @@ in
     # PostgreSQLのpeer認証がホストと同一のUIDでの接続を要求するため、
     # pickにはできずidentity(UID分離なし、capability分離のみ)のまま。
     privateUsers = "identity";
-    hostAddress = addr.host;
-    localAddress = addr.guest;
     hostAddress6 = addr.host6;
     localAddress6 = addr.guest6;
+    hostAddress = addr.host4;
+    localAddress = addr.guest4;
     bindMounts = {
       "/run/postgresql" = {
         hostPath = "/run/postgresql";
@@ -62,7 +62,7 @@ in
           # GarageへはHTTPで転送します。
           # presigned URLはhttps://garage.ncaq.net/...のままなので、
           # 外部クライアントはCloudflare Tunnel経由でアクセスできます。
-          hosts."${addr.host}" = [ "garage.ncaq.net" ];
+          hosts."${addr.host6}" = [ "garage.ncaq.net" ];
         };
         users = {
           users.niks3-public = niks3User // {
@@ -107,8 +107,27 @@ in
             oidc.providers.github = {
               issuer = "https://token.actions.githubusercontent.com";
               audience = "https://niks3-public.ncaq.net";
+              # 書き込めるトークンがあれば任意の中身をサーバの署名付きで置けるので、
+              # 発行元をなるべく絞る。
+              # PRのビルド結果もキャッシュに載せたいので`ref`では絞らず、
+              # Renovateの起動した実行も載せたいので`actor`でも絞らない。
               boundClaims = {
                 repository_owner = [ "ncaq" ];
+                # アカウント名は変更や再取得がありえるので、不変の数値IDでも確かめる。
+                # `gh api users/ncaq --jq .id`で得られる。
+                repository_owner_id = [ "2913112" ];
+                # privateリポジトリの成果物を公開キャッシュへ出さない。
+                repository_visibility = [ "public" ];
+                # 書き込み権限の無い人が起動できるのにベースリポジトリの権限で動く、
+                # `pull_request_target`や`workflow_run`や`issue_comment`などを締め出す。
+                # フォークからの`pull_request`にはそもそもトークンが発行されない。
+                event_name = [
+                  "merge_group"
+                  "pull_request"
+                  "push"
+                  "schedule"
+                  "workflow_dispatch"
+                ];
               };
             };
           };
@@ -146,7 +165,7 @@ in
       ];
     };
     garage-setup-niks3-public = import ../../../lib/garage-setup.nix {
-      inherit pkgs config inputs;
+      inherit pkgs config;
       name = "niks3-public";
     };
   };

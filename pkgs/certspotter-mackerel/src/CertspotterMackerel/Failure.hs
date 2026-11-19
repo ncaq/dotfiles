@@ -9,7 +9,7 @@ import Himari
 data ConfigFailure
   = -- | 必要な環境変数が無いか空である。その名前。
     MissingVariable Text
-  | -- | アラート期間が整数の秒数ではない。その生の値。
+  | -- | アラート期間が0以上の整数の秒数ではない。その生の値。
     InvalidAlertWindow Text
   deriving stock (Eq, Show)
 

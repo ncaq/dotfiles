@@ -15,7 +15,6 @@
     "programming-tasuke@konoka": true,
     "web-tasuke@konoka": true
   },
-  "enableAllProjectMcpServers": true,
   "permissions": {
     "allow": ["Bash(./check.sh:*)", "Bash(./install.sh:*)"],
     "additionalDirectories": [

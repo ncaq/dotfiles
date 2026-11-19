@@ -115,7 +115,7 @@ tests = describe "register" do
               )
           )
   it "張れなかったrootの前回のリンクは消さない" do
-    -- 今回ビルドできなくても、前回の閉包を守り続ける方が良い。
+    -- 今回ビルドできなくても、前回のクロージャを守り続ける方が良い。
     registered healthy{failing = [seminar]} ["nixos-seminar", "nixos-removed"]
       >>= ( `shouldBe`
               ( Right (SomeFailed ["nixos-seminar"])

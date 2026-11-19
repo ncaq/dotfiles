@@ -3,7 +3,7 @@
   # 外部ディスプレイ(テレビなど音声出力を持つもの)にHDMI接続したとき、
   # 音声出力のデフォルトをそのHDMI sinkへ自動で切り替える。
   # `wpctl status`と`wpctl inspect <id>`で確認できた、
-  # ThinkPadの内蔵スピーカーの`priority.session`が`1000`だったので、
+  # ThinkPadの内蔵スピーカの`priority.session`が`1000`だったので、
   # HDMIをそれより高い値にする。
   # GPUの音声コントローラは複数のHDMIピンを持ちsinkも複数現れるが、
   # WirePlumberはport availability(EDIDから取得するELD)を考慮するため、

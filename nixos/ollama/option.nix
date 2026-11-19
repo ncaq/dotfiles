@@ -106,7 +106,7 @@ in
 
               アクセラレータ別にしないのは、
               Open WebUIの`RAG_EMBEDDING_MODEL`が1つの固定文字列で、
-              リクエストを受けるホストはCaddyのフェイルオーバーが実行時に決めるためである。
+              リクエストを受けるホストはCaddyのフェイルオーバが実行時に決めるためである。
               ホストごとにモデルが違うと、
               フォールバックした瞬間にモデル不明で失敗するか、
               埋め込みの空間がずれて検索が壊れる。
@@ -173,6 +173,36 @@ in
                 言語モデル本体に加えて、
                 visionを持つモデルはclipの投影器が要ります。
                 `model`と判定されるGGUFは1つでなければなりません。
+              '';
+            };
+            draft = lib.mkOption {
+              type = lib.types.nullOr lib.types.package;
+              default = null;
+              description = ''
+                投機的デコーディングに使う別ファイルのドラフトモデル。
+                Modelfileの`DRAFT`に書く。
+                `sources`へ並べると本体と同じ`model`のレイヤとして取り込まれてしまうため分けている。
+              '';
+            };
+            template = lib.mkOption {
+              type = lib.types.nullOr lib.types.str;
+              default = null;
+              description = "Modelfileの`TEMPLATE`。nullならGGUFに埋め込まれたものを使う。";
+            };
+            renderer = lib.mkOption {
+              type = lib.types.nullOr lib.types.str;
+              default = null;
+              description = ''
+                Modelfileの`RENDERER`。
+                Ollamaがモデル固有に実装しているプロンプトの組み立てを使う場合に指定する。
+              '';
+            };
+            parser = lib.mkOption {
+              type = lib.types.nullOr lib.types.str;
+              default = null;
+              description = ''
+                Modelfileの`PARSER`。
+                Ollamaがモデル固有に実装している思考やツール呼び出しの解釈を使う場合に指定する。
               '';
             };
             parameters = lib.mkOption {

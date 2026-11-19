@@ -1,99 +1,61 @@
 # dotfiles
 
-My main configuration files.
+私のメインの設定ファイルです。
 
-It's managed by
-[NixOS | Declarative builds and deployments](https://nixos.org/) and
-[home-manager](https://github.com/nix-community/home-manager).
+[NixOS | Declarative builds and deployments](https://nixos.org/)と、
+[home-manager](https://github.com/nix-community/home-manager)で管理しています。
 
-# Note
+# 注意
 
 > [!NOTE]
-> My default `${USER}` is `ncaq`.
-> I haven't tested with other usernames.
-> I have hard-coded the username.
-> Maybe, if you want to use other username, you need to change code.
+> 既定の`${USER}`は`ncaq`です。
+> 他のユーザ名では試していません。
+> ユーザ名はハードコードしています。
+> 他のユーザ名で使うには、おそらくコードの変更が必要です。
 
-# Initial
+# 初回のインストール
 
-Choose the installation method that fits your environment:
+環境に合ったインストール方法を選んでください。
 
 ## NixOS
 
-- [Install using disko (automated)](./docs/install/nixos-disko.md)
-- [Manual installation with existing partitioning](./docs/install/nixos-manual.md)
+- [diskoを使ったインストール(自動)](./docs/install/nixos-disko.md)
+- [既存のパーティションを残す手動のインストール](./docs/install/nixos-manual.md)
 
-## Non NixOS
+## NixOS以外
 
-- [Install using home-manager on non-NixOS system](./docs/install/home-manager.md)
-- [Install using Nix-on-Droid on Android](./docs/install/nix-on-droid.md)
+- [NixOS以外のシステムへhome-managerでインストール](./docs/install/home-manager.md)
+- [AndroidへNix-on-Droidでインストール](./docs/install/nix-on-droid.md)
 
-# Rebuild
+# 設定の適用
 
 ```zsh
 ./install.sh
 ```
 
-This script automatically detects your environment and runs the appropriate command.
+このスクリプトは実行環境を自動で判別して、
+適切なコマンドを実行します。
 
-# Format
+# フォーマット
 
 ```zsh
 nix fmt
 ```
 
-# Check
-
-## Static
+# チェック
 
 ```zsh
 ./check.sh
 ```
 
-# Policy
+# 方針
 
-As a general approach,
-I prefer home-manager and only use NixOS options when they are the simpler or only choice.
+基本的にはhome-managerを優先します。
+NixOSのオプションを使うのは、
+その方が単純な場合か、
+それしか手段が無い場合だけです。
 
-# Directory Structure
-
-## [flake.nix](./flake.nix)
-
-The entry point of the flake.
-
-## [home/](./home/)
-
-The home-manager configuration files.
-
-`home/` contains the home-manager configuration files.
-
-### [home/link.nix](./home/link.nix), [home/linked/](./home/linked/)
-
-Create symbolic links from filepath.
-`link.nix` is the program that creates them.
-`linked/` contains the linked files.
-
-### [home/package/](./home/package/)
-
-To install packages.
-
-### [home/prompt/](./home/prompt/)
-
-Prompts directly used by chat LLMs and coding agents.
-
-## [lib/](./lib/)
-
-The library files for Nix expressions.
-
-## [nixos/](./nixos/)
-
-NixOS configuration files.
-
-## [pkgs/](./pkgs/)
-
-Custom Nix packages.
-
-# Related external config repo
+# 関連する外部の設定リポジトリ
 
 - [ncaq/.emacs.d: My Emacs config](https://github.com/ncaq/.emacs.d)
 - [ncaq/.xmonad](https://github.com/ncaq/.xmonad)

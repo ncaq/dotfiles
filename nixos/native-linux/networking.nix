@@ -1,63 +1,73 @@
-_:
+{ lib, ... }:
 let
-  # DNS over TLSが利用できるPublic DNSサーバーのリスト。
-  # CloudflareのDNSリゾルバが稀に不調になることがあるためGoogleでも解決できるように、
-  # 両者を混在させます。
-  encryptedDns = [
-    # Cloudflare
-    # IPv4
-    "1.1.1.1#one.one.one.one"
-    "1.0.0.1#one.one.one.one"
-    # IPv6
-    "2606:4700:4700::1111#one.one.one.one"
-    "2606:4700:4700::1001#one.one.one.one"
-    # Google
-    # IPv4
-    "8.8.8.8#dns.google"
-    "8.8.4.4#dns.google"
-    # IPv6
-    "2001:4860:4860::8888#dns.google"
-    "2001:4860:4860::8844#dns.google"
-  ];
+  publicDns = import ../../lib/public-dns.nix;
+  # systemd-resolvedへ渡す、DNS over TLSで確かめる名前付きの形。
+  # IPv6のサーバを先に並べ、IPv4を持つ時だけIPv4のサーバを後ろに足す。
+  encryptedDns =
+    hasIpv4:
+    map (server: "${server.address}#${server.name}") (
+      publicDns.ipv6 ++ lib.optionals hasIpv4 publicDns.ipv4
+    );
 in
 {
-  networking = {
-    networkmanager = {
-      enable = true;
-      # NMが「Wired connection 1」のような一時プロファイル(nm-generated=true)を、
-      # 明示プロファイルのない管理対象NICに自動生成するのを抑止する。
-      # 宣言的に書いたプロファイル以外がランタイムに出現するのを防ぐ。
-      settings.main.no-auto-default = "*";
-    };
-    # NetworkManagerが既定で有効にするが、
-    # モデムを持つホストは無いので動かさない。
-    modemmanager.enable = false;
-    nameservers = encryptedDns;
+  # コンテナのsystemd-resolvedもホストと同じ公開DNSを使う。
+  # コンテナはDNSサーバを教わらないので、フォールバックの一覧がそのまま使われる。
+  # 何も書かないとsystemdに組み込まれた一覧になり、IPv4のサーバが先に並ぶ。
+  # IPv4を持たないコンテナからはIPv4のサーバに届かないので外す。
+  options.containers = lib.mkOption {
+    type = lib.types.attrsOf (
+      lib.types.submodule (
+        { config, ... }:
+        let
+          # 自分のネットワークを持たないコンテナはホストのIPv4をそのまま使える。
+          hasIpv4 = !config.privateNetwork || config.localAddress != null;
+        in
+        {
+          config.config.services.resolved.settings.Resolve.FallbackDNS = encryptedDns hasIpv4;
+        }
+      )
+    );
   };
 
-  programs = {
-    nm-applet = {
-      enable = true;
+  config = {
+    networking = {
+      networkmanager = {
+        enable = true;
+        # NMが「Wired connection 1」のような一時プロファイル(nm-generated=true)を、
+        # 明示プロファイルのない管理対象NICに自動生成するのを抑止する。
+        # 宣言的に書いたプロファイル以外がランタイムに出現するのを防ぐ。
+        settings.main.no-auto-default = "*";
+      };
+      # NetworkManagerが既定で有効にするが、
+      # モデムを持つホストは無いので動かさない。
+      modemmanager.enable = false;
+      nameservers = encryptedDns true;
     };
-  };
 
-  services.resolved = {
-    enable = true;
-    settings = {
-      Resolve = {
-        DNSSEC = "true";
-        # Tailscaleが有効な環境ではDNSクエリはTailscaleの内部DNSサーバに流れます。
-        # Tailscale側は同じくCloudflareかGoogleのDNSを使うように設定しています。
-        # その時にDNS over HTTPSが利用されます。
-        # しかし念の為Tailscaleが外れた時も比較的安全にDNSが解決できるように、
-        # 本体の設定でもDNS over TLSを利用するようにします。
-        DNSOverTLS = "true";
-        FallbackDNS = encryptedDns;
-        # LLMNRはDNSで引けなかった名前をリンクローカルにマルチキャストで問い合わせて、
-        # 名乗り出た相手を認証無しに信じる仕組みなので、
-        # 同じLANにいる攻撃者が任意の名前を自分に向けられる(Responder系の攻撃)。
-        # ホストの探索はwsddとavahi(mDNS)で足りているので、問い合わせる側としても無効にする。
-        LLMNR = "false";
+    programs = {
+      nm-applet = {
+        enable = true;
+      };
+    };
+
+    services.resolved = {
+      enable = true;
+      settings = {
+        Resolve = {
+          DNSSEC = "true";
+          # tailnetはシステムのDNS設定を上書きしないようにしているので、
+          # Tailscaleの内部DNSサーバに流れるのはtailnetの名前だけです。
+          # それ以外の問い合わせはここの設定で解決するので、
+          # DNS over TLSで暗号化して、DNSSECも手元で検証します。
+          # exit nodeを使っている間だけは全ての問い合わせがTailscaleへ流れます。
+          DNSOverTLS = "true";
+          FallbackDNS = encryptedDns true;
+          # LLMNRはDNSで引けなかった名前をリンクローカルにマルチキャストで問い合わせて、
+          # 名乗り出た相手を認証無しに信じる仕組みなので、
+          # 同じLANにいる攻撃者が任意の名前を自分に向けられる(Responder系の攻撃)。
+          # ホストの探索はwsddとavahi(mDNS)で足りているので、問い合わせる側としても無効にする。
+          LLMNR = "false";
+        };
       };
     };
   };

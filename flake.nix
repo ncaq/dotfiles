@@ -51,7 +51,7 @@
 
     nixos-hardware = {
       url = "github:NixOS/nixos-hardware";
-      inputs.nixpkgs.follows = "nixpkgs-unstable";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     disko = {
@@ -85,19 +85,16 @@
     xremap-flake = {
       url = "github:xremap/nix-flake";
       inputs = {
-        nixpkgs.follows = "nixpkgs-unstable"; # オリジナルで最新のRustのためにunstableを使っている。
+        nixpkgs.follows = "nixpkgs";
         flake-parts.follows = "flake-parts";
       };
     };
 
-    # 上流のREADMEはfollowsなしを標準構成としていますが、
-    # unstableへfollowさせても評価とビルドは通り、画像と動画の生成も動きます。
-    # stableだとtransformersが古く、
-    # flash_attnが無い環境で辞書参照がKeyErrorになる不具合を踏んで、
-    # SeedVR2のカスタムノードが読み込めません。
-    # comfyui-nixのパッケージと一緒に実行するプログラムは、
-    # 同じnixpkgsから取る必要があります。
-    # 詳細は`nixos/host/bullet/comfyui/container.nix`の`comfyPkgs`のコメントを参照。
+    # stableのtransformers 5.5.4では、
+    # flash_attnが無い環境でSeedVR2のカスタムノードがKeyErrorで読み込めないので、
+    # 直っている5.16.1以上を持つunstableへfollowさせます。
+    # followする先を変える時は、
+    # `nixos/host/bullet/comfyui/container.nix`が同じnixpkgsから取っているプログラムも揃えます。
     utensils-comfyui-nix = {
       url = "github:utensils/comfyui-nix";
       inputs = {
@@ -192,14 +189,17 @@
         "x86_64-linux"
       ];
 
-      # ディレクトリ内の全`.nix`ファイルをimportするヘルパー関数。
+      # ディレクトリ内の全`.nix`ファイルをimportするヘルパ関数。
       importDirModules = import ./lib/import-dir-modules.nix { inherit lib; };
       # systemdサービス共通のハードニング設定。
       hardening = import ./lib/systemd-hardening.nix;
       # nixpkgsの共通設定。
       nixpkgsConfig = import ./lib/nixpkgs-config.nix { inherit lib; };
+      # `pkgs/`の自作パッケージをトップレベルに生やすoverlay。
+      localPackagesOverlay = import ./lib/local-packages-overlay.nix { inherit lib inputs; };
       # 全環境で共通のoverlays。
       overlays = [
+        localPackagesOverlay
         (import ./lib/snapper-btrfs-bin-overlay.nix)
         inputs.utensils-comfyui-nix.overlays.default
         inputs.firge-nix.overlays.default
@@ -211,7 +211,7 @@
           inherit system overlays;
           config = nixpkgsConfig;
         };
-      # systemごとにpkgsをメモ化するヘルパー。
+      # systemごとにpkgsをメモ化するヘルパ。
       # 複数ホストやcheck/test-nixos-bootから同じ`system`で繰り返し呼ばれても、
       # 同じpkgs実体を返すようにして、評価時のメモリ消費を削減する。
       memoizePkgsPerSystem =
@@ -268,8 +268,13 @@
 
       nixosConfigurations = lib.mapAttrs (_: def: def.nixosSystem) hostDefs;
 
-      testNixosBoot = import ./lib/test-nixos-boot.nix {
-        inherit lib importPkgsStable hostDefs;
+      testNixosBoot = import ./test/nixos-boot {
+        inherit
+          lib
+          importPkgsStable
+          importDirModules
+          hostDefs
+          ;
       };
 
       mkLinuxHomeManager = import ./lib/mk-linux-home-manager.nix {
@@ -309,6 +314,9 @@
 
       inherit systems;
 
+      # `perSystem`の`ciJobs`を、flakeの出力の`ciJobs.<system>`にします。
+      transposition.ciJobs.adHoc = true;
+
       flake = {
         inherit
           nixosConfigurations
@@ -320,142 +328,110 @@
 
       perSystem =
         {
+          config,
           pkgs,
           system,
           ...
         }:
         let
-          # Gitリポジトリを購読するためのツール。
-          # ビルドの中でsandwichのテストが走る。
-          git-repo-subscribe = pkgs.callPackage ./pkgs/git-repo-subscribe {
-            inherit (inputs) himari-src;
+          pkgsUnstable = importPkgsUnstable system;
+          # overlayが生やす`pkgs/`の自作パッケージの名前。
+          localPackageNames = pkgs.localPackagesInfo.names;
+          # `pkgs/`の自作パッケージ。
+          # overlayを`pkgs`に当てた結果から、overlayが生やした名前の分だけを取り出す。
+          localPackages = lib.getAttrs localPackageNames pkgs // {
+            # CIでCUDAをビルドしないようCPU版のllama.cppを渡す。
+            # モデルとドラフトはラッパの検査の分岐を通すためだけの値で、
+            # 検査は推論しないので実在しなくてよい。
+            plamo-translate-cli = pkgs.plamo-translate-cli.override {
+              inherit (pkgsUnstable) llama-cpp;
+              model = "pfnet/plamo-3-translate-8b-GGUF:Q4_K_M";
+              draftModel = "pfnet/plamo-3-translate-0.8b-GGUF:Q4_0";
+            };
           };
-          # 評価時にしか走らない純粋なNixのテストをderivationへ包む。
-          #
-          # `bullet/comfyui/workflow/lib/*-test.nix`は`validate.nix`が`assert`で走らせるが、
-          # `lib/`のこれらは検査を使う側がホストの構成の中にあるため、
-          # そのホストを評価しない限り走らない。
-          # CIで必ず走らせたいので`checks`へ載せる。
-          #
-          # テストは全ての表明を通ると`true`を返す。
-          # `builtins.seq`でその値を強制してからビルドを成功させる。
-          mkNixTest =
-            name: test:
-            pkgs.runCommand name {
-              passed = builtins.seq (
-                assert test;
-                test
-              ) name;
-            } ''echo "$passed" > "$out"'';
-          systemd-specifier-test = mkNixTest "systemd-specifier-test" (
-            import ./lib/systemd-specifier-test.nix { inherit lib; }
-          );
-          machine-address6-test = mkNixTest "machine-address6-test" (
-            import ./lib/machine-address6-test.nix { inherit lib; }
-          );
-          comfyui-api-workflow-test = mkNixTest "comfyui-api-workflow-test" (
-            import ./lib/comfyui-api-workflow-test.nix { inherit lib; }
-          );
-          safetensors-fp16 = pkgs.callPackage ./pkgs/safetensors-fp16 { };
-          # Comfy-Orgの公式CLI。
-          comfy-cli = pkgs.callPackage ./pkgs/comfy-cli { };
-          # PLaMo Translateでローカル翻訳するCLI。
-          # CIでCUDAをビルドしないようCPU版のllama.cppを渡す。
-          # モデルとドラフトはラッパーの検査の分岐を通すためだけの値で、
-          # 検査は推論しないので実在しなくてよい。
-          plamo-translate-cli = pkgs.callPackage ./pkgs/plamo-translate-cli {
-            inherit ((importPkgsUnstable system)) llama-cpp;
-            model = "pfnet/plamo-3-translate-8b-GGUF:Q4_K_M";
-            draftModel = "pfnet/plamo-3-translate-0.8b-GGUF:Q4_0";
+          # 自作のパッケージが`passthru.tests`に置いたテスト。
+          # パッケージ自身の`checkPhase`に入れると、
+          # テストを書き換えただけでパッケージのstoreパスが変わってしまう時に使う。
+          # `<パッケージの名前>-test-<テストの名前>`という名前にする。
+          localPackageTests = lib.concatMapAttrs (
+            name: package: lib.mapAttrs' (test: lib.nameValuePair "${name}-test-${test}") (package.tests or { })
+          ) localPackages;
+          # 自作のパッケージの名前がnixpkgsの属性と重なっていないかのチェック。
+          # 重なった時に何が起きるかは`lib/local-packages-overlay.nix`に書いてある。
+          # 黙って差し替わらないように評価を止めて、移行するか名前を変えるかを決める。
+          # overlayはunstableにも当てるので、unstableの属性とも比べる。
+          # 強制をenv属性の中に置く理由は下の`nixosEvalChecks`と同じ。
+          localPackagesNameCollision =
+            let
+              collisions = lib.unique (
+                pkgs.localPackagesInfo.collisions ++ pkgsUnstable.localPackagesInfo.collisions
+              );
+            in
+            pkgs.runCommand "local-packages-name-collision" {
+              checked = builtins.seq (lib.assertMsg (
+                collisions == [ ]
+              ) "自作のパッケージの名前がnixpkgsの属性と重なっています: ${lib.concatStringsSep ", " collisions}") system;
+            } ''echo "$checked" > "$out"'';
+          # このシステムで動くホスト。
+          # 属性名を数えるだけでホストの構成を評価しないように、
+          # 構成の中の`pkgs`ではなく静的な`hostDefs`の`system`で絞る。
+          hostDefsOfSystem = lib.filterAttrs (_: def: def.system == system) hostDefs;
+          # NixOS構成の評価チェック(評価のみ、ビルドしない)。
+          # env属性の中の`builtins.seq`がinstantiation時にのみ完全評価を強制する。
+          # この形には2つの理由がある。
+          # チェック対象の値自体を`builtins.seq`や`writeText`のtextで強制すると、
+          # `nix flake show`のような属性値に触れるだけのコマンドでも、
+          # 全ホストの完全評価が走り数GBのメモリを消費してしまう。
+          # (`writeText`は関数適用の時点でtextを強制評価する。)
+          # かといって`drvPath`の文字列をそのままenv属性に含めると、
+          # 文字列コンテキスト経由でtoplevelへのビルド依存が発生してしまい、
+          # チェックのビルドがシステム全体の実ビルドになってしまう。
+          nixosEvalChecks = lib.mapAttrs' (
+            name: def:
+            lib.nameValuePair "nixos-eval-${name}" (
+              pkgs.runCommand "nixos-eval-${name}" {
+                evaluated = builtins.seq def.nixosSystem.config.system.build.toplevel.drvPath name;
+              } ''echo "$evaluated" > "$out"''
+            )
+          ) hostDefsOfSystem;
+          # home-manager構成の評価チェック
+          hmEvalChecks = lib.optionalAttrs (homeConfigurations ? ${system}) {
+            "hm-eval" = pkgs.runCommand "hm-eval-${system}" {
+              evaluated = builtins.seq homeConfigurations.${system}.activationPackage.drvPath system;
+            } ''echo "$evaluated" > "$out"'';
           };
-          # ワークフローを名前で呼ぶコマンド。
-          # ビルドの中でsandwichのテストが走る。
-          comfy-workflow = pkgs.callPackage ./pkgs/comfy-workflow {
-            inherit comfy-cli;
-            inherit (inputs) himari-src;
-          };
-          # アイドル中のComfyUIにメモリを解放させる常駐プロセス。
-          # ビルドの中でsandwichのテストが走る。
-          comfyui-idle-free-memory = pkgs.callPackage ./pkgs/comfyui-idle-free-memory {
-            inherit (inputs) himari-src;
-          };
-          # GGUFのチャットテンプレートを取り出して書き戻すコマンド。
-          # ビルドの中でsandwichのテストが走る。
-          patch-gguf-chat-template = pkgs.callPackage ./pkgs/patch-gguf-chat-template {
-            inherit (inputs) himari-src;
-          };
-          # PRコメントにnvd diffを投稿するコマンド。
-          # ビルドの中でsandwichのテストが走る。
-          nvd-pr-diff = pkgs.callPackage ./pkgs/nvd-pr-diff {
-            inherit (inputs) himari-src;
-          };
-          # certspotterが検知したイベントをMackerelのチェックへ繋ぐコマンド。
-          # ビルドの中でsandwichのテストが走る。
-          certspotter-mackerel = pkgs.callPackage ./pkgs/certspotter-mackerel {
-            inherit (inputs) himari-src;
-          };
-          # Open WebUIの利用者ごとの設定とプロフィールを宣言へ揃えるコマンド。
-          # ビルドの中でsandwichのテストが走る。
-          open-webui-user-settings-sync = pkgs.callPackage ./pkgs/open-webui-user-settings-sync {
-            inherit (inputs) himari-src;
-          };
-          # 暗号化されたリムーバブルデバイスをマウントしてアンマウントするコマンド。
-          # ビルドの中でsandwichのテストが走る。
-          removable-crypt = pkgs.callPackage ./pkgs/removable-crypt {
-            inherit (inputs) himari-src;
-          };
-          # GarageのS3バケットとキーを用意するコマンド。
-          # ビルドの中でsandwichのテストが走る。
-          garage-setup = pkgs.callPackage ./pkgs/garage-setup {
-            inherit (inputs) himari-src;
-          };
-          # flakeに定義された全ホストの閉包をGC rootとして登録するコマンド。
-          # ビルドの中でsandwichのテストが走る。
-          nix-gc-root-hosts = pkgs.callPackage ./pkgs/nix-gc-root-hosts {
-            inherit (inputs) himari-src;
-          };
-          # seminarへのレイテンシを見てTailscaleのexit nodeを切り替えるdispatcherスクリプト。
-          # ビルドの中でsandwichのテストが走る。
-          tailscale-exit-node = pkgs.callPackage ./pkgs/tailscale-exit-node {
-            inherit (inputs) himari-src;
-          };
-          # 有線接続中はWiFiの接続を切るNetworkManagerのdispatcherスクリプト。
-          # ビルドの中でsandwichのテストが走る。
-          wifi-wired-exclusive = pkgs.callPackage ./pkgs/wifi-wired-exclusive {
-            inherit (inputs) himari-src;
+          # 評価だけを確かめるチェック。
+          # 手元の`./check.sh`を軽くするためのもので、
+          # 実際にビルドする`ciJobs`では要らなくなる。
+          evalChecks = nixosEvalChecks // hmEvalChecks;
+          # 実装のファイルに書けない評価のテスト(`*.test.nix`)を、ファイルごとにderivationへ包んだもの。
+          nixTests = import ./test/collect-nix-tests.nix {
+            inherit lib;
+            inherit (pkgs) runCommand;
           };
           # リポジトリ内のPythonをpyrightで型検査するためのderivation群。
-          # ComfyUIのパッケージはoverlay経由でしか生えないが、
-          # perSystemの`pkgs`にはoverlayが載っていないため、
-          # overlayを載せる`importPkgsStable`から取る。
-          # overlayが返すのはcomfyui-nix自身が固定したnixpkgsで組んだ成果物で、
-          # 適用先の`pkgs`には依存しないため、どのpkgsから取っても結果は同じ。
           #
           # 取るのはCUDA版の`comfy-ui-cuda`にする。
           # bulletの`services.comfyui.gpuSupport = "cuda"`がこれを選ぶので、
-          # 型検査が要求するtorchなどの依存の閉包が、
+          # 型検査が要求するtorchなどの依存のクロージャが、
           # 実際に動かしている環境のものと共有される。
           # overlayの`comfyui`はCPUビルドで、
-          # そちらを取ると誰も実行しない環境の閉包を新たに取得することになる。
+          # そちらを取ると誰も実行しない環境のクロージャを新たに取得することになる。
           # 型検査用の環境は検査専用の依存を足すので、
           # bulletが使う環境そのものにはならない。
           pythonPyright = import ./lib/python-pyright.nix {
             inherit pkgs;
-            comfyui = (importPkgsStable system).comfy-ui-cuda;
-          };
-          # ComfyUIの自作カスタムノードのうち、
-          # ComfyUI本体に触れない部分のpytest。
-          # PythonのバージョンをComfyUIに揃えるため、
-          # 型検査と同じcomfyuiからインタプリタを取る。
-          comfyui-custom-node-test = import ./lib/comfyui-custom-node-test.nix {
-            inherit pkgs;
-            comfyui = (importPkgsStable system).comfy-ui-cuda;
+            comfyui = pkgs.comfy-ui-cuda;
           };
           # CUDA版torchを含むcomfyuiはaarch64では現実的にビルドできないため、
-          # 型検査とテストもx86_64-linuxでだけ提供します。
+          # 型検査はx86_64-linuxでだけ提供します。
           hasComfyui = system == "x86_64-linux";
         in
         {
+          # flake-partsが渡す既定の`pkgs`はoverlayを載せていないので、
+          # ホストと同じ設定とoverlayのものに差し替える。
+          _module.args.pkgs = importPkgsStable system;
+
           treefmt.config = {
             projectRootFile = "flake.nix";
             programs = {
@@ -512,137 +488,72 @@
                 command = pkgs.editorconfig-checker;
                 includes = [ "*" ];
               };
-              # himariが推奨するスタイルのhlint設定を上流のソースから借りる。
-              hlint.options = [ "--hint=${inputs.himari-src}/.hlint.yaml" ];
               zizmor.options = [ "--pedantic" ];
             };
           };
 
+          # CIのセルフホステッドランナが1回の`nix-fast-build`でまとめて処理するもの。
+          # `CHECK_OUTPUT=ciJobs ./check.sh`で実行する。
+          #
+          # `checks`との違いは、ホストとhome-managerの構成を評価するだけでなく実際にビルドして、
+          # ホストのブートテストも走らせること。
+          # 手元の`./check.sh`でこれらを毎回ビルドするのは重いので`checks`とは分けている。
+          #
+          # 1回にまとめる理由は、ホストの構成の評価が重いこと。
+          # 評価のチェック、ビルド、ブートテストを別々のジョブに分けると、
+          # 同じホストをジョブごとに評価し直すことになる。
+          # まとめれば評価は1回で済み、`nix-eval-jobs`のワーカへ並列に割り振られる。
+          #
+          # `nix-eval-jobs`は属性を名前の順に評価して、評価が済んだものからビルドが始まる。
+          # 全体の時間を決めるのは評価、ビルド、VMのブートが直列に並ぶブートテストなので、
+          # 先頭で評価されるように`boot-test-`という名前にしている。
+          ciJobs =
+            removeAttrs config.checks (builtins.attrNames evalChecks)
+            // lib.mapAttrs' (
+              name: def: lib.nameValuePair "nixos-${name}" def.nixosSystem.config.system.build.toplevel
+            ) hostDefsOfSystem
+            // lib.optionalAttrs (homeConfigurations ? ${system}) {
+              home-manager = homeConfigurations.${system}.activationPackage;
+            }
+            // lib.mapAttrs' (name: lib.nameValuePair "boot-test-${name}") (
+              lib.filterAttrs (name: _: hostDefsOfSystem ? ${name}) testNixosBoot
+            );
+
           checks =
-            let
-              # NixOS構成の評価チェック(評価のみ、ビルドしない)。
-              # env属性の中の`builtins.seq`がinstantiation時にのみ完全評価を強制する。
-              # この形には2つの理由がある。
-              # チェック対象の値自体を`builtins.seq`や`writeText`のtextで強制すると、
-              # `nix flake show`のような属性値に触れるだけのコマンドでも、
-              # 全ホストの完全評価が走り数GBのメモリを消費してしまう。
-              # (`writeText`は関数適用の時点でtextを強制評価する。)
-              # かといって`drvPath`の文字列をそのままenv属性に含めると、
-              # 文字列コンテキスト経由でtoplevelへのビルド依存が発生してしまい、
-              # チェックのビルドがシステム全体の実ビルドになってしまう。
-              nixosEvalChecks =
-                lib.mapAttrs'
-                  (
-                    name: nixosConfig:
-                    lib.nameValuePair "nixos-eval-${name}" (
-                      pkgs.runCommand "nixos-eval-${name}" {
-                        evaluated = builtins.seq nixosConfig.config.system.build.toplevel.drvPath name;
-                      } ''echo "$evaluated" > "$out"''
-                    )
-                  )
-                  (
-                    lib.filterAttrs (
-                      _: nixosConfig: nixosConfig.pkgs.stdenv.hostPlatform.system == system
-                    ) nixosConfigurations
-                  );
-              # home-manager構成の評価チェック
-              hmEvalChecks =
-                let
-                  hmConfig = homeConfigurations.${system} or null;
-                in
-                lib.optionalAttrs (hmConfig != null) {
-                  "hm-eval" = pkgs.runCommand "hm-eval-${system}" {
-                    evaluated = builtins.seq hmConfig.activationPackage.drvPath system;
-                  } ''echo "$evaluated" > "$out"'';
-                };
-            in
-            nixosEvalChecks
-            // hmEvalChecks
+            evalChecks
+            // nixTests
+            # `nix-fast-build`が見るのは`.#checks`だけで、
+            # `packages`へ置いただけではCIでビルドされないので、
+            # 自作のパッケージは全てビルドとderivationの中のテストを確かめる。
+            // localPackages
+            // localPackageTests
             // {
-              # `nix-fast-build`が見るのは`.#checks`だけで、
-              # `packages`へ置いただけではCIでビルドされません。
-              # ビルドが通ることと、
-              # derivationの中で走るテストが通ることをCIで保証したいパッケージは、
-              # `packages`と両方に並べます。
-              inherit
-                comfy-cli
-                comfyui-api-workflow-test
-                machine-address6-test
-                plamo-translate-cli
-                safetensors-fp16
-                systemd-specifier-test
-                ;
-              # 警告を残さないために、CIでだけ`-Werror`で組む。
-              certspotter-mackerel = certspotter-mackerel.override { werror = true; };
-              open-webui-user-settings-sync = open-webui-user-settings-sync.override { werror = true; };
-              removable-crypt = removable-crypt.override { werror = true; };
-              garage-setup = garage-setup.override { werror = true; };
-              nix-gc-root-hosts = nix-gc-root-hosts.override { werror = true; };
-              tailscale-exit-node = tailscale-exit-node.override { werror = true; };
-              wifi-wired-exclusive = wifi-wired-exclusive.override { werror = true; };
-              comfy-workflow = comfy-workflow.override { werror = true; };
-              comfyui-idle-free-memory = comfyui-idle-free-memory.override { werror = true; };
-              git-repo-subscribe = git-repo-subscribe.override { werror = true; };
-              patch-gguf-chat-template = patch-gguf-chat-template.override { werror = true; };
-              nvd-pr-diff = nvd-pr-diff.override { werror = true; };
-              # `renovate-recovery`ワークフローが直接実行するTypeScriptの型検査とテスト。
-              renovate-recovery = pkgs.callPackage ./pkgs/renovate-recovery { };
+              local-packages-name-collision = localPackagesNameCollision;
             }
             // lib.optionalAttrs hasComfyui {
               # リポジトリ内のPythonの型検査。
               pyright = pythonPyright.check;
-              inherit comfyui-custom-node-test;
             };
 
-          packages = {
-            # flake.lockの管理バージョンをre-exportすることで安定した利用を促進。
-            inherit (pkgs)
-              disko
-              fastfetch
-              git
-              home-manager
-              nix-fast-build
-              ;
-            # `renovate-recovery`ワークフローが`claude-code-action`へ渡す実行ファイル。
-            # NixOSのセルフホステッドランナーでは、
-            # アクションが自分でダウンロードするバイナリは動的リンクを解決できず動かないため、
-            # Nixでビルドしたものを指定します。
-            inherit (pkgs) bun;
-            inherit (importPkgsUnstable system) claude-code;
-            # Gitリポジトリを購読するためのツール。
-            inherit git-repo-subscribe;
-            # PRコメントにnvd diffを投稿するコマンド。
-            inherit nvd-pr-diff;
-            # safetensorsのF32テンソルをF16へ変換するコマンド。
-            inherit safetensors-fp16;
-            # Comfy-Orgの公式CLIと、それを包んでワークフローを名前で呼ぶコマンド。
-            inherit comfy-cli comfy-workflow;
-            # PLaMo Translateでローカル翻訳するCLI。
-            inherit plamo-translate-cli;
-            # アイドル中のComfyUIにメモリを解放させる常駐プロセス。
-            inherit comfyui-idle-free-memory;
-            # certspotterが検知したイベントをMackerelのチェックへ繋ぐコマンド。
-            inherit certspotter-mackerel;
-            # Open WebUIの利用者ごとの設定とプロフィールを宣言へ揃えるコマンド。
-            inherit open-webui-user-settings-sync;
-            # 暗号化されたリムーバブルデバイスをマウントしてアンマウントするコマンド。
-            inherit removable-crypt;
-            # GarageのS3バケットとキーを用意するコマンド。
-            inherit garage-setup;
-            # flakeに定義された全ホストの閉包をGC rootとして登録するコマンド。
-            inherit nix-gc-root-hosts;
-            # seminarへのレイテンシを見てTailscaleのexit nodeを切り替えるdispatcherスクリプト。
-            inherit tailscale-exit-node;
-            # 有線接続中はWiFiの接続を切るNetworkManagerのdispatcherスクリプト。
-            inherit wifi-wired-exclusive;
-            # GGUFのチャットテンプレートを取り出して書き戻すコマンド。
-            inherit patch-gguf-chat-template;
-          }
-          // lib.optionalAttrs hasComfyui {
-            # pyrightがPython環境とComfyUIのソースを辿るためのディレクトリ。
-            # `.envrc`が`.typecheck`という名前のout-linkを張ります。
-            typecheck = pythonPyright.typecheckDir;
-          };
+          packages =
+            localPackages
+            // {
+              # flake.lockの管理バージョンをre-exportすることで安定した利用を促進。
+              inherit (pkgs)
+                disko
+                fastfetch
+                git
+                home-manager
+                ;
+              # 既定の引数を足した`nix-fast-build`のラッパ。
+              # `./check.sh`がPATHに無い環境で`nix run`する対象です。
+              nix-fast-build = pkgs.nix-fast-build-wrapper;
+            }
+            // lib.optionalAttrs hasComfyui {
+              # pyrightがPython環境とComfyUIのソースを辿るためのディレクトリ。
+              # `.envrc`が`.typecheck`という名前のout-linkを張ります。
+              typecheck = pythonPyright.typecheckDir;
+            };
 
           devShells.default = pkgs.mkShell {
             buildInputs = with pkgs; [

@@ -2,7 +2,6 @@
   pkgs,
   lib,
   config,
-  inputs,
   ...
 }:
 let
@@ -11,8 +10,7 @@ let
   # exit nodeの設定を切り替えるスクリプト。
   # 中身は`pkgs/tailscale-exit-node`にあります。
   tailscaleExitNodeScript = lib.getExe (
-    pkgs.callPackage ../../pkgs/tailscale-exit-node {
-      inherit (inputs) himari-src;
+    pkgs.tailscale-exit-node.override {
       tailscale = config.services.tailscale.package;
     }
   );

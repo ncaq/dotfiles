@@ -24,7 +24,6 @@
   pkgs,
   config,
   inputs,
-  username,
   hardening,
   ...
 }:
@@ -77,27 +76,14 @@ let
       sha256 = oid;
     };
 
-  # 人がブラウザで新しい会話を始めた時に既定で効くシステムプロンプト。
-  #
-  # home-managerはNixOSのホストではシステムへ統合されているため、
-  # `lib/mk-nixos-system.nix`が読み込んだhome-manager側のオプションを直接引ける。
-  # 素材を二重に持たずに、他のサービスへ貼るのと同じプロンプトを渡せる。
-  #
-  # 値はderivationなので、評価時に`readFile`で開くとIFDになる。
-  # 同期のスクリプトが`jq --rawfile`で読めば評価は中身を知らずに済む。
-  #
-  # ミニ版を使うのは文字数の制約があるからではなく、
-  # `blue-prompt.nix`が登録する人格のModelと合わさるためである。
-  # `middleware.py`はModel側のシステムプロンプトを先に、
-  # ブラウザが積んだこちらを後に連結するので、両方が同時に効く。
-  # 人格を演じている最中にも噛み合う分量に絞っておきたい。
-  systemPromptFile = config.home-manager.users.${username}.prompt.chatAssistantMini;
-
-  # システムプロンプト以外に宣言する設定。
+  # `settings.ui`へ宣言する設定。
   #
   # ここに書いた鍵だけが上書きされ、書いていない鍵は実体のまま残る。
   # 全置換にしないのは、最後に選んだModelを覚える`models`のように、
   # 人が触った結果をそのまま持たせたい鍵が同じ階層に同居しているためである。
+  #
+  # ただしシステムプロンプトの`system`の鍵だけは例外で、同期のたびに取り除かれる。
+  # 同期へシステムプロンプトを渡していないためで、UIで設定しても次の同期で消える。
   #
   # `version`は書いてはならない。
   # `ChangelogModal.svelte`が閉じた時に実際の版を書き込む鍵で、
@@ -114,7 +100,7 @@ let
   # 設定画面のUIかソースの`Settings`配下の該当コンポーネントと突き合わせる。
   #
   # 既定値と同じ値は原則として書かない。
-  # 書ける理由が無い上に、
+  # 書く理由が無い上に、
   # 上流が既定を変えた時に宣言が黙って古い値を固定し続けてしまう。
   # 例外は`iframeSandbox`のように、
   # 既定のままであること自体を守りたい場合に限る。
@@ -222,9 +208,7 @@ let
 
   # 同期の中身は`pkgs/open-webui-user-settings-sync`にある。
   # 宣言はJSONのファイルにして、下のサービスの環境変数でパスを渡す。
-  sync = pkgs.callPackage ../../../../pkgs/open-webui-user-settings-sync {
-    inherit (inputs) himari-src;
-  };
+  sync = pkgs.open-webui-user-settings-sync;
 in
 {
   systemd.services.open-webui-user-settings-sync = {
@@ -259,7 +243,6 @@ in
       OPEN_WEBUI_DECLARED_SETTINGS_FILE = pkgs.writeText "open-webui-declared-settings.json" (
         builtins.toJSON declared
       );
-      OPEN_WEBUI_SYSTEM_PROMPT_FILE = systemPromptFile;
       OPEN_WEBUI_DECLARED_PROFILE_FILE = pkgs.writeText "open-webui-declared-profile.json" (
         builtins.toJSON profile
       );

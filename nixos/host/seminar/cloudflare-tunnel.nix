@@ -3,15 +3,15 @@
   ...
 }:
 let
-  forgejoAddr = config.machineAddresses.forgejo.guest;
-  mcpNixosAddr = config.machineAddresses.mcp-nixos.guest;
-  garageAddr = config.machineAddresses.garage.guest;
-  niks3PublicAddr = config.machineAddresses.niks3-public.guest;
+  forgejoAddr = config.machineAddresses.forgejo.guest6;
+  mcpNixosAddr = config.machineAddresses.mcp-nixos.guest6;
+  garageAddr = config.machineAddresses.garage.guest6;
+  niks3PublicAddr = config.machineAddresses.niks3-public.guest6;
 in
 {
   # To initialize (first time only):
   # ```
-  # nix run 'nixpkgs#cloudflared' -- tunnel login
+  # cloudflared tunnel login
   # ```
   # Then copy cert.pem content to cert_pem key and
   # tunnel credentials JSON to tunnel_credentials key in the sops file.
@@ -22,10 +22,10 @@ in
       default = "http_status:404";
       credentialsFile = config.sops.secrets."cloudflare-tunnel-credentials".path;
       ingress = {
-        "forgejo.ncaq.net" = "http://${forgejoAddr}:8080";
-        "mcp-nixos.ncaq.net" = "http://${mcpNixosAddr}:8080";
-        "garage.ncaq.net" = "http://${garageAddr}:3900";
-        "niks3-public.ncaq.net" = "http://${niks3PublicAddr}:5751";
+        "forgejo.ncaq.net" = "http://[${forgejoAddr}]:8080";
+        "mcp-nixos.ncaq.net" = "http://[${mcpNixosAddr}]:8080";
+        "garage.ncaq.net" = "http://[${garageAddr}]:3900";
+        "niks3-public.ncaq.net" = "http://[${niks3PublicAddr}]:5751";
       };
     };
   };
@@ -55,4 +55,6 @@ in
       };
     };
   };
+  # `cloudflared tunnel info`など
+  environment.systemPackages = [ config.services.cloudflared.package ];
 }

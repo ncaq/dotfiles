@@ -19,7 +19,7 @@
 -- オプションの一覧を見るためだけにコンテナが起きることになる。
 --
 -- 接続先とワークフローの出力ディレクトリは環境変数から取る。
--- どちらもNixの側が知っていて、`cli.nix`がラッパーへ埋め込む。
+-- どちらもNixの側が知っていて、`cli.nix`がラッパへ埋め込む。
 --
 -- 標準出力へ出すのは結果として使えるものだけにする。
 -- 保存されたファイルのパスと、`--dry-run`のAPI形式のプロンプトがそれで、
@@ -132,7 +132,10 @@ typeName (OtherWidget other) = other
 -- | ワークフローの名前とUI形式のJSONのパスと、残りのコマンドライン引数を受けて実行する。
 run :: (MonadLogger m, MonadThrow m, MonadUnliftIO m) => Text -> FilePath -> [String] -> m ()
 run name workflowPath argv = do
-  authority <- fromMaybe "127.0.0.1:8188" <$> lookupEnv "COMFYUI_AUTHORITY"
+  -- 既定の接続先はアドレスファミリを決めずに`localhost`で書く。
+  -- ComfyUI自身の既定の待ち受けは127.0.0.1なので、
+  -- `::1`に決め打ちすると何も設定していないComfyUIへ繋がらない。
+  authority <- fromMaybe "localhost:8188" <$> lookupEnv "COMFYUI_AUTHORITY"
   target <- either (throwM . ComfyFailure) pure (parseAuthority (convert authority))
   outputDir <- lookupEnv "COMFYUI_OUTPUT_DIR"
   workflowValue <- readWorkflow workflowPath
@@ -141,9 +144,9 @@ run name workflowPath argv = do
   Slots slots <- comfyJson (["workflow", "slots", convert workflowPath] <> targetArgs)
   params <- either (throwM . ComfyFailure) pure (parameters workflow slots)
   let parserInfo = optionsParser name params
-      -- 使い方に出る名前はラッパーの`comfy-<名前>`にする。
+      -- 使い方に出る名前はラッパの`comfy-<名前>`にする。
       -- 実際の実行ファイルは`comfy-workflow`だが、
-      -- 利用者が打つのはラッパーの方である。
+      -- 利用者が打つのはラッパの方である。
       handleResult :: (MonadUnliftIO n) => ParserResult a -> n a
       handleResult result =
         withProgName ("comfy-" <> convert name) (liftIO (handleParseResult result))

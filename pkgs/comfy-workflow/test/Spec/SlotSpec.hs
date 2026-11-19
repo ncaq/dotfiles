@@ -98,7 +98,7 @@ tests = describe "Slot" do
                 "data": null,
                 "error": {
                   "code": "cql_no_graph",
-                  "message": "cannot reach http://127.0.0.1:9/object_info",
+                  "message": "cannot reach http://[::1]:9/object_info",
                   "hint": "run `comfy launch` first"
                 }
               }|]
@@ -109,7 +109,7 @@ tests = describe "Slot" do
           , Just
               ComfyError
                 { code = "cql_no_graph"
-                , message = "cannot reach http://127.0.0.1:9/object_info"
+                , message = "cannot reach http://[::1]:9/object_info"
                 , hint = Just "run `comfy launch` first"
                 }
           )

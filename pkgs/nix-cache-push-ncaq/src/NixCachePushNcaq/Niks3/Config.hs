@@ -5,7 +5,7 @@
 -- * `NIKS3_PUSH_NCAQ_SECRETS_FILE`: sopsで暗号化されたシークレットファイル。
 -- * `NIKS3_PUSH_NCAQ_SERVER_URL`: niks3サーバのURL。
 -- * `XDG_RUNTIME_DIR`: 認証トークンの一時ファイルを置くディレクトリ。
---   無ければ`/dev/shm`を使う。選び方は`NixCachePushNcaq.Niks3.TokenFile`に書いてある。
+--   tmpfsでなければ他の候補を使う。選び方は`NixCachePushNcaq.Niks3.TokenFile`に書いてある。
 module NixCachePushNcaq.Niks3.Config
   ( Config (..)
   , configFrom
@@ -19,7 +19,7 @@ data Config = Config
   { secretsFile :: FilePath
   , serverUrl :: ServerUrl
   , runtimeDirectory :: Maybe FilePath
-  -- ^ ユーザ専用のtmpfs。ここに置いたファイルは、消し損ねてもディスクには書かれない。
+  -- ^ `XDG_RUNTIME_DIR`の値。普通はユーザ専用のtmpfsだが、ここでは確かめない。
   }
   deriving stock (Eq, Show)
 

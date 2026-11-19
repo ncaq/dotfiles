@@ -1,28 +1,42 @@
 -- | `niks3`へ認証トークンを渡すための一時ファイル。
 module NixCachePushNcaq.Niks3.TokenFile
-  ( tokenDirectoryFrom
+  ( systemTokenDirectory
+  , tokenDirectoryFrom
   , withTokenFile
   ) where
 
-import Data.Text.IO.Utf8 (hPutStr)
-import Himari
+import Data.Text.IO.Utf8 (hPutStr, readFile)
+import Himari hiding (readFile)
 import NixCachePushNcaq.AuthToken (AuthToken (..))
 import NixCachePushNcaq.Failure (ConfigFailure (..))
+import NixCachePushNcaq.MountInfo (Mount, fileSystemOf, parseMountInfo)
 
--- | 一時ファイルを置くtmpfsのディレクトリを選ぶ。
+-- | このマシンで一時ファイルを置くディレクトリを選ぶ。
 --
--- `XDG_RUNTIME_DIR`があればそれを使い、無ければ`/dev/shm`を使う。
--- どちらも無ければ`NoTmpfsDirectory`を投げる。
--- `/tmp`はtmpfsとは限らず、消し損ねた時に平文のトークンがディスクに残るので使わない。
-tokenDirectoryFrom :: (MonadIO m, MonadThrow m) => Maybe FilePath -> m FilePath
-tokenDirectoryFrom = \case
-  Just directory -> pure directory
-  Nothing -> do
-    exists <- doesDirectoryExist sharedMemory
-    unless exists (throwM NoTmpfsDirectory)
-    pure sharedMemory
+-- 候補は`XDG_RUNTIME_DIR`、`/dev/shm`、システムの一時ディレクトリの順で、
+-- `/proc/self/mountinfo`を読んで実際にtmpfsであるものだけを使う。
+-- 一時ディレクトリは、tmpfsにしている環境でだけ選ばれる。
+systemTokenDirectory :: (MonadIO m, MonadThrow m) => Maybe FilePath -> m FilePath
+systemTokenDirectory runtimeDirectory = do
+  mounts <- liftIO (readFile "/proc/self/mountinfo") >>= parseMountInfo
+  temporaryDirectory <- getTemporaryDirectory
+  tokenDirectoryFrom mounts (toList runtimeDirectory <> ["/dev/shm", temporaryDirectory])
+
+-- | 候補のうち、存在していてtmpfsの上にある最初のディレクトリを選ぶ。
+--
+-- tmpfsでない場所は、消し損ねた時に平文のトークンがディスクに残るので使わない。
+-- 使える候補が無ければ`NoTmpfsDirectory`を投げる。
+--
+-- シンボリックリンクを辿った先で判定する。返すのは渡された候補のままのパスである。
+tokenDirectoryFrom :: (MonadIO m, MonadThrow m) => [Mount] -> [FilePath] -> m FilePath
+tokenDirectoryFrom mounts candidates =
+  filterM onTmpfs candidates >>= maybe (throwM NoTmpfsDirectory) pure . preview _head
  where
-  sharedMemory = "/dev/shm"
+  onTmpfs candidate = do
+    exists <- doesDirectoryExist candidate
+    if exists
+      then (== Just "tmpfs") . fileSystemOf mounts <$> canonicalizePath candidate
+      else pure False
 
 -- | 認証トークンを書いた一時ファイルを作って処理に渡し、処理が終わったら消す。
 --
@@ -33,7 +47,7 @@ tokenDirectoryFrom = \case
 -- ファイルは所有者だけが読み書きできるモードで作られる。
 -- 処理が例外で終わった時も消す。
 -- SIGKILLで止められた時だけは残るので、tmpfsのディレクトリを渡すのは呼び出し側の責任である。
--- `tokenDirectoryFrom`で選べる。
+-- `systemTokenDirectory`で選べる。
 --
 -- 末尾に改行は付けない。
 withTokenFile :: (MonadUnliftIO m) => FilePath -> AuthToken -> (FilePath -> m a) -> m a

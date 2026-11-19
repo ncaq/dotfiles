@@ -14,7 +14,7 @@ import Himari
 import NixCachePushNcaq.Niks3.Command (Niks3 (..), systemNiks3)
 import NixCachePushNcaq.Niks3.Config (Config (..), configFrom)
 import NixCachePushNcaq.Niks3.StorePaths (storePathsFrom)
-import NixCachePushNcaq.Niks3.TokenFile (tokenDirectoryFrom, withTokenFile)
+import NixCachePushNcaq.Niks3.TokenFile (systemTokenDirectory, withTokenFile)
 import NixCachePushNcaq.Report (finish)
 import NixCachePushNcaq.Secrets (authTokenFrom)
 import NixCachePushNcaq.Signal (withTerminationAsExit)
@@ -27,9 +27,19 @@ import NixCachePushNcaq.Variable (processVariables)
 run :: (MonadLogger m, MonadThrow m, MonadUnliftIO m) => [String] -> m ()
 run args = withTerminationAsExit do
   lookupVariable <- processVariables
-  runWith systemSops systemNiks3 lookupVariable (liftIO Data.Text.IO.Utf8.getContents) args
+  runWith
+    systemSops
+    systemNiks3
+    systemTokenDirectory
+    lookupVariable
+    (liftIO Data.Text.IO.Utf8.getContents)
+    args
 
--- | コマンドの呼び出しと環境変数を引く関数と、標準入力を読む処理を受け取って実行する。
+-- | コマンドの呼び出しと、一時ファイルの置き場所を選ぶ処理と、
+-- 環境変数を引く関数と、標準入力を読む処理を受け取って実行する。
+--
+-- 置き場所を選ぶ処理は`XDG_RUNTIME_DIR`の値を受け取る。
+-- 実物はマウントの一覧を読んでtmpfsを探すので、テストでは決まった場所を返すものに替える。
 --
 -- 引数があれば、全て`niks3 push`の後ろへ渡す。
 -- 引数が無ければ、標準入力からstoreパスを1行ずつ読んで渡す。
@@ -47,13 +57,14 @@ runWith
   :: (MonadLogger m, MonadThrow m, MonadUnliftIO m)
   => Sops m
   -> Niks3 m
+  -> (Maybe FilePath -> m FilePath)
   -> (Text -> Maybe Text)
   -> m Text
   -> [String]
   -> m ()
-runWith sops niks3 lookupVariable readInput args = finish do
+runWith sops niks3 selectDirectory lookupVariable readInput args = finish do
   config <- configFrom lookupVariable
-  directory <- tokenDirectoryFrom config.runtimeDirectory
+  directory <- selectDirectory config.runtimeDirectory
   token <- authTokenFrom sops "api_token" config.secretsFile
   paths <- if null args then storePathsFrom <$> readInput else pure args
   if null paths

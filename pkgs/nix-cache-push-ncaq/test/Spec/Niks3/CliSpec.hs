@@ -5,9 +5,11 @@ import Data.Text (isInfixOf)
 import Data.Text.IO.Utf8 (readFile)
 import Fixture (failingSops, recordingSops, runCapturing, variables, withSecretsFile)
 import Himari hiding (readFile)
+import NixCachePushNcaq.Failure (ConfigFailure (..))
 import NixCachePushNcaq.Niks3.Cli (runWith)
 import NixCachePushNcaq.Niks3.Command (Niks3 (..))
 import NixCachePushNcaq.Niks3.ServerUrl (ServerUrl)
+import NixCachePushNcaq.Sops (Sops)
 import Test.Sandwich
 
 -- | 偽の`niks3`が受け取った呼び出し。
@@ -40,6 +42,20 @@ secretsAt path =
     , ("XDG_RUNTIME_DIR", convert (takeDirectory path))
     ]
 
+-- | 一時ファイルの置き場所を、`XDG_RUNTIME_DIR`に渡したディレクトリに決めて`runWith`を呼ぶ。
+--
+-- 実物の選び方はtmpfsかどうかを調べるので、テストの作業ディレクトリは選ばれない。
+-- 選び方そのものは`TokenFileSpec`で確かめる。
+runGiven
+  :: (MonadLogger m, MonadThrow m, MonadUnliftIO m)
+  => Sops m
+  -> Niks3 m
+  -> (Text -> Maybe Text)
+  -> m Text
+  -> [String]
+  -> m ()
+runGiven sops niks3 = runWith sops niks3 (maybe (throwM NoTmpfsDirectory) pure)
+
 -- | 読まないはずの標準入力が読まれた。
 data InputRead = InputRead
   deriving stock (Eq, Show)
@@ -58,7 +74,7 @@ tests = describe "runWith" do
       pushes <- newIORef []
       let args = ["/nix/store/a", "/nix/store/b"]
       runCapturing
-        ( runWith
+        ( runGiven
             (recordingSops decrypts)
             (recordingNiks3 pushes ExitSuccess)
             (secretsAt path)
@@ -76,7 +92,7 @@ tests = describe "runWith" do
       decrypts <- newIORef []
       pushes <- newIORef []
       runCapturing
-        ( runWith
+        ( runGiven
             (recordingSops decrypts)
             (recordingNiks3 pushes ExitSuccess)
             (secretsAt path)
@@ -93,7 +109,7 @@ tests = describe "runWith" do
         pushes <- newIORef []
         (result, _) <-
           runCapturing
-            ( runWith
+            ( runGiven
                 (recordingSops decrypts)
                 (recordingNiks3 pushes ExitSuccess)
                 (secretsAt path)
@@ -109,7 +125,7 @@ tests = describe "runWith" do
       pushes <- newIORef []
       _ <-
         runCapturing
-          ( runWith
+          ( runGiven
               (recordingSops decrypts)
               (recordingNiks3 pushes ExitSuccess)
               (secretsAt path)
@@ -122,7 +138,7 @@ tests = describe "runWith" do
       decrypts <- newIORef []
       pushes <- newIORef []
       runCapturing
-        ( runWith
+        ( runGiven
             (recordingSops decrypts)
             (recordingNiks3 pushes (ExitFailure 3))
             (secretsAt path)
@@ -138,7 +154,7 @@ tests = describe "runWith" do
       pushes <- newIORef []
       (result, logs) <-
         runCapturing
-          ( runWith
+          ( runGiven
               (recordingSops decrypts)
               (recordingNiks3 pushes ExitSuccess)
               (secretsAt path)
@@ -155,7 +171,7 @@ tests = describe "runWith" do
       pushes <- newIORef []
       (result, logs) <-
         runCapturing
-          (runWith failingSops (recordingNiks3 pushes ExitSuccess) (secretsAt path) unreadInput [])
+          (runGiven failingSops (recordingNiks3 pushes ExitSuccess) (secretsAt path) unreadInput [])
       result `shouldBe` Left (ExitFailure 1)
       length logs `shouldBe` 1
       filter (isInfixOf (convert path)) logs `shouldBe` logs
@@ -165,7 +181,7 @@ tests = describe "runWith" do
     pushes <- newIORef []
     (result, logs) <-
       runCapturing
-        ( runWith
+        ( runGiven
             (recordingSops decrypts)
             (recordingNiks3 pushes ExitSuccess)
             (variables [])

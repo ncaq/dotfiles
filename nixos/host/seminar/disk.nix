@@ -5,6 +5,35 @@ let
   # 下の`environment.etc.crypttab`へ渡して切り替えの後に解錠する。
   # マッパ名とデバイスをdiskoの定義から取ることで、
   # ディスクの追加や改名で片方だけ変えて食い違うことを防ぐ。
+  # `/mnt/noa`のbtrfsを構成するメンバの番号。
+  # ディスクを足す時はここを増やす。
+  # diskoの定義とmkfsの引数とbcacheのキャッシュモードの設定が、
+  # この一覧から作られる。
+  noaMemberIndices = lib.range 0 3;
+  noaMappers = map (index: "/dev/mapper/noa${toString index}") noaMemberIndices;
+  # メンバ1台分のdiskoの定義。
+  # bcacheのデバイスの上にGPTを切って、
+  # 全体をLUKSにする。
+  # `extraLuksContent`はLUKSの定義に足す属性で、
+  # ファイルシステムを持つメンバだけが渡す。
+  mkNoaMember = index: extraLuksContent: {
+    type = "disk";
+    device = "/dev/bcache${toString index}";
+    content = {
+      type = "gpt";
+      partitions.luks = {
+        size = "100%";
+        content = {
+          type = "luks";
+          name = "noa${toString index}";
+          initrdUnlock = false;
+          settings.allowDiscards = true;
+          passwordFile = "/tmp/secret.password";
+        }
+        // extraLuksContent;
+      };
+    };
+  };
   lateUnlockLuksPartitions =
     lib.filter
       (
@@ -143,131 +172,56 @@ in
       # # 新しいディスクはこれから書く分に使われる。
       # # 全体を配り直すbalanceは時間がかかるので、
       # # 必要な時にだけ別途実行する。
-      noa0 = {
-        type = "disk";
-        device = "/dev/bcache0";
+      #
+      # ファイルシステムの定義は先頭のメンバのLUKSの中に置く。
+      noa0 = mkNoaMember 0 {
         content = {
-          type = "gpt";
-          partitions = {
-            luks = {
-              size = "100%";
-              content = {
-                type = "luks";
-                name = "noa0";
-                initrdUnlock = false;
-                settings.allowDiscards = true;
-                passwordFile = "/tmp/secret.password";
-                content = {
-                  type = "btrfs";
-                  mountpoint = "/mnt/noa";
-                  mountOptions = [
-                    "noatime"
-                    "compress=zstd"
-                    # ディスクが欠けてマウントできなくても、
-                    # emergency modeに落ちずに起動を続ける。
-                    # noaは起動に必須ではないので、
-                    # sshで入って調べられる方を優先する。
-                    # マウントされていない時にルートのSSDへ書き込まれないための対策は、
-                    # `noa.nix`と使う側のユニットの`RequiresMountsFor`にある。
-                    "nofail"
-                    # `degraded`は付けない。
-                    # 付けていると、
-                    # 解錠が済んだメンバだけで黙ってマウントされて、
-                    # 残りのメンバが古くなる。
-                    # ディスクが欠けた時は、
-                    # 状況を確かめてから手で`-o degraded`を付けてマウントする。
-                  ];
-                  subvolumes = {
-                    # snapperスナップショットの転送先。
-                    # 独立したサブボリュームにすることで、
-                    # noa config(SUBVOLUME = /mnt/noa)のタイムラインスナップショットに含まれず、
-                    # バックアップの二重保存を避けられる。
-                    # `mountpoint`は指定しない。
-                    # トップレベルがマウントされている`/mnt/noa/snapshot-backup`として参照でき、
-                    # 別途マウントユニットを生成するとブート時のマウント失敗でemergencyに落ちるため。
-                    "snapshot-backup" = { };
-                  };
-                  extraArgs = [
-                    "-d raid1"
-                    "/dev/mapper/noa0"
-                    "/dev/mapper/noa1"
-                    "/dev/mapper/noa2"
-                    "/dev/mapper/noa3"
-                    "-m raid1c3"
-                    "/dev/mapper/noa0"
-                    "/dev/mapper/noa1"
-                    "/dev/mapper/noa2"
-                    "/dev/mapper/noa3"
-                    "-s raid1c3"
-                    "/dev/mapper/noa0"
-                    "/dev/mapper/noa1"
-                    "/dev/mapper/noa2"
-                    "/dev/mapper/noa3"
-                  ];
-                };
-              };
-            };
+          type = "btrfs";
+          mountpoint = "/mnt/noa";
+          mountOptions = [
+            "noatime"
+            "compress=zstd"
+            # ディスクが欠けてマウントできなくても、
+            # emergency modeに落ちずに起動を続ける。
+            # noaは起動に必須ではないので、
+            # sshで入って調べられる方を優先する。
+            # マウントされていない時にルートのSSDへ書き込まれないための対策は、
+            # `noa.nix`と使う側のユニットの`RequiresMountsFor`にある。
+            "nofail"
+            # `degraded`は付けない。
+            # 付けていると、
+            # 解錠が済んだメンバだけで黙ってマウントされて、
+            # 残りのメンバが古くなる。
+            # ディスクが欠けた時は、
+            # 状況を確かめてから手で`-o degraded`を付けてマウントする。
+          ];
+          subvolumes = {
+            # snapperスナップショットの転送先。
+            # 独立したサブボリュームにすることで、
+            # noa config(SUBVOLUME = /mnt/noa)のタイムラインスナップショットに含まれず、
+            # バックアップの二重保存を避けられる。
+            # `mountpoint`は指定しない。
+            # トップレベルがマウントされている`/mnt/noa/snapshot-backup`として参照でき、
+            # 別途マウントユニットを生成するとブート時のマウント失敗でemergencyに落ちるため。
+            "snapshot-backup" = { };
           };
+          extraArgs = [
+            "-d raid1"
+          ]
+          ++ noaMappers
+          ++ [ "-m raid1c3" ]
+          ++ noaMappers
+          ++ [ "-s raid1c3" ]
+          ++ noaMappers;
         };
       };
-      noa1 = {
-        type = "disk";
-        device = "/dev/bcache1";
-        content = {
-          type = "gpt";
-          partitions = {
-            luks = {
-              size = "100%";
-              content = {
-                type = "luks";
-                name = "noa1";
-                initrdUnlock = false;
-                settings.allowDiscards = true;
-                passwordFile = "/tmp/secret.password";
-              };
-            };
-          };
-        };
-      };
-      noa2 = {
-        type = "disk";
-        device = "/dev/bcache2";
-        content = {
-          type = "gpt";
-          partitions = {
-            luks = {
-              size = "100%";
-              content = {
-                type = "luks";
-                name = "noa2";
-                initrdUnlock = false;
-                settings.allowDiscards = true;
-                passwordFile = "/tmp/secret.password";
-              };
-            };
-          };
-        };
-      };
-      noa3 = {
-        type = "disk";
-        device = "/dev/bcache3";
-        content = {
-          type = "gpt";
-          partitions = {
-            luks = {
-              size = "100%";
-              content = {
-                type = "luks";
-                name = "noa3";
-                initrdUnlock = false;
-                settings.allowDiscards = true;
-                passwordFile = "/tmp/secret.password";
-              };
-            };
-          };
-        };
-      };
-    };
+    }
+    # 残りのメンバはLUKSだけを持つ。
+    // lib.listToAttrs (
+      map (index: lib.nameValuePair "noa${toString index}" (mkNoaMember index { })) (
+        lib.tail noaMemberIndices
+      )
+    );
   };
   swapDevices = [
     {
@@ -314,13 +268,10 @@ in
     in
     "${partition.content.name} ${partition.device} - ${lib.concatStringsSep "," options}\n"
   ) lateUnlockLuksPartitions;
-  systemd.tmpfiles.rules = [
-    # writebackモードを有効化
-    # `-`を付けて、
-    # ディスクが欠けてbcacheのデバイスが無くてもsystemd-tmpfilesを失敗させない。
-    "w- /sys/block/bcache0/bcache/cache_mode - - - - writeback"
-    "w- /sys/block/bcache1/bcache/cache_mode - - - - writeback"
-    "w- /sys/block/bcache2/bcache/cache_mode - - - - writeback"
-    "w- /sys/block/bcache3/bcache/cache_mode - - - - writeback"
-  ];
+  # writebackモードを有効化
+  # `-`を付けて、
+  # ディスクが欠けてbcacheのデバイスが無くてもsystemd-tmpfilesを失敗させない。
+  systemd.tmpfiles.rules = map (
+    index: "w- /sys/block/bcache${toString index}/bcache/cache_mode - - - - writeback"
+  ) noaMemberIndices;
 }

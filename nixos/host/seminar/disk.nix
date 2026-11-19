@@ -1,10 +1,5 @@
 { config, lib, ... }:
 let
-  # initrdで解錠しないLUKSのパーティション。
-  # `initrdUnlock = false`にしたものは誰も解錠しなくなるので、
-  # 下の`environment.etc.crypttab`へ渡して切り替えの後に解錠する。
-  # マッパ名とデバイスをdiskoの定義から取ることで、
-  # ディスクの追加や改名で片方だけ変えて食い違うことを防ぐ。
   # `/mnt/noa`のbtrfsを構成するメンバの番号。
   # ディスクを足す時はここを増やす。
   # diskoの定義とmkfsの引数とbcacheのキャッシュモードの設定が、
@@ -34,6 +29,11 @@ let
       };
     };
   };
+  # initrdで解錠しないLUKSのパーティション。
+  # `initrdUnlock = false`にしたものは誰も解錠しなくなるので、
+  # 下の`environment.etc.crypttab`へ渡して切り替えの後に解錠する。
+  # マッパ名とデバイスをdiskoの定義から取ることで、
+  # ディスクの追加や改名で片方だけ変えて食い違うことを防ぐ。
   lateUnlockLuksPartitions =
     lib.filter
       (

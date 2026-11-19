@@ -145,10 +145,6 @@
       permissions = {
         defaultMode = "auto";
         allow = [
-          "Bash(fd:*)"
-          "Bash(ls:*)"
-          "Bash(readlink:*)"
-          "Bash(rg:*)"
           "mcp__plugin_claude-code-home-manager_backlog__count_issues"
           "mcp__plugin_claude-code-home-manager_backlog__count_notifications"
           "mcp__plugin_claude-code-home-manager_backlog__get_categories"

@@ -12,6 +12,8 @@ data ConfigFailure
     MissingVariable Text
   | -- | 認証トークンの一時ファイルを置けるtmpfsのディレクトリが無い。
     NoTmpfsDirectory
+  | -- | マウントの一覧を読めなかった。パーサの理由を持つ。
+    UnparsableMountInfo Text
   deriving stock (Eq, Show)
 
 instance Exception ConfigFailure where
@@ -19,6 +21,7 @@ instance Exception ConfigFailure where
     MissingVariable name -> "環境変数" <> convert name <> "が必要です"
     NoTmpfsDirectory ->
       "認証トークンの一時ファイルを置けるtmpfsがありません。XDG_RUNTIME_DIRを設定してください"
+    UnparsableMountInfo reason -> "マウントの一覧を読めませんでした: " <> convert reason
 
 -- | シークレットから認証トークンを得られない理由。
 data SecretsFailure

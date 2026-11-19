@@ -51,6 +51,7 @@ import ComfyWorkflow.Seed (seedTargets)
 import ComfyWorkflow.Slot (Slot (..), Slots (..), WidgetType (..))
 import ComfyWorkflow.Workflow (Workflow (..), parseWorkflow)
 import Data.Text (intercalate)
+import Data.Text.IO.Utf8 qualified
 import Himari
 import Options.Applicative
 import System.Random (randomRIO)
@@ -173,7 +174,7 @@ run name workflowPath argv = do
       -- 投げる時と同じ順で同じものを通す。
       -- ここは「何が投げられるのか」を確かめるための出口なので、
       -- 実際に投げる内容と食い違っていては用を成さない。
-      liftIO (putStrLn (convert (convert (encodePretty (prepare baseSeed)) :: Text)))
+      putLine (convert (encodePretty (prepare baseSeed)))
     else do
       -- 先に全件を投入してから順に待つ。
       -- 1件ずつ待ってから次を投げると、
@@ -193,7 +194,14 @@ run name workflowPath argv = do
         case result of
           Failed reason -> throwM (ComfyFailure ("生成が失敗しました: " <> reason))
           Succeeded files ->
-            for_ files \file -> liftIO (putStrLn (maybe file (</> file) outputDir))
+            for_ files \file ->
+              putLine (convert (maybe file (</> file) outputDir))
+
+-- | 結果を1行として標準出力へ出す。
+--
+-- `LANG`に左右されないように、常にUTF-8で書く。
+putLine :: (MonadIO m) => Text -> m ()
+putLine = liftIO . Data.Text.IO.Utf8.putStrLn
 
 readWorkflow :: (MonadIO m, MonadThrow m) => FilePath -> m Value
 readWorkflow workflowPath =

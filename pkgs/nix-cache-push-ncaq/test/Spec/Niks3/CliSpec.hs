@@ -54,7 +54,7 @@ runGiven
   -> m Text
   -> [String]
   -> m ()
-runGiven sops niks3 = runWith sops niks3 (maybe (throwM NoTmpfsDirectory) pure)
+runGiven sops niks3 = runWith sops niks3 (maybe (throwM (NoTmpfsDirectory [])) pure)
 
 -- | 読まないはずの標準入力が読まれた。
 data InputRead = InputRead

@@ -75,9 +75,13 @@ tests = describe "TokenFile" do
           >>= (`shouldBe` second)
     it "tmpfsの候補が無ければ失敗にする" do
       withCandidates \first second ->
-        tokenDirectoryFrom (tmpfsAt []) [first, second] `shouldThrow` (== NoTmpfsDirectory)
+        tokenDirectoryFrom (tmpfsAt []) [first, second]
+          `shouldThrow` (== NoTmpfsDirectory [first, second])
     it "候補が無ければ失敗にする" do
-      tokenDirectoryFrom (tmpfsAt []) [] `shouldThrow` (== NoTmpfsDirectory)
+      tokenDirectoryFrom (tmpfsAt []) [] `shouldThrow` (== NoTmpfsDirectory [])
+    it "失敗の説明に調べた候補を出す" do
+      displayException (NoTmpfsDirectory ["/run/user/1000", "/dev/shm"])
+        `shouldBe` "認証トークンの一時ファイルを置けません。候補のどれも、存在するtmpfsの上のディレクトリではありません: /run/user/1000, /dev/shm"
   describe "systemTokenDirectory" do
     -- どこを選ぶかは環境によるので固定しない。選んだ場所がtmpfsであることだけを確かめる。
     it "このマシンのマウントの一覧でtmpfsである場所を選ぶ" do

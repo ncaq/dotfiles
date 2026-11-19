@@ -131,14 +131,18 @@ in
       # # 稼働中のファイルシステムへ後からディスクを足す時は、
       # # diskoのformatを使わずに手動で作る。
       # # 上と同じ`make-bcache`とキャッシュセットへの接続の後に、
-      # # 既存のディスクと同じ大きさのパーティションを作ってLUKSで初期化する。
-      # sudo sgdisk --new=1:2048:15628052479 --typecode=1:8300 --change-name=1:disk-noa3-luks /dev/bcache3
+      # # パーティションを作ってLUKSで初期化する。
+      # sudo sgdisk --new=1:0:0 --typecode=1:8300 --change-name=1:disk-noa3-luks /dev/bcache3
       # sudo cryptsetup luksFormat --type luks2 /dev/disk/by-partlabel/disk-noa3-luks
       # sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/disk/by-partlabel/disk-noa3-luks
       # # `settings.allowDiscards`に当たるフラグをLUKSのヘッダへ残す。
       # sudo systemd-cryptsetup attach noa3 /dev/disk/by-partlabel/disk-noa3-luks - tpm2-device=auto
       # sudo cryptsetup refresh --allow-discards --persistent noa3
       # sudo btrfs device add /dev/mapper/noa3 /mnt/noa
+      # # 足しただけでは既存のデータは動かず、
+      # # 新しいディスクはこれから書く分に使われる。
+      # # 全体を配り直すbalanceは時間がかかるので、
+      # # 必要な時にだけ別途実行する。
       noa0 = {
         type = "disk";
         device = "/dev/bcache0";

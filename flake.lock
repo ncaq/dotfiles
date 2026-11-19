@@ -299,11 +299,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1795008856,
-        "narHash": "sha256-1wXPZMm6tzFBpRdpo26V9Cz60ZkUjWW4y5cmyPxc6fk=",
+        "lastModified": 1795077895,
+        "narHash": "sha256-tzjEaFjNKbfW6yAm1upFGSemylp/pPf0Ge5V/3fdTfM=",
         "owner": "ncaq",
         "repo": "konoka",
-        "rev": "4e03010b1341fa62b7942215814e7f55e53efef7",
+        "rev": "6eb12b5589dd678de4f364100adef8b5c380b742",
         "type": "github"
       },
       "original": {
@@ -343,11 +343,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1795003076,
-        "narHash": "sha256-XHaWPk6eakP2otu3o7mAQ2ARlHM7qIV3ppyhj9fyxRA=",
+        "lastModified": 1795088909,
+        "narHash": "sha256-QVyM2INwcmj9pEenKVBFGs19n34hKzfw+A6QeFaHPNk=",
         "owner": "Mic92",
         "repo": "niks3",
-        "rev": "38c867bd99e3a569915eb9aec6ce8fc408c74c3c",
+        "rev": "95b8da7c3ef54b911c1fdea858feca310d7221ec",
         "type": "github"
       },
       "original": {

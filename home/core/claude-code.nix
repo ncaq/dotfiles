@@ -14,7 +14,6 @@
   pkgs,
   pkgs-unstable,
   config,
-  codingAgentWorkDirFullPath,
   systemdPackage,
   ...
 }:

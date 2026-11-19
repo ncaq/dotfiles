@@ -1,13 +1,14 @@
 -- | アクセストークンの読み方のテスト。
 module Spec.AccessTokenSpec (tests) where
 
+import Data.Text.IO.Utf8 (writeFile)
 import GithubRunnerRegistrationToken.AccessToken (AccessToken, readAccessToken)
 import GithubRunnerRegistrationToken.Failure (ConfigFailure (..))
-import Himari
+import Himari hiding (writeFile)
 import Test.Sandwich
 
 -- | 一時ディレクトリに中身を書いたファイルを置いて、そのパスを渡す。
-withTokenFile :: (MonadUnliftIO m) => String -> (FilePath -> m a) -> m a
+withTokenFile :: (MonadUnliftIO m) => Text -> (FilePath -> m a) -> m a
 withTokenFile content action =
   withSystemTempDirectory "github-runner-registration-token-test" \directory -> do
     let path = directory </> "pat"

@@ -2,8 +2,9 @@
 module Spec.Niks3.CliSpec (tests) where
 
 import Data.Text (isInfixOf)
+import Data.Text.IO.Utf8 (readFile)
 import Fixture (failingSops, recordingSops, runCapturing, variables, withSecretsFile)
-import Himari
+import Himari hiding (readFile)
 import NixCachePushNcaq.Niks3.Cli (runWith)
 import NixCachePushNcaq.Niks3.Command (Niks3 (..))
 import NixCachePushNcaq.Niks3.ServerUrl (ServerUrl)
@@ -12,7 +13,7 @@ import Test.Sandwich
 -- | 偽の`niks3`が受け取った呼び出し。
 data Push = Push
   { tokenFile :: FilePath
-  , token :: String
+  , token :: Text
   -- ^ 呼ばれた時点でトークンのファイルに書かれていた中身。
   , serverUrl :: ServerUrl
   , arguments :: [String]

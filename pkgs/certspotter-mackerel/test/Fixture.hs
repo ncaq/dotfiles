@@ -13,7 +13,8 @@ module Fixture
 import CertspotterMackerel.Event (Event (..))
 import CertspotterMackerel.EventLogPath (EventLogPath (..))
 import CertspotterMackerel.Notification (Notification (..))
-import Himari
+import Data.Text.IO.Utf8 (writeFile)
+import Himari hiding (writeFile)
 
 -- | 連想リストを、環境変数を引く関数にする。
 variables :: [(Text, Text)] -> Text -> Maybe Text

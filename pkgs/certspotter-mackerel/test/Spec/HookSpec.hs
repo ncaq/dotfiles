@@ -7,8 +7,9 @@ import CertspotterMackerel.Event (Event (..))
 import CertspotterMackerel.EventLog (readEvents)
 import CertspotterMackerel.Hook (recordNotification, toEvent)
 import CertspotterMackerel.Notification (Notification (..))
+import Data.Text.IO.Utf8 (writeFile)
 import Fixture
-import Himari
+import Himari hiding (writeFile)
 import Test.Sandwich
 
 -- | 記録して、ログのイベントを返す。時刻は実行のたびに変わるので0に揃える。
@@ -104,7 +105,7 @@ tests = do
       , jsonFilename
       }
   -- 中身が`Nothing`ならファイルを作らない。
-  unreadable :: [(String, Maybe String)]
+  unreadable :: [(String, Maybe Text)]
   unreadable =
     [ ("無くても", Nothing)
     , ("壊れていても", Just "not json")

@@ -1,8 +1,9 @@
 -- | Admin APIのトークンの読み方のテスト。
 module Spec.AdminTokenSpec (tests) where
 
+import Data.Text.IO.Utf8 (writeFile)
 import GarageSetup.AdminToken (AdminToken, readAdminToken)
-import Himari
+import Himari hiding (writeFile)
 import Test.Sandwich
 
 tests :: TopSpec

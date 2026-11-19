@@ -6,7 +6,8 @@
 module Spec.ReportSpec (tests) where
 
 import Data.Text (intercalate)
-import Himari
+import Data.Text.IO.Utf8 (readFile)
+import Himari hiding (readFile)
 import NvdPrDiff.Report
 import Test.Sandwich
 
@@ -206,7 +207,7 @@ tests = describe "parseReport" do
   -- bulletの2世代を`nvd --color never diff`した出力をそのまま置いてある。
   -- 手で組み立てた入力と違い、nvdを更新して出力の形が変わった時にここで気付ける。
   it "bulletの実際の出力を読む" do
-    actual <- convert <$> liftIO (readFile "test/fixture/nvd-diff-bullet.txt")
+    actual <- liftIO (readFile "test/fixture/nvd-diff-bullet.txt")
     parseReport actual
       `shouldBe` Right
         Report

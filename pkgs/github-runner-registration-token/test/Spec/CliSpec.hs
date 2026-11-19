@@ -2,10 +2,11 @@
 module Spec.CliSpec (tests) where
 
 import Data.Text (isInfixOf)
+import Data.Text.IO.Utf8 (readFile, writeFile)
 import Fixture
 import GithubRunnerRegistrationToken.Cli (runWith)
 import GithubRunnerRegistrationToken.TokenFile (tokenFileName)
-import Himari
+import Himari hiding (readFile, writeFile)
 import Test.Sandwich
 
 -- | ログを端末へ出さずに集めて、結果と共に返す。

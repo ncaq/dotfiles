@@ -7,7 +7,8 @@ module Fixture
   , withSecretsFile
   ) where
 
-import Himari
+import Data.Text.IO.Utf8 (writeFile)
+import Himari hiding (writeFile)
 import NixCachePushNcaq.Failure (SecretsFailure (..))
 import NixCachePushNcaq.SecretKey (SecretKey)
 import NixCachePushNcaq.Sops (Sops (..))

@@ -1,7 +1,8 @@
 -- | 認証トークンの一時ファイルのテスト。
 module Spec.Niks3.TokenFileSpec (tests) where
 
-import Himari
+import Data.Text.IO.Utf8 (readFile)
+import Himari hiding (readFile)
 import NixCachePushNcaq.Niks3.TokenFile (withTokenFile)
 import System.Posix.Files (fileMode, getFileStatus, intersectFileModes)
 import Test.Sandwich

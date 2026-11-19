@@ -3,12 +3,11 @@
 {
   home.packages = with pkgs; [
     cachix
-    # `secrets/cachix.yaml`から認証トークンを復号して`cachix push ncaq`するラッパ。
-    cachix-push-ncaq
     hydra-check # Hydraでのビルド状況を調べます。
-    # `secrets/niks3-{public,private}.yaml`から認証トークンを復号して、
-    # 自分のniks3サーバに`niks3 push`するラッパ。
-    niks3-push-ncaq
+    # sopsで暗号化されたシークレットから認証トークンを復号して、
+    # 自分のバイナリキャッシュへ転送するラッパ。
+    # `cachix-push-ncaq`と`niks3-push-ncaq-{public,private}`を提供します。
+    nix-cache-push-ncaq
     nix-diff
     # 既定の引数を足した`nix-fast-build`のラッパ。
     nix-fast-build-wrapper

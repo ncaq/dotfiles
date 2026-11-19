@@ -5,12 +5,13 @@
 module Spec.CertificateSpec (tests) where
 
 import CertspotterMackerel.Certificate (Certificate (..), readCertificate)
+import Data.Text.IO.Utf8 (writeFile)
 import Fixture
-import Himari
+import Himari hiding (writeFile)
 import Test.Sandwich
 
 -- | 中身を書いたファイルを証明書として読む。
-readContent :: (MonadUnliftIO m) => String -> m (Either Text Certificate)
+readContent :: (MonadUnliftIO m) => Text -> m (Either Text Certificate)
 readContent content =
   withWorkspace \workspace -> do
     let path = workspace.root </> "content.json"

@@ -4,7 +4,8 @@
 module Spec.RegisterSpec (tests) where
 
 import Data.List (sort)
-import Himari
+import Data.Text.IO.Utf8 (writeFile)
+import Himari hiding (writeFile)
 import NixGcRootHosts.Config (Config (..))
 import NixGcRootHosts.Installable (Installable)
 import NixGcRootHosts.Nix (Nix (..))

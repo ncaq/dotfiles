@@ -16,8 +16,9 @@ import CertspotterMackerel.Notification (Notification (..), notificationFrom)
 import CertspotterMackerel.Status (Status (..))
 import CertspotterMackerel.Summary (Summary)
 import Data.Text (isInfixOf)
+import Data.Text.IO.Utf8 (appendFile)
 import Fixture
-import Himari
+import Himari hiding (appendFile)
 import Test.Sandwich
 
 -- | アラート期間。

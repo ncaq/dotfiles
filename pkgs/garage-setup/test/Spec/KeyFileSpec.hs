@@ -1,8 +1,9 @@
 -- | キーファイルの書き出しのテスト。
 module Spec.KeyFileSpec (tests) where
 
+import Data.Text.IO.Utf8 (readFile)
 import GarageSetup.KeyFile (writeSecretFile)
-import Himari
+import Himari hiding (readFile)
 import System.Posix.Files (fileMode, getFileStatus, intersectFileModes)
 import Test.Sandwich
 

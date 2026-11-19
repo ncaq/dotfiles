@@ -1,8 +1,9 @@
 -- | 登録トークンのファイルへの書き出しのテスト。
 module Spec.TokenFileSpec (tests) where
 
+import Data.Text.IO.Utf8 (readFile)
 import GithubRunnerRegistrationToken.TokenFile (tokenFileName, writeTokenFile)
-import Himari
+import Himari hiding (readFile)
 import System.Posix.Files (fileMode, getFileStatus, intersectFileModes)
 import Test.Sandwich
 

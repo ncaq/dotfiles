@@ -92,9 +92,9 @@
       # ちらつきが少ないことが期待できる表示方法を選びます。
       tui = "fullscreen";
       # statuslineを設定します。
-      # ccstatuslineを使用して豪華な表示にします。
       statusLine = {
         type = "command";
+        # ccstatuslineを使用して豪華な表示にします。
         command = lib.getExe pkgs.ccstatusline;
       };
       inputNeededNotifEnabled = true; # 入力待ちのときに通知を出す。

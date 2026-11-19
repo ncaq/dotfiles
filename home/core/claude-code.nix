@@ -1,6 +1,6 @@
 # Claude Codeの全ホストに共通の設定。
 #
-# プラグイン、権限、フックなどを`programs.claude-code`で宣言して、
+# 設定を`programs.claude-code`で宣言して、
 # ユーザの`~/.claude/settings.json`として展開する。
 # `settings.json`では表せない種類の設定は、
 # home-managerが生成するラッパプログラムの引数として渡す。

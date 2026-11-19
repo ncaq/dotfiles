@@ -11,7 +11,7 @@ in
 {
   # To initialize (first time only):
   # ```
-  # nix run 'nixpkgs#cloudflared' -- tunnel login
+  # cloudflared tunnel login
   # ```
   # Then copy cert.pem content to cert_pem key and
   # tunnel credentials JSON to tunnel_credentials key in the sops file.
@@ -55,4 +55,6 @@ in
       };
     };
   };
+  # `cloudflared tunnel info`など
+  environment.systemPackages = [ config.services.cloudflared.package ];
 }

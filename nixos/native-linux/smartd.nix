@@ -4,6 +4,9 @@
 # セルフテストのような重い処理は予約しないので、
 # クライアントマシンでも有効にします。
 # WSLでは物理ディスクが見えないので対象外です。
+{ pkgs, ... }:
 {
   services.smartd.enable = true;
+  # `smartctl`
+  environment.systemPackages = [ pkgs.smartmontools ];
 }

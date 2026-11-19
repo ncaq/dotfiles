@@ -16,6 +16,7 @@
 #
 # - `ErP Ready`を`Disabled`にして、電源オフ状態でもNICへ給電する
 # - `Resume By PCI-E Device`を`Enabled`にして、NICからの起床を許可する
+{ pkgs, ... }:
 {
   networking.networkmanager.ensureProfiles.profiles.basic-ethernet.ethernet = {
     # NetworkManagerのkeyfileではフラグを数値で指定します。
@@ -24,4 +25,6 @@
     # 日常的なLANの通信で意図せず起きてしまいます。
     wake-on-lan = 64;
   };
+  # `ethtool`で`Wake-on`を確かめる
+  environment.systemPackages = [ pkgs.ethtool ];
 }

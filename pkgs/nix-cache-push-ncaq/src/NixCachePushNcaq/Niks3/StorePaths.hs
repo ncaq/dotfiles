@@ -3,8 +3,11 @@ module NixCachePushNcaq.Niks3.StorePaths
   ( storePathsFrom
   ) where
 
-import Himari
+import Data.Text (lines)
+import Himari hiding (lines)
 
 -- | 1行に1つずつ書かれたstoreパスを読む。空の行は捨てる。
-storePathsFrom :: String -> [String]
-storePathsFrom = filter (/= mempty) . lines
+--
+-- 結果はそのまま`niks3`の引数にするので`String`で返す。
+storePathsFrom :: Text -> [String]
+storePathsFrom = fmap convert . filter (/= mempty) . lines

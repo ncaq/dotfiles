@@ -3,7 +3,7 @@ module NixCachePushNcaq.Niks3.TokenFile
   ( withTokenFile
   ) where
 
-import Data.Text.IO (hPutStr)
+import Data.Text.IO.Utf8 (hPutStr)
 import Himari
 import NixCachePushNcaq.AuthToken (AuthToken (..))
 

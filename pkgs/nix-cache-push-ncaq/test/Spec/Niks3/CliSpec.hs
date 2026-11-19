@@ -46,7 +46,7 @@ data InputRead = InputRead
 instance Exception InputRead
 
 -- | 読まれたら失敗する標準入力。読まないことを確かめるために使う。
-unreadInput :: (MonadThrow m) => m String
+unreadInput :: (MonadThrow m) => m Text
 unreadInput = throwM InputRead
 
 tests :: TopSpec

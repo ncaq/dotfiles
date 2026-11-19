@@ -9,6 +9,7 @@ module NixCachePushNcaq.Niks3.Cli
   , runWith
   ) where
 
+import Data.Text.IO.Utf8 qualified
 import Himari
 import NixCachePushNcaq.Niks3.Command (Niks3 (..), systemNiks3)
 import NixCachePushNcaq.Niks3.Config (Config (..), configFrom)
@@ -27,7 +28,7 @@ run :: (MonadLogger m, MonadThrow m, MonadUnliftIO m) => [String] -> m ()
 run args = do
   exitOnTermination
   lookupVariable <- processVariables
-  runWith systemSops systemNiks3 lookupVariable (liftIO getContents) args
+  runWith systemSops systemNiks3 lookupVariable (liftIO Data.Text.IO.Utf8.getContents) args
 
 -- | コマンドの呼び出しと環境変数を引く関数と、標準入力を読む処理を受け取って実行する。
 --
@@ -44,7 +45,7 @@ runWith
   => Sops m
   -> Niks3 m
   -> (Text -> Maybe Text)
-  -> m String
+  -> m Text
   -> [String]
   -> m ()
 runWith sops niks3 lookupVariable readInput args = finish do

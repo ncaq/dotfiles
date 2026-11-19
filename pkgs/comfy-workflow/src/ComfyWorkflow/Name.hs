@@ -78,7 +78,7 @@ resolveNames reserved candidateLists =
   ]
  where
   positions = [0 .. length candidateLists - 1]
-  depth = maximum (0 : fmap length candidateLists)
+  depth = maximumBound 0 (fmap length candidateLists)
   resolved :: Map Int Text
   (resolved, _) = foldl' step (mempty, reserved) [0 .. depth - 1]
   step (done, taken) level =

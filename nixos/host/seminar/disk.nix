@@ -108,6 +108,7 @@
               content = {
                 type = "luks";
                 name = "noa0";
+                initrdUnlock = false;
                 settings.allowDiscards = true;
                 passwordFile = "/tmp/secret.password";
                 content = {
@@ -173,6 +174,7 @@
               content = {
                 type = "luks";
                 name = "noa1";
+                initrdUnlock = false;
                 settings.allowDiscards = true;
                 passwordFile = "/tmp/secret.password";
               };
@@ -191,6 +193,7 @@
               content = {
                 type = "luks";
                 name = "noa2";
+                initrdUnlock = false;
                 settings.allowDiscards = true;
                 passwordFile = "/tmp/secret.password";
               };
@@ -208,36 +211,25 @@
   ];
   boot = {
     kernelModules = [ "bcache" ];
-    initrd = {
-      availableKernelModules = [ "bcache" ];
-      # TPM2による復号の脅威モデルは`boot.nix`の`nixos-root`と同じ。
-      # `nofail`は`/mnt/noa`のマウントオプションの`nofail`と同じ理由で、
-      # ディスクが欠けて解錠できなくても起動を続けるために付ける。
-      luks.devices = {
-        "noa0" = {
-          device = "/dev/disk/by-partlabel/disk-noa0-luks";
-          crypttabExtraOpts = [
-            "tpm2-device=auto"
-            "nofail"
-          ];
-        };
-        "noa1" = {
-          device = "/dev/disk/by-partlabel/disk-noa1-luks";
-          crypttabExtraOpts = [
-            "tpm2-device=auto"
-            "nofail"
-          ];
-        };
-        "noa2" = {
-          device = "/dev/disk/by-partlabel/disk-noa2-luks";
-          crypttabExtraOpts = [
-            "tpm2-device=auto"
-            "nofail"
-          ];
-        };
-      };
-    };
+    initrd.availableKernelModules = [ "bcache" ];
   };
+  # noaのLUKSはinitrdではなく、
+  # ルートへ切り替わった後に解錠する。
+  # TPM2による復号の脅威モデルは`boot.nix`の`nixos-root`と同じ。
+  #
+  # `nofail`は`/mnt/noa`のマウントオプションの`nofail`と同じ理由で、
+  # ディスクが欠けて解錠できなくても起動を続けるために付ける。
+  # `nofail`を付けた解錠は`cryptsetup.target`より前に順序付けられないので、
+  # initrdに置くと解錠が終わる前にルートへ切り替わる。
+  # 途中だった解錠は止められたままやり直されず、
+  # ディスクが揃っていてもマウントされなくなる。
+  # noaは起動に必須ではないので、
+  # 解錠を待つものが`/mnt/noa`のマウントだけになる切り替えの後に置く。
+  environment.etc.crypttab.text = ''
+    noa0 /dev/disk/by-partlabel/disk-noa0-luks - tpm2-device=auto,discard,nofail
+    noa1 /dev/disk/by-partlabel/disk-noa1-luks - tpm2-device=auto,discard,nofail
+    noa2 /dev/disk/by-partlabel/disk-noa2-luks - tpm2-device=auto,discard,nofail
+  '';
   systemd.tmpfiles.rules = [
     # writebackモードを有効化
     # `-`を付けて、

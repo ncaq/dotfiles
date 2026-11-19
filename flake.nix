@@ -404,11 +404,6 @@
           # 手元の`./check.sh`を軽くするためのもので、
           # 実際にビルドする`ciJobs`では要らなくなる。
           evalChecks = nixosEvalChecks // hmEvalChecks;
-          # `renovate-recovery`ワークフローのClaude Codeへ渡すプラグインやプロンプトなどの設定一式。
-          renovate-recovery-claude-config = pkgs.callPackage ./pkgs/renovate-recovery/claude-config.nix {
-            konokaPlugins = inputs.konoka.packages.${system};
-            git-hooks = inputs.git-hooks.packages.${system}.default;
-          };
           # 実装のファイルに書けない評価のテスト(`*.test.nix`)を、ファイルごとにderivationへ包んだもの。
           nixTests = import ./test/collect-nix-tests.nix {
             inherit lib;
@@ -534,10 +529,6 @@
             // localPackageTests
             // {
               local-packages-name-collision = localPackagesNameCollision;
-              # `renovate-recovery`ワークフローのClaude Codeへ渡す設定一式。
-              # 使われるのはRenovateのPRが失敗した時だけなので、
-              # konokaやgit-hooksの更新で壊れたことに普段のCIで気付けるようにします。
-              inherit renovate-recovery-claude-config;
             }
             // lib.optionalAttrs hasComfyui {
               # リポジトリ内のPythonの型検査。
@@ -557,14 +548,6 @@
               # 既定の引数を足した`nix-fast-build`のラッパ。
               # `./check.sh`がPATHに無い環境で`nix run`する対象です。
               nix-fast-build = pkgs.nix-fast-build-wrapper;
-              # `renovate-recovery`ワークフローが`claude-code-action`へ渡す実行ファイル。
-              # NixOSのセルフホステッドランナでは、
-              # アクションが自分でダウンロードするバイナリは動的リンクを解決できず動かないため、
-              # Nixでビルドしたものを指定します。
-              inherit (pkgs) bun;
-              inherit (importPkgsUnstable system) claude-code;
-              # 同じワークフローのClaude Codeへ渡すプラグインやプロンプトなどの設定一式。
-              inherit renovate-recovery-claude-config;
             }
             // lib.optionalAttrs hasComfyui {
               # pyrightがPython環境とComfyUIのソースを辿るためのディレクトリ。

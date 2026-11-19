@@ -34,7 +34,7 @@ nixpkgsにあってもinputと版を揃えたいものも同じように足し�
 以下の制約があります。
 
 - `pkgs/`直下の`.nix`は全てパッケージとして`callPackage`されるので、補助のファイルは直下に置けない
-- `package.nix`を持つディレクトリでは、`renovate-recovery/claude-config.nix`のような他の`.nix`は拾われない
+- `package.nix`を持つディレクトリでは、他の`.nix`は拾われない
 - `package.nix`を持たないサブディレクトリは入れ子の属性集合になり、flakeの`packages`と`checks`では扱えない
 - `callPackage`で包むと`.override`が変わって困るもの(`lib/linux-xanmod-server.nix`のカーネル)は`lib/`に置く
 

@@ -11,37 +11,37 @@
 #   * このファイルをプロジェクトルートに .hlint.yaml としてコピー
 #   * または .hlint.yaml から参照: - arguments: [--hint=path/to/this/.hlint.yaml]
 - arguments:
-    - "-XGHC2024"
-    - "-XApplicativeDo"
-    - "-XBlockArguments"
-    - "-XCPP"
-    - "-XDefaultSignatures"
-    - "-XDerivingVia"
-    - "-XDuplicateRecordFields"
-    - "-XFunctionalDependencies"
-    - "-XLexicalNegation"
-    - "-XLinearTypes"
-    - "-XMonadComprehensions"
-    - "-XMultiWayIf"
-    - "-XNegativeLiterals"
-    - "-XNoFieldSelectors"
-    - "-XNoImplicitPrelude"
-    - "-XOverloadedLabels"
-    - "-XOverloadedRecordDot"
-    - "-XOverloadedStrings"
-    - "-XParallelListComp"
-    - "-XPatternSynonyms"
-    - "-XQualifiedDo"
-    - "-XQuantifiedConstraints"
-    - "-XQuasiQuotes"
-    - "-XRecordWildCards"
-    - "-XRecursiveDo"
-    - "-XStrictData"
-    - "-XTemplateHaskell"
-    - "-XTypeData"
-    - "-XTypeFamilies"
-    - "-XTypeFamilyDependencies"
-    - "-XViewPatterns"
+    - -XGHC2024
+    - -XApplicativeDo
+    - -XBlockArguments
+    - -XCPP
+    - -XDefaultSignatures
+    - -XDerivingVia
+    - -XDuplicateRecordFields
+    - -XFunctionalDependencies
+    - -XLexicalNegation
+    - -XLinearTypes
+    - -XMonadComprehensions
+    - -XMultiWayIf
+    - -XNegativeLiterals
+    - -XNoFieldSelectors
+    - -XNoImplicitPrelude
+    - -XOverloadedLabels
+    - -XOverloadedRecordDot
+    - -XOverloadedStrings
+    - -XParallelListComp
+    - -XPatternSynonyms
+    - -XQualifiedDo
+    - -XQuantifiedConstraints
+    - -XQuasiQuotes
+    - -XRecordWildCards
+    - -XRecursiveDo
+    - -XStrictData
+    - -XTemplateHaskell
+    - -XTypeData
+    - -XTypeFamilies
+    - -XTypeFamilyDependencies
+    - -XViewPatterns
 - group:
     enabled: true
     name: generalise
@@ -50,10 +50,10 @@
     name: dollar
 - group:
     enabled: true
-    name: "use-lens"
+    name: use-lens
 - group:
     enabled: true
-    name: "use-th-quotes"
+    name: use-th-quotes
 - functions:
     - message: Discards error info. Use eitherDecode instead to get error messages.
       name: Data.Aeson.decode
@@ -69,30 +69,30 @@
       within: []
 - functions:
     - message: Deprecated alias since aeson 2.2.0.0. Use eitherDecode instead.
-      name: "Data.Aeson.decode'"
+      name: Data.Aeson.decode'
       within: []
     - message: Deprecated alias since aeson 2.2.0.0. Use eitherDecodeStrict instead.
-      name: "Data.Aeson.decodeStrict'"
+      name: Data.Aeson.decodeStrict'
       within: []
     - message: Deprecated alias since aeson 2.2.0.0. Use eitherDecodeFileStrict instead.
-      name: "Data.Aeson.decodeFileStrict'"
+      name: Data.Aeson.decodeFileStrict'
       within: []
 - functions:
     - message: Deprecated alias since aeson 2.2.0.0. Use eitherDecode instead.
-      name: "Data.Aeson.eitherDecode'"
+      name: Data.Aeson.eitherDecode'
       within: []
     - message: Deprecated alias since aeson 2.2.0.0. Use eitherDecodeStrict instead.
-      name: "Data.Aeson.eitherDecodeStrict'"
+      name: Data.Aeson.eitherDecodeStrict'
       within: []
     - message: Deprecated alias since aeson 2.2.0.0. Use eitherDecodeFileStrict instead.
-      name: "Data.Aeson.eitherDecodeFileStrict'"
+      name: Data.Aeson.eitherDecodeFileStrict'
       within: []
 - functions:
     - message: Deprecated alias since aeson 2.2.0.0. Use throwDecode instead.
-      name: "Data.Aeson.throwDecode'"
+      name: Data.Aeson.throwDecode'
       within: []
     - message: Deprecated alias since aeson 2.2.0.0. Use throwDecodeStrict instead.
-      name: "Data.Aeson.throwDecodeStrict'"
+      name: Data.Aeson.throwDecodeStrict'
       within: []
 - functions:
     - message: Discards error info. Use parseEither instead to get error messages.
@@ -144,13 +144,13 @@
       name: Data.ByteString.foldl1
       within: []
     - message: "Partial: throws on empty ByteString. Use foldl' with explicit initial value."
-      name: "Data.ByteString.foldl1'"
+      name: Data.ByteString.foldl1'
       within: []
     - message: "Partial: throws on empty ByteString. Use foldr with explicit initial value."
       name: Data.ByteString.foldr1
       within: []
     - message: "Partial: throws on empty ByteString. Use foldr' with explicit initial value."
-      name: "Data.ByteString.foldr1'"
+      name: Data.ByteString.foldr1'
       within: []
     - message: "Partial: throws on empty ByteString. Use fold with explicit initial value."
       name: Data.ByteString.maximum
@@ -178,13 +178,13 @@
       name: Data.ByteString.Char8.foldl1
       within: []
     - message: "Partial: throws on empty ByteString. Use foldl' with explicit initial value."
-      name: "Data.ByteString.Char8.foldl1'"
+      name: Data.ByteString.Char8.foldl1'
       within: []
     - message: "Partial: throws on empty ByteString. Use foldr with explicit initial value."
       name: Data.ByteString.Char8.foldr1
       within: []
     - message: "Partial: throws on empty ByteString. Use foldr' with explicit initial value."
-      name: "Data.ByteString.Char8.foldr1'"
+      name: Data.ByteString.Char8.foldr1'
       within: []
     - message: "Partial: throws on empty ByteString. Use fold with explicit initial value."
       name: Data.ByteString.Char8.maximum
@@ -212,13 +212,13 @@
       name: Data.ByteString.Lazy.foldl1
       within: []
     - message: "Partial: throws on empty ByteString. Use foldl' with explicit initial value."
-      name: "Data.ByteString.Lazy.foldl1'"
+      name: Data.ByteString.Lazy.foldl1'
       within: []
     - message: "Partial: throws on empty ByteString. Use foldr with explicit initial value."
       name: Data.ByteString.Lazy.foldr1
       within: []
     - message: "Partial: throws on empty ByteString. Use foldr' with explicit initial value."
-      name: "Data.ByteString.Lazy.foldr1'"
+      name: Data.ByteString.Lazy.foldr1'
       within: []
     - message: "Partial: throws on empty ByteString. Use fold with explicit initial value."
       name: Data.ByteString.Lazy.maximum
@@ -249,13 +249,13 @@
       name: Data.ByteString.Lazy.Char8.foldl1
       within: []
     - message: "Partial: throws on empty ByteString. Use foldl' with explicit initial value."
-      name: "Data.ByteString.Lazy.Char8.foldl1'"
+      name: Data.ByteString.Lazy.Char8.foldl1'
       within: []
     - message: "Partial: throws on empty ByteString. Use foldr with explicit initial value."
       name: Data.ByteString.Lazy.Char8.foldr1
       within: []
     - message: "Partial: throws on empty ByteString. Use foldr' with explicit initial value."
-      name: "Data.ByteString.Lazy.Char8.foldr1'"
+      name: Data.ByteString.Lazy.Char8.foldr1'
       within: []
     - message: "Partial: throws on empty ByteString. Use fold with explicit initial value."
       name: Data.ByteString.Lazy.Char8.maximum
@@ -286,13 +286,13 @@
       name: Data.ByteString.Short.foldl1
       within: []
     - message: "Partial: throws on empty ShortByteString. Use foldl' with explicit initial value."
-      name: "Data.ByteString.Short.foldl1'"
+      name: Data.ByteString.Short.foldl1'
       within: []
     - message: "Partial: throws on empty ShortByteString. Use foldr with explicit initial value."
       name: Data.ByteString.Short.foldr1
       within: []
     - message: "Partial: throws on empty ShortByteString. Use foldr' with explicit initial value."
-      name: "Data.ByteString.Short.foldr1'"
+      name: Data.ByteString.Short.foldr1'
       within: []
     - message: "Partial: throws on out-of-bounds. Use Data.ByteString.Short.indexMaybe or Data.ByteString.Short.(!?) instead"
       name: Data.ByteString.Short.index
@@ -330,22 +330,22 @@
       name: Data.Char.chr
       within: []
 - functions:
-    - message: "Exceptions don't propagate to parent thread. Use async or withAsync from UnliftIO.Async instead."
+    - message: Exceptions don't propagate to parent thread. Use async or withAsync from UnliftIO.Async instead.
       name: forkIO
       within: []
-    - message: "Exceptions don't propagate to parent thread. Use asyncBound or withAsyncBound from UnliftIO.Async instead."
+    - message: Exceptions don't propagate to parent thread. Use asyncBound or withAsyncBound from UnliftIO.Async instead.
       name: forkOS
       within: []
-    - message: "Exceptions don't propagate to parent thread. Use asyncOn or withAsyncOn from UnliftIO.Async instead."
+    - message: Exceptions don't propagate to parent thread. Use asyncOn or withAsyncOn from UnliftIO.Async instead.
       name: forkOn
       within: []
-    - message: "Exceptions don't propagate to parent thread. Use asyncWithUnmask or withAsyncWithUnmask from UnliftIO.Async instead."
+    - message: Exceptions don't propagate to parent thread. Use asyncWithUnmask or withAsyncWithUnmask from UnliftIO.Async instead.
       name: forkIOWithUnmask
       within: []
-    - message: "Exceptions don't propagate to parent thread. Use asyncOnWithUnmask or withAsyncOnWithUnmask from UnliftIO.Async instead."
+    - message: Exceptions don't propagate to parent thread. Use asyncOnWithUnmask or withAsyncOnWithUnmask from UnliftIO.Async instead.
       name: forkOnWithUnmask
       within: []
-    - message: "Deprecated and exceptions don't propagate to parent thread. Use asyncWithUnmask or withAsyncWithUnmask from UnliftIO.Async instead."
+    - message: Deprecated and exceptions don't propagate to parent thread. Use asyncWithUnmask or withAsyncWithUnmask from UnliftIO.Async instead.
       name: forkWithUnmask
       within: []
     - message: No automatic cancellation or exception handling. Use UnliftIO.Async instead.
@@ -354,12 +354,12 @@
     - message: Prefer structured cancellation with cancel or withAsync. Use UnliftIO.Async instead.
       name: killThread
       within: []
-    - message: "Almost impossible to use correctly. Consider typed-process or UnliftIO.Async."
+    - message: Almost impossible to use correctly. Consider typed-process or UnliftIO.Async.
       name: forkProcess
       within: []
 - functions:
-    - message: "Use Data.Map.lookup or Data.Map.!? instead"
-      name: "Data.Map.!"
+    - message: Use Data.Map.lookup or Data.Map.!? instead
+      name: Data.Map.!
       within: []
     - message: "Partial: throws on empty map. Use Data.Map.lookupMin instead."
       name: Data.Map.findMin
@@ -386,8 +386,8 @@
       name: Data.Map.deleteFindMax
       within: []
 - functions:
-    - message: "Use Data.Map.Strict.lookup or Data.Map.Strict.!? instead"
-      name: "Data.Map.Strict.!"
+    - message: Use Data.Map.Strict.lookup or Data.Map.Strict.!? instead
+      name: Data.Map.Strict.!
       within: []
     - message: "Partial: throws on empty map. Use Data.Map.Strict.lookupMin instead."
       name: Data.Map.Strict.findMin
@@ -414,8 +414,8 @@
       name: Data.Map.Strict.deleteFindMax
       within: []
 - functions:
-    - message: "Use Data.Map.Lazy.lookup or Data.Map.Lazy.!? instead"
-      name: "Data.Map.Lazy.!"
+    - message: Use Data.Map.Lazy.lookup or Data.Map.Lazy.!? instead
+      name: Data.Map.Lazy.!
       within: []
     - message: "Partial: throws on empty map. Use Data.Map.Lazy.lookupMin instead."
       name: Data.Map.Lazy.findMin
@@ -464,8 +464,8 @@
       name: Data.Set.deleteFindMax
       within: []
 - functions:
-    - message: "Use Data.IntMap.lookup or Data.IntMap.!? instead"
-      name: "Data.IntMap.!"
+    - message: Use Data.IntMap.lookup or Data.IntMap.!? instead
+      name: Data.IntMap.!
       within: []
     - message: "Partial: throws on empty map. Use Data.IntMap.lookupMin instead."
       name: Data.IntMap.findMin
@@ -480,8 +480,8 @@
       name: Data.IntMap.deleteFindMax
       within: []
 - functions:
-    - message: "Use Data.IntMap.Strict.lookup or Data.IntMap.Strict.!? instead"
-      name: "Data.IntMap.Strict.!"
+    - message: Use Data.IntMap.Strict.lookup or Data.IntMap.Strict.!? instead
+      name: Data.IntMap.Strict.!
       within: []
     - message: "Partial: throws on empty map. Use Data.IntMap.Strict.lookupMin instead."
       name: Data.IntMap.Strict.findMin
@@ -496,8 +496,8 @@
       name: Data.IntMap.Strict.deleteFindMax
       within: []
 - functions:
-    - message: "Use Data.IntMap.Lazy.lookup or Data.IntMap.Lazy.!? instead"
-      name: "Data.IntMap.Lazy.!"
+    - message: Use Data.IntMap.Lazy.lookup or Data.IntMap.Lazy.!? instead
+      name: Data.IntMap.Lazy.!
       within: []
     - message: "Partial: throws on empty map. Use Data.IntMap.Lazy.lookupMin instead."
       name: Data.IntMap.Lazy.findMin
@@ -543,7 +543,7 @@
       name: Data.Text.Lazy.Encoding.decodeUtf8
       within: []
 - functions:
-    - message: "Don't throw in pure code. Use throwM in MonadThrow context."
+    - message: Don't throw in pure code. Use throwM in MonadThrow context.
       name: throw
       within: []
     - message: Use typed exceptions with throwM instead of throwString.
@@ -552,7 +552,7 @@
     - message: Use typed exceptions with throwM instead of throwIO.
       name: throwIO
       within: []
-    - message: "Avoid in production code. For development placeholders, consider typed holes instead."
+    - message: Avoid in production code. For development placeholders, consider typed holes instead.
       name: error
       within: []
     - message: Remember to implement before release. Consider typed holes for better error messages.
@@ -561,19 +561,19 @@
     - message: Use proper error handling
       name: errorWithoutStackTrace
       within: []
-    - message: "Deprecated. Use error instead, which now includes stack traces."
+    - message: Deprecated. Use error instead, which now includes stack traces.
       name: errorWithStackTrace
       within: []
 - extensions:
-    - message: "Defers ambiguity errors to call sites, making debugging harder"
+    - message: Defers ambiguity errors to call sites, making debugging harder
       name:
         - AllowAmbiguousTypes
       within: []
-    - message: "Defers type errors to runtime, defeating Haskell's type safety"
+    - message: Defers type errors to runtime, defeating Haskell's type safety
       name:
         - DeferTypeErrors
       within: []
-    - message: "Causes unexpected type defaulting (e.g., show.read defaults to ())"
+    - message: Causes unexpected type defaulting (e.g., show.read defaults to ())
       name:
         - ExtendedDefaultRules
       within: []
@@ -581,7 +581,7 @@
       name:
         - ImpredicativeTypes
       within: []
-    - message: "Makes instance selection non-deterministic and order-dependent"
+    - message: Makes instance selection non-deterministic and order-dependent
       name:
         - IncoherentInstances
       within: []
@@ -589,15 +589,15 @@
       name:
         - LiberalTypeSynonyms
       within: []
-    - message: "Deprecated since GHC 7.10, use OVERLAPPING pragma if truly needed"
+    - message: Deprecated since GHC 7.10, use OVERLAPPING pragma if truly needed
       name:
         - OverlappingInstances
       within: []
-    - message: "Changes do/if-then-else semantics, breaks deriving and TH"
+    - message: Changes do/if-then-else semantics, breaks deriving and TH
       name:
         - RebindableSyntax
       within: []
-    - message: "Can cause type checker non-termination or stack overflow"
+    - message: Can cause type checker non-termination or stack overflow
       name:
         - UndecidableSuperClasses
       within: []
@@ -612,22 +612,58 @@
       within: []
 - functions:
     - message: "Partial: throws on empty Fold. Use (^?) instead."
-      name: "Control.Lens.Fold.^?!"
+      name: Control.Lens.Fold.^?!
       within: []
     - message: "Partial: throws on empty Fold. Use (^@?) instead."
-      name: "Control.Lens.Fold.^@?!"
+      name: Control.Lens.Fold.^@?!
       within: []
     - message: "Partial: throws on 0 or >1 elements. Consider using (^?) or ensure exactly 1 element."
       name: Control.Lens.Traversal.singular
       within: []
+    - message: "Partial: throws on 0 or >1 elements. Consider using (^?) or ensure exactly 1 element."
+      name: Himari.singular
+      within: []
+    - message: "Partial: throws on 0 or >1 elements. Consider using (^?) or ensure exactly 1 element."
+      name: Himari.Prelude.singular
+      within: []
+    - message: "Partial: throws on 0 or >1 elements. Consider using (^?) or ensure exactly 1 element."
+      name: Himari.SafePrelude.singular
+      within: []
     - message: "Partial: throws on 0 or >1 elements."
       name: Control.Lens.Traversal.unsafeSingular
+      within: []
+    - message: "Partial: throws on 0 or >1 elements."
+      name: Himari.unsafeSingular
+      within: []
+    - message: "Partial: throws on 0 or >1 elements."
+      name: Himari.Prelude.unsafeSingular
+      within: []
+    - message: "Partial: throws on 0 or >1 elements."
+      name: Himari.SafePrelude.unsafeSingular
       within: []
     - message: "Unsafe: may throw if list length changes."
       name: Control.Lens.Traversal.unsafePartsOf
       within: []
     - message: "Unsafe: may throw if list length changes."
+      name: Himari.unsafePartsOf
+      within: []
+    - message: "Unsafe: may throw if list length changes."
+      name: Himari.Prelude.unsafePartsOf
+      within: []
+    - message: "Unsafe: may throw if list length changes."
+      name: Himari.SafePrelude.unsafePartsOf
+      within: []
+    - message: "Unsafe: may throw if list length changes."
       name: Control.Lens.Traversal.iunsafePartsOf
+      within: []
+    - message: "Unsafe: may throw if list length changes."
+      name: Himari.iunsafePartsOf
+      within: []
+    - message: "Unsafe: may throw if list length changes."
+      name: Himari.Prelude.iunsafePartsOf
+      within: []
+    - message: "Unsafe: may throw if list length changes."
+      name: Himari.SafePrelude.iunsafePartsOf
       within: []
 - functions:
     - message: "Unsound: violates lens laws unless lenses are disjoint. Use alongside instead."
@@ -685,70 +721,70 @@
       name: showBin
       within: []
 - functions:
-    - message: "O(n^2) complexity. Use ordNub or nubOrd instead."
+    - message: O(n^2) complexity. Use ordNub or nubOrd instead.
       name: nub
       within: []
-    - message: "Lazy accumulator causes space leaks. Use foldl' instead."
+    - message: Lazy accumulator causes space leaks. Use foldl' instead.
       name: foldl
       within: []
-    - message: "O(n) stack space. Use length with explicit conversion."
+    - message: O(n) stack space. Use length with explicit conversion.
       name: genericLength
       within: []
 - hint:
     lhs: trace
-    note: "pTrace* provides pretty-printed output for easier debugging"
+    note: pTrace* provides pretty-printed output for easier debugging
     rhs: pTrace
 - hint:
     lhs: traceId
-    note: "pTrace* provides pretty-printed output for easier debugging"
+    note: pTrace* provides pretty-printed output for easier debugging
     rhs: pTraceId
 - hint:
     lhs: traceShow
-    note: "pTrace* provides pretty-printed output for easier debugging"
+    note: pTrace* provides pretty-printed output for easier debugging
     rhs: pTraceShow
 - hint:
     lhs: traceShowId
-    note: "pTrace* provides pretty-printed output for easier debugging"
+    note: pTrace* provides pretty-printed output for easier debugging
     rhs: pTraceShowId
 - hint:
     lhs: traceWith
-    note: "pTrace* provides pretty-printed output for easier debugging"
+    note: pTrace* provides pretty-printed output for easier debugging
     rhs: pTraceWith
 - hint:
     lhs: traceShowWith
-    note: "pTrace* provides pretty-printed output for easier debugging"
+    note: pTrace* provides pretty-printed output for easier debugging
     rhs: pTraceShowWith
 - hint:
     lhs: traceStack
-    note: "pTrace* provides pretty-printed output for easier debugging"
+    note: pTrace* provides pretty-printed output for easier debugging
     rhs: pTraceStack
 - hint:
     lhs: traceIO
-    note: "pTrace* provides pretty-printed output for easier debugging"
+    note: pTrace* provides pretty-printed output for easier debugging
     rhs: pTraceIO
 - hint:
     lhs: traceM
-    note: "pTrace* provides pretty-printed output for easier debugging"
+    note: pTrace* provides pretty-printed output for easier debugging
     rhs: pTraceM
 - hint:
     lhs: traceShowM
-    note: "pTrace* provides pretty-printed output for easier debugging"
+    note: pTrace* provides pretty-printed output for easier debugging
     rhs: pTraceShowM
 - hint:
     lhs: traceEvent
-    note: "pTrace* provides pretty-printed output for easier debugging"
+    note: pTrace* provides pretty-printed output for easier debugging
     rhs: pTraceEvent
 - hint:
     lhs: traceEventIO
-    note: "pTrace* provides pretty-printed output for easier debugging"
+    note: pTrace* provides pretty-printed output for easier debugging
     rhs: pTraceEventIO
 - hint:
     lhs: traceMarker
-    note: "pTrace* provides pretty-printed output for easier debugging"
+    note: pTrace* provides pretty-printed output for easier debugging
     rhs: pTraceMarker
 - hint:
     lhs: traceMarkerIO
-    note: "pTrace* provides pretty-printed output for easier debugging"
+    note: pTrace* provides pretty-printed output for easier debugging
     rhs: pTraceMarkerIO
 - functions:
     - message: Unsafe primitive state token conversion. Use safe alternatives.
@@ -797,7 +833,7 @@
     - as: TL
       importStyle: explicitOrQualified
       name: Data.Text.Lazy
-    - message: "Data.Map is a re-export of Data.Map.Lazy. Use Data.Map.Strict or Data.Map.Lazy directly."
+    - message: Data.Map is a re-export of Data.Map.Lazy. Use Data.Map.Strict or Data.Map.Lazy directly.
       name: Data.Map
       within: []
     - as: Map
@@ -806,7 +842,7 @@
     - as: MapL
       importStyle: explicitOrQualified
       name: Data.Map.Lazy
-    - message: "Data.IntMap is a re-export of Data.IntMap.Lazy. Use Data.IntMap.Strict or Data.IntMap.Lazy directly."
+    - message: Data.IntMap is a re-export of Data.IntMap.Lazy. Use Data.IntMap.Strict or Data.IntMap.Lazy directly.
       name: Data.IntMap
       within: []
     - as: IntMap
@@ -877,32 +913,95 @@
     - message: "Partial: throws on empty list. Use headMay or headDef from Safe instead."
       name: Data.List.head
       within: []
+    - message: "Partial: throws on empty list. Use headMay or headDef from Safe instead."
+      name: Himari.head
+      within: []
+    - message: "Partial: throws on empty list. Use headMay or headDef from Safe instead."
+      name: Himari.Prelude.head
+      within: []
+    - message: "Partial: throws on empty list. Use headMay or headDef from Safe instead."
+      name: Himari.SafePrelude.head
+      within: []
     - message: "Partial: throws on empty list. Use tailMay, tailDef, or tailSafe from Safe instead."
       name: Data.List.tail
+      within: []
+    - message: "Partial: throws on empty list. Use tailMay, tailDef, or tailSafe from Safe instead."
+      name: Himari.tail
+      within: []
+    - message: "Partial: throws on empty list. Use tailMay, tailDef, or tailSafe from Safe instead."
+      name: Himari.Prelude.tail
+      within: []
+    - message: "Partial: throws on empty list. Use tailMay, tailDef, or tailSafe from Safe instead."
+      name: Himari.SafePrelude.tail
       within: []
     - message: "Partial: throws on empty list. Use initMay, initDef, or initSafe from Safe instead."
       name: Data.List.init
       within: []
+    - message: "Partial: throws on empty list. Use initMay, initDef, or initSafe from Safe instead."
+      name: Himari.init
+      within: []
+    - message: "Partial: throws on empty list. Use initMay, initDef, or initSafe from Safe instead."
+      name: Himari.Prelude.init
+      within: []
+    - message: "Partial: throws on empty list. Use initMay, initDef, or initSafe from Safe instead."
+      name: Himari.SafePrelude.init
+      within: []
     - message: "Partial: throws on empty list. Use lastMay or lastDef from Safe instead."
       name: Data.List.last
       within: []
+    - message: "Partial: throws on empty list. Use lastMay or lastDef from Safe instead."
+      name: Himari.last
+      within: []
+    - message: "Partial: throws on empty list. Use lastMay or lastDef from Safe instead."
+      name: Himari.Prelude.last
+      within: []
+    - message: "Partial: throws on empty list. Use lastMay or lastDef from Safe instead."
+      name: Himari.SafePrelude.last
+      within: []
     - message: "Partial: throws on out-of-bounds. Use atMay or atDef from Safe instead."
-      name: "Data.List.!!"
+      name: Data.List.!!
       within: []
     - message: "Partial: throws on empty list. Use cycleMay or cycleDef from Safe instead."
       name: Data.List.cycle
       within: []
+    - message: "Partial: throws on empty list. Use cycleMay or cycleDef from Safe instead."
+      name: Himari.cycle
+      within: []
+    - message: "Partial: throws on empty list. Use cycleMay or cycleDef from Safe instead."
+      name: Himari.Prelude.cycle
+      within: []
+    - message: "Partial: throws on empty list. Use cycleMay or cycleDef from Safe instead."
+      name: Himari.SafePrelude.cycle
+      within: []
     - message: "Partial: throws on empty list. Use scanl1May or scanl1Def from Safe instead."
       name: Data.List.scanl1
       within: []
+    - message: "Partial: throws on empty list. Use scanl1May or scanl1Def from Safe instead."
+      name: Himari.scanl1
+      within: []
+    - message: "Partial: throws on empty list. Use scanl1May or scanl1Def from Safe instead."
+      name: Himari.Prelude.scanl1
+      within: []
+    - message: "Partial: throws on empty list. Use scanl1May or scanl1Def from Safe instead."
+      name: Himari.SafePrelude.scanl1
+      within: []
     - message: "Partial: throws on empty list. Use scanr1May or scanr1Def from Safe instead."
       name: Data.List.scanr1
+      within: []
+    - message: "Partial: throws on empty list. Use scanr1May or scanr1Def from Safe instead."
+      name: Himari.scanr1
+      within: []
+    - message: "Partial: throws on empty list. Use scanr1May or scanr1Def from Safe instead."
+      name: Himari.Prelude.scanr1
+      within: []
+    - message: "Partial: throws on empty list. Use scanr1May or scanr1Def from Safe instead."
+      name: Himari.SafePrelude.scanr1
       within: []
     - message: "Partial: throws on empty list. Use foldl1May from Safe instead."
       name: Data.List.foldl1
       within: []
     - message: "Partial: throws on empty list. Use foldl1May' from Safe instead."
-      name: "Data.List.foldl1'"
+      name: Data.List.foldl1'
       within: []
     - message: "Partial: throws on empty list. Use foldr1May from Safe instead."
       name: Data.List.foldr1
@@ -923,6 +1022,15 @@
     - message: "Partial: throws on Nothing. Use fromMaybe or pattern match instead."
       name: Data.Maybe.fromJust
       within: []
+    - message: "Partial: throws on Nothing. Use fromMaybe or pattern match instead."
+      name: Himari.fromJust
+      within: []
+    - message: "Partial: throws on Nothing. Use fromMaybe or pattern match instead."
+      name: Himari.Prelude.fromJust
+      within: []
+    - message: "Partial: throws on Nothing. Use fromMaybe or pattern match instead."
+      name: Himari.SafePrelude.fromJust
+      within: []
 - functions:
     - message: "Partial: throws on parse failure. Use readMay or readDef from Safe instead."
       name: read
@@ -931,43 +1039,151 @@
     - message: "Partial: throws on empty structure. Use foldl1May from Safe.Foldable instead."
       name: Data.Foldable.foldl1
       within: []
+    - message: "Partial: throws on empty structure. Use foldl1May from Safe.Foldable instead."
+      name: Himari.foldl1
+      within: []
+    - message: "Partial: throws on empty structure. Use foldl1May from Safe.Foldable instead."
+      name: Himari.Prelude.foldl1
+      within: []
+    - message: "Partial: throws on empty structure. Use foldl1May from Safe.Foldable instead."
+      name: Himari.SafePrelude.foldl1
+      within: []
     - message: "Partial: throws on empty structure. Use foldr1May from Safe.Foldable instead."
       name: Data.Foldable.foldr1
+      within: []
+    - message: "Partial: throws on empty structure. Use foldr1May from Safe.Foldable instead."
+      name: Himari.foldr1
+      within: []
+    - message: "Partial: throws on empty structure. Use foldr1May from Safe.Foldable instead."
+      name: Himari.Prelude.foldr1
+      within: []
+    - message: "Partial: throws on empty structure. Use foldr1May from Safe.Foldable instead."
+      name: Himari.SafePrelude.foldr1
       within: []
     - message: "Partial: throws on empty structure. Use maximumMay or maximumBound from Safe.Foldable instead."
       name: Data.Foldable.maximum
       within: []
+    - message: "Partial: throws on empty structure. Use maximumMay or maximumBound from Safe.Foldable instead."
+      name: Himari.maximum
+      within: []
+    - message: "Partial: throws on empty structure. Use maximumMay or maximumBound from Safe.Foldable instead."
+      name: Himari.Prelude.maximum
+      within: []
+    - message: "Partial: throws on empty structure. Use maximumMay or maximumBound from Safe.Foldable instead."
+      name: Himari.SafePrelude.maximum
+      within: []
     - message: "Partial: throws on empty structure. Use minimumMay or minimumBound from Safe.Foldable instead."
       name: Data.Foldable.minimum
+      within: []
+    - message: "Partial: throws on empty structure. Use minimumMay or minimumBound from Safe.Foldable instead."
+      name: Himari.minimum
+      within: []
+    - message: "Partial: throws on empty structure. Use minimumMay or minimumBound from Safe.Foldable instead."
+      name: Himari.Prelude.minimum
+      within: []
+    - message: "Partial: throws on empty structure. Use minimumMay or minimumBound from Safe.Foldable instead."
+      name: Himari.SafePrelude.minimum
       within: []
     - message: "Partial: throws on empty structure. Use maximumByMay or maximumBoundBy from Safe.Foldable instead."
       name: Data.Foldable.maximumBy
       within: []
+    - message: "Partial: throws on empty structure. Use maximumByMay or maximumBoundBy from Safe.Foldable instead."
+      name: Himari.maximumBy
+      within: []
+    - message: "Partial: throws on empty structure. Use maximumByMay or maximumBoundBy from Safe.Foldable instead."
+      name: Himari.Prelude.maximumBy
+      within: []
+    - message: "Partial: throws on empty structure. Use maximumByMay or maximumBoundBy from Safe.Foldable instead."
+      name: Himari.SafePrelude.maximumBy
+      within: []
     - message: "Partial: throws on empty structure. Use minimumByMay or minimumBoundBy from Safe.Foldable instead."
       name: Data.Foldable.minimumBy
+      within: []
+    - message: "Partial: throws on empty structure. Use minimumByMay or minimumBoundBy from Safe.Foldable instead."
+      name: Himari.minimumBy
+      within: []
+    - message: "Partial: throws on empty structure. Use minimumByMay or minimumBoundBy from Safe.Foldable instead."
+      name: Himari.Prelude.minimumBy
+      within: []
+    - message: "Partial: throws on empty structure. Use minimumByMay or minimumBoundBy from Safe.Foldable instead."
+      name: Himari.SafePrelude.minimumBy
       within: []
 - functions:
     - message: "Partial: throws on empty structure. Use bifoldl with a default value instead."
       name: Data.Bifoldable.bifoldl1
       within: []
+    - message: "Partial: throws on empty structure. Use bifoldl with a default value instead."
+      name: Himari.bifoldl1
+      within: []
+    - message: "Partial: throws on empty structure. Use bifoldl with a default value instead."
+      name: Himari.Prelude.bifoldl1
+      within: []
+    - message: "Partial: throws on empty structure. Use bifoldl with a default value instead."
+      name: Himari.SafePrelude.bifoldl1
+      within: []
     - message: "Partial: throws on empty structure. Use bifoldr with a default value instead."
       name: Data.Bifoldable.bifoldr1
+      within: []
+    - message: "Partial: throws on empty structure. Use bifoldr with a default value instead."
+      name: Himari.bifoldr1
+      within: []
+    - message: "Partial: throws on empty structure. Use bifoldr with a default value instead."
+      name: Himari.Prelude.bifoldr1
+      within: []
+    - message: "Partial: throws on empty structure. Use bifoldr with a default value instead."
+      name: Himari.SafePrelude.bifoldr1
       within: []
     - message: "Partial: throws on empty structure. Use bifoldr with explicit initial value."
       name: Data.Bifoldable.bimaximum
       within: []
     - message: "Partial: throws on empty structure. Use bifoldr with explicit initial value."
+      name: Himari.bimaximum
+      within: []
+    - message: "Partial: throws on empty structure. Use bifoldr with explicit initial value."
+      name: Himari.Prelude.bimaximum
+      within: []
+    - message: "Partial: throws on empty structure. Use bifoldr with explicit initial value."
+      name: Himari.SafePrelude.bimaximum
+      within: []
+    - message: "Partial: throws on empty structure. Use bifoldr with explicit initial value."
       name: Data.Bifoldable.biminimum
+      within: []
+    - message: "Partial: throws on empty structure. Use bifoldr with explicit initial value."
+      name: Himari.biminimum
+      within: []
+    - message: "Partial: throws on empty structure. Use bifoldr with explicit initial value."
+      name: Himari.Prelude.biminimum
+      within: []
+    - message: "Partial: throws on empty structure. Use bifoldr with explicit initial value."
+      name: Himari.SafePrelude.biminimum
       within: []
     - message: "Partial: throws on empty structure. Use bifoldr with explicit initial value."
       name: Data.Bifoldable.bimaximumBy
       within: []
     - message: "Partial: throws on empty structure. Use bifoldr with explicit initial value."
+      name: Himari.bimaximumBy
+      within: []
+    - message: "Partial: throws on empty structure. Use bifoldr with explicit initial value."
+      name: Himari.Prelude.bimaximumBy
+      within: []
+    - message: "Partial: throws on empty structure. Use bifoldr with explicit initial value."
+      name: Himari.SafePrelude.bimaximumBy
+      within: []
+    - message: "Partial: throws on empty structure. Use bifoldr with explicit initial value."
       name: Data.Bifoldable.biminimumBy
+      within: []
+    - message: "Partial: throws on empty structure. Use bifoldr with explicit initial value."
+      name: Himari.biminimumBy
+      within: []
+    - message: "Partial: throws on empty structure. Use bifoldr with explicit initial value."
+      name: Himari.Prelude.biminimumBy
+      within: []
+    - message: "Partial: throws on empty structure. Use bifoldr with explicit initial value."
+      name: Himari.SafePrelude.biminimumBy
       within: []
 - functions:
     - message: "Partial: throws on out-of-bounds. Use atMay or atDef from Safe with toList instead."
-      name: "Data.List.NonEmpty.!!"
+      name: Data.List.NonEmpty.!!
       within: []
     - message: "Partial: throws on empty list. Use nonEmpty instead."
       name: Data.List.NonEmpty.fromList
@@ -1033,7 +1249,7 @@
       name: Safe.foldl1Note
       within: []
     - message: "Partial: throws on empty list. Use foldl1May' instead."
-      name: "Safe.foldl1Note'"
+      name: Safe.foldl1Note'
       within: []
     - message: "Partial: throws on empty list. Use scanr1May or scanr1Def instead."
       name: Safe.scanr1Note
@@ -1153,40 +1369,157 @@
       name: System.IO.getChar
       within: []
     - message: Encoding depends on LANG env. Use Text or ByteString.
+      name: Himari.getChar
+      within: []
+    - message: Encoding depends on LANG env. Use Text or ByteString.
+      name: Himari.Prelude.getChar
+      within: []
+    - message: Encoding depends on LANG env. Use Text or ByteString.
+      name: Himari.SafePrelude.getChar
+      within: []
+    - message: Encoding depends on LANG env. Use Text or ByteString.
       name: System.IO.getLine
       within: []
-    - message: "Lazy IO + env-dependent encoding. Use strict Text or ByteString."
+    - message: Encoding depends on LANG env. Use Text or ByteString.
+      name: Himari.getLine
+      within: []
+    - message: Encoding depends on LANG env. Use Text or ByteString.
+      name: Himari.Prelude.getLine
+      within: []
+    - message: Encoding depends on LANG env. Use Text or ByteString.
+      name: Himari.SafePrelude.getLine
+      within: []
+    - message: Lazy IO + env-dependent encoding. Use strict Text or ByteString.
       name: System.IO.getContents
       within: []
-    - message: "Lazy IO + env-dependent encoding. Use Data.Text.IO.readFile or Data.ByteString.readFile."
+    - message: Lazy IO + env-dependent encoding. Use strict Text or ByteString.
+      name: Himari.getContents
+      within: []
+    - message: Lazy IO + env-dependent encoding. Use strict Text or ByteString.
+      name: Himari.Prelude.getContents
+      within: []
+    - message: Lazy IO + env-dependent encoding. Use strict Text or ByteString.
+      name: Himari.SafePrelude.getContents
+      within: []
+    - message: Lazy IO + env-dependent encoding. Use Data.Text.IO.readFile or Data.ByteString.readFile.
       name: System.IO.readFile
       within: []
-    - message: "Lazy IO + env-dependent encoding."
+    - message: Lazy IO + env-dependent encoding. Use Data.Text.IO.readFile or Data.ByteString.readFile.
+      name: Himari.readFile
+      within: []
+    - message: Lazy IO + env-dependent encoding. Use Data.Text.IO.readFile or Data.ByteString.readFile.
+      name: Himari.Prelude.readFile
+      within: []
+    - message: Lazy IO + env-dependent encoding. Use Data.Text.IO.readFile or Data.ByteString.readFile.
+      name: Himari.SafePrelude.readFile
+      within: []
+    - message: Lazy IO + env-dependent encoding.
       name: System.IO.interact
       within: []
-    - message: "Env-dependent + partial (uses read)."
+    - message: Lazy IO + env-dependent encoding.
+      name: Himari.interact
+      within: []
+    - message: Lazy IO + env-dependent encoding.
+      name: Himari.Prelude.interact
+      within: []
+    - message: Lazy IO + env-dependent encoding.
+      name: Himari.SafePrelude.interact
+      within: []
+    - message: Env-dependent + partial (uses read).
       name: System.IO.readIO
       within: []
-    - message: "Env-dependent + partial (uses read)."
+    - message: Env-dependent + partial (uses read).
+      name: Himari.readIO
+      within: []
+    - message: Env-dependent + partial (uses read).
+      name: Himari.Prelude.readIO
+      within: []
+    - message: Env-dependent + partial (uses read).
+      name: Himari.SafePrelude.readIO
+      within: []
+    - message: Env-dependent + partial (uses read).
       name: System.IO.readLn
+      within: []
+    - message: Env-dependent + partial (uses read).
+      name: Himari.readLn
+      within: []
+    - message: Env-dependent + partial (uses read).
+      name: Himari.Prelude.readLn
+      within: []
+    - message: Env-dependent + partial (uses read).
+      name: Himari.SafePrelude.readLn
       within: []
     - message: Encoding depends on LANG env. Use Text or ByteString.
       name: System.IO.putChar
       within: []
     - message: Encoding depends on LANG env. Use Text or ByteString.
+      name: Himari.putChar
+      within: []
+    - message: Encoding depends on LANG env. Use Text or ByteString.
+      name: Himari.Prelude.putChar
+      within: []
+    - message: Encoding depends on LANG env. Use Text or ByteString.
+      name: Himari.SafePrelude.putChar
+      within: []
+    - message: Encoding depends on LANG env. Use Text or ByteString.
       name: System.IO.putStr
+      within: []
+    - message: Encoding depends on LANG env. Use Text or ByteString.
+      name: Himari.putStr
+      within: []
+    - message: Encoding depends on LANG env. Use Text or ByteString.
+      name: Himari.Prelude.putStr
+      within: []
+    - message: Encoding depends on LANG env. Use Text or ByteString.
+      name: Himari.SafePrelude.putStr
       within: []
     - message: Encoding depends on LANG env. Use Text or ByteString.
       name: System.IO.putStrLn
       within: []
     - message: Encoding depends on LANG env. Use Text or ByteString.
+      name: Himari.putStrLn
+      within: []
+    - message: Encoding depends on LANG env. Use Text or ByteString.
+      name: Himari.Prelude.putStrLn
+      within: []
+    - message: Encoding depends on LANG env. Use Text or ByteString.
+      name: Himari.SafePrelude.putStrLn
+      within: []
+    - message: Encoding depends on LANG env. Use Text or ByteString.
       name: System.IO.print
       within: []
-    - message: "Env-dependent encoding. Use Data.Text.IO.writeFile or Data.ByteString.writeFile."
+    - message: Encoding depends on LANG env. Use Text or ByteString.
+      name: Himari.print
+      within: []
+    - message: Encoding depends on LANG env. Use Text or ByteString.
+      name: Himari.Prelude.print
+      within: []
+    - message: Encoding depends on LANG env. Use Text or ByteString.
+      name: Himari.SafePrelude.print
+      within: []
+    - message: Env-dependent encoding. Use Data.Text.IO.writeFile or Data.ByteString.writeFile.
       name: System.IO.writeFile
       within: []
-    - message: "Env-dependent encoding. Use Data.Text.IO.appendFile or Data.ByteString.appendFile."
+    - message: Env-dependent encoding. Use Data.Text.IO.writeFile or Data.ByteString.writeFile.
+      name: Himari.writeFile
+      within: []
+    - message: Env-dependent encoding. Use Data.Text.IO.writeFile or Data.ByteString.writeFile.
+      name: Himari.Prelude.writeFile
+      within: []
+    - message: Env-dependent encoding. Use Data.Text.IO.writeFile or Data.ByteString.writeFile.
+      name: Himari.SafePrelude.writeFile
+      within: []
+    - message: Env-dependent encoding. Use Data.Text.IO.appendFile or Data.ByteString.appendFile.
       name: System.IO.appendFile
+      within: []
+    - message: Env-dependent encoding. Use Data.Text.IO.appendFile or Data.ByteString.appendFile.
+      name: Himari.appendFile
+      within: []
+    - message: Env-dependent encoding. Use Data.Text.IO.appendFile or Data.ByteString.appendFile.
+      name: Himari.Prelude.appendFile
+      within: []
+    - message: Env-dependent encoding. Use Data.Text.IO.appendFile or Data.ByteString.appendFile.
+      name: Himari.SafePrelude.appendFile
       within: []
 - functions:
     - message: Use Data.Text.uncons instead
@@ -1205,7 +1538,7 @@
       name: Data.Text.foldl1
       within: []
     - message: "Partial: throws on empty Text. Use foldl' with explicit initial value."
-      name: "Data.Text.foldl1'"
+      name: Data.Text.foldl1'
       within: []
     - message: "Partial: throws on empty Text. Use foldr with explicit initial value."
       name: Data.Text.foldr1
@@ -1236,7 +1569,7 @@
       name: Data.Text.Lazy.foldl1
       within: []
     - message: "Partial: throws on empty Text. Use foldl' with explicit initial value."
-      name: "Data.Text.Lazy.foldl1'"
+      name: Data.Text.Lazy.foldl1'
       within: []
     - message: "Partial: throws on empty Text. Use foldr with explicit initial value."
       name: Data.Text.Lazy.foldr1
@@ -1267,37 +1600,37 @@
       name: Data.Text.Unsafe.dropWord8
       within: []
 - functions:
-    - message: "Use System.Process.Typed.runProcess_ instead for type-safe process execution."
+    - message: Use System.Process.Typed.runProcess_ instead for type-safe process execution.
       name: System.Process.callProcess
       within: []
-    - message: "Use System.Process.Typed.runProcess_ with shell instead for type-safe process execution."
+    - message: Use System.Process.Typed.runProcess_ with shell instead for type-safe process execution.
       name: System.Process.callCommand
       within: []
-    - message: "Use System.Process.Typed.startProcess instead for type-safe process execution."
+    - message: Use System.Process.Typed.startProcess instead for type-safe process execution.
       name: System.Process.spawnProcess
       within: []
-    - message: "Use System.Process.Typed.startProcess with shell instead for type-safe process execution."
+    - message: Use System.Process.Typed.startProcess with shell instead for type-safe process execution.
       name: System.Process.spawnCommand
       within: []
-    - message: "Use System.Process.Typed.startProcess instead for type-safe process execution."
+    - message: Use System.Process.Typed.startProcess instead for type-safe process execution.
       name: System.Process.createProcess
       within: []
-    - message: "Use System.Process.Typed.startProcess instead for type-safe process execution."
+    - message: Use System.Process.Typed.startProcess instead for type-safe process execution.
       name: System.Process.createProcess_
       within: []
-    - message: "Use System.Process.Typed.stopProcess instead for type-safe process cleanup."
+    - message: Use System.Process.Typed.stopProcess instead for type-safe process cleanup.
       name: System.Process.cleanupProcess
       within: []
-    - message: "Use System.Process.Typed.readProcessStdout instead for type-safe output capture."
+    - message: Use System.Process.Typed.readProcessStdout instead for type-safe output capture.
       name: System.Process.readProcess
       within: []
-    - message: "Use System.Process.Typed.readProcess instead for type-safe output capture."
+    - message: Use System.Process.Typed.readProcess instead for type-safe output capture.
       name: System.Process.readProcessWithExitCode
       within: []
-    - message: "Use System.Process.Typed.readProcessStdout instead for type-safe output capture."
+    - message: Use System.Process.Typed.readProcessStdout instead for type-safe output capture.
       name: System.Process.readCreateProcess
       within: []
-    - message: "Use System.Process.Typed.readProcess instead for type-safe output capture."
+    - message: Use System.Process.Typed.readProcess instead for type-safe output capture.
       name: System.Process.readCreateProcessWithExitCode
       within: []
     - message: Use System.Process.Typed.waitExitCode instead for MonadIO support.
@@ -1312,10 +1645,10 @@
     - message: Consider using System.Process.Typed with setCreateGroup for process group management.
       name: System.Process.interruptProcessGroupOf
       within: []
-    - message: "Use System.Process.Typed.runProcess with shell instead for type-safe process execution."
+    - message: Use System.Process.Typed.runProcess with shell instead for type-safe process execution.
       name: System.Process.runCommand
       within: []
-    - message: "Use System.Process.Typed.runProcess instead for type-safe process execution."
+    - message: Use System.Process.Typed.runProcess instead for type-safe process execution.
       name: System.Process.runProcess
       within: []
     - message: Use System.Process.Typed.startProcess with shell and createPipe instead.
@@ -1324,16 +1657,16 @@
     - message: Use System.Process.Typed.startProcess with createPipe instead.
       name: System.Process.runInteractiveProcess
       within: []
-    - message: "Use System.Process.Typed.runProcess with shell instead for type-safe process execution."
+    - message: Use System.Process.Typed.runProcess with shell instead for type-safe process execution.
       name: System.Process.system
       within: []
-    - message: "Use System.Process.Typed.runProcess instead for type-safe process execution."
+    - message: Use System.Process.Typed.runProcess instead for type-safe process execution.
       name: System.Process.rawSystem
       within: []
-    - message: "Use System.Process.Typed.proc instead for type-safe ProcessConfig."
+    - message: Use System.Process.Typed.proc instead for type-safe ProcessConfig.
       name: System.Process.proc
       within: []
-    - message: "Use System.Process.Typed.shell instead for type-safe ProcessConfig."
+    - message: Use System.Process.Typed.shell instead for type-safe ProcessConfig.
       name: System.Process.shell
       within: []
     - message: Use System.Process.Typed.withProcessWait or withProcessTerm instead for MonadUnliftIO support.
@@ -1348,6 +1681,12 @@
       within: []
     - message: Use typed exceptions instead. Define a proper exception type.
       name: UnliftIO.Exception.stringException
+      within: []
+    - message: Use typed exceptions instead. Define a proper exception type.
+      name: Himari.stringException
+      within: []
+    - message: Use typed exceptions instead. Define a proper exception type.
+      name: Himari.Prelude.stringException
       within: []
 - functions:
     - message: Use UnliftIO.Async.async instead for MonadUnliftIO support.
@@ -1666,14 +2005,14 @@
     - message: Use UnliftIO.IORef.modifyIORef instead for MonadIO support.
       name: Data.IORef.modifyIORef
       within: []
-    - message: "Use UnliftIO.IORef.modifyIORef' instead for MonadIO support."
-      name: "Data.IORef.modifyIORef'"
+    - message: Use UnliftIO.IORef.modifyIORef' instead for MonadIO support.
+      name: Data.IORef.modifyIORef'
       within: []
     - message: Use UnliftIO.IORef.atomicModifyIORef instead for MonadIO support.
       name: Data.IORef.atomicModifyIORef
       within: []
-    - message: "Use UnliftIO.IORef.atomicModifyIORef' instead for MonadIO support."
-      name: "Data.IORef.atomicModifyIORef'"
+    - message: Use UnliftIO.IORef.atomicModifyIORef' instead for MonadIO support.
+      name: Data.IORef.atomicModifyIORef'
       within: []
     - message: Use UnliftIO.IORef.mkWeakIORef instead for MonadIO support.
       name: Data.IORef.mkWeakIORef
@@ -2290,11 +2629,11 @@
       within: []
 - functions:
     - message: "Partial: throws on missing key. Use Data.HashMap.Strict.lookup or Data.HashMap.Strict.!? instead"
-      name: "Data.HashMap.Strict.!"
+      name: Data.HashMap.Strict.!
       within: []
 - functions:
     - message: "Partial: throws on missing key. Use Data.HashMap.Lazy.lookup or Data.HashMap.Lazy.!? instead"
-      name: "Data.HashMap.Lazy.!"
+      name: Data.HashMap.Lazy.!
       within: []
 - functions:
     - message: Breaks type safety. Only for very specific use cases.
@@ -2314,7 +2653,7 @@
       within: []
 - functions:
     - message: "Partial: throws on out-of-bounds. Use (!?) for safe indexing."
-      name: "Data.Vector.!"
+      name: Data.Vector.!
       within: []
     - message: "Partial: throws on empty vector. Use uncons or (!?) 0 instead."
       name: Data.Vector.head
@@ -2362,13 +2701,13 @@
       name: Data.Vector.foldl1
       within: []
     - message: "Partial: throws on empty vector. Use foldl' with explicit initial value."
-      name: "Data.Vector.foldl1'"
+      name: Data.Vector.foldl1'
       within: []
     - message: "Partial: throws on empty vector. Use foldr with explicit initial value."
       name: Data.Vector.foldr1
       within: []
     - message: "Partial: throws on empty vector. Use foldr' with explicit initial value."
-      name: "Data.Vector.foldr1'"
+      name: Data.Vector.foldr1'
       within: []
     - message: "Partial: throws on empty vector. Use fold with explicit initial value."
       name: Data.Vector.maximum
@@ -2398,28 +2737,28 @@
       name: Data.Vector.fold1M
       within: []
     - message: "Partial: throws on empty vector. Use foldM' with explicit initial value."
-      name: "Data.Vector.fold1M'"
+      name: Data.Vector.fold1M'
       within: []
     - message: "Partial: throws on empty vector. Use foldM_ with explicit initial value."
       name: Data.Vector.fold1M_
       within: []
     - message: "Partial: throws on empty vector. Use foldM'_ with explicit initial value."
-      name: "Data.Vector.fold1M'_"
+      name: Data.Vector.fold1M'_
       within: []
     - message: "Partial: throws on empty vector. Use scanl with explicit initial value."
       name: Data.Vector.scanl1
       within: []
     - message: "Partial: throws on empty vector. Use scanl' with explicit initial value."
-      name: "Data.Vector.scanl1'"
+      name: Data.Vector.scanl1'
       within: []
     - message: "Partial: throws on empty vector. Use scanr with explicit initial value."
       name: Data.Vector.scanr1
       within: []
     - message: "Partial: throws on empty vector. Use scanr' with explicit initial value."
-      name: "Data.Vector.scanr1'"
+      name: Data.Vector.scanr1'
       within: []
     - message: "Partial: throws on out-of-bounds. Use (!?) for safe indexing."
-      name: "Data.Vector.Generic.!"
+      name: Data.Vector.Generic.!
       within: []
     - message: "Partial: throws on empty vector. Use uncons or (!?) 0 instead."
       name: Data.Vector.Generic.head
@@ -2467,13 +2806,13 @@
       name: Data.Vector.Generic.foldl1
       within: []
     - message: "Partial: throws on empty vector. Use foldl' with explicit initial value."
-      name: "Data.Vector.Generic.foldl1'"
+      name: Data.Vector.Generic.foldl1'
       within: []
     - message: "Partial: throws on empty vector. Use foldr with explicit initial value."
       name: Data.Vector.Generic.foldr1
       within: []
     - message: "Partial: throws on empty vector. Use foldr' with explicit initial value."
-      name: "Data.Vector.Generic.foldr1'"
+      name: Data.Vector.Generic.foldr1'
       within: []
     - message: "Partial: throws on empty vector. Use fold with explicit initial value."
       name: Data.Vector.Generic.maximum
@@ -2503,28 +2842,28 @@
       name: Data.Vector.Generic.fold1M
       within: []
     - message: "Partial: throws on empty vector. Use foldM' with explicit initial value."
-      name: "Data.Vector.Generic.fold1M'"
+      name: Data.Vector.Generic.fold1M'
       within: []
     - message: "Partial: throws on empty vector. Use foldM_ with explicit initial value."
       name: Data.Vector.Generic.fold1M_
       within: []
     - message: "Partial: throws on empty vector. Use foldM'_ with explicit initial value."
-      name: "Data.Vector.Generic.fold1M'_"
+      name: Data.Vector.Generic.fold1M'_
       within: []
     - message: "Partial: throws on empty vector. Use scanl with explicit initial value."
       name: Data.Vector.Generic.scanl1
       within: []
     - message: "Partial: throws on empty vector. Use scanl' with explicit initial value."
-      name: "Data.Vector.Generic.scanl1'"
+      name: Data.Vector.Generic.scanl1'
       within: []
     - message: "Partial: throws on empty vector. Use scanr with explicit initial value."
       name: Data.Vector.Generic.scanr1
       within: []
     - message: "Partial: throws on empty vector. Use scanr' with explicit initial value."
-      name: "Data.Vector.Generic.scanr1'"
+      name: Data.Vector.Generic.scanr1'
       within: []
     - message: "Partial: throws on out-of-bounds. Use (!?) for safe indexing."
-      name: "Data.Vector.Primitive.!"
+      name: Data.Vector.Primitive.!
       within: []
     - message: "Partial: throws on empty vector. Use uncons or (!?) 0 instead."
       name: Data.Vector.Primitive.head
@@ -2572,13 +2911,13 @@
       name: Data.Vector.Primitive.foldl1
       within: []
     - message: "Partial: throws on empty vector. Use foldl' with explicit initial value."
-      name: "Data.Vector.Primitive.foldl1'"
+      name: Data.Vector.Primitive.foldl1'
       within: []
     - message: "Partial: throws on empty vector. Use foldr with explicit initial value."
       name: Data.Vector.Primitive.foldr1
       within: []
     - message: "Partial: throws on empty vector. Use foldr' with explicit initial value."
-      name: "Data.Vector.Primitive.foldr1'"
+      name: Data.Vector.Primitive.foldr1'
       within: []
     - message: "Partial: throws on empty vector. Use fold with explicit initial value."
       name: Data.Vector.Primitive.maximum
@@ -2608,28 +2947,28 @@
       name: Data.Vector.Primitive.fold1M
       within: []
     - message: "Partial: throws on empty vector. Use foldM' with explicit initial value."
-      name: "Data.Vector.Primitive.fold1M'"
+      name: Data.Vector.Primitive.fold1M'
       within: []
     - message: "Partial: throws on empty vector. Use foldM_ with explicit initial value."
       name: Data.Vector.Primitive.fold1M_
       within: []
     - message: "Partial: throws on empty vector. Use foldM'_ with explicit initial value."
-      name: "Data.Vector.Primitive.fold1M'_"
+      name: Data.Vector.Primitive.fold1M'_
       within: []
     - message: "Partial: throws on empty vector. Use scanl with explicit initial value."
       name: Data.Vector.Primitive.scanl1
       within: []
     - message: "Partial: throws on empty vector. Use scanl' with explicit initial value."
-      name: "Data.Vector.Primitive.scanl1'"
+      name: Data.Vector.Primitive.scanl1'
       within: []
     - message: "Partial: throws on empty vector. Use scanr with explicit initial value."
       name: Data.Vector.Primitive.scanr1
       within: []
     - message: "Partial: throws on empty vector. Use scanr' with explicit initial value."
-      name: "Data.Vector.Primitive.scanr1'"
+      name: Data.Vector.Primitive.scanr1'
       within: []
     - message: "Partial: throws on out-of-bounds. Use (!?) for safe indexing."
-      name: "Data.Vector.Storable.!"
+      name: Data.Vector.Storable.!
       within: []
     - message: "Partial: throws on empty vector. Use uncons or (!?) 0 instead."
       name: Data.Vector.Storable.head
@@ -2677,13 +3016,13 @@
       name: Data.Vector.Storable.foldl1
       within: []
     - message: "Partial: throws on empty vector. Use foldl' with explicit initial value."
-      name: "Data.Vector.Storable.foldl1'"
+      name: Data.Vector.Storable.foldl1'
       within: []
     - message: "Partial: throws on empty vector. Use foldr with explicit initial value."
       name: Data.Vector.Storable.foldr1
       within: []
     - message: "Partial: throws on empty vector. Use foldr' with explicit initial value."
-      name: "Data.Vector.Storable.foldr1'"
+      name: Data.Vector.Storable.foldr1'
       within: []
     - message: "Partial: throws on empty vector. Use fold with explicit initial value."
       name: Data.Vector.Storable.maximum
@@ -2713,28 +3052,28 @@
       name: Data.Vector.Storable.fold1M
       within: []
     - message: "Partial: throws on empty vector. Use foldM' with explicit initial value."
-      name: "Data.Vector.Storable.fold1M'"
+      name: Data.Vector.Storable.fold1M'
       within: []
     - message: "Partial: throws on empty vector. Use foldM_ with explicit initial value."
       name: Data.Vector.Storable.fold1M_
       within: []
     - message: "Partial: throws on empty vector. Use foldM'_ with explicit initial value."
-      name: "Data.Vector.Storable.fold1M'_"
+      name: Data.Vector.Storable.fold1M'_
       within: []
     - message: "Partial: throws on empty vector. Use scanl with explicit initial value."
       name: Data.Vector.Storable.scanl1
       within: []
     - message: "Partial: throws on empty vector. Use scanl' with explicit initial value."
-      name: "Data.Vector.Storable.scanl1'"
+      name: Data.Vector.Storable.scanl1'
       within: []
     - message: "Partial: throws on empty vector. Use scanr with explicit initial value."
       name: Data.Vector.Storable.scanr1
       within: []
     - message: "Partial: throws on empty vector. Use scanr' with explicit initial value."
-      name: "Data.Vector.Storable.scanr1'"
+      name: Data.Vector.Storable.scanr1'
       within: []
     - message: "Partial: throws on out-of-bounds. Use (!?) for safe indexing."
-      name: "Data.Vector.Strict.!"
+      name: Data.Vector.Strict.!
       within: []
     - message: "Partial: throws on empty vector. Use uncons or (!?) 0 instead."
       name: Data.Vector.Strict.head
@@ -2782,13 +3121,13 @@
       name: Data.Vector.Strict.foldl1
       within: []
     - message: "Partial: throws on empty vector. Use foldl' with explicit initial value."
-      name: "Data.Vector.Strict.foldl1'"
+      name: Data.Vector.Strict.foldl1'
       within: []
     - message: "Partial: throws on empty vector. Use foldr with explicit initial value."
       name: Data.Vector.Strict.foldr1
       within: []
     - message: "Partial: throws on empty vector. Use foldr' with explicit initial value."
-      name: "Data.Vector.Strict.foldr1'"
+      name: Data.Vector.Strict.foldr1'
       within: []
     - message: "Partial: throws on empty vector. Use fold with explicit initial value."
       name: Data.Vector.Strict.maximum
@@ -2818,28 +3157,28 @@
       name: Data.Vector.Strict.fold1M
       within: []
     - message: "Partial: throws on empty vector. Use foldM' with explicit initial value."
-      name: "Data.Vector.Strict.fold1M'"
+      name: Data.Vector.Strict.fold1M'
       within: []
     - message: "Partial: throws on empty vector. Use foldM_ with explicit initial value."
       name: Data.Vector.Strict.fold1M_
       within: []
     - message: "Partial: throws on empty vector. Use foldM'_ with explicit initial value."
-      name: "Data.Vector.Strict.fold1M'_"
+      name: Data.Vector.Strict.fold1M'_
       within: []
     - message: "Partial: throws on empty vector. Use scanl with explicit initial value."
       name: Data.Vector.Strict.scanl1
       within: []
     - message: "Partial: throws on empty vector. Use scanl' with explicit initial value."
-      name: "Data.Vector.Strict.scanl1'"
+      name: Data.Vector.Strict.scanl1'
       within: []
     - message: "Partial: throws on empty vector. Use scanr with explicit initial value."
       name: Data.Vector.Strict.scanr1
       within: []
     - message: "Partial: throws on empty vector. Use scanr' with explicit initial value."
-      name: "Data.Vector.Strict.scanr1'"
+      name: Data.Vector.Strict.scanr1'
       within: []
     - message: "Partial: throws on out-of-bounds. Use (!?) for safe indexing."
-      name: "Data.Vector.Unboxed.!"
+      name: Data.Vector.Unboxed.!
       within: []
     - message: "Partial: throws on empty vector. Use uncons or (!?) 0 instead."
       name: Data.Vector.Unboxed.head
@@ -2887,13 +3226,13 @@
       name: Data.Vector.Unboxed.foldl1
       within: []
     - message: "Partial: throws on empty vector. Use foldl' with explicit initial value."
-      name: "Data.Vector.Unboxed.foldl1'"
+      name: Data.Vector.Unboxed.foldl1'
       within: []
     - message: "Partial: throws on empty vector. Use foldr with explicit initial value."
       name: Data.Vector.Unboxed.foldr1
       within: []
     - message: "Partial: throws on empty vector. Use foldr' with explicit initial value."
-      name: "Data.Vector.Unboxed.foldr1'"
+      name: Data.Vector.Unboxed.foldr1'
       within: []
     - message: "Partial: throws on empty vector. Use fold with explicit initial value."
       name: Data.Vector.Unboxed.maximum
@@ -2923,25 +3262,25 @@
       name: Data.Vector.Unboxed.fold1M
       within: []
     - message: "Partial: throws on empty vector. Use foldM' with explicit initial value."
-      name: "Data.Vector.Unboxed.fold1M'"
+      name: Data.Vector.Unboxed.fold1M'
       within: []
     - message: "Partial: throws on empty vector. Use foldM_ with explicit initial value."
       name: Data.Vector.Unboxed.fold1M_
       within: []
     - message: "Partial: throws on empty vector. Use foldM'_ with explicit initial value."
-      name: "Data.Vector.Unboxed.fold1M'_"
+      name: Data.Vector.Unboxed.fold1M'_
       within: []
     - message: "Partial: throws on empty vector. Use scanl with explicit initial value."
       name: Data.Vector.Unboxed.scanl1
       within: []
     - message: "Partial: throws on empty vector. Use scanl' with explicit initial value."
-      name: "Data.Vector.Unboxed.scanl1'"
+      name: Data.Vector.Unboxed.scanl1'
       within: []
     - message: "Partial: throws on empty vector. Use scanr with explicit initial value."
       name: Data.Vector.Unboxed.scanr1
       within: []
     - message: "Partial: throws on empty vector. Use scanr' with explicit initial value."
-      name: "Data.Vector.Unboxed.scanr1'"
+      name: Data.Vector.Unboxed.scanr1'
       within: []
 - functions:
     - message: "Unsafe: no bounds checking, may cause segfaults. Use (!) or (!?) instead."
@@ -3667,13 +4006,13 @@
       name: Data.Vector.Storable.Mutable.unsafeWith
       within: []
 - functions:
-    - message: "Discards error info. Use decodeEither' or decodeThrow instead."
+    - message: Discards error info. Use decodeEither' or decodeThrow instead.
       name: Data.Yaml.decode
       within: []
     - message: Discards error info. Use decodeFileEither or decodeFileThrow instead.
       name: Data.Yaml.decodeFile
       within: []
 - functions:
-    - message: "Deprecated. Use decodeEither' instead for ParseException details."
+    - message: Deprecated. Use decodeEither' instead for ParseException details.
       name: Data.Yaml.decodeEither
       within: []

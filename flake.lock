@@ -249,11 +249,11 @@
     "himari-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1795009992,
-        "narHash": "sha256-g6YHndGyvdWycpkz5PIl5MRmYPOSLo5OcfR3YDIOn9o=",
+        "lastModified": 1795066124,
+        "narHash": "sha256-FNfzxm4DDRPn1QUG4uE9bsPFKB4ZFDN2XibDfA1CzPo=",
         "owner": "ncaq",
         "repo": "himari",
-        "rev": "914b948bd124584912b5db3536d0814dcc1032eb",
+        "rev": "2f2355a1c1216180c5db9a20d09516032d0bbfb7",
         "type": "github"
       },
       "original": {

@@ -222,7 +222,17 @@
   # 途中だった解錠は止められたままやり直されず、
   # ディスクが揃っていてもマウントされなくなる。
   # noaは起動に必須ではないので、
-  # 解錠を待つものが`/mnt/noa`のマウントだけになる切り替えの後に置く。
+  # 解錠が途中で止められない切り替えの後に置く。
+  #
+  # 切り替えの後では全てのメンバがほぼ同時に解錠される。
+  # systemdの`64-btrfs.rules`は、
+  # 複数デバイスのbtrfsの全メンバがカーネルへ登録されるまで、
+  # メンバのデバイスをreadyにしない。
+  # `/mnt/noa`のマウントは`/dev/mapper/noa0`がreadyになるのを待つので、
+  # noa0の解錠が先に済んでも、
+  # 全メンバが揃うまでマウントは始まらない。
+  # この待ちを飛ばすudevルールや`degraded`を足すと、
+  # 解錠が済んだメンバだけでマウントされる。
   environment.etc.crypttab.text = ''
     noa0 /dev/disk/by-partlabel/disk-noa0-luks - tpm2-device=auto,discard,nofail
     noa1 /dev/disk/by-partlabel/disk-noa1-luks - tpm2-device=auto,discard,nofail

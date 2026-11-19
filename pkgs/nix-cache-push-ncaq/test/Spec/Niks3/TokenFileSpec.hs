@@ -1,7 +1,9 @@
 -- | 認証トークンの一時ファイルのテスト。
 module Spec.Niks3.TokenFileSpec (tests) where
 
+import Data.Text (isInfixOf)
 import Data.Text.IO.Utf8 (readFile)
+import Fixture (runCapturing)
 import Himari hiding (readFile)
 import NixCachePushNcaq.Failure (ConfigFailure (..))
 import NixCachePushNcaq.MountInfo (Mount (..), fileSystemOf, parseMountInfo)
@@ -97,14 +99,20 @@ tests = describe "TokenFile" do
         `shouldBe` "認証トークンの一時ファイルを置けません。候補のどれも、存在するtmpfsの上のディレクトリではありません: /run/user/1000, /dev/shm"
   describe "systemTokenDirectory" do
     -- どこを選ぶかは環境によるので固定しない。選んだ場所がtmpfsであることだけを確かめる。
-    it "このマシンのマウントの一覧でtmpfsである場所を選ぶ" do
-      directory <- systemTokenDirectory Nothing >>= canonicalizePath
+    it "このマシンのマウントの一覧でtmpfsである場所を、警告を出さずに選ぶ" do
+      (result, logs) <- runCapturing (systemTokenDirectory Nothing)
       mounts <- liftIO (readFile "/proc/self/mountinfo") >>= parseMountInfo
-      fileSystemOf mounts directory `shouldBe` Just "tmpfs"
-    it "tmpfsでないXDG_RUNTIME_DIRは使わない" do
+      traverse canonicalizePath result
+        >>= (`shouldBe` Right (Just "tmpfs")) . fmap (fileSystemOf mounts)
+      logs `shouldBe` []
+    it "tmpfsでないXDG_RUNTIME_DIRは使わず、使わなかったことを警告する" do
       withDirectory \directory -> do
         mounts <- liftIO (readFile "/proc/self/mountinfo") >>= parseMountInfo
         notOnTmpfs <- (/= Just "tmpfs") . fileSystemOf mounts <$> canonicalizePath directory
         -- 作業ディレクトリがtmpfsの環境では、このテストは確かめるものが無い。
         when notOnTmpfs do
-          systemTokenDirectory (Just directory) >>= (`shouldNotBe` directory)
+          (result, logs) <- runCapturing (systemTokenDirectory (Just directory))
+          result `shouldNotBe` Right directory
+          isRight result `shouldBe` True
+          length logs `shouldBe` 1
+          filter (isInfixOf (convert directory)) logs `shouldBe` logs

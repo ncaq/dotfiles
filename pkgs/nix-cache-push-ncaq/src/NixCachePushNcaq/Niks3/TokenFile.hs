@@ -16,11 +16,25 @@ import NixCachePushNcaq.MountInfo (Mount, fileSystemOf, parseMountInfo)
 -- 候補は`XDG_RUNTIME_DIR`、`/dev/shm`、システムの一時ディレクトリの順で、
 -- `/proc/self/mountinfo`を読んで実際にtmpfsであるものだけを使う。
 -- 一時ディレクトリは、tmpfsにしている環境でだけ選ばれる。
-systemTokenDirectory :: (MonadIO m, MonadThrow m) => Maybe FilePath -> m FilePath
+--
+-- `XDG_RUNTIME_DIR`が設定されているのに使えなかった時は、警告を出して他の候補を使う。
+-- 黙って切り替えると、環境の設定の誤りに気付けない。
+systemTokenDirectory
+  :: (MonadIO m, MonadLogger m, MonadThrow m) => Maybe FilePath -> m FilePath
 systemTokenDirectory runtimeDirectory = do
   mounts <- liftIO (readFile "/proc/self/mountinfo") >>= parseMountInfo
   temporaryDirectory <- getTemporaryDirectory
-  tokenDirectoryFrom mounts (toList runtimeDirectory <> ["/dev/shm", temporaryDirectory])
+  directory <-
+    tokenDirectoryFrom mounts (toList runtimeDirectory <> ["/dev/shm", temporaryDirectory])
+  for_ (mfilter (/= directory) runtimeDirectory) \unused ->
+    logWarnN
+      ( "XDG_RUNTIME_DIRの"
+          <> convert unused
+          <> "は存在するtmpfsの上のディレクトリではないので、代わりに"
+          <> convert directory
+          <> "を使います"
+      )
+  pure directory
 
 -- | 候補のうち、存在していてtmpfsの上にある最初のディレクトリを選ぶ。
 --

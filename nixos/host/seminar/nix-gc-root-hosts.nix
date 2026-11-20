@@ -9,6 +9,8 @@ let
   # サービス名はユニット属性名・StateDirectory・CacheDirectoryなど各所で使うため、
   # リネーム時の取りこぼしが起きないよう一箇所から導出します。
   serviceName = "nix-gc-root-hosts";
+  # 稼働中のsystemdと同じパッケージの`systemctl`。
+  systemctl = lib.getExe' config.systemd.package "systemctl";
   # flakeに定義された全nixosConfigurationsとhomeConfigurationsのクロージャを、
   # GCから保護するGC rootを登録するスクリプト。
   #
@@ -54,11 +56,14 @@ in
           # root更新が終わったらGCを起動します。
           # 先頭の`+`はサンドボックスの外で動かす指定で、`systemctl`がsystemdと話せるようにします。
           # GCの終わりは待ちません。
-          ExecStartPost = "+${lib.getExe' config.systemd.package "systemctl"} start --no-block nix-gc.service";
+          ExecStartPost = "+${systemctl} start --no-block nix-gc.service";
           StateDirectory = serviceName;
           CacheDirectory = serviceName;
-          # キャッシュが切れているとビルドに長時間かかることがあります。
-          TimeoutStartSec = "8h";
+          # キャッシュが効いている時は数分で終わります。
+          # キャッシュが切れているとビルドに時間がかかるので余裕は持たせますが、
+          # 毎日動くので、次の回に重なるほど長くは待ちません。
+          # 途中で止められても、ビルドが済んだ分はストアに残って次の回に使われます。
+          TimeoutStartSec = "2h";
           # 定期のウォームアップに緊急性はないため、
           # 同居するCIや公開サービスへリソースを譲ります。
           Nice = 19;

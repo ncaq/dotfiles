@@ -32,6 +32,9 @@
   ホストのストアの最適化も、
   VMが掴んでいるファイルをハードリンクへ置き換えるので、
   同じようにVMを止めている間に動かします。
+  GCと最適化は毎日続けて動き、
+  負荷が高い日は見送られます。
+  時刻と条件は`nixos/core/nix-store-maintenance.nix`に書いています。
 
   VMの中でGCを動かしてはいけません。
   VMのNixは書き込み用の層に「消した」という印を置くことしかできず、
@@ -43,8 +46,11 @@
   VMを起動するたびに作り直します。
   VMは起動し直すまで使い回すので、
   ジョブをまたいで書き込み用の層のビルド結果が残ります。
-  層が埋まらないように、
-  起動から1日経つとジョブが無い時にVMが自分で止まって作り直されます。
+  VMの中ではGCできないので、
+  層はVMを再起動すると空になります。
+  ホストのGCと最適化が毎日VMを再起動するので、
+  層を空にするためだけにVMを止める仕組みは持ちません。
+  負荷が高くて見送られた日が続くと、その間は層が増え続けます。
   ジョブはVMの中のnix-daemonの`trusted-users`なので、
   後のジョブが使うストアを書き換えることはできます。
   守っているのはホストと他のVMで、
@@ -161,25 +167,6 @@ let
   overlayMount = "/nix/.rw-store";
   # Nixのデータベースの置き場所。ホストでもVMの中でも同じパスです。
   nixDbDir = "/nix/var/nix/db";
-  # VMの中でジョブが動いているかを確かめるシェルの関数`job_running`の定義。
-  # `procps`の`pgrep`を使います。
-  #
-  # ジョブの実行中はランナの`Runner.Listener`が子の`Runner.Worker`を持ちます。
-  # どちらもnixpkgsではラッパではない実行ファイルなので、
-  # プロセス名がそのまま実行ファイルの名前になり、`--exact`で一致します。
-  #
-  # ジョブは任意のコードを実行できるので、
-  # 名前だけで探すと、同じ名前のプロセスを残してジョブが動いているように見せられます。
-  # ジョブのプロセスは`Runner.Listener`の子にはなれないので、
-  # ランナのユーザの`Runner.Listener`の子だけを探します。
-  jobRunningFunction = ''
-    job_running() {
-      local listeners
-      # `Runner.Listener`が居なければ、ジョブも動いていません。
-      listeners=$(pgrep --exact --uid github-runner --delimiter , Runner.Listener) || return 1
-      pgrep --exact --uid github-runner --parent "$listeners" Runner.Worker >/dev/null
-    }
-  '';
   # TAPのホスト側とゲスト側のネットワークの定義。
   # アドレスはVMの名前で`machineAddresses`のエントリを引きます。
   tapNetworkOf =
@@ -220,7 +207,7 @@ let
       # ゲストの構成が変わるたびに設定の適用でVMが再起動されて、
       # 実行中のジョブが落ちます。
       # 新しい構成の置き場所は設定の適用のたびに更新されるので、
-      # `regenerate-idle-vm`がジョブの無い時にVMを止めた後の起動から新しい構成になります。
+      # VMを再起動した後から新しい構成になります。
       # 共有やTAPのようなホスト側のユニットに関わる変更をすぐ反映したい時は、
       # 手で`microvm@`を再起動します。
       restartIfChanged = false;
@@ -378,7 +365,20 @@ let
                       pkgs.procps
                     ];
                     text = ''
-                      ${jobRunningFunction}
+                      # ジョブの実行中はランナの`Runner.Listener`が子の`Runner.Worker`を持ちます。
+                      # どちらもnixpkgsではラッパではない実行ファイルなので、
+                      # プロセス名がそのまま実行ファイルの名前になり、`--exact`で一致します。
+                      #
+                      # ジョブは任意のコードを実行できるので、
+                      # 名前だけで探すと、同じ名前のプロセスを残してジョブが動いているように見せられます。
+                      # ジョブのプロセスは`Runner.Listener`の子にはなれないので、
+                      # ランナのユーザの`Runner.Listener`の子だけを探します。
+                      job_running() {
+                        local listeners
+                        # `Runner.Listener`が居なければ、ジョブも動いていません。
+                        listeners=$(pgrep --exact --uid github-runner --delimiter , Runner.Listener) || return 1
+                        pgrep --exact --uid github-runner --parent "$listeners" Runner.Worker >/dev/null
+                      }
                       # 実行中にキャッシュを捨てるとビルドが遅くなるだけなので、何もしません。
                       if job_running; then
                         exit 0
@@ -386,39 +386,6 @@ let
                       sync
                       echo 3 >/proc/sys/vm/drop_caches
                       echo 1 >/proc/sys/vm/compact_memory
-                    '';
-                  }
-                );
-              };
-            };
-            # 起動から1日経ったら、ジョブが無い時にVMを止めて書き込み用の層を作り直させます。
-            #
-            # VMの中ではGCできないので、
-            # 何もしないと書き込み用の層はホストのGCで起動し直す週1回まで増え続けます。
-            # ジョブをまたいで残った結果で層が埋まり、
-            # 後のジョブがディスク不足で落ちます。
-            #
-            # VMが自分で電源を切ると、
-            # ホストの`microvm@`が`Restart=always`で起動し直します。
-            # 自動の起動し直しでも`Requires`のストアの準備のサービスは動くので、
-            # 層とデータベースの写しは新しくなります。
-            regenerate-idle-vm = {
-              description = "Power off the VM to regenerate its store overlay while no job is running";
-              serviceConfig = {
-                Type = "oneshot";
-                ExecStart = lib.getExe (
-                  pkgs.writeShellApplication {
-                    name = "regenerate-idle-vm";
-                    runtimeInputs = [
-                      pkgs.procps
-                      config.systemd.package
-                    ];
-                    text = ''
-                      ${jobRunningFunction}
-                      if job_running; then
-                        exit 0
-                      fi
-                      systemctl poweroff
                     '';
                   }
                 );
@@ -467,31 +434,17 @@ let
                 OnUnitInactiveSec = "10min";
               };
             };
-            # 1日ごとにしているのは、
-            # 続けて動くジョブ同士でビルドの結果を使い回せるようにするためです。
-            # 起動から1日後に初めて確かめて、
-            # その後は1時間ごとに確かめるので、
-            # ジョブが続いている間は終わるまで待ってから作り直します。
-            #
-            # ジョブが無いと確かめてから電源を切るまでの間に、
-            # 待っているランナがジョブを受け取ると、そのジョブは落ちます。
-            # 先にランナのサービスを止めても、
-            # 止めた時に受け取ったばかりのジョブはランナと一緒に終わるので、
-            # 隙間は止めるまでの間に移るだけで狭くなりません。
-            # 起きるのは確かめた直後の一瞬だけで、
-            # 落ちたジョブは実行し直せば済むので、この隙間は許容します。
-            regenerate-idle-vm = {
-              wantedBy = [ "timers.target" ];
-              timerConfig = {
-                OnBootSec = "1d";
-                OnUnitInactiveSec = "1h";
-              };
-            };
           };
         };
       };
     };
   vmUnits = lib.mapAttrsToList (name: _: "microvm@${name}.service") runnerVmDefs;
+  # ホストのストアを書き換えるサービス。
+  # 動いている間はVMを止めておく必要があります。
+  storeWriterUnits = [
+    "nix-gc"
+    "nix-optimise"
+  ];
   # 稼働中のsystemdと同じパッケージの`systemctl`。
   systemctl = lib.getExe' config.systemd.package "systemctl";
 in
@@ -620,7 +573,14 @@ in
           after = [
             "${tokenServiceOf name}.service"
             "${storeServiceOf name}.service"
-          ];
+          ]
+          # ストアを書き換える処理が起動を待っている間は、VMの起動も待たせます。
+          # GCは終わる時に最適化の起動を頼んでからVMの起動を頼みます。
+          # 順序が無いとVMはすぐ起動し始めて、直後に最適化の前処理に止められます。
+          # 順序があるとVMの起動は最適化の起動を待ち、
+          # 最適化の前処理が止める時に取り消されるので、VMは起動しかけません。
+          # 最適化が動かない時は待つ相手が居ないので、そのまま起動します。
+          ++ map (unit: "${unit}.service") storeWriterUnits;
         }
       ) runnerVmDefs)
 
@@ -651,16 +611,10 @@ in
       # VMの中ではストアのファイルが開けなくなります。
       # ランナは次の登録で共有ライブラリを読み込めずに失敗して、
       # VMを起動し直すまで戻りませんでした。
-      (lib.genAttrs
-        [
-          "nix-gc"
-          "nix-optimise"
-        ]
-        (_: {
-          preStart = "${systemctl} stop ${lib.concatStringsSep " " vmUnits}";
-          postStop = "${systemctl} start --no-block ${lib.concatStringsSep " " vmUnits}";
-        })
-      )
+      (lib.genAttrs storeWriterUnits (_: {
+        preStart = "${systemctl} stop ${lib.concatStringsSep " " vmUnits}";
+        postStop = "${systemctl} start --no-block ${lib.concatStringsSep " " vmUnits}";
+      }))
     ];
   };
 }

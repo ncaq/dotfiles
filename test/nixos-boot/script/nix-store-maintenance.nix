@@ -46,7 +46,13 @@ in
   assert "nix-store-maintenance-retry-limit" in gc_condition[0], gc_condition
   assert unit_lines("nix-gc.service", "Restart") == ["on-failure"]
   assert unit_lines("nix-gc.service", "RestartSteps") == ["3"]
-  assert unit_lines("nix-gc.service", "RestartPreventExitStatus"), "RestartPreventExitStatus"
+  # 本体の失敗とタイムアウトを再試行から外す指定。
+  # systemdが読み取った後の値で見ます。シグナルは`SIG`を除いた名前で返ります。
+  gc_restart_prevent = machine.succeed(
+      "systemctl show nix-gc.service --property=RestartPreventExitStatus --value"
+  ).split()
+  for expected in ["1", "255", "TERM", "KILL"]:
+      assert expected in gc_restart_prevent, (expected, gc_restart_prevent)
 
   machine.succeed("systemctl cat nix-optimise.service")
 

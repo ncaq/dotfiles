@@ -46,9 +46,14 @@ Rustにするのは、
 
 ## Haskell
 
-Haskellで書く時は、
+`pkgs`にパッケージとして置く時は、
 `pkgs/git-repo-subscribe`などの既存のパッケージと同じ構成に揃えます。
 himariを使うcabalプロジェクトにして、
 テストはsandwichで書きます。
 外部コマンドの出力のような複雑な文字列のパースには、
 手書きの分割や再帰ではなくmegaparsecを使います。
+
+この構成はパッケージとして置く時の決まりです。
+モジュールの中にインラインで書いて済む小さなものまで、
+cabalプロジェクトにする必要はありません。
+`pkgs.writers.writeHaskellBin`などでそのまま書いて構いません。

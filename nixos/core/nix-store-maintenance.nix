@@ -75,6 +75,10 @@
 let
   # 稼働中のsystemdと同じパッケージの`systemctl`。
   systemctl = lib.getExe' config.systemd.package "systemctl";
+  # 負荷を検査する回数の上限。最初の1回を含みます。
+  # 検査する時点は、この値と`retryServiceConfig`の待ち時間の指定で決まります。
+  # 変える時は、冒頭の「負荷と再試行」に書いた時点の説明も合わせます。
+  maxAttempts = 5;
   # 再試行を打ち切るかを確かめます。引数はユニットの名前です。
   # `ExecCondition`として動かすので、1で終わるとサービスは失敗ではなく見送りになります。
   # 文字列を取って整数を比べるだけなので、シェルスクリプトにします。
@@ -82,8 +86,9 @@ let
     name = "nix-store-maintenance-retry-limit";
     runtimeInputs = [ config.systemd.package ];
     text = ''
+      # 起動し直した回数は、済んだ検査の回数と同じです。
       restarts=$(systemctl show --property=NRestarts --value "$1")
-      if [ "$restarts" -ge 5 ]; then
+      if [ "$restarts" -ge ${toString maxAttempts} ]; then
         echo "確かめ直しても負荷が下がらないので、今回は見送ります"
         exit 1
       fi

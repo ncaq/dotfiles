@@ -111,6 +111,9 @@ in
       };
     after = [ "sops-install-secrets.service" ];
     requires = [ "sops-install-secrets.service" ];
+    # 設定の適用の間ずっと止めておくとその分のメトリクスが欠けるので、
+    # 適用の後に再起動させます。
+    stopIfChanged = false;
   };
 
   # `GARAGE_METRICS_TOKEN`: Garageの`/metrics`アクセス用Bearerトークン(garage.nixで定義)。

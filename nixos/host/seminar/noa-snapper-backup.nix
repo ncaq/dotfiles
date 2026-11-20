@@ -13,6 +13,16 @@ let
     IOSchedulingClass=idle
     IOWeight=10
   '';
+  # 転送の最中に設定を適用してユニットが変更扱いになっても、
+  # 途中で止められてやり直しにならないようにする。
+  # タイマーで起動するので、次の回は新しい定義で動く。
+  # `lowPriority`と同じ理由で、
+  # `restartIfChanged = false`が生成するものと同じ指定を追記する。
+  keepRunningOnSwitch = ''
+
+    [Service]
+    X-RestartIfChanged=false
+  '';
   targetPath = "/mnt/noa/snapshot-backup/seminar/root";
   # `/mnt/noa`は`nofail`なので、
   # マウントに失敗してもブートは進みます。
@@ -49,6 +59,7 @@ in
       "snapper-backup.service".text =
         builtins.readFile "${pkgs.snapper}/lib/systemd/system/snapper-backup.service"
         + lowPriority
+        + keepRunningOnSwitch
         + requireMount;
       "snapper-backup.timer" = {
         text = builtins.readFile "${pkgs.snapper}/lib/systemd/system/snapper-backup.timer";

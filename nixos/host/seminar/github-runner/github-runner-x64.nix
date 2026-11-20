@@ -213,6 +213,14 @@ let
     }:
     {
       inherit pkgs;
+      # 宣言的なmicroVMの既定はtrueで、
+      # ゲストの構成が変わるたびに設定の適用でVMが再起動されて、
+      # 実行中のジョブが落ちます。
+      # 新しい構成の置き場所は設定の適用のたびに更新されるので、
+      # `regenerate-idle-vm`がジョブの無い時にVMを止めた後の起動から新しい構成になります。
+      # 共有やTAPのようなホスト側のユニットに関わる変更をすぐ反映したい時は、
+      # 手で`microvm@`を再起動します。
+      restartIfChanged = false;
       config = {
         system.stateVersion = "26.05";
         microvm = {

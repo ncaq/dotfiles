@@ -2,7 +2,8 @@
   ストアのGCと最適化を、毎日決まった時刻に続けて動かします。
 
   どちらも稼働に必須ではないので、
-  ホストを使っている人やジョブの邪魔になりそうな時は動かさずに次の日へ回します。
+  ホストを使っている人やジョブの邪魔になりそうな時は始めません。
+  しばらく待って確かめ直し、それでも駄目なら次の日へ回します。
   ホストの空きが本当に足りなくなった時は、
   `nix-daemon.nix`の`min-free`がビルドの途中でGCします。
   ホストが完全に立ち往生しないための備えで、VMの中の空きには関わりません。
@@ -16,12 +17,33 @@
   タイマーはGCだけに持たせて、
   GCが終わった時に最適化を起動させます。
   GCを動かしてよいと判断した後なので、
-  最適化は条件を確かめ直さずに動きます。
+  最適化は負荷を確かめ直さずに動きます。
   GCが見送られた時と失敗した時は、最適化も動きません。
 
   起動させるのに`OnSuccess`を使わないのは、
   `ExecCondition`で見送られた時にも`OnSuccess`が発火するからです。
   `ExecStartPost`はGCの本体が成功した時にだけ動きます。
+
+  # 負荷と再試行
+
+  負荷が高い時は、時間を置いて確かめ直します。
+  負荷を細かい条件で見分けようとするより、
+  何度か確かめ直すほうが、
+  直前の処理が上げた一時的な負荷にも強くなります。
+
+  待つのも繰り返すのもsystemdに任せます。
+  負荷の検査は`ExecStartPre`に置いて、負荷が高い時は失敗させます。
+  `Restart=on-failure`が起動し直して、
+  `RestartSteps`が待ち時間を5分から40分まで倍々に伸ばします。
+  検査は最初の1回と合わせて、0分、5分、15分、35分、75分の時点の5回です。
+
+  回数は`ExecCondition`で打ち切ります。
+  `Restart`には回数の上限が無く、
+  `StartLimitBurst`で止めるとユニットがfailedで残ります。
+  `ExecCondition`で止めると失敗ではなく見送りになり、
+  見送りは`Restart`の対象にもなりません。
+
+  本体が失敗した時も同じ仕組みで再試行されます。
 
   # 逃した回
 
@@ -48,13 +70,26 @@
 let
   # 稼働中のsystemdと同じパッケージの`systemctl`。
   systemctl = lib.getExe' config.systemd.package "systemctl";
+  # 再試行を打ち切るかを確かめます。引数はユニットの名前です。
+  # `ExecCondition`として動かすので、1で終わるとサービスは失敗ではなく見送りになります。
+  # 文字列を取って整数を比べるだけなので、シェルスクリプトにします。
+  retryLimit = pkgs.writeShellApplication {
+    name = "nix-store-maintenance-retry-limit";
+    runtimeInputs = [ config.systemd.package ];
+    text = ''
+      restarts=$(systemctl show --property=NRestarts --value "$1")
+      if [ "$restarts" -ge 5 ]; then
+        echo "確かめ直しても負荷が下がらないので、今回は見送ります"
+        exit 1
+      fi
+    '';
+  };
   # ストアの手入れを始めてよいかを確かめます。
-  # `ExecCondition`として動かすので、
-  # 1から254で終わるとサービスは失敗ではなく見送りになり、
-  # 255で終わると失敗になります。
-  # `ExecStartPre`より前に動くので、
-  # 見送る時はホストごとの前処理も動きません。
-  # `ExecStopPost`は見送る時にも動くので、
+  # `ExecStartPre`として動かすので、0以外で終わるとサービスは失敗になり、
+  # `Restart=on-failure`が時間を置いて起動し直します。
+  # ホストごとの前処理より先に動かすので、
+  # 負荷が高い時はホストごとの前処理は動きません。
+  # `ExecStopPost`は前処理が失敗した時にも動くので、
   # ホストごとの後処理は前処理が動いていなくても害の無いものにします。
   #
   # 条件をsystemdの`ConditionCPUPressure`で書かないのは、
@@ -107,12 +142,12 @@ let
               hPutStrLn stderr "ロードアベレージを取得できませんでした"
               exitWith (ExitFailure 255)
             Just loadAvg
-              -- 直近1分と直近5分のどちらかがスレッドの数の半分を超えていたら見送ります。
+              -- 直近1分と直近5分のどちらかがスレッドの数の半分を超えていたら始めません。
               -- 直近1分は、始まったばかりのジョブに気付くために見ます。
               -- 直近5分は、ジョブの合間に負荷が一瞬だけ下がった時に始めてしまわないために見ます。
               | load1 > limit || load5 > limit -> do
                   putStrLn $
-                    "負荷が高いので見送ります: ロードアベレージが直近1分で"
+                    "負荷が高いので始めません: ロードアベレージが直近1分で"
                       <> showFFloat (Just 2) load1 ""
                       <> "、直近5分で"
                       <> showFFloat (Just 2) load5 ""
@@ -127,7 +162,27 @@ let
       '';
 in
 {
-  nix = {
+  options.local.nixStoreMaintenance.retryServiceConfig = lib.mkOption {
+    type = lib.types.attrs;
+    readOnly = true;
+    default = {
+      # 先頭の`+`はサービスのサンドボックスの外で動かす指定です。
+      # サンドボックスを持つサービスからも`systemctl`でsystemdに問い合わせられるようにします。
+      # `%n`はユニットの名前に展開されます。
+      ExecCondition = "+${lib.getExe retryLimit} %n";
+      ExecStartPre = [ (lib.getExe condition) ];
+      Restart = "on-failure";
+      RestartSec = "5min";
+      RestartSteps = 3;
+      RestartMaxDelaySec = "40min";
+    };
+    description = ''
+      負荷が高い時は始めずに、時間を置いて確かめ直すための`serviceConfig`。
+      GCの前に別の処理を挟むホストが、その処理にも同じ振る舞いをさせるのに使う。
+    '';
+  };
+
+  config.nix = {
     gc = {
       automatic = true;
       # ホストのタイムゾーンの設定に関わらず、日本時間の朝に動かします。
@@ -138,13 +193,14 @@ in
     optimise.automatic = false;
   };
 
-  systemd = {
+  config.systemd = {
     services = {
       nix-gc = {
         # 起動を頼んだ最適化は、GCの後処理まで終わってから動き出します。
         before = [ "nix-optimise.service" ];
-        serviceConfig = {
-          ExecCondition = lib.getExe condition;
+        serviceConfig = config.local.nixStoreMaintenance.retryServiceConfig // {
+          # 負荷の検査は、ホストごとの前処理より先に動かします。
+          ExecStartPre = lib.mkBefore config.local.nixStoreMaintenance.retryServiceConfig.ExecStartPre;
           # 最適化の終わりは待ちません。
           # 待つとGCのユニットが最適化の間も起動の途中のままになります。
           ExecStartPost = "${systemctl} start --no-block nix-optimise.service";

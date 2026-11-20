@@ -28,8 +28,14 @@ lib.optionalString (githubRunnerVms != { }) # python
                 for line in store_unit_text.splitlines()
                 if line.startswith(key + "=")
             ]
-            assert len(store_unit_scripts) == 1, (store_unit, store_unit_text)
-            store_unit_script = machine.succeed(f"cat {store_unit_scripts[0]}")
+            # 負荷の検査のように、スクリプトではない実行ファイルが並ぶこともあります。
+            # バイナリの中身はそのままでは読めないので、VMのユニットの名前だけを抜き出します。
+            assert len(store_unit_scripts) >= 1, (store_unit, store_unit_text)
+            store_unit_script = machine.succeed(
+                "cat "
+                + " ".join(store_unit_scripts)
+                + " | grep --text --only-matching 'microvm@[A-Za-z0-9-]*[.]service' || true"
+            )
             for unit in ${builtins.toJSON units}:
                 assert unit in store_unit_script, (store_unit, key, unit, store_unit_script)
         for unit in ${builtins.toJSON units}:

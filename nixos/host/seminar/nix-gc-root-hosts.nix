@@ -51,7 +51,10 @@ in
         CacheDirectory = serviceName;
         # キャッシュが切れているとビルドに長時間かかることがあります。
         TimeoutStartSec = "8h";
-        # 週次のウォームアップに緊急性はないため、
+        # GCに連れられて毎日起動するので、GCと同じ条件で見送ります。
+        # 条件を付けないと、GCが負荷を見て見送る日にも全ホストの評価だけは動きます。
+        ExecCondition = config.systemd.services.nix-gc.serviceConfig.ExecCondition;
+        # 定期のウォームアップに緊急性はないため、
         # 同居するCIや公開サービスへリソースを譲ります。
         Nice = 19;
         CPUSchedulingPolicy = "idle";

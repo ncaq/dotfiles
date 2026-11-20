@@ -49,14 +49,6 @@
         "@wheel"
       ];
     };
-    gc = {
-      automatic = true;
-      dates = "Mon *-*-* 12:30:00";
-    };
-    optimise = {
-      automatic = true;
-      dates = "Fri *-*-* 12:30:00";
-    };
     # nix-daemonにGitHubのアクセストークンを渡します。
     # `nix profile add`などを実行した際のGitHubのAPI rate limitを回避するために有用です。
     # `access-tokens`はクライアントからdaemonに転送されない設定のため、

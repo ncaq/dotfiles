@@ -27,6 +27,8 @@ let
   # 負荷が高くて再試行を待っている間も正常になってしまいます。
   # 待っている間はVMを止めていないので、その間にVMが落ちても通知されません。
   # そこでユニットの細かい状態を見て、本体か後処理が動いている時だけを正常にします。
+  # タイムアウトで本体や後処理を止めている途中の状態(`stop-sigkill`や`final-sigterm`など)も、
+  # VMは止まったままなので正常に入れます。
   # 再試行の待ち(`auto-restart`)と、
   # 打ち切りの判定(`condition`)と、負荷の検査(`start-pre`)は正常にしません。
   #
@@ -55,7 +57,9 @@ let
             for unit in nix-gc.service nix-optimise.service; do
               state=$(systemctl show --property=SubState --value "$unit")
               case "$state" in
-                start | start-post | running | stop | stop-sigterm | stop-post)
+                start | start-post | running | \
+                  stop | stop-sigterm | stop-sigkill | \
+                  stop-post | final-sigterm | final-sigkill)
                   echo "${label} OK: stopped while $unit is $state"
                   exit 0
                   ;;

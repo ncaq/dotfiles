@@ -2,6 +2,11 @@
 # 全てのGitHub ActionsのランナのVMのユニットが入っていることを確認します。
 # GCがパスを消した後もVMが動き続けると、VMのデータベースと実体が食い違います。
 # 最適化がファイルを置き換えた後もVMが動き続けると、VMの中でストアのファイルが開けなくなります。
+#
+# VMのユニットがGCと最適化の後に順序付けられていることも確認します。
+# 順序が無いと、GCに続けて最適化が動く時に、
+# VMがGCの後に起動しかけて、すぐ最適化の前処理に止められます。
+#
 # ランナのVMは秘密情報が無いとテストVMでは起動しないので、
 # 評価とブートが通っても、
 # ここが壊れたことには気付けません。
@@ -27,4 +32,7 @@ lib.optionalString (githubRunnerVms != { }) # python
             store_unit_script = machine.succeed(f"cat {store_unit_scripts[0]}")
             for unit in ${builtins.toJSON units}:
                 assert unit in store_unit_script, (store_unit, key, unit, store_unit_script)
+        for unit in ${builtins.toJSON units}:
+            unit_after = machine.succeed(f"systemctl show {unit} --property=After --value").split()
+            assert store_unit in unit_after, (store_unit, unit, unit_after)
   ''

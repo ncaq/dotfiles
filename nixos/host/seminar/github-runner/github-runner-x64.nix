@@ -492,6 +492,12 @@ let
       };
     };
   vmUnits = lib.mapAttrsToList (name: _: "microvm@${name}.service") runnerVmDefs;
+  # ホストのストアを書き換えるサービス。
+  # 動いている間はVMを止めておく必要があります。
+  storeWriterUnits = [
+    "nix-gc"
+    "nix-optimise"
+  ];
   # 稼働中のsystemdと同じパッケージの`systemctl`。
   systemctl = lib.getExe' config.systemd.package "systemctl";
 in
@@ -620,7 +626,14 @@ in
           after = [
             "${tokenServiceOf name}.service"
             "${storeServiceOf name}.service"
-          ];
+          ]
+          # ストアを書き換える処理が起動を待っている間は、VMの起動も待たせます。
+          # GCは終わる時に最適化の起動を頼んでからVMの起動を頼みます。
+          # 順序が無いとVMはすぐ起動し始めて、直後に最適化の前処理に止められます。
+          # 順序があるとVMの起動は最適化の起動を待ち、
+          # 最適化の前処理が止める時に取り消されるので、VMは起動しかけません。
+          # 最適化が動かない時は待つ相手が居ないので、そのまま起動します。
+          ++ map (unit: "${unit}.service") storeWriterUnits;
         }
       ) runnerVmDefs)
 
@@ -651,16 +664,10 @@ in
       # VMの中ではストアのファイルが開けなくなります。
       # ランナは次の登録で共有ライブラリを読み込めずに失敗して、
       # VMを起動し直すまで戻りませんでした。
-      (lib.genAttrs
-        [
-          "nix-gc"
-          "nix-optimise"
-        ]
-        (_: {
-          preStart = "${systemctl} stop ${lib.concatStringsSep " " vmUnits}";
-          postStop = "${systemctl} start --no-block ${lib.concatStringsSep " " vmUnits}";
-        })
-      )
+      (lib.genAttrs storeWriterUnits (_: {
+        preStart = "${systemctl} stop ${lib.concatStringsSep " " vmUnits}";
+        postStop = "${systemctl} start --no-block ${lib.concatStringsSep " " vmUnits}";
+      }))
     ];
   };
 }

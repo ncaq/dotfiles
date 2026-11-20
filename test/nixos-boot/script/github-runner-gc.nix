@@ -1,5 +1,7 @@
-# ホストのGCの前後の処理に、全てのGitHub ActionsのランナのVMのユニットが入っていることを確認します。
+# ホストのGCとストアの最適化の前後の処理に、
+# 全てのGitHub ActionsのランナのVMのユニットが入っていることを確認します。
 # GCがパスを消した後もVMが動き続けると、VMのデータベースと実体が食い違います。
+# 最適化がファイルを置き換えた後もVMが動き続けると、VMの中でストアのファイルが開けなくなります。
 # ランナのVMは秘密情報が無いとテストVMでは起動しないので、
 # 評価とブートが通っても、
 # ここが壊れたことには気付けません。
@@ -13,15 +15,16 @@ let
 in
 lib.optionalString (githubRunnerVms != { }) # python
   ''
-    nix_gc_unit = machine.succeed("systemctl cat nix-gc.service")
-    for key in ["ExecStartPre", "ExecStopPost"]:
-        nix_gc_scripts = [
-            line.split("=", 1)[1].strip()
-            for line in nix_gc_unit.splitlines()
-            if line.startswith(key + "=")
-        ]
-        assert len(nix_gc_scripts) == 1, nix_gc_unit
-        nix_gc_script = machine.succeed(f"cat {nix_gc_scripts[0]}")
-        for unit in ${builtins.toJSON units}:
-            assert unit in nix_gc_script, (key, unit, nix_gc_script)
+    for store_unit in ["nix-gc.service", "nix-optimise.service"]:
+        store_unit_text = machine.succeed(f"systemctl cat {store_unit}")
+        for key in ["ExecStartPre", "ExecStopPost"]:
+            store_unit_scripts = [
+                line.split("=", 1)[1].strip()
+                for line in store_unit_text.splitlines()
+                if line.startswith(key + "=")
+            ]
+            assert len(store_unit_scripts) == 1, (store_unit, store_unit_text)
+            store_unit_script = machine.succeed(f"cat {store_unit_scripts[0]}")
+            for unit in ${builtins.toJSON units}:
+                assert unit in store_unit_script, (store_unit, key, unit, store_unit_script)
   ''

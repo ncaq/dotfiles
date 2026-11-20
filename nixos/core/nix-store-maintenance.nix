@@ -43,7 +43,12 @@
   `ExecCondition`で止めると失敗ではなく見送りになり、
   見送りは`Restart`の対象にもなりません。
 
-  本体が失敗した時も同じ仕組みで再試行されます。
+  再試行するのは負荷の検査で止まった時だけです。
+  本体の失敗は時間を置いても直らないことが多く、
+  繰り返すと負荷だけがかかるので、本体が失敗した時とタイムアウトした時は再試行しません。
+  `RestartPreventExitStatus`が見るのは本体の終了の仕方だけで、
+  `ExecStartPre`の失敗には効かないので、
+  本体のあらゆる終了コードとシグナルを挙げて再試行から外します。
 
   # 逃した回
 
@@ -175,6 +180,17 @@ in
       RestartSec = "5min";
       RestartSteps = 3;
       RestartMaxDelaySec = "40min";
+      # 本体が失敗した時は再試行しません。
+      # 終了コードは範囲で書けないので、全て並べます。
+      # シグナルは、タイムアウトの時にsystemdが送るものです。
+      # リストにするとユニットに値の数だけ行が並ぶので、1行の文字列にします。
+      RestartPreventExitStatus = lib.concatStringsSep " " (
+        map toString (lib.range 1 255)
+        ++ [
+          "SIGTERM"
+          "SIGKILL"
+        ]
+      );
     };
     description = ''
       負荷が高い時は始めずに、時間を置いて確かめ直すための`serviceConfig`。

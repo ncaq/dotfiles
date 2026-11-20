@@ -19,12 +19,23 @@ let
   # 止まっている時間は数分から数十分で、ストアの状態によって変わります。
   # 失敗を許す回数を増やして吸収しようとすると、
   # 本当に落ちた時に気付くのもその分遅れます。
-  # そこで応答が無くても、GCか最適化が動いている間は正常として扱います。
+  # そこで応答が無くても、GCか最適化がVMを止めている間は正常として扱います。
   # 止める側の定義は`github-runner/github-runner-x64.nix`の`storeWriterUnits`です。
   #
-  # GCから最適化へ移る一瞬と、最適化が終わってからVMが起動し終わるまでの十数秒は、
-  # どちらも動いていないのに応答が無い状態になります。
-  # これは1回の失敗を許す`max_check_attempts`が吸収します。
+  # VMが止まっているのは、サービスの前処理から後処理までの間です。
+  # サービスが動いているかどうかだけで判断すると、
+  # 負荷が高くて再試行を待っている間も正常になってしまいます。
+  # 待っている間はVMを止めていないので、その間にVMが落ちても通知されません。
+  # そこでユニットの細かい状態を見て、本体か後処理が動いている時だけを正常にします。
+  # 再試行の待ち(`auto-restart`)と、
+  # 打ち切りの判定(`condition`)と、負荷の検査(`start-pre`)は正常にしません。
+  #
+  # 以下の間は、正常として扱われないのに応答が無い状態になります。
+  # どれも数秒から十数秒なので、1回の失敗を許す`max_check_attempts`が吸収します。
+  #
+  # - VMを止める前処理が動いている間(負荷の検査と同じ`start-pre`)
+  # - GCから最適化へ移る間
+  # - 最適化が終わってからVMが起動し終わるまで
   githubRunnerCheck =
     { name, label }:
     {
@@ -42,10 +53,9 @@ let
               exit 0
             fi
             for unit in nix-gc.service nix-optimise.service; do
-              # 動いていない時は`is-active`が0以外で終わります。
-              state=$(systemctl is-active "$unit" || true)
+              state=$(systemctl show --property=SubState --value "$unit")
               case "$state" in
-                active | activating | deactivating)
+                start | start-post | running | stop | stop-sigterm | stop-post)
                   echo "${label} OK: stopped while $unit is $state"
                   exit 0
                   ;;

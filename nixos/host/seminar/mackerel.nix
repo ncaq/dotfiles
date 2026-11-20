@@ -13,6 +13,54 @@ let
   # この自宅サーバでダウン時間ゼロを達成する気は基本的にありません。
   # なのでブルーグリーンデプロイメントなどは行いません。
   max_check_attempts = 2;
+  # GitHub ActionsのランナのVMのチェック。
+  #
+  # ランナのVMは、ホストのGCとストアの最適化の間は毎日わざと止められます。
+  # 止まっている時間は数分から数十分で、ストアの状態によって変わります。
+  # 失敗を許す回数を増やして吸収しようとすると、
+  # 本当に落ちた時に気付くのもその分遅れます。
+  # そこで応答が無くても、GCか最適化が動いている間は正常として扱います。
+  # 止める側の定義は`github-runner/github-runner-x64.nix`の`storeWriterUnits`です。
+  #
+  # GCから最適化へ移る一瞬と、最適化が終わってからVMが起動し終わるまでの十数秒は、
+  # どちらも動いていないのに応答が無い状態になります。
+  # これは1回の失敗を許す`max_check_attempts`が吸収します。
+  githubRunnerCheck =
+    { name, label }:
+    {
+      command = lib.getExe (
+        pkgs.writeShellApplication {
+          name = "check-${name}";
+          runtimeInputs = [
+            pkgs.iputils
+            config.systemd.package
+          ];
+          text = ''
+            runner_host=${config.machineAddresses.${name}.guest6}
+            if ping -c 1 -W 2 "$runner_host" > /dev/null 2>&1; then
+              echo "${label} OK"
+              exit 0
+            fi
+            for unit in nix-gc.service nix-optimise.service; do
+              # 動いていない時は`is-active`が0以外で終わります。
+              state=$(systemctl is-active "$unit" || true)
+              case "$state" in
+                active | activating | deactivating)
+                  echo "${label} OK: stopped while $unit is $state"
+                  exit 0
+                  ;;
+              esac
+            done
+            echo "${label} CRITICAL: ping failed"
+            exit 2
+          '';
+        }
+      );
+      inherit
+        check_interval
+        max_check_attempts
+        ;
+    };
 in
 {
   services.mackerel-agent = {
@@ -307,49 +355,13 @@ in
             max_check_attempts
             ;
         };
-        github-runner-dotfiles-x64 = {
-          command = lib.getExe (
-            pkgs.writeShellApplication {
-              name = "check-github-runner-dotfiles-x64";
-              runtimeInputs = [ pkgs.iputils ];
-              text = ''
-                runner_host=${config.machineAddresses.github-runner-dotfiles-x64.guest6}
-                if ping -c 1 -W 2 "$runner_host" > /dev/null 2>&1; then
-                  echo "GitHub Runner x64 dotfiles OK"
-                  exit 0
-                else
-                  echo "GitHub Runner x64 dotfiles CRITICAL: ping failed"
-                  exit 2
-                fi
-              '';
-            }
-          );
-          inherit
-            check_interval
-            max_check_attempts
-            ;
+        github-runner-dotfiles-x64 = githubRunnerCheck {
+          name = "github-runner-dotfiles-x64";
+          label = "GitHub Runner x64 dotfiles";
         };
-        github-runner-cdn-ncaq-net-x64 = {
-          command = lib.getExe (
-            pkgs.writeShellApplication {
-              name = "check-github-runner-cdn-ncaq-net-x64";
-              runtimeInputs = [ pkgs.iputils ];
-              text = ''
-                runner_host=${config.machineAddresses.github-runner-cdn-ncaq-net-x64.guest6}
-                if ping -c 1 -W 2 "$runner_host" > /dev/null 2>&1; then
-                  echo "GitHub Runner x64 cdn.ncaq.net OK"
-                  exit 0
-                else
-                  echo "GitHub Runner x64 cdn.ncaq.net CRITICAL: ping failed"
-                  exit 2
-                fi
-              '';
-            }
-          );
-          inherit
-            check_interval
-            max_check_attempts
-            ;
+        github-runner-cdn-ncaq-net-x64 = githubRunnerCheck {
+          name = "github-runner-cdn-ncaq-net-x64";
+          label = "GitHub Runner x64 cdn.ncaq.net";
         };
       };
     };

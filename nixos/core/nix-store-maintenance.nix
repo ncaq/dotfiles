@@ -13,9 +13,14 @@
   同じ時刻のタイマーを2つ並べても、
   systemdはどちらを先に起動するかを決めてくれません。
   タイマーはGCだけに持たせて、
-  GCが最適化を連れて起動するようにします。
-  GCが失敗しても見送られても、
-  最適化は自分の条件だけを見て動きます。
+  GCが終わった時に最適化を起動させます。
+  GCを動かしてよいと判断した後なので、
+  最適化は条件を確かめ直さずに動きます。
+  GCが見送られた時と失敗した時は、最適化も動きません。
+
+  起動させるのに`OnSuccess`を使わないのは、
+  `ExecCondition`で見送られた時にも`OnSuccess`が発火するからです。
+  `ExecStartPost`はGCの本体が成功した時にだけ動きます。
 
   # 逃した回
 
@@ -36,9 +41,12 @@
 {
   pkgs,
   lib,
+  config,
   ...
 }:
 let
+  # 稼働中のsystemdと同じパッケージの`systemctl`。
+  systemctl = lib.getExe' config.systemd.package "systemctl";
   # ストアの手入れを始めてよいかを確かめます。
   # `ExecCondition`として動かすので、
   # 1から254で終わるとサービスは失敗ではなく見送りになり、
@@ -114,9 +122,6 @@ let
                 load5 = sample_5 loadAvg
                 limit = fromIntegral threads / 2 :: Double
       '';
-  maintenance = {
-    serviceConfig.ExecCondition = lib.getExe condition;
-  };
 in
 {
   nix = {
@@ -132,14 +137,16 @@ in
 
   systemd = {
     services = {
-      nix-gc = lib.mkMerge [
-        maintenance
-        {
-          wants = [ "nix-optimise.service" ];
-          before = [ "nix-optimise.service" ];
-        }
-      ];
-      nix-optimise = maintenance;
+      nix-gc = {
+        # 起動を頼んだ最適化は、GCの後処理まで終わってから動き出します。
+        before = [ "nix-optimise.service" ];
+        serviceConfig = {
+          ExecCondition = lib.getExe condition;
+          # 最適化の終わりは待ちません。
+          # 待つとGCのユニットが最適化の間も起動の途中のままになります。
+          ExecStartPost = "${systemctl} start --no-block nix-optimise.service";
+        };
+      };
     };
     timers = {
       # 起動の時には有効にせず、下のタイマーに任せます。

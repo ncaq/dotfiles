@@ -4,7 +4,7 @@
   # ホスト側で用意するものの場所をモジュールの外から参照できるようにします。
   # ブートテストがこれを読んで、
   # ストアの準備(`test/nixos-boot/script/github-runner-store.nix`)と、
-  # GCの前後の処理(`test/nixos-boot/script/github-runner-gc.nix`)を確かめます。
+  # GCとストアの最適化の前後の処理(`test/nixos-boot/script/github-runner-gc.nix`)を確かめます。
   # 値は`github-runner-x64.nix`が定義します。
   options.local.githubRunnerVms = lib.mkOption {
     type = lib.types.attrsOf (

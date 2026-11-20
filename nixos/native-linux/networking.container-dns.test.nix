@@ -41,6 +41,10 @@ let
         type = lib.types.anything;
         default = { };
       };
+      systemd = lib.mkOption {
+        type = lib.types.anything;
+        default = { };
+      };
       # `nixos-containers.nix`のうち、`networking.nix`が読むものと書くものだけ。
       containers = lib.mkOption {
         type = lib.types.attrsOf (

@@ -44,6 +44,20 @@ in
       nameservers = encryptedDns true;
     };
 
+    # ホストがオンラインかどうかは`NetworkManager-wait-online.service`だけで決める。
+    #
+    # 外向きのリンクは全てNetworkManagerの管理で、
+    # systemd-networkdを有効にするホストでも、
+    # 任せているのはmicroVMのTAPやコンテナのvethのような内向きのリンクだけ。
+    # `systemd-networkd-wait-online.service`は管理する全てのリンクの設定が終わるのを待つが、
+    # 内向きのリンクは相手のVMやコンテナが起動するまで設定が終わらない。
+    # `network-online.target`を待つサービスの後に起動する相手が1つでもあると、
+    # 互いを待ち合ってタイムアウトまで進まなくなる。
+    #
+    # テストVMには実機のNICが無くsystemd-networkdが待つリンクが揃わないので、
+    # ブートのテストでも待たないことが要る。
+    systemd.network.wait-online.enable = false;
+
     programs = {
       nm-applet = {
         enable = true;

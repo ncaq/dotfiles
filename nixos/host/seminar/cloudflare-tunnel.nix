@@ -29,6 +29,9 @@ in
       };
     };
   };
+  # インターネットからの入口なので、
+  # 設定の適用の間ずっと止めておかずに、適用の後に再起動させます。
+  systemd.services.cloudflared-tunnel-seminar.stopIfChanged = false;
   # Cloudflare TunnelがQUICを使うときのライブラリである、
   # quic-goの推奨ガイドラインに従って、
   # UDPバッファサイズを増大させます。

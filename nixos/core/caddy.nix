@@ -18,7 +18,13 @@
 {
   config = lib.mkIf config.services.caddy.enable {
     # `/run`直下はcaddyユーザに書けないのでsystemdにディレクトリを用意させる。
-    systemd.services.caddy.serviceConfig.RuntimeDirectory = "caddy";
+    systemd.services.caddy = {
+      serviceConfig.RuntimeDirectory = "caddy";
+      # 設定の変更だけならreloadで済みますが、
+      # パッケージが変わるとユニットごと変更扱いになります。
+      # HTTPの入口を設定の適用の間ずっと止めておかずに、適用の後に再起動させます。
+      stopIfChanged = false;
+    };
     services.caddy = {
       # スラッシュが2つ並ぶのはタイプミスではない。
       # `unix/`がCaddyのネットワークアドレス記法のプレフィックスで、

@@ -7,5 +7,24 @@
 # 対象のファイルシステムと間隔は既定値に任せます。
 # 既定では全てのbtrfsをデバイスごとに1回ずつ、月1回scrubします。
 {
+  lib,
+  config,
+  utils,
+  ...
+}:
+{
   services.btrfs.autoScrub.enable = true;
+  # scrubは大きなファイルシステムだと何時間もかかります。
+  # 動いている最中に設定を適用してユニットが変更扱いになると、
+  # 途中で止められて最初からやり直しになります。
+  # タイマーで起動するので、触らなくても次の回は新しい定義で動きます。
+  # ユニット名は上流モジュールの付け方に合わせています。
+  systemd.services = lib.listToAttrs (
+    map (
+      fs:
+      lib.nameValuePair "btrfs-scrub-${utils.escapeSystemdPath fs}" {
+        restartIfChanged = false;
+      }
+    ) config.services.btrfs.autoScrub.fileSystems
+  );
 }

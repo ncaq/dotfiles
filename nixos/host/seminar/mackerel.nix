@@ -20,6 +20,14 @@ in
     runAsRoot = true;
     apiKeyFile = config.sops.templates."mackerel-api-key.conf".path;
     settings = {
+      # 上流モジュールの既定は`poweroff`で、
+      # エージェントが止まるたびにホストのステータスを`poweroff`に変えます。
+      # エージェントは止まった理由を区別しないので、
+      # 設定の適用で再起動しただけでも電源断として通知されます。
+      # 上流モジュールの型は空を許さないので、
+      # 起動時と同じ`working`を送らせてステータスを変えないようにします。
+      # 本当に電源が落ちた時は死活監視で気付きます。
+      host_status.on_stop = "working";
       # disk I/Oメトリクスを物理ディスク単位だけに絞ってノイズを削減する。
       # この正規表現はデバイス名に部分一致したものを収集対象から除外する。
       # 残したいのは物理ディスク全体(nvme0n1, nvme1n1, sda, sdb, sdc)のI/Oだけ。
@@ -346,6 +354,12 @@ in
       };
     };
   };
+  # チェックコマンドのストアパスが設定に入るので、
+  # nixpkgsを更新するとほぼ毎回このユニットは変更扱いになります。
+  # 既定では設定の適用の最初に止めて最後に起動するので、
+  # 適用にかかる時間だけメトリクスが欠けます。
+  # 適用の後に再起動させて、欠ける時間を再起動の一瞬にします。
+  systemd.services.mackerel-agent.stopIfChanged = false;
   sops = {
     # Mackerel APIキー(純粋なキー文字列)をsopsで管理
     secrets."mackerel-api-key" = {

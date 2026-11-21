@@ -27,7 +27,7 @@ himariとその依存をパッケージの数だけ評価し直すことにな�
 ## テスト
 
 パッケージの`passthru.tests`に置いたderivationも、
-`<名前>-test-<テストの名前>`として`checks`に加わります。
+`checks`の`local-package-tests`へ`<名前>-test-<テストの名前>`として束ねられて確かめられます。
 `comfyui-ncaq-nodes`のように、
 テストを書き換えただけで配るもののstoreパスが変わると困る時に、
 `checkPhase`の代わりに使います。

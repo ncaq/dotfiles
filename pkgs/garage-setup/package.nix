@@ -8,16 +8,9 @@
 {
   lib,
   haskell,
-  haskellPackages,
-  himari-src,
+  localHaskellPackages,
 }:
 let
-  packages = haskellPackages.extend (
-    hself: _hsuper: {
-      # himariはstableのnixpkgsではbrokenなので、上流のソースから組む。
-      himari = hself.callCabal2nix "himari" himari-src { };
-    }
-  );
   # 動かすものだけをstoreへ入れる。
   # ディレクトリをそのまま渡すと`dist-newstyle`のような作業中のファイルまで付いてくる。
   source = lib.fileset.toSource {
@@ -29,7 +22,7 @@ let
       ./test
     ];
   };
-  package = packages.callCabal2nix "garage-setup" source { };
+  package = localHaskellPackages.callCabal2nix "garage-setup" source { };
 in
 lib.pipe package [
   # seminarのクロージャへGHCを持ち込まない。

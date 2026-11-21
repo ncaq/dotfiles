@@ -7,20 +7,13 @@
 {
   lib,
   haskell,
-  haskellPackages,
+  localHaskellPackages,
   makeWrapper,
   writeShellScriptBin,
   formats,
   comfy-cli,
-  himari-src,
 }:
 let
-  packages = haskellPackages.extend (
-    hself: _hsuper: {
-      # himariはstableのnixpkgsではbrokenなので、上流のソースから組む。
-      himari = hself.callCabal2nix "himari" himari-src { };
-    }
-  );
   # 動かすものだけをstoreへ入れる。
   # ディレクトリをそのまま渡すと`dist-newstyle`のような作業中のファイルまで付いてくる。
   source = lib.fileset.toSource {
@@ -32,7 +25,7 @@ let
       ./test
     ];
   };
-  package = packages.callCabal2nix "comfy-workflow" source { };
+  package = localHaskellPackages.callCabal2nix "comfy-workflow" source { };
   comfyWorkflow = lib.pipe package [
     (haskell.lib.compose.overrideCabal (old: {
       buildTools = (old.buildTools or [ ]) ++ [ makeWrapper ];

@@ -243,6 +243,11 @@
       hostInfo = {
         "SSD0086" = {
           system = "x86_64-linux";
+          # WSL2の上で動くホストかどうか。
+          # 構成の`wsl.enable`を見ると、ホストの一覧を絞るだけで全ホストの構成を評価することになるので、
+          # ここに静的に書く。
+          # 構成と食い違っていないかは`nixos/core/host-info.nix`が確かめる。
+          wsl = true;
         };
         "bullet" = {
           system = "x86_64-linux";

@@ -114,6 +114,15 @@ let
         // lib.optionalAttrs (widgets != null) { widgets_values = widgets; }
         // lib.optionalAttrs (title != null) { inherit title; };
       mkInput = name: type: link: { inherit name type link; };
+      # ウィジェットをソケットから上書きする入力。
+      mkWidgetInput =
+        name: type: link:
+        mkInput name type link
+        // {
+          widget = {
+            inherit name;
+          };
+        };
       mkOutput = name: type: links: { inherit name type links; };
       mkAppInput = nodeId: widgetName: [
         nodeId
@@ -499,6 +508,7 @@ let
       inherit
         mkNode
         mkInput
+        mkWidgetInput
         mkOutput
         mkLoraLoader
         mkAppInput

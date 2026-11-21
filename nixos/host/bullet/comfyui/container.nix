@@ -131,7 +131,7 @@ in
               # pinned memoryはカーネルが回収もswap outもできないので、
               # ホストの他のプロセスやページキャッシュの分が残らない。
               #
-              # 実際にanime-videoでOOM killerが発動した。
+              # 動画生成のモデルがWan 2.2だった頃に、実際にanime-videoでOOM killerが発動した。
               # Wan 2.2のhigh/lowが27GiBずつとumt5_xxl_fp16の11GiBで、
               # プロセスのanon-rssは65.0GiBに達していた。
               # cgroupの`MemoryMax`(84.3GiB)には届いていないためそちらでは止まらず、
@@ -145,8 +145,6 @@ in
               # 重みの供給がディスク速度に律速するようになるが、
               # モデルはNVMe(SN8100)上のNix storeにあるので許容できる。
               "--fast-disk"
-              # WanのRoPEやFP8量子化処理をeager実装からTritonカーネルへ切り替える。
-              "--enable-triton-backend"
               "--fast"
               # FP16の行列積で低精度の累積を許可して、LoRAやFP16 fallbackを高速化する。
               # 丸め誤差が増えるため生成結果は変化する可能性がある。
@@ -186,13 +184,6 @@ in
             ffmpeg-headless
             oxipng
           ];
-          # Tritonはsm_100以上へのコンパイルに`ptxas`ではなく`ptxas-blackwell`を探す。
-          # comfyui-nixのランチャは`TRITON_PTXAS_PATH`しか設定しないため、
-          # RTX 5090(sm_120)では`Cannot find ptxas-blackwell`で止まる。
-          # ComfyUI v0.37.0ではAnimaのテキストエンコーダのRoPEがTritonカーネルを通るので、
-          # 動画だけでなく画像のワークフローも失敗する。
-          # CUDA 13の`ptxas`はsm_120に対応しているのでそれを指す。
-          environment.TRITON_PTXAS_BLACKWELL_PATH = "${pkgs-unstable.cudaPackages_13.cuda_nvcc}/bin/ptxas";
         };
       };
   };
@@ -232,10 +223,11 @@ in
       # 実際に50%(46.8GiB)ではGPU使用率が0%のまま、
       # `memory.pressure`のfullが69%に達して停止していた。
       #
-      # 現在はanime-videoの実測でプロセスのピークRSSが23.2GiBに収まる。
-      # cgroupの`memory.peak`は66.5GiBまで伸びるが、
+      # 現在はMiniMax H3のanime-videoの実測でプロセスのピークRSSが8.9GiBに収まる。
+      # cgroupの`memory.peak`は54.1GiBまで伸びるが、
       # その大半はmmapしたモデルファイルのページキャッシュなので、
       # 圧力がかかればカーネルが回収でき、同期回収に張り付くことはない。
+      # `memory.peak`は回によって大きく変わり、同じ生成で23.6GiBだった回もある。
       #
       # 下げる余地はあるが下げない。
       # `--fast-disk`はページキャッシュに重みが乗っていることで速度を保つ構造で、

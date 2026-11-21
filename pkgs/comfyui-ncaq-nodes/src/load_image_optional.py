@@ -3,7 +3,7 @@
 # (none)のままなら出力はNoneになり、
 # 接続先のoptional入力へは未接続と同じ扱いで渡る。
 #
-# WanFirstLastFrameToVideoのend_imageのような任意入力に対して、
+# MiniMaxH3ImageToVideoのlast_frameのような任意入力に対して、
 # ノードのバイパス操作なしで、
 # 「画像が指定してあれば有効、なければ無効」を実現するためのもの。
 #

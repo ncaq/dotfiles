@@ -21,7 +21,6 @@
 let
   dataDir = config.containers.comfyui.config.services.comfyui.dataDir;
   fetchHuggingFace = import ../../../../lib/fetch-hugging-face.nix { inherit pkgs; };
-  convertSafetensorsFp16 = import ../../../../lib/convert-safetensors-fp16.nix { inherit pkgs; };
   # 属性名は`models/`配下のディレクトリ名、
   # その中の属性名が配置するファイル名に対応する。
   models = {
@@ -64,7 +63,7 @@ let
       # 有料API、公開生成サービス、収益化製品などの機能としての推論には別途商用ライセンスが必要。
       # 一方、生成画像は派生モデルに含まれず、
       # 販売、コミッション、広告、有料ゲームなどの素材を含む商用利用が明示的に許可されている。
-      # https://huggingface.co/circlestone-labs/Anima/blob/f973fc41ec7545364ac9776c2440285f43ff2a30/LICENSE.md
+      # https://huggingface.co/circlestone-labs/Anima/blob/6e0b2da2112573380abfb6a1435a60a994b254f2/LICENSE.md
       # NVIDIA Cosmosの派生モデルでもあるため、NVIDIA Open Model Licenseも適用される。
       # https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license/
       #
@@ -74,7 +73,7 @@ let
       "anima-aesthetic-v1.1.safetensors" = fetchHuggingFace {
         owner = "circlestone-labs";
         repo = "Anima";
-        rev = "f973fc41ec7545364ac9776c2440285f43ff2a30";
+        rev = "6e0b2da2112573380abfb6a1435a60a994b254f2";
         file = "split_files/diffusion_models/anima-aesthetic-v1.1.safetensors";
         hash = "sha256-PBhoOHo6H/UEu7h8M2eDIZZerTgfz4evvQJk2qYAwII=";
       };
@@ -82,7 +81,7 @@ let
       "anima-base-v1.0.safetensors" = fetchHuggingFace {
         owner = "circlestone-labs";
         repo = "Anima";
-        rev = "f973fc41ec7545364ac9776c2440285f43ff2a30";
+        rev = "6e0b2da2112573380abfb6a1435a60a994b254f2";
         file = "split_files/diffusion_models/anima-base-v1.0.safetensors";
         hash = "sha256-vUO3z/4e0RU9nEHnvrLxjLEnPq+6o68+3WoXPckKAG4=";
       };
@@ -121,43 +120,45 @@ let
         file = "diffusion_models/qwen_image_2.1_int8_convrot.safetensors";
         hash = "sha256-y3QRPLA/rs15YRsB/X/WQvCqYNbwuVCGq+4hTXXqpX0=";
       };
-      # Wan 2.2 I2V 14B MoEを高品質720pデータで4ステップ用に蒸留したfull expertモデル2つ。
-      # LoRA近似ではなく蒸留済みの全重みを使い、
-      # サンプリング前半をhigh noise、後半をlow noiseが担当する。
-      # Apache 2.0ライセンス。
+      # MiniMax H3はMiniMax H3 Community License Agreement。
+      # 本体、テキストエンコーダ、VAE、蒸留LoRAのすべてが対象になる。
+      # 使える地域からEU、英国、韓国、米国が除かれていて、日本は含まれる。
+      # 商用利用もできるが、年間の売上が2000万米ドルを超える場合は別途の許諾が要り、
+      # 商用の製品やサービスのUIには「MiniMax H3」と表示する必要がある。
+      # 生成物を他のAIモデルの改善に使うことは禁じられている。
+      # https://huggingface.co/MiniMaxAI/MiniMax-H3/blob/1cc7549f2cf0af8ff2f09b24f3c57303c8aa6317/LICENSE
       #
-      # この720p版は配布ファイルが全テンソルF32で1つ57GBあり、
-      # high/lowの2つで114GBになる(非720p版はbf16で28GBだった)。
-      # ComfyUIの計算dtypeはfp16で確定しているのに、
-      # CPU側の重みはmmapしたファイル上のdtypeのまま保持されてキャストされないため、
-      # 素のまま使うとシステムRAMを80GB以上消費してホストが応答しなくなる。
-      # 事前にfp16へ落として半分にする。
-      # fp16化した実測のピークは67.9GiBだった。
-      # 丸めはround-to-nearest-evenでランタイムのキャストとビット一致するので、
-      # 生成結果は変わらない。
-      # 重みの最大絶対値は4.44で、fp16の上限65504に対して十分な余裕がある。
+      # 開始フレームと終了フレームから音付きの動画を作るFL2VAのモデル。
+      # 24fpsの動画と音声を1つのモデルが同時に生成する。
       #
-      # 変換後のhashで出力パスを固定するfixed-output derivationなので、
-      # 変換ツールやPythonが更新されても再変換と原本の再取得は走らない。
-      "wan2.2_i2v_A14b_high_noise_lightx2v_4step_720p_260412.safetensors" = convertSafetensorsFp16 {
-        src = fetchHuggingFace {
-          owner = "lightx2v";
-          repo = "Wan2.2-Distill-Models";
-          rev = "52699089e1dac804cbedd2400d0d2aea969577de";
-          file = "wan2.2_i2v_A14b_high_noise_lightx2v_4step_720p_260412.safetensors";
-          hash = "sha256-NfRDFHG0ueWS6ZQcH18v0eG/JuFAHISt/gHdIrWyuGQ=";
-        };
-        hash = "sha256-nXzTJqI2bQI91BEfAqvlgPwJ31UBqnbNgmSv3OEUnvQ=";
+      # 枝刈りされたpruned版のINT8 ConvRotを使う。
+      # 枝刈りしていない版はINT8でも31.7GiBあり、
+      # 32GBのVRAMでは計算用の領域が残らない。
+      "minimax_h3_fl2va_pruned_int8_convrot.safetensors" = fetchHuggingFace {
+        owner = "Comfy-Org";
+        repo = "MiniMax-H3";
+        rev = "4b53a35191437de05370da548e59aeabe2a5a09a";
+        file = "diffusion_models/minimax_h3_fl2va_pruned_int8_convrot.safetensors";
+        hash = "sha256-6IkgLEHa+2exDWe5fw2FQVCANqYJCvI0JaXCYV0DxHo=";
       };
-      "wan2.2_i2v_A14b_low_noise_lightx2v_4step_720p_260412.safetensors" = convertSafetensorsFp16 {
-        src = fetchHuggingFace {
-          owner = "lightx2v";
-          repo = "Wan2.2-Distill-Models";
-          rev = "52699089e1dac804cbedd2400d0d2aea969577de";
-          file = "wan2.2_i2v_A14b_low_noise_lightx2v_4step_720p_260412.safetensors";
-          hash = "sha256-kChH/FKj0w9naRXSrrhPwTxN+Sv2p5Q77uZprDTOPBU=";
-        };
-        hash = "sha256-rRVdtZzj/Eays5/iG+8vDG+hwYkysw4Cn327hS8veKU=";
+    };
+    loras = {
+      # MiniMax H3を8ステップで生成できるようにするlightx2vの蒸留LoRA。
+      # ライセンスは拡散モデル本体の所に書いたMiniMax H3 Community License。
+      # bulletでの約5秒(124フレーム)の生成は、
+      # 蒸留なしの20ステップが1280x704で約118秒、
+      # このLoRAの8ステップが1344x768で約60秒だった。
+      #
+      # 768p(1344x768)で、動画のshiftを6、音声のshiftを3にして学習されている。
+      # ワークフローの解像度とshiftはこれに合わせる。
+      #
+      # 4ステップ版はさらに速い(約30秒)が、8ステップ版を選んでいる。
+      "minimax_h3_fl2v_turbo_8step_v1.2_768p_comfyui_bf16.safetensors" = fetchHuggingFace {
+        owner = "lightx2v";
+        repo = "Minimax-h3-Turbo";
+        rev = "c2bf13b837e33bd851b370285fc7db99482d2ab2";
+        file = "minimax_h3_fl2v_turbo_8step_v1.2_768p_comfyui_bf16.safetensors";
+        hash = "sha256-LY4iNcLyTERQerdi97SOb4Dc1syj0wS564AhK+LZP9I=";
       };
     };
     text_encoders = {
@@ -165,7 +166,7 @@ let
       "qwen_3_06b_base.safetensors" = fetchHuggingFace {
         owner = "circlestone-labs";
         repo = "Anima";
-        rev = "f973fc41ec7545364ac9776c2440285f43ff2a30";
+        rev = "6e0b2da2112573380abfb6a1435a60a994b254f2";
         file = "split_files/text_encoders/qwen_3_06b_base.safetensors";
         hash = "sha256-zSpRIAPi+fPNPDKpw1c/gguyjJQPc8V7Hdqpg9kiPro=";
       };
@@ -208,14 +209,18 @@ let
         file = "qwen3.5_9b_qwen_image_2.1_pe_i2i_heretic.int8_convrot.safetensors";
         hash = "sha256-l5uQY90WZF8Bkcn/VapQWRBb/oQJbZaoF6hd7tIiMfA=";
       };
-      # Wan系が使うテキストエンコーダ。
-      # 複雑な動作やカメラ指示の追従精度を優先してFP16版を使う。
-      "umt5_xxl_fp16.safetensors" = fetchHuggingFace {
+      # MiniMax H3で指示文とキーフレームの画像を解析するQwen3-VL 32B。
+      # ライセンスは拡散モデル本体の所に書いたMiniMax H3 Community License。
+      # 1回の実行で1度しか回らず速度の寄与が小さいので、
+      # 公式テンプレートのNVFP4 AWQ(14.6GiB)より精度の高いINT8 ConvRot(25.3GiB)を使う。
+      # bulletでの実測では、どちらでも1本の生成にかかる時間はほぼ同じだった。
+      # BF16は48GiBあってVRAMに載らない。
+      "qwen3vl_32b_minimax_h3_int8_convrot.safetensors" = fetchHuggingFace {
         owner = "Comfy-Org";
-        repo = "Wan-2.2";
-        rev = "ee6f4a40737a995bf5818954cfce6d59443b0f04";
-        file = "split_files/text_encoders/umt5_xxl_fp16.safetensors";
-        hash = "sha256-e4hQ8ZYeHPinfMpMlko1jTA/SQgzxsCH0M/0svmdsq8=";
+        repo = "MiniMax-H3";
+        rev = "4b53a35191437de05370da548e59aeabe2a5a09a";
+        file = "text_encoders/qwen3vl_32b_minimax_h3_int8_convrot.safetensors";
+        hash = "sha256-vCztD76mR1f6ms3cz8Cz9IGdHc8dpsEk1pDTaL4oOSM=";
       };
     };
     vae = {
@@ -238,13 +243,24 @@ let
         file = "vae/qwen_image_2.1_vae_bf16.safetensors";
         hash = "sha256-uyH3RzBR4aw2hRXdPy4VzUTXoRdI7ogj4d3KPkh2t8k=";
       };
-      # Wan 2.2 14BはWan 2.1と共通のVAEを使う。
-      "wan_2.1_vae.safetensors" = fetchHuggingFace {
+      # MiniMax H3の映像のVAE。
+      # ライセンスは拡散モデル本体の所に書いたMiniMax H3 Community License。
+      # 出力の画素に直接効くので、公式テンプレートのINT8 ConvRotではなくFP16を使う。
+      # 4.9GiBなのでVRAMには余裕で載る。
+      "minimax_h3_video_vae_fp16.safetensors" = fetchHuggingFace {
         owner = "Comfy-Org";
-        repo = "Wan-2.2";
-        rev = "ee6f4a40737a995bf5818954cfce6d59443b0f04";
-        file = "split_files/vae/wan_2.1_vae.safetensors";
-        hash = "sha256-L8OdMTWaSwpk9Vh22P9/qNeAlWriyxNGOwIj4VFIl2s=";
+        repo = "MiniMax-H3";
+        rev = "4b53a35191437de05370da548e59aeabe2a5a09a";
+        file = "vae/minimax_h3_video_vae_fp16.safetensors";
+        hash = "sha256-fB8TFJLn7drKrJBpphuBvdOd5cyWVh5nfF6rHNzl5SI=";
+      };
+      # MiniMax H3の音声のVAE。配布されているのはFP32だけである。
+      "minimax_h3_audio_vae_fp32.safetensors" = fetchHuggingFace {
+        owner = "Comfy-Org";
+        repo = "MiniMax-H3";
+        rev = "4b53a35191437de05370da548e59aeabe2a5a09a";
+        file = "vae/minimax_h3_audio_vae_fp32.safetensors";
+        hash = "sha256-jlBdld0VYdR6vUPUI4/UDZuxrp4UftCky6d412rk20g=";
       };
     };
     controlnet = {

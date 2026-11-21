@@ -6,7 +6,17 @@
  * 念の為の多層防御なのでこれだけを信頼しているわけではありません。
  */
 
-import { readFile } from "node:fs/promises";
+import { readFile, realpath } from "node:fs/promises";
+import { resolve } from "node:path";
+
+/**
+ * ランナがイベントのペイロードを書き出すディレクトリの親。
+ *
+ * nixpkgsの`services.github-runners`は`workDir`を指定しないと、
+ * systemdの`RuntimeDirectory`である`/run/github-runner/<name>`を作業ディレクトリにします。
+ * ランナはその下の`_temp/_github_workflow/event.json`にペイロードを書き出します。
+ */
+const runnerRoot = "/run/github-runner/";
 
 interface GitHubEvent {
   readonly pull_request?: {
@@ -52,7 +62,19 @@ async function main(): Promise<void> {
   const prEvents = new Set(["pull_request", "pull_request_target"]);
 
   if (prEvents.has(eventName)) {
-    const content = await readFile(eventPath, "utf-8");
+    // 環境変数で渡されたパスをそのまま読むと、
+    // 環境変数を差し替えられた時に偽のペイロードで判定することになります。
+    // ランナが書き出す場所にあることを、
+    // `..`を畳んだ時点と、シンボリックリンクを解決した時点の両方で確かめます。
+    const normalizedEventPath = resolve(eventPath);
+    if (!normalizedEventPath.startsWith(runnerRoot)) {
+      throw new Error(`Event path '${normalizedEventPath}' is outside '${runnerRoot}'.`);
+    }
+    const realEventPath = await realpath(normalizedEventPath);
+    if (!realEventPath.startsWith(runnerRoot)) {
+      throw new Error(`Event path '${realEventPath}' is outside '${runnerRoot}'.`);
+    }
+    const content = await readFile(realEventPath, "utf-8");
     const event = JSON.parse(content) as GitHubEvent;
     const sender = event.sender?.login;
     const prHeadRepoFullName = event.pull_request?.head?.repo?.full_name;

@@ -18,14 +18,14 @@ in
   "31b-q4_k_m" = fetchHuggingFace {
     owner = "pfnet";
     repo = "plamo-3-translate-31b-GGUF";
-    rev = "8b797b290907c84403877cb9d03150929f10b467";
+    rev = "7d170d025221a9301f2eec5e38cb3d2361814339";
     file = "plamo-3-translate-31b-Q4_K_M.gguf";
     hash = "sha256-R3iMPrcbgwkZqEVAIjgd6UOkPt+rZdrZ50KZcCjR+d8=";
   };
   "8b-q4_k_m" = fetchHuggingFace {
     owner = "pfnet";
     repo = "plamo-3-translate-8b-GGUF";
-    rev = "c67efa4eefdc14d3c97bf8f4f35ee58e2ecd2f42";
+    rev = "724c63780fbdbd821c86d7b3378a630b10176246";
     file = "plamo-3-translate-8b-Q4_K_M.gguf";
     hash = "sha256-lOXT+RtCH3yJAN2qwnsRoZ90QUJslUu7JaL9YKFkAYc=";
   };
@@ -33,7 +33,7 @@ in
   "2b-q4_k_m" = fetchHuggingFace {
     owner = "pfnet";
     repo = "plamo-3-translate-2b-GGUF";
-    rev = "4f672106b847200bfdc0f6af6c321cd94eba1aed";
+    rev = "caf0267797e8a4ae418e7d8c480746be2ea6040c";
     file = "plamo-3-translate-2b-Q4_K_M.gguf";
     hash = "sha256-H/2Qc6/McONczJQkKKorc9eqK56neb9QS3dTaeAnbBM=";
   };
@@ -41,7 +41,7 @@ in
   "0.8b-q4_0" = fetchHuggingFace {
     owner = "pfnet";
     repo = "plamo-3-translate-0.8b-GGUF";
-    rev = "1cf96ae02133958a20074bfdfab76517bb737d00";
+    rev = "7de4409f84a9d70e3a5e87b81e84883d49f77b58";
     file = "plamo-3-translate-0.8b-Q4_0.gguf";
     hash = "sha256-M97tKCL3md5NFbsDvqGsQO+n1mPZI57lTMf2X1q5KRc=";
   };

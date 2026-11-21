@@ -29,7 +29,7 @@ TIMEOUT_SECONDS = 60
 # ワークフローから任意の文を渡せると訳文を好きな方向へ誘導できてしまう。
 #
 # 名前を型にしておくと、固定の名前を渡す呼び出し側の打ち間違いを型検査が拾う。
-ContextName = Literal["generic", "video", "image-edit", "image-edit-to-video"]
+ContextName = Literal["generic", "video", "image-edit"]
 
 CONTEXTS: dict[ContextName, str] = {
     "generic": (
@@ -43,10 +43,6 @@ CONTEXTS: dict[ContextName, str] = {
     "image-edit": (
         "This is an instruction for an AI image editing model "
         "that edits an anime-style illustration of characters."
-    ),
-    "image-edit-to-video": (
-        "This is an instruction for AI models that edit an anime-style image "
-        "and then animate it into a video clip."
     ),
 }
 

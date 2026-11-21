@@ -57,7 +57,6 @@ ignore = [
 # 実際に外部コマンドを起動しているファイルでだけ許可する。
 # 全体で落とすと、新しくプロセスを起動するコードを書いた時に何も言われなくなる。
 [lint.per-file-ignores]
-"pkgs/comfyui-ncaq-nodes/src/anime_video_quick.py" = ["S603"]
 "pkgs/comfyui-ncaq-nodes/src/optimize_png.py" = ["S603"]
 "pkgs/comfyui-ncaq-nodes/src/seedvr2_streaming.py" = ["S603"]
 "pkgs/comfyui-ncaq-nodes/src/share_encode.py" = ["S603"]

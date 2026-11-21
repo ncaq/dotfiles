@@ -28,17 +28,6 @@ let
   #
   # App Modeから参照するノード型だけを載せれば良い。
   widgetNames = {
-    # 自作ノード。`pkgs/comfyui-ncaq-nodes/src/anime_video_quick.py`。
-    AnimeVideoQuick = [
-      "prompts"
-      "wan_model_high"
-      "wan_model_low"
-      "wan_clip"
-      "wan_vae"
-      "seed"
-      "retry_seed_offset"
-      "job_id"
-    ];
     CLIPTextEncode = [ "text" ];
     EmptyLatentImage = [
       "width"

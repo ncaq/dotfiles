@@ -8,7 +8,6 @@
 # 翻訳や配布用エンコードのような複数のノードが使うモジュールを、
 # 普通の相対importで共有するためである。
 from . import (
-    anime_video_quick,
     free_vram,
     load_image_optional,
     rewrite_edit_prompt,
@@ -21,7 +20,6 @@ from . import (
 from . import optimize_saved_png as optimize_saved_png
 
 NODE_CLASS_MAPPINGS: dict[str, type] = {
-    **anime_video_quick.NODE_CLASS_MAPPINGS,
     **free_vram.NODE_CLASS_MAPPINGS,
     **load_image_optional.NODE_CLASS_MAPPINGS,
     **rewrite_edit_prompt.NODE_CLASS_MAPPINGS,
@@ -30,7 +28,6 @@ NODE_CLASS_MAPPINGS: dict[str, type] = {
     **translate_text.NODE_CLASS_MAPPINGS,
 }
 NODE_DISPLAY_NAME_MAPPINGS: dict[str, str] = {
-    **anime_video_quick.NODE_DISPLAY_NAME_MAPPINGS,
     **free_vram.NODE_DISPLAY_NAME_MAPPINGS,
     **load_image_optional.NODE_DISPLAY_NAME_MAPPINGS,
     **rewrite_edit_prompt.NODE_DISPLAY_NAME_MAPPINGS,

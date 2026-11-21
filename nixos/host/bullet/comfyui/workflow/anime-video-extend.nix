@@ -1,47 +1,47 @@
-# anime-videoで生成した動画を約5秒(81フレーム)延長するワークフロー。
+# anime-videoで生成した動画を約5秒(124フレーム)延長するワークフロー。
 #
-# anime-videoのコンテキスト窓方式は定常的な動きの長回しには向くが、
-# 開始画像の条件を全窓に保持させる都合で窓の切り替わりでポーズが戻りやすく、
-# 動画全体で1つの大きな動作をさせるのが難しい。
+# anime-videoが一度に作れるのは学習範囲の15秒までで、
+# それより長い動画や、途中で指示を変えたい動画は1回では作れない。
 # こちらは既存動画の最終フレームを開始画像にして続きを生成し、
 # 元動画と連結して出力する継ぎ足し方式。
 # 各区間の絵は直前の区間の最終ポーズに固定されるため動作が前へ進み、
 # 区間ごとに動きの指示を変えて演出できる。
 # 結果を確認しながら好きな回数繰り返して延長できる。
 #
-# 弱点は繋ぎ目で動きの勢いが一瞬失われることと、
+# 弱点は繋ぎ目で動きの勢いと音が一瞬途切れることと、
 # 区間を重ねるごとに色味や質感が少しずつ劣化していくこと。
 #
-# 任意で区間の終了ポーズも画像で指定できる(FLF2V方式)。
+# 入力はanime-videoかこのワークフローが作った、音付きで24fpsの動画を前提にする。
+# 音声の無い動画を入れると、元動画の音声と新区間の音声を連結する所で失敗する。
+#
+# 任意で区間の終了ポーズも画像で指定できる。
 # 成り行き生成では5秒以内に動作が完結せず中途半端なポーズで終わって、
 # 次の継ぎ足しが破綻しやすい。
 # 「終了ポーズの画像」ノードで画像を選ぶと、
-# WanFirstLastFrameToVideoが末尾フレームを指定画像へ固定するため、
+# MiniMaxH3ImageToVideoが末尾フレームを指定画像へ固定するため、
 # 動作が区間内で必ず完結し、
 # キーフレームを先に用意しておけば長尺の動きを計画的に設計できる。
 # 終了ポーズの画像は元動画の最終フレームを元に、
 # sdxl-editやqwen-editなどで先に作っておく。
-# ノード内部で生成解像度へbilinear+中央クロップされるため、
+# ノード内部で生成解像度へ中央クロップされるため、
 # 元動画と同じアスペクト比の画像を用意するのが安全。
 # (none)のままなら自作のLoadImageOptionalがNoneを出力して、
-# end_imageは未指定扱いになり、
-# 従来どおり開始フレームのみの成り行き生成になる。
+# last_frameは未指定扱いになり、
+# 開始フレームのみの成り行き生成になる。
 #
 # モデル構成とサンプリング設定はanime-videoと同じ。
-# Wan 2.2 14B I2Vのlightx2v 4-step distilled full model構成で、
-# 4ステップ・CFG 1の高速生成にしている。
-# 1回の延長は学習範囲内の81フレーム固定なのでコンテキスト窓は使わない。
+# MiniMax H3にlightx2vの8ステップ蒸留LoRAを効かせて、8ステップで生成する。
 #
-# 新区間の先頭フレームは元動画の最終フレームとほぼ同じ絵になるため、
-# 連結時に取り除いて一瞬の停滞を防ぐ。
+# 新区間の先頭フレームは元動画の最終フレームとほぼ同じ絵になるが、取り除かずにそのまま連結する。
+# 1フレームの重複をなくすことより、区間の映像と音声の長さに手を入れない単純さを取る。
 #
 # 動きの指示は日本語で書けば自作カスタムノードで英語へ翻訳される。
 # 「続きから」の指示なので直前の動きから繋がる動作を書くと自然になる。
-# 出力は自作保存ノードによるSVT-AV1 losslessのWebM。
+# 出力は自作保存ノードによるSVT-AV1 losslessの映像とOpusの音声のWebM。
 # 新区間のみと、繋ぎ目を確認するための連結済み動画を別々に保存する。
 # 新区間を個別に保存するのは、
 # 延長を繰り返すと連結済み動画がComfyUIのアップロード上限を超えるためと、
-# 連結済み動画を入力に使い続けると再エンコードによる劣化が重なるため。
+# 連結済み動画を入力に使い続けると音声の再エンコードによる劣化が重なるため。
 # 8-bit RGBから10-bit YUV 4:2:0への色変換後の映像を可逆圧縮する。
 # 色変換とクロマサブサンプリングを挟むため、元のRGB画像に対する厳密な可逆圧縮ではない。
 { lib, ... }:
@@ -59,12 +59,18 @@ let
     mkFilenamePrefixWith
     seedWidgets
     ;
-  # 実写バイアスを打ち消すために常にプロンプトへ前置するスタイル指定。
+  # 実写や3Dへ寄るのを避けるために常にプロンプトへ前置するスタイル指定。
   # anime-videoと同じ値。
   animeStylePrefix = "Anime style, 2D cel animation, flat colors.";
-  # 公式テンプレートのネガティブに実写抑制を追記したもの。
-  # anime-videoと同じ値。
-  negativePrompt = "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走，写实风格，照片级，3D渲染，真人";
+  # ウィジェットをソケットから上書きする入力。
+  mkWidgetInput =
+    inputName: type: link:
+    mkInput inputName type link
+    // {
+      widget = {
+        name = inputName;
+      };
+    };
 in
 {
   local.comfyui.workflows.${name} = mkWorkflow {
@@ -76,7 +82,7 @@ in
         })
         (mkAppInputWith 19 "text" {
           height = 160;
-          description = "続きの動きとカメラワーク。日本語でも英語でも入力可能";
+          description = "続きの動きとカメラワークと音。日本語でも英語でも入力可能";
         })
         (mkAppInput 13 "noise_seed")
       ];
@@ -89,9 +95,9 @@ in
       (mkNode {
         id = 1;
         type = "UNETLoader";
-        title = "high noiseモデル";
+        title = "MiniMax H3モデル";
         pos = [
-          1260
+          1280
           40
         ];
         size = [
@@ -99,62 +105,77 @@ in
           82
         ];
         order = 0;
-        outputs = [ (mkOutput "MODEL" "MODEL" [ 36 ]) ];
+        outputs = [ (mkOutput "MODEL" "MODEL" [ 1 ]) ];
         widgets = [
-          "wan2.2_i2v_A14b_high_noise_lightx2v_4step_720p_260412.safetensors"
+          "minimax_h3_fl2va_pruned_int8_convrot.safetensors"
           "default" # weight_dtype
         ];
       })
-      # オプショナルなLoRA適用(high noise側)。
-      # Wan 2.2のLoRAはhigh/lowで別ファイルなので対応する側へ入れる。
-      # WanのLoRAはUNETにだけ作用するのでCLIPは繋がない。
-      (mkLoraLoader {
-        id = 29;
-        title = "LoRA(high noise用)";
-        pos = [
-          1260
-          172
-        ];
-        order = 1;
-        modelLink = 36;
-        modelLinks = [ 1 ];
-      })
+      # 8ステップで生成できるようにする蒸留LoRA。常に効かせる。
       (mkNode {
-        id = 2;
-        type = "UNETLoader";
-        title = "low noiseモデル";
+        id = 29;
+        type = "LoraLoaderModelOnly";
+        title = "8ステップ蒸留LoRA";
         pos = [
-          1260
-          702
+          1280
+          190
         ];
         size = [
           385
           82
         ];
-        order = 2;
-        outputs = [ (mkOutput "MODEL" "MODEL" [ 37 ]) ];
+        order = 1;
+        inputs = [ (mkInput "model" "MODEL" 1) ];
+        outputs = [ (mkOutput "MODEL" "MODEL" [ 2 ]) ];
         widgets = [
-          "wan2.2_i2v_A14b_low_noise_lightx2v_4step_720p_260412.safetensors"
-          "default" # weight_dtype
+          "minimax_h3_fl2v_turbo_8step_v1.2_768p_comfyui_bf16.safetensors"
+          1 # strength_model
         ];
       })
-      # オプショナルなLoRA適用(low noise側)。
+      # オプショナルなLoRA適用。
+      # MiniMax H3のLoRAは拡散モデルにだけ作用するのでCLIPは繋がない。
       (mkLoraLoader {
         id = 30;
-        title = "LoRA(low noise用)";
+        title = "LoRA";
         pos = [
-          1260
-          834
+          1280
+          340
+        ];
+        order = 2;
+        modelLink = 2;
+        modelLinks = [ 3 ];
+      })
+      # 蒸留LoRAの学習時のshiftへ合わせる。
+      (mkNode {
+        id = 7;
+        type = "MiniMaxH3SigmaShift";
+        title = "shift";
+        pos = [
+          1280
+          870
+        ];
+        size = [
+          315
+          82
         ];
         order = 3;
-        modelLink = 37;
-        modelLinks = [ 2 ];
+        inputs = [ (mkInput "model" "MODEL" 3) ];
+        outputs = [
+          (mkOutput "MODEL" "MODEL" [
+            4
+            5
+          ])
+        ];
+        widgets = [
+          6 # shift_video
+          3 # shift_audio
+        ];
       })
       (mkNode {
         id = 3;
         type = "CLIPLoader";
         pos = [
-          800
+          820
           40
         ];
         size = [
@@ -162,24 +183,20 @@ in
           106
         ];
         order = 4;
-        outputs = [
-          (mkOutput "CLIP" "CLIP" [
-            3
-            4
-          ])
-        ];
+        outputs = [ (mkOutput "CLIP" "CLIP" [ 6 ]) ];
         widgets = [
-          "umt5_xxl_fp16.safetensors"
-          "wan" # type
+          "qwen3vl_32b_minimax_h3_int8_convrot.safetensors"
+          "minimax" # type
           "default" # device
         ];
       })
       (mkNode {
         id = 4;
         type = "VAELoader";
+        title = "映像のVAE";
         pos = [
-          800
-          190
+          820
+          220
         ];
         size = [
           385
@@ -188,11 +205,27 @@ in
         order = 5;
         outputs = [
           (mkOutput "VAE" "VAE" [
-            5
-            6
+            7
+            8
           ])
         ];
-        widgets = [ "wan_2.1_vae.safetensors" ];
+        widgets = [ "minimax_h3_video_vae_fp16.safetensors" ];
+      })
+      (mkNode {
+        id = 31;
+        type = "VAELoader";
+        title = "音声のVAE";
+        pos = [
+          820
+          350
+        ];
+        size = [
+          385
+          58
+        ];
+        order = 6;
+        outputs = [ (mkOutput "VAE" "VAE" [ 9 ]) ];
+        widgets = [ "minimax_h3_audio_vae_fp32.safetensors" ];
       })
       # 動画を読み込むとプレビューがここより下へ展開されて伸びる。
       # その分の場所は`lib/overlap.nix`の`growHeights`が見込んで空けさせている。
@@ -208,8 +241,8 @@ in
           340
           310
         ];
-        order = 6;
-        outputs = [ (mkOutput "VIDEO" "VIDEO" [ 11 ]) ];
+        order = 7;
+        outputs = [ (mkOutput "VIDEO" "VIDEO" [ 10 ]) ];
         widgets = [ "example.webm" ];
       })
       # 区間の終了時点のポーズを指定する任意入力。
@@ -227,9 +260,9 @@ in
           340
           314
         ];
-        order = 7;
+        order = 8;
         outputs = [
-          (mkOutput "IMAGE" "IMAGE" [ 34 ])
+          (mkOutput "IMAGE" "IMAGE" [ 11 ])
           (mkOutput "MASK" "MASK" [ ])
         ];
         widgets = [
@@ -248,14 +281,14 @@ in
           240
           106
         ];
-        order = 8;
-        inputs = [ (mkInput "video" "VIDEO" 11) ];
+        order = 9;
+        inputs = [ (mkInput "video" "VIDEO" 10) ];
         outputs = [
           (mkOutput "images" "IMAGE" [
             12
             13
           ])
-          (mkOutput "audio" "AUDIO" [ ])
+          (mkOutput "audio" "AUDIO" [ 14 ])
           (mkOutput "fps" "FLOAT" [ ])
           (mkOutput "bit_depth" "COMBO" [ ])
           (mkOutput "color_space" "COMBO" [ ])
@@ -274,15 +307,15 @@ in
           315
           106
         ];
-        order = 9;
+        order = 10;
         inputs = [ (mkInput "image" "IMAGE" 12) ];
-        outputs = [ (mkOutput "IMAGE" "IMAGE" [ 14 ]) ];
+        outputs = [ (mkOutput "IMAGE" "IMAGE" [ 15 ]) ];
         widgets = [
           (-1) # batch_index
           1 # length
         ];
       })
-      # 元動画は生成時に既に0.9メガピクセル・16の倍数になっているので、
+      # 元動画は生成時に既に768p相当・32の倍数になっているので、
       # このスケールは実質恒等変換だが、
       # 手動で用意した動画を入れた場合の保険としてanime-videoと同じ経路を通す。
       (mkNode {
@@ -290,44 +323,44 @@ in
         type = "ImageScaleToTotalPixels";
         title = "生成解像度へスケール";
         pos = [
-          800
-          760
+          820
+          480
         ];
         size = [
           315
           130
         ];
-        order = 10;
-        inputs = [ (mkInput "image" "IMAGE" 14) ];
+        order = 11;
+        inputs = [ (mkInput "image" "IMAGE" 15) ];
         outputs = [
           (mkOutput "IMAGE" "IMAGE" [
-            15
             16
+            17
           ])
         ];
         widgets = [
           "lanczos" # upscale_method
-          0.9 # megapixels
-          16 # resolution_steps
+          0.98 # megapixels
+          32 # resolution_steps
         ];
       })
-      # スケール後の実寸をWanFirstLastFrameToVideoへ渡す。
+      # スケール後の実寸をMiniMaxH3ImageToVideoへ渡す。
       (mkNode {
         id = 22;
         type = "GetImageSize";
         pos = [
-          800
-          960
+          820
+          680
         ];
         size = [
           240
           86
         ];
-        order = 11;
-        inputs = [ (mkInput "image" "IMAGE" 16) ];
+        order = 12;
+        inputs = [ (mkInput "image" "IMAGE" 17) ];
         outputs = [
-          (mkOutput "width" "INT" [ 17 ])
-          (mkOutput "height" "INT" [ 18 ])
+          (mkOutput "width" "INT" [ 18 ])
+          (mkOutput "height" "INT" [ 19 ])
           (mkOutput "batch_size" "INT" [ ])
         ];
       })
@@ -345,8 +378,8 @@ in
           420
           200
         ];
-        order = 12;
-        outputs = [ (mkOutput "english_text" "STRING" [ 19 ]) ];
+        order = 13;
+        outputs = [ (mkOutput "english_text" "STRING" [ 20 ]) ];
         widgets = [
           "カメラはゆっくりと近づく。キャラクターは穏やかに微笑み、髪と服が風に揺れる。"
           # 翻訳モデルへ伝える用途。動画生成の動きの指示。
@@ -366,21 +399,12 @@ in
           340
           130
         ];
-        order = 13;
-        inputs = [
-          (
-            mkInput "string_b" "STRING" 19
-            // {
-              widget = {
-                name = "string_b";
-              };
-            }
-          )
-        ];
+        order = 14;
+        inputs = [ (mkWidgetInput "string_b" "STRING" 20) ];
         outputs = [
           (mkOutput "STRING" "STRING" [
-            20
             21
+            22
           ])
         ];
         widgets = [
@@ -397,231 +421,154 @@ in
         title = "最終プロンプト";
         pos = [
           440
-          260
+          240
         ];
         size = [
           340
           200
         ];
-        order = 14;
-        inputs = [ (mkInput "source" "*" 21) ];
-      })
-      (mkNode {
-        id = 10;
-        type = "CLIPTextEncode";
-        title = "ポジティブ(スタイル+動きの指示)";
-        pos = [
-          800
-          330
-        ];
-        size = [
-          420
-          160
-        ];
         order = 15;
-        inputs = [
-          (mkInput "clip" "CLIP" 3)
-          (
-            mkInput "text" "STRING" 20
-            // {
-              widget = {
-                name = "text";
-              };
-            }
-          )
-        ];
-        outputs = [ (mkOutput "CONDITIONING" "CONDITIONING" [ 22 ]) ];
-        widgets = [ "" ];
+        inputs = [ (mkInput "source" "*" 22) ];
       })
-      # CFG 1のLightning構成では効かないが、
-      # CFGを上げた時のために実写抑制込みで置いてある。
-      (mkNode {
-        id = 11;
-        type = "CLIPTextEncode";
-        title = "ネガティブ(CFG 1では無効)";
-        pos = [
-          800
-          530
-        ];
-        size = [
-          420
-          160
-        ];
-        order = 16;
-        inputs = [ (mkInput "clip" "CLIP" 4) ];
-        outputs = [ (mkOutput "CONDITIONING" "CONDITIONING" [ 23 ]) ];
-        widgets = [ negativePrompt ];
-      })
-      # 元動画の最終フレームを開始フレームにして初期latentを作る。
-      # end_imageは任意入力で、終了ポーズ画像が指定されている時だけ、
-      # 拡散過程で末尾フレームが境界条件として強制され、
-      # 動作が区間内で終了ポーズへ収束する。
-      # 未指定時(None)はWanImageToVideoと等価な開始フレームのみの条件付けになる。
+      # 指示文と元動画の最終フレームから条件付けと空のlatentを作る。
+      # latentは映像と音声を1つにまとめたもので、
+      # サンプリングの後でそれぞれのVAEが自分の分だけを取り出して復元する。
+      # last_frameは任意入力で、終了ポーズ画像が指定されている時だけ、
+      # 末尾フレームが指定画像へ固定される。
       # 解像度はソケット経由で自動で入るので手動調整は不要。
-      # 1回の延長は学習範囲内の81フレーム(約5秒)固定。
       (mkNode {
         id = 12;
-        type = "WanFirstLastFrameToVideo";
+        type = "MiniMaxH3ImageToVideo";
         pos = [
-          1260
-          1550
+          820
+          840
+        ];
+        size = [
+          400
+          300
+        ];
+        order = 16;
+        inputs = [
+          (mkInput "clip" "CLIP" 6)
+          (mkInput "vae" "VAE" 7)
+          (mkInput "first_frame" "IMAGE" 16 // { shape = 7; })
+          (mkInput "last_frame" "IMAGE" 11 // { shape = 7; })
+          (mkWidgetInput "prompt" "STRING" 21)
+          (mkWidgetInput "width" "INT" 18)
+          (mkWidgetInput "height" "INT" 19)
+        ];
+        outputs = [
+          (mkOutput "positive" "CONDITIONING" [ 23 ])
+          (mkOutput "LATENT" "LATENT" [ 24 ])
+        ];
+        widgets = [
+          "" # prompt(ソケットから上書きされる)
+          1344 # width(ソケットから上書きされる)
+          768 # height(ソケットから上書きされる)
+          124 # length: 24fpsで約5秒
+        ];
+      })
+      (mkNode {
+        id = 13;
+        type = "RandomNoise";
+        pos = [
+          1740
+          40
         ];
         size = [
           315
-          230
+          82
         ];
         order = 17;
-        inputs = [
-          (mkInput "positive" "CONDITIONING" 22)
-          (mkInput "negative" "CONDITIONING" 23)
-          (mkInput "vae" "VAE" 5)
-          (mkInput "clip_vision_start_image" "CLIP_VISION_OUTPUT" null)
-          (mkInput "clip_vision_end_image" "CLIP_VISION_OUTPUT" null)
-          (mkInput "start_image" "IMAGE" 15)
-          (mkInput "end_image" "IMAGE" 34)
-          (
-            mkInput "width" "INT" 17
-            // {
-              widget = {
-                name = "width";
-              };
-            }
-          )
-          (
-            mkInput "height" "INT" 18
-            // {
-              widget = {
-                name = "height";
-              };
-            }
-          )
-        ];
-        outputs = [
-          (mkOutput "positive" "CONDITIONING" [
-            24
-            25
-          ])
-          (mkOutput "negative" "CONDITIONING" [
-            26
-            27
-          ])
-          (mkOutput "latent" "LATENT" [ 28 ])
-        ];
-        widgets = [
-          704 # width(ソケットから上書きされる)
-          1280 # height(ソケットから上書きされる)
-          81 # length: 16fpsで約5秒
-          1 # batch_size
-        ];
+        outputs = [ (mkOutput "NOISE" "NOISE" [ 25 ]) ];
+        widgets = seedWidgets;
       })
       (mkNode {
-        id = 7;
-        type = "ModelSamplingSD3";
-        title = "shift(high)";
+        id = 32;
+        type = "KSamplerSelect";
         pos = [
-          1260
-          1334
+          1740
+          190
         ];
         size = [
           315
           58
         ];
         order = 18;
-        inputs = [ (mkInput "model" "MODEL" 1) ];
-        outputs = [ (mkOutput "MODEL" "MODEL" [ 9 ]) ];
-        widgets = [ 5 ]; # shift
+        outputs = [ (mkOutput "SAMPLER" "SAMPLER" [ 26 ]) ];
+        widgets = [ "res_multistep" ];
       })
+      # ステップ数は蒸留LoRAの推奨の8。
       (mkNode {
-        id = 8;
-        type = "ModelSamplingSD3";
-        title = "shift(low)";
+        id = 33;
+        type = "BasicScheduler";
         pos = [
-          1260
-          1442
+          1740
+          320
         ];
         size = [
           315
-          58
+          106
         ];
         order = 19;
-        inputs = [ (mkInput "model" "MODEL" 2) ];
-        outputs = [ (mkOutput "MODEL" "MODEL" [ 10 ]) ];
-        widgets = [ 5 ]; # shift
+        inputs = [ (mkInput "model" "MODEL" 4) ];
+        outputs = [ (mkOutput "SIGMAS" "SIGMAS" [ 27 ]) ];
+        widgets = [
+          "simple" # scheduler
+          8 # steps
+          1 # denoise
+        ];
       })
-      # 前半2ステップをhigh noiseモデルで生成する。
       (mkNode {
-        id = 13;
-        type = "KSamplerAdvanced";
-        title = "サンプリング前半(high noise)";
+        id = 34;
+        type = "BasicGuider";
         pos = [
-          1660
-          40
+          1740
+          500
         ];
         size = [
-          315
-          334
+          240
+          46
         ];
         order = 20;
         inputs = [
-          (mkInput "model" "MODEL" 9)
-          (mkInput "positive" "CONDITIONING" 24)
-          (mkInput "negative" "CONDITIONING" 26)
-          (mkInput "latent_image" "LATENT" 28)
+          (mkInput "model" "MODEL" 5)
+          (mkInput "conditioning" "CONDITIONING" 23)
         ];
-        outputs = [ (mkOutput "LATENT" "LATENT" [ 29 ]) ];
-        widgets = [
-          "enable" # add_noise
-        ]
-        ++ seedWidgets
-        ++ [
-          4 # steps
-          1 # cfg
-          "euler"
-          "simple"
-          0 # start_at_step
-          2 # end_at_step
-          "enable" # return_with_leftover_noise
-        ];
+        outputs = [ (mkOutput "GUIDER" "GUIDER" [ 28 ]) ];
       })
-      # 後半をlow noiseモデルで仕上げる。
       (mkNode {
         id = 14;
-        type = "KSamplerAdvanced";
-        title = "サンプリング後半(low noise)";
+        type = "SamplerCustomAdvanced";
         pos = [
-          1660
-          450
+          1740
+          620
         ];
         size = [
-          315
-          334
+          355
+          106
         ];
         order = 21;
         inputs = [
-          (mkInput "model" "MODEL" 10)
-          (mkInput "positive" "CONDITIONING" 25)
-          (mkInput "negative" "CONDITIONING" 27)
-          (mkInput "latent_image" "LATENT" 29)
+          (mkInput "noise" "NOISE" 25)
+          (mkInput "guider" "GUIDER" 28)
+          (mkInput "sampler" "SAMPLER" 26)
+          (mkInput "sigmas" "SIGMAS" 27)
+          (mkInput "latent_image" "LATENT" 24)
         ];
-        outputs = [ (mkOutput "LATENT" "LATENT" [ 30 ]) ];
-        widgets = [
-          "disable" # add_noise
-          0 # noise_seed
-          "fixed"
-          4 # steps
-          1 # cfg
-          "euler"
-          "simple"
-          2 # start_at_step
-          10000 # end_at_step
-          "disable" # return_with_leftover_noise
+        outputs = [
+          (mkOutput "output" "LATENT" [
+            29
+            30
+          ])
+          (mkOutput "denoised_output" "LATENT" [ ])
         ];
       })
       (mkNode {
         id = 15;
         type = "VAEDecode";
         pos = [
-          2040
+          2160
           40
         ];
         size = [
@@ -630,49 +577,47 @@ in
         ];
         order = 22;
         inputs = [
-          (mkInput "samples" "LATENT" 30)
-          (mkInput "vae" "VAE" 6)
+          (mkInput "samples" "LATENT" 29)
+          (mkInput "vae" "VAE" 8)
         ];
-        outputs = [ (mkOutput "IMAGE" "IMAGE" [ 31 ]) ];
-      })
-      # 新区間の先頭フレームは元動画の最終フレームとほぼ同じなので、
-      # 連結時の一瞬の停滞を防ぐために取り除く。
-      # lengthは残数へ自動でクランプされるので大きな値で全フレームを取る。
-      (mkNode {
-        id = 25;
-        type = "ImageFromBatch";
-        title = "新区間の先頭フレームを除去";
-        pos = [
-          2040
-          140
-        ];
-        size = [
-          315
-          106
-        ];
-        order = 23;
-        inputs = [ (mkInput "image" "IMAGE" 31) ];
         outputs = [
           (mkOutput "IMAGE" "IMAGE" [
-            32
-            35
+            33
+            34
           ])
         ];
-        widgets = [
-          1 # batch_index
-          4096 # length
+      })
+      (mkNode {
+        id = 35;
+        type = "VAEDecodeAudio";
+        pos = [
+          2160
+          160
+        ];
+        size = [
+          210
+          46
+        ];
+        order = 23;
+        inputs = [
+          (mkInput "samples" "LATENT" 30)
+          (mkInput "vae" "VAE" 9)
+        ];
+        outputs = [
+          (mkOutput "AUDIO" "AUDIO" [
+            35
+            36
+          ])
         ];
       })
       # 新区間だけを保存する。
-      # 先頭フレームは元動画の最終フレームとの重複なので、
-      # ここでは除去済みのフレーム列を使い、後でそのまま連結できるようにする。
       # 連結済み動画の保存とはグラフ上のデータ依存を持たない独立した出力。
       (mkNode {
         id = 28;
         type = "SaveSvtAv1";
         title = "新区間のみを保存";
         pos = [
-          2400
+          2540
           40
         ];
         size = [
@@ -680,10 +625,13 @@ in
           470
         ];
         order = 24;
-        inputs = [ (mkInput "images" "IMAGE" 35) ];
+        inputs = [
+          (mkInput "images" "IMAGE" 33)
+          (mkInput "audio" "AUDIO" 35 // { shape = 7; })
+        ];
         widgets = [
           (mkFilenamePrefixWith name "-segment") # filename_prefix
-          16 # fps
+          24 # fps
           4 # preset
         ];
       })
@@ -693,8 +641,8 @@ in
         type = "BatchImagesNode";
         title = "元動画と連結";
         pos = [
-          2040
-          320
+          2160
+          280
         ];
         size = [
           240
@@ -703,35 +651,59 @@ in
         order = 25;
         inputs = [
           (mkInput "images.image0" "IMAGE" 13)
-          (mkInput "images.image1" "IMAGE" 32)
+          (mkInput "images.image1" "IMAGE" 34)
         ];
-        outputs = [ (mkOutput "IMAGE" "IMAGE" [ 33 ]) ];
+        outputs = [ (mkOutput "IMAGE" "IMAGE" [ 37 ]) ];
       })
-      # Wan 2.2 14Bは16fpsで学習されているのでfpsは16のまま使う。
+      # 元動画の音声の後ろへ新区間の音声を連結する。
+      (mkNode {
+        id = 37;
+        type = "AudioConcat";
+        title = "元動画の音声と連結";
+        pos = [
+          2160
+          430
+        ];
+        size = [
+          315
+          82
+        ];
+        order = 26;
+        inputs = [
+          (mkInput "audio1" "AUDIO" 14)
+          (mkInput "audio2" "AUDIO" 36)
+        ];
+        outputs = [ (mkOutput "AUDIO" "AUDIO" [ 38 ]) ];
+        widgets = [ "after" ]; # direction
+      })
+      # MiniMax H3は24fpsで学習されているのでfpsは24のまま使う。
       (mkNode {
         id = 17;
         type = "SaveSvtAv1";
         title = "連結済み動画を保存";
         pos = [
-          2400
-          550
+          2540
+          560
         ];
         size = [
           420
           470
         ];
-        order = 26;
-        inputs = [ (mkInput "images" "IMAGE" 33) ];
+        order = 27;
+        inputs = [
+          (mkInput "images" "IMAGE" 37)
+          (mkInput "audio" "AUDIO" 38 // { shape = 7; })
+        ];
         widgets = [
           (mkFilenamePrefix name) # filename_prefix
-          16 # fps
+          24 # fps
           4 # preset
         ];
       })
     ];
     links = [
       [
-        36
+        1
         1
         0
         29
@@ -739,55 +711,55 @@ in
         "MODEL"
       ]
       [
-        1
+        2
         29
+        0
+        30
+        0
+        "MODEL"
+      ]
+      [
+        3
+        30
         0
         7
         0
         "MODEL"
       ]
       [
-        37
-        2
-        0
-        30
-        0
-        "MODEL"
-      ]
-      [
-        2
-        30
-        0
-        8
-        0
-        "MODEL"
-      ]
-      [
-        3
-        3
-        0
-        10
-        0
-        "CLIP"
-      ]
-      [
         4
-        3
+        7
         0
-        11
+        33
         0
-        "CLIP"
+        "MODEL"
       ]
       [
         5
-        4
+        7
         0
-        12
-        2
-        "VAE"
+        34
+        0
+        "MODEL"
       ]
       [
         6
+        3
+        0
+        12
+        0
+        "CLIP"
+      ]
+      [
+        7
+        4
+        0
+        12
+        1
+        "VAE"
+      ]
+      [
+        8
         4
         0
         15
@@ -796,22 +768,14 @@ in
       ]
       [
         9
-        7
+        31
         0
-        13
-        0
-        "MODEL"
+        35
+        1
+        "VAE"
       ]
       [
         10
-        8
-        0
-        14
-        0
-        "MODEL"
-      ]
-      [
-        11
         9
         0
         23
@@ -819,6 +783,14 @@ in
         "VIDEO"
       ]
       [
+        11
+        27
+        0
+        12
+        3
+        "IMAGE"
+      ]
+      [
         12
         23
         0
@@ -836,151 +808,151 @@ in
       ]
       [
         14
+        23
+        1
+        37
+        0
+        "AUDIO"
+      ]
+      [
+        15
         24
         0
         21
         0
-        "IMAGE"
-      ]
-      [
-        15
-        21
-        0
-        12
-        5
         "IMAGE"
       ]
       [
         16
         21
         0
+        12
+        2
+        "IMAGE"
+      ]
+      [
+        17
+        21
+        0
         22
         0
         "IMAGE"
       ]
       [
-        17
+        18
         22
         0
         12
-        7
+        5
         "INT"
       ]
       [
-        18
+        19
         22
         1
         12
-        8
+        6
         "INT"
-      ]
-      [
-        19
-        19
-        0
-        18
-        0
-        "STRING"
       ]
       [
         20
+        19
+        0
         18
         0
-        10
-        1
         "STRING"
       ]
       [
         21
         18
         0
+        12
+        4
+        "STRING"
+      ]
+      [
+        22
+        18
+        0
         20
         0
         "STRING"
       ]
       [
-        22
-        10
-        0
-        12
-        0
-        "CONDITIONING"
-      ]
-      [
         23
-        11
-        0
         12
+        0
+        34
         1
         "CONDITIONING"
       ]
       [
         24
         12
-        0
-        13
-        1
-        "CONDITIONING"
-      ]
-      [
-        25
-        12
-        0
-        14
-        1
-        "CONDITIONING"
-      ]
-      [
-        26
-        12
-        1
-        13
-        2
-        "CONDITIONING"
-      ]
-      [
-        27
-        12
         1
         14
-        2
-        "CONDITIONING"
-      ]
-      [
-        28
-        12
-        2
-        13
-        3
+        4
         "LATENT"
       ]
       [
-        29
+        25
         13
         0
         14
+        0
+        "NOISE"
+      ]
+      [
+        26
+        32
+        0
+        14
+        2
+        "SAMPLER"
+      ]
+      [
+        27
+        33
+        0
+        14
         3
+        "SIGMAS"
+      ]
+      [
+        28
+        34
+        0
+        14
+        1
+        "GUIDER"
+      ]
+      [
+        29
+        14
+        0
+        15
+        0
         "LATENT"
       ]
       [
         30
         14
         0
-        15
+        35
         0
         "LATENT"
       ]
       [
-        31
+        33
         15
         0
-        25
+        28
         0
         "IMAGE"
       ]
       [
-        32
-        25
+        34
+        15
         0
         26
         1
@@ -988,14 +960,22 @@ in
       ]
       [
         35
-        25
+        35
         0
         28
-        0
-        "IMAGE"
+        1
+        "AUDIO"
       ]
       [
-        33
+        36
+        35
+        0
+        37
+        1
+        "AUDIO"
+      ]
+      [
+        37
         26
         0
         17
@@ -1003,12 +983,12 @@ in
         "IMAGE"
       ]
       [
-        34
-        27
+        38
+        37
         0
-        12
-        6
-        "IMAGE"
+        17
+        1
+        "AUDIO"
       ]
     ];
   };

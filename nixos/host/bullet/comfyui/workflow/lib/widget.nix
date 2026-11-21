@@ -63,7 +63,9 @@ let
     LoadImageOptional = [ "image" ];
     # 動画を選ぶウィジェットは画像と違って`file`。
     LoadVideo = [ "file" ];
+    PrimitiveFloat = [ "value" ];
     PrimitiveInt = [ "value" ];
+    RandomNoise = [ "noise_seed" ];
     # 自作ノード。`pkgs/comfyui-ncaq-nodes/src/rewrite_edit_prompt.py`。
     RewriteEditPrompt = [
       "text"

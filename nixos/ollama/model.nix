@@ -141,14 +141,14 @@ let
               model = fetchHuggingFace {
                 owner = "ggml-org";
                 repo = "Qwen3.8-27B-GGUF";
-                rev = "8ccda149192dec5f41450a402e66889e5fd25a24";
+                rev = "c1869413dece09109e55b7dcc2c77ef382b0d0bd";
                 file = "Qwen3.8-27B-BF16.gguf";
                 hash = "sha256-7hHoaU5cXP+griGJVwbJc2A1DkBTKXkwi3VtIKmnF70=";
               };
               draft = fetchHuggingFace {
                 owner = "ggml-org";
                 repo = "Qwen3.8-27B-GGUF";
-                rev = "8ccda149192dec5f41450a402e66889e5fd25a24";
+                rev = "c1869413dece09109e55b7dcc2c77ef382b0d0bd";
                 file = "mtp-Qwen3.8-27B-BF16.gguf";
                 hash = "sha256-n8QonqUMFvNWcyFBWW8zgOdHcjy5EikaoLj+z9j5Jzw=";
               };
@@ -161,7 +161,7 @@ let
           (fetchHuggingFace {
             owner = "unsloth";
             repo = "Qwen3.8-27B-GGUF";
-            rev = "43f522df59109a037f64f1e29ab1eff5c00e8e1e";
+            rev = "4af51b3542f775b0a8e4b310bfb3f17e01c306c9";
             file = "mmproj-F16.gguf";
             hash = "sha256-y7hBqe4GNrLsFy9buN8uqN/rAekP58YSZYHWYqC05D4=";
           })

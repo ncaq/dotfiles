@@ -64,7 +64,7 @@ let
       # 有料API、公開生成サービス、収益化製品などの機能としての推論には別途商用ライセンスが必要。
       # 一方、生成画像は派生モデルに含まれず、
       # 販売、コミッション、広告、有料ゲームなどの素材を含む商用利用が明示的に許可されている。
-      # https://huggingface.co/circlestone-labs/Anima/blob/f973fc41ec7545364ac9776c2440285f43ff2a30/LICENSE.md
+      # https://huggingface.co/circlestone-labs/Anima/blob/6e0b2da2112573380abfb6a1435a60a994b254f2/LICENSE.md
       # NVIDIA Cosmosの派生モデルでもあるため、NVIDIA Open Model Licenseも適用される。
       # https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license/
       #
@@ -74,7 +74,7 @@ let
       "anima-aesthetic-v1.1.safetensors" = fetchHuggingFace {
         owner = "circlestone-labs";
         repo = "Anima";
-        rev = "f973fc41ec7545364ac9776c2440285f43ff2a30";
+        rev = "6e0b2da2112573380abfb6a1435a60a994b254f2";
         file = "split_files/diffusion_models/anima-aesthetic-v1.1.safetensors";
         hash = "sha256-PBhoOHo6H/UEu7h8M2eDIZZerTgfz4evvQJk2qYAwII=";
       };
@@ -82,7 +82,7 @@ let
       "anima-base-v1.0.safetensors" = fetchHuggingFace {
         owner = "circlestone-labs";
         repo = "Anima";
-        rev = "f973fc41ec7545364ac9776c2440285f43ff2a30";
+        rev = "6e0b2da2112573380abfb6a1435a60a994b254f2";
         file = "split_files/diffusion_models/anima-base-v1.0.safetensors";
         hash = "sha256-vUO3z/4e0RU9nEHnvrLxjLEnPq+6o68+3WoXPckKAG4=";
       };
@@ -165,7 +165,7 @@ let
       "qwen_3_06b_base.safetensors" = fetchHuggingFace {
         owner = "circlestone-labs";
         repo = "Anima";
-        rev = "f973fc41ec7545364ac9776c2440285f43ff2a30";
+        rev = "6e0b2da2112573380abfb6a1435a60a994b254f2";
         file = "split_files/text_encoders/qwen_3_06b_base.safetensors";
         hash = "sha256-zSpRIAPi+fPNPDKpw1c/gguyjJQPc8V7Hdqpg9kiPro=";
       };
@@ -213,7 +213,7 @@ let
       "umt5_xxl_fp16.safetensors" = fetchHuggingFace {
         owner = "Comfy-Org";
         repo = "Wan-2.2";
-        rev = "ee6f4a40737a995bf5818954cfce6d59443b0f04";
+        rev = "5df3a4a3ed0628002308022198249dbbbd045d09";
         file = "split_files/text_encoders/umt5_xxl_fp16.safetensors";
         hash = "sha256-e4hQ8ZYeHPinfMpMlko1jTA/SQgzxsCH0M/0svmdsq8=";
       };
@@ -242,7 +242,7 @@ let
       "wan_2.1_vae.safetensors" = fetchHuggingFace {
         owner = "Comfy-Org";
         repo = "Wan-2.2";
-        rev = "ee6f4a40737a995bf5818954cfce6d59443b0f04";
+        rev = "5df3a4a3ed0628002308022198249dbbbd045d09";
         file = "split_files/vae/wan_2.1_vae.safetensors";
         hash = "sha256-L8OdMTWaSwpk9Vh22P9/qNeAlWriyxNGOwIj4VFIl2s=";
       };

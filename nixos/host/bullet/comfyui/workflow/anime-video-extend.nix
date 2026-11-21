@@ -50,6 +50,7 @@ let
   inherit (import ./lib/builder.nix { inherit lib; })
     mkNode
     mkInput
+    mkWidgetInput
     mkOutput
     mkLoraLoader
     mkAppInput
@@ -62,15 +63,6 @@ let
   # 実写や3Dへ寄るのを避けるために常にプロンプトへ前置するスタイル指定。
   # anime-videoと同じ値。
   animeStylePrefix = "Anime style, 2D cel animation, flat colors.";
-  # ウィジェットをソケットから上書きする入力。
-  mkWidgetInput =
-    inputName: type: link:
-    mkInput inputName type link
-    // {
-      widget = {
-        name = inputName;
-      };
-    };
 in
 {
   local.comfyui.workflows.${name} = mkWorkflow {

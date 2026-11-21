@@ -5,18 +5,11 @@
 {
   lib,
   haskell,
-  haskellPackages,
+  localHaskellPackages,
   makeWrapper,
   nix,
-  himari-src,
 }:
 let
-  packages = haskellPackages.extend (
-    hself: _hsuper: {
-      # himariはstableのnixpkgsではbrokenなので、上流のソースから組む。
-      himari = hself.callCabal2nix "himari" himari-src { };
-    }
-  );
   # 動かすものだけをstoreへ入れる。
   # ディレクトリをそのまま渡すと`dist-newstyle`のような作業中のファイルまで付いてくる。
   source = lib.fileset.toSource {
@@ -28,7 +21,7 @@ let
       ./test
     ];
   };
-  package = packages.callCabal2nix "nix-gc-root-hosts" source { };
+  package = localHaskellPackages.callCabal2nix "nix-gc-root-hosts" source { };
 in
 lib.pipe package [
   (haskell.lib.compose.overrideCabal (old: {

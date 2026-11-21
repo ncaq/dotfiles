@@ -25,11 +25,21 @@
 { lib, inputs }:
 final: prev:
 let
+  # 自作のHaskellパッケージが共有するパッケージセット。
+  # パッケージごとに`haskellPackages.extend`すると、
+  # できるセットは互いに別の不動点なので、
+  # himariとその依存のderivationをパッケージの数だけ評価し直すことになる。
+  localHaskellPackages = final.haskellPackages.extend (
+    hself: _hsuper: {
+      # himariはstableのnixpkgsではbrokenなので、上流のソースから組む。
+      himari = hself.callCabal2nix "himari" inputs.himari-src { };
+    }
+  );
   packages = lib.packagesFromDirectoryRecursive {
     callPackage = lib.callPackageWith (
       final
       // {
-        inherit (inputs) himari-src;
+        inherit localHaskellPackages;
         inherit (inputs.niks3.packages.${final.stdenv.hostPlatform.system}) niks3;
         # nixpkgsの`home-manager`はmasterのスナップショットなので、
         # 構成の評価に使うinputと同じ版のCLIを渡す。

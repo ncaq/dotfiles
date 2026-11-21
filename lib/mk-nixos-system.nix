@@ -12,6 +12,9 @@
   hostInfo,
 }:
 let
+  # WSL2の上で動くホストかどうか。
+  # 構成の`wsl.enable`ではなく静的な`hostInfo`から取るので、構成を評価せずに分かる。
+  isWSL = hostInfo.${hostName}.wsl or false;
   specialArgs = {
     inherit
       importDirModules
@@ -35,29 +38,31 @@ let
     ../nixos/configuration.nix
     ../nixos/host/${hostName}.nix
     inputs.home-manager.nixosModules.home-manager
-    (
-      { config, ... }:
-      {
-        home-manager = {
-          backupFileExtension = "hm-bak";
-          useGlobalPkgs = true;
-          useUserPackages = true;
-          extraSpecialArgs = specialArgs // {
-            isTermux = false;
-            isWSL = config.wsl.enable or false;
-          };
-          sharedModules = [
-            inputs.sops-nix.homeManagerModules.sops
-          ];
-          users.ncaq = import ../home;
+    {
+      home-manager = {
+        backupFileExtension = "hm-bak";
+        useGlobalPkgs = true;
+        useUserPackages = true;
+        extraSpecialArgs = specialArgs // {
+          inherit isWSL;
+          isTermux = false;
         };
-      }
-    )
+        sharedModules = [
+          inputs.sops-nix.homeManagerModules.sops
+        ];
+        users.ncaq = import ../home;
+      };
+    }
   ];
 in
 {
   nixosSystem = lib.nixosSystem {
     inherit modules specialArgs system;
   };
-  inherit modules specialArgs system;
+  inherit
+    modules
+    specialArgs
+    system
+    isWSL
+    ;
 }

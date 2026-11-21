@@ -243,6 +243,11 @@
       hostInfo = {
         "SSD0086" = {
           system = "x86_64-linux";
+          # WSL2の上で動くホストかどうか。
+          # 構成の`wsl.enable`を見ると、ホストの一覧を絞るだけで全ホストの構成を評価することになるので、
+          # ここに静的に書く。
+          # 構成と食い違っていないかは`nixos/core/host-info.nix`が確かめる。
+          wsl = true;
         };
         "bullet" = {
           system = "x86_64-linux";
@@ -352,10 +357,19 @@
           # 自作のパッケージが`passthru.tests`に置いたテスト。
           # パッケージ自身の`checkPhase`に入れると、
           # テストを書き換えただけでパッケージのstoreパスが変わってしまう時に使う。
-          # `<パッケージの名前>-test-<テストの名前>`という名前にする。
-          localPackageTests = lib.concatMapAttrs (
-            name: package: lib.mapAttrs' (test: lib.nameValuePair "${name}-test-${test}") (package.tests or { })
-          ) localPackages;
+          # `<パッケージの名前>-test-<テストの名前>`という名前で1つのderivationへ束ねる。
+          #
+          # テストごとに`checks`の属性にしないのは、
+          # 属性の名前を決めるのに全てのパッケージの`tests`を見ることになるから。
+          # `checks`の属性名を数えるだけで全てのパッケージが評価されて、
+          # `callCabal2nix`のIFDまで走ってしまう。
+          # `nix-eval-jobs`のワーカは起動するたびに属性名を数えるので、その度に同じ評価を繰り返す。
+          # 束ねておけば、パッケージを評価するのはこの属性を評価する時だけになる。
+          localPackageTests = pkgs.linkFarm "local-package-tests" (
+            lib.concatMapAttrs (
+              name: package: lib.mapAttrs' (test: lib.nameValuePair "${name}-test-${test}") (package.tests or { })
+            ) localPackages
+          );
           # 自作のパッケージの名前がnixpkgsの属性と重なっていないかのチェック。
           # 重なった時に何が起きるかは`lib/local-packages-overlay.nix`に書いてある。
           # 黙って差し替わらないように評価を止めて、移行するか名前を変えるかを決める。
@@ -526,8 +540,8 @@
             # `packages`へ置いただけではCIでビルドされないので、
             # 自作のパッケージは全てビルドとderivationの中のテストを確かめる。
             // localPackages
-            // localPackageTests
             // {
+              local-package-tests = localPackageTests;
               local-packages-name-collision = localPackagesNameCollision;
             }
             // lib.optionalAttrs hasComfyui {

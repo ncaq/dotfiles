@@ -13,20 +13,13 @@
 {
   lib,
   haskell,
-  haskellPackages,
+  localHaskellPackages,
   makeWrapper,
   cachix,
   niks3,
   sops,
-  himari-src,
 }:
 let
-  packages = haskellPackages.extend (
-    hself: _hsuper: {
-      # himariはstableのnixpkgsではbrokenなので、上流のソースから組む。
-      himari = hself.callCabal2nix "himari" himari-src { };
-    }
-  );
   # 動かすものだけをstoreへ入れる。
   # ディレクトリをそのまま渡すと`dist-newstyle`のような作業中のファイルまで付いてくる。
   source = lib.fileset.toSource {
@@ -38,7 +31,7 @@ let
       ./test
     ];
   };
-  package = packages.callCabal2nix "nix-cache-push-ncaq" source { };
+  package = localHaskellPackages.callCabal2nix "nix-cache-push-ncaq" source { };
   # シークレットファイルはsops暗号化済みなので、
   # Nix storeに取り込んでビルド時に解決する。
   niks3Variants = {

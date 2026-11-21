@@ -9,18 +9,11 @@
 {
   lib,
   haskell,
-  haskellPackages,
+  localHaskellPackages,
   runCommand,
   writeText,
-  himari-src,
 }:
 let
-  packages = haskellPackages.extend (
-    hself: _hsuper: {
-      # himariはstableのnixpkgsではbrokenなので、上流のソースから組む。
-      himari = hself.callCabal2nix "himari" himari-src { };
-    }
-  );
   # 動かすものだけをstoreへ入れる。
   # ディレクトリをそのまま渡すと`dist-newstyle`のような作業中のファイルまで付いてくる。
   source = lib.fileset.toSource {
@@ -33,7 +26,7 @@ let
     ];
   };
   mainProgram = "comfyui-idle-free-memory";
-  executable = lib.pipe (packages.callCabal2nix mainProgram source { }) [
+  executable = lib.pipe (localHaskellPackages.callCabal2nix mainProgram source { }) [
     # コンテナのクロージャへGHCを持ち込まない。
     haskell.lib.compose.justStaticExecutables
   ];

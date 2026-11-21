@@ -10,17 +10,24 @@ flakeの`packages`と`checks`にも加わります。
 `flake.nix`やモジュールでパスを指定して`callPackage`する必要はありません。
 ホストの設定に合わせた引数を渡したい時は`pkgs.<名前>.override`を使います。
 
-`himari-src`のようなnixpkgsに無いflakeのinputは、
+`niks3`のようなnixpkgsに無いflakeのinputは、
 overlayが`callPackage`の自動で渡す引数に足しています。
 `home-manager`のように、
 nixpkgsにあってもinputと版を揃えたいものも同じように足しています。
+
+Haskellのパッケージは、
+overlayが渡す`localHaskellPackages`の`callCabal2nix`で組みます。
+nixpkgsの`haskellPackages`にhimariを足したパッケージセットで、
+全ての自作パッケージが同じものを共有します。
+パッケージごとに`haskellPackages.extend`すると、
+himariとその依存をパッケージの数だけ評価し直すことになります。
 
 新しく書く時の言語の選び方は`docs/helper-program-language-policy.md`に書いてあります。
 
 ## テスト
 
 パッケージの`passthru.tests`に置いたderivationも、
-`<名前>-test-<テストの名前>`として`checks`に加わります。
+`checks`の`local-package-tests`へ`<名前>-test-<テストの名前>`として束ねられて確かめられます。
 `comfyui-ncaq-nodes`のように、
 テストを書き換えただけで配るもののstoreパスが変わると困る時に、
 `checkPhase`の代わりに使います。

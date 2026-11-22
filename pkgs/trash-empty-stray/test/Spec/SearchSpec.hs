@@ -7,12 +7,15 @@ import Himari
 import System.Posix.Files (createSymbolicLink)
 import Test.Sandwich
 import TrashEmptyStray.AbsDir (absDirFilePath, parseAbsDirPath)
+import TrashEmptyStray.FoundTrashDir (FoundTrashDir (..))
 import TrashEmptyStray.Search (findTrashDirs)
 
 -- | `FilePath`の起点から探して、見つけたものを`FilePath`で返す。ログは出さない。
 findIn :: (MonadIO m) => [FilePath] -> m [FilePath]
 findIn roots =
-  runQuiet (traverse parseAbsDirPath roots >>= findTrashDirs >>= traverse absDirFilePath)
+  runQuiet do
+    found <- traverse parseAbsDirPath roots >>= findTrashDirs
+    for found \FoundTrashDir{path} -> absDirFilePath path
 
 tests :: TopSpec
 tests = describe "findTrashDirs" do

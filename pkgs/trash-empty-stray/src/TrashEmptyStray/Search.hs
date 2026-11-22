@@ -14,6 +14,7 @@ import System.Posix.Directory.PosixPath (closeDirStream, openDirStream, readDirS
 import System.Posix.Files.PosixString (deviceID, getSymbolicLinkStatus, isDirectory)
 import System.Posix.Types (DeviceID)
 import TrashEmptyStray.AbsDir (AbsDir)
+import TrashEmptyStray.FoundTrashDir (FoundTrashDir (..), identityOf)
 import TrashEmptyStray.TrashDirName (isHomeTrashDir, isTrashDirName)
 
 -- | これから中身を読むディレクトリと、その起点のデバイス。
@@ -21,7 +22,7 @@ data Pending = Pending AbsDir DeviceID
 
 -- | ディレクトリを読んで分かったこと。
 data Visited = Visited
-  { trashDirs :: [AbsDir]
+  { trashDirs :: [FoundTrashDir]
   -- ^ 見つけたゴミ箱。
   , children :: [Pending]
   -- ^ 続けて読むディレクトリ。
@@ -50,7 +51,7 @@ instance Monoid Visited where
 -- 並列にするために、まず起点から浅い階層だけを順に読んで、探す範囲をディレクトリの単位に分ける。
 -- 分けたディレクトリを1つずつワーカーへ渡して、ワーカーはその下を1人で最後まで辿る。
 -- ワーカーどうしは何も共有せず、それぞれが見つけたものを最後に集める。
-findTrashDirs :: (MonadLogger m, MonadUnliftIO m) => [AbsDir] -> m [AbsDir]
+findTrashDirs :: (MonadLogger m, MonadUnliftIO m) => [AbsDir] -> m [FoundTrashDir]
 findTrashDirs roots = do
   rootPending <- fmap catMaybes . for roots $ \root ->
     tryIO (liftIO (getSymbolicLinkStatus (fromAbsDir root))) >>= \case
@@ -83,7 +84,7 @@ splitIntoUnits pending
       pure deeper{trashDirs = visited.trashDirs <> deeper.trashDirs}
 
 -- | ディレクトリの下を最後まで順に辿って、見つけたゴミ箱を返す。
-walk :: (MonadLogger m, MonadUnliftIO m) => [Pending] -> m [AbsDir]
+walk :: (MonadLogger m, MonadUnliftIO m) => [Pending] -> m [FoundTrashDir]
 walk = go []
  where
   go found = \case
@@ -108,7 +109,8 @@ visit (Pending directory device) = do
         | otherwise -> case parseRelDir name of
             Nothing -> mempty <$ warn unchecked "ディレクトリの名前として扱えません"
             Just relative
-              | isTrashDirName name -> pure mempty{trashDirs = [path]}
+              | isTrashDirName name ->
+                  pure mempty{trashDirs = [FoundTrashDir{path, identity = identityOf status}]}
               | isHomeTrashDir path -> pure mempty
               -- 降りて良いのは、起点と同じデバイスにあるディレクトリだけである。
               | deviceID status == device -> pure mempty{children = [Pending path device]}

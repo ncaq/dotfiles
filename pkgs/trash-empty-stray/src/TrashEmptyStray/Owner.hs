@@ -14,6 +14,7 @@ import System.Posix.IO
   )
 import System.Posix.User (getEffectiveUserID)
 import TrashEmptyStray.Failure (OwnerFailure (..))
+import TrashEmptyStray.FoundTrashDir (DirIdentity, identityOf)
 
 -- | ディレクトリの中を作業ディレクトリにして、その所有者の権限でコマンドを実行する。
 --
@@ -39,11 +40,19 @@ import TrashEmptyStray.Failure (OwnerFailure (..))
 -- 権限を落とすのを`setpriv`に任せるのは、スレッドを持つこのプロセスの中でuidを変えないためである。
 -- 補助グループも`setpriv`が空にする。
 --
+-- 開いたものが、探索で見つけた時と同じ実体かも確かめる。
+-- シンボリックリンクを辿らないのはパスの最後の要素だけなので、
+-- 見つけてから開くまでの間に途中のディレクトリをリンクへ差し替えられると、
+-- 探索が除いた場所にあるゴミ箱を開いてしまう。
+-- 違う実体だった時は`ReplacedSinceFound`を投げて、何も実行しない。
+--
 -- コマンドが成功で終わらなかった時は`ChildFailed`を投げる。
-runAsOwnerInside :: (MonadThrow m, MonadUnliftIO m) => FilePath -> FilePath -> [String] -> m ()
-runAsOwnerInside path command arguments =
+runAsOwnerInside
+  :: (MonadThrow m, MonadUnliftIO m) => DirIdentity -> FilePath -> FilePath -> [String] -> m ()
+runAsOwnerInside expected path command arguments =
   bracket (liftIO (openFd path ReadOnly flags)) (liftIO . closeFd) \fd -> do
     status <- liftIO (getFdStatus fd)
+    unless (identityOf status == expected) (throwM ReplacedSinceFound)
     effective <- liftIO getEffectiveUserID
     let
       owner = fileOwner status

@@ -63,6 +63,7 @@ library
     TrashEmptyStray.Clean
     TrashEmptyStray.Cli
     TrashEmptyStray.Failure
+    TrashEmptyStray.FoundTrashDir
     TrashEmptyStray.Owner
     TrashEmptyStray.RetentionDays
     TrashEmptyStray.Search
@@ -109,6 +110,7 @@ test-suite trash-empty-stray-test
     Spec
     Spec.CleanSpec
     Spec.CliSpec
+    Spec.OwnerSpec
     Spec.SearchSpec
     Spec.TrashDirNameSpec
 

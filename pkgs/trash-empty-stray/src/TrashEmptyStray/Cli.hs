@@ -28,6 +28,7 @@ import Himari
 import Options.Applicative
 import TrashEmptyStray.AbsDir (absDirFilePath, parseAbsDirPath)
 import TrashEmptyStray.Clean (cleanTrashDir)
+import TrashEmptyStray.FoundTrashDir (FoundTrashDir (..))
 import TrashEmptyStray.Owner (runAsOwnerInside)
 import TrashEmptyStray.RetentionDays (RetentionDays (..))
 import TrashEmptyStray.Search (findTrashDirs)
@@ -60,10 +61,15 @@ runWith self argv =
         traverse parseAbsDirPath roots `catchAny` \(SomeException exception) -> do
           logErrorN ("起点を解釈できませんでした: " <> convert (displayException exception))
           throwM (ExitFailure 1)
-      trashDirs <- findTrashDirs absoluteRoots >>= traverse absDirFilePath
-      results <- for trashDirs \path -> do
+      trashDirs <- findTrashDirs absoluteRoots
+      results <- for trashDirs \found -> do
+        path <- absDirFilePath found.path
         logInfoN (convert path <> "を掃除します")
-        result <- tryAny (runAsOwnerInside path self (cleanHereArguments days path))
+        -- `clean-here`が空になったゴミ箱自体を消す時は、見つけた時のパスを使う。
+        -- そこだけは途中のディレクトリを差し替えられると別の場所を指すが、
+        -- 消せるのは空のディレクトリだけなので受け入れている。
+        result <-
+          tryAny (runAsOwnerInside found.identity path self (cleanHereArguments days path))
         for_ (result ^? _Left) (report path)
         pure result
       unless (all isRight results) (throwM (ExitFailure 1))

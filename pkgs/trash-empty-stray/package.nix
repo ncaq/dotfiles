@@ -1,6 +1,6 @@
 # `trash-empty --all-users`が見つけられないゴミ箱を探して掃除するコマンド。
 #
-# `nixos/core/trash.nix`のサービスから呼ばれる。
+# 同じディレクトリの`module.nix`が定義する`trash-empty-stray.service`から呼ばれる。
 # 何を探してどう掃除するかは`src/TrashEmptyStray/Cli.hs`に書いてある。
 {
   lib,

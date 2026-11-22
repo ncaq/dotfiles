@@ -6,7 +6,7 @@
 -- Nixのビルドではそれが入らないので、`package.nix`の`preCheck`がPATHへ足している。
 --
 -- テストは一般ユーザとして走るので、他の所有者の権限へ落とす場面はここでは確かめられない。
--- そこは`test/nixos-boot/script/trash-empty.nix`が実際のサービスで確かめる。
+-- そこは`nixos-test.nix`が実際のサービスで確かめる。
 module Spec.CliSpec (tests) where
 
 import Fixture (Age (..), listTree, putEntry, runQuiet, withRoot)

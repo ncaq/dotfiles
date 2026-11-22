@@ -13,6 +13,9 @@
 # - `files`をrootしか書けない場所へのシンボリックリンクにしても、リンクの先が残る
 # - rootが所有するゴミ箱が掃除される。`sudo trash`でできるゴミ箱である
 # - 名前のuidと所有者が食い違うゴミ箱が、所有者の権限で掃除される
+# - 起点と違うデバイスの中にあるゴミ箱が、期限切れでも残る。
+#   ネットワークマウントやスナップショットのサブボリュームを辿らないための境界で、
+#   マウントを作れないsandwichのテストでは確かめられない
 #
 # 権限の絞り込みが強すぎてuidを変えられない時は、ユニットが失敗するのでここで落ちます。
 { testers }:
@@ -67,6 +70,14 @@ testers.runNixOSTest {
           f"{as_user} ln -s ${victim} ${base}/attack-as-root/.Trash-0/files",
       )
 
+      # 起点と違うデバイスの中にあるゴミ箱。
+      machine.succeed(
+          f"{as_user} mkdir -p ${base}/other-device",
+          "mount -t tmpfs tmpfs ${base}/other-device",
+          "chown ${user} ${base}/other-device",
+      )
+      put_entry(as_user, "${base}/other-device/.Trash-1000", "old", "${expired}")
+
       machine.succeed("systemctl start trash-empty-stray.service")
 
       machine.succeed(
@@ -77,6 +88,8 @@ testers.runNixOSTest {
           "test ! -e ${base}/root-owned/.Trash-0",
           "test -e ${victim}/file",
           "test -e ${victim}/sub/file",
+          "test -e ${base}/other-device/.Trash-1000/files/old",
+          "test -e ${base}/other-device/.Trash-1000/info/old.trashinfo",
       )
     '';
 }

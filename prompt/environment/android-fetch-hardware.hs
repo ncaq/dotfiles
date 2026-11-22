@@ -162,7 +162,10 @@ describe serial =
   os = do
     release <- getprop "ro.build.version.release"
     sdk <- getprop "ro.build.version.sdk"
-    oneUi <- getprop "ro.build.version.oneui"
+    -- One UIの無い端末では値が空なので、値がある時だけ読む。
+    oneUi <-
+      getprop "ro.build.version.oneui"
+        >>= maybe (pure Nothing) (parseOrWarn "getprop ro.build.version.oneui" oneUiVersion)
     pure do
       version <- release
       pure
@@ -170,7 +173,7 @@ describe serial =
             ", "
             ( catMaybes
                 [ Just ("Android " <> version <> maybe "" (\level -> " (SDK " <> level <> ")") sdk)
-                , ("One UI " <>) <$> (oneUi >>= parseMaybe oneUiVersion)
+                , ("One UI " <>) <$> oneUi
                 ]
             )
         )

@@ -19,7 +19,7 @@ in
 {
   systemd = {
     services.trash-empty = {
-      description = "Remove files older than 30 days from all trash cans";
+      description = "Remove files older than 7 days from all trash cans";
       after = [
         "local-fs.target"
         "remote-fs.target"
@@ -28,7 +28,7 @@ in
       serviceConfig = trashHardening // {
         Type = "oneshot";
         TimeoutStartSec = "1h";
-        ExecStart = "${pkgs.trash-cli}/bin/trash-empty --all-users -f 30";
+        ExecStart = "${pkgs.trash-cli}/bin/trash-empty --all-users -f 7";
         # ゴミ箱の掃除は緊急性がないため、他の処理を最優先する。
         Nice = 19;
         CPUSchedulingPolicy = "idle";

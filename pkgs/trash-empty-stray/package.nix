@@ -7,6 +7,7 @@
   haskell,
   localHaskellPackages,
   makeWrapper,
+  testers,
   trash-cli,
   util-linux,
 }:
@@ -48,4 +49,16 @@ lib.pipe package [
     '';
   }))
   haskell.lib.compose.justStaticExecutables
+  # 権限を落とす場面はsandwichのテストでは確かめられないので、VMの中で実際のユニットを動かす。
+  # 配るもののstoreパスに関わらないように、`checkPhase`ではなく`passthru.tests`に置く。
+  (
+    package:
+    package.overrideAttrs (old: {
+      passthru = (old.passthru or { }) // {
+        tests = (old.passthru.tests or { }) // {
+          nixos = import ./nixos-test.nix { inherit testers; };
+        };
+      };
+    })
+  )
 ]

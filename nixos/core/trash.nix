@@ -1,12 +1,12 @@
 {
   pkgs,
   lib,
+  config,
   hardening,
   ...
 }:
 let
-  # ゴミ箱へ入れてからこの日数が経ったものを消す。
-  days = 7;
+  days = config.local.trash.retentionDays;
   trashHardening =
     # 全ユーザのホーム、全マウント先、ホストの/tmpにあるゴミ箱を掃除するため、
     # それらを不可視またはread-onlyにする隔離は適用できない。
@@ -82,7 +82,16 @@ let
   };
 in
 {
-  systemd = {
+  options.local.trash.retentionDays = lib.mkOption {
+    type = lib.types.ints.positive;
+    default = 7;
+    description = ''
+      ゴミ箱へ入れてからこの日数が経ったものを消す。
+      Sambaのゴミ箱のように別の仕組みで掃除するものも、保持期間が食い違わないようにここを参照する。
+    '';
+  };
+
+  config.systemd = {
     services.trash-empty = {
       description = "Remove files older than ${toString days} days from all trash cans";
       after = [

@@ -110,12 +110,14 @@ in
   '';
 
   systemd = {
-    # Sambaのゴミ箱へ入ってから7日経ったものを消す。
+    # Sambaのゴミ箱へ入ってから、通常のゴミ箱と同じ日数が経ったものを消す。
     # Sambaはファイルを1つずつゴミ箱へ移動するので、その時にctimeが更新される。
     # systemd-tmpfilesはatimeとmtimeとctimeの全てが期限より古いファイルだけを消すため、
     # 元のファイルがどれだけ古くても、ゴミ箱へ入ってからの日数で数えられる。
     # `e`は中身だけを掃除して、ディレクトリ自体は作りも消しもしない。
-    tmpfiles.rules = [ "e ${chihiroPath}/${recycleDir} - - - 7d" ];
+    tmpfiles.rules = [
+      "e ${chihiroPath}/${recycleDir} - - - ${toString config.local.trash.retentionDays}d"
+    ];
 
     services.samba-password-setup = {
       description = "Setup Samba password for ncaq user";

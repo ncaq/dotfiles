@@ -14,12 +14,30 @@
 # caddyユーザとroot以外は接続できない。
 # `caddy reload`は`--address`を省くと設定ファイルからadminのアドレスを読むため、
 # NixOSモジュールが組み立てる`ExecReload`はそのままで通る。
-{ lib, config, ... }:
+{
+  lib,
+  config,
+  hardening,
+  ...
+}:
 {
   config = lib.mkIf config.services.caddy.enable {
     # `/run`直下はcaddyユーザに書けないのでsystemdにディレクトリを用意させる。
     systemd.services.caddy = {
-      serviceConfig.RuntimeDirectory = "caddy";
+      # パッケージのユニットとnixpkgsのモジュールは一部しか制限をかけないので、
+      # 共通のハードニングを足す。
+      # 書き込む先はnixpkgsのモジュールが`ReadWritePaths`などで用意している。
+      # コンテナの中のCaddyは別の構成なので、ここの設定は及ばない。
+      serviceConfig = hardening.network // {
+        # パッケージのユニットが`AmbientCapabilities`で渡す2つは残す。
+        # `CAP_NET_BIND_SERVICE`は443などで待ち受けるため、
+        # `CAP_NET_ADMIN`はHTTP/3のUDPバッファを広げるため。
+        CapabilityBoundingSet = [
+          "CAP_NET_ADMIN"
+          "CAP_NET_BIND_SERVICE"
+        ];
+        RuntimeDirectory = "caddy";
+      };
       # 設定の変更だけならreloadで済みますが、
       # パッケージが変わるとユニットごと変更扱いになります。
       # HTTPの入口を設定の適用の間ずっと止めておかずに、適用の後に再起動させます。

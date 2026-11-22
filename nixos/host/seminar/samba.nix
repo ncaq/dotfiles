@@ -23,6 +23,11 @@ in
       # NetBIOSの名前解決とブラウズを担うデーモン。
       # NetBIOSを使わない理由は下の`disable netbios`に書いてある。
       nmbd.enable = false;
+      # ドメインのユーザやグループをNSSやPAMへ見せるデーモン。
+      # ドメインに参加しない単体のサーバで、
+      # ユーザは`/etc/passwd`とSamba自身のpassdbだけで解決するので使わない。
+      # rootで動き続けるデーモンを1つ減らす。
+      winbindd.enable = false;
       settings = {
         global = {
           # 基本設定

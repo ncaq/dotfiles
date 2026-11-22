@@ -56,8 +56,28 @@ let
         fi
       done < <(df --local --output=target)
 
-      fd --hidden --no-ignore --one-file-system --type d --prune '^\.Trash-[0-9]+$' "''${roots[@]}" \
-        --exec trash-empty -f ${toString days} --trash-dir
+      # ディレクトリが無いか、空で消せた時に成功する。
+      # 空でない時は何もせずに失敗する。
+      remove_if_empty() {
+        if [[ -e $1 ]]; then
+          rmdir --ignore-fail-on-non-empty "$1"
+        fi
+        [[ ! -e $1 ]]
+      }
+
+      mapfile -d "" -t trash_dirs < <(
+        fd --hidden --no-ignore --one-file-system --type d --prune --print0 '^\.Trash-[0-9]+$' "''${roots[@]}"
+      )
+      for trash_dir in "''${trash_dirs[@]}"; do
+        trash-empty -f ${toString days} --trash-dir "$trash_dir"
+        # 空になったゴミ箱は、ゴミ箱ごと消す。
+        # うっかり作られた場所に空のディレクトリが残り続けて、手で消して回ることになるため。
+        # 捨てている最中のゴミ箱を壊さないように、
+        # `.trashinfo`が先に書かれる`info`が空の時だけ`files`へ進む。
+        if remove_if_empty "$trash_dir/info" && remove_if_empty "$trash_dir/files"; then
+          remove_if_empty "$trash_dir" || true
+        fi
+      done
     '';
   };
 in

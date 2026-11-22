@@ -27,7 +27,9 @@ import TrashEmptyStray.FoundTrashDir (DirIdentity, identityOf)
 -- ゴミ箱の名前のuidではなく所有者を使う。
 -- 名前は作った者が自由に決められるので、権限の根拠にできない。
 -- rootが作ったゴミ箱はrootの権限のまま掃除する。
--- root所有のディレクトリは他の者には作れず、中も書き換えられない。
+-- root所有のディレクトリは他の者には作れず、通常は中も書き換えられない。
+-- 誰でも書き込める権限で残っている時のように、この前提が崩れる場合への備えは、
+-- `TrashEmptyStray.Clean`の`isOwnDirectoryOrMissing`にある。
 --
 -- 手順は以下の通りである。
 --

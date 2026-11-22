@@ -1,5 +1,6 @@
 {
   config,
+  hardening,
   ...
 }:
 let
@@ -31,7 +32,12 @@ in
   };
   # インターネットからの入口なので、
   # 設定の適用の間ずっと止めておかずに、適用の後に再起動させます。
-  systemd.services.cloudflared-tunnel-seminar.stopIfChanged = false;
+  systemd.services.cloudflared-tunnel-seminar = {
+    stopIfChanged = false;
+    # nixpkgsのモジュールは`DynamicUser`で動かすだけなので、ハードニングを足します。
+    # Cloudflareのエッジへ繋いでコンテナとmicroVMへ中継するだけで、ファイルは書きません。
+    serviceConfig = hardening.network;
+  };
   # Cloudflare TunnelがQUICを使うときのライブラリである、
   # quic-goの推奨ガイドラインに従って、
   # UDPバッファサイズを増大させます。

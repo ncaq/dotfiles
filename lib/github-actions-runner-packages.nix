@@ -18,6 +18,15 @@
   - gzip
   - nix
 
+  NixOSのsystemdのサービスが既定で持つPATHからも、
+  以下が入ります。
+
+  - coreutils
+  - findutils
+  - gnugrep
+  - gnused
+  - systemd
+
   これらは上流に任せて、
   このリストには書きません。
 
@@ -30,7 +39,6 @@ with pkgs;
 let
   # 暗黙のうちに要求されることが多いランタイム。
   basicRuntime = [
-    findutils
     go
     nodejs
     perl

@@ -48,5 +48,9 @@ tests = describe "findTrashDirs" do
       createDirectoryIfMissing True (root </> "exists/.Trash-1000")
       findIn [root </> "missing", root </> "exists"]
         >>= (`shouldBe` [root </> "exists/.Trash-1000"])
+  it "起点が重なっていても、同じゴミ箱は1回だけ返す" do
+    withRoot \root -> do
+      createDirectoryIfMissing True (root </> "a/.Trash-1000")
+      findIn [root, root </> "a"] >>= (`shouldBe` [root </> "a/.Trash-1000"])
   it "起点が無ければ何も返さない" do
     findIn [] >>= (`shouldBe` [])

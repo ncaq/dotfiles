@@ -68,7 +68,6 @@ in
       after = [
         "local-fs.target"
         "remote-fs.target"
-        "mnt-chihiro.mount"
       ];
       serviceConfig = trashHardening // {
         Type = "oneshot";

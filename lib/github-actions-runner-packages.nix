@@ -11,7 +11,7 @@
   nixpkgsの`services.github-runners`は何も足さなくても、
   以下をPATHに入れます。
 
-  - bash
+  - bashInteractive
   - coreutils
   - git
   - gnutar

@@ -23,6 +23,11 @@ in
       # NetBIOSの名前解決とブラウズを担うデーモン。
       # NetBIOSを使わない理由は下の`disable netbios`に書いてある。
       nmbd.enable = false;
+      # ドメインのユーザやグループをNSSやPAMへ見せるデーモン。
+      # ドメインに参加しない単体のサーバで、
+      # ユーザは`/etc/passwd`とSamba自身のpassdbだけで解決するので使わない。
+      # rootで動き続けるデーモンを1つ減らす。
+      winbindd.enable = false;
       settings = {
         global = {
           # 基本設定
@@ -118,6 +123,80 @@ in
     tmpfiles.rules = [
       "e ${chihiroPath}/${recycleDir} - - - ${toString config.local.trash.retentionDays}d"
     ];
+
+    # smbdはrootで待ち受けて、接続ごとに認証したユーザへ切り替える。
+    # 乗っ取られるとroot相当になるので、見える場所と書ける場所を必要なものだけにする。
+    #
+    # 禁止する場所を並べるのではなく、
+    # `confinement`で空のルートへ必要なものだけをbind mountする。
+    # ホームや他のデータ、`/run/secrets`、`/etc/shadow`、SSHのホスト鍵などは、
+    # rootのままでも名前空間の中に存在しないので読めない。
+    services.samba-smbd = {
+      # 共有がマウントされていない時は、bind mountの元が無いので起動に失敗する。
+      # 共有を出せないSambaを動かす意味は無いので、マウントを必須にして順序も付ける。
+      # 上流の`/var/lib/samba`と同じオプションなので、合わせて上書きする。
+      unitConfig.RequiresMountsFor = lib.mkForce [
+        "/var/lib/samba"
+        chihiroPath
+      ];
+      confinement = {
+        enable = true;
+        # `ExecStart`だけでなく、
+        # `LD_LIBRARY_PATH`で渡されるNSSのモジュールもNix storeから見えるようにする。
+        fullUnit = true;
+        # シェルを呼ぶ設定(`add user script`など)は使っていない。
+        binSh = null;
+      };
+      serviceConfig = hardening.network // {
+        # `confinement`は既定でユーザ名前空間も分けるが、
+        # それではホストのユーザへ切り替えられず、ファイルの所有者も合わなくなる。
+        PrivateUsers = false;
+        CapabilityBoundingSet = [
+          # 445番で待ち受ける。
+          "CAP_NET_BIND_SERVICE"
+          # 認証したユーザへ切り替える。
+          "CAP_SETGID"
+          "CAP_SETUID"
+          # ユーザを問わず共有の中を扱う。
+          "CAP_CHOWN"
+          "CAP_DAC_OVERRIDE"
+          "CAP_DAC_READ_SEARCH"
+          "CAP_FOWNER"
+          # 他のユーザが所有するファイルにoplock用のleaseを掛ける。
+          "CAP_LEASE"
+          # ユーザへ切り替えた子プロセスへシグナルを送る。
+          "CAP_KILL"
+        ];
+        RestrictAddressFamilies = hardening.network.RestrictAddressFamilies ++ [
+          # インタフェースの一覧をnetlinkで取る。
+          "AF_NETLINK"
+        ];
+        # `/run/samba`を起動のたびに用意する。
+        # tmpfilesには無く、今まではsmbdが自分で作っていたが、
+        # 無いパスはbind mountできない。
+        RuntimeDirectory = [ "samba" ];
+        BindPaths = [
+          chihiroPath
+          "/var/cache/samba"
+          "/var/lib/samba"
+          "/var/log/samba"
+          # smbdはビルド時に決まった`/var/run`と`/var/lock`の側のパスを使う。
+          # ホストではどちらも`/run`へのシンボリックリンクだが、空のルートには無い。
+          "/run/samba:/var/run/samba"
+          "/run/lock/samba:/var/lock/samba"
+        ];
+        BindReadOnlyPaths = [
+          "/etc/samba/smb.conf"
+          # 接続してきたユーザのuidとgidを引く。
+          # ファイル単位のbind mountなので、ユーザを増減させた時はsmbdを再起動するまで反映されない。
+          "/etc/group"
+          "/etc/nsswitch.conf"
+          "/etc/passwd"
+          # ログの時刻。
+          "-/etc/localtime"
+        ];
+      };
+    };
 
     services.samba-password-setup = {
       description = "Setup Samba password for ncaq user";

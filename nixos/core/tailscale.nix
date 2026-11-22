@@ -49,6 +49,12 @@
         "network-online.target"
         "tailscaled.service"
       ];
+      # tailscaledが止まったら、このユニットも待ち終わっていない状態へ戻す。
+      # `RemainAfterExit`のoneshotなので、放っておくとtailscaledが再起動してもactiveのまま残る。
+      # `tailscale-serve-*`のようにこのユニットを待つものは、
+      # tailscaledの再起動に引かれて起動し直す時に、もう待たずに走ってしまう。
+      # tailscaledはまだ準備中なので、`unexpected state: NoState`で失敗する。
+      bindsTo = [ "tailscaled.service" ];
       # tailscale CLIはtailscaledのLocalAPIにUNIXソケット経由で接続するだけなので、
       # UNIXソケットのみ許可のハードニングまで絞れる。
       # seminar上で同等のサンドボックスを再現して`tailscale status --json`が

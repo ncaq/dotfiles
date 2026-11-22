@@ -4,6 +4,7 @@
   pkgs-unstable,
   config,
   username,
+  hardening,
   ...
 }:
 let
@@ -178,10 +179,14 @@ in
           ollama-model-loader = {
             # GNU parallelがsystem userのnologin shellを使わないようにする。
             environment.SHELL = lib.getExe pkgs.bash;
-            serviceConfig = {
+            # OllamaのAPIへ`ollama pull`を頼むだけなので、ネットワーク通信の他は閉じる。
+            # GNU parallelがホームに`.parallel`を作るので、
+            # ホームでもあるデータディレクトリは書き込めるままにする。
+            serviceConfig = hardening.network // {
               DynamicUser = lib.mkForce false;
               User = "ollama";
               Group = "ollama";
+              ReadWritePaths = [ dataDir ];
             };
           };
         };

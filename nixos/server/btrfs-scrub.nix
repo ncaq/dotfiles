@@ -10,6 +10,7 @@
   lib,
   config,
   utils,
+  hardening,
   ...
 }:
 {
@@ -24,6 +25,24 @@
       fs:
       lib.nameValuePair "btrfs-scrub-${utils.escapeSystemdPath fs}" {
         restartIfChanged = false;
+        # scrubはカーネルへioctlで依頼して、進捗を`/var/lib/btrfs`のUNIXソケットで受けるだけです。
+        # 上流のモジュールは優先度を下げるだけなので、ハードニングを足します。
+        #
+        # `ProtectSystem`は設定できません。
+        # scrubは修復のために対象を書き込み可能で開くので、
+        # 対象のマウントが読み取り専用に見えると`Read-only file system`で失敗します。
+        # 対象には`/`も含まれるので、`ReadWritePaths`で開けると何も守れません。
+        # `ProtectKernelTunables`も設定できません。
+        # 速度の上限を`/sys/fs/btrfs`へ書き込むためです。
+        serviceConfig =
+          removeAttrs hardening.unixSocket [
+            "ProtectKernelTunables"
+            "ProtectSystem"
+          ]
+          // {
+            # scrubのioctlに必要です。
+            CapabilityBoundingSet = [ "CAP_SYS_ADMIN" ];
+          };
       }
     ) config.services.btrfs.autoScrub.fileSystems
   );

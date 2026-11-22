@@ -5,8 +5,6 @@
     # NautilusはD-Busの`org.gnome.NautilusPreviewer`を呼ぶだけで中身を持っていない。
     # モジュールがdbusのサービスファイルも登録するのでGNOME外でも起動する。
     gnome.sushi.enable = true;
-    # 仮想的なファイルシステムを扱う。
-    gvfs.enable = true;
   };
 
   programs.dconf.profiles.user.databases = [

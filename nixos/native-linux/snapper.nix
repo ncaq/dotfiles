@@ -1,3 +1,4 @@
+{ hardening, ... }:
 let
   # snapperのスナップショット作成・クリーンアップは緊急性がないので、
   # 他のプロセスを妨害しないようにCPUとI/Oの優先度を下げる。
@@ -61,8 +62,12 @@ in
   systemd.services = {
     # 実際の重いbtrfs操作(subvolume削除など)はD-Bus越しにsnapperdが行うため、
     # トリガとなるtimeline/cleanupだけでなくsnapperd本体にも適用する。
-    snapper-cleanup.serviceConfig = lowPriority;
-    snapper-timeline.serviceConfig = lowPriority;
+    #
+    # timeline/cleanupはD-Busでsnapperdへ依頼するだけのクライアントなので、
+    # UNIXソケット以外を閉じる。
+    # snapperd本体はbtrfsのサブボリュームを直接操作するので絞らない。
+    snapper-cleanup.serviceConfig = hardening.unixSocket // lowPriority;
+    snapper-timeline.serviceConfig = hardening.unixSocket // lowPriority;
     snapperd.serviceConfig = lowPriority;
   };
 }

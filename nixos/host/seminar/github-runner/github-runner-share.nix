@@ -6,9 +6,9 @@
   ...
 }:
 let
-  # GitHub Actionsのホステッドランナとある程度互換にするためのパッケージリスト。
+  # 全てのランナのPATHへ足す基本的なパッケージリスト。
   githubActionsRunnerPackages = import ../../../../lib/github-actions-runner-packages.nix;
-  # GitHubの標準ランナにはないけれど個人的に含まれていて欲しいパッケージリスト。
+  # セルフホステッドランナに固有で入っていて欲しいパッケージリスト。
   selfHostRunnerPackages =
     { pkgs, ... }:
     with pkgs;

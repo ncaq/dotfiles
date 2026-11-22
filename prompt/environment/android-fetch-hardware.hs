@@ -198,7 +198,7 @@ describe serial =
     let soc = case (known, partNumber) of
           (Just name, Just part) -> Just (name <> " [" <> part <> "]")
           _ -> joinWords [maker, partNumber]
-    -- 最大周波数が同じコアをcpufreqのpolicyがまとめているので、policyごとに1行で読む。
+    -- 周波数を一緒に制御するコアをcpufreqのpolicyがまとめているので、policyごとに1行で読む。
     clusters <-
       query
         serial
@@ -262,7 +262,8 @@ oneUiVersion = format <$> L.decimal
   format :: Int -> Text
   format number = T.show (number `div` 10000) <> "." <> T.show (number `div` 100 `mod` 100)
 
--- | 最大周波数が同じコアのまとまり。
+-- | cpufreqのpolicy1つ分のコアのまとまり。
+-- 最大周波数が同じでもpolicyが別なら、別のまとまりとして出る。
 data Cluster = Cluster
   { maxFrequencyKhz :: Int
   , cores :: Int

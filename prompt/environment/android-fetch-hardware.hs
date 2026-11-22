@@ -45,6 +45,7 @@ import System.Process.Typed (proc, readProcess)
 import Text.Megaparsec
   ( Parsec
   , anySingle
+  , eof
   , parseMaybe
   , sepBy1
   , skipManyTill
@@ -197,7 +198,8 @@ describe serial =
         ( "cd /sys/devices/system/cpu/cpufreq && for p in policy*; do "
             <> "echo \"$(cat $p/cpuinfo_max_freq) $(cat $p/related_cpus)\"; done"
         )
-        (some cluster)
+        -- 途中の行を読めなかった時に、そこまでのコアだけで数えてしまわないようにする。
+        (some cluster <* eof)
     pure (joinWords [soc, formatClusters <$> clusters])
 
   -- SurfaceFlingerが使っているドライバの自己申告を読む。

@@ -102,11 +102,12 @@ connectedDevices = do
  where
   device row = case T.words row of
     [serial, "device"] -> pure (Just (Serial serial))
-    [serial, state] -> do
+    (serial : state) -> do
       -- USBデバッグを許可していない端末は`unauthorized`になる。
-      warn (serial <> " は " <> state <> " の状態なので読めません")
+      -- udevの設定が足りない時は`no permissions (...)`のように複数の語になる。
+      warn (serial <> " は " <> T.unwords state <> " の状態なので読めません")
       pure Nothing
-    _ -> pure Nothing
+    [] -> pure Nothing
 
 -- | 端末の中でコマンドを実行する。空の出力は値が無いものとして扱う。
 shell :: Serial -> Text -> IO (Maybe Text)

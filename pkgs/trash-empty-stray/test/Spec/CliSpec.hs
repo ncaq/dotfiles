@@ -1,7 +1,9 @@
 -- | 引数の解釈から終了までのテスト。
 --
 -- `sweep`はゴミ箱ごとに実行ファイル自身を`clean-here`として起動するので、
--- cabalがテストのPATHへ入れる、ビルドした`trash-empty-stray`を使う。
+-- PATHにある、ビルドした`trash-empty-stray`を使う。
+-- cabalで動かす時は`build-tool-depends`に書いたものがPATHへ入る。
+-- Nixのビルドではそれが入らないので、`package.nix`の`preCheck`がPATHへ足している。
 --
 -- テストは一般ユーザとして走るので、他の所有者の権限へ落とす場面はここでは確かめられない。
 -- そこは`test/nixos-boot/script/trash-empty.nix`が実際のサービスで確かめる。

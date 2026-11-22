@@ -19,14 +19,12 @@
 -- 分けているのは、見つけたゴミ箱を所有者の権限で掃除するためである。
 -- `sweep`はゴミ箱ごとに、権限を落とした`clean-here`を起動する。
 -- 探し方は`TrashEmptyStray.Search`に、権限の落とし方は`TrashEmptyStray.Owner`に書いてある。
---
--- lensの`argument`はoptparse-applicativeの位置引数と名前がぶつかるので、Himariの側を隠す。
 module TrashEmptyStray.Cli
   ( run
   , runWith
   ) where
 
-import Himari hiding (argument)
+import Himari
 import Options.Applicative
 import TrashEmptyStray.AbsDir (absDirFilePath, parseAbsDirPath)
 import TrashEmptyStray.Clean (cleanTrashDir)

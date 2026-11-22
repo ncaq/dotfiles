@@ -4,7 +4,7 @@ module TrashEmptyStray.Owner
   ) where
 
 import Himari
-import System.Posix.Files (fileGroup, fileOwner, getFdStatus)
+import System.Posix.Files (fileOwner, getFdStatus)
 import System.Posix.IO
   ( OpenFileFlags (..)
   , OpenMode (ReadOnly)
@@ -12,7 +12,8 @@ import System.Posix.IO
   , defaultFileFlags
   , openFd
   )
-import System.Posix.User (getEffectiveUserID)
+import System.Posix.Types (GroupID, UserID)
+import System.Posix.User (getEffectiveUserID, getUserEntryForID, userGroupID)
 import TrashEmptyStray.Failure (OwnerFailure (..))
 import TrashEmptyStray.FoundTrashDir (DirIdentity, identityOf)
 
@@ -38,7 +39,7 @@ import TrashEmptyStray.FoundTrashDir (DirIdentity, identityOf)
 -- 所有者を見た後に親のディレクトリを差し替えられても、見た実体を掴んだままにするためである。
 --
 -- 権限を落とすのを`setpriv`に任せるのは、スレッドを持つこのプロセスの中でuidを変えないためである。
--- 補助グループも`setpriv`が空にする。
+-- グループは所有者の主グループにして、補助グループは`setpriv`が空にする。
 --
 -- 開いたものが、探索で見つけた時と同じ実体かも確かめる。
 -- シンボリックリンクを辿らないのはパスの最後の要素だけなので、
@@ -54,14 +55,15 @@ runAsOwnerInside expected path command arguments =
     status <- liftIO (getFdStatus fd)
     unless (identityOf status == expected) (throwM ReplacedSinceFound)
     effective <- liftIO getEffectiveUserID
+    let owner = fileOwner status
+    group <- primaryGroupOf owner
     let
-      owner = fileOwner status
       process
         | effective == owner = proc command arguments
         | otherwise =
             proc "setpriv" $
               [ "--reuid=" <> show owner
-              , "--regid=" <> show (fileGroup status)
+              , "--regid=" <> show group
               , "--clear-groups"
               , "--"
               , command
@@ -73,3 +75,19 @@ runAsOwnerInside expected path command arguments =
   -- 起動したコマンドへ、開いたディレクトリを引き継がない。
   -- 作業ディレクトリへの移動はコマンドに置き換わる前なので、それまでは開いている。
   flags = defaultFileFlags{directory = True, nofollow = True, cloexec = True}
+
+-- | 権限を落とす時に使う、ユーザの主グループ。
+--
+-- ディレクトリのグループは使わない。
+-- setgidの付いたディレクトリの中に作ったディレクトリは親のグループを引き継ぐので、
+-- 所有者が属していないグループの権限で掃除することになってしまう。
+--
+-- ユーザの一覧に無いuidは主グループが分からない。
+-- 消したユーザや、他のホストから持ってきたデータの所有者が当たる。
+-- その時は、どのグループの権限も足さないように`nogroup`にする。
+-- ゴミ箱の中身は所有者のものなので、グループの権限が無くても掃除できる。
+primaryGroupOf :: (MonadUnliftIO m) => UserID -> m GroupID
+primaryGroupOf user =
+  either (const nogroup) userGroupID <$> tryIO (liftIO (getUserEntryForID user))
+ where
+  nogroup = 65534

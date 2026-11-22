@@ -171,19 +171,35 @@ FIDO認証としてディスクの復号化やパスキーなどに使ってい�
 
 ## スマートデバイス
 
+USBデバッグを許可した端末をPCに繋いで以下のコマンドを実行すると、
+adbを通してほぼ同じ最新の情報を取得できます。
+
+```console
+"$HOME/dotfiles/prompt/environment/android-fetch-hardware.hs"
+```
+
+`Memory`の`nominal`は、
+見えているメモリの量から推定した製品としての公称の容量です。
+
 ### スマートフォン
 
 #### paint
 
 [Galaxy Z Fold7](https://www.samsung.com/jp/smartphones/galaxy-z-fold7/)
 
+- Name: paint
+- Product: Galaxy Z Fold7
 - Host: samsung SM-F966Q
-- CPU: Qualcomm Snapdragon 8 Elite for Galaxy [SM8750] (8)
-- GPU: Qualcomm Adreno (TM) 830 [Integrated]
-- Memory: 16 GB
+- OS: Android 17 (SDK 37), One UI 9.0
+- Kernel: Linux 6.6.127-android15-8-p4a765df-abogkiF966QOPU1CZJD-4k
+- CPU: Qualcomm Snapdragon 8 Elite for Galaxy [SM8750-AC] (8) 2x 4.47 GHz + 6x 3.53 GHz
+- GPU: Qualcomm Adreno (TM) 830
+- Memory: 14.74 GiB (nominal 16 GB)
 - Swap: 20.00 GiB
-- Disk (/): 7.06 GiB / 7.06 GiB (100%) - erofs [Read-only]
-- Disk (/storage/emulated): 114.81 GiB / 936.83 GiB (12%) - fuse
+- Disk (/data): 193.47 GiB / 936.20 GiB (21%) - f2fs
+- Display 1: 1968x2184 in 8.0", 120 Hz
+- Display 2: 1080x2520 in 6.5", 120 Hz
+- Battery: 4400 mAh
 
 ### タブレット
 

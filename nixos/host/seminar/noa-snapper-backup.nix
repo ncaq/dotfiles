@@ -23,6 +23,37 @@ let
     [Service]
     X-RestartIfChanged=false
   '';
+  # 上流のユニットはcapabilityなどを既に選んで絞っているので、そこは変えずに足りない分を足す。
+  # 転送先は`target-mode = "local"`でネットワークを使わず、
+  # snapperdとはD-Busで話すので、UNIXソケット以外を閉じる。
+  # 内容は`lib/systemd-hardening.nix`の`unixSocket`から以下を除いたもの。
+  #
+  # - `ProtectSystem`:
+  #   転送先を`ReadWritePaths`で開けるとマウントが増えて、
+  #   `btrfs receive`がサブボリュームを辿れずに失敗する
+  # - `CapabilityBoundingSet`と`NoNewPrivileges`: 上流の指定を残す
+  # - `PrivateDevices`と`RestrictSUIDSGID`と`ProtectKernelModules`:
+  #   上流が残している`CAP_MKNOD`と`CAP_FSETID`と`CAP_SYS_MODULE`を落としたり無効にしたりする。
+  #   スナップショットの中のデバイスファイルやsetuidされたファイルを復元できなくなる
+  #
+  # `ProtectHome`は上流が`WorkingDirectory=/root`にしているので読み取り専用に留める。
+  # `lowPriority`と同じ理由で`[Service]`セクションを追記する。
+  hardeningText = ''
+
+    [Service]
+    MemoryDenyWriteExecute=true
+    PrivateNetwork=true
+    PrivateTmp=true
+    ProtectClock=true
+    ProtectControlGroups=true
+    ProtectHome=read-only
+    ProtectKernelLogs=true
+    ProtectKernelTunables=true
+    RestrictAddressFamilies=AF_UNIX
+    RestrictNamespaces=true
+    SystemCallArchitectures=native
+    SystemCallFilter=@system-service
+  '';
   targetPath = "/mnt/noa/snapshot-backup/seminar/root";
   # `/mnt/noa`は`nofail`なので、
   # マウントに失敗してもブートは進みます。
@@ -60,6 +91,7 @@ in
         builtins.readFile "${pkgs.snapper}/lib/systemd/system/snapper-backup.service"
         + lowPriority
         + keepRunningOnSwitch
+        + hardeningText
         + requireMount;
       "snapper-backup.timer" = {
         text = builtins.readFile "${pkgs.snapper}/lib/systemd/system/snapper-backup.timer";

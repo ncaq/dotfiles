@@ -177,7 +177,11 @@ describe serial =
     maker <- getprop "ro.soc.manufacturer"
     model <- getprop "ro.soc.model"
     -- 同じ型番でも`for Galaxy`のような派生があり、Qualcommではこの符号で区別できる。
-    featureCode <- shell serial "cat /sys/devices/soc0/feature_code"
+    -- 他のメーカーのSoCではこのファイルを読めないので、Qualcommの時だけ読む。
+    featureCode <-
+      if maker == Just "QTI"
+        then shell serial "cat /sys/devices/soc0/feature_code"
+        else pure Nothing
     let partNumber = T.intercalate "-" . catMaybes . (: [featureCode]) . Just <$> model
         known = partNumber >>= (`lookup` socNames)
     when (isNothing known) do
@@ -281,7 +285,8 @@ formatClusters clusters =
 -- 知らない型番は型番のまま出して、標準エラー出力で知らせる。
 socNames :: [(Text, Text)]
 socNames =
-  [ ("SM8550-AC", "Qualcomm Snapdragon 8 Gen 2 for Galaxy")
+  [ ("MT6993", "MediaTek Dimensity 9500")
+  , ("SM8550-AC", "Qualcomm Snapdragon 8 Gen 2 for Galaxy")
   , ("SM8750-AC", "Qualcomm Snapdragon 8 Elite for Galaxy")
   ]
 
@@ -299,9 +304,11 @@ meminfoField name = seek (string (name <> ":") *> hspace1 *> L.decimal <* string
 -- | 搭載メモリの公称値。
 -- カーネルやファームウェアが予約する分だけ`MemTotal`は小さく見えるので、
 -- 製品として売られている容量のうち、見えている量を下回らない最小のものを選ぶ。
+-- メモリの「16 GB」は実際には16 GiBなので、2進接頭辞で比べる。
+-- 10進で比べると、予約が少なく16 GBを超えて見える端末を1つ上の容量と誤る。
 nominalMemoryGb :: Int -> Maybe Int
 nominalMemoryGb kib =
-  find (\gb -> gb * 1000 * 1000 * 1000 >= kib * 1024) [1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64]
+  find (\gb -> gb * 1024 * 1024 >= kib) [1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64]
 
 data Usage = Usage
   { totalKib :: Int

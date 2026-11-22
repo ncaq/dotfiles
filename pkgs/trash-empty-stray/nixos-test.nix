@@ -6,7 +6,7 @@
 # 権限を落とす処理が外れても、ビルドは通り、掃除も今まで通り動いて見えます。
 #
 # sandwichのテストは一般ユーザとして走るので、権限を落とす場面を確かめられません。
-# VMの中で`nixos/core/trash.nix`の実際のユニットを、その権限の絞り込みのまま動かして、以下を見ます。
+# VMの中で`module.nix`の実際のユニットを、その権限の絞り込みのまま動かして、以下を見ます。
 #
 # - 期限切れのエントリが消えて、空になったゴミ箱がゴミ箱ごと消える
 # - 期限切れでないエントリが残る
@@ -15,8 +15,6 @@
 # - 名前のuidと所有者が食い違うゴミ箱が、所有者の権限で掃除される
 #
 # 権限の絞り込みが強すぎてuidを変えられない時は、ユニットが失敗するのでここで落ちます。
-#
-# ユニットの定義はホストごとに変わらないので、ホストごとのブートテストではなくここに置いています。
 { testers }:
 let
   user = "alice";
@@ -31,9 +29,12 @@ testers.runNixOSTest {
   name = "trash-empty-stray";
 
   nodes.machine = {
-    imports = [ ../../nixos/core/trash.nix ];
-    # ホストの構成では`flake.nix`の`specialArgs`から渡している。
-    _module.args.hardening = import ../../lib/systemd-hardening.nix;
+    imports = [ ./module.nix ];
+    services.trash-empty = {
+      enable = true;
+      retentionDays = 7;
+      stray.roots = [ "/home" ];
+    };
     users.users.${user}.isNormalUser = true;
   };
 

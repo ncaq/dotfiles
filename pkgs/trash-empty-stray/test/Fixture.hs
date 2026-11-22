@@ -3,6 +3,7 @@ module Fixture
   ( Age (..)
   , putEntry
   , listTree
+  , runCapturingWarnings
   , runQuiet
   , withRoot
   ) where
@@ -50,6 +51,18 @@ listTree root = sort <$> go ""
 -- | ログを端末へ出さずに実行する。
 runQuiet :: (MonadIO m) => Himari SimpleEnv a -> m a
 runQuiet = runSimpleEnvWith (\_ _ _ _ -> pure ())
+
+-- | ログを端末へ出さずに実行して、警告以上のログを結果と共に返す。
+runCapturingWarnings :: (MonadIO m) => Himari SimpleEnv a -> m (a, [Text])
+runCapturingWarnings action = do
+  logs <- newIORef []
+  result <-
+    runSimpleEnvWith
+      ( \_ _ level message ->
+          when (level >= LevelWarn) (modifyIORef' logs (<> [convert (fromLogStr message)]))
+      )
+      action
+  (result,) <$> readIORef logs
 
 -- | 一時ディレクトリを作って実行する。
 withRoot :: (MonadUnliftIO m) => (FilePath -> m a) -> m a

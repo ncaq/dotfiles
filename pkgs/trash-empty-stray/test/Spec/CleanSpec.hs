@@ -3,8 +3,9 @@
 -- 期限の判定は`trash-empty`の実物に任せている。
 module Spec.CleanSpec (tests) where
 
-import Fixture (Age (..), listTree, putEntry, runQuiet, withRoot)
+import Fixture (Age (..), listTree, putEntry, runCapturingWarnings, runQuiet, withRoot)
 import Himari
+import System.Posix.Files (setFileMode)
 import Test.Sandwich
 import TrashEmptyStray.Clean (cleanTrashDir)
 import TrashEmptyStray.RetentionDays (RetentionDays (..))
@@ -48,6 +49,18 @@ tests = describe "cleanTrashDir" do
           writeBinaryFile (trashDir </> "directorysizes") ""
       )
       >>= (`shouldBe` [".Trash-1000", ".Trash-1000/directorysizes"])
+  it "親に書き込めなければ、空になったゴミ箱を残して警告も出さない" do
+    withRoot \root -> do
+      let
+        parent = root </> "locked"
+        trashDir = parent </> ".Trash-1000"
+      putEntry trashDir "old" Expired
+      -- 一時ディレクトリを片付けられるように、確かめた後で書き込めるように戻す。
+      (_, warnings) <-
+        bracket_ (liftIO (setFileMode parent 0o555)) (liftIO (setFileMode parent 0o755)) $
+          runCapturingWarnings (cleanTrashDir (RetentionDays 7) (atPath trashDir))
+      warnings `shouldBe` []
+      listTree root >>= (`shouldBe` ["locked", "locked/.Trash-1000"])
   it "infoが空でなければ、空のfilesも残す" do
     cleaned
       ( \trashDir -> do

@@ -4,7 +4,7 @@ module TrashEmptyStray.Clean
   ) where
 
 import Himari
-import System.IO.Error (isDoesNotExistError)
+import System.IO.Error (isDoesNotExistError, isPermissionError)
 import TrashEmptyStray.Failure (CleanFailure (..))
 import TrashEmptyStray.RetentionDays (RetentionDays (..))
 import TrashEmptyStray.TrashDir (TrashDir (..))
@@ -34,13 +34,20 @@ cleanTrashDir (RetentionDays days) trashDir = do
 -- | 空のディレクトリを消す。消えたか、元から無い時に真を返す。
 --
 -- 空でない時は何もせずに偽を返す。
--- それ以外の理由で消せない時は、理由を警告に出して偽を返す。
+-- それ以外の理由で消せない時は、理由をログに出して偽を返す。
+--
+-- 権限が無くて消せない時は警告にしない。
+-- ゴミ箱は所有者の権限で掃除するので、
+-- マウントポイントの直下のように親がroot所有の場所では、空になったゴミ箱自体を消せないのが正常である。
+-- 警告にすると、そのゴミ箱が空である限り毎日同じ警告が出続ける。
 removeIfEmpty :: (MonadLogger m, MonadUnliftIO m) => FilePath -> m Bool
 removeIfEmpty path =
   tryIO (removeDirectory path) >>= \case
     Right () -> True <$ logInfoN (convert path <> "を消しました")
     Left exception
       | isDoesNotExistError exception -> pure True
+      | isPermissionError exception ->
+          False <$ logInfoN (convert path <> "は親に書き込めないので残します")
       | otherwise ->
           doesDirectoryNonEmpty >>= \case
             True -> pure False

@@ -10,6 +10,9 @@ let
   tailscaleInterface = config.services.tailscale.interfaceName;
   tailscaleIpv4Range = config.local.tailscale.ipv4Range;
   tailscaleIpv6Range = config.local.tailscale.ipv6Range;
+  chihiroPath = "/mnt/noa/chihiro";
+  # 共有のルートからの相対パス。`recycle:repository`はこの下にユーザごとのディレクトリを作る。
+  recycleDir = ".recycle";
 in
 {
   services = {
@@ -47,7 +50,7 @@ in
           "server smb transports" = "tcp";
         };
         "chihiro" = {
-          "path" = "/mnt/noa/chihiro";
+          "path" = chihiroPath;
           "browsable" = "yes";
           "read only" = "no"; # 書き込み可能に設定
           "guest ok" = "no";
@@ -55,8 +58,9 @@ in
           "create mask" = "0664";
           "directory mask" = "0775";
           # ゴミ箱
+          # Sambaには古いものを消す機能が無いので、掃除は下のsystemd.tmpfilesが行う。
           "vfs objects" = "recycle";
-          "recycle:repository" = ".recycle/%U";
+          "recycle:repository" = "${recycleDir}/%U";
           "recycle:keeptree" = "yes";
           "recycle:versions" = "yes";
         };
@@ -105,8 +109,15 @@ in
     iifname "${tailscaleInterface}" ip6 saddr ${tailscaleIpv6Range} tcp dport 445 accept comment "SMB from tailnet"
   '';
 
-  systemd.services = {
-    samba-password-setup = {
+  systemd = {
+    # Sambaのゴミ箱へ入ってから7日経ったものを消す。
+    # Sambaはファイルを1つずつゴミ箱へ移動するので、その時にctimeが更新される。
+    # systemd-tmpfilesはatimeとmtimeとctimeの全てが期限より古いファイルだけを消すため、
+    # 元のファイルがどれだけ古くても、ゴミ箱へ入ってからの日数で数えられる。
+    # `e`は中身だけを掃除して、ディレクトリ自体は作りも消しもしない。
+    tmpfiles.rules = [ "e ${chihiroPath}/${recycleDir} - - - 7d" ];
+
+    services.samba-password-setup = {
       description = "Setup Samba password for ncaq user";
       requires = [ "samba-smbd.service" ];
       after = [ "samba-smbd.service" ];

@@ -30,7 +30,7 @@ import Control.Monad (when)
 import Data.Char (isSpace)
 import Data.Foldable (find)
 import Data.List (sortOn)
-import Data.Maybe (catMaybes, fromMaybe, isNothing)
+import Data.Maybe (catMaybes, fromMaybe, maybeToList)
 import Data.Ord (Down (..))
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -184,10 +184,13 @@ describe serial =
       if maker == Just "QTI"
         then shell serial "cat /sys/devices/soc0/feature_code"
         else pure Nothing
-    let partNumber = T.intercalate "-" . catMaybes . (: [featureCode]) . Just <$> model
+    let partNumber = (\part -> T.intercalate "-" (part : maybeToList featureCode)) <$> model
         known = partNumber >>= (`lookup` socNames)
-    when (isNothing known) do
-      warn (fromMaybe "不明なSoC" partNumber <> " の商品名を知らないので型番で出します。socNamesに足してください")
+    case (known, partNumber) of
+      (Nothing, Just part) ->
+        warn (part <> " の商品名を知らないので型番で出します。socNamesに足してください")
+      -- 型番が取れなかった時は、出せる型番が無いので何も知らせない。
+      _ -> pure ()
     let soc = case (known, partNumber) of
           (Just name, Just part) -> Just (name <> " [" <> part <> "]")
           _ -> joinWords [maker, partNumber]

@@ -8,7 +8,7 @@
 # ユニットを分けているので、片方が失敗してももう片方は動き、失敗はそれぞれのユニットの結果に出ます。
 #
 # ユニットの権限の絞り込みは、コマンドが何をするかと対になっているので、パッケージの隣に置いています。
-# 使う側(`nixos/core/trash.nix`)は、何日残すかとどこを探すかだけを決めます。
+# 使う側(`nixos/core/trash.nix`)は、何日残すかだけを決めます。
 # テスト(`nixos-test.nix`)もこのモジュールだけを読むので、パッケージがホストの構成に依存しません。
 {
   pkgs,
@@ -56,10 +56,13 @@ in
       package = lib.mkPackageOption pkgs "trash-empty-stray" { };
       roots = lib.mkOption {
         type = lib.types.listOf lib.types.path;
+        default = import ./stray-roots.nix { inherit lib; } config.fileSystems;
+        defaultText = lib.literalExpression "import ./stray-roots.nix { inherit lib; } config.fileSystems";
         description = ''
           `trash-empty --all-users`が見つけられないゴミ箱を探す起点。絶対パスで指定する。
           起点と違うデバイスのディレクトリへは降りないので、
           起点の下にマウントしているファイルシステムも探す時は、それも起点として並べる。
+          既定の決め方は`stray-roots.nix`に書いてある。
         '';
       };
     };

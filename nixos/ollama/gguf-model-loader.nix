@@ -28,11 +28,13 @@
   lib,
   pkgs,
   config,
+  hardening,
   ...
 }:
 let
   ggufModels = config.local.ollama.ggufModels;
-  markerDir = "${config.local.ollama.dataDir}/gguf-models";
+  inherit (config.local.ollama) dataDir;
+  markerDir = "${dataDir}/gguf-models";
   # モデル名の`:`はstoreの派生名にもパスにも使えないため潰します。
   # derivation名とマーカのパスの両方で使うので、
   # 置換規則が片方だけ変わってマーカが一致しなくなる事故を防ぐために括り出します。
@@ -126,7 +128,12 @@ in
         after = [ "ollama.service" ] ++ modelLoader;
         bindsTo = [ "ollama.service" ];
         environment = config.systemd.services.ollama.environment;
-        serviceConfig = {
+        # Nix storeのGGUFを読んでOllamaのAPIへ送り、マーカを書くだけなので、
+        # ネットワーク通信とデータディレクトリへの書き込みの他は閉じます。
+        serviceConfig = hardening.network // {
+          # マーカのディレクトリは初回には無く、無いパスは`ReadWritePaths`に書けないので、
+          # 親のデータディレクトリを開けます。
+          ReadWritePaths = [ dataDir ];
           # oneshotにするとGGUFの登録が終わるまでmulti-user.targetに到達せず、
           # nspawnのready通知が`container@ollama.service`の`TimeoutStartSec`を超えて、
           # 登録の途中でコンテナごとkillされる無限ループに陥る。

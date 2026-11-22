@@ -3,6 +3,7 @@ module TrashEmptyStray.Search
   ( findTrashDirs
   ) where
 
+import Data.Containers.ListUtils (nubOrd)
 import Data.List (sort)
 import Himari hiding ((</>))
 import OsPath (fromAbsDir, parseRelDir, (</>))
@@ -58,7 +59,10 @@ findTrashDirs roots = do
       Left exception -> Nothing <$ warn (fromAbsDir root) (displayException exception)
   shallow <- splitIntoUnits rootPending
   beneath <- pooledForConcurrently shallow.children (walk . pure)
-  pure (sort (shallow.trashDirs <> concat beneath))
+  -- 起点が重なっていると同じゴミ箱を2回見つけるので、重複を除く。
+  -- マウントされていないマウントポイントは親と同じデバイスのただのディレクトリなので、
+  -- 親と一緒に起点として渡されると、その下を2回辿ることになる。
+  pure (nubOrd (sort (shallow.trashDirs <> concat beneath)))
 
 -- | ワーカーへ渡す単位がこの数に届くまで、階層を順に読み進める。
 --

@@ -41,12 +41,19 @@ tests = describe "runWith" do
             )
   it "掃除できないゴミ箱があっても残りを掃除して、1で終わる" do
     withRoot \root -> do
-      -- `info`がディレクトリではないので、`trash-empty`が失敗する。
-      createDirectoryIfMissing True (root </> "a/.Trash-1000")
-      writeBinaryFile (root </> "a/.Trash-1000/info") ""
+      -- `.trashinfo`がファイルではなくディレクトリなので、`trash-empty`が読めずに失敗する。
+      createDirectoryIfMissing True (root </> "a/.Trash-1000/info/broken.trashinfo")
       putEntry (root </> "b/.Trash-1000") "old" Expired
       try (runBuilt ["sweep", "--days", "7", root]) >>= (`shouldBe` Left (ExitFailure 1))
-      listTree root >>= (`shouldBe` ["a", "a/.Trash-1000", "a/.Trash-1000/info", "b"])
+      listTree root
+        >>= ( `shouldBe`
+                [ "a"
+                , "a/.Trash-1000"
+                , "a/.Trash-1000/info"
+                , "a/.Trash-1000/info/broken.trashinfo"
+                , "b"
+                ]
+            )
   it "ゴミ箱がシンボリックリンクなら掃除しない" do
     withRoot \root -> do
       putEntry (root </> "outside/.Trash-1000") "old" Expired

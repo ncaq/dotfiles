@@ -5,7 +5,7 @@ module Spec.CleanSpec (tests) where
 
 import Fixture (Age (..), listTree, putEntry, runCapturingWarnings, runQuiet, withRoot)
 import Himari
-import System.Posix.Files (setFileMode)
+import System.Posix.Files (createSymbolicLink, setFileMode)
 import Test.Sandwich
 import TrashEmptyStray.Clean (cleanTrashDir)
 import TrashEmptyStray.RetentionDays (RetentionDays (..))
@@ -61,6 +61,28 @@ tests = describe "cleanTrashDir" do
           runCapturingWarnings (cleanTrashDir (RetentionDays 7) (atPath trashDir))
       warnings `shouldBe` []
       listTree root >>= (`shouldBe` ["locked", "locked/.Trash-1000"])
+  it "filesがシンボリックリンクなら、リンクの先もゴミ箱も触らずに警告を出す" do
+    withRoot \root -> do
+      let trashDir = root </> ".Trash-1000"
+      createDirectoryIfMissing True (root </> "victim")
+      writeBinaryFile (root </> "victim/keep") ""
+      createDirectoryIfMissing True trashDir
+      liftIO (createSymbolicLink (root </> "victim") (trashDir </> "files"))
+      (_, warnings) <- runCapturingWarnings (cleanTrashDir (RetentionDays 7) (atPath trashDir))
+      length warnings `shouldBe` 1
+      listTree root >>= (`shouldBe` [".Trash-1000", ".Trash-1000/files", "victim", "victim/keep"])
+  it "infoがディレクトリでなければ、何も触らずに警告を出す" do
+    withRoot \root -> do
+      let trashDir = root </> ".Trash-1000"
+      createDirectoryIfMissing True (trashDir </> "files")
+      writeBinaryFile (trashDir </> "info") ""
+      writeBinaryFile (trashDir </> "files/orphan") ""
+      (_, warnings) <- runCapturingWarnings (cleanTrashDir (RetentionDays 7) (atPath trashDir))
+      length warnings `shouldBe` 1
+      listTree root
+        >>= ( `shouldBe`
+                [".Trash-1000", ".Trash-1000/files", ".Trash-1000/files/orphan", ".Trash-1000/info"]
+            )
   it "infoが空でなければ、空のfilesも残す" do
     cleaned
       ( \trashDir -> do

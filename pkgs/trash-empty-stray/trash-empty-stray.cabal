@@ -59,6 +59,7 @@ library
   hs-source-dirs: src
   -- cabal-gild: discover ./src
   exposed-modules:
+    TrashEmptyStray.AbsDir
     TrashEmptyStray.Clean
     TrashEmptyStray.Cli
     TrashEmptyStray.Failure
@@ -70,8 +71,11 @@ library
 
   build-depends:
     base >=4.20.0.0 && <4.23,
+    filepath >=1.5 && <1.6,
     himari >=1.1.6 && <1.2,
     optparse-applicative >=0.18 && <0.20,
+    os-string >=2.0 && <2.1,
+    path >=0.9.6 && <0.10,
     unix >=2.8 && <2.9,
 
 executable trash-empty-stray
@@ -114,6 +118,8 @@ test-suite trash-empty-stray-test
   build-depends:
     base,
     himari,
+    os-string,
+    path,
     sandwich >=0.3.0.5,
     text >=2.1 && <2.2,
     trash-empty-stray,

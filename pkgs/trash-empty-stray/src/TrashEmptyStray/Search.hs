@@ -4,17 +4,23 @@ module TrashEmptyStray.Search
   ) where
 
 import Data.List (sort)
-import Himari
-import System.Posix.Files (deviceID, getSymbolicLinkStatus, isDirectory)
+import Himari hiding ((</>))
+import OsPath (fromAbsDir, parseRelDir, (</>))
+import System.OsPath.Posix (PosixPath, decodeFS)
+import System.OsPath.Posix qualified as PP
+import System.OsString.Posix (pstr)
+import System.Posix.Directory.PosixPath (closeDirStream, openDirStream, readDirStreamMaybe)
+import System.Posix.Files.PosixString (deviceID, getSymbolicLinkStatus, isDirectory)
 import System.Posix.Types (DeviceID)
-import TrashEmptyStray.TrashDirName (isHomeTrashPath, isTrashDirName)
+import TrashEmptyStray.AbsDir (AbsDir)
+import TrashEmptyStray.TrashDirName (isHomeTrashDir, isTrashDirName)
 
 -- | これから中身を読むディレクトリと、その起点のデバイス。
-data Pending = Pending FilePath DeviceID
+data Pending = Pending AbsDir DeviceID
 
 -- | ディレクトリを読んで分かったこと。
 data Visited = Visited
-  { trashDirs :: [FilePath]
+  { trashDirs :: [AbsDir]
   -- ^ 見つけたゴミ箱。
   , children :: [Pending]
   -- ^ 続けて読むディレクトリ。
@@ -43,13 +49,13 @@ instance Monoid Visited where
 -- 並列にするために、まず起点から浅い階層だけを順に読んで、探す範囲をディレクトリの単位に分ける。
 -- 分けたディレクトリを1つずつワーカーへ渡して、ワーカーはその下を1人で最後まで辿る。
 -- ワーカーどうしは何も共有せず、それぞれが見つけたものを最後に集める。
-findTrashDirs :: (MonadLogger m, MonadUnliftIO m) => [FilePath] -> m [FilePath]
+findTrashDirs :: (MonadLogger m, MonadUnliftIO m) => [AbsDir] -> m [AbsDir]
 findTrashDirs roots = do
   rootPending <- fmap catMaybes . for roots $ \root ->
-    tryIO (liftIO (getSymbolicLinkStatus root)) >>= \case
+    tryIO (liftIO (getSymbolicLinkStatus (fromAbsDir root))) >>= \case
       Right status | isDirectory status -> pure (Just (Pending root (deviceID status)))
-      Right _ -> Nothing <$ logWarnN (convert root <> "はディレクトリではないので探しません")
-      Left exception -> Nothing <$ warn root exception
+      Right _ -> Nothing <$ warn (fromAbsDir root) "ディレクトリではありません"
+      Left exception -> Nothing <$ warn (fromAbsDir root) (displayException exception)
   shallow <- splitIntoUnits rootPending
   beneath <- pooledForConcurrently shallow.children (walk . pure)
   pure (sort (shallow.trashDirs <> concat beneath))
@@ -73,7 +79,7 @@ splitIntoUnits pending
       pure deeper{trashDirs = visited.trashDirs <> deeper.trashDirs}
 
 -- | ディレクトリの下を最後まで順に辿って、見つけたゴミ箱を返す。
-walk :: (MonadLogger m, MonadUnliftIO m) => [Pending] -> m [FilePath]
+walk :: (MonadLogger m, MonadUnliftIO m) => [Pending] -> m [AbsDir]
 walk = go []
  where
   go found = \case
@@ -85,19 +91,42 @@ walk = go []
 -- | 1つのディレクトリを読んで、見つけたゴミ箱と、続けて読むディレクトリを返す。
 visit :: (MonadLogger m, MonadUnliftIO m) => Pending -> m Visited
 visit (Pending directory device) = do
-  names <- listDirectory directory `catchIO` \exception -> [] <$ warn directory exception
+  names <-
+    readNames directory `catchIO` \exception ->
+      [] <$ warn (fromAbsDir directory) (displayException exception)
   fmap fold . for names $ \name -> do
-    let path = directory </> name
-    tryIO (liftIO (getSymbolicLinkStatus path)) >>= \case
-      Left exception -> mempty <$ warn path exception
+    -- ディレクトリだと分かるまでは、型の付かない名前のまま繋いで調べる。
+    let unchecked = fromAbsDir directory PP.</> name
+    tryIO (liftIO (getSymbolicLinkStatus unchecked)) >>= \case
+      Left exception -> mempty <$ warn unchecked (displayException exception)
       Right status
         | not (isDirectory status) -> pure mempty
-        | isTrashDirName name -> pure mempty{trashDirs = [path]}
-        | isHomeTrashPath path -> pure mempty
-        -- 降りて良いのは、起点と同じデバイスにあるディレクトリだけである。
-        | deviceID status == device -> pure mempty{children = [Pending path device]}
-        | otherwise -> pure mempty
+        | otherwise -> case parseRelDir name of
+            Nothing -> mempty <$ warn unchecked "ディレクトリの名前として扱えません"
+            Just relative
+              | isTrashDirName name -> pure mempty{trashDirs = [path]}
+              | isHomeTrashDir path -> pure mempty
+              -- 降りて良いのは、起点と同じデバイスにあるディレクトリだけである。
+              | deviceID status == device -> pure mempty{children = [Pending path device]}
+              | otherwise -> pure mempty
+             where
+              path = directory </> relative
 
-warn :: (MonadLogger m) => FilePath -> IOException -> m ()
-warn path exception =
-  logWarnN (convert path <> "を読めないので飛ばします: " <> convert (displayException exception))
+-- | ディレクトリの中の名前を返す。`.`と`..`は除く。
+readNames :: (MonadUnliftIO m) => AbsDir -> m [PosixPath]
+readNames directory =
+  liftIO . bracket (openDirStream (fromAbsDir directory)) closeDirStream $ \stream ->
+    let
+      go names =
+        readDirStreamMaybe stream >>= \case
+          Nothing -> pure names
+          Just name
+            | name `elem` [[pstr|.|], [pstr|..|]] -> go names
+            | otherwise -> go (name : names)
+     in
+      go []
+
+warn :: (MonadIO m, MonadLogger m) => PosixPath -> String -> m ()
+warn path reason = do
+  displayPath <- liftIO (decodeFS path)
+  logWarnN (convert displayPath <> "を飛ばします: " <> convert reason)

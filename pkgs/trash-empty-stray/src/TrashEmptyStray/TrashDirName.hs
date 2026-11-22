@@ -1,27 +1,36 @@
 -- | 探す対象にするゴミ箱の名前と、探さない場所。
 module TrashEmptyStray.TrashDirName
   ( isTrashDirName
-  , isHomeTrashPath
+  , isHomeTrashDir
   ) where
 
 import Data.Char (isDigit)
-import Data.List (isSuffixOf, stripPrefix)
 import Himari
+import OsPath (dirname, parent, reldir)
+import System.OsPath.Posix (PosixPath)
+import System.OsString.Posix (pstr)
+import System.OsString.Posix qualified as PS
+import TrashEmptyStray.AbsDir (AbsDir)
 
 -- | `.Trash-<uid>`の形の名前かどうか。
 --
 -- `trash-put`がホーム以外のボリュームに作るゴミ箱の名前である。
 -- `~/.local/share/Trash`は`trash-empty --all-users`が見ているので対象にしない。
 -- 管理者が用意する`.Trash/<uid>`の形も、うっかり作られるものではないので対象にしない。
-isTrashDirName :: FilePath -> Bool
-isTrashDirName name = case stripPrefix ".Trash-" name of
-  Just uid -> not (null uid) && all isDigit uid
+isTrashDirName :: PosixPath -> Bool
+isTrashDirName name = case PS.stripPrefix [pstr|.Trash-|] name of
+  Just uid -> not (PS.null uid) && PS.all (isDigit . PS.toChar) uid
   Nothing -> False
 
--- | ホームのゴミ箱(`.local/share/Trash`)を指すパスかどうか。
+-- | ホームのゴミ箱(`.local/share/Trash`)かどうか。
 --
 -- この中には捨てたディレクトリがそのまま入っていて、その中に`.Trash-<uid>`があることもある。
 -- それを掃除すると捨てたものの中身を書き換えてしまうので、探索はこの中へ降りない。
 -- 中身の期限は`trash-empty --all-users`が外側のエントリの単位で見ている。
-isHomeTrashPath :: FilePath -> Bool
-isHomeTrashPath = isSuffixOf "/.local/share/Trash"
+isHomeTrashDir :: AbsDir -> Bool
+isHomeTrashDir path =
+  dirname path == [reldir|Trash|]
+    && dirname share == [reldir|share|]
+    && dirname (parent share) == [reldir|.local|]
+ where
+  share = parent path

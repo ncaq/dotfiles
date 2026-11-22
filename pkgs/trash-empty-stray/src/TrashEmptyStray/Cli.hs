@@ -28,6 +28,7 @@ module TrashEmptyStray.Cli
 
 import Himari hiding (argument)
 import Options.Applicative
+import TrashEmptyStray.AbsDir (absDirFilePath, parseAbsDirPath)
 import TrashEmptyStray.Clean (cleanTrashDir)
 import TrashEmptyStray.Owner (runAsOwnerInside)
 import TrashEmptyStray.RetentionDays (RetentionDays (..))
@@ -56,7 +57,12 @@ runWith :: (MonadLogger m, MonadThrow m, MonadUnliftIO m) => FilePath -> [String
 runWith self argv =
   liftIO (handleParseResult (execParserPure defaultPrefs parserInfo argv)) >>= \case
     Sweep days roots -> do
-      trashDirs <- findTrashDirs roots
+      -- 絶対パスでない起点は、どこを探すことになるのかが作業ディレクトリ次第になるので受け付けない。
+      absoluteRoots <-
+        traverse parseAbsDirPath roots `catchAny` \(SomeException exception) -> do
+          logErrorN ("起点を解釈できませんでした: " <> convert (displayException exception))
+          throwM (ExitFailure 1)
+      trashDirs <- findTrashDirs absoluteRoots >>= traverse absDirFilePath
       results <- for trashDirs \path -> do
         logInfoN (convert path <> "を掃除します")
         result <- tryAny (runAsOwnerInside path self (cleanHereArguments days path))

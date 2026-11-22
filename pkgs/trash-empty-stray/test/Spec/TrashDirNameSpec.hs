@@ -4,32 +4,47 @@
 module Spec.TrashDirNameSpec (tests) where
 
 import Himari
+import OsPath (absdir)
+import System.OsString.Posix (pstr)
 import Test.Sandwich
-import TrashEmptyStray.TrashDirName (isHomeTrashPath, isTrashDirName)
+import TrashEmptyStray.TrashDirName (isHomeTrashDir, isTrashDirName)
 
 tests :: TopSpec
 tests = do
   isTrashDirNameTests
-  isHomeTrashPathTests
+  isHomeTrashDirTests
 
-isHomeTrashPathTests :: TopSpec
-isHomeTrashPathTests = describe "isHomeTrashPath" do
-  it "ホームのゴミ箱を指すパスを見分ける" do
-    filter isHomeTrashPath ["/home/ncaq/.local/share/Trash", "/root/.local/share/Trash"]
-      `shouldBe` ["/home/ncaq/.local/share/Trash", "/root/.local/share/Trash"]
+isHomeTrashDirTests :: TopSpec
+isHomeTrashDirTests = describe "isHomeTrashDir" do
+  it "ホームのゴミ箱を見分ける" do
+    let homeTrashDirs =
+          [ [absdir|/home/ncaq/.local/share/Trash|]
+          , [absdir|/root/.local/share/Trash|]
+          ]
+    filter isHomeTrashDir homeTrashDirs `shouldBe` homeTrashDirs
   it "末尾が揃っていないパスは違うとする" do
     filter
-      isHomeTrashPath
-      ["/home/ncaq/Trash", "/home/ncaq/.local/share/Trash/files", "/home/ncaq/.local/share/Trash2"]
+      isHomeTrashDir
+      [ [absdir|/home/ncaq/Trash|]
+      , [absdir|/home/ncaq/.local/share/Trash/files|]
+      , [absdir|/home/ncaq/.local/share/Trash2|]
+      , [absdir|/share/Trash|]
+      , [absdir|/|]
+      ]
       `shouldBe` []
 
 isTrashDirNameTests :: TopSpec
 isTrashDirNameTests = describe "isTrashDirName" do
   it "uidの付いた名前を拾う" do
-    filter isTrashDirName [".Trash-0", ".Trash-1000", ".Trash-65534"]
-      `shouldBe` [".Trash-0", ".Trash-1000", ".Trash-65534"]
+    filter isTrashDirName [[pstr|.Trash-0|], [pstr|.Trash-1000|], [pstr|.Trash-65534|]]
+      `shouldBe` [[pstr|.Trash-0|], [pstr|.Trash-1000|], [pstr|.Trash-65534|]]
   it "uidが数字だけでない名前は拾わない" do
-    filter isTrashDirName [".Trash-", ".Trash-ncaq", ".Trash-1000x", ".Trash--1"] `shouldBe` []
+    filter
+      isTrashDirName
+      [[pstr|.Trash-|], [pstr|.Trash-ncaq|], [pstr|.Trash-1000x|], [pstr|.Trash--1|]]
+      `shouldBe` []
   it "別の形のゴミ箱の名前は拾わない" do
-    filter isTrashDirName [".Trash", "Trash", "Trash-1000", ".trash-1000", "x.Trash-1000"]
+    filter
+      isTrashDirName
+      [[pstr|.Trash|], [pstr|Trash|], [pstr|Trash-1000|], [pstr|.trash-1000|], [pstr|x.Trash-1000|]]
       `shouldBe` []

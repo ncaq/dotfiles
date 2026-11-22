@@ -1,16 +1,18 @@
 # 探して見つけたゴミ箱が、所有者の権限で掃除されることを確認します。
 #
 # `trash-empty-stray.service`はrootで動き、ユーザが好きに作れる場所からゴミ箱を探します。
-# `trash-empty`は`files`がシンボリックリンクでも辿って中身を消すので、
-# rootのまま掃除すると、リンクを仕込んだユーザに任意の場所を消させられます。
-# 権限を落とす処理が外れても、ビルドは通り、掃除も今まで通り動いて見えます。
+# rootのまま掃除すると、ゴミ箱の中身を細工したユーザに、自分では消せないものを消させられます。
+# 所有者の権限へ落とす処理が外れても、ビルドは通り、掃除も今まで通り動いて見えます。
 #
 # sandwichのテストは一般ユーザとして走るので、権限を落とす場面を確かめられません。
 # VMの中で`module.nix`の実際のユニットを、その権限の絞り込みのまま動かして、以下を見ます。
 #
 # - 期限切れのエントリが消えて、空になったゴミ箱がゴミ箱ごと消える
 # - 期限切れでないエントリが残る
-# - `files`をrootしか書けない場所へのシンボリックリンクにしても、リンクの先が残る
+# - 一般ユーザのゴミ箱にある、rootにしか消せない中身を持つ期限切れのエントリが残る。
+#   権限を落とす処理だけを確かめている。rootのまま掃除していれば消える
+# - `files`をrootしか書けない場所へのシンボリックリンクにしても、リンクの先が残る。
+#   こちらは掃除の前の確認(`info`と`files`が本物のディレクトリか)で弾かれる
 # - rootが所有するゴミ箱が掃除される。`sudo trash`でできるゴミ箱である
 # - 名前のuidと所有者が食い違うゴミ箱が、所有者の権限で掃除される
 # - 起点と違うデバイスの中にあるゴミ箱が、期限切れでも残る。
@@ -70,6 +72,16 @@ testers.runNixOSTest {
           f"{as_user} ln -s ${victim} ${base}/attack-as-root/.Trash-0/files",
       )
 
+      # 一般ユーザのゴミ箱の中に、rootにしか消せない中身を持つエントリを置く。
+      # `info`と`files`は一般ユーザの本物のディレクトリなので、掃除の前の確認は通る。
+      machine.succeed(
+          f"{as_user} mkdir -p ${base}/undeletable/.Trash-1000/info ${base}/undeletable/.Trash-1000/files",
+          "mkdir ${base}/undeletable/.Trash-1000/files/old",
+          "touch ${base}/undeletable/.Trash-1000/files/old/kept",
+          "printf '[Trash Info]\\nPath=old\\nDeletionDate=${expired}\\n'"
+          f" | {as_user} tee ${base}/undeletable/.Trash-1000/info/old.trashinfo",
+      )
+
       # 起点と違うデバイスの中にあるゴミ箱。
       machine.succeed(
           f"{as_user} mkdir -p ${base}/other-device",
@@ -88,6 +100,7 @@ testers.runNixOSTest {
           "test ! -e ${base}/root-owned/.Trash-0",
           "test -e ${victim}/file",
           "test -e ${victim}/sub/file",
+          "test -e ${base}/undeletable/.Trash-1000/files/old/kept",
           "test -e ${base}/other-device/.Trash-1000/files/old",
           "test -e ${base}/other-device/.Trash-1000/info/old.trashinfo",
       )

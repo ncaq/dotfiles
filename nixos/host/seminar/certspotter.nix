@@ -161,7 +161,9 @@ in
           "network-online.target"
           "certspotter-loglist.service"
         ];
-        serviceConfig = {
+        # nixpkgsのモジュールは専用ユーザで動かすだけなので、ハードニングを足します。
+        # 書き込むのはhookの追記も含めて`StateDirectory`の中だけです。
+        serviceConfig = hardening.network // {
           Restart = "on-failure";
           RestartSec = "30s";
         };

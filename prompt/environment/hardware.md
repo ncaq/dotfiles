@@ -200,3 +200,22 @@ adbを通してほぼ同じ最新の情報を取得できます。
 - Display 1: 1968x2184 in 8.0", 120 Hz
 - Display 2: 1080x2520 in 6.5", 120 Hz
 - Battery: 4400 mAh
+
+### タブレット
+
+#### lacquer
+
+[Galaxy Tab S12 Ultra](https://www.samsung.com/jp/tablets/galaxy-tab-s/galaxy-tab-s12-ultra-gray-256gb-sm-x940nzaaxjp/)
+
+- Name: lacquer
+- Product: Galaxy Tab S12 Ultra
+- Host: samsung SM-X940
+- OS: Android 17 (SDK 37), One UI 9.0
+- Kernel: Linux 6.12.69-android16-6-pe68bd8c-abogkiX940XXU2AZJA-4k
+- CPU: MediaTek Dimensity 9500 [MT6993] (8) 1x 4.21 GHz + 3x 3.50 GHz + 4x 2.70 GHz
+- GPU: ARM Mali-G1-Ultra MC12
+- Memory: 15.10 GiB (nominal 16 GB)
+- Swap: 20.00 GiB
+- Disk (/data): 70.95 GiB / 938.25 GiB (8%) - f2fs
+- Display: 1848x2960 in 14.6", 120 Hz
+- Battery: 11600 mAh

@@ -22,64 +22,51 @@ let
         "CAP_FOWNER"
       ];
     };
-  # `trash-empty --all-users`が見つけられないゴミ箱を探して掃除する。
-  #
-  # `trash-put`は`os.path.ismount`で親を辿ってボリュームを決めるが、
-  # `trash-empty`はマウントの一覧にある決まった種類のファイルシステムの直下しか見ない。
-  # そのため以下のような場所に作られた`.Trash-<uid>`は掃除されずに残る。
-  #
-  # - CIFS越しに捨てた時に共有の中へ作られたもの。
-  #   クライアントからはCIFSが対象外で、サーバからは共有のルートがマウントの直下ではない。
-  # - マウントしていない入れ子のbtrfsサブボリュームの直下に作られたもの。
-  #
-  # 置き場所を列挙する代わりに、ユーザのデータを置く場所を全て探す。
-  # `--one-file-system`を付けるので、
-  # ネットワークマウントやスナップショットのサブボリュームへは降りない。
-  # /mntの下にマウントしたローカルのファイルシステムは、起点として別に渡す。
-  emptyStrayTrash = pkgs.writeShellApplication {
-    name = "trash-empty-stray";
-    runtimeInputs = with pkgs; [
-      coreutils
-      fd
-      trash-cli
-    ];
-    text = ''
-      roots=()
-      for dir in /efi /home /mnt; do
-        if [[ -d $dir ]]; then
-          roots+=("$dir")
-        fi
-      done
-      while IFS= read -r target; do
-        if [[ $target == /mnt/* ]]; then
-          roots+=("$target")
-        fi
-      done < <(df --local --output=target)
-
-      # ディレクトリが無いか、空で消せた時に成功する。
-      # 空でない時は何もせずに失敗する。
-      remove_if_empty() {
-        if [[ -e $1 ]]; then
-          rmdir --ignore-fail-on-non-empty "$1"
-        fi
-        [[ ! -e $1 ]]
-      }
-
-      mapfile -d "" -t trash_dirs < <(
-        fd --hidden --no-ignore --one-file-system --type d --prune --print0 '^\.Trash-[0-9]+$' "''${roots[@]}"
-      )
-      for trash_dir in "''${trash_dirs[@]}"; do
-        trash-empty -f ${toString days} --trash-dir "$trash_dir"
-        # 空になったゴミ箱は、ゴミ箱ごと消す。
-        # うっかり作られた場所に空のディレクトリが残り続けて、手で消して回ることになるため。
-        # 捨てている最中のゴミ箱を壊さないように、
-        # `.trashinfo`が先に書かれる`info`が空の時だけ`files`へ進む。
-        if remove_if_empty "$trash_dir/info" && remove_if_empty "$trash_dir/files"; then
-          remove_if_empty "$trash_dir" || true
-        fi
-      done
-    '';
+  # ゴミ箱の掃除は緊急性がないため、他の処理を最優先する。
+  lowPriority = {
+    Nice = 19;
+    CPUSchedulingPolicy = "idle";
+    IOSchedulingClass = "idle";
+    IOWeight = 10;
   };
+  dailyTimer = {
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnCalendar = "daily";
+      Persistent = true;
+      RandomizedDelaySec = "1h";
+    };
+  };
+  # `trash-empty-stray`がゴミ箱を探す起点。
+  #
+  # ユーザのデータを置く場所を全て探す。
+  # 起点と違うデバイスのディレクトリへは降りないので、
+  # /mntの下にマウントするローカルのディスクは起点として別に渡す。
+  # ネットワークマウントは実体のあるホストの側で掃除するので、ここへは入れない。
+  # `/mnt/chihiro`のようなCIFSのマウントは`systemd.mounts`で定義しているので、元から`fileSystems`に無い。
+  #
+  # マウントしていない入れ子のbtrfsサブボリュームの直下に作られたゴミ箱は対象外になる。
+  # 親と違うデバイスに見えるので降りず、マウントの定義も無いので起点にも入らない。
+  localDiskTypes = [
+    "btrfs"
+    "exfat"
+    "ext4"
+    "vfat"
+    "xfs"
+  ];
+  strayRoots = [
+    "/efi"
+    "/home"
+    "/mnt"
+  ]
+  ++ lib.sort lib.lessThan (
+    lib.mapAttrsToList (_: fileSystem: fileSystem.mountPoint) (
+      lib.filterAttrs (
+        _: fileSystem:
+        lib.hasPrefix "/mnt/" fileSystem.mountPoint && lib.elem fileSystem.fsType localDiskTypes
+      ) config.fileSystems
+    )
+  );
 in
 {
   options.local.trash.retentionDays = lib.mkOption {
@@ -92,33 +79,61 @@ in
   };
 
   config.systemd = {
-    services.trash-empty = {
-      description = "Remove files older than ${toString days} days from all trash cans";
-      after = [
-        "local-fs.target"
-        "remote-fs.target"
-      ];
-      serviceConfig = trashHardening // {
-        Type = "oneshot";
-        TimeoutStartSec = "1h";
-        ExecStart = [
-          "${pkgs.trash-cli}/bin/trash-empty --all-users -f ${toString days}"
-          (lib.getExe emptyStrayTrash)
+    services = {
+      trash-empty = {
+        description = "Remove files older than ${toString days} days from all trash cans";
+        after = [
+          "local-fs.target"
+          "remote-fs.target"
         ];
-        # ゴミ箱の掃除は緊急性がないため、他の処理を最優先する。
-        Nice = 19;
-        CPUSchedulingPolicy = "idle";
-        IOSchedulingClass = "idle";
-        IOWeight = 10;
+        serviceConfig =
+          trashHardening
+          // lowPriority
+          // {
+            Type = "oneshot";
+            TimeoutStartSec = "1h";
+            ExecStart = "${pkgs.trash-cli}/bin/trash-empty --all-users -f ${toString days}";
+          };
+      };
+      # `trash-empty --all-users`が見つけられないゴミ箱を探して掃除する。
+      # 何を探してどう掃除するかは`pkgs/trash-empty-stray`に書いてある。
+      #
+      # `trash-empty`とはユニットを分ける。
+      # 片方が失敗してももう片方は動き、失敗はそれぞれのユニットの結果に出る。
+      trash-empty-stray = {
+        description = "Remove files older than ${toString days} days from stray trash cans";
+        after = [ "local-fs.target" ];
+        serviceConfig =
+          trashHardening
+          // lowPriority
+          // {
+            # 見つけたゴミ箱を所有者の権限で掃除するために、uidとgidを変える権限を足す。
+            # 一般ユーザのゴミ箱は権限を落として掃除するので、
+            # 残りの権限を使うのは探索と、rootが所有するゴミ箱の掃除だけになる。
+            CapabilityBoundingSet = trashHardening.CapabilityBoundingSet ++ [
+              "CAP_SETGID"
+              "CAP_SETUID"
+            ];
+            Type = "oneshot";
+            TimeoutStartSec = "1h";
+            ExecStart = lib.escapeShellArgs (
+              [
+                (lib.getExe pkgs.trash-empty-stray)
+                "sweep"
+                "--days"
+                (toString days)
+              ]
+              ++ strayRoots
+            );
+          };
       };
     };
-    timers.trash-empty = {
-      description = "Daily trash cleanup";
-      wantedBy = [ "timers.target" ];
-      timerConfig = {
-        OnCalendar = "daily";
-        Persistent = true;
-        RandomizedDelaySec = "1h";
+    timers = {
+      trash-empty = dailyTimer // {
+        description = "Daily trash cleanup";
+      };
+      trash-empty-stray = dailyTimer // {
+        description = "Daily stray trash cleanup";
       };
     };
   };

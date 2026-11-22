@@ -20,6 +20,12 @@ tests = describe "findTrashDirs" do
     withRoot \root -> do
       createDirectoryIfMissing True (root </> ".Trash-1000/files/trashed/.Trash-1000")
       runQuiet (findTrashDirs [root]) >>= (`shouldBe` [root </> ".Trash-1000"])
+  it "ホームのゴミ箱の中へは降りない" do
+    withRoot \root -> do
+      createDirectoryIfMissing True (root </> "user/.local/share/Trash/files/trashed/.Trash-1000")
+      createDirectoryIfMissing True (root </> "user/.local/share/other/.Trash-1000")
+      runQuiet (findTrashDirs [root])
+        >>= (`shouldBe` [root </> "user/.local/share/other/.Trash-1000"])
   it "ゴミ箱の名前でもディレクトリでなければ拾わない" do
     withRoot \root -> do
       writeBinaryFile (root </> ".Trash-1000") ""

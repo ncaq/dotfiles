@@ -18,7 +18,8 @@
   - gzip
   - nix
 
-  しかしわかりやすさのために明示的に入れて被るのは気にしていません。
+  これらは上流に任せて、
+  このリストには書きません。
 
   バージョンはあまり気にしません。
   バージョンを気にするような用途の場合はワークフローの方で、
@@ -29,8 +30,6 @@ with pkgs;
 let
   # 暗黙のうちに要求されることが多いランタイム。
   basicRuntime = [
-    bash
-    coreutils
     findutils
     go
     nodejs
@@ -41,7 +40,6 @@ let
 
   cliTools = [
     # Version Control
-    git
     git-lfs
 
     # GitHub CLI

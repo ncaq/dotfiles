@@ -15,6 +15,9 @@
 #   こちらは掃除の前の確認(`info`と`files`が本物のディレクトリか)で弾かれる
 # - rootが所有するゴミ箱が掃除される。`sudo trash`でできるゴミ箱である
 # - 名前のuidと所有者が食い違うゴミ箱が、所有者の権限で掃除される
+# - ユーザの一覧に無いuidが所有するゴミ箱が掃除される。
+#   消したユーザや、他のホストから持ってきたデータの所有者が当たる。
+#   主グループを引けない時の扱いが壊れると、そのゴミ箱ごとに毎日失敗し続ける
 # - 起点と違うデバイスの中にあるゴミ箱が、期限切れでも残る。
 #   ネットワークマウントやスナップショットのサブボリュームを辿らないための境界で、
 #   マウントを作れないsandwichのテストでは確かめられない
@@ -82,6 +85,10 @@ testers.runNixOSTest {
           f" | {as_user} tee ${base}/undeletable/.Trash-1000/info/old.trashinfo",
       )
 
+      # ユーザの一覧に無いuidが所有するゴミ箱。
+      put_entry(as_root, "${base}/unknown-owner/.Trash-4242", "old", "${expired}")
+      machine.succeed("chown -R 4242:4242 ${base}/unknown-owner/.Trash-4242")
+
       # 起点と違うデバイスの中にあるゴミ箱。
       machine.succeed(
           f"{as_user} mkdir -p ${base}/other-device",
@@ -101,6 +108,9 @@ testers.runNixOSTest {
           "test -e ${victim}/file",
           "test -e ${victim}/sub/file",
           "test -e ${base}/undeletable/.Trash-1000/files/old/kept",
+          # 親はrootの所有なので、空になったゴミ箱自体は残る。エントリが消えたことだけを見る。
+          "test ! -e ${base}/unknown-owner/.Trash-4242/files/old",
+          "test ! -e ${base}/unknown-owner/.Trash-4242/info/old.trashinfo",
           "test -e ${base}/other-device/.Trash-1000/files/old",
           "test -e ${base}/other-device/.Trash-1000/info/old.trashinfo",
       )

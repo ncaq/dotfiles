@@ -171,30 +171,51 @@ FIDO認証としてディスクの復号化やパスキーなどに使ってい�
 
 ## スマートデバイス
 
+USBデバッグを許可した端末をPCに繋いで以下のコマンドを実行すると、
+adbを通してほぼ同じ最新の情報を取得できます。
+
+```console
+"$HOME/dotfiles/prompt/environment/android-fetch-hardware.hs"
+```
+
+`Memory`の`nominal`は、
+見えているメモリの量から推定した製品としての公称の容量です。
+
 ### スマートフォン
 
 #### paint
 
 [Galaxy Z Fold7](https://www.samsung.com/jp/smartphones/galaxy-z-fold7/)
 
+- Name: paint
+- Product: Galaxy Z Fold7
 - Host: samsung SM-F966Q
-- CPU: Qualcomm Snapdragon 8 Elite for Galaxy [SM8750] (8)
-- GPU: Qualcomm Adreno (TM) 830 [Integrated]
-- Memory: 16 GB
+- OS: Android 17 (SDK 37), One UI 9.0
+- Kernel: Linux 6.6.127-android15-8-p4a765df-abogkiF966QOPU1CZJD-4k
+- CPU: Qualcomm Snapdragon 8 Elite for Galaxy [SM8750-AC] (8) 2x 4.47 GHz + 6x 3.53 GHz
+- GPU: Qualcomm Adreno (TM) 830
+- Memory: 14.74 GiB (nominal 16 GB)
 - Swap: 20.00 GiB
-- Disk (/): 7.06 GiB / 7.06 GiB (100%) - erofs [Read-only]
-- Disk (/storage/emulated): 114.81 GiB / 936.83 GiB (12%) - fuse
+- Disk (/data): 193.47 GiB / 936.20 GiB (21%) - f2fs
+- Display 1: 1968x2184 in 8.0", 120 Hz
+- Display 2: 1080x2520 in 6.5", 120 Hz
+- Battery: 4400 mAh
 
 ### タブレット
 
-#### dream
+#### lacquer
 
-[Galaxy Tab S9 Ultra](https://www.samsung.com/jp/tablets/galaxy-tab-s/galaxy-tab-s9-ultra-wi-fi-graphite-512gb-sm-x910nzaexjp/)
+[Galaxy Tab S12 Ultra](https://www.samsung.com/jp/tablets/galaxy-tab-s/galaxy-tab-s12-ultra-gray-256gb-sm-x940nzaaxjp/)
 
-- Host: samsung SM-X910
-- CPU: Qualcomm Snapdragon 8 Gen 2 for Galaxy [SM8550] (8)
-- GPU: Qualcomm Adreno (TM) 740 [Integrated]
-- Memory: 12 GB
-- Swap: 12.00 GiB
-- Disk (/): 6.50 GiB / 6.50 GiB (100%) - erofs [Read-only]
-- Disk (/storage/emulated): 71.38 GiB / 462.07 GiB (15%) - fuse
+- Name: lacquer
+- Product: Galaxy Tab S12 Ultra
+- Host: samsung SM-X940
+- OS: Android 17 (SDK 37), One UI 9.0
+- Kernel: Linux 6.12.69-android16-6-pe68bd8c-abogkiX940XXU2AZJA-4k
+- CPU: MediaTek Dimensity 9500 [MT6993] (8) 1x 4.21 GHz + 3x 3.50 GHz + 4x 2.70 GHz
+- GPU: ARM Mali-G1-Ultra MC12
+- Memory: 15.10 GiB (nominal 16 GB)
+- Swap: 20.00 GiB
+- Disk (/data): 70.95 GiB / 938.25 GiB (8%) - f2fs
+- Display: 1848x2960 in 14.6", 120 Hz
+- Battery: 11600 mAh

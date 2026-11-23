@@ -9,17 +9,6 @@
 }:
 let
   port = 11434;
-  # コンテナのvethのアドレス。
-  # ホストとの間はIPv6で繋ぐ。
-  # seminarではホストの`machineAddresses`にも同じ値を予約している。
-  hostAddress6 = "fdf2:a855:5a3f:100::20";
-  localAddress6 = "fdf2:a855:5a3f:100::21";
-  # IPv4は出口のためだけに持たせる(下の`local.machineEgress`を参照)。
-  toAddress4 = import ../../lib/machine-address4.nix { inherit lib; };
-  hostAddress = toAddress4 hostAddress6;
-  localAddress = toAddress4 localAddress6;
-  ollamaUid = 501;
-  ollamaGid = ollamaUid;
   dataDir = config.local.ollama.dataDir;
   enableCuda = config.local.ollama.enableCuda;
   # unstableのOllamaを使う。
@@ -37,30 +26,34 @@ let
   ];
 in
 {
-  users = {
-    users = {
-      ollama = {
-        uid = ollamaUid;
-        group = "ollama";
-        isSystemUser = true;
-      };
-      ${username}.extraGroups = [ "ollama" ];
-    };
-    groups.ollama.gid = ollamaGid;
+  # コンテナのvethのアドレス。
+  # bulletとseminarで同じ値を使う。
+  # seminarでは`nixos/host/seminar/machine-mapping.nix`の割り当てと重ならない値にしている。
+  machineAddresses.ollama = {
+    host6 = "fdf2:a855:5a3f:100::20";
+    guest6 = "fdf2:a855:5a3f:100::21";
+    # 手でpullするhf.coのモデルの配信元のcas-bridge.xethub.hf.co
+    # (下の`local.machineEgress`を参照)。
+    ipv4 = true;
   };
+
+  # ホスト側のGGUFの登録(`gguf-model-loader.nix`)がデータ領域を同じユーザで読み書きするので、
+  # DynamicUserにはせずIDを固定する。
+  serviceUser.ollama = {
+    uid = 501;
+    gid = 501;
+  };
+
+  users.users.${username}.extraGroups = [ "ollama" ];
 
   containers.ollama = {
     # ホスト側のsocketへの初回アクセスで起動する。
     autoStart = false;
-    ephemeral = true;
-    privateNetwork = true;
-    privateUsers = "pick";
-    inherit
-      hostAddress
-      localAddress
-      hostAddress6
-      localAddress6
-      ;
+    local = {
+      serviceUser = true;
+      # 可変データを永続化する。
+      persist = [ dataDir ];
+    };
     allowedDevices = lib.optionals enableCuda (
       map (node: {
         inherit node;
@@ -79,22 +72,10 @@ in
         };
       }
     );
-    # 可変データを永続化し、
-    # privateUsersによるUID変換後も固定UIDで読み書きできるようにする。
-    extraFlags = [ "--bind=${dataDir}:${dataDir}:idmap" ];
     config =
       { lib, pkgs, ... }:
       {
-        system.stateVersion = "26.05";
-        time.timeZone = "Asia/Tokyo";
-        users = {
-          users.ollama.uid = ollamaUid;
-          groups.ollama.gid = ollamaGid;
-        };
-        networking.useHostResolvConf = lib.mkForce false;
         services = {
-          # ホストのresolv.confを使わないので、コンテナの中の名前解決はresolvedに任せる。
-          resolved.enable = true;
           ollama = {
             enable = true;
             inherit package;
@@ -202,20 +183,7 @@ in
       MemoryHigh = "50%";
       MemoryMax = "60%";
     };
-    tmpfiles.rules = [
-      "d ${dataDir} 0750 ollama ollama - -"
-      "d ${dataDir}/models 0750 ollama ollama - -"
-    ];
-  };
-
-  networking = {
-    nat = {
-      enable = true;
-      # ULAを持つコンテナをIPv6で外へ出す(`lib/machine-address4.nix`)。
-      enableIPv6 = true;
-      internalInterfaces = [ "ve-*" ];
-    };
-    networkmanager.unmanaged = [ "interface-name:ve-*" ];
+    tmpfiles.rules = [ "d ${dataDir}/models 0750 ollama ollama - -" ];
   };
 
   # Ollamaの出口はインターネットだけ。

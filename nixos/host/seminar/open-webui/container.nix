@@ -12,8 +12,6 @@
 }:
 let
   addr = config.machineAddresses.open-webui;
-  user = config.serviceUser.open-webui;
-  postgresGid = config.serviceUser.postgres.gid;
   stateDir = "/var/lib/open-webui";
   port = 8080;
   # コンテナのモジュールでは`config`がコンテナ自身のものになるため、
@@ -29,22 +27,7 @@ let
   });
 in
 {
-  # コンテナ内と同じIDでホスト側にもユーザとグループを作る。
-  # bind mountした永続データ領域の所有者をホストからも名前で扱えるようにするため。
-  users = {
-    users = {
-      open-webui = {
-        inherit (user) uid;
-        group = "open-webui";
-        isSystemUser = true;
-      };
-      ${username}.extraGroups = [ "open-webui" ];
-    };
-    groups.open-webui.gid = user.gid;
-  };
-
-  # PostgreSQLコンテナ側にデータベースとpeer認証のユーザを用意させる。
-  postgresClient = [ "open-webui" ];
+  users.users.${username}.extraGroups = [ "open-webui" ];
 
   # Open WebUIの出口はインターネットだけ。
   # web検索(`web-search.nix`)のAPIと検索結果のページの取得、
@@ -62,29 +45,13 @@ in
   postgresExtension.open-webui = [ "vector" ];
 
   containers.open-webui = {
-    autoStart = true;
-    ephemeral = true;
-    privateNetwork = true;
-    # PostgreSQLのpeer認証がホストと同一のUIDでの接続を要求するため、
-    # pickにはできずidentity(UID分離なし、capability分離のみ)にする。
-    privateUsers = "identity";
-    hostAddress6 = addr.host6;
-    localAddress6 = addr.guest6;
-    hostAddress = addr.host4;
-    localAddress = addr.guest4;
-    bindMounts = {
+    local = {
+      serviceUser = true;
+      postgres = true;
       # DBとベクトルはPostgreSQLへ移したため、
       # ここに残るのはアップロードされたファイルや書き起こしのモデルのキャッシュなどで、
       # それらをコンテナの再作成後も保持する。
-      "${stateDir}" = {
-        hostPath = stateDir;
-        isReadOnly = false;
-      };
-      # PostgreSQLコンテナとのUnixソケット共有。
-      "/run/postgresql" = {
-        hostPath = "/run/postgresql";
-        isReadOnly = true;
-      };
+      persist = [ stateDir ];
     };
     config =
       {
@@ -94,22 +61,6 @@ in
         ...
       }:
       {
-        system.stateVersion = "26.05";
-        time.timeZone = "Asia/Tokyo";
-        users = {
-          users.open-webui = {
-            inherit (user) uid;
-            group = "open-webui";
-            isSystemUser = true;
-            # `/run/postgresql`が0750 postgres:postgresのため、
-            # ソケットへ到達するにはpostgresグループへの所属が必要。
-            extraGroups = [ "postgres" ];
-          };
-          groups = {
-            open-webui.gid = user.gid;
-            postgres.gid = postgresGid;
-          };
-        };
         services = {
           open-webui = {
             enable = true;
@@ -189,11 +140,8 @@ in
                 OLLAMA_BASE_URL = "http://[${addr.host6}]:${toString ollamaPort}";
               };
           };
-          # web検索や書き起こしのモデルの取得などで名前解決が必要になる。
-          resolved.enable = true;
         };
         networking = {
-          useHostResolvConf = lib.mkForce false;
           # Tailscale Serveの転送先として中継する、ホスト側のCaddyからの接続だけを許可する。
           # 他のコンテナからの転送はホストの`local.machineEgress`が落とすが、
           # 認証を無効化したUIなので送信元の制限をこちらでも持って多層にする。
@@ -235,22 +183,14 @@ in
       inherit addr;
     })
     {
-      services."container@open-webui" = {
-        # DBが接続を受け付けてから起動しないと、
-        # 起動時のマイグレーションが失敗する。
-        requires = [ "postgresql-ready.service" ];
-        after = [ "postgresql-ready.service" ];
-        serviceConfig = {
-          # 音声の書き起こしではfaster-whisperがプロセス内でCPU推論する。
-          # 常時起動のホストで他のワークロードを巻き添えにしないよう上限を設ける。
-          # OSや他の処理のために2スレッド分を残す既存のCPU予算を使う。
-          CPUQuota = "${toString (config.local.cpuBudgetThreads * 100)}%";
-          MemoryHigh = "8G"; # ソフトリミット。これを超えるとメモリを積極的に解放する。
-          MemoryMax = "16G"; # ハードリミット。大きな文書の取り込みでも足りるだろうという推定値。
-        };
+      services."container@open-webui".serviceConfig = {
+        # 音声の書き起こしではfaster-whisperがプロセス内でCPU推論する。
+        # 常時起動のホストで他のワークロードを巻き添えにしないよう上限を設ける。
+        # OSや他の処理のために2スレッド分を残す既存のCPU予算を使う。
+        CPUQuota = "${toString (config.local.cpuBudgetThreads * 100)}%";
+        MemoryHigh = "8G"; # ソフトリミット。これを超えるとメモリを積極的に解放する。
+        MemoryMax = "16G"; # ハードリミット。大きな文書の取り込みでも足りるだろうという推定値。
       };
-      # コンテナへbind mountする永続データ領域をホスト側に用意する。
-      tmpfiles.rules = [ "d ${stateDir} 0750 open-webui open-webui - -" ];
     }
   ];
 }

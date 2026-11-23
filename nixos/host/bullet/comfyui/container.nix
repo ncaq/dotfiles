@@ -11,24 +11,6 @@ let
   # ホスト側では`comfyui-proxy.socket`が同じ番号でlistenし、
   # コンテナ内のComfyUIへ転送する。
   port = 8188;
-  # コンテナのvethアドレス。
-  # ホストとの間はIPv6で繋ぐ。
-  hostAddress6 = "fdf2:a855:5a3f:100::10";
-  localAddress6 = "fdf2:a855:5a3f:100::11";
-  # IPv4は出口のためだけに持たせる(下の`local.machineEgress`を参照)。
-  # 導いた先はLANの192.168.10.0/24と重複しない範囲になる。
-  toAddress4 = import ../../../../lib/machine-address4.nix { inherit lib; };
-  hostAddress = toAddress4 hostAddress6;
-  localAddress = toAddress4 localAddress6;
-  # コンテナ内のcomfyuiユーザのID。
-  # ephemeralコンテナでは動的割り当ての記録が起動ごとに消えるため、
-  # bind mountした`/var/lib/comfyui`の所有権がずれないように固定する。
-  # idmap付きbind mountは数値IDをホストとコンテナで同一視するため、
-  # `privateUsers = "pick"`でもこの固定が引き続き必要。
-  # nixpkgsが静的IDに予約している400未満と、
-  # 動的割り当てが使う999からの降順領域を避けた任意の値。
-  comfyuiUid = 500;
-  comfyuiGid = 500;
   # CUDAに必要なNVIDIAデバイスノード。
   nvidiaDevices = [
     "/dev/nvidia-modeset"
@@ -40,33 +22,30 @@ let
   dataDir = "/var/lib/comfyui";
 in
 {
-  # コンテナ内と同じIDでホスト側にもユーザとグループを作る。
-  # bind mountした`/var/lib/comfyui`の所有者をホストからも名前で扱えるようにするため。
-  users = {
-    users.comfyui = {
-      uid = comfyuiUid;
-      group = "comfyui";
-      isSystemUser = true;
-    };
-    groups.comfyui.gid = comfyuiGid;
+  # コンテナのvethアドレス。
+  machineAddresses.comfyui = {
+    host6 = "fdf2:a855:5a3f:100::10";
+    guest6 = "fdf2:a855:5a3f:100::11";
+    # カスタムノードの取得元のgithub.comなど(下の`local.machineEgress`を参照)。
+    # 導いた先はLANの192.168.10.0/24と重複しない範囲になる。
+    ipv4 = true;
+  };
+  # nixpkgsが静的IDに予約している400未満と、
+  # 動的割り当てが使う999からの降順領域を避けた任意の値。
+  serviceUser.comfyui = {
+    uid = 500;
+    gid = 500;
   };
   # 外部から取得したモデルやカスタムノードを実行するサービスなので、
   # NixOS Containersに包んで隔離してリスクを減らす。
   containers.comfyui = {
     # ソケットアクティベーションでオンデマンド起動するのでブート時には起動しない。
     autoStart = false;
-    ephemeral = true;
-    privateNetwork = true;
-    # 毎起動ランダムな高位UID範囲へマップして、
-    # コンテナを脱出されてもホスト上では無権限のUIDになるようにする。
-    # identityと違いコンテナ内rootがホストのUID 0を持たなくなる。
-    privateUsers = "pick";
-    inherit
-      hostAddress
-      localAddress
-      hostAddress6
-      localAddress6
-      ;
+    local = {
+      serviceUser = true;
+      # モデルやカスタムノードなどのデータはホスト側に永続化する。
+      persist = [ dataDir ];
+    };
     # CUDAを使うためにNVIDIAデバイスをコンテナへ渡す。
     allowedDevices = map (node: {
       inherit node;
@@ -87,116 +66,87 @@ in
           isReadOnly = true;
         };
       };
-    # モデルやカスタムノードなどのデータはホスト側に永続化する。
-    # pickでは素のbind mountだと所有者が無効なUIDに見えて書き込めないため、
-    # idmapオプションで数値IDをホストとコンテナで同一視させる。
-    # `bindMounts`はマウントオプションを渡せないのでextraFlagsで指定する。
-    extraFlags = [ "--bind=${dataDir}:${dataDir}:idmap" ];
-    config =
-      { lib, ... }:
-      {
-        imports = [ inputs.utensils-comfyui-nix.nixosModules.default ];
-        system.stateVersion = "26.05";
-        # コンテナにはホストのタイムゾーンが伝播しないため明示する。
-        # 未設定だとUTCになり、出力ファイル名の生成日時がJSTとずれる。
-        time.timeZone = "Asia/Tokyo";
-        users = {
-          users.comfyui.uid = comfyuiUid;
-          groups.comfyui.gid = comfyuiGid;
-        };
-        networking.useHostResolvConf = lib.mkForce false;
-        services = {
-          # ホストのresolv.confを使わないので、コンテナの中の名前解決はresolvedに任せる。
-          resolved.enable = true;
-          comfyui = {
-            enable = true;
-            gpuSupport = "cuda";
-            enableManager = true;
-            inherit port;
-            # ホストからvethを通してIPv6でアクセスするので全インタフェースでlistenする。
-            # privateNetworkなのでLANには露出しない。
-            # ComfyUIはaiohttpでlistenするので、`::`はIPv6だけを受ける。
-            listenAddress = "::";
-            inherit dataDir;
-            # コンテナ内のfirewallを開ける。到達できるのはvethを持つホストのみ。
-            openFirewall = true;
-            extraArgs = [
-              # モデルの重みをpinned memoryへコピーせず、
-              # mmapしたディスク上の重みからGPUへ転送する。
-              #
-              # ComfyUIはpinned memoryの上限を、
-              # `max(ram * 0.40, min(ram * 0.90, ram - 4GiB, ram + ディスクswap - 16GiB))`
-              # で決める。
-              # この計算はzramを意図的にディスクswapから除外する。
-              # pinned memoryはカーネルが回収もswap outもできないので、
-              # ホストの他のプロセスやページキャッシュの分が残らない。
-              #
-              # 動画生成のモデルがWan 2.2だった頃に、実際にanime-videoでOOM killerが発動した。
-              # Wan 2.2のhigh/lowが27GiBずつとumt5_xxl_fp16の11GiBで、
-              # プロセスのanon-rssは65.0GiBに達していた。
-              # cgroupの`MemoryMax`(84.3GiB)には届いていないためそちらでは止まらず、
-              # 回収できないinactive_anonを47GiB抱えたままglobal OOMになった。
-              #
-              # このフラグを付けるとdynamic VRAMのsignatureを持つ層で、
-              # `pin_memory`を呼ばずにmmapから直接転送する経路を通るため、
-              # 重みのRAM常駐が消える。
-              # dynamic VRAMはNVIDIAかつtorch 2.8以上かつ非WSLで自動的に有効になり、
-              # このホストは条件を満たす。
-              # 重みの供給がディスク速度に律速するようになるが、
-              # モデルはNVMe(SN8100)上のNix storeにあるので許容できる。
-              "--fast-disk"
-              "--fast"
-              # FP16の行列積で低精度の累積を許可して、LoRAやFP16 fallbackを高速化する。
-              # 丸め誤差が増えるため生成結果は変化する可能性がある。
-              "fp16_accumulation"
-              # 重みがfp8_e4m3fnの層の行列積をTensor Coreのfp8演算で行う。
-              # 実測でbf16の0.622msに対しfp8は0.253msだった(4096角のGEMM)。
-              #
-              # 現在使っているモデルには効かない。
-              # 量子化済みモデルは各層に`comfy_quant`マーカを持つため、
-              # `pick_operations`がこのフラグを見る前にmixed precision経路へ抜けて、
-              # 層ごとの量子化設定に従うためである。
-              # 効くのはマーカを持たない素のfp8チェックポイントを足した時で、
-              # その時に指定し忘れないよう先に入れておく。
-              "fp8_matrix_mult"
-              # xformers 0.0.30はBlackwell(sm_120)に対応していないため使わない。
-              # comfy-kitchen同梱のINT8 attentionで、
-              # 動画生成の大半を占めるattentionを近似計算して高速化する。
-              #
-              # 自前ビルドのSageAttention 2.2.0から乗り換えた。
-              # (h=40, s=32760, d=128)のマイクロベンチではRTX 5090上で、
-              # PyTorch SDPAの99.12msに対しSageAttentionが37.65ms、こちらが39.75msで、
-              # ガウス乱数入力の相対誤差は前者0.0385に対しこちらが0.0160だった。
-              # 5%の速度差と引き換えにCUDAソースビルドを1つ丸ごと減らせる。
-              #
-              # 利用不可ならComfyUIは黙って別実装へ落ちずに起動時点で終了するので、
-              # 気付かないまま遅い実装で動き続けることはない。
-              "--use-ck-attention"
-            ];
-          };
-        };
-        systemd.services.comfyui = {
-          # ComfyUI本体と同じnixpkgsから取る。
-          # comfyui-nixのnixpkgsは`flake.nix`でunstableへfollowさせている。
-          # comfyui-nixのランチャはglibなどのライブラリを`LD_LIBRARY_PATH`で子プロセスにも渡すので、
-          # 別のnixpkgsのffmpegを`path`に置くとglibcの版が合わずに起動できなかった。
-          path = with pkgs-unstable; [
-            ffmpeg-headless
-            oxipng
+    config = {
+      imports = [ inputs.utensils-comfyui-nix.nixosModules.default ];
+      services = {
+        comfyui = {
+          enable = true;
+          gpuSupport = "cuda";
+          enableManager = true;
+          inherit port;
+          # ホストからvethを通してIPv6でアクセスするので全インタフェースでlistenする。
+          # privateNetworkなのでLANには露出しない。
+          # ComfyUIはaiohttpでlistenするので、`::`はIPv6だけを受ける。
+          listenAddress = "::";
+          inherit dataDir;
+          # コンテナ内のfirewallを開ける。到達できるのはvethを持つホストのみ。
+          openFirewall = true;
+          extraArgs = [
+            # モデルの重みをpinned memoryへコピーせず、
+            # mmapしたディスク上の重みからGPUへ転送する。
+            #
+            # ComfyUIはpinned memoryの上限を、
+            # `max(ram * 0.40, min(ram * 0.90, ram - 4GiB, ram + ディスクswap - 16GiB))`
+            # で決める。
+            # この計算はzramを意図的にディスクswapから除外する。
+            # pinned memoryはカーネルが回収もswap outもできないので、
+            # ホストの他のプロセスやページキャッシュの分が残らない。
+            #
+            # 動画生成のモデルがWan 2.2だった頃に、実際にanime-videoでOOM killerが発動した。
+            # Wan 2.2のhigh/lowが27GiBずつとumt5_xxl_fp16の11GiBで、
+            # プロセスのanon-rssは65.0GiBに達していた。
+            # cgroupの`MemoryMax`(84.3GiB)には届いていないためそちらでは止まらず、
+            # 回収できないinactive_anonを47GiB抱えたままglobal OOMになった。
+            #
+            # このフラグを付けるとdynamic VRAMのsignatureを持つ層で、
+            # `pin_memory`を呼ばずにmmapから直接転送する経路を通るため、
+            # 重みのRAM常駐が消える。
+            # dynamic VRAMはNVIDIAかつtorch 2.8以上かつ非WSLで自動的に有効になり、
+            # このホストは条件を満たす。
+            # 重みの供給がディスク速度に律速するようになるが、
+            # モデルはNVMe(SN8100)上のNix storeにあるので許容できる。
+            "--fast-disk"
+            "--fast"
+            # FP16の行列積で低精度の累積を許可して、LoRAやFP16 fallbackを高速化する。
+            # 丸め誤差が増えるため生成結果は変化する可能性がある。
+            "fp16_accumulation"
+            # 重みがfp8_e4m3fnの層の行列積をTensor Coreのfp8演算で行う。
+            # 実測でbf16の0.622msに対しfp8は0.253msだった(4096角のGEMM)。
+            #
+            # 現在使っているモデルには効かない。
+            # 量子化済みモデルは各層に`comfy_quant`マーカを持つため、
+            # `pick_operations`がこのフラグを見る前にmixed precision経路へ抜けて、
+            # 層ごとの量子化設定に従うためである。
+            # 効くのはマーカを持たない素のfp8チェックポイントを足した時で、
+            # その時に指定し忘れないよう先に入れておく。
+            "fp8_matrix_mult"
+            # xformers 0.0.30はBlackwell(sm_120)に対応していないため使わない。
+            # comfy-kitchen同梱のINT8 attentionで、
+            # 動画生成の大半を占めるattentionを近似計算して高速化する。
+            #
+            # 自前ビルドのSageAttention 2.2.0から乗り換えた。
+            # (h=40, s=32760, d=128)のマイクロベンチではRTX 5090上で、
+            # PyTorch SDPAの99.12msに対しSageAttentionが37.65ms、こちらが39.75msで、
+            # ガウス乱数入力の相対誤差は前者0.0385に対しこちらが0.0160だった。
+            # 5%の速度差と引き換えにCUDAソースビルドを1つ丸ごと減らせる。
+            #
+            # 利用不可ならComfyUIは黙って別実装へ落ちずに起動時点で終了するので、
+            # 気付かないまま遅い実装で動き続けることはない。
+            "--use-ck-attention"
           ];
         };
       };
-  };
-  networking = {
-    # コンテナから外(モデルやカスタムノードのダウンロードなど)へ出られるようにする。
-    nat = {
-      enable = true;
-      # ULAを持つコンテナをIPv6で外へ出す(`lib/machine-address4.nix`)。
-      enableIPv6 = true;
-      internalInterfaces = [ "ve-*" ];
+      systemd.services.comfyui = {
+        # ComfyUI本体と同じnixpkgsから取る。
+        # comfyui-nixのnixpkgsは`flake.nix`でunstableへfollowさせている。
+        # comfyui-nixのランチャはglibなどのライブラリを`LD_LIBRARY_PATH`で子プロセスにも渡すので、
+        # 別のnixpkgsのffmpegを`path`に置くとglibcの版が合わずに起動できなかった。
+        path = with pkgs-unstable; [
+          ffmpeg-headless
+          oxipng
+        ];
+      };
     };
-    # NetworkManagerがコンテナのvethを管理しようとして競合するのを防ぐ。
-    networkmanager.unmanaged = [ "interface-name:ve-*" ];
   };
   # ComfyUIの出口はインターネットだけ。
   # モデルやカスタムノードの取得に要る。
@@ -242,7 +192,5 @@ in
       MemoryHigh = "85%"; # ソフトリミット。これを超えるとメモリを積極的に解放する。
       MemoryMax = "90%"; # ハードリミット。超えたらcgroupの中でOOM killする。
     };
-    # bind mountするデータディレクトリをホスト側で用意する。
-    tmpfiles.rules = [ "d ${dataDir} 0750 comfyui comfyui - -" ];
   };
 }

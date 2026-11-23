@@ -129,25 +129,14 @@ in
     # 届くのが配信ディレクトリとストアだけになるようにします。
     # 動的なプログラムを動かすわけではないので、microVMではなくコンテナにしています。
     containers.cdn = {
-      autoStart = true;
-      ephemeral = true;
-      privateNetwork = true;
-      # 毎起動ランダムな高位UID範囲へマップして、
-      # コンテナを脱出されてもホスト上では無権限のUIDになるようにします。
-      privateUsers = "pick";
-      hostAddress6 = addr.host6;
-      localAddress6 = addr.guest6;
-      hostAddress = addr.host4;
-      localAddress = addr.guest4;
       # 配信ディレクトリは同期で`D755,F644`に揃えているので、
-      # UIDがマップされないpickでもotherのパーミッションで読めます。
+      # UIDがマップされない`privateUsers = "pick"`でもotherのパーミッションで読めます。
       # 書く必要は無いのでidmapは付けずに読み取り専用で渡します。
       bindMounts.${cdnRoot} = {
         hostPath = cdnRoot;
         isReadOnly = true;
       };
       config = {
-        system.stateVersion = "26.05";
         networking.firewall.allowedTCPPorts = [ cdnPort ];
         services.caddy = {
           enable = true;

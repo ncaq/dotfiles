@@ -1,5 +1,4 @@
 {
-  pkgs,
   lib,
   config,
   inputs,
@@ -7,13 +6,6 @@
 }:
 let
   addr = config.machineAddresses.niks3-private;
-  user = config.serviceUser.niks3-private;
-  postgresGid = config.serviceUser.postgres.gid;
-  niks3User = {
-    inherit (user) uid;
-    group = "niks3-private";
-    isSystemUser = true;
-  };
   # コンテナ内のniks3が待ち受けるポート。
   # ホスト側の中継Caddyも同じ番号のloopbackで待ち受ける。
   # niks3-publicのコンテナも同じ番号を使うが、あちらは自分のnetnsの中なので衝突しない。
@@ -39,29 +31,12 @@ in
   '';
 
   containers.niks3-private = {
-    autoStart = true;
-    ephemeral = true;
-    privateNetwork = true;
-    # PostgreSQLのpeer認証がホストと同一のUIDでの接続を要求するため、
-    # pickにはできずidentity(UID分離なし、capability分離のみ)のまま。
-    privateUsers = "identity";
-    hostAddress6 = addr.host6;
-    localAddress6 = addr.guest6;
-    hostAddress = addr.host4;
-    localAddress = addr.guest4;
+    local = {
+      serviceUser = true;
+      postgres = true;
+      garageBucket = true;
+    };
     bindMounts = {
-      "/run/postgresql" = {
-        hostPath = "/run/postgresql";
-        isReadOnly = true;
-      };
-      "/run/garage-setup/niks3-private/s3-access-key" = {
-        hostPath = "/run/garage-setup/niks3-private/s3-access-key";
-        isReadOnly = true;
-      };
-      "/run/garage-setup/niks3-private/s3-secret-key" = {
-        hostPath = "/run/garage-setup/niks3-private/s3-secret-key";
-        isReadOnly = true;
-      };
       "/run/niks3-private/api-token" = {
         hostPath = config.sops.secrets."niks3-private-api-token".path;
         isReadOnly = true;
@@ -71,69 +46,50 @@ in
         isReadOnly = true;
       };
     };
-    config =
-      { lib, ... }:
-      {
-        imports = [ inputs.niks3.nixosModules.niks3 ];
-        system.stateVersion = "26.05";
-        networking = {
-          useHostResolvConf = lib.mkForce false;
-          firewall.allowedTCPPorts = [ port ];
-          # 同じサーバ上にあるのにわざわざCloudflare Tunnelを経由すると無駄なので、
-          # 同じサーバ上のCaddy経由でGarageコンテナに接続します。
-          # CaddyがLet's Encrypt証明書(DNS-01)でTLS terminationし、
-          # GarageへはHTTPで転送します。
-          # presigned URLはhttps://garage.ncaq.net/...のままなので、
-          # 外部クライアントはCloudflare Tunnel経由でアクセスできます。
-          hosts."${addr.host6}" = [ "garage.ncaq.net" ];
-        };
-        users = {
-          users.niks3-private = niks3User // {
-            extraGroups = [ "postgres" ];
+    config = {
+      imports = [ inputs.niks3.nixosModules.niks3 ];
+      networking = {
+        firewall.allowedTCPPorts = [ port ];
+        # 同じサーバ上にあるのにわざわざCloudflare Tunnelを経由すると無駄なので、
+        # 同じサーバ上のCaddy経由でGarageコンテナに接続します。
+        # CaddyがLet's Encrypt証明書(DNS-01)でTLS terminationし、
+        # GarageへはHTTPで転送します。
+        # presigned URLはhttps://garage.ncaq.net/...のままなので、
+        # 外部クライアントはCloudflare Tunnel経由でアクセスできます。
+        hosts."${addr.host6}" = [ "garage.ncaq.net" ];
+      };
+      services = {
+        niks3 = {
+          enable = true;
+          user = "niks3-private";
+          group = "niks3-private";
+          httpAddr = "[::]:${toString port}";
+          database = {
+            createLocally = false;
+            connectionString = "postgres:///niks3-private?host=/run/postgresql";
           };
-          groups = {
-            niks3-private.gid = user.gid;
-            postgres.gid = postgresGid;
+          s3 = {
+            endpoint = "garage.ncaq.net";
+            bucket = "niks3-private";
+            region = "garage";
+            useSSL = true;
+            accessKeyFile = "/run/garage-setup/niks3-private/s3-access-key";
+            secretKeyFile = "/run/garage-setup/niks3-private/s3-secret-key";
           };
-        };
-        services = {
-          resolved.enable = true;
-          niks3 = {
-            enable = true;
-            user = "niks3-private";
-            group = "niks3-private";
-            httpAddr = "[::]:${toString port}";
-            database = {
-              createLocally = false;
-              connectionString = "postgres:///niks3-private?host=/run/postgresql";
-            };
-            s3 = {
-              endpoint = "garage.ncaq.net";
-              bucket = "niks3-private";
-              region = "garage";
-              useSSL = true;
-              accessKeyFile = "/run/garage-setup/niks3-private/s3-access-key";
-              secretKeyFile = "/run/garage-setup/niks3-private/s3-secret-key";
-            };
-            apiTokenFile = "/run/niks3-private/api-token";
-            signKeyFiles = [ "/run/niks3-private/sign-key" ];
-            # Tailscale Service経由でHTTPSアクセスされるURL。
-            # landing pageと`/api/cache-config`でsubstituterとして案内される。
-            inherit cacheUrl;
-            # readはTailscaleネットワーク認証、writeはAPIトークン認証。
-            readProxy.enable = true;
-            # nix-cache-infoで広告する優先順位(数値が小さいほど高優先)。
-            # tailnet経由のこちらの方がniks3-public(デフォルトの30)より高速なため、
-            # クライアント側でsubstituterの順序に依存せず選ばれるようにします。
-            priority = 20;
-          };
+          apiTokenFile = "/run/niks3-private/api-token";
+          signKeyFiles = [ "/run/niks3-private/sign-key" ];
+          # Tailscale Service経由でHTTPSアクセスされるURL。
+          # landing pageと`/api/cache-config`でsubstituterとして案内される。
+          inherit cacheUrl;
+          # readはTailscaleネットワーク認証、writeはAPIトークン認証。
+          readProxy.enable = true;
+          # nix-cache-infoで広告する優先順位(数値が小さいほど高優先)。
+          # tailnet経由のこちらの方がniks3-public(デフォルトの30)より高速なため、
+          # クライアント側でsubstituterの順序に依存せず選ばれるようにします。
+          priority = 20;
         };
       };
-  };
-
-  users = {
-    users.niks3-private = niks3User;
-    groups.niks3-private.gid = user.gid;
+    };
   };
 
   local = {
@@ -155,27 +111,15 @@ in
     machineEgress.niks3-private = { };
   };
 
-  postgresClient = [ "niks3-private" ];
-
-  systemd.services = {
-    "container@niks3-private" = {
-      requires = [
-        "caddy.service"
-        "garage-setup-niks3-private.service"
-        "postgresql-ready.service"
-        "sops-install-secrets.service"
-      ];
-      after = [
-        "caddy.service"
-        "garage-setup-niks3-private.service"
-        "postgresql-ready.service"
-        "sops-install-secrets.service"
-      ];
-    };
-    garage-setup-niks3-private = import ../../../lib/garage-setup.nix {
-      inherit pkgs config;
-      name = "niks3-private";
-    };
+  systemd.services."container@niks3-private" = {
+    requires = [
+      "caddy.service"
+      "sops-install-secrets.service"
+    ];
+    after = [
+      "caddy.service"
+      "sops-install-secrets.service"
+    ];
   };
 
   # Managed by sops-nix.

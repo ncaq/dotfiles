@@ -27,7 +27,11 @@ in
     postgresClient = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ ];
-      description = "PostgreSQLへpeer認証で接続するクライアントユーザ名のリスト";
+      description = ''
+        PostgreSQLへpeer認証で接続するクライアントユーザ名のリスト。
+        コンテナは`containers.<name>.local.postgres`(`postgresql-client.nix`)で登録するので、
+        直接書くのはホストで動くクライアントだけ。
+      '';
     };
     postgresExtension = lib.mkOption {
       type = lib.types.attrsOf (lib.types.listOf lib.types.str);
@@ -38,18 +42,16 @@ in
 
   config = {
     containers.postgresql = {
-      autoStart = true;
-      ephemeral = true;
       # nixpkgsのデフォルトは1分ですが、
       # ホストの負荷が高いとコンテナ内のsystemdがreadyを通知するまでに1分を超える事があります。
       # CIのブートテストで初回起動が64秒で殺されて失敗し、
       # Restartで上がり直したものの`postgresql-ready.service`が依存失敗のまま放置される事がありました。
       # 起動が遅いだけでコンテナを殺されないように余裕を持たせます。
       timeoutStartSec = "5min";
-      # ネットワークを有効化するためではなく、
-      # ホストのネットワークスタックから隔離してTCP接続を遮断するために有効化している。
-      # hostAddress/localAddressを意図的に設定せず、IPアドレスを持たない状態にしている。
-      privateNetwork = true;
+      # `machineAddresses`へ意図的に載せず、IPアドレスを持たない状態にしている。
+      # `privateNetwork`でホストのネットワークスタックから隔離されているので、
+      # TCPでは誰も繋げない。
+      #
       # peer認証はSO_PEERCREDで得たクライアントの実UIDを、
       # このコンテナのユーザ名前空間で解決してユーザ名と照合する。
       # クライアントはホストや他コンテナ(identity)のプロセスなので、
@@ -73,7 +75,6 @@ in
       config =
         { lib, ... }:
         {
-          system.stateVersion = "26.05";
           # データベースがホスト側で`ja_JP.UTF-8`で初期化されているため、
           # コンテナ内でも同じロケールが必要。
           i18n.defaultLocale = "ja_JP.UTF-8";
@@ -116,6 +117,11 @@ in
               local sameuser all peer
               local all postgres peer
             '';
+            # 書かないとコンテナのタイムゾーンがセッションの既定値になる。
+            # `timestamp without time zone`の列へ`now()`を入れるクライアントがいると、
+            # コンテナのタイムゾーンを変えた時に、それまでの行と新しい行で基準がずれる。
+            # コンテナのタイムゾーンがUTCだった頃からのデータに合わせて固定する。
+            settings.timezone = "UTC";
             ensureDatabases = clientNames;
             ensureUsers = map (name: {
               inherit name;

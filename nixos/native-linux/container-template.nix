@@ -79,7 +79,13 @@
 
   コンテナの再作成をまたいで残すディレクトリ。
   ホストとコンテナで同じパスになる。
-  ホスト側に`0750`でサービスユーザの所有として用意して、コンテナへ読み書きできる形で渡す。
+  ホスト側に`local.persistMode`(既定は`0750`)でサービスユーザの所有として用意して、
+  コンテナへ読み書きできる形で渡す。
+
+  コンテナの中のサービスがそのディレクトリをStateDirectoryにしていると、
+  モードは起動ごとにsystemdが強制する。
+  ここの宣言と食い違うと、ブート直後とサービスの起動後でモードが変わるので、
+  サービスの`StateDirectoryMode`と`local.persistMode`を同じ値に揃える。
 
   `pick`では素のbind mountだと所有者が無効なUIDに見えて書き込めないので、
   idmapで数値のIDをホストとコンテナで同一視させる。
@@ -161,6 +167,11 @@ assert hostInterfaceOf "niks3-private" == "ve-niks3-pr*";
                 ホストとコンテナで同じパスになり、サービスユーザが所有する。
               '';
             };
+            persistMode = lib.mkOption {
+              type = lib.types.strMatching "[0-7]{4}";
+              default = "0750";
+              description = "`local.persist`のディレクトリをホスト側に用意する時のモード。";
+            };
           };
 
           config = lib.mkMerge [
@@ -211,7 +222,7 @@ assert hostInterfaceOf "niks3-private" == "ve-niks3-pr*";
     systemd = {
       tmpfiles.rules = lib.concatLists (
         lib.mapAttrsToList (
-          name: c: map (path: "d ${path} 0750 ${name} ${name} -") c.local.persist
+          name: c: map (path: "d ${path} ${c.local.persistMode} ${name} ${name} -") c.local.persist
         ) withPersist
       );
       services = lib.mapAttrs' (

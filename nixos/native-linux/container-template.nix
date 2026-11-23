@@ -21,6 +21,19 @@
     コンテナにはホストのタイムゾーンが伝播しないので、
     渡さないとUTCになってログやファイル名の時刻がホストとずれる
 
+  # `pkgs`
+
+  コンテナの中の`pkgs`を、ホストの`pkgs`と同じインスタンスにする。
+  コンテナは既定ではホストの`pkgs`を引き継がず、
+  コンテナごとにnixpkgsを読み込み直す。
+  同じパッケージのderivationをコンテナの数だけ評価し直すことになり、
+  `nix-eval-jobs`のワーカは評価中にGCをしないので、その分がそのままメモリの使用量に積み上がる。
+  コンテナを8つ持つseminarでは、
+  ホストの構成の評価が確保する量がこれで約17%減った。
+
+  ホストの`pkgs`を渡すので、
+  コンテナの中のパッケージにもホストのoverlayとunfreeの許可が効く。
+
   # アドレス
 
   `machineAddresses.<name>`があれば、それをvethのアドレスにする。
@@ -74,7 +87,12 @@
   `extraFlags`のbind mountには`bindMounts`と違って`RequiresMountsFor`が自動で付かないので、
   それもここで足す。
 */
-{ lib, config, ... }:
+{
+  lib,
+  pkgs,
+  config,
+  ...
+}:
 let
   hostConfig = config;
   idsOf =
@@ -152,6 +170,7 @@ assert hostInterfaceOf "niks3-private" == "ve-niks3-pr*";
               privateNetwork = lib.mkDefault true;
               privateUsers = lib.mkDefault "pick";
               config = {
+                nixpkgs.pkgs = pkgs;
                 system.stateVersion = lib.mkDefault hostConfig.system.stateVersion;
                 time.timeZone = lib.mkDefault hostConfig.time.timeZone;
                 networking.useHostResolvConf = lib.mkIf networked false;

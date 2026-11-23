@@ -16,7 +16,7 @@
 # 上流がoverlayを`stratovirt`の時だけ足すようになれば、このファイルは要らなくなります。
 # https://github.com/ncaq/dotfiles/issues/1759
 #
-# コンテナの分は`nixos/core/container-pkgs.nix`です。
+# コンテナの分は`nixos/native-linux/container-template.nix`です。
 # 別のファイルにしているのは、
 # `microvm.vms`のオプションがmicroVMのホストモジュールを取り込んだホストにしか無いためです。
 { lib, config, ... }:

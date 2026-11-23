@@ -24,33 +24,41 @@ let
     lib.concatMapStringsSep "; " (dupVal: "${toStr dupVal} (${namesForValue dupVal})") (
       findDuplicates (map (e: e.value) entries)
     );
-in
-assert
-  findDuplicates [
+
+  # 以下は末尾の`assert`のための入力。
+  entry = name: value: { inherit name value; };
+  duplicated = findDuplicates [
     1
     2
     1
     3
     2
-  ] == [
+  ];
+  onePair = formatDuplicates toString [
+    (entry "a" 1)
+    (entry "b" 2)
+    (entry "c" 1)
+  ];
+  twoPairs = formatDuplicates toString [
+    (entry "a" 1)
+    (entry "b" 2)
+    (entry "c" 1)
+    (entry "d" 2)
+  ];
+  noPair = formatDuplicates toString [
+    (entry "a" 1)
+    (entry "b" 2)
+  ];
+in
+assert lib.assertMsg (
+  duplicated == [
     1
     2
-  ];
-assert
-  formatDuplicates toString [
-    {
-      name = "a";
-      value = 1;
-    }
-    {
-      name = "b";
-      value = 2;
-    }
-    {
-      name = "c";
-      value = 1;
-    }
-  ] == "1 (a, c)";
+  ]
+) "2回以上現れる値を、最初に現れた順に1つずつ返しません: ${builtins.toJSON duplicated}";
+assert lib.assertMsg (onePair == "1 (a, c)") "重複が1組の時の書き方が違います: ${onePair}";
+assert lib.assertMsg (twoPairs == "1 (a, c); 2 (b, d)") "重複が2組の時の書き方が違います: ${twoPairs}";
+assert lib.assertMsg (noPair == "") "重複が無い時に空文字列になりません: ${noPair}";
 {
   inherit findDuplicates formatDuplicates;
 }

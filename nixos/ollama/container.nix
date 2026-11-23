@@ -161,14 +161,10 @@ in
             # GNU parallelがsystem userのnologin shellを使わないようにする。
             environment.SHELL = lib.getExe pkgs.bash;
             # OllamaのAPIへ`ollama pull`を頼むだけなので、ネットワーク通信の他は閉じる。
-            # GNU parallelがホームに`.parallel`を作るので、
-            # ホームでもあるデータディレクトリは書き込めるままにする。
-            serviceConfig = hardening.network // {
-              DynamicUser = lib.mkForce false;
-              User = "ollama";
-              Group = "ollama";
-              ReadWritePaths = [ dataDir ];
-            };
+            # データ領域には触らないので、nixpkgsの既定のDynamicUserのまま動かす。
+            # GNU parallelはホームに`.parallel`を作ろうとするが、
+            # 作れなくても警告を出すだけでpullは進む。
+            serviceConfig = hardening.network;
           };
         };
       };

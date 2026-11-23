@@ -54,7 +54,37 @@ let
     SystemCallArchitectures=native
     SystemCallFilter=@system-service
   '';
-  targetPath = "/mnt/noa/snapshot-backup/seminar/root";
+  # 転送先は`/mnt/noa/backup-snapshots/<hostname>/<config>`で名前空間を切る。
+  # snbkが転送先に作る`<番号>/info.xml`と`<番号>/snapshot`は、
+  # snapperの`.snapshots`の中身と同じ形をしている。
+  # 転送先の名前を`.snapshots`にすると、
+  # 親の`backupSubvolume`を`SUBVOLUME`とするsnapperのconfigから見えるので、
+  # 転送先に残す世代をsnapperのtimeline cleanupに決めさせられる。
+  backupSubvolume = "/mnt/noa/backup-snapshots/seminar/root";
+  targetPath = "${backupSubvolume}/.snapshots";
+  # snbkには転送元に無いスナップショットを消す`delete`しか無く、
+  # `transfer-and-delete`だと転送先は転送元の鏡にしかならない。
+  # 転送先はHDDで広いので、転送元より古い世代まで残したい。
+  # 転送だけを行わせて、消すのは下の`noa-backup-seminar-root`のconfigに任せる。
+  # `lowPriority`と同じ理由で`[Service]`セクションを追記する。
+  # 空の代入で上流の`ExecStart`を消してから指定する。
+  transferOnly = ''
+
+    [Service]
+    ExecStart=
+    ExecStart=${pkgs.snapper}/sbin/snbk --verbose --automatic transfer
+  '';
+  # 上流のtimerは1時間ごとに転送する。
+  # 新しい世代は転送元のSSDにも残っていて、
+  # 転送先に欲しいのは古い世代なので、1日に1回で足りる。
+  # 0時ちょうどはその日の最初のスナップショットを作っている最中なので、少しずらす。
+  # 空の代入で上流の`OnCalendar`を消してから指定する。
+  dailyTimer = ''
+
+    [Timer]
+    OnCalendar=
+    OnCalendar=*-*-* 00:30:00
+  '';
   # `/mnt/noa`は`nofail`なので、
   # マウントに失敗してもブートは進みます。
   # マウントされていない時に転送すると、
@@ -72,8 +102,6 @@ in
   # snbk(snapper-backup)でnoa(HDD RAID1)へbtrfs send/receive増分転送する。
   # システムドライブ故障時の復旧と、
   # 容量逼迫時の退避先を兼ねる。
-
-  # 転送先は /mnt/noa/snapshot-backup/<hostname>/<config> で名前空間を切る。
   environment.etc."snapper/backup-configs/seminar-root.json".text = builtins.toJSON {
     config = "root";
     target-mode = "local";
@@ -83,27 +111,57 @@ in
   };
 
   systemd = {
-    # snapper同梱のbackup unitをそのまま流用する。
-    # serviceは`snbk --verbose --automatic transfer-and-delete`を実行し、
-    # `automatic: true`のbackup-configを転送しつつリテンションに基づく削除も行う。
+    # snapper同梱のbackup unitを流用して、実行するコマンドと頻度だけを変える。
     units = {
       "snapper-backup.service".text =
         builtins.readFile "${pkgs.snapper}/lib/systemd/system/snapper-backup.service"
+        + transferOnly
         + lowPriority
         + keepRunningOnSwitch
         + hardeningText
         + requireMount;
       "snapper-backup.timer" = {
-        text = builtins.readFile "${pkgs.snapper}/lib/systemd/system/snapper-backup.timer";
+        text = builtins.readFile "${pkgs.snapper}/lib/systemd/system/snapper-backup.timer" + dailyTimer;
         wantedBy = [ "timers.target" ];
       };
     };
-    # target-path配下のディレクトリを用意する。
-    # サブボリューム自体はdiskoで管理している。
-    # 権限は元の`.snapshots`の典型的形式に合わせています。
+    # snapperは`SUBVOLUME`と、その中の`.snapshots`の両方がbtrfsのサブボリュームであることを求める。
+    # `v`はbtrfsの上ならサブボリュームを作る。
+    # 一番上の`backup-snapshots`はdiskoでも宣言しているが、
+    # diskoはフォーマットの時にしか作らないので、ここでも作る。
+    # 権限は元の`.snapshots`に合わせている。
     tmpfiles.rules = [
-      "d /mnt/noa/snapshot-backup/seminar 0755 root root -"
-      "d /mnt/noa/snapshot-backup/seminar/root 0755 root root -"
+      "v /mnt/noa/backup-snapshots 0755 root root -"
+      "d /mnt/noa/backup-snapshots/seminar 0755 root root -"
+      "v ${backupSubvolume} 0755 root root -"
+      "v ${targetPath} 0755 root root -"
     ];
+  };
+
+  # 転送先に残す世代を決める。
+  # スナップショットは作らず、snbkが転送してきたものを掃除するだけ。
+  # 転送されたスナップショットの`info.xml`は転送元と同じで、
+  # timelineの掃除対象の印が付いている。
+  services.snapper.configs.noa-backup-seminar-root = {
+    SUBVOLUME = backupSubvolume;
+
+    TIMELINE_CREATE = false;
+    TIMELINE_CLEANUP = true;
+
+    # 下限は転送元のrootの上限である10を下回らせない。
+    # 転送元に残っている世代を転送先で消すと、
+    # snbkは足りないものとして次の回に転送し直すので、
+    # 消しては送り直すことを毎日繰り返してしまう。
+    # hourlyは古い世代を残す意味が薄いので転送元と同じにして、
+    # dailyとmonthlyを長く残す。
+    TIMELINE_LIMIT_HOURLY = "10";
+    TIMELINE_LIMIT_DAILY = "10-30";
+    TIMELINE_LIMIT_MONTHLY = "10-36";
+    TIMELINE_LIMIT_YEARLY = "10";
+
+    # 空き容量が逼迫した時に世代数の下限まで追加で削除する。
+    # 範囲指定が必要な理由やSPACE_LIMITを使わない理由は、
+    # rootの設定がある`nixos/native-linux/snapper.nix`に書いている。
+    FREE_LIMIT = "0.2";
   };
 }

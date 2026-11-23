@@ -175,8 +175,11 @@ in
       TIMELINE_CLEANUP = true;
 
       # 下限を`rootLimit`にしている理由は`rootLimit`に書いている。
-      # hourlyは古い世代を残す意味が薄いので転送元と同じにして、
+      # hourlyは古い世代を残す意味が薄いので転送元の上限と同じ単一の値にして、
       # それ以外を長く残す。
+      # 単一の値は範囲のmin=maxとして扱われるので、
+      # hourlyだけは`FREE_LIMIT`による追加の削除の対象にならない。
+      # 転送元に残っている世代を転送先が先に消してはいけないので、これで意図通り。
       TIMELINE_LIMIT_HOURLY = toString rootLimit.hourly;
       TIMELINE_LIMIT_DAILY = "${toString rootLimit.daily}-30";
       TIMELINE_LIMIT_MONTHLY = "${toString rootLimit.monthly}-36";

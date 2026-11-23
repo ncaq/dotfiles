@@ -207,6 +207,11 @@ in
     # ここで宣言する`.network`が先に一致するので、
     # systemdに同梱の`80-container-ve.network`はこのvethには使われない。
     network.networks."20-open-webui-veth" = {
+      # `containers.open-webui.local.hostInterface`は使わない。
+      # systemd-networkdの`matchConfig.Name`はaltnameにも一致するので、
+      # 名前が15文字を超えて主名が縮められても、完全な`ve-<コンテナ名>`で一致する。
+      # あちらは超えた時にワイルドカードになり、
+      # 同じ先頭を持つ他のコンテナのvethにもこのアドレスを付けてしまう。
       matchConfig.Name = "ve-open-webui";
       addresses = [
         { Address = "${addr.host6}/128"; }

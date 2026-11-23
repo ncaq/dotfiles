@@ -79,6 +79,8 @@ let
       # コンテナでは使わない種類だけを禁止する。
       #
       # `@reboot`は禁止しない。実測では、禁止するとコンテナが起動しない。
+      # コンテナの中のsystemdが使うのは`reboot`だけなので、
+      # 同じ`@reboot`に入っているkexecは個別に禁止する。
       # `@debug`は禁止しない。コンテナの中で`strace`や`gdb`を使えるようにしておく。
       SystemCallFilter = [
         "~@clock"
@@ -87,6 +89,8 @@ let
         "~@obsolete"
         "~@raw-io"
         "~@swap"
+        "~kexec_file_load"
+        "~kexec_load"
       ];
     };
 in

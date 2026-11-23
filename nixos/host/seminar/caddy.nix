@@ -4,7 +4,6 @@ let
   garageHostAddr = config.machineAddresses.garage.host6;
   niks3PublicHostAddr = config.machineAddresses.niks3-public.host6;
   niks3PrivateHostAddr = config.machineAddresses.niks3-private.host6;
-  containerIfname = name: import ../../../lib/container-ifname.nix { inherit lib name; };
 in
 {
   # ホスト上でgarage.ncaq.netをローカルのCaddyへ向けます。
@@ -76,7 +75,7 @@ in
       # 他のコンテナがvethのホスト側アドレスの443へ繋ぐ用途は無い。
       # CIランナの中のniks3クライアントも公開DNSで引いてCloudflare Tunnel経由で届く。
       # インタフェース名は`ve-niks3-private`が15文字に収まらず縮められるので、
-      # `lib/container-ifname.nix`でパターンにする。
+      # パターンになっている`containers.<name>.local.hostInterface`を使う。
       #
       # Tailscale経由の接続はここでは開けない。
       # tailscaledが`INPUT`の先頭に挿す`ts-input`チェインが、
@@ -87,7 +86,7 @@ in
       # `tailscale-exit-node.nix`を参照。
       firewall.interfaces =
         lib.genAttrs
-          (map containerIfname [
+          (map (name: config.containers.${name}.local.hostInterface) [
             "niks3-public"
             "niks3-private"
           ])

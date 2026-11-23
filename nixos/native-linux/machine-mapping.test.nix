@@ -1,4 +1,4 @@
-# seminarの`machineAddresses`に掛けている検査が、
+# `machineAddresses`に掛けている検査が、
 # 壊れた宣言で落ちて、正しい宣言では落ちないことを確かめる。
 #
 # 実機の宣言は正しいので、
@@ -23,10 +23,6 @@ let
       # NATの設定を受けるだけ。
       networking = lib.mkOption {
         type = lib.types.anything;
-        default = { };
-      };
-      microvm.vms = lib.mkOption {
-        type = lib.types.attrs;
         default = { };
       };
       local.machineEgress = lib.mkOption {

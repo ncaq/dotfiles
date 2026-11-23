@@ -4,14 +4,6 @@
   ...
 }:
 let
-  addr = config.machineAddresses.forgejo;
-  user = config.serviceUser.forgejo;
-  postgresGid = config.serviceUser.postgres.gid;
-  forgejoUser = {
-    inherit (user) uid;
-    group = "forgejo";
-    isSystemUser = true;
-  };
   # ホストからコンテナ内のforgejoコマンドを実行するラッパスクリプト
   forgejoWrapper = pkgs.writeShellApplication {
     name = "forgejo";
@@ -21,25 +13,15 @@ let
     '';
   };
   garageAddr = config.machineAddresses.garage.guest6;
-  # LFSオブジェクトをgarage(S3互換)に保存するためのバケットとキーをidempotentに作成します。
-  # name = "forgejo" なので/run/garage-setup/forgejoにキーが書き出され、forgejoユーザが所有します。
-  garageSetup = import ../../../lib/garage-setup.nix {
-    inherit pkgs config;
-    name = "forgejo";
-  };
 in
 {
   containers.forgejo = {
-    autoStart = true;
-    ephemeral = true;
-    privateNetwork = true;
-    # PostgreSQLのpeer認証がホストと同一のUIDでの接続を要求するため、
-    # pickにはできずidentity(UID分離なし、capability分離のみ)のまま。
-    privateUsers = "identity";
-    hostAddress6 = addr.host6;
-    localAddress6 = addr.guest6;
-    hostAddress = addr.host4;
-    localAddress = addr.guest4;
+    local = {
+      postgres = true;
+      # LFSオブジェクトをgarage(S3互換)に保存します。
+      garageBucket = true;
+      persist = [ "/var/lib/forgejo" ];
+    };
     forwardPorts = [
       {
         containerPort = 2222;
@@ -47,106 +29,66 @@ in
         protocol = "tcp";
       }
     ];
-    bindMounts = {
-      # garage-setupが出力したS3キーをマウントします。
-      "/run/garage-setup/forgejo/s3-access-key" = {
-        hostPath = "/run/garage-setup/forgejo/s3-access-key";
-        isReadOnly = true;
-      };
-      "/run/garage-setup/forgejo/s3-secret-key" = {
-        hostPath = "/run/garage-setup/forgejo/s3-secret-key";
-        isReadOnly = true;
-      };
-      "/run/postgresql" = {
-        hostPath = "/run/postgresql";
-        isReadOnly = true;
-      };
-      "/var/lib/forgejo" = {
-        hostPath = "/var/lib/forgejo";
-        isReadOnly = false;
-      };
-    };
     config =
-      { config, lib, ... }:
+      { config, ... }:
       {
-        system.stateVersion = "26.05";
-        networking = {
-          useHostResolvConf = lib.mkForce false;
-          firewall.allowedTCPPorts = [
-            2222 # ssh
-            8080 # http
-          ];
-        };
-        users = {
-          users.forgejo = forgejoUser // {
-            extraGroups = [ "postgres" ];
+        networking.firewall.allowedTCPPorts = [
+          2222 # ssh
+          8080 # http
+        ];
+        services.forgejo = {
+          enable = true;
+          # LFSサーバ機能(`LFS_START_SERVER`)を有効化し、
+          # `LFS_JWT_SECRET`も自動生成します。
+          # 保存先は下の`settings.lfs`でminio(garage)に切り替えます。
+          lfs.enable = true;
+          database = {
+            type = "postgres";
+            # PostgreSQLは直接接続されないため、
+            # NixOSによるデータベース自動生成機能は無効にします。
+            createDatabase = false;
+            socket = "/run/postgresql";
           };
-          groups = {
-            forgejo.gid = user.gid;
-            postgres.gid = postgresGid;
+          settings = {
+            server = {
+              HTTP_PORT = 8080;
+              SSH_PORT = 2222;
+              DOMAIN = "forgejo.ncaq.net";
+              ROOT_URL = "https://forgejo.ncaq.net/";
+              SSH_DOMAIN = "ssh.forgejo.ncaq.net";
+              START_SSH_SERVER = true;
+            };
+            session = {
+              COOKIE_SECURE = true;
+            };
+            service = {
+              DISABLE_REGISTRATION = true;
+            };
+            repository = {
+              DEFAULT_BRANCH = "master";
+            };
+            lfs = {
+              # LFSオブジェクトのストレージにgarage(S3互換)を使用。
+              STORAGE_TYPE = "minio";
+              MINIO_ENDPOINT = "[${garageAddr}]:3900";
+              MINIO_BUCKET = "forgejo";
+              MINIO_LOCATION = "garage";
+              # 内部のIP直アクセスのためSSLは不要。
+              MINIO_USE_SSL = false;
+              # コンテナ間はIP直アクセスのためpath style。
+              MINIO_BUCKET_LOOKUP = "path";
+            };
           };
-        };
-        services = {
-          resolved.enable = true;
-          forgejo = {
-            enable = true;
-            # LFSサーバ機能(`LFS_START_SERVER`)を有効化し、
-            # `LFS_JWT_SECRET`も自動生成します。
-            # 保存先は下の`settings.lfs`でminio(garage)に切り替えます。
-            lfs.enable = true;
-            database = {
-              type = "postgres";
-              # PostgreSQLは直接接続されないため、
-              # NixOSによるデータベース自動生成機能は無効にします。
-              createDatabase = false;
-              socket = "/run/postgresql";
-            };
-            settings = {
-              server = {
-                HTTP_PORT = 8080;
-                SSH_PORT = 2222;
-                DOMAIN = "forgejo.ncaq.net";
-                ROOT_URL = "https://forgejo.ncaq.net/";
-                SSH_DOMAIN = "ssh.forgejo.ncaq.net";
-                START_SSH_SERVER = true;
-              };
-              session = {
-                COOKIE_SECURE = true;
-              };
-              service = {
-                DISABLE_REGISTRATION = true;
-              };
-              repository = {
-                DEFAULT_BRANCH = "master";
-              };
-              lfs = {
-                # LFSオブジェクトのストレージにgarage(S3互換)を使用。
-                STORAGE_TYPE = "minio";
-                MINIO_ENDPOINT = "[${garageAddr}]:3900";
-                MINIO_BUCKET = "forgejo";
-                MINIO_LOCATION = "garage";
-                # 内部のIP直アクセスのためSSLは不要。
-                MINIO_USE_SSL = false;
-                # コンテナ間はIP直アクセスのためpath style。
-                MINIO_BUCKET_LOOKUP = "path";
-              };
-            };
-            # S3キーはgarage-setupが起動ごとに生成するため、
-            # LoadCredential経由でファイルから読み込みます。
-            secrets.lfs = {
-              MINIO_ACCESS_KEY_ID = "/run/garage-setup/forgejo/s3-access-key";
-              MINIO_SECRET_ACCESS_KEY = "/run/garage-setup/forgejo/s3-secret-key";
-            };
+          # S3キーはgarage-setupが起動ごとに生成するため、
+          # LoadCredential経由でファイルから読み込みます。
+          secrets.lfs = {
+            MINIO_ACCESS_KEY_ID = "/run/garage-setup/forgejo/s3-access-key";
+            MINIO_SECRET_ACCESS_KEY = "/run/garage-setup/forgejo/s3-secret-key";
           };
         };
         # コンテナ内で管理CLIコマンドを使えるようにします。
         environment.systemPackages = [ config.services.forgejo.package ];
       };
-  };
-
-  users = {
-    users.forgejo = forgejoUser;
-    groups.forgejo.gid = user.gid;
   };
 
   # forgejoの出口。
@@ -161,27 +103,6 @@ in
         address = garageAddr;
         tcpPorts = [ 3900 ];
       }
-    ];
-  };
-
-  postgresClient = [ "forgejo" ];
-
-  systemd = {
-    services = {
-      "container@forgejo" = {
-        requires = [
-          "garage-setup-forgejo.service"
-          "postgresql-ready.service"
-        ];
-        after = [
-          "garage-setup-forgejo.service"
-          "postgresql-ready.service"
-        ];
-      };
-      "garage-setup-forgejo" = garageSetup;
-    };
-    tmpfiles.rules = [
-      "d /var/lib/forgejo 0750 forgejo forgejo -"
     ];
   };
 

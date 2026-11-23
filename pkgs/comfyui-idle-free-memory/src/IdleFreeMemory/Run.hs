@@ -15,7 +15,7 @@
 -- コンテナごと止めれば全て解決するが、それはできない。
 -- ComfyUIはSQLiteへ保存した状態の一部をローカル版では復元できず、
 -- アイドルだからと落とすと利用者が困る。
--- そのため`lib/container-socket-activation.nix`はアイドル停止を持たない。
+-- そのため`nixos/native-linux/container-socket-activation.nix`はアイドル停止を持たない。
 -- プロセスは生かしたまま、メモリだけを返させる。
 --
 -- = アイドルの測り方

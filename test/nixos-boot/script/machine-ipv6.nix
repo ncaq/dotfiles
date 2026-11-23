@@ -10,7 +10,7 @@
 # - IPv6アドレスを持つコンテナの設定ファイルに、ホスト側とコンテナ側のIPv6アドレスが書かれていること。
 #   コンテナのinitとホスト側のpostStartはこのファイルを読んでアドレスと経路を付けます
 # - ホスト側のsystemd-networkdの設定ファイルに、宣言したIPv6アドレスが書かれていること。
-#   `lib/container-veth.nix`とmicroVMのTAPはpostStartではなくこちらで付けます
+#   open-webuiのコンテナのvethとmicroVMのTAPはpostStartではなくこちらで付けます
 # - microVMのTAPに実際にIPv6アドレスが付くこと
 #
 # コンテナのvethは実際のインタフェースを見ません。

@@ -9,17 +9,6 @@
 }:
 let
   port = 11434;
-  # コンテナのvethのアドレス。
-  # ホストとの間はIPv6で繋ぐ。
-  # seminarではホストの`machineAddresses`にも同じ値を予約している。
-  hostAddress6 = "fdf2:a855:5a3f:100::20";
-  localAddress6 = "fdf2:a855:5a3f:100::21";
-  # IPv4は出口のためだけに持たせる(下の`local.machineEgress`を参照)。
-  toAddress4 = import ../../lib/machine-address4.nix { inherit lib; };
-  hostAddress = toAddress4 hostAddress6;
-  localAddress = toAddress4 localAddress6;
-  ollamaUid = 501;
-  ollamaGid = ollamaUid;
   dataDir = config.local.ollama.dataDir;
   enableCuda = config.local.ollama.enableCuda;
   # unstableのOllamaを使う。
@@ -37,30 +26,40 @@ let
   ];
 in
 {
-  users = {
-    users = {
-      ollama = {
-        uid = ollamaUid;
-        group = "ollama";
-        isSystemUser = true;
-      };
-      ${username}.extraGroups = [ "ollama" ];
-    };
-    groups.ollama.gid = ollamaGid;
+  # コンテナのvethのアドレス。
+  # bulletとseminarで同じ値を使う。
+  # seminarでは`nixos/host/seminar/machine-mapping.nix`の割り当てと重ならない値にしている。
+  machineAddresses.ollama = {
+    host6 = "fdf2:a855:5a3f:100::20";
+    guest6 = "fdf2:a855:5a3f:100::21";
+    # 手でpullするhf.coのモデルの配信元のcas-bridge.xethub.hf.co
+    # (下の`local.machineEgress`を参照)。
+    ipv4 = true;
   };
 
+  # DynamicUserにはせずIDを固定する。
+  # コンテナの中のGGUFの登録(`gguf-model-loader.nix`)が、
+  # Ollama本体と同じユーザでデータ領域にマーカを書く。
+  # bind mountしたデータ領域の所有者も、
+  # ephemeralなコンテナの再作成をまたいで同じIDに揃っている必要がある。
+  serviceUser.ollama = {
+    uid = 501;
+    gid = 501;
+  };
+
+  users.users.${username}.extraGroups = [ "ollama" ];
+
   containers.ollama = {
-    # ホスト側のsocketへの初回アクセスで起動する。
-    autoStart = false;
-    ephemeral = true;
-    privateNetwork = true;
-    privateUsers = "pick";
-    inherit
-      hostAddress
-      localAddress
-      hostAddress6
-      localAddress6
-      ;
+    local = {
+      # ホスト側のsocketへの初回アクセスで起動する。
+      socketActivation = {
+        label = "Ollama";
+        inherit port;
+        healthPath = "/api/tags";
+      };
+      # 可変データを永続化する。
+      persist = [ dataDir ];
+    };
     allowedDevices = lib.optionals enableCuda (
       map (node: {
         inherit node;
@@ -79,22 +78,10 @@ in
         };
       }
     );
-    # 可変データを永続化し、
-    # privateUsersによるUID変換後も固定UIDで読み書きできるようにする。
-    extraFlags = [ "--bind=${dataDir}:${dataDir}:idmap" ];
     config =
       { lib, pkgs, ... }:
       {
-        system.stateVersion = "26.05";
-        time.timeZone = "Asia/Tokyo";
-        users = {
-          users.ollama.uid = ollamaUid;
-          groups.ollama.gid = ollamaGid;
-        };
-        networking.useHostResolvConf = lib.mkForce false;
         services = {
-          # ホストのresolv.confを使わないので、コンテナの中の名前解決はresolvedに任せる。
-          resolved.enable = true;
           ollama = {
             enable = true;
             inherit package;
@@ -176,18 +163,16 @@ in
             # tmpfilesで宣言するだけでは既定の0755へ戻されてしまう。
             StateDirectoryMode = "0750";
           };
-          ollama-model-loader = {
+          # nixpkgsのモジュールは取得するモデルが無い時はこのサービスを定義しない。
+          # その時にこちらの上書きだけを入れると、`ExecStart`の無い壊れたユニットが残る。
+          ollama-model-loader = lib.mkIf (config.local.ollama.loadModels != [ ]) {
             # GNU parallelがsystem userのnologin shellを使わないようにする。
             environment.SHELL = lib.getExe pkgs.bash;
             # OllamaのAPIへ`ollama pull`を頼むだけなので、ネットワーク通信の他は閉じる。
-            # GNU parallelがホームに`.parallel`を作るので、
-            # ホームでもあるデータディレクトリは書き込めるままにする。
-            serviceConfig = hardening.network // {
-              DynamicUser = lib.mkForce false;
-              User = "ollama";
-              Group = "ollama";
-              ReadWritePaths = [ dataDir ];
-            };
+            # データ領域には触らないので、nixpkgsの既定のDynamicUserのまま動かす。
+            # GNU parallelはホームに`.parallel`を作ろうとするが、
+            # 作れなくても警告を出すだけでpullは進む。
+            serviceConfig = hardening.network;
           };
         };
       };
@@ -202,20 +187,7 @@ in
       MemoryHigh = "50%";
       MemoryMax = "60%";
     };
-    tmpfiles.rules = [
-      "d ${dataDir} 0750 ollama ollama - -"
-      "d ${dataDir}/models 0750 ollama ollama - -"
-    ];
-  };
-
-  networking = {
-    nat = {
-      enable = true;
-      # ULAを持つコンテナをIPv6で外へ出す(`lib/machine-address4.nix`)。
-      enableIPv6 = true;
-      internalInterfaces = [ "ve-*" ];
-    };
-    networkmanager.unmanaged = [ "interface-name:ve-*" ];
+    tmpfiles.rules = [ "d ${dataDir}/models 0750 ollama ollama - -" ];
   };
 
   # Ollamaの出口はインターネットだけ。

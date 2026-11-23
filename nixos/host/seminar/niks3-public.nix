@@ -1,44 +1,18 @@
 {
-  pkgs,
   config,
   inputs,
   ...
 }:
 let
   addr = config.machineAddresses.niks3-public;
-  user = config.serviceUser.niks3-public;
-  postgresGid = config.serviceUser.postgres.gid;
-  niks3User = {
-    inherit (user) uid;
-    group = "niks3-public";
-    isSystemUser = true;
-  };
 in
 {
   containers.niks3-public = {
-    autoStart = true;
-    ephemeral = true;
-    privateNetwork = true;
-    # PostgreSQLのpeer認証がホストと同一のUIDでの接続を要求するため、
-    # pickにはできずidentity(UID分離なし、capability分離のみ)のまま。
-    privateUsers = "identity";
-    hostAddress6 = addr.host6;
-    localAddress6 = addr.guest6;
-    hostAddress = addr.host4;
-    localAddress = addr.guest4;
+    local = {
+      postgres = true;
+      garageBucket = true;
+    };
     bindMounts = {
-      "/run/postgresql" = {
-        hostPath = "/run/postgresql";
-        isReadOnly = true;
-      };
-      "/run/garage-setup/niks3-public/s3-access-key" = {
-        hostPath = "/run/garage-setup/niks3-public/s3-access-key";
-        isReadOnly = true;
-      };
-      "/run/garage-setup/niks3-public/s3-secret-key" = {
-        hostPath = "/run/garage-setup/niks3-public/s3-secret-key";
-        isReadOnly = true;
-      };
       "/run/niks3-public/api-token" = {
         hostPath = config.sops.secrets."niks3-public-api-token".path;
         isReadOnly = true;
@@ -48,96 +22,77 @@ in
         isReadOnly = true;
       };
     };
-    config =
-      { lib, ... }:
-      {
-        imports = [ inputs.niks3.nixosModules.niks3 ];
-        system.stateVersion = "26.05";
-        networking = {
-          useHostResolvConf = lib.mkForce false;
-          firewall.allowedTCPPorts = [ 5751 ];
-          # 同じサーバ上にあるのにわざわざCloudflare Tunnelを経由すると無駄なので、
-          # 同じサーバ上のCaddy経由でGarageコンテナに接続します。
-          # CaddyがLet's Encrypt証明書(DNS-01)でTLS terminationし、
-          # GarageへはHTTPで転送します。
-          # presigned URLはhttps://garage.ncaq.net/...のままなので、
-          # 外部クライアントはCloudflare Tunnel経由でアクセスできます。
-          hosts."${addr.host6}" = [ "garage.ncaq.net" ];
-        };
-        users = {
-          users.niks3-public = niks3User // {
-            extraGroups = [ "postgres" ];
+    config = {
+      imports = [ inputs.niks3.nixosModules.niks3 ];
+      networking = {
+        firewall.allowedTCPPorts = [ 5751 ];
+        # 同じサーバ上にあるのにわざわざCloudflare Tunnelを経由すると無駄なので、
+        # 同じサーバ上のCaddy経由でGarageコンテナに接続します。
+        # CaddyがLet's Encrypt証明書(DNS-01)でTLS terminationし、
+        # GarageへはHTTPで転送します。
+        # presigned URLはhttps://garage.ncaq.net/...のままなので、
+        # 外部クライアントはCloudflare Tunnel経由でアクセスできます。
+        hosts."${addr.host6}" = [ "garage.ncaq.net" ];
+      };
+      services = {
+        niks3 = {
+          enable = true;
+          user = "niks3-public";
+          group = "niks3-public";
+          httpAddr = "[::]:5751";
+          database = {
+            createLocally = false;
+            connectionString = "postgres:///niks3-public?host=/run/postgresql";
           };
-          groups = {
-            niks3-public.gid = user.gid;
-            postgres.gid = postgresGid;
+          s3 = {
+            endpoint = "garage.ncaq.net";
+            bucket = "niks3-public";
+            region = "garage";
+            useSSL = true;
+            accessKeyFile = "/run/garage-setup/niks3-public/s3-access-key";
+            secretKeyFile = "/run/garage-setup/niks3-public/s3-secret-key";
           };
-        };
-        services = {
-          resolved.enable = true;
-          niks3 = {
-            enable = true;
-            user = "niks3-public";
-            group = "niks3-public";
-            httpAddr = "[::]:5751";
-            database = {
-              createLocally = false;
-              connectionString = "postgres:///niks3-public?host=/run/postgresql";
-            };
-            s3 = {
-              endpoint = "garage.ncaq.net";
-              bucket = "niks3-public";
-              region = "garage";
-              useSSL = true;
-              accessKeyFile = "/run/garage-setup/niks3-public/s3-access-key";
-              secretKeyFile = "/run/garage-setup/niks3-public/s3-secret-key";
-            };
-            apiTokenFile = "/run/niks3-public/api-token";
-            signKeyFiles = [ "/run/niks3-public/sign-key" ];
-            cacheUrl = "https://niks3-public.ncaq.net";
-            # publicバケットですがGarage S3 APIが匿名読み取りを未サポートのため、
-            # niks3のread proxy経由で配信しています。
-            # Garage v3.0で匿名アクセスが実装予定のようです。
-            # [Allow anonymous access on the S3 endpoint](https://git.deuxfleurs.fr/Deuxfleurs/garage/issues/263)
-            # よって実装されたらS3直接読み取りを有効化して性能を改善する予定です。
-            # 互換性のためread proxyは残したままにするかもしれませんが。
-            # 今でもweb endpointを使えば匿名アクセスは可能かもしれませんが、
-            # 正規の方法で匿名アクセスが実装予定なのにそういったトリッキーなことはしたくありません。
-            readProxy.enable = true;
-            oidc.providers.github = {
-              issuer = "https://token.actions.githubusercontent.com";
-              audience = "https://niks3-public.ncaq.net";
-              # 書き込めるトークンがあれば任意の中身をサーバの署名付きで置けるので、
-              # 発行元をなるべく絞る。
-              # PRのビルド結果もキャッシュに載せたいので`ref`では絞らず、
-              # Renovateの起動した実行も載せたいので`actor`でも絞らない。
-              boundClaims = {
-                repository_owner = [ "ncaq" ];
-                # アカウント名は変更や再取得がありえるので、不変の数値IDでも確かめる。
-                # `gh api users/ncaq --jq .id`で得られる。
-                repository_owner_id = [ "2913112" ];
-                # privateリポジトリの成果物を公開キャッシュへ出さない。
-                repository_visibility = [ "public" ];
-                # 書き込み権限の無い人が起動できるのにベースリポジトリの権限で動く、
-                # `pull_request_target`や`workflow_run`や`issue_comment`などを締め出す。
-                # フォークからの`pull_request`にはそもそもトークンが発行されない。
-                event_name = [
-                  "merge_group"
-                  "pull_request"
-                  "push"
-                  "schedule"
-                  "workflow_dispatch"
-                ];
-              };
+          apiTokenFile = "/run/niks3-public/api-token";
+          signKeyFiles = [ "/run/niks3-public/sign-key" ];
+          cacheUrl = "https://niks3-public.ncaq.net";
+          # publicバケットですがGarage S3 APIが匿名読み取りを未サポートのため、
+          # niks3のread proxy経由で配信しています。
+          # Garage v3.0で匿名アクセスが実装予定のようです。
+          # [Allow anonymous access on the S3 endpoint](https://git.deuxfleurs.fr/Deuxfleurs/garage/issues/263)
+          # よって実装されたらS3直接読み取りを有効化して性能を改善する予定です。
+          # 互換性のためread proxyは残したままにするかもしれませんが。
+          # 今でもweb endpointを使えば匿名アクセスは可能かもしれませんが、
+          # 正規の方法で匿名アクセスが実装予定なのにそういったトリッキーなことはしたくありません。
+          readProxy.enable = true;
+          oidc.providers.github = {
+            issuer = "https://token.actions.githubusercontent.com";
+            audience = "https://niks3-public.ncaq.net";
+            # 書き込めるトークンがあれば任意の中身をサーバの署名付きで置けるので、
+            # 発行元をなるべく絞る。
+            # PRのビルド結果もキャッシュに載せたいので`ref`では絞らず、
+            # Renovateの起動した実行も載せたいので`actor`でも絞らない。
+            boundClaims = {
+              repository_owner = [ "ncaq" ];
+              # アカウント名は変更や再取得がありえるので、不変の数値IDでも確かめる。
+              # `gh api users/ncaq --jq .id`で得られる。
+              repository_owner_id = [ "2913112" ];
+              # privateリポジトリの成果物を公開キャッシュへ出さない。
+              repository_visibility = [ "public" ];
+              # 書き込み権限の無い人が起動できるのにベースリポジトリの権限で動く、
+              # `pull_request_target`や`workflow_run`や`issue_comment`などを締め出す。
+              # フォークからの`pull_request`にはそもそもトークンが発行されない。
+              event_name = [
+                "merge_group"
+                "pull_request"
+                "push"
+                "schedule"
+                "workflow_dispatch"
+              ];
             };
           };
         };
       };
-  };
-
-  users = {
-    users.niks3-public = niks3User;
-    groups.niks3-public.gid = user.gid;
+    };
   };
 
   # niks3-publicの出口。
@@ -147,27 +102,15 @@ in
   # それは`caddy.nix`が開けている。
   local.machineEgress.niks3-public.internet = true;
 
-  postgresClient = [ "niks3-public" ];
-
-  systemd.services = {
-    "container@niks3-public" = {
-      requires = [
-        "caddy.service"
-        "garage-setup-niks3-public.service"
-        "postgresql-ready.service"
-        "sops-install-secrets.service"
-      ];
-      after = [
-        "caddy.service"
-        "garage-setup-niks3-public.service"
-        "postgresql-ready.service"
-        "sops-install-secrets.service"
-      ];
-    };
-    garage-setup-niks3-public = import ../../../lib/garage-setup.nix {
-      inherit pkgs config;
-      name = "niks3-public";
-    };
+  systemd.services."container@niks3-public" = {
+    requires = [
+      "caddy.service"
+      "sops-install-secrets.service"
+    ];
+    after = [
+      "caddy.service"
+      "sops-install-secrets.service"
+    ];
   };
 
   # Managed by sops-nix.

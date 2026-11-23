@@ -16,6 +16,10 @@ NixOSのシステム設定です。
 - `server/`: サーバに固有の設定。クライアントPCには適用しない
 - `wsl/`: WSL2環境専用の設定
 
+NixOS Containerの定義の定型は、
+`native-linux/container-template.nix`が既定値と`containers.<name>.local`の宣言から生成します。
+個々のコンテナの定義には、そのコンテナに固有のことだけを書きます。
+
 各ディレクトリの`default.nix`は`importDirModules`で中の`.nix`を全て読み込むので、
 ファイルを足すだけで有効になります。
 仕組みは`lib/import-dir-modules.nix`に書いてあります。

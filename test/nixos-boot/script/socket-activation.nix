@@ -1,4 +1,4 @@
-# `lib/container-socket-activation.nix`が作るproxyを確認します。
+# `nixos/native-linux/container-socket-activation.nix`が作るproxyを確認します。
 #
 # 待ち受けは、IPv6のloopbackに加えて、
 # 既定の接続先を`127.0.0.1`で持つ外部のツールのためにIPv4のloopbackでも意図して残しています。
@@ -8,8 +8,14 @@
 # `systemd-socket-proxyd`が角括弧付きの書き方を名前として引いて失敗するからです。
 # 直感に反するので、「直す」つもりで囲むと壊れます。
 #
+# proxyを宣言したコンテナは、ブート時には起動しない設定になります。
+# その設定は`container-template.nix`の既定値との優先度の組み合わせで決まるので、
+# どちらかを書き換えると、GPUを掴むコンテナがブート時に起動するようになります。
+# テストVMではコンテナが起動できないので、それでも評価とブートは通ったまま退行します。
+#
 # 以下を見ます。
 #
+# - proxyを宣言したコンテナの`autoStart`が切れていること。評価時に見ます
 # - socketが宣言した全てのアドレスで待ち受けていること。
 #   接続すると起動の引き金になってテストVMの中でコンテナが起き上がるので、`ss`で見ます
 # - 実際の`ExecStart`をそのまま動かすと、転送先へ中継できること。
@@ -45,7 +51,8 @@ lib.concatStrings (
       # 読み取りが崩れると、VMの中のアドレスの追加やサーバの起動で落ちて原因が分かりにくいので、
       # 読み取った値をコンテナの宣言と突き合わせて評価時に止めます。
       # ポートはホスト側とコンテナ側で共通です。
-      expectedAddress = config.containers.${lib.removeSuffix "-proxy" name}.localAddress6;
+      container = config.containers.${lib.removeSuffix "-proxy" name};
+      expectedAddress = container.localAddress6;
       expectedPort = lib.last (lib.splitString ":" (lib.head socket.listenStreams));
       port = checkPort index;
     in
@@ -55,6 +62,7 @@ lib.concatStrings (
     assert lib.assertMsg (
       targetPort == expectedPort
     ) "${name}: ExecStartから読んだ転送先のポート${targetPort}が待ち受けのポート${expectedPort}と一致しません";
+    assert lib.assertMsg (!container.autoStart) "${name}: socketで起動するコンテナが`autoStart`でブート時にも起動します";
     lib.concatMapStrings (
       stream: # python
       ''

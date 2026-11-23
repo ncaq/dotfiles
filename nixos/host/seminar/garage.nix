@@ -6,13 +6,6 @@
   ...
 }:
 let
-  addr = config.machineAddresses.garage;
-  user = config.serviceUser.garage;
-  garageUser = {
-    inherit (user) uid;
-    group = "garage";
-    isSystemUser = true;
-  };
   # コンテナ内へbind mountされる環境ファイルのパス。
   # sops-nixの展開先はramfsでidmapped mountに対応していないため、
   # container@garageのExecStartPreがtmpfsである/runへ複製したものをbind mountする。
@@ -43,90 +36,67 @@ let
 in
 {
   containers.garage = {
-    autoStart = true;
-    ephemeral = true;
-    privateNetwork = true;
-    # 毎起動ランダムな高位UID範囲へマップして、
-    # コンテナを脱出されてもホスト上では無権限のUIDになるようにする。
-    # identityと違いコンテナ内rootがホストのUID 0を持たなくなる。
-    # garageはUNIXソケットのpeer認証を使わないためpickにできる。
-    privateUsers = "pick";
-    hostAddress6 = addr.host6;
-    localAddress6 = addr.guest6;
-    hostAddress = addr.host4;
-    localAddress = addr.guest4;
-    # pickでは素のbind mountだと所有者が無効なUIDに見えてアクセスできないため、
-    # idmapオプションで数値IDをホストとコンテナで同一視させる。
-    # データディレクトリはbtrfs、環境ファイルはtmpfs上にありどちらもidmap対応。
-    # `bindMounts`はマウントオプションを渡せないのでextraFlagsで指定する。
-    extraFlags = [
-      "--bind-ro=${envDir}:${envDir}:idmap"
-      "--bind=/var/lib/garage/meta:/var/lib/garage/meta:idmap"
-      "--bind=/mnt/noa/garage/data:/mnt/noa/garage/data:idmap"
-    ];
-    config =
-      { lib, ... }:
-      {
-        system.stateVersion = "26.05";
-        networking = {
-          useHostResolvConf = lib.mkForce false;
-          firewall.allowedTCPPorts = [
-            3900 # S3 API
-            3903 # Admin API (プライベートネットワーク経由でホストからのみアクセス)
-          ];
-        };
-        users = {
-          users.garage = garageUser;
-          groups.garage.gid = user.gid;
-        };
-        services = {
-          resolved.enable = true;
-          garage = {
-            enable = true;
-            package = pkgs.garage_2;
-            environmentFile = envFile;
-            settings = {
-              metadata_dir = "/var/lib/garage/meta";
-              data_dir = "/mnt/noa/garage/data";
-              db_engine = "lmdb";
-              metadata_auto_snapshot_interval = "6h";
-              replication_factor = 1;
-              rpc_bind_addr = "[::1]:3901";
-              # 他のノードと`garage`のCLIがこのノードへ繋ぐ先。
-              # 省くとCLIは`rpc_bind_addr`ではなく既定の`127.0.0.1:3901`へ繋ぎに行って失敗する。
-              # 単一ノードなので待ち受けと同じloopbackを書く。
-              rpc_public_addr = "[::1]:3901";
-              s3_api = {
-                s3_region = "garage";
-                api_bind_addr = "[::]:3900";
-                root_domain = ".garage.ncaq.net";
-              };
-              admin = {
-                api_bind_addr = "[::]:3903";
-              };
-            };
+    local = {
+      # どちらもbtrfsの上にあり、idmapped mountに対応している。
+      persist = [
+        "/var/lib/garage/meta"
+        "/mnt/noa/garage/data"
+      ];
+    };
+    # 環境ファイルはtmpfsの上にあり、idmapped mountに対応している。
+    extraFlags = [ "--bind-ro=${envDir}:${envDir}:idmap" ];
+    config = {
+      networking.firewall.allowedTCPPorts = [
+        3900 # S3 API
+        3903 # Admin API (プライベートネットワーク経由でホストからのみアクセス)
+      ];
+      services.garage = {
+        enable = true;
+        package = pkgs.garage_2;
+        environmentFile = envFile;
+        settings = {
+          metadata_dir = "/var/lib/garage/meta";
+          data_dir = "/mnt/noa/garage/data";
+          db_engine = "lmdb";
+          metadata_auto_snapshot_interval = "6h";
+          replication_factor = 1;
+          rpc_bind_addr = "[::1]:3901";
+          # 他のノードと`garage`のCLIがこのノードへ繋ぐ先。
+          # 省くとCLIは`rpc_bind_addr`ではなく既定の`127.0.0.1:3901`へ繋ぎに行って失敗する。
+          # 単一ノードなので待ち受けと同じloopbackを書く。
+          rpc_public_addr = "[::1]:3901";
+          s3_api = {
+            s3_region = "garage";
+            api_bind_addr = "[::]:3900";
+            root_domain = ".garage.ncaq.net";
+          };
+          admin = {
+            api_bind_addr = "[::]:3903";
           };
         };
-        # ホスト側bind mountの所有権と一致する明示的なUIDを使うためDynamicUserを無効化する。
-        # DynamicUser=trueが暗黙に有効化していたセキュリティ設定を再有効化し、
-        # さらに追加のハードニングを上乗せする。
-        # GarageはRustバイナリで、必要なのはS3/RPC/Admin APIのTCP通信と、
-        # bind mountされたmetadata_dirとdata_dirへのファイルアクセスだけ。
-        # これらは上流モジュールのStateDirectory/ReadWritePathsで書き込み可能になっている。
-        systemd.services.garage.serviceConfig = hardening.network // {
-          DynamicUser = lib.mkForce false;
-          User = "garage";
-          Group = "garage";
-          # DynamicUser=trueが暗黙に有効化していたIPC隔離を再有効化する。
-          RemoveIPC = true;
-        };
-        environment.systemPackages = [ pkgs.garage_2 ];
       };
-  };
-
-  users = {
-    users.garage = garageUser;
-    groups.garage.gid = user.gid;
+      # ホスト側bind mountの所有権と一致する明示的なUIDを使うためDynamicUserを無効化する。
+      #
+      # DynamicUserへ戻すには、データを全てStateDirectoryの下へ置いて、
+      # 所有者をsystemdに任せることになる。
+      # しかしコンテナのルートはephemeralで、StateDirectoryの親は起動のたびに作り直される。
+      # systemdは親の所有者が合わなければ中身を再帰的にchownするので、
+      # HDDの上の全てのデータブロックを起動のたびに辿ることになる。
+      #
+      # DynamicUser=trueが暗黙に有効化していたセキュリティ設定を再有効化し、
+      # さらに追加のハードニングを上乗せする。
+      # GarageはRustバイナリで、必要なのはS3/RPC/Admin APIのTCP通信と、
+      # bind mountされたmetadata_dirとdata_dirへのファイルアクセスだけ。
+      # これらは上流モジュールのStateDirectory/ReadWritePathsで書き込み可能になっている。
+      systemd.services.garage.serviceConfig = hardening.network // {
+        DynamicUser = lib.mkForce false;
+        User = "garage";
+        Group = "garage";
+        # DynamicUser=trueが暗黙に有効化していたIPC隔離を再有効化する。
+        RemoveIPC = true;
+      };
+      environment.systemPackages = [ pkgs.garage_2 ];
+    };
   };
 
   # garageは外へ出ない。
@@ -139,9 +109,6 @@ in
     services."container@garage" = {
       requires = [ "sops-install-secrets.service" ];
       after = [ "sops-install-secrets.service" ];
-      # extraFlagsのbind mountはbindMountsと違いRequiresMountsForが自動付与されないため、
-      # 明示的に指定して/mnt/noaのマウントを待つ。
-      unitConfig.RequiresMountsFor = [ "/mnt/noa/garage/data" ];
       # sopsテンプレートの環境ファイルをtmpfsへ複製する。
       # 展開先の/run/secrets.dはramfsでidmapped mountできないため、
       # idmap対応のtmpfs(/run)に置き直してからコンテナへbind mountする。
@@ -168,11 +135,10 @@ in
         } ${envFile}";
       };
     };
+    # `local.persist`のディレクトリの親。
     tmpfiles.rules = [
-      "d /var/lib/garage      0750 garage garage -"
-      "d /var/lib/garage/meta 0750 garage garage -"
-      "d /mnt/noa/garage      0750 garage garage -"
-      "d /mnt/noa/garage/data 0750 garage garage -"
+      "d /var/lib/garage 0750 garage garage -"
+      "d /mnt/noa/garage 0750 garage garage -"
     ];
   };
 

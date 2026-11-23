@@ -41,6 +41,6 @@ Nixで書いたテストのうち、
 リポジトリのどこに置いても`collect-nix-tests.nix`が集めて、
 1ファイルが`checks`の1つの`nix-test-*`になります。
 
-- `nixos/host/seminar/machine-mapping.nix`のテストは`nixos/host/seminar/machine-mapping.test.nix`
+- `nixos/native-linux/machine-mapping.nix`のテストは`nixos/native-linux/machine-mapping.test.nix`
 - トピックを分ける時は`nixos/native-linux/networking.container-dns.test.nix`のように`<実装の名前>.<トピック>.test.nix`
 - `importDirModules`は`.test.nix`をモジュールとして読まない

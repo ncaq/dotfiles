@@ -51,10 +51,6 @@ in
       };
       # モデルやカスタムノードなどのデータはホスト側に永続化する。
       persist = [ dataDir ];
-      # comfyui-nixのモジュールは`dataDir`をStateDirectoryにしていて、
-      # モードは起動ごとにsystemdが既定の0755にする。
-      # ブート直後とComfyUIの起動後でモードが変わらないように、宣言を合わせる。
-      persistMode = "0755";
     };
     # CUDAを使うためにNVIDIAデバイスをコンテナへ渡す。
     allowedDevices = map (node: {
@@ -155,6 +151,10 @@ in
           ffmpeg-headless
           oxipng
         ];
+        # comfyui-nixのモジュールは`dataDir`をStateDirectoryにしている。
+        # StateDirectoryのモードは起動ごとにsystemdが強制するため、
+        # tmpfilesで宣言するだけでは既定の0755へ戻されてしまう。
+        serviceConfig.StateDirectoryMode = "0750";
       };
     };
   };

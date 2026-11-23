@@ -141,12 +141,16 @@ in
     # `v`はbtrfsの上ならサブボリュームを作る。
     # 一番上の`backup-snapshots`はdiskoでも宣言しているが、
     # diskoはフォーマットの時にしか作らないので、ここでも作る。
-    # 権限は元の`.snapshots`に合わせている。
+    # スナップショットを置く2つはrootだけが辿れるようにする。
+    # 古い世代には、後から権限を絞ったファイルの古い版が残っている。
+    # 保持期間が長いので、他のユーザから読める期間も長くなってしまう。
+    # snapperが`.snapshots`に求めるのは所有者がrootでグループに書き込ませないことだけなので、
+    # `0700`でも使える。
     tmpfiles.rules = [
       "v /mnt/noa/backup-snapshots 0755 root root -"
       "d /mnt/noa/backup-snapshots/seminar 0755 root root -"
-      "v ${backupSubvolume} 0755 root root -"
-      "v ${targetPath} 0755 root root -"
+      "v ${backupSubvolume} 0700 root root -"
+      "v ${targetPath} 0700 root root -"
     ];
   };
 

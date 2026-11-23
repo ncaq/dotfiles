@@ -37,8 +37,11 @@ in
     ipv4 = true;
   };
 
-  # ホスト側のGGUFの登録(`gguf-model-loader.nix`)がデータ領域を同じユーザで読み書きするので、
   # DynamicUserにはせずIDを固定する。
+  # コンテナの中のGGUFの登録(`gguf-model-loader.nix`)が、
+  # Ollama本体と同じユーザでデータ領域にマーカを書く。
+  # bind mountしたデータ領域の所有者も、
+  # ephemeralなコンテナの再作成をまたいで同じIDに揃っている必要がある。
   serviceUser.ollama = {
     uid = 501;
     gid = 501;

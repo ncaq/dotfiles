@@ -6,9 +6,9 @@
 # 汎用モデルは32GiBのVRAMに対して28.8GiBあるので、
 # ComfyUIが重みを掴んだままだとCUDAのOOMで載らない。
 #
-# ComfyUIのコンテナは`socket-activation.nix`のオンデマンド起動で上がるが、
+# ComfyUIのコンテナは`local.socketActivation`のオンデマンド起動で上がるが、
 # 一度起動すると手で止めるまで動き続ける。
-# `lib/container-socket-activation.nix`がアイドル停止を持たないのは、
+# `nixos/native-linux/container-socket-activation.nix`がアイドル停止を持たないのは、
 # 生成の途中で止める誤爆の方が困るという判断による。
 # アイドルが続けば`pkgs/comfyui-idle-free-memory`の常駐プロセスが降ろさせるが、
 # それは最後の活動から一定の時間が経ってからで、使い終わった直後には空かない。

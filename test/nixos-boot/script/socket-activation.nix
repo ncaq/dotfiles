@@ -1,4 +1,4 @@
-# `lib/container-socket-activation.nix`が作るproxyを確認します。
+# `nixos/native-linux/container-socket-activation.nix`が作るproxyを確認します。
 #
 # 待ち受けは、IPv6のloopbackに加えて、
 # 既定の接続先を`127.0.0.1`で持つ外部のツールのためにIPv4のloopbackでも意図して残しています。

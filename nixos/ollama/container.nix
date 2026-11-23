@@ -47,10 +47,14 @@ in
   users.users.${username}.extraGroups = [ "ollama" ];
 
   containers.ollama = {
-    # ホスト側のsocketへの初回アクセスで起動する。
-    autoStart = false;
     local = {
       serviceUser = true;
+      # ホスト側のsocketへの初回アクセスで起動する。
+      socketActivation = {
+        label = "Ollama";
+        inherit port;
+        healthPath = "/api/tags";
+      };
       # 可変データを永続化する。
       persist = [ dataDir ];
     };

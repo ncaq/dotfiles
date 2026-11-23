@@ -69,7 +69,7 @@ let
         # systemdの既定の起動レート制限(10秒に5回)に掛からないため、
         # 直らない状態で10秒間隔の再起動を永久に繰り返す。
         #
-        # `lib/container-socket-activation.nix`が`comfyui-proxy`へ入れているものと同じ、
+        # `nixos/native-linux/container-socket-activation.nix`が`comfyui-proxy`へ入れているものと同じ、
         # nixpkgsの`ollama-model-loader`由来の指数バックオフで抑える。
         Restart = "always";
         RestartSec = "10s";

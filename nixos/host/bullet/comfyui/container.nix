@@ -39,10 +39,16 @@ in
   # 外部から取得したモデルやカスタムノードを実行するサービスなので、
   # NixOS Containersに包んで隔離してリスクを減らす。
   containers.comfyui = {
-    # ソケットアクティベーションでオンデマンド起動するのでブート時には起動しない。
-    autoStart = false;
     local = {
       serviceUser = true;
+      # GPUを触るサービスを常時起動させたくないので、
+      # ソケットアクティベーションによるオンデマンド起動にする。
+      socketActivation = {
+        label = "ComfyUI";
+        inherit port;
+        # ComfyUIには専用のヘルスチェック用エンドポイントがないのでルートを使う。
+        healthPath = "/";
+      };
       # モデルやカスタムノードなどのデータはホスト側に永続化する。
       persist = [ dataDir ];
     };

@@ -176,14 +176,9 @@ in
       };
   };
 
-  systemd = lib.mkMerge [
-    (import ../../../../lib/container-veth.nix {
-      inherit lib;
-      name = "open-webui";
-      inherit addr;
-    })
-    {
-      services."container@open-webui".serviceConfig = {
+  systemd = {
+    services."container@open-webui" = {
+      serviceConfig = {
         # 音声の書き起こしではfaster-whisperがプロセス内でCPU推論する。
         # 常時起動のホストで他のワークロードを巻き添えにしないよう上限を設ける。
         # OSや他の処理のために2スレッド分を残す既存のCPU予算を使う。
@@ -191,6 +186,37 @@ in
         MemoryHigh = "8G"; # ソフトリミット。これを超えるとメモリを積極的に解放する。
         MemoryMax = "16G"; # ハードリミット。大きな文書の取り込みでも足りるだろうという推定値。
       };
-    }
-  ];
+      # NixOSコンテナモジュールが生成する`postStart`は`ip addr add`と`ip route add`を使うため、
+      # 下のsystemd-networkdが先に設定済みだとEEXISTで失敗する。
+      # 実際の設定はsystemd-networkdへ任せるので、冪等にして失敗を無視する。
+      postStart = lib.mkForce ''
+        ifaceHost=ve-$INSTANCE
+        ip link set dev "$ifaceHost" up
+        ip -6 addr add ${addr.host6} dev "$ifaceHost" 2>/dev/null || true
+        ip -6 route add ${addr.guest6} dev "$ifaceHost" 2>/dev/null || true
+        ip addr add ${addr.host4} dev "$ifaceHost" 2>/dev/null || true
+        ip route add ${addr.guest4} dev "$ifaceHost" 2>/dev/null || true
+      '';
+    };
+    # vethへホスト側からアドレスとルートを設定する。
+    #
+    # NixOSコンテナモジュールのExecStartPostはコンテナのdefault target到達後に実行されるため、
+    # コンテナ内のサービスが起動する時点ではホスト側のネットワーク設定が終わっていない。
+    # Open WebUIは起動時にホストのCaddyを通してOllamaへ繋ぎに行くので、
+    # ホスト側の設定を待つとデッドロックする。
+    # systemd-networkdはvethの作成直後に設定を適用するのでこの順序問題が起きない。
+    # ここで宣言する`.network`が先に一致するので、
+    # systemdに同梱の`80-container-ve.network`はこのvethには使われない。
+    network.networks."20-open-webui-veth" = {
+      matchConfig.Name = "ve-open-webui";
+      addresses = [
+        { Address = "${addr.host6}/128"; }
+        { Address = "${addr.host4}/32"; }
+      ];
+      routes = [
+        { Destination = "${addr.guest6}/128"; }
+        { Destination = "${addr.guest4}/32"; }
+      ];
+    };
+  };
 }

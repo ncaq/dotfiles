@@ -21,6 +21,8 @@
 
   個々のコンテナで外す必要が出た時は、
   `systemd.services."container@<name>".serviceConfig`を`lib.mkForce`で上書きする。
+  コンテナの中で`sudo`のようなsetuidのプログラムを働かせる必要が出た時は、
+  そのコンテナの`NoNewPrivileges`を外す。
 */
 {
   lib,
@@ -40,7 +42,9 @@ let
       "MemoryDenyWriteExecute"
       # 実測では、nspawnが`clone`に失敗してコンテナが起動しない。
       "RestrictNamespaces"
-      # 実測では、コンテナの中のNixOSがsetuidのラッパを作れない。
+      # 実測では、コンテナの中のNixOSがsetuidのラッパを作れずにactivationが失敗する。
+      # 外すのはラッパを作れるようにするためで、ラッパが働くようにはならない。
+      # `NoNewPrivileges`が残るので、コンテナの中でsetuidやsetgidのプログラムを実行しても権限は上がらない。
       "RestrictSUIDSGID"
       # 実測では、nspawnがコンテナのホスト名を設定できない。
       "ProtectHostname"

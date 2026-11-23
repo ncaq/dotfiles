@@ -1,5 +1,17 @@
 { pkgs, ... }:
 let
+  # 転送元のrootに残す世代の上限。
+  # 古い世代はnoaに残るので、SSDの上では他のホストより少なくする。
+  # 転送先に残す世代の下限にも同じ値を使う。
+  # 転送元に残っている世代を転送先で消すと、
+  # snbkは足りないものとして次の回に転送し直すので、
+  # 消しては送り直すことを毎日繰り返してしまう。
+  rootLimit = {
+    hourly = 10;
+    daily = 7;
+    monthly = 2;
+    yearly = 2;
+  };
   # snapper.nixの`lowPriority`と同じ意図で、btrfs send/receiveの転送を低優先度にする。
   # snapper-backup.serviceは`systemd.units`の生テキストで定義しているため、
   # `serviceConfig`では上書きできない。
@@ -138,30 +150,42 @@ in
     ];
   };
 
-  # 転送先に残す世代を決める。
-  # スナップショットは作らず、snbkが転送してきたものを掃除するだけ。
-  # 転送されたスナップショットの`info.xml`は転送元と同じで、
-  # timelineの掃除対象の印が付いている。
-  services.snapper.configs.noa-backup-seminar-root = {
-    SUBVOLUME = backupSubvolume;
+  services.snapper.configs = {
+    # 転送元。
+    # 全ホストに共通のrootの設定は`nixos/native-linux/snapper.nix`にある。
+    # seminarだけ上限を`rootLimit`へ下げる。
+    # hourlyとdailyの下限は共通の設定と同じ2のままにする。
+    # monthlyとyearlyは古い世代がnoaにあるので、
+    # 空き容量が逼迫した時はSSDの上から全て消してよい。
+    root = {
+      TIMELINE_LIMIT_HOURLY = "2-${toString rootLimit.hourly}";
+      TIMELINE_LIMIT_DAILY = "2-${toString rootLimit.daily}";
+      TIMELINE_LIMIT_MONTHLY = "0-${toString rootLimit.monthly}";
+      TIMELINE_LIMIT_YEARLY = "0-${toString rootLimit.yearly}";
+    };
 
-    TIMELINE_CREATE = false;
-    TIMELINE_CLEANUP = true;
+    # 転送先に残す世代を決める。
+    # スナップショットは作らず、snbkが転送してきたものを掃除するだけ。
+    # 転送されたスナップショットの`info.xml`は転送元と同じで、
+    # timelineの掃除対象の印が付いている。
+    noa-backup-seminar-root = {
+      SUBVOLUME = backupSubvolume;
 
-    # 下限は転送元のrootの上限である10を下回らせない。
-    # 転送元に残っている世代を転送先で消すと、
-    # snbkは足りないものとして次の回に転送し直すので、
-    # 消しては送り直すことを毎日繰り返してしまう。
-    # hourlyは古い世代を残す意味が薄いので転送元と同じにして、
-    # dailyとmonthlyを長く残す。
-    TIMELINE_LIMIT_HOURLY = "10";
-    TIMELINE_LIMIT_DAILY = "10-30";
-    TIMELINE_LIMIT_MONTHLY = "10-36";
-    TIMELINE_LIMIT_YEARLY = "10";
+      TIMELINE_CREATE = false;
+      TIMELINE_CLEANUP = true;
 
-    # 空き容量が逼迫した時に世代数の下限まで追加で削除する。
-    # 範囲指定が必要な理由やSPACE_LIMITを使わない理由は、
-    # rootの設定がある`nixos/native-linux/snapper.nix`に書いている。
-    FREE_LIMIT = "0.2";
+      # 下限を`rootLimit`にしている理由は`rootLimit`に書いている。
+      # hourlyは古い世代を残す意味が薄いので転送元と同じにして、
+      # それ以外を長く残す。
+      TIMELINE_LIMIT_HOURLY = toString rootLimit.hourly;
+      TIMELINE_LIMIT_DAILY = "${toString rootLimit.daily}-30";
+      TIMELINE_LIMIT_MONTHLY = "${toString rootLimit.monthly}-36";
+      TIMELINE_LIMIT_YEARLY = "${toString rootLimit.yearly}-10";
+
+      # 空き容量が逼迫した時に世代数の下限まで追加で削除する。
+      # 範囲指定が必要な理由やSPACE_LIMITを使わない理由は、
+      # rootの設定がある`nixos/native-linux/snapper.nix`に書いている。
+      FREE_LIMIT = "0.2";
+    };
   };
 }

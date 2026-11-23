@@ -40,7 +40,6 @@ in
   # NixOS Containersに包んで隔離してリスクを減らす。
   containers.comfyui = {
     local = {
-      serviceUser = true;
       # GPUを触るサービスを常時起動させたくないので、
       # ソケットアクティベーションによるオンデマンド起動にする。
       socketActivation = {

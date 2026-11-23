@@ -46,7 +46,6 @@ in
 
   containers.open-webui = {
     local = {
-      serviceUser = true;
       postgres = true;
       # DBとベクトルはPostgreSQLへ移したため、
       # ここに残るのはアップロードされたファイルや書き起こしのモデルのキャッシュなどで、

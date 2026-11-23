@@ -17,7 +17,6 @@ in
 {
   containers.forgejo = {
     local = {
-      serviceUser = true;
       postgres = true;
       # LFSオブジェクトをgarage(S3互換)に保存します。
       garageBucket = true;

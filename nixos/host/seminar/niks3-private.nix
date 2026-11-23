@@ -32,7 +32,6 @@ in
 
   containers.niks3-private = {
     local = {
-      serviceUser = true;
       postgres = true;
       garageBucket = true;
     };

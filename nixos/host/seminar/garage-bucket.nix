@@ -13,7 +13,7 @@
   古いキーが蓄積するのは問題にならないと想定している。
 
   キーのファイルはコンテナと同じ名前のユーザの所有になるので、
-  `local.serviceUser`でホストにもそのユーザを作っておく必要がある。
+  `local.serviceUser`も有効にして、ホストにもそのユーザを作る。
 
   garageへ繋ぐ経路はコンテナごとに違うので、
   `local.machineEgress`などの宣言は個々のコンテナの定義に残す。
@@ -75,38 +75,25 @@ in
             description = "コンテナと同じ名前のgarageのバケットとS3のキーを用意して、キーをコンテナへ渡すか。";
           };
 
-          config.bindMounts = lib.mkIf config.local.garageBucket (
-            lib.genAttrs (keyFiles name) (path: {
+          config = lib.mkIf config.local.garageBucket {
+            local.serviceUser = true;
+            bindMounts = lib.genAttrs (keyFiles name) (path: {
               hostPath = path;
               isReadOnly = true;
-            })
-          );
+            });
+          };
         }
       )
     );
   };
 
-  config = {
-    systemd.services = lib.mkMerge (
-      map (name: {
-        "garage-setup-${name}" = setupOf name;
-        "container@${name}" = {
-          requires = [ "garage-setup-${name}.service" ];
-          after = [ "garage-setup-${name}.service" ];
-        };
-      }) clients
-    );
-
-    assertions = [
-      (
-        let
-          userless = lib.filter (name: !config.containers.${name}.local.serviceUser) clients;
-        in
-        {
-          assertion = userless == [ ];
-          message = "containers.<name>.local.garageBucket: キーのファイルの所有者になるユーザが要るので`local.serviceUser`も有効にしてください: ${lib.concatStringsSep ", " userless}";
-        }
-      )
-    ];
-  };
+  config.systemd.services = lib.mkMerge (
+    map (name: {
+      "garage-setup-${name}" = setupOf name;
+      "container@${name}" = {
+        requires = [ "garage-setup-${name}.service" ];
+        after = [ "garage-setup-${name}.service" ];
+      };
+    }) clients
+  );
 }

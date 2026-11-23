@@ -75,6 +75,9 @@
   bind mountしたディレクトリの所有権がずれないようにIDを固定する。
   ホスト側にも作るのは、その所有者をホストから名前で扱うため。
 
+  `local.persist`のように所有者になるユーザを必要とする宣言は、これを自動で有効にする。
+  直接書くのは、それらを使わずにユーザだけが要る時に限る。
+
   # `local.persist`
 
   コンテナの再作成をまたいで残すディレクトリ。
@@ -174,6 +177,8 @@ assert hostInterfaceOf "niks3-private" == "ve-niks3-pr*";
               ephemeral = lib.mkDefault true;
               privateNetwork = lib.mkDefault true;
               privateUsers = lib.mkDefault "pick";
+              # 残すディレクトリには所有者になるユーザが要る。
+              local.serviceUser = lib.mkIf (cfg.persist != [ ]) true;
               config = {
                 nixpkgs.pkgs = pkgs;
                 system.stateVersion = lib.mkDefault hostConfig.system.stateVersion;
@@ -223,17 +228,5 @@ assert hostInterfaceOf "niks3-private" == "ve-niks3-pr*";
         name: c: lib.nameValuePair "container@${name}" { unitConfig.RequiresMountsFor = c.local.persist; }
       ) (lib.filterAttrs (_: usesIdmap) withPersist);
     };
-
-    assertions = [
-      (
-        let
-          ownerless = lib.attrNames (lib.filterAttrs (_: c: !c.local.serviceUser) withPersist);
-        in
-        {
-          assertion = ownerless == [ ];
-          message = "containers.<name>.local.persist: 所有者になるサービスユーザが要るので`local.serviceUser`も有効にしてください: ${lib.concatStringsSep ", " ownerless}";
-        }
-      )
-    ];
   };
 }

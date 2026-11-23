@@ -51,7 +51,6 @@ in
 
   containers.ollama = {
     local = {
-      serviceUser = true;
       # ホスト側のsocketへの初回アクセスで起動する。
       socketActivation = {
         label = "Ollama";

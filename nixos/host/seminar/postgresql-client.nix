@@ -15,7 +15,7 @@
   peer認証は、接続してきたプロセスのUIDをPostgreSQLのコンテナの中でユーザ名に解決して照合する。
   UIDをずらす`pick`では解決できないので、
   `privateUsers`は`identity`(UID分離なし、capability分離のみ)にする。
-  同じ理由でDynamicUserにもできず、`local.serviceUser`でIDを固定したユーザが要る。
+  同じ理由でDynamicUserにもできないので、`local.serviceUser`も有効にしてIDを固定したユーザを作る。
 */
 { lib, config, ... }:
 let
@@ -36,6 +36,7 @@ in
 
           config = lib.mkIf config.local.postgres {
             privateUsers = "identity";
+            local.serviceUser = true;
             bindMounts."/run/postgresql" = {
               hostPath = "/run/postgresql";
               isReadOnly = true;
@@ -62,17 +63,5 @@ in
         }
       ) clients
     );
-
-    assertions = [
-      (
-        let
-          userless = lib.filter (name: !config.containers.${name}.local.serviceUser) clients;
-        in
-        {
-          assertion = userless == [ ];
-          message = "containers.<name>.local.postgres: peer認証にはIDを固定したユーザが要るので`local.serviceUser`も有効にしてください: ${lib.concatStringsSep ", " userless}";
-        }
-      )
-    ];
   };
 }

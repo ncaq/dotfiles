@@ -9,7 +9,6 @@ in
 {
   containers.niks3-public = {
     local = {
-      serviceUser = true;
       postgres = true;
       garageBucket = true;
     };

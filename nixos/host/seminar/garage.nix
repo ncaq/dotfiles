@@ -37,7 +37,6 @@ in
 {
   containers.garage = {
     local = {
-      serviceUser = true;
       # どちらもbtrfsの上にあり、idmapped mountに対応している。
       persist = [
         "/var/lib/garage/meta"

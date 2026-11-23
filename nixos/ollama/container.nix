@@ -161,7 +161,9 @@ in
             # tmpfilesで宣言するだけでは既定の0755へ戻されてしまう。
             StateDirectoryMode = "0750";
           };
-          ollama-model-loader = {
+          # nixpkgsのモジュールは取得するモデルが無い時はこのサービスを定義しない。
+          # その時にこちらの上書きだけを入れると、`ExecStart`の無い壊れたユニットが残る。
+          ollama-model-loader = lib.mkIf (config.local.ollama.loadModels != [ ]) {
             # GNU parallelがsystem userのnologin shellを使わないようにする。
             environment.SHELL = lib.getExe pkgs.bash;
             # OllamaのAPIへ`ollama pull`を頼むだけなので、ネットワーク通信の他は閉じる。

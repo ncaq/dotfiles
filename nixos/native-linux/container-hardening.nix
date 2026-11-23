@@ -82,6 +82,9 @@ let
       # コンテナの中のsystemdが使うのは`reboot`だけなので、
       # 同じ`@reboot`に入っているkexecは個別に禁止する。
       # `@debug`は禁止しない。コンテナの中で`strace`や`gdb`を使えるようにしておく。
+      # `@clock`は`hardening.network`から残る`ProtectClock`も同じものを禁止するので重複している。
+      # `systemd-analyze security`は`SystemCallFilter`に書いたものしか数えず、
+      # 外すと守りは同じまま評価だけが7.5から7.7へ悪くなるので、ここにも書いておく。
       SystemCallFilter = [
         "~@clock"
         "~@cpu-emulation"

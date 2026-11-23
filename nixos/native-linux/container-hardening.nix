@@ -15,9 +15,18 @@
 
   nspawnはコンテナを作るために名前空間もマウントも強い権限も使うので、
   `hardening.network`の多くは適用できない。
+  そのまま残るのは以下になる。
+
+  - `NoNewPrivileges`
+  - `ProtectClock`
+  - `RestrictRealtime`
+  - `SystemCallArchitectures`
+
+  `RestrictAddressFamilies`と`SystemCallFilter`は、コンテナに合わせた値へ置き換える。
+
   外すものはそれぞれ理由を下に書く。
   「実測」と書いたものは、その設定だけを足したコンテナをVMで起動して確かめた結果。
-  `systemd-analyze security`の評価が高くならないのは、その結果になる。
+  多くを外しているので、`systemd-analyze security`の評価は7.5までしか良くならない。
 
   個々のコンテナで外す必要が出た時は、
   `systemd.services."container@<name>".serviceConfig`を`lib.mkForce`で上書きする。

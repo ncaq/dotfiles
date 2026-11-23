@@ -124,8 +124,20 @@ in
     services.snapper.configs = lib.mkIf cfg.snapper (
       lib.mapAttrs (name: _device: {
         SUBVOLUME = "/mnt/${name}";
+        # スナップショットの作成と掃除は`removable-crypt`がマウント時とアンマウント時に行う。
+        # systemdのtimerに任せると、挿していない間はマウントポイントが無くて失敗する。
         TIMELINE_CREATE = false;
         TIMELINE_CLEANUP = false;
+
+        # マウント時に実行する`snapper cleanup timeline`が読む。
+        # 空き容量が逼迫した時に世代数の下限まで追加で削除する。
+        # 範囲指定が必要な理由やSPACE_LIMITを使わない理由は、
+        # rootの設定がある`nixos/native-linux/snapper.nix`に書いている。
+        TIMELINE_LIMIT_HOURLY = "2-10";
+        TIMELINE_LIMIT_DAILY = "2-10";
+        TIMELINE_LIMIT_MONTHLY = "2-10";
+        TIMELINE_LIMIT_YEARLY = "2-10";
+        FREE_LIMIT = "0.2";
       }) cfg.devices
     );
   };

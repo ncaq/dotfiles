@@ -1,4 +1,4 @@
-{ hardening, ... }:
+{ lib, hardening, ... }:
 let
   # snapperのスナップショット作成・クリーンアップは緊急性がないので、
   # 他のプロセスを妨害しないようにCPUとI/Oの優先度を下げる。
@@ -32,10 +32,12 @@ in
         # それでもFREE_LIMITを満たせない時だけ、
         # min値まで追加で削除する(2パス目)。
         # maxは従来のデフォルト値、minは容量が逼迫した時に残す最低世代数。
-        TIMELINE_LIMIT_HOURLY = "2-10";
-        TIMELINE_LIMIT_DAILY = "2-10";
-        TIMELINE_LIMIT_MONTHLY = "2-10";
-        TIMELINE_LIMIT_YEARLY = "2-10";
+        # 古い世代を別のディスクへ退避しているホストは上限を下げたいので、
+        # ホストの側で上書きできるように`mkDefault`にしている。
+        TIMELINE_LIMIT_HOURLY = lib.mkDefault "2-10";
+        TIMELINE_LIMIT_DAILY = lib.mkDefault "2-10";
+        TIMELINE_LIMIT_MONTHLY = lib.mkDefault "2-10";
+        TIMELINE_LIMIT_YEARLY = lib.mkDefault "2-10";
 
         # 空き容量がこの割合を下回ると、timeline cleanupが世代数の制限とは別に、
         # 古いスナップショットから追加で削除して空き容量を確保する。

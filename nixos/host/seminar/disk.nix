@@ -204,9 +204,9 @@ in
             # noa config(SUBVOLUME = /mnt/noa)のタイムラインスナップショットに含まれず、
             # バックアップの二重保存を避けられる。
             # `mountpoint`は指定しない。
-            # トップレベルがマウントされている`/mnt/noa/snapshot-backup`として参照でき、
+            # トップレベルがマウントされている`/mnt/noa/backup-snapshots`として参照でき、
             # 別途マウントユニットを生成するとブート時のマウント失敗でemergencyに落ちるため。
-            "snapshot-backup" = { };
+            "backup-snapshots" = { };
           };
           extraArgs = [
             "-d raid1"

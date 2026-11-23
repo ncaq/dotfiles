@@ -85,7 +85,7 @@ let
   parseIpv6 = import ../../lib/parse-ipv6.nix { inherit lib; };
 
   # 宣言を名前付きのリストにして、インタフェースのパターンごとにまとめる。
-  # `lib/container-ifname.nix`のワイルドカードで複数のコンテナが同じパターンに一致する時、
+  # `containers.<name>.local.hostInterface`のワイルドカードで複数のコンテナが同じパターンに一致する時、
   # マシンごとにルールを並べると先のマシンのdropで後のマシンのacceptが届かなくなる。
   # 同じパターンのマシンは同じ方針でなければならない(assertionで検査する)ので、
   # パターンごとに1組だけ出す。
@@ -156,8 +156,10 @@ in
           options = {
             interface = lib.mkOption {
               type = lib.types.str;
-              default = import ../../lib/container-ifname.nix { inherit lib name; };
-              defaultText = lib.literalMD "`lib/container-ifname.nix`でコンテナ名から導いたvethの名前";
+              default =
+                config.containers.${name}.local.hostInterface
+                  or (throw "local.machineEgress.${name}: 同じ名前のコンテナが無いので`interface`を導けません");
+              defaultText = lib.literalMD "同じ名前のコンテナの`containers.<name>.local.hostInterface`";
               description = ''
                 このマシンからのパケットが入ってくるホスト側のインタフェース名。
                 nftablesの`iifname`に渡すので末尾の`*`でワイルドカードにできる。

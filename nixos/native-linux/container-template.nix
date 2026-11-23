@@ -33,6 +33,27 @@
   nixpkgsのresolvedのモジュールが有効なままだと評価を止めるため。
   コンテナ向けの既定値は`mkDefault true`なので、`mkForce`は要らない。
 
+  # `local.hostInterface`
+
+  vethのホスト側のインタフェース名を、
+  nftablesの`iifname`や`networking.firewall.interfaces`で使える形で持つ読み取り専用の値。
+
+  nspawnはvethを`ve-<コンテナ名>`と名付けるが、
+  Linuxのインタフェース名はIFNAMSIZの制限で15文字までしか持てない。
+  収まらない名前はsystemdの`shorten_ifname`が先頭11文字を残して、
+  元の名前のハッシュから作った4文字を足した名前に縮める。
+  実機では`ve-niks3-private`が`ve-niks3-preMOW`になっている。
+
+  縮めた後の4文字はNixから再現できないので、
+  先頭11文字にワイルドカードを付けた形にする。
+  元の名前はaltnameとして残っていてsystemd-networkdの`matchConfig.Name`は拾えるが、
+  nftablesの`iifname`は主名しか見ないため、
+  firewallの側ではこの形でなければ何にも一致しない。
+
+  同じ11文字を共有するコンテナは同じパターンに一致する。
+  パターンでfirewallを開ける時はその全てに開くことになるので、
+  使う側はそれで良いかを確かめること。
+
   # `local.serviceUser`
 
   `serviceUser.<name>`のIDで、コンテナと同じ名前のユーザとグループを、
@@ -68,7 +89,21 @@ let
   withServiceUser = lib.filterAttrs (_: c: c.local.serviceUser) config.containers;
   withPersist = lib.filterAttrs (_: c: c.local.persist != [ ]) config.containers;
   usesIdmap = c: c.privateUsers == "pick";
+  hostInterfaceOf =
+    name:
+    let
+      full = "ve-${name}";
+      # IFNAMSIZは終端のNULを含めて16なので、名前として使えるのは15文字まで。
+      maxLength = 15;
+      # 縮める時に残る先頭の長さ。15文字からハッシュの4文字を引いた11。
+      keptLength = maxLength - 4;
+    in
+    if lib.stringLength full <= maxLength then full else "${lib.substring 0 keptLength full}*";
 in
+assert hostInterfaceOf "open-webui" == "ve-open-webui";
+# ちょうど15文字の名前は縮められない。
+assert hostInterfaceOf "niks3-public" == "ve-niks3-public";
+assert hostInterfaceOf "niks3-private" == "ve-niks3-pr*";
 {
   options.containers = lib.mkOption {
     type = lib.types.attrsOf (
@@ -81,6 +116,17 @@ in
         in
         {
           options.local = {
+            hostInterface = lib.mkOption {
+              type = lib.types.str;
+              readOnly = true;
+              default = hostInterfaceOf name;
+              defaultText = lib.literalMD "コンテナ名から導いたvethの名前。15文字に収まらない名前は先頭11文字と`*`";
+              description = ''
+                vethのホスト側のインタフェース名。
+                nftablesの`iifname`や`networking.firewall.interfaces`に渡せる形で、
+                末尾が`*`のワイルドカードになることがある。
+              '';
+            };
             serviceUser = lib.mkOption {
               type = lib.types.bool;
               default = false;

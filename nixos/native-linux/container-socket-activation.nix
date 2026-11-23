@@ -3,7 +3,7 @@
   ホスト側のsocketへの初回アクセスで起動するproxyを、
   `containers.<name>.local.socketActivation`の宣言から生成する。
 
-  対象ごとにコンテナ名とポートと疎通確認パスしか違わないため、
+  対象ごとにコンテナ名と表示名とポートと疎通確認パスしか違わないため、
   それぞれに同じ形の定義を書くと片方だけ直した差分が残りやすい。
 
   ```nix
@@ -36,7 +36,13 @@ let
     name: container:
     let
       inherit (container.local.socketActivation) label port healthPath;
-      inherit (container) localAddress6;
+      # アドレスの無いコンテナへは中継できない。
+      # そのまま文字列へ埋め込むと原因の分からないエラーで評価が止まるので、理由を添えて止める。
+      localAddress6 =
+        if container.localAddress6 == null then
+          throw "containers.${name}.local.socketActivation: 中継先になる`localAddress6`がありません。`machineAddresses.${name}`を宣言してください"
+        else
+          container.localAddress6;
       containerService = "container@${name}.service";
     in
     {

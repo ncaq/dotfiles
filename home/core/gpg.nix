@@ -128,7 +128,7 @@ lib.mkMerge [
       activation.cleanGpgKeyboxd = entryBetween [ "importGpgKeys" ] [ "createGpgHomedir" ] ''
         $DRY_RUN_CMD ${lib.getExe' config.programs.gpg.package "gpgconf"} --kill keyboxd 2>/dev/null || true
         $DRY_RUN_CMD ${lib.getExe' pkgs.coreutils "rm"} -rf \
-          "${config.home.homeDirectory}/.gnupg/public-keys.d/"
+          "${config.programs.gpg.homedir}/public-keys.d/"
       '';
     };
   })

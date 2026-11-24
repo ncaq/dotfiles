@@ -34,20 +34,23 @@ lib.mkMerge [
       # `gpg.conf`を弄っても効かない(keyboxd設定は`common.conf`を見る)ため、
       # `programs.gpg.settings`ではなく直接ファイルを配置しています。
       file.".gnupg/common.conf".text = "";
-      # 非gracefulなシャットダウン(WSL終了など)でgpg-agentのsentinel lockが残留し、
-      # importGpgKeysでgpg-agentに接続できなくなることがあります。
-      # importGpgKeysの前にstaleなロックファイルを削除して回避します。
-      activation.cleanGpgStaleLocks = entryBetween [ "importGpgKeys" ] [ "createGpgHomedir" ] ''
-        $DRY_RUN_CMD ${pkgs.trash-cli}/bin/trash \
-          "${config.programs.gpg.homedir}/gnupg_spawn_agent_sentinel.lock" \
-          2>/dev/null || true
-      '';
       packages = with pkgs; [
         # 最終復旧手段として印刷するためのパッケージ。
         paperkey
       ];
     };
   }
+  (lib.mkIf (!useVault) {
+    # 非gracefulなシャットダウン(WSL終了など)でgpg-agentのsentinel lockが残留し、
+    # importGpgKeysでgpg-agentに接続できなくなることがあります。
+    # importGpgKeysの前にstaleなロックファイルを削除して回避します。
+    # sentinel lockはgpgがagentを自動起動する時に作るものです。
+    # vaultを使う環境は`no-autostart`で自動起動しないので、ロックが作られません。
+    home.activation.cleanGpgStaleLocks = entryBetween [ "importGpgKeys" ] [ "createGpgHomedir" ] ''
+      $DRY_RUN_CMD ${lib.getExe' pkgs.coreutils "rm"} -f \
+        "${config.programs.gpg.homedir}/gnupg_spawn_agent_sentinel.lock"
+    '';
+  })
   (lib.mkIf (!isTermux && useVault) {
     # NixOS環境: 秘密鍵はgpg-vaultユーザのagentが保持するため、
     # ncaq側ではgpg-agentを起動しません。
@@ -124,9 +127,8 @@ lib.mkMerge [
       # stale lockのない状態で鍵を再インポートします。
       activation.cleanGpgKeyboxd = entryBetween [ "importGpgKeys" ] [ "createGpgHomedir" ] ''
         $DRY_RUN_CMD ${lib.getExe' config.programs.gpg.package "gpgconf"} --kill keyboxd 2>/dev/null || true
-        $DRY_RUN_CMD ${pkgs.trash-cli}/bin/trash \
-          "${config.home.homeDirectory}/.gnupg/public-keys.d/" \
-          2>/dev/null || true
+        $DRY_RUN_CMD ${lib.getExe' pkgs.coreutils "rm"} -rf \
+          "${config.programs.gpg.homedir}/public-keys.d/"
       '';
     };
   })

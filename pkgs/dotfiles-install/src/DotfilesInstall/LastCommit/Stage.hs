@@ -60,15 +60,8 @@ withStagedLastCommit repository action = do
         <> "`で外してください"
   discard = doesFileExist path >>= (`when` remove)
   -- 消せなくても、無視されているファイルが残るだけなので、記録だけして続ける。
-  -- `trash`があればそちらで消して、無い環境ではそのまま消す。
   remove =
-    findExecutable "trash" >>= \case
-      Just trash -> do
-        code <- runProcess (proc trash [path])
-        unless (code == ExitSuccess) $
-          logWarnN ("注入したファイルをtrashで消せませんでした: " <> convert (show code))
-      Nothing ->
-        tryIO (removeFile path) >>= \case
-          Right () -> pure ()
-          Left failure ->
-            logWarnN ("注入したファイルを消せませんでした: " <> convert (displayException failure))
+    tryIO (removeFile path) >>= \case
+      Right () -> pure ()
+      Left failure ->
+        logWarnN ("注入したファイルを消せませんでした: " <> convert (displayException failure))

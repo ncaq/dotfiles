@@ -11,9 +11,27 @@
   nix = {
     settings = {
       experimental-features = [
+        # 下の`auto-allocate-uids`の設定を使えるようにします。
+        "auto-allocate-uids"
+        # uidの範囲を持つビルドはcgroupの中で動かす決まりなので、
+        # 下の`uid-range`を提供するために要ります。
+        "cgroups"
+        # このリポジトリの前提であるNix Flakesと、それを扱う`nix`コマンドです。
         "flakes"
         "nix-command"
       ];
+      # ビルドに使うuidを、`nixbld`のユーザからではなく動的に割り当てます。
+      # 下の`uid-range`が求めるuidの範囲は、この方法でしか割り当てられません。
+      # コンテナを使わない普通のビルドも、動的に割り当てたuidで動くようになります。
+      auto-allocate-uids = true;
+      # NixOS Testのマシンを、QEMUのVMではなくsystemd-nspawnのコンテナ(`containers`)で動かせるようにします。
+      # コンテナはビルドのサンドボックスの中で起動するので、
+      # サンドボックスの中にrootを含むuidの範囲が要ります。
+      # テストのderivationはそれを`uid-range`という機能として要求するので、
+      # このデーモンが提供できると宣言します。
+      # クライアントからの`--option`では受け付けられず、デーモンの設定に書く必要があります。
+      # 必要な設定はNixOSのマニュアルの"Running Tests"の"System Requirements"に書いてあります。
+      extra-system-features = [ "uid-range" ];
       substituters = [
         "https://cache.nixos.org/"
         "https://niks3-public.ncaq.net/"

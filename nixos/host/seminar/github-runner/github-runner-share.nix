@@ -76,10 +76,12 @@ let
   # 必要な設定だけを抜き出します。
   ciNixSettings = {
     inherit (config.nix.settings)
-      experimental-features
-      cores
-      max-jobs
       accept-flake-config
+      auto-allocate-uids
+      cores
+      experimental-features
+      extra-system-features
+      max-jobs
       trusted-users
       ;
   };

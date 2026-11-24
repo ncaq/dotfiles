@@ -99,6 +99,14 @@
         command = lib.getExe pkgs.ccstatusline;
       };
       inputNeededNotifEnabled = true; # 入力待ちのときに通知を出す。
+      env = {
+        # Bashツールが使うシェルを、ログインシェルのzshではなくbashにします。
+        # Claudeはbashを前提にコマンドを書くので、
+        # zshだとマッチしないglobがエラーになるなどの非互換でよく失敗するためです。
+        # 動かないパスを渡すと黙ってログインシェルに戻るので、
+        # `bash.nix`で設定しているbashをストアパスで指定します。
+        CLAUDE_CODE_SHELL = lib.getExe config.programs.bash.package;
+      };
       sandbox = {
         # sandboxは通常無効にします。
         # sandboxであることが由来のトラブルが多すぎるためです。

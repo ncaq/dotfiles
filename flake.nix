@@ -33,7 +33,11 @@
     };
 
     nix-on-droid = {
-      url = "github:nix-community/nix-on-droid/release-24.05";
+      # 最後のリリースブランチの`release-24.05`が同梱するprootは、
+      # glibc 2.42以降の`tcgetattr`が発行するioctlを処理できず、nixpkgs 26.05では適用に失敗する。
+      # 新しいprootを指しているのはmasterだけなので、リリースブランチではなくmasterを使う。
+      # [Activation failed with nixos-unstable and 26.05](https://github.com/nix-community/nix-on-droid/issues/495)
+      url = "github:nix-community/nix-on-droid";
       inputs = {
         nixpkgs.follows = "nixpkgs";
         home-manager.follows = "home-manager";

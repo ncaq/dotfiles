@@ -25,7 +25,7 @@ inputs.nix-on-droid.lib.nixOnDroidConfiguration {
   inherit pkgs;
   modules = [
     {
-      # nix-on-droidのセットアップ時の最新バージョン。
+      # nix-on-droidが受け付ける最新のバージョン。
       system.stateVersion = "24.05";
       # 常に有効にしておく機能をランタイムでも有効化。
       nix.extraOptions = ''
@@ -64,9 +64,9 @@ inputs.nix-on-droid.lib.nixOnDroidConfiguration {
       # Androidホストのタイムゾーンは自動的に引き継がれないようなので明示的に設定。
       time.timeZone = "Asia/Tokyo";
       user = {
-        # `userName`はnix-on-droidでread-onlyで`"nix-on-droid"`固定のため設定不可。
-        # 以下のコミットで変更可能なようになるようですがまだリリースされていません。
-        # [allow both group and username to be changed](https://github.com/nix-community/nix-on-droid/commit/010aa48cf613ce3b4a0ed57457920f66ff3239f8)
+        # 既定は`"nix-on-droid"`だが他の環境と揃える。
+        # 変わるのは`/etc/passwd`の名前と`USER`で、uidとホームディレクトリはAndroidが決めたまま。
+        userName = username;
         shell = "${pkgs.zsh}/bin/zsh";
       };
       # 今後home-managerに設定を委任。

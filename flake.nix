@@ -422,10 +422,11 @@
           # 手元の`./check.sh`を軽くするためのもので、
           # 実際にビルドする`ciJobs`では要らなくなる。
           evalChecks = nixosEvalChecks // hmEvalChecks;
-          # 実装のファイルに書けない評価のテスト(`*.test.nix`)を、ファイルごとにderivationへ包んだもの。
+          # 実装の隣に置いたテスト(`*.test.nix`)を、ファイルごとにderivationにしたもの。
+          # 実装のファイルに書けない評価のテストと、モジュールだけを動かすNixOS Testがある。
           nixTests = import ./test/collect-nix-tests.nix {
             inherit lib;
-            inherit (pkgs) runCommand;
+            inherit (pkgs) runCommand testers;
           };
           # リポジトリ内のPythonをpyrightで型検査するためのderivation群。
           #

@@ -14,62 +14,16 @@ let
   # なのでブルーグリーンデプロイメントなどは行いません。
   max_check_attempts = 2;
   # GitHub ActionsのランナのVMのチェック。
-  #
-  # ランナのVMは、ホストのGCとストアの最適化の間は毎日わざと止められます。
-  # 止まっている時間は数分から数十分で、ストアの状態によって変わります。
-  # 失敗を許す回数を増やして吸収しようとすると、
-  # 本当に落ちた時に気付くのもその分遅れます。
-  # そこで応答が無くても、GCか最適化がVMを止めている間は正常として扱います。
-  # 止める側の定義は`github-runner/github-runner-x64.nix`の`storeWriterUnits`です。
-  #
-  # VMが止まっているのは、サービスの前処理から後処理までの間です。
-  # サービスが動いているかどうかだけで判断すると、
-  # 負荷が高くて再試行を待っている間も正常になってしまいます。
-  # 待っている間はVMを止めていないので、その間にVMが落ちても通知されません。
-  # そこでユニットの細かい状態を見て、本体か後処理が動いている時だけを正常にします。
-  # タイムアウトで本体や後処理を止めている途中の状態(`stop-sigkill`や`final-sigterm`など)も、
-  # VMは止まったままなので正常に入れます。
-  # 再試行の待ち(`auto-restart`)と、
-  # 打ち切りの判定(`condition`)と、負荷の検査(`start-pre`)は正常にしません。
-  #
-  # 以下の間は、正常として扱われないのに応答が無い状態になります。
-  # どれも数秒から十数秒なので、1回の失敗を許す`max_check_attempts`が吸収します。
-  #
-  # - VMを止める前処理が動いている間(負荷の検査と同じ`start-pre`)
-  # - GCから最適化へ移る間
-  # - 最適化が終わってからVMが起動し終わるまで
+  # 応答が無くても正常として扱う条件は、コマンドの側(`pkgs/mackerel-check-github-runner`)に書いています。
+  # コマンドは`sh -c`で実行されるので、空白を含む表示名を引用します。
   githubRunnerCheck =
     { name, label }:
     {
-      command = lib.getExe (
-        pkgs.writeShellApplication {
-          name = "check-${name}";
-          runtimeInputs = [
-            pkgs.iputils
-            config.systemd.package
-          ];
-          text = ''
-            runner_host=${config.machineAddresses.${name}.guest6}
-            if ping -c 1 -W 2 "$runner_host" > /dev/null 2>&1; then
-              echo "${label} OK"
-              exit 0
-            fi
-            for unit in nix-gc.service nix-optimise.service; do
-              state=$(systemctl show --property=SubState --value "$unit")
-              case "$state" in
-                start | start-post | running | \
-                  stop | stop-sigterm | stop-sigkill | \
-                  stop-post | final-sigterm | final-sigkill)
-                  echo "${label} OK: stopped while $unit is $state"
-                  exit 0
-                  ;;
-              esac
-            done
-            echo "${label} CRITICAL: ping failed"
-            exit 2
-          '';
-        }
-      );
+      command = lib.escapeShellArgs [
+        (lib.getExe (pkgs.mackerel-check-github-runner.override { systemd = config.systemd.package; }))
+        label
+        config.machineAddresses.${name}.guest6
+      ];
       inherit
         check_interval
         max_check_attempts

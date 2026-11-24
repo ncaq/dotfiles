@@ -49,7 +49,7 @@ lib.pipe package [
     '';
   }))
   haskell.lib.compose.justStaticExecutables
-  # 権限を落とす場面はsandwichのテストでは確かめられないので、VMの中で実際のユニットを動かす。
+  # 権限を落とす場面はsandwichのテストでは確かめられないので、コンテナの中で実際のユニットを動かす。
   # 配るもののstoreパスに関わらないように、`checkPhase`ではなく`passthru.tests`に置く。
   (
     package:

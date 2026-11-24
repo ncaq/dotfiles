@@ -72,36 +72,11 @@ let
   # 何も書かないとnamespaceごとにファイルシステムの10%(最大4G)まで使う。
   maxUse = "1G";
 
-  machineLog = pkgs.writeShellApplication {
-    name = "machine-log";
-    runtimeInputs = [ config.systemd.package ];
-    text = ''
-      machines=(${lib.escapeShellArgs (lib.attrNames selectors)})
-
-      if [[ $# -eq 0 ]]; then
-        printf '%s\n' "''${machines[@]}"
-        exit 0
-      fi
-
-      name=$1
-      shift
-
-      case "$name" in
-      ${lib.concatStrings (
-        lib.mapAttrsToList (name: selector: ''
-          ${lib.escapeShellArg name}) selector=${lib.escapeShellArg selector} ;;
-        '') selectors
-      )}
-      *)
-        echo "machine-log: unknown machine: $name" >&2
-        echo "machines:" >&2
-        printf '  %s\n' "''${machines[@]}" >&2
-        exit 1
-        ;;
-      esac
-
-      exec journalctl "$selector" "$@"
-    '';
+  # コマンドの中身は`pkgs/machine-log`にあります。
+  # このホストのマシンの一覧と、稼働中のsystemdと同じパッケージの`journalctl`を渡します。
+  machineLog = pkgs.machine-log.override {
+    inherit selectors;
+    systemd = config.systemd.package;
   };
 in
 {

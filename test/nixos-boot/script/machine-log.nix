@@ -58,12 +58,10 @@ let
       unit = "container@postgresql.service";
     };
 
-  # `machine-log`のコマンド自体の分岐を確かめるための、
   # 起動しないマシンも含めた全てのマシンの名前です。
-  # 引数無しの一覧がこの名前を1行ずつ出すことと、
-  # 知らない名前は失敗することを見ます。
-  # 名前の対応はNixの評価時に`case`文として生成しているので、
-  # 生成の仕方が崩れると全ての名前が知らない名前の側へ落ちます。
+  # 引数無しの一覧がこの名前を1行ずつ出すことを見て、
+  # このホストのマシンがコマンドへ渡っていることを確かめます。
+  # コマンド自体の分岐は、パッケージのテスト(`pkgs/machine-log`)で見ています。
   allNames = lib.attrNames config.containers ++ lib.attrNames microvms;
 in
 assert lib.assertMsg (
@@ -76,7 +74,6 @@ lib.optionalString (allNames != [ ]) # python
   ''
     machine_log_list = machine.succeed("machine-log").splitlines()
     assert sorted(machine_log_list) == sorted(${builtins.toJSON allNames}), machine_log_list
-    machine.fail("machine-log no-such-machine")
   ''
 + lib.concatMapStrings (
   m: # python

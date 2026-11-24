@@ -34,7 +34,7 @@
   同じようにVMを止めている間に動かします。
   GCと最適化は毎日続けて動き、
   負荷が高い日は見送られます。
-  時刻と条件は`nixos/core/nix-store-maintenance.nix`に書いています。
+  時刻と条件は`pkgs/nix-store-maintenance/module.nix`に書いています。
 
   VMの中でGCを動かしてはいけません。
   VMのNixは書き込み用の層に「消した」という印を置くことしかできず、
@@ -76,7 +76,7 @@ let
   # ランナのユーザのUIDとGID。ホストとVMで同じ値です。
   runnerUser = config.serviceUser.github-runner;
   # cdn.ncaq.netのランナへ共有するステージングのディレクトリ。
-  cdnDeployRoot = config.local.cdnDeploy.deployRoot;
+  cdnDeployRoot = config.services.cdn-ncaq-net-sync.deployRoot;
   # リポジトリごとのランナのVMの定義。
   # attr名がそのままVMの名前になります。
   # IPアドレスとvsockのCIDは`machineAddresses`と`microvmCid`の同名のエントリを参照するため、
@@ -154,12 +154,11 @@ let
   # 登録トークンを置くホスト側のディレクトリ。
   # サービスの`RuntimeDirectory`として作られます。
   tokenDirOf = name: "/run/${tokenServiceOf name}";
-  # VMのストアを用意するホスト側のサービスの名前。
-  storeServiceOf = name: "${name}-store";
+  # VMのストアを用意するホスト側のサービスの名前と、
   # ホストのNixのデータベースの写しを置くホスト側のディレクトリ。
-  # サービスの`CacheDirectory`として作られます。
-  # 写しは数百MiBあるので、tmpfsの`/run`ではなくディスクに置いてホストのメモリを使わせません。
-  storeDirOf = name: "/var/cache/${storeServiceOf name}";
+  # どちらも`pkgs/github-runner-store/module.nix`が決めます。
+  storeServiceOf = name: config.services.github-runner-store.vms.${name}.unit;
+  storeDirOf = name: config.services.github-runner-store.vms.${name}.storeDir;
   # VMだけが持つ書き込み用の層のイメージ。
   overlayImage = "nix-store-overlay.img";
   overlayImageOf = name: "${config.microvm.stateDir}/${name}/${overlayImage}";
@@ -449,14 +448,19 @@ let
   systemctl = lib.getExe' config.systemd.package "systemctl";
 in
 {
+  imports = [ ../../../../pkgs/github-runner-store/module.nix ];
+
   microvm.vms = lib.mapAttrs mkRunnerVm runnerVmDefs;
 
+  # VMを起動するたびにストアの状態を作り直すサービス。
+  services.github-runner-store.vms = lib.mapAttrs (name: _: {
+    overlayImage = overlayImageOf name;
+  }) runnerVmDefs;
+
   local = {
-    # ブートテストがストアの準備とGCの前後の処理を確かめるために読みます。
+    # ブートテストがVMの再起動とGCの前後の処理を確かめるために読みます。
     githubRunnerVms = lib.mapAttrs (name: _: {
       storeService = "${storeServiceOf name}.service";
-      storeDatabase = "${storeDirOf name}/db.sqlite";
-      overlayImage = overlayImageOf name;
     }) runnerVmDefs;
 
     # CIランナの出口はインターネットだけ。
@@ -527,35 +531,14 @@ in
 
       # VMを起動するたびに、書き込み用の層を捨てて、
       # ホストのNixのデータベースの写しを取り直します。
-      # `RemainAfterExit`を付けないので、VMが起動し直されるたびにもう一度動きます。
+      # サービスの本体は`pkgs/github-runner-store/module.nix`が定義していて、
+      # ここではmicrovm.nixのユニットとの順序だけを足します。
       (lib.mapAttrs' (
         name: _:
         lib.nameValuePair (storeServiceOf name) {
-          description = "Prepare Nix store for ${name}";
           # イメージを置くディレクトリはmicrovm.nixのこのサービスが作ります。
           requires = [ "install-microvm-${name}.service" ];
           after = [ "install-microvm-${name}.service" ];
-          serviceConfig = hardening.isolated // {
-            Type = "oneshot";
-            ExecStart = [
-              # イメージが無ければmicrovm.nixが起動の前に空のものを作ります。
-              # 前の起動の時の写しも捨てます。
-              "${lib.getExe' pkgs.coreutils "rm"} --force ${overlayImageOf name} ${storeDirOf name}/db.sqlite"
-              # 動いているデータベースをそのままコピーすると書き込みの途中を拾うことがあるので、
-              # SQLiteのバックアップの機能で一貫した状態を取ります。
-              "${lib.getExe pkgs.sqlite} ${nixDbDir}/db.sqlite \".backup ${storeDirOf name}/db.sqlite\""
-            ];
-            CacheDirectory = storeServiceOf name;
-            CacheDirectoryMode = "0700";
-            # WALモードのデータベースは読むだけでも共有メモリのファイルへ書き込みます。
-            ReadWritePaths = [
-              nixDbDir
-              "${config.microvm.stateDir}/${name}"
-            ];
-            # イメージとその親のディレクトリはmicrovmユーザの所有なので、
-            # rootでも所有者の検査を越える権限が無いと消せません。
-            CapabilityBoundingSet = [ "CAP_DAC_OVERRIDE" ];
-          };
         }
       ) runnerVmDefs)
 

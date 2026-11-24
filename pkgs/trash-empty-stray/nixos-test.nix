@@ -5,7 +5,9 @@
 # 所有者の権限へ落とす処理が外れても、ビルドは通り、掃除も今まで通り動いて見えます。
 #
 # sandwichのテストは一般ユーザとして走るので、権限を落とす場面を確かめられません。
-# VMの中で`module.nix`の実際のユニットを、その権限の絞り込みのまま動かして、以下を見ます。
+# systemd-nspawnのコンテナの中で`module.nix`の実際のユニットを、その権限の絞り込みのまま動かして、以下を見ます。
+# カーネルや起動の過程には関わらないテストなので、QEMUのVMより起動が速いコンテナを使います。
+# 実行するnix-daemonに要る設定は`nixos/core/nix-daemon.nix`に書いてあります。
 #
 # - 期限切れのエントリが消えて、空になったゴミ箱がゴミ箱ごと消える
 # - 期限切れでないエントリが残る
@@ -36,7 +38,7 @@ in
 testers.runNixOSTest {
   name = "trash-empty-stray";
 
-  nodes.machine = {
+  containers.machine = {
     imports = [ ./module.nix ];
     services.trash-empty = {
       enable = true;

@@ -35,6 +35,27 @@ himariとその依存をパッケージの数だけ評価し直すことにな�
 各言語のテストは、
 その言語のツールが期待する場所(`<名前>/test`など)に置きます。
 
+### ユニットごと確かめるテスト
+
+コマンドがsystemdのユニットとの組み合わせで意味を持つ時は、
+ユニットを定義するNixOSモジュールもパッケージの隣に置いて、
+NixOS Testで実際のユニットを動かします。
+
+- `<名前>/package.nix`: コマンド。`passthru.tests.nixos`に`nixos-test.nix`を置く
+- `<名前>/module.nix`: コマンドを動かすユニットのNixOSモジュール。
+  ホストの構成に依存させず、置き場所のようなホストごとの値はオプションで受け取る
+- `<名前>/nixos-test.nix`: `module.nix`だけを読み込んだマシンで確かめるテスト
+
+ホストの側は、`nixos/core/trash.nix`のように`module.nix`を`imports`に書いて使います。
+`importDirModules`は`pkgs/`を走査しないので、ここだけは明示的に読み込みます。
+
+テストのマシンは、`nodes`ではなく`containers`に書いて、
+QEMUのVMではなくsystemd-nspawnのコンテナで動かします。
+ホストをブートしないので数秒で終わります。
+カーネルや起動の過程に関わるものを確かめる時だけ`nodes`にします。
+コンテナのテストを実行するnix-daemonに要る設定は、
+`nixos/core/nix-daemon.nix`に書いています。
+
 ## 制約
 
 置くだけで拾われる裏返しとして、

@@ -7,7 +7,7 @@
   # 配信ディレクトリはotherのパーミッションで読むので、配信の振る舞いは変わりません。
   #
   # モジュールの形が`options`に依存すると無限再帰になるので、`config`の中で分岐します。
-  config = lib.optionalAttrs (options ? local.cdnDeploy) {
+  config = lib.optionalAttrs (options ? services.cdn-ncaq-net-sync) {
     containers.cdn.privateUsers = lib.mkForce "identity";
   };
 }

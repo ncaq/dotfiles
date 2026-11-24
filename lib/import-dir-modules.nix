@@ -13,7 +13,7 @@
       - 通常ファイル("regular")で、
         名前が".nix"で終わり、
         "default.nix"ではなく(呼び出し元自身を再帰importしないため)、
-        ".test.nix"で終わらない(モジュールの隣に置いた評価のテストで、`test/collect-nix-tests.nix`が集める)
+        ".test.nix"で終わらない(モジュールの隣に置いたテストで、`test/collect-nix-tests.nix`が集める)
       - ディレクトリで、直下にdefault.nixを持つ
         (default.nixを持たないディレクトリはモジュールではないので無視される)
     3. 絞り込んだ名前にディレクトリパスを結合してフルパスのリストにして返す

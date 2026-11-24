@@ -1,7 +1,9 @@
 /**
-  評価時にしか走らない純粋なNixのテストを、ファイルごとに`checks`のderivationへ包む。
+  モジュールの隣に置いたテストを、ファイルごとに`checks`のderivationにする。
+  評価時にしか走らない純粋なNixのテストと、
+  モジュールだけを読み込んだマシンで実際に動かすNixOS Testの2種類がある。
 
-  型: { lib, runCommand } -> AttrSet Derivation
+  型: { lib, runCommand, testers } -> AttrSet Derivation
 
   何を集めるか:
     リポジトリの中の、名前が`.test.nix`で終わるファイルを再帰的に集めて、1ファイルを1つのテストにする。
@@ -12,6 +14,10 @@
     トピックを分ける時は`<実装の名前>.<トピック>.test.nix`にする。
     テストは`{ lib }`を受け取り、全ての表明を通ると`true`を返す。
     ファイルを足すだけでテストに加わる。
+
+    同じ名前の付け方で、`{ testers }`か`{ lib, testers }`を受け取って`testers.runNixOSTest`のderivationを返すテストも集める。
+    コマンドを持たないモジュールの振る舞いを、ホストをブートせずに確かめるためのもの。
+    コマンドを持つものは、パッケージのテスト(`pkgs/<名前>/nixos-test.nix`)に書く。
 
     モジュールのディレクトリに置いても、
     `importDirModules`が`.test.nix`をモジュールとして読まないので混ざらない。
@@ -32,7 +38,11 @@
     分けておくと評価が並列に進む。
     落ちた時にどのトピックのテストかが属性名で分かる。
 */
-{ lib, runCommand }:
+{
+  lib,
+  runCommand,
+  testers,
+}:
 let
   root = ../.;
 
@@ -50,19 +60,30 @@ let
   # `builtins.seq`でテストの値を強制してからビルドを成功させる。
   # 強制はderivationのinstantiation時にだけ起きるので、
   # `nix flake show`のように属性へ触れるだけのコマンドではテストは走らない。
+  #
+  # `testers`を受け取るテストは、モジュールを実際に動かすNixOS Testで、
+  # 返したderivationをそのまま載せる。
+  # どちらの形かは関数の引数で見分けるので、見分けるためにテストの値を強制することはない。
   mkNixTest =
     path:
     let
       name = nameOf path;
-      test = import path { inherit lib; };
+      test = import path;
     in
     lib.nameValuePair name (
-      runCommand name {
-        passed = builtins.seq (
-          assert test;
-          test
-        ) name;
-      } ''echo "$passed" > "$out"''
+      if lib.functionArgs test ? testers then
+        # `lib`を使わないテストが受け取らずに済むように、求められた引数だけを渡す。
+        test (builtins.intersectAttrs (lib.functionArgs test) { inherit lib testers; })
+      else
+        let
+          result = test { inherit lib; };
+        in
+        runCommand name {
+          passed = builtins.seq (
+            assert result;
+            result
+          ) name;
+        } ''echo "$passed" > "$out"''
     );
 
   tests = map mkNixTest (lib.filter isTest (lib.filesystem.listFilesRecursive root));

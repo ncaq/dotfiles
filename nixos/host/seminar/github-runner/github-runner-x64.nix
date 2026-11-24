@@ -34,7 +34,7 @@
   同じようにVMを止めている間に動かします。
   GCと最適化は毎日続けて動き、
   負荷が高い日は見送られます。
-  時刻と条件は`nixos/core/nix-store-maintenance.nix`に書いています。
+  時刻と条件は`pkgs/nix-store-maintenance/module.nix`に書いています。
 
   VMの中でGCを動かしてはいけません。
   VMのNixは書き込み用の層に「消した」という印を置くことしかできず、
@@ -76,7 +76,7 @@ let
   # ランナのユーザのUIDとGID。ホストとVMで同じ値です。
   runnerUser = config.serviceUser.github-runner;
   # cdn.ncaq.netのランナへ共有するステージングのディレクトリ。
-  cdnDeployRoot = config.local.cdnDeploy.deployRoot;
+  cdnDeployRoot = config.services.cdn-ncaq-net-sync.deployRoot;
   # リポジトリごとのランナのVMの定義。
   # attr名がそのままVMの名前になります。
   # IPアドレスとvsockのCIDは`machineAddresses`と`microvmCid`の同名のエントリを参照するため、

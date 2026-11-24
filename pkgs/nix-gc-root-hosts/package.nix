@@ -1,6 +1,6 @@
 # flakeに定義された全ホストのクロージャをGC rootとして登録するコマンド。
 #
-# `nixos/host/seminar/nix-gc-root-hosts.nix`のサービスから呼ばれる。
+# 同じディレクトリの`module.nix`が定義する`nix-gc-root-hosts.service`から呼ばれる。
 # 何をどう登録するかは`src/NixGcRootHosts/Register.hs`に書いてある。
 {
   lib,
@@ -8,6 +8,7 @@
   localHaskellPackages,
   makeWrapper,
   nix,
+  testers,
 }:
 let
   # 動かすものだけをstoreへ入れる。
@@ -33,4 +34,16 @@ lib.pipe package [
     '';
   }))
   haskell.lib.compose.justStaticExecutables
+  # GCの前に挟まる順序はユニットの組み合わせで決まるので、コンテナの中で実際のユニットを読み込んで確かめる。
+  # 配るもののstoreパスに関わらないように、`checkPhase`ではなく`passthru.tests`に置く。
+  (
+    package:
+    package.overrideAttrs (old: {
+      passthru = (old.passthru or { }) // {
+        tests = (old.passthru.tests or { }) // {
+          nixos = import ./nixos-test.nix { inherit testers; };
+        };
+      };
+    })
+  )
 ]

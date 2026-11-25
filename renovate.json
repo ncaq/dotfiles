@@ -13,6 +13,14 @@
       ],
       "groupName": "gitoxide monorepo",
       "matchSourceUrls": ["https://github.com/GitoxideLabs/gitoxide"]
+    },
+    {
+      "description": [
+        "Mackerelのチェックの自作パッケージは、Goの依存をNixの`vendorHash`で固定しています。Renovateは`go.mod`と`go.sum`を書き換えても`package.nix`の`vendorHash`は更新しないので、依存の更新のPRはどれもハッシュの不一致でビルドに失敗します。ホスト版のRenovateでは`postUpgradeTasks`のコマンドが既定でブロックされていて、ハッシュを更新させることもできません。そのため自動の更新から外して、手で更新します。"
+      ],
+      "enabled": false,
+      "matchFileNames": ["pkgs/mackerel-check-*/**"],
+      "matchManagers": ["gomod"]
     }
   ]
 }

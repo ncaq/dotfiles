@@ -13,22 +13,69 @@ let
   # この自宅サーバでダウン時間ゼロを達成する気は基本的にありません。
   # なのでブルーグリーンデプロイメントなどは行いません。
   max_check_attempts = 2;
+  # チェックのコマンドはなるべく自前で書かずに、既にあるものを使います。
+  # Mackerel公式の`pkgs/go-check-plugins`と、
+  # 終了コードの決まりが同じNagios向けのプラグインです。
+  #
+  # 引数の並びから、標準的な間隔と失敗の上限のチェックを作ります。
+  # コマンドは`sh -c`で実行されるので、引数を引用して1つの文字列にします。
+  mkCheck = args: {
+    command = lib.escapeShellArgs args;
+    inherit
+      check_interval
+      max_check_attempts
+      ;
+  };
+  # systemdのユニットがactiveであることのチェック。
+  # `--state`を渡さないと、止まっているユニットも正常として扱われます。
+  # `--no-startup-time`を渡さないと、ホストの起動にかかった時間も検査されます。
+  # 60秒より長いと警告、120秒より長いと異常になり、ユニットの状態は関係ありません。
+  # `systemctl`は`mackerel-agent`のユニットの`PATH`から探されます。
+  systemdUnitCheck =
+    unit:
+    mkCheck [
+      (lib.getExe pkgs.nagiosPlugins.check_systemd)
+      "--unit"
+      unit
+      "--state"
+      "active"
+      "--no-startup-time"
+      "--no-performance-data"
+    ];
+  # HTTPの応答のチェック。
+  # `check-http`は既定で3xxまでを正常、4xxを警告、5xxと接続の失敗を異常にします。
+  # リダイレクトは辿って、辿った先のステータスで判定します。
+  # ここでは4xxも異常にしておき、
+  # 変えたいチェックだけ`statuses`で読み替えます。
+  httpCheck =
+    {
+      url,
+      statuses ? [ "400-499=critical" ],
+      extraArgs ? [ ],
+    }:
+    mkCheck (
+      [
+        (lib.getExe' pkgs.go-check-plugins "check-http")
+        "--url"
+        url
+        "--timeout"
+        "3"
+      ]
+      ++ lib.concatMap (status: [
+        "--status"
+        status
+      ]) statuses
+      ++ extraArgs
+    );
   # GitHub ActionsのランナのVMのチェック。
   # 応答が無くても正常として扱う条件は、コマンドの側(`pkgs/mackerel-check-github-runner`)に書いています。
-  # コマンドは`sh -c`で実行されるので、空白を含む表示名を引用します。
   githubRunnerCheck =
     { name, label }:
-    {
-      command = lib.escapeShellArgs [
-        (lib.getExe (pkgs.mackerel-check-github-runner.override { systemd = config.systemd.package; }))
-        label
-        config.machineAddresses.${name}.guest6
-      ];
-      inherit
-        check_interval
-        max_check_attempts
-        ;
-    };
+    mkCheck [
+      (lib.getExe pkgs.mackerel-check-github-runner)
+      label
+      config.machineAddresses.${name}.guest6
+    ];
 in
 {
   services.mackerel-agent = {
@@ -60,268 +107,77 @@ in
       disks.ignore = "loop|zram|bcache|nvme[0-9]+n[0-9]+p[0-9]+|sd[a-z][0-9]+";
       # ヘルスチェックプラグイン
       plugin.checks = {
-        ssh = {
-          command = lib.getExe (
-            pkgs.writeShellApplication {
-              name = "check-ssh";
-              runtimeInputs = [ config.systemd.package ];
-              text = ''
-                # sshdサービスがactiveであればOK
-                if systemctl is-active --quiet sshd.service; then
-                  echo "SSH OK"
-                  exit 0
-                else
-                  echo "SSH CRITICAL: sshd service not running"
-                  exit 2
-                fi
-              '';
-            }
-          );
-          inherit
-            check_interval
-            max_check_attempts
-            ;
-        };
-        tailscale = {
-          command = lib.getExe (
-            pkgs.writeShellApplication {
-              name = "check-tailscale";
-              runtimeInputs = [
-                config.services.tailscale.package
-                pkgs.jq
-              ];
-              text = ''
-                # BackendStateがRunningかつSelf.OnlineがtrueであればOK
-                status=$(tailscale status --json 2>&1)
-                backend_state=$(echo "$status" | jq -r '.BackendState' 2>/dev/null \
-                                  || echo "unknown")
-                online=$(echo "$status" | jq -r '.Self.Online' 2>/dev/null || echo "false")
-                if [[ "$backend_state" == "Running" ]] && [[ "$online" == "true" ]]; then
-                  echo "Tailscale OK (connected to tailnet)"
-                  exit 0
-                else
-                  echo "Tailscale CRITICAL: BackendState=$backend_state, Online=$online"
-                  exit 2
-                fi
-              '';
-            }
-          );
-          inherit check_interval;
+        ssh = systemdUnitCheck "sshd.service";
+        # 正常にする条件は、コマンドの側(`pkgs/mackerel-check-tailscale`)に書いています。
+        tailscale = mkCheck [ (lib.getExe pkgs.mackerel-check-tailscale) ] // {
           # 一時的な瞬断で自動復帰するケースが多いため、
           # 失敗を多めに許容します。
           max_check_attempts = 3;
         };
-        cloudflared = {
-          command = lib.getExe (
-            pkgs.writeShellApplication {
-              name = "check-cloudflared";
-              runtimeInputs = [ config.systemd.package ];
-              text = ''
-                if systemctl is-active --quiet cloudflared-tunnel-seminar.service; then
-                  echo "Cloudflared OK"
-                  exit 0
-                else
-                  echo "Cloudflared CRITICAL: service not running"
-                  exit 2
-                fi
-              '';
-            }
-          );
-          inherit
-            check_interval
-            max_check_attempts
-            ;
+        cloudflared = systemdUnitCheck "cloudflared-tunnel-seminar.service";
+        # `nixos/core/caddy.nix`が`::1`限定で立てているヘルスエンドポイント。
+        caddy = httpCheck { url = "http://[::1]:2020/health"; };
+        samba = systemdUnitCheck "samba-smbd.service";
+        # サーバはコンテナ内で動いていて、ホストとはUnixソケットのディレクトリを共有しています。
+        # peer認証で繋ぐので、`healthcheck`ユーザになってから実行します。
+        # `check-postgresql`はパスワードが空だと接続文字列が崩れてホストの指定が無視されるので、
+        # 使われない値を渡しています。
+        # 接続の数が70を超えると警告、90を超えると異常になります。
+        # 繋がらない時は異常ではなくUNKNOWNを返します。
+        postgresql = mkCheck [
+          (lib.getExe' pkgs.util-linux "runuser")
+          "-u"
+          "healthcheck"
+          "--"
+          (lib.getExe' pkgs.go-check-plugins "check-postgresql")
+          "connection"
+          "--host"
+          "/run/postgresql"
+          "--user"
+          "healthcheck"
+          "--password"
+          "unused"
+          "--database"
+          "healthcheck"
+          "--timeout"
+          "3"
+        ];
+        # S3 APIのルートGETはデータ層の過負荷に巻き込まれて遅延しやすいので、
+        # admin APIの軽量なlivenessエンドポイント/healthを使います。
+        # /healthは認証不要で、quorumを満たせば200、不足すれば503を返します。
+        garage = httpCheck { url = "http://[${config.machineAddresses.garage.guest6}]:3903/health"; };
+        forgejo = httpCheck { url = "http://[${config.machineAddresses.forgejo.guest6}]:8080"; };
+        niks3-public = httpCheck {
+          url = "http://[${config.machineAddresses.niks3-public.guest6}]:5751";
         };
-        caddy = {
-          command = lib.getExe (
-            pkgs.writeShellApplication {
-              name = "check-caddy";
-              runtimeInputs = [ pkgs.curl ];
-              text = ''
-                # `nixos/core/caddy.nix`が`::1`限定で立てているヘルスエンドポイント。
-                if curl -f -s --max-time 3 "http://[::1]:2020/health" > /dev/null 2>&1; then
-                  echo "Caddy OK"
-                  exit 0
-                else
-                  echo "Caddy CRITICAL: HTTP check failed"
-                  exit 2
-                fi
-              '';
-            }
-          );
-          inherit
-            check_interval
-            max_check_attempts
-            ;
+        niks3-private = httpCheck {
+          url = "http://[${config.machineAddresses.niks3-private.guest6}]:5751";
         };
-        samba = {
-          command = lib.getExe (
-            pkgs.writeShellApplication {
-              name = "check-samba";
-              runtimeInputs = [ config.systemd.package ];
-              text = ''
-                if systemctl is-active --quiet samba-smbd.service; then
-                  echo "Samba OK"
-                  exit 0
-                else
-                  echo "Samba CRITICAL: service not running"
-                  exit 2
-                fi
-              '';
-            }
-          );
-          inherit
-            check_interval
-            max_check_attempts
-            ;
-        };
-        postgresql = {
-          command = lib.getExe (
-            pkgs.writeShellApplication {
-              name = "check-postgresql";
-              runtimeInputs = [
-                # サーバはコンテナ内で動いているので、
-                # psqlもそのコンテナで拡張込みで実際に起動しているパッケージから取る。
-                # `test/nixos-boot/script/postgres-extension.nix`と同じ参照先。
-                config.containers.postgresql.config.services.postgresql.finalPackage
-                pkgs.util-linux
-              ];
-              text = ''
-                if runuser -u healthcheck -- psql -d healthcheck -c "SELECT 1" \
-                    > /dev/null 2>&1; then
-                  echo "PostgreSQL OK"
-                  exit 0
-                else
-                  echo "PostgreSQL CRITICAL: connection failed"
-                  exit 2
-                fi
-              '';
-            }
-          );
-          inherit
-            check_interval
-            max_check_attempts
-            ;
-        };
-        garage = {
-          command = lib.getExe (
-            pkgs.writeShellApplication {
-              name = "check-garage";
-              runtimeInputs = [ pkgs.curl ];
-              text = ''
-                # S3 APIのルートGETはデータ層の過負荷に巻き込まれて遅延しやすいので、
-                # admin APIの軽量なlivenessエンドポイント/healthを使います。
-                # /healthは認証不要で、quorumを満たせば200、不足すれば503を返します。
-                http_code=$(curl -s --max-time 3 -o /dev/null -w "%{http_code}" \
-                  "http://[${config.machineAddresses.garage.guest6}]:3903/health" || true)
-                if [[ "$http_code" == "200" ]]; then
-                  echo "Garage OK (health HTTP $http_code)"
-                  exit 0
-                else
-                  echo "Garage CRITICAL: health HTTP $http_code"
-                  exit 2
-                fi
-              '';
-            }
-          );
-          inherit
-            check_interval
-            max_check_attempts
-            ;
-        };
-        forgejo = {
-          command = lib.getExe (
-            pkgs.writeShellApplication {
-              name = "check-forgejo";
-              runtimeInputs = [ pkgs.curl ];
-              text = ''
-                forgejo_url="http://[${config.machineAddresses.forgejo.guest6}]:8080"
-                if curl -f -s --max-time 3 "$forgejo_url" > /dev/null 2>&1; then
-                  echo "Forgejo OK"
-                  exit 0
-                else
-                  echo "Forgejo CRITICAL: container not responding"
-                  exit 2
-                fi
-              '';
-            }
-          );
-          inherit
-            check_interval
-            max_check_attempts
-            ;
-        };
-        niks3-public = {
-          command = lib.getExe (
-            pkgs.writeShellApplication {
-              name = "check-niks3-public";
-              runtimeInputs = [ pkgs.curl ];
-              text = ''
-                http_code=$(curl -s --max-time 3 -o /dev/null -w "%{http_code}" \
-                  "http://[${config.machineAddresses.niks3-public.guest6}]:5751" || true)
-                if [[ "$http_code" =~ ^[23][0-9][0-9]$ ]]; then
-                  echo "niks3-public OK (HTTP $http_code)"
-                  exit 0
-                else
-                  echo "niks3-public CRITICAL: HTTP $http_code"
-                  exit 2
-                fi
-              '';
-            }
-          );
-          inherit
-            check_interval
-            max_check_attempts
-            ;
-        };
-        niks3-private = {
-          command = lib.getExe (
-            pkgs.writeShellApplication {
-              name = "check-niks3-private";
-              runtimeInputs = [ pkgs.curl ];
-              text = ''
-                http_code=$(curl -s --max-time 3 -o /dev/null -w "%{http_code}" \
-                  "http://[${config.machineAddresses.niks3-private.guest6}]:5751" || true)
-                if [[ "$http_code" =~ ^[23][0-9][0-9]$ ]]; then
-                  echo "niks3-private OK (HTTP $http_code)"
-                  exit 0
-                else
-                  echo "niks3-private CRITICAL: HTTP $http_code"
-                  exit 2
-                fi
-              '';
-            }
-          );
-          inherit
-            check_interval
-            max_check_attempts
-            ;
-        };
-        mcp-nixos = {
-          command = lib.getExe (
-            pkgs.writeShellApplication {
-              name = "check-mcp-nixos";
-              runtimeInputs = [ pkgs.curl ];
-              text = ''
-                # MCPサーバのHTTPエンドポイントにアクセスして応答を確認
-                # 2xx/4xxレスポンスならサーバは動作している
-                # それ以外は異常とみなす
-                http_code=$(curl -s --max-time 3 -o /dev/null -w "%{http_code}" \
-                  "http://[${config.machineAddresses.mcp-nixos.guest6}]:8080/mcp" || true)
-                if [[ "$http_code" =~ ^[24][0-9][0-9]$ ]]; then
-                  echo "mcp-nixos OK (HTTP $http_code)"
-                  exit 0
-                else
-                  echo "mcp-nixos CRITICAL: HTTP $http_code"
-                  exit 2
-                fi
-              '';
-            }
-          );
-          inherit
-            check_interval
-            max_check_attempts
-            ;
+        # MCPの`ping`を投げて、結果が返ることを見ます。
+        # 前段のCaddyだけでなく、MCPサーバ自身が応答していることを確かめられます。
+        # セッション無しで`ping`を受け付けるのは、
+        # `mcp-nixos.nix`でステートレスにしているからです。
+        # JSON-RPCはエラーも200で返すことがあるので、`result`があることも見ます。
+        # `check-http`は二重引用符で始まる値をGoの文字列リテラルとして解釈しようとするので、
+        # パターンはキーの先頭の引用符を省いています。
+        mcp-nixos = httpCheck {
+          url = "http://[${config.machineAddresses.mcp-nixos.guest6}]:8080/mcp";
+          extraArgs = [
+            "--method"
+            "POST"
+            "-H"
+            "Content-Type: application/json"
+            "-H"
+            "Accept: application/json, text/event-stream"
+            "--body"
+            (builtins.toJSON {
+              jsonrpc = "2.0";
+              id = 1;
+              method = "ping";
+            })
+            "--pattern"
+            ''result":''
+          ];
         };
         github-runner-dotfiles-x64 = githubRunnerCheck {
           name = "github-runner-dotfiles-x64";

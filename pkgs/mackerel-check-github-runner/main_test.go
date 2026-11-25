@@ -7,11 +7,91 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/mackerelio/checkers"
 )
+
+func TestParseOptions(t *testing.T) {
+	required := []string{
+		"--label", "Test Runner",
+		"--token-file", "/run/token",
+		"--repository", "owner/repo",
+	}
+	tests := []struct {
+		name    string
+		args    []string
+		want    options
+		wantErr string
+	}{
+		{
+			name: "every --runner is collected",
+			args: append(append([]string{}, required...), "--runner", "test-0", "--runner", "test-1"),
+			want: options{
+				label:      "Test Runner",
+				api:        "https://api.github.com",
+				tokenFile:  "/run/token",
+				repository: "owner/repo",
+				runners:    stringList{"test-0", "test-1"},
+			},
+		},
+		{
+			name: "--label is missing",
+			args: []string{
+				"--token-file", "/run/token", "--repository", "owner/repo", "--runner", "test-0",
+			},
+			wantErr: "--label is required",
+		},
+		{
+			name:    "--token-file is missing",
+			args:    []string{"--label", "Test Runner", "--repository", "owner/repo", "--runner", "test-0"},
+			wantErr: "--token-file is required",
+		},
+		{
+			name:    "--repository is missing",
+			args:    []string{"--label", "Test Runner", "--token-file", "/run/token", "--runner", "test-0"},
+			wantErr: "--repository is required",
+		},
+		{
+			name:    "--runner is missing",
+			args:    required,
+			wantErr: "--runner is required",
+		},
+		{
+			name:    "an argument is left over",
+			args:    append(append([]string{}, required...), "--runner", "test-0", "extra"),
+			wantErr: "unexpected arguments: [extra]",
+		},
+		{
+			name:    "an unknown flag",
+			args:    append(append([]string{}, required...), "--runner", "test-0", "--unknown"),
+			wantErr: "flag provided but not defined: -unknown",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var output strings.Builder
+			got, err := parseOptions(tt.args, &output)
+			if tt.wantErr != "" {
+				if err == nil || err.Error() != tt.wantErr {
+					t.Errorf("parseOptions() error = %v, want %q", err, tt.wantErr)
+				}
+				if !strings.Contains(output.String(), "Usage of mackerel-check-github-runner") {
+					t.Errorf("parseOptions() printed %q, want the usage", output.String())
+				}
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("parseOptions() = %+v, want %+v", got, tt.want)
+			}
+		})
+	}
+}
 
 func TestRun(t *testing.T) {
 	// The fake API reports the runner as online only for the expected token,

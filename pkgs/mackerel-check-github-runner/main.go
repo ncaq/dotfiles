@@ -12,6 +12,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -46,36 +47,50 @@ type options struct {
 	runners    stringList
 }
 
-func parseOptions() (options, error) {
+// parseOptions parses the arguments without the command name.
+// The error and the usage are printed to output on an error.
+func parseOptions(args []string, output io.Writer) (options, error) {
 	var opts options
-	flag.StringVar(&opts.label, "label", "", "name shown in the check result")
-	flag.StringVar(&opts.api, "api", "https://api.github.com", "base URL of the GitHub REST API")
-	flag.StringVar(&opts.tokenFile, "token-file", "",
+	flags := flag.NewFlagSet("mackerel-check-github-runner", flag.ContinueOnError)
+	flags.SetOutput(output)
+	flags.StringVar(&opts.label, "label", "", "name shown in the check result")
+	flags.StringVar(&opts.api, "api", "https://api.github.com", "base URL of the GitHub REST API")
+	flags.StringVar(&opts.tokenFile, "token-file", "",
 		"file holding a token that can read the runners of the repository")
-	flag.StringVar(&opts.repository, "repository", "",
+	flags.StringVar(&opts.repository, "repository", "",
 		"repository the runners belong to, as OWNER/REPO")
-	flag.Var(&opts.runners, "runner", "name of a runner that must be online; may be repeated")
-	flag.Parse()
+	flags.Var(&opts.runners, "runner", "name of a runner that must be online; may be repeated")
+	if err := flags.Parse(args); err != nil {
+		return opts, err
+	}
+	err := validateOptions(opts, flags.Args())
+	if err != nil {
+		fmt.Fprintln(flags.Output(), err)
+		flags.Usage()
+	}
+	return opts, err
+}
+
+// validateOptions reports the first missing or unexpected argument.
+func validateOptions(opts options, rest []string) error {
 	switch {
 	case opts.label == "":
-		return opts, errors.New("--label is required")
+		return errors.New("--label is required")
 	case opts.tokenFile == "":
-		return opts, errors.New("--token-file is required")
+		return errors.New("--token-file is required")
 	case opts.repository == "":
-		return opts, errors.New("--repository is required")
+		return errors.New("--repository is required")
 	case len(opts.runners) == 0:
-		return opts, errors.New("--runner is required")
-	case flag.NArg() != 0:
-		return opts, fmt.Errorf("unexpected arguments: %v", flag.Args())
+		return errors.New("--runner is required")
+	case len(rest) != 0:
+		return fmt.Errorf("unexpected arguments: %v", rest)
 	}
-	return opts, nil
+	return nil
 }
 
 func main() {
-	opts, err := parseOptions()
+	opts, err := parseOptions(os.Args[1:], os.Stderr)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		flag.Usage()
 		os.Exit(int(checkers.UNKNOWN))
 	}
 	ckr := run(opts)

@@ -38,27 +38,24 @@ func main() {
 }
 
 func run(address string) *checkers.Checker {
-	pingErr := ping(address)
+	ctx, cancel := context.WithTimeout(context.Background(), systemdTimeout)
+	defer cancel()
+	return judge(ctx, ping(address), systemdSubState)
+}
+
+// subStateFunc reports the systemd sub state of a unit.
+type subStateFunc func(ctx context.Context, unit string) (string, error)
+
+// judge decides the result from the outcome of the ping.
+// It asks for the sub states only when the ping failed.
+func judge(ctx context.Context, pingErr error, subStateOf subStateFunc) *checkers.Checker {
 	if pingErr == nil {
 		return checkers.Ok("ping succeeded")
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), systemdTimeout)
-	defer cancel()
-	conn, err := dbus.NewSystemConnectionContext(ctx)
-	if err != nil {
-		return checkers.Critical(fmt.Sprintf("ping failed: %v; cannot ask systemd: %v", pingErr, err))
-	}
-	defer conn.Close()
 	for _, unit := range storeWriterUnits {
-		property, err := conn.GetUnitPropertyContext(ctx, unit, "SubState")
+		subState, err := subStateOf(ctx, unit)
 		if err != nil {
 			msg := fmt.Sprintf("ping failed: %v; cannot ask systemd about %s: %v", pingErr, unit, err)
-			return checkers.Critical(msg)
-		}
-		value := property.Value.Value()
-		subState, ok := value.(string)
-		if !ok {
-			msg := fmt.Sprintf("ping failed: %v; unexpected SubState type of %s: %T", pingErr, unit, value)
 			return checkers.Critical(msg)
 		}
 		if stopsVM(subState) {
@@ -66,6 +63,25 @@ func run(address string) *checkers.Checker {
 		}
 	}
 	return checkers.Critical(fmt.Sprintf("ping failed: %v", pingErr))
+}
+
+// systemdSubState asks systemd over D-Bus for the sub state of a unit.
+func systemdSubState(ctx context.Context, unit string) (string, error) {
+	conn, err := dbus.NewSystemConnectionContext(ctx)
+	if err != nil {
+		return "", err
+	}
+	defer conn.Close()
+	property, err := conn.GetUnitPropertyContext(ctx, unit, "SubState")
+	if err != nil {
+		return "", err
+	}
+	value := property.Value.Value()
+	subState, ok := value.(string)
+	if !ok {
+		return "", fmt.Errorf("unexpected SubState type %T", value)
+	}
+	return subState, nil
 }
 
 // ping sends one ICMP echo request and reports why no reply arrived.

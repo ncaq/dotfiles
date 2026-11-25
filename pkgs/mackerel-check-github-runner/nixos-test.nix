@@ -14,6 +14,7 @@
 # - GCが負荷の検査(`start-pre`)にいる時は異常。この間はVMを止めていない
 # - GCの本体が動いている時は正常
 # - GCが終わった後は異常
+# - 最適化の本体が動いている時は正常
 #
 # 応答するアドレスに対しては、GCの状態に関わらず正常を返すことを見ます。
 { testers }:
@@ -21,6 +22,7 @@ let
   # 代わりのサービスが、このファイルができるまで段階に留まります。
   preDone = "/run/nix-gc-test-pre-done";
   mainDone = "/run/nix-gc-test-main-done";
+  optimiseDone = "/run/nix-optimise-test-done";
   # 文書用のアドレス。経路が無いのでpingはすぐに失敗します。
   unreachable = "2001:db8::1";
 in
@@ -50,6 +52,13 @@ testers.runNixOSTest {
           ExecStart = waitFor "main" mainDone;
         };
       };
+      systemd.services.nix-optimise = {
+        description = "Stand-in for the Nix Store Optimiser";
+        serviceConfig = {
+          Type = "oneshot";
+          ExecStart = waitFor "optimise" optimiseDone;
+        };
+      };
     };
 
   testScript = # python
@@ -57,11 +66,14 @@ testers.runNixOSTest {
       def check(address):
           return machine.execute(f"mackerel-check-github-runner 'Test Runner' {address}")
 
-      def wait_for_gc_state(state):
+      def wait_for_state(unit, state):
           machine.wait_until_succeeds(
-              "systemctl show --property=SubState --value nix-gc.service"
+              f"systemctl show --property=SubState --value {unit}"
               f" | grep --line-regexp {state}"
           )
+
+      def wait_for_gc_state(state):
+          wait_for_state("nix-gc.service", state)
 
       machine.wait_for_unit("multi-user.target")
 
@@ -93,5 +105,13 @@ testers.runNixOSTest {
           wait_for_gc_state("dead")
           status, output = check("${unreachable}")
           assert status == 2, (status, output)
+
+      with subtest("最適化の本体が動いている間は正常"):
+          machine.succeed("systemctl start --no-block nix-optimise.service")
+          wait_for_state("nix-optimise.service", "start")
+          status, output = check("${unreachable}")
+          assert status == 0, (status, output)
+          assert output == "Test Runner OK: stopped while nix-optimise.service is start\n", output
+          machine.succeed("touch ${optimiseDone}")
     '';
 }

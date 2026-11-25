@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	// apiTimeout bounds the queries to GitHub.
+	// apiTimeout bounds all the queries to GitHub together, not each one.
 	apiTimeout = 10 * time.Second
 	// systemdTimeout bounds the queries to systemd.
 	systemdTimeout = 10 * time.Second
@@ -88,8 +88,9 @@ func run(opts options) *checkers.Checker {
 	if err != nil {
 		return checkers.Unknown(fmt.Sprintf("cannot read the token: %v", err))
 	}
+	// The deadline comes from the context in check, so the client has none.
 	client := &githubClient{
-		http:  &http.Client{Timeout: apiTimeout},
+		http:  &http.Client{},
 		api:   opts.api,
 		token: strings.TrimSpace(string(token)),
 	}

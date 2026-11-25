@@ -117,29 +117,8 @@ in
       plugin.checks = {
         ssh = systemdUnitCheck "sshd.service";
         tailscale = {
-          command = lib.getExe (
-            pkgs.writeShellApplication {
-              name = "check-tailscale";
-              runtimeInputs = [
-                config.services.tailscale.package
-                pkgs.jq
-              ];
-              text = ''
-                # BackendStateがRunningかつSelf.OnlineがtrueであればOK
-                status=$(tailscale status --json 2>&1)
-                backend_state=$(echo "$status" | jq -r '.BackendState' 2>/dev/null \
-                                  || echo "unknown")
-                online=$(echo "$status" | jq -r '.Self.Online' 2>/dev/null || echo "false")
-                if [[ "$backend_state" == "Running" ]] && [[ "$online" == "true" ]]; then
-                  echo "Tailscale OK (connected to tailnet)"
-                  exit 0
-                else
-                  echo "Tailscale CRITICAL: BackendState=$backend_state, Online=$online"
-                  exit 2
-                fi
-              '';
-            }
-          );
+          # 正常にする条件は、コマンドの側(`pkgs/mackerel-check-tailscale`)に書いています。
+          command = lib.getExe pkgs.mackerel-check-tailscale;
           inherit check_interval;
           # 一時的な瞬断で自動復帰するケースが多いため、
           # 失敗を多めに許容します。

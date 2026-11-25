@@ -457,6 +457,7 @@
               actionlint.enable = true;
               deadnix.enable = true;
               fourmolu.enable = true;
+              gofmt.enable = true;
               hlint.enable = true;
               nixf-diagnose.enable = true;
               nixfmt.enable = true;

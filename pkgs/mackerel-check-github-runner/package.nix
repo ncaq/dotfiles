@@ -4,7 +4,7 @@
 #
 # ```console
 # mackerel-check-github-runner --label "GitHub Runner x64 dotfiles" \
-#   --token-file /run/secrets/runner-registration-pat \
+#   --token-file /run/secrets/github-runner-read-pat \
 #   --repository ncaq/dotfiles --runner dotfiles-x64-0
 # ```
 #
@@ -17,6 +17,7 @@
 # そこでGitHubのAPIでランナの一覧を引いて、
 # ランナが登録されていて`online`であることを確かめます。
 # トークンはリポジトリの`Administration`を読めれば足ります。
+# ランナの一覧を読むのに、これより狭い権限はありません。
 #
 # ランナはephemeralで、ジョブが終わるたびに登録し直します。
 # 登録し直す数秒の間は登録されていない状態になるので、

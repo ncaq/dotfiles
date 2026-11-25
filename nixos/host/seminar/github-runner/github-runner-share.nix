@@ -108,8 +108,7 @@ in
     secrets = {
       # ランナの登録トークンを発行するためのPAT。
       # リポジトリの`Administration: Read and write`を持つfine-grained PATです。
-      # ホストの`registrationTokenBroker`と、
-      # ランナの登録を確かめるMackerelのチェック(`nixos/host/seminar/mackerel.nix`)だけが読み、
+      # ホストの`registrationTokenBroker`だけが読み、
       # ランナのVMには渡しません。
       "runner-registration-pat" = {
         sopsFile = ../../../../secrets/seminar/github-runner.yaml;

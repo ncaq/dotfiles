@@ -70,7 +70,8 @@ let
   # GitHub ActionsのランナのVMのチェック。
   # VMの中のランナが全てGitHubに登録されていてonlineであることを、GitHubのAPIで確かめます。
   # 登録されていなくても正常として扱う条件は、コマンドの側(`pkgs/mackerel-check-github-runner`)に書いています。
-  # APIは登録トークンを発行するのと同じPATで読みます。
+  # APIはランナの一覧を読むだけのPATで読みます。
+  # 登録トークンを発行するPATは書き込みの権限を持つので使い回しません。
   githubRunnerCheck =
     { name, label }:
     let
@@ -82,7 +83,7 @@ let
         "--label"
         label
         "--token-file"
-        config.sops.secrets."runner-registration-pat".path
+        config.sops.secrets."github-runner-read-pat".path
         "--repository"
         vm.repository
       ]
@@ -216,6 +217,18 @@ in
     secrets."mackerel-api-key" = {
       sopsFile = ../../../secrets/seminar/mackerel.yaml;
       key = "api_key";
+      owner = "root";
+      group = "root";
+      mode = "0400";
+    };
+    # GitHub Actionsのランナの登録を確かめるためのPAT。
+    # ランナを置いているリポジトリの`Administration: Read-only`だけを持つfine-grained PATです。
+    # ランナの一覧を読むのに、これより狭い権限はありません。
+    # 今はチェックがrootで動くのでrootだけが読めるようにしていますが、
+    # チェックをrootから外す時は所有者をチェックのユーザに変えます。
+    secrets."github-runner-read-pat" = {
+      sopsFile = ../../../secrets/seminar/mackerel.yaml;
+      key = "github_runner_read_pat";
       owner = "root";
       group = "root";
       mode = "0400";

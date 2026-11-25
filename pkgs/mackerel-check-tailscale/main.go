@@ -9,6 +9,7 @@ import (
 
 	"github.com/mackerelio/checkers"
 	"tailscale.com/client/local"
+	"tailscale.com/ipn/ipnstate"
 )
 
 // timeout bounds the request to the local tailscaled.
@@ -28,14 +29,16 @@ func run() *checkers.Checker {
 	if err != nil {
 		return checkers.Critical(err.Error())
 	}
-	return judge(status.BackendState, status.Self != nil && status.Self.Online)
+	return judge(status)
 }
 
 // judge reports OK only when tailscaled is running and the control plane
 // sees this node as online.
-func judge(backendState string, online bool) *checkers.Checker {
-	msg := fmt.Sprintf("BackendState=%s, Online=%t", backendState, online)
-	if backendState == "Running" && online {
+// Self is missing before the node has logged in, which counts as offline.
+func judge(status *ipnstate.Status) *checkers.Checker {
+	online := status.Self != nil && status.Self.Online
+	msg := fmt.Sprintf("BackendState=%s, Online=%t", status.BackendState, online)
+	if status.BackendState == "Running" && online {
 		return checkers.Ok(msg)
 	}
 	return checkers.Critical(msg)

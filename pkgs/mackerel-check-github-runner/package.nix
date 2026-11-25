@@ -1,19 +1,33 @@
-# GitHub ActionsのランナのVMが生きているかを確かめる、Mackerelのチェックのコマンド。
+# GitHub ActionsのランナのVMのランナが、GitHubに登録されていてonlineかを確かめる、Mackerelのチェックのコマンド。
 #
 # `nixos/host/seminar/mackerel.nix`がチェックとして登録する。
 #
 # ```console
-# mackerel-check-github-runner "GitHub Runner x64 dotfiles" fd00::1
+# mackerel-check-github-runner --label "GitHub Runner x64 dotfiles" \
+#   --token-file /run/secrets/runner-registration-pat \
+#   --repository ncaq/dotfiles --runner dotfiles-x64-0
 # ```
 #
-# 引数は表示名とVMのアドレス。
+# `--runner`は繰り返して、VMの中の全てのランナを渡す。
 # 終了コードはMackerelのチェックの決まりに従い、正常なら0、異常なら2。
+# GitHubに問い合わせられない時は、ランナの状態が分からないので3(UNKNOWN)を返す。
+#
+# VMにpingが届くだけでは、ランナがジョブを受け取れるかは分かりません。
+# VMが動いていても、ランナの登録に失敗し続けていればジョブは来ません。
+# そこでGitHubのAPIでランナの一覧を引いて、
+# ランナが登録されていて`online`であることを確かめます。
+# トークンはリポジトリの`Administration`を読めれば足ります。
+#
+# ランナはephemeralで、ジョブが終わるたびに登録し直します。
+# 登録し直す数秒の間は登録されていない状態になるので、
+# チェックの側で1回の失敗を許して吸収します。
 #
 # ランナのVMは、ホストのGCとストアの最適化の間は毎日わざと止められます。
 # 止まっている時間は数分から数十分で、ストアの状態によって変わります。
 # 失敗を許す回数を増やして吸収しようとすると、
 # 本当に落ちた時に気付くのもその分遅れます。
-# そこで応答が無くても、GCか最適化がVMを止めている間は正常として扱います。
+# そこでランナが登録されていなかったりofflineだったりしても、
+# GCか最適化がVMを止めている間は正常として扱います。
 # 止める側の定義は`nixos/host/seminar/github-runner/github-runner-x64.nix`の`storeWriterUnits`です。
 #
 # VMが止まっているのは、サービスの前処理から後処理までの間です。
@@ -26,16 +40,17 @@
 # 再試行の待ち(`auto-restart`)と、
 # 打ち切りの判定(`condition`)と、負荷の検査(`start-pre`)は正常にしません。
 #
-# 以下の間は、正常として扱われないのに応答が無い状態になります。
+# 以下の間は、正常として扱われないのにランナが使えない状態になります。
 # どれも数秒から十数秒なので、チェックの側で1回の失敗を許して吸収します。
 #
 # - VMを止める前処理が動いている間(負荷の検査と同じ`start-pre`)
 # - GCから最適化へ移る間
-# - 最適化が終わってからVMが起動し終わるまで
+# - 最適化が終わってからVMが起動してランナが登録し終わるまで
 #
 # Goで書いているのは、Mackerelのチェックプラグインのエコシステムに合わせるためです。
-# pingもユニットの状態も、外部コマンドの出力を読まずにライブラリで直に取ります。
-# ICMPのソケットを直に開くので、rootで動かす必要があります。
+# ユニットの状態は、外部コマンドの出力を読まずにライブラリで直に取ります。
+# GitHubのAPIは1つのエンドポイントを引くだけなので、標準ライブラリのHTTPで叩きます。
+# トークンのファイルはrootだけが読めるので、rootで動かす必要があります。
 #
 # Goの依存はRenovateの対象から外していて、手で更新します。
 # 理由は`renovate.json`に書いています。
@@ -47,7 +62,7 @@
 }:
 buildGoModule {
   pname = "mackerel-check-github-runner";
-  version = "0.1.0";
+  version = "0.2.0";
 
   # 動かすものだけをstoreへ入れる。
   src = lib.fileset.toSource {
@@ -55,18 +70,17 @@ buildGoModule {
     fileset = lib.fileset.unions [
       ./go.mod
       ./go.sum
-      ./main.go
-      ./main_test.go
+      (lib.fileset.fileFilter (file: file.hasExt "go") ./.)
     ];
   };
 
-  vendorHash = "sha256-Zldt2r/3+ebeWX+hVyMcEj56gtqhnRd9+/GNFfRW4jw=";
+  vendorHash = "sha256-QlrGsIxVnnwvRYGFBouwiIYhtip+SP1BfmT/9jj0m4I=";
 
   # 正常にする条件はsystemdのユニットの状態との組み合わせなので、コンテナの中で実際のユニットを動かす。
   passthru.tests.nixos = import ./nixos-test.nix { inherit testers; };
 
   meta = {
-    description = "Mackerel check plugin that reports whether a GitHub Actions runner VM is alive";
+    description = "Mackerel check plugin that reports whether the GitHub Actions runners of a VM are online on GitHub";
     mainProgram = "mackerel-check-github-runner";
   };
 }

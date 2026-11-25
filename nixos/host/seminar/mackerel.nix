@@ -68,14 +68,29 @@ let
       ++ extraArgs
     );
   # GitHub ActionsのランナのVMのチェック。
-  # 応答が無くても正常として扱う条件は、コマンドの側(`pkgs/mackerel-check-github-runner`)に書いています。
+  # VMの中のランナが全てGitHubに登録されていてonlineであることを、GitHubのAPIで確かめます。
+  # 登録されていなくても正常として扱う条件は、コマンドの側(`pkgs/mackerel-check-github-runner`)に書いています。
+  # APIは登録トークンを発行するのと同じPATで読みます。
   githubRunnerCheck =
     { name, label }:
-    mkCheck [
-      (lib.getExe pkgs.mackerel-check-github-runner)
-      label
-      config.machineAddresses.${name}.guest6
-    ];
+    let
+      vm = config.local.githubRunnerVms.${name};
+    in
+    mkCheck (
+      [
+        (lib.getExe pkgs.mackerel-check-github-runner)
+        "--label"
+        label
+        "--token-file"
+        config.sops.secrets."runner-registration-pat".path
+        "--repository"
+        vm.repository
+      ]
+      ++ lib.concatMap (runner: [
+        "--runner"
+        runner
+      ]) vm.runnerNames
+    );
 in
 {
   services.mackerel-agent = {

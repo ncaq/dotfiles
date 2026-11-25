@@ -132,10 +132,15 @@ in
             # 環境変数で設定して直接起動します。
             # パスは未指定だとデフォルトの`/mcp`になり、前段Caddyの転送先と一致します。
             # 外部からはCaddy経由でアクセスするのでループバックのみで待ち受けます。
+            # ステートレスにして、リクエストごとに完結させます。
+            # 読み取り専用の問い合わせに答えるだけで、セッションに持つ状態がありません。
+            # サーバが再起動してもクライアントのセッションが切れず、
+            # Mackerelのチェックもセッションを作らずに`ping`を投げられます。
             Environment = [
               "MCP_NIXOS_TRANSPORT=http"
               "MCP_NIXOS_HOST=::1"
               "MCP_NIXOS_PORT=8081"
+              "MCP_NIXOS_STATELESS_HTTP=true"
             ];
             ExecStart = "${pkgs.mcp-nixos}/bin/mcp-nixos";
             DynamicUser = true;

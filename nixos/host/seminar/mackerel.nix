@@ -47,6 +47,7 @@ let
     {
       url,
       statuses ? [ "400-499=critical" ],
+      extraArgs ? [ ],
     }:
     {
       command = lib.escapeShellArgs (
@@ -61,6 +62,7 @@ let
           "--status"
           status
         ]) statuses
+        ++ extraArgs
       );
       inherit
         check_interval
@@ -188,12 +190,31 @@ in
         niks3-private = httpCheck {
           url = "http://[${config.machineAddresses.niks3-private.guest6}]:5751";
         };
-        # MCPサーバのHTTPエンドポイントは、
-        # MCPの手順を踏まない素のGETには4xxを返します。
-        # 4xxでもサーバは動作しているので正常として扱います。
+        # MCPの`ping`を投げて、結果が返ることを見ます。
+        # 前段のCaddyだけでなく、MCPサーバ自身が応答していることを確かめられます。
+        # セッション無しで`ping`を受け付けるのは、
+        # `mcp-nixos.nix`でステートレスにしているからです。
+        # JSON-RPCはエラーも200で返すことがあるので、`result`があることも見ます。
+        # `check-http`は二重引用符で始まる値をGoの文字列リテラルとして解釈しようとするので、
+        # パターンはキーの先頭の引用符を省いています。
         mcp-nixos = httpCheck {
           url = "http://[${config.machineAddresses.mcp-nixos.guest6}]:8080/mcp";
-          statuses = [ "400-499=ok" ];
+          extraArgs = [
+            "--method"
+            "POST"
+            "-H"
+            "Content-Type: application/json"
+            "-H"
+            "Accept: application/json, text/event-stream"
+            "--body"
+            (builtins.toJSON {
+              jsonrpc = "2.0";
+              id = 1;
+              method = "ping";
+            })
+            "--pattern"
+            ''result":''
+          ];
         };
         github-runner-dotfiles-x64 = githubRunnerCheck {
           name = "github-runner-dotfiles-x64";

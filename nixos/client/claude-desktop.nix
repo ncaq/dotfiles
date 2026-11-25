@@ -2,19 +2,13 @@
   lib,
   pkgs,
   config,
-  username,
   inputs,
   ...
 }:
 {
   imports = [ inputs.claude-desktop.nixosModules.default ];
 
-  programs.claude-desktop = {
-    enable = true;
-    # Coworkのmicro-VMは`/dev/kvm`を開く必要があるため、
-    # 上流モジュールにkvmグループへ追加するユーザを渡す。
-    cowork.kvmUsers = [ username ];
-  };
+  programs.claude-desktop.enable = true;
 
   # PCが起動しているときは基本的にモバイルのClaudeアプリなどからClaude Desktopに繋げるように、
   # GUIセッションの開始時にトレイへ常駐させます。

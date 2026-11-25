@@ -55,7 +55,12 @@ func run(address string) *checkers.Checker {
 			msg := fmt.Sprintf("ping failed: %v; cannot ask systemd about %s: %v", pingErr, unit, err)
 			return checkers.Critical(msg)
 		}
-		subState, _ := property.Value.Value().(string)
+		value := property.Value.Value()
+		subState, ok := value.(string)
+		if !ok {
+			msg := fmt.Sprintf("ping failed: %v; unexpected SubState type of %s: %T", pingErr, unit, value)
+			return checkers.Critical(msg)
+		}
 		if stopsVM(subState) {
 			return checkers.Ok(fmt.Sprintf("stopped while %s is %s", unit, subState))
 		}

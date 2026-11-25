@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -63,6 +64,8 @@ func TestGithubClientFindRunner(t *testing.T) {
 		}
 		// Answers with a similar name too, which must not be taken.
 		switch r.URL.Query().Get("name") {
+		case "broken":
+			_, _ = w.Write([]byte(`{"runners":[`))
 		case "test-0":
 			_, _ = w.Write([]byte(`{"total_count":2,"runners":[` +
 				`{"name":"test-00","status":"offline"},` +
@@ -100,8 +103,17 @@ func TestGithubClientFindRunner(t *testing.T) {
 	})
 	t.Run("bad token", func(t *testing.T) {
 		bad := &githubClient{http: server.Client(), api: server.URL, token: "wrong"}
-		if _, err := bad.FindRunner(ctx, "owner/repo", "test-0"); err == nil {
-			t.Error("FindRunner() succeeded with a wrong token")
+		_, err := bad.FindRunner(ctx, "owner/repo", "test-0")
+		// The status and the body are shown in Mackerel as they are.
+		want := "401 Unauthorized: bad credentials Bearer wrong"
+		if err == nil || err.Error() != want {
+			t.Errorf("FindRunner() error = %v, want %q", err, want)
+		}
+	})
+	t.Run("broken response", func(t *testing.T) {
+		_, err := client.FindRunner(ctx, "owner/repo", "broken")
+		if err == nil || !strings.HasPrefix(err.Error(), "cannot decode the runners: ") {
+			t.Errorf("FindRunner() error = %v, want a decode error", err)
 		}
 	})
 }

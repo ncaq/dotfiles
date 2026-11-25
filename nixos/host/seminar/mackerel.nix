@@ -20,8 +20,8 @@ let
   #
   # systemdのユニットがactiveであることのチェック。
   # `--state`を渡さないと、止まっているユニットも正常として扱われます。
-  # `--no-startup-time`を渡さないと、ホストの起動に120秒より長くかかった時に、
-  # ユニットの状態に関わらず異常になります。
+  # `--no-startup-time`を渡さないと、ホストの起動にかかった時間も検査されます。
+  # 60秒より長いと警告、120秒より長いと異常になり、ユニットの状態は関係ありません。
   # `systemctl`は`mackerel-agent`のユニットの`PATH`から探されます。
   systemdUnitCheck = unit: {
     command = lib.escapeShellArgs [

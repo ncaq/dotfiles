@@ -68,7 +68,7 @@ testers.runNixOSTest {
       with subtest("GCが動いていない時は異常"):
           status, output = check("${unreachable}")
           assert status == 2, (status, output)
-          assert output == "Test Runner CRITICAL: ping failed\n", output
+          assert output.startswith("Test Runner CRITICAL: ping failed: "), output
 
       with subtest("負荷の検査の間は異常"):
           machine.succeed("systemctl start --no-block nix-gc.service")
@@ -86,7 +86,7 @@ testers.runNixOSTest {
       with subtest("応答があれば正常"):
           status, output = check("::1")
           assert status == 0, (status, output)
-          assert output == "Test Runner OK\n", output
+          assert output == "Test Runner OK: ping succeeded\n", output
 
       with subtest("GCが終わった後は異常"):
           machine.succeed("touch ${mainDone}")

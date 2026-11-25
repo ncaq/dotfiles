@@ -33,40 +33,36 @@
 # - GCから最適化へ移る間
 # - 最適化が終わってからVMが起動し終わるまで
 #
-# pingを打って文字列を比べるだけなので、シェルスクリプトにしています。
+# Goで書いているのは、Mackerelのチェックプラグインのエコシステムに合わせるためです。
+# pingもユニットの状態も、外部コマンドの出力を読まずにライブラリで直に取ります。
+# ICMPのソケットを直に開くので、rootで動かす必要があります。
 {
-  iputils,
-  systemd,
+  lib,
+  buildGoModule,
   testers,
-  writeShellApplication,
 }:
-writeShellApplication {
-  name = "mackerel-check-github-runner";
-  runtimeInputs = [
-    iputils
-    systemd
-  ];
-  text = ''
-    label=$1
-    runner_host=$2
-    if ping -c 1 -W 2 "$runner_host" > /dev/null 2>&1; then
-      echo "$label OK"
-      exit 0
-    fi
-    for unit in nix-gc.service nix-optimise.service; do
-      state=$(systemctl show --property=SubState --value "$unit")
-      case "$state" in
-        start | start-post | running | \
-          stop | stop-sigterm | stop-sigkill | \
-          stop-post | final-sigterm | final-sigkill)
-          echo "$label OK: stopped while $unit is $state"
-          exit 0
-          ;;
-      esac
-    done
-    echo "$label CRITICAL: ping failed"
-    exit 2
-  '';
+buildGoModule {
+  pname = "mackerel-check-github-runner";
+  version = "0.1.0";
+
+  # 動かすものだけをstoreへ入れる。
+  src = lib.fileset.toSource {
+    root = ./.;
+    fileset = lib.fileset.unions [
+      ./go.mod
+      ./go.sum
+      ./main.go
+      ./main_test.go
+    ];
+  };
+
+  vendorHash = "sha256-Zldt2r/3+ebeWX+hVyMcEj56gtqhnRd9+/GNFfRW4jw=";
+
   # 正常にする条件はsystemdのユニットの状態との組み合わせなので、コンテナの中で実際のユニットを動かす。
   passthru.tests.nixos = import ./nixos-test.nix { inherit testers; };
+
+  meta = {
+    description = "Mackerel check plugin that reports whether a GitHub Actions runner VM is alive";
+    mainProgram = "mackerel-check-github-runner";
+  };
 }

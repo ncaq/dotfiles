@@ -75,7 +75,7 @@ let
     { name, label }:
     {
       command = lib.escapeShellArgs [
-        (lib.getExe (pkgs.mackerel-check-github-runner.override { systemd = config.systemd.package; }))
+        (lib.getExe pkgs.mackerel-check-github-runner)
         label
         config.machineAddresses.${name}.guest6
       ];

@@ -84,7 +84,7 @@ func main() {
 }
 
 func run(opts options) *checkers.Checker {
-	token, err := os.ReadFile(opts.tokenFile)
+	token, err := readToken(opts.tokenFile)
 	if err != nil {
 		return checkers.Unknown(fmt.Sprintf("cannot read the token: %v", err))
 	}
@@ -92,9 +92,24 @@ func run(opts options) *checkers.Checker {
 	client := &githubClient{
 		http:  &http.Client{},
 		api:   opts.api,
-		token: strings.TrimSpace(string(token)),
+		token: token,
 	}
 	return check(opts.repository, opts.runners, client, systemdSubState)
+}
+
+// readToken reads the token from the file without the surrounding spaces.
+// An empty file is refused here, so that a secret missing from the file is
+// not reported as a rejection by GitHub.
+func readToken(path string) (string, error) {
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	token := strings.TrimSpace(string(content))
+	if token == "" {
+		return "", errors.New("the token file is empty")
+	}
+	return token, nil
 }
 
 // check asks the finder about the wanted runners and judges the result.

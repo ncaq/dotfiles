@@ -16,15 +16,24 @@ let
   # チェックのコマンドはなるべく自前で書かずに、既にあるものを使います。
   # Mackerel公式の`pkgs/go-check-plugins`と、
   # 終了コードの決まりが同じNagios向けのプラグインです。
-  # コマンドは`sh -c`で実行されるので、引数を引用して1つの文字列にします。
   #
+  # 引数の並びから、標準的な間隔と失敗の上限のチェックを作ります。
+  # コマンドは`sh -c`で実行されるので、引数を引用して1つの文字列にします。
+  mkCheck = args: {
+    command = lib.escapeShellArgs args;
+    inherit
+      check_interval
+      max_check_attempts
+      ;
+  };
   # systemdのユニットがactiveであることのチェック。
   # `--state`を渡さないと、止まっているユニットも正常として扱われます。
   # `--no-startup-time`を渡さないと、ホストの起動にかかった時間も検査されます。
   # 60秒より長いと警告、120秒より長いと異常になり、ユニットの状態は関係ありません。
   # `systemctl`は`mackerel-agent`のユニットの`PATH`から探されます。
-  systemdUnitCheck = unit: {
-    command = lib.escapeShellArgs [
+  systemdUnitCheck =
+    unit:
+    mkCheck [
       (lib.getExe pkgs.nagiosPlugins.check_systemd)
       "--unit"
       unit
@@ -33,11 +42,6 @@ let
       "--no-startup-time"
       "--no-performance-data"
     ];
-    inherit
-      check_interval
-      max_check_attempts
-      ;
-  };
   # HTTPの応答のチェック。
   # `check-http`は既定で3xxまでを正常、4xxを警告、5xxと接続の失敗を異常にします。
   # リダイレクトは辿って、辿った先のステータスで判定します。
@@ -49,41 +53,29 @@ let
       statuses ? [ "400-499=critical" ],
       extraArgs ? [ ],
     }:
-    {
-      command = lib.escapeShellArgs (
-        [
-          (lib.getExe' pkgs.go-check-plugins "check-http")
-          "--url"
-          url
-          "--timeout"
-          "3"
-        ]
-        ++ lib.concatMap (status: [
-          "--status"
-          status
-        ]) statuses
-        ++ extraArgs
-      );
-      inherit
-        check_interval
-        max_check_attempts
-        ;
-    };
+    mkCheck (
+      [
+        (lib.getExe' pkgs.go-check-plugins "check-http")
+        "--url"
+        url
+        "--timeout"
+        "3"
+      ]
+      ++ lib.concatMap (status: [
+        "--status"
+        status
+      ]) statuses
+      ++ extraArgs
+    );
   # GitHub ActionsのランナのVMのチェック。
   # 応答が無くても正常として扱う条件は、コマンドの側(`pkgs/mackerel-check-github-runner`)に書いています。
   githubRunnerCheck =
     { name, label }:
-    {
-      command = lib.escapeShellArgs [
-        (lib.getExe pkgs.mackerel-check-github-runner)
-        label
-        config.machineAddresses.${name}.guest6
-      ];
-      inherit
-        check_interval
-        max_check_attempts
-        ;
-    };
+    mkCheck [
+      (lib.getExe pkgs.mackerel-check-github-runner)
+      label
+      config.machineAddresses.${name}.guest6
+    ];
 in
 {
   services.mackerel-agent = {
@@ -116,10 +108,8 @@ in
       # ヘルスチェックプラグイン
       plugin.checks = {
         ssh = systemdUnitCheck "sshd.service";
-        tailscale = {
-          # 正常にする条件は、コマンドの側(`pkgs/mackerel-check-tailscale`)に書いています。
-          command = lib.getExe pkgs.mackerel-check-tailscale;
-          inherit check_interval;
+        # 正常にする条件は、コマンドの側(`pkgs/mackerel-check-tailscale`)に書いています。
+        tailscale = mkCheck [ (lib.getExe pkgs.mackerel-check-tailscale) ] // {
           # 一時的な瞬断で自動復帰するケースが多いため、
           # 失敗を多めに許容します。
           max_check_attempts = 3;
@@ -134,30 +124,24 @@ in
         # 使われない値を渡しています。
         # 接続の数が70を超えると警告、90を超えると異常になります。
         # 繋がらない時は異常ではなくUNKNOWNを返します。
-        postgresql = {
-          command = lib.escapeShellArgs [
-            (lib.getExe' pkgs.util-linux "runuser")
-            "-u"
-            "healthcheck"
-            "--"
-            (lib.getExe' pkgs.go-check-plugins "check-postgresql")
-            "connection"
-            "--host"
-            "/run/postgresql"
-            "--user"
-            "healthcheck"
-            "--password"
-            "unused"
-            "--database"
-            "healthcheck"
-            "--timeout"
-            "3"
-          ];
-          inherit
-            check_interval
-            max_check_attempts
-            ;
-        };
+        postgresql = mkCheck [
+          (lib.getExe' pkgs.util-linux "runuser")
+          "-u"
+          "healthcheck"
+          "--"
+          (lib.getExe' pkgs.go-check-plugins "check-postgresql")
+          "connection"
+          "--host"
+          "/run/postgresql"
+          "--user"
+          "healthcheck"
+          "--password"
+          "unused"
+          "--database"
+          "healthcheck"
+          "--timeout"
+          "3"
+        ];
         # S3 APIのルートGETはデータ層の過負荷に巻き込まれて遅延しやすいので、
         # admin APIの軽量なlivenessエンドポイント/healthを使います。
         # /healthは認証不要で、quorumを満たせば200、不足すれば503を返します。

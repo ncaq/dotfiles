@@ -149,6 +149,12 @@ let
       extraRunnerOptions.serviceOverrides.ReadWritePaths = [ cdnDeployRoot ];
     };
   };
+  # GitHubのAPIで使う`OWNER/REPO`の形のリポジトリ名。
+  repositoryOf = def: lib.removePrefix "https://github.com/" def.url;
+  # VMの中のランナがGitHubに登録される名前。
+  runnerNamesOf =
+    { basename, runnerNum, ... }:
+    builtins.genList (number: "${basename}-${toString number}") runnerNum;
   # 登録トークンを発行するホスト側のサービスの名前。
   tokenServiceOf = name: "${name}-registration-token";
   # 登録トークンを置くホスト側のディレクトリ。
@@ -309,11 +315,10 @@ let
           resolved.enable = true;
           github-runners =
             let
-              runnerNumbers = builtins.genList (x: x) runnerNum;
               args = { inherit pkgs; };
               extraPkgs = (githubActionsRunnerPackages args).all ++ selfHostRunnerPackages args;
-              mkRunner = number: {
-                name = "${basename}-${toString number}";
+              mkRunner = runnerName: {
+                name = runnerName;
                 value = {
                   enable = true;
                   ephemeral = true;
@@ -334,7 +339,11 @@ let
                 // extraRunnerOptions;
               };
             in
-            builtins.listToAttrs (map mkRunner runnerNumbers);
+            builtins.listToAttrs (
+              map mkRunner (runnerNamesOf {
+                inherit basename runnerNum;
+              })
+            );
         };
         systemd = {
           tmpfiles.rules = [ "d ${overlayMount}/builds 0755 root root -" ];
@@ -459,8 +468,11 @@ in
 
   local = {
     # ブートテストがVMの再起動とGCの前後の処理を確かめるために読みます。
-    githubRunnerVms = lib.mapAttrs (name: _: {
+    # Mackerelのチェックがランナの登録を確かめるためにも読みます。
+    githubRunnerVms = lib.mapAttrs (name: def: {
       storeService = "${storeServiceOf name}.service";
+      repository = repositoryOf def;
+      runnerNames = runnerNamesOf def;
     }) runnerVmDefs;
 
     # CIランナの出口はインターネットだけ。
@@ -521,7 +533,7 @@ in
             RuntimeDirectoryPreserve = true;
           };
           environment = {
-            GITHUB_RUNNER_REGISTRATION_TOKEN_REPOSITORY = lib.removePrefix "https://github.com/" def.url;
+            GITHUB_RUNNER_REGISTRATION_TOKEN_REPOSITORY = repositoryOf def;
             GITHUB_RUNNER_REGISTRATION_TOKEN_API = "https://api.github.com";
             GITHUB_RUNNER_REGISTRATION_TOKEN_ACCESS_TOKEN_FILE =
               config.sops.secrets."runner-registration-pat".path;

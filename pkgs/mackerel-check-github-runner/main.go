@@ -1,121 +1,143 @@
 // Command mackerel-check-github-runner is a Mackerel check plugin that reports
-// whether a GitHub Actions runner VM is alive.
+// whether the self-hosted GitHub Actions runners of a VM are registered on
+// GitHub and online.
 //
 // The VM is deliberately stopped while the host collects garbage or optimises
-// the store, so a missing reply is treated as OK during those periods.
+// the store, so missing runners are treated as OK during those periods.
 // The conditions are explained in package.nix.
 package main
 
 import (
 	"context"
+	"errors"
+	"flag"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
+	"strings"
 	"time"
 
-	"github.com/coreos/go-systemd/v22/dbus"
 	"github.com/mackerelio/checkers"
-	probing "github.com/prometheus-community/pro-bing"
 )
 
 const (
-	// pingTimeout bounds the wait for a single echo reply.
-	pingTimeout = 2 * time.Second
+	// apiTimeout bounds all the queries to GitHub together, not each one.
+	apiTimeout = 10 * time.Second
 	// systemdTimeout bounds the queries to systemd.
 	systemdTimeout = 10 * time.Second
 )
 
-// storeWriterUnits are the units that stop the VM while they run.
-var storeWriterUnits = []string{"nix-gc.service", "nix-optimise.service"}
+// stringList is a flag that can be given more than once.
+type stringList []string
 
-func main() {
-	if len(os.Args) != 3 {
-		fmt.Fprintf(os.Stderr, "usage: %s LABEL ADDRESS\n", os.Args[0])
-		os.Exit(int(checkers.UNKNOWN))
-	}
-	ckr := run(os.Args[2])
-	ckr.Name = os.Args[1]
-	ckr.Exit()
+func (l *stringList) String() string { return strings.Join(*l, ",") }
+
+func (l *stringList) Set(value string) error {
+	*l = append(*l, value)
+	return nil
 }
 
-func run(address string) *checkers.Checker {
-	ctx, cancel := context.WithTimeout(context.Background(), systemdTimeout)
-	defer cancel()
-	return judge(ctx, ping(address), systemdSubState)
+// options are the command line arguments.
+type options struct {
+	label      string
+	api        string
+	tokenFile  string
+	repository string
+	runners    stringList
 }
 
-// subStateFunc reports the systemd sub state of a unit.
-type subStateFunc func(ctx context.Context, unit string) (string, error)
-
-// judge decides the result from the outcome of the ping.
-// It asks for the sub states only when the ping failed.
-func judge(ctx context.Context, pingErr error, subStateOf subStateFunc) *checkers.Checker {
-	if pingErr == nil {
-		return checkers.Ok("ping succeeded")
+// parseOptions parses the arguments without the command name.
+// The error and the usage are printed to output on an error.
+func parseOptions(args []string, output io.Writer) (options, error) {
+	var opts options
+	flags := flag.NewFlagSet("mackerel-check-github-runner", flag.ContinueOnError)
+	flags.SetOutput(output)
+	flags.StringVar(&opts.label, "label", "", "name shown in the check result")
+	flags.StringVar(&opts.api, "api", "https://api.github.com", "base URL of the GitHub REST API")
+	flags.StringVar(&opts.tokenFile, "token-file", "",
+		"file holding a token that can read the runners of the repository")
+	flags.StringVar(&opts.repository, "repository", "",
+		"repository the runners belong to, as OWNER/REPO")
+	flags.Var(&opts.runners, "runner", "name of a runner that must be online; may be repeated")
+	if err := flags.Parse(args); err != nil {
+		return opts, err
 	}
-	for _, unit := range storeWriterUnits {
-		subState, err := subStateOf(ctx, unit)
-		if err != nil {
-			msg := fmt.Sprintf("ping failed: %v; cannot ask systemd about %s: %v", pingErr, unit, err)
-			return checkers.Critical(msg)
-		}
-		if stopsVM(subState) {
-			return checkers.Ok(fmt.Sprintf("stopped while %s is %s", unit, subState))
-		}
-	}
-	return checkers.Critical(fmt.Sprintf("ping failed: %v", pingErr))
-}
-
-// systemdSubState asks systemd over D-Bus for the sub state of a unit.
-func systemdSubState(ctx context.Context, unit string) (string, error) {
-	conn, err := dbus.NewSystemConnectionContext(ctx)
+	err := validateOptions(opts, flags.Args())
 	if err != nil {
-		return "", err
+		fmt.Fprintln(flags.Output(), err)
+		flags.Usage()
 	}
-	defer conn.Close()
-	property, err := conn.GetUnitPropertyContext(ctx, unit, "SubState")
-	if err != nil {
-		return "", err
-	}
-	value := property.Value.Value()
-	subState, ok := value.(string)
-	if !ok {
-		return "", fmt.Errorf("unexpected SubState type %T", value)
-	}
-	return subState, nil
+	return opts, err
 }
 
-// ping sends one ICMP echo request and reports why no reply arrived.
-func ping(address string) error {
-	pinger, err := probing.NewPinger(address)
-	if err != nil {
-		return err
-	}
-	pinger.SetPrivileged(true)
-	pinger.Count = 1
-	pinger.Timeout = pingTimeout
-	if err := pinger.Run(); err != nil {
-		return err
-	}
-	if pinger.Statistics().PacketsRecv == 0 {
-		return fmt.Errorf("no reply from %s", address)
+// validateOptions reports the first missing or unexpected argument.
+func validateOptions(opts options, rest []string) error {
+	switch {
+	case opts.label == "":
+		return errors.New("--label is required")
+	case opts.tokenFile == "":
+		return errors.New("--token-file is required")
+	case opts.repository == "":
+		return errors.New("--repository is required")
+	case len(opts.runners) == 0:
+		return errors.New("--runner is required")
+	case len(rest) != 0:
+		return fmt.Errorf("unexpected arguments: %v", rest)
 	}
 	return nil
 }
 
-// stopsVM reports whether a store writer unit in the given sub state is
-// keeping the VM stopped.
-//
-// The VM is down from the end of the pre-start step until the post-stop step
-// finishes, including while systemd is killing the main or post-stop process.
-// The pre-start step itself, the condition check, and the wait before a retry
-// leave the VM running.
-func stopsVM(subState string) bool {
-	switch subState {
-	case "start", "start-post", "running",
-		"stop", "stop-sigterm", "stop-sigkill",
-		"stop-post", "final-sigterm", "final-sigkill":
-		return true
-	default:
-		return false
+func main() {
+	opts, err := parseOptions(os.Args[1:], os.Stderr)
+	if err != nil {
+		os.Exit(int(checkers.UNKNOWN))
 	}
+	ckr := run(opts)
+	ckr.Name = opts.label
+	ckr.Exit()
+}
+
+func run(opts options) *checkers.Checker {
+	token, err := readToken(opts.tokenFile)
+	if err != nil {
+		return checkers.Unknown(fmt.Sprintf("cannot read the token: %v", err))
+	}
+	// The deadline comes from the context in check, so the client has none.
+	client := &githubClient{
+		http:  &http.Client{},
+		api:   opts.api,
+		token: token,
+	}
+	return check(opts.repository, opts.runners, client, systemdSubState)
+}
+
+// readToken reads the token from the file without the surrounding spaces.
+// An empty file is refused here, so that a secret missing from the file is
+// not reported as a rejection by GitHub.
+func readToken(path string) (string, error) {
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	token := strings.TrimSpace(string(content))
+	if token == "" {
+		return "", errors.New("the token file is empty")
+	}
+	return token, nil
+}
+
+// check asks the finder about the wanted runners and judges the result.
+func check(
+	repository string, wanted []string, finder runnerFinder, subStateOf subStateFunc,
+) *checkers.Checker {
+	apiCtx, cancelAPI := context.WithTimeout(context.Background(), apiTimeout)
+	defer cancelAPI()
+	found, err := findRunners(apiCtx, finder, repository, wanted)
+	if err != nil {
+		return checkers.Unknown(err.Error())
+	}
+	systemdCtx, cancelSystemd := context.WithTimeout(context.Background(), systemdTimeout)
+	defer cancelSystemd()
+	return judge(systemdCtx, wanted, found, subStateOf)
 }

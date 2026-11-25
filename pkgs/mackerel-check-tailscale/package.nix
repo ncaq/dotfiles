@@ -13,6 +13,11 @@
 # Tailscaleが公式に提供しているローカルAPIのクライアントもGoだからです。
 # `tailscale status --json`の出力を読むのではなく、
 # 公式のクライアントでtailscaledへ直に問い合わせます。
+#
+# Goの依存はRenovateの対象から外していて、手で更新します。
+# 理由は`renovate.json`に書いています。
+# `tailscale.com`の版は、nixpkgsの`tailscale`の版に揃えます。
+# 依存を変えたら`vendorHash`も取り直します。
 {
   lib,
   buildGo127Module,

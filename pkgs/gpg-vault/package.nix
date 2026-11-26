@@ -1,14 +1,17 @@
-# GPG秘密鍵を通常ユーザから隔離するgpg-vaultの、GNUPGHOMEに置く静的な設定。
+# gpg-vaultのagentのGNUPGHOMEへ置く設定ファイル。
 #
-# 同じディレクトリの`module.nix`が、ここのファイルをgpg-vaultユーザのGNUPGHOMEへリンクして、
-# そのGNUPGHOMEでgpg-agentを動かす。
-# 何のために隔離するかは`module.nix`の冒頭に書いてある。
+# 入っているのは以下のファイルで、どの鍵を使うかには依らない。
 #
-# 通常ユーザへ公開するソケットの場所と名前は`socketDir`と`socketNames`として`passthru`に出していて、
-# `module.nix`とクライアント側の`home-module.nix`の両方がここから引く。
+# - `gpg-agent.conf`
+# - ソケットを`socketDir`に作らせるリダイレクトのファイル。ソケットごとに1つ
 #
-# ここに置くのは、どの鍵を使うかに依らないものだけ。
-# 鍵ごとに変わる`gpg.conf`と`sshcontrol`は、鍵の情報をオプションで受け取る`module.nix`が作る。
+# `module.nix`がこれらをgpg-vaultユーザのGNUPGHOMEへリンクして、gpg-agentを動かす。
+# 鍵ごとに変わる`gpg.conf`と`sshcontrol`はここには無く、鍵をオプションで受け取る`module.nix`が作る。
+#
+# ソケットの場所と名前は`passthru`にも出している。
+# `module.nix`とクライアント側の`home-module.nix`は、パスを自分では書かずにそこから引く。
+#
+# gpg-vaultが何のための仕組みかは`module.nix`の冒頭に書いてある。
 {
   pinentry-curses,
   symlinkJoin,
@@ -46,13 +49,13 @@ symlinkJoin {
   paths = [
     (writeTextDir "gpg-agent.conf" ''
       enable-ssh-support
-      # 鍵更新時に通常ユーザ側から`--pinentry-mode loopback`でパスフレーズ操作をするために必要です。
-      # pinentryはユーザ境界を跨いで通常ユーザの端末を開けないためloopbackを使います。
+      # パスフレーズの入力は、通常ユーザ側のgpgが`--pinentry-mode loopback`で受け取ってagentへ渡します。
+      # agentは別のユーザで動いていて、pinentryを通常ユーザの端末や画面に出せないためです。
       allow-loopback-pinentry
-      # パスフレーズなし運用なのでpinentryが実際に呼ばれることはありませんが、
+      # そのためpinentryが入力を受け取ることはありませんが、
       # 設定として有効なパスは必要です。
       pinentry-program ${pinentry-curses}/bin/pinentry-curses
-      # スマートカードは使わない運用なので、
+      # agentのユニットはデバイスを見せずに動かすので、スマートカードは使えません。
       # 鍵操作時にscdaemonがカード探索のためにspawnされるのを止めます。
       disable-scdaemon
     '')

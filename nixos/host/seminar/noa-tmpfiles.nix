@@ -14,10 +14,12 @@
   config,
   hardening,
   lib,
+  utils,
   ...
 }:
 let
   noa = "/mnt/noa";
+  noaMount = "${utils.escapeSystemdPath noa}.mount";
 
   isUnderNoa = path: path == noa || lib.hasPrefix "${noa}/" path;
   requiresNoa =
@@ -38,12 +40,12 @@ lib.mkIf (config.fileSystems ? ${noa}) {
       # マウントユニットから起動されるようにすると、
       # 起動時のマウントでも、
       # ディスクが欠けた後に手で`mount`した時でも実行される。
-      wantedBy = [ "mnt-noa.mount" ];
+      wantedBy = [ noaMount ];
       # アンマウントされたら止まって、
       # 次のマウントでもう一度実行されるようにする。
-      bindsTo = [ "mnt-noa.mount" ];
+      bindsTo = [ noaMount ];
       after = [
-        "mnt-noa.mount"
+        noaMount
         "systemd-sysusers.service"
       ];
       # 空のnoaを作り直した直後でも、

@@ -17,6 +17,8 @@
 # - グループに入ったユーザが、ソケット経由で鍵を作って署名できること
 # - そのユーザからもvaultのGNUPGHOMEは読めず、自分の側に秘密鍵のファイルが無いこと
 # - グループに入っていないユーザは、ソケットへ繋げないこと
+# - SSHのソケットも、グループのユーザにだけ応答すること
+# - agentを再起動しても、ソケットが同じ場所に同じ権限でできること
 #
 # クライアント側の`home-module.nix`はhome-managerのモジュールなので、ここでは動かしません。
 # 代わりに同じ形のソケットへのリンクを、ユーザのGNUPGHOMEへ手で置きます。
@@ -59,7 +61,11 @@ testers.runNixOSTest {
         };
         ${outsider}.isNormalUser = true;
       };
-      environment.systemPackages = [ pkgs.gnupg ];
+      environment.systemPackages = [
+        pkgs.gnupg
+        # SSHのソケットへ`ssh-add`で繋ぎます。
+        pkgs.openssh
+      ];
     };
 
   testScript =
@@ -68,12 +74,13 @@ testers.runNixOSTest {
       # 場所と名前はここに直に書かず、モジュールとパッケージの値から引きます。
       # 直に書くと、モジュールの側で場所を変えた時に、テストだけが古い場所を見続けます。
       inherit (containers.machine.services.gpg-vault) gnupgHome;
-      inherit (containers.machine.nixpkgs.pkgs.gpg-vault) socketDir socketNames;
+      inherit (containers.machine.nixpkgs.pkgs.gpg-vault) socketDir socketNames sshSocketName;
     in
     # python
     ''
       socket_dir = "${socketDir}"
       socket_names = ${builtins.toJSON socketNames}
+      ssh_socket = "${socketDir}/${sshSocketName}"
       vault_home = "${gnupgHome}"
       vault_parent = "${dirOf gnupgHome}"
 
@@ -96,6 +103,24 @@ testers.runNixOSTest {
           ))
 
 
+      def check_socket_permissions():
+          for name in socket_names:
+              stat = machine.succeed(f"stat -c '%U %G %a' {socket_dir}/{name}").strip()
+              assert stat == "gpg-vault gpg-vault 660", f"{name}: {stat}"
+          stat = machine.succeed(f"stat -c '%U %G %a' {socket_dir}").strip()
+          assert stat == "gpg-vault gpg-vault 750", stat
+
+
+      def ssh_add_status(user):
+          # `ssh-add -l`は、agentに繋がって鍵が無ければ1、繋がらなければ2で終わります。
+          status, _ = machine.execute(as_user(user, f"SSH_AUTH_SOCK={ssh_socket} ssh-add -l"))
+          return status
+
+
+      # `gpg-connect-agent`は繋げなくても0で終わるので、agentの応答があるかで見ます。
+      ask_agent = "gpg-connect-agent --no-autostart \"getinfo version\" /bye | grep --quiet \"^D \""
+      sign = "echo test | gpg --batch --sign --armor | gpg --batch --verify"
+
       machine.wait_for_unit("multi-user.target")
       machine.wait_for_unit("gpg-vault-agent.service")
       # lingerのユーザの`/run/user/<uid>`ができてから、gpgにソケットの場所を聞きます。
@@ -108,11 +133,7 @@ testers.runNixOSTest {
           )
 
       with subtest("ソケットはgpg-vaultグループにだけ開いている"):
-          for name in socket_names:
-              stat = machine.succeed(f"stat -c '%U %G %a' {socket_dir}/{name}").strip()
-              assert stat == "gpg-vault gpg-vault 660", stat
-          stat = machine.succeed(f"stat -c '%U %G %a' {socket_dir}").strip()
-          assert stat == "gpg-vault gpg-vault 750", stat
+          check_socket_permissions()
 
       with subtest("グループのユーザはソケット経由で鍵を作って署名できる"):
           point_to_vault("${member}")
@@ -121,10 +142,7 @@ testers.runNixOSTest {
               "gpg --batch --pinentry-mode loopback --passphrase \"\""
               " --quick-generate-key test@example.com ed25519 sign never"
           ))
-          machine.succeed(as_user(
-              "${member}",
-              "echo test | gpg --batch --sign --armor | gpg --batch --verify"
-          ))
+          machine.succeed(as_user("${member}", sign))
 
       with subtest("秘密鍵のファイルはvaultの中にだけある"):
           machine.succeed(f"test -n \"$(ls {vault_home}/private-keys-v1.d)\"")
@@ -139,10 +157,25 @@ testers.runNixOSTest {
 
       with subtest("グループの外のユーザはソケットへ繋げない"):
           point_to_vault("${outsider}")
-          # `gpg-connect-agent`は繋げなくても0で終わるので、agentの応答があるかで見ます。
-          ask_agent = "gpg-connect-agent --no-autostart \"getinfo version\" /bye | grep --quiet \"^D \""
           machine.fail(as_user("${outsider}", ask_agent))
           # 繋げる側では同じコマンドが通るので、失敗の理由は権限です。
           machine.succeed(as_user("${member}", ask_agent))
+
+      with subtest("SSHのソケットもグループのユーザにだけ応答する"):
+          # sshcontrolのkeygripはダミーなので、繋がっても鍵は出ません。
+          status = ssh_add_status("${member}")
+          assert status == 1, f"${member}: {status}"
+          status = ssh_add_status("${outsider}")
+          assert status == 2, f"${outsider}: {status}"
+
+      with subtest("agentを再起動してもソケットが同じ場所に同じ権限でできる"):
+          # 設定を変えた時は`restartTriggers`で再起動されるので、実際にも通る経路です。
+          # リダイレクトのファイルが残ることと、`ExecStartPost`のchmodが毎回効くことを見ます。
+          machine.succeed("systemctl restart gpg-vault-agent.service")
+          check_socket_permissions()
+          machine.succeed(as_user("${member}", ask_agent))
+          machine.succeed(as_user("${member}", sign))
+          status = ssh_add_status("${member}")
+          assert status == 1, f"${member}: {status}"
     '';
 }

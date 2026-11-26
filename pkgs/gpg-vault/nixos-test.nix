@@ -13,8 +13,11 @@
 # 以下を見ます。
 #
 # - agentが起動して、公開鍵がvault側のpubringへ取り込まれること
-# - ソケットがgpg-vaultグループにだけ開いていること
-# - グループに入ったユーザが、ソケット経由で鍵を作って署名できること
+# - 公開するソケットがgpg-vaultグループにだけ開いていて、全てのコマンドを受け付けるソケットは閉じていること
+# - gpg-vaultユーザが、全てのコマンドを受け付けるソケット経由で鍵を作れること
+# - グループに入ったユーザが、制限付きのソケット経由で署名と復号をできること
+# - そのユーザからは、秘密鍵のエクスポートとインポートと鍵の生成がagentに拒否されること
+# - 鍵の削除とパスフレーズの変更も拒否されて、秘密鍵がvaultに残ること
 # - そのユーザからもvaultのGNUPGHOMEは読めず、自分の側に秘密鍵のファイルが無いこと
 # - グループに入っていないユーザは、ソケットへ繋げないこと
 # - SSHのソケットも、グループのユーザにだけ応答すること
@@ -136,16 +139,24 @@ testers.runNixOSTest {
       inherit (containers.machine.services.gpg-vault) gnupgHome;
       inherit (containers.machine.nixpkgs.pkgs.gpg-vault)
         agentSocketName
+        clientSocketLinks
+        extraSocketName
+        publicSocketNames
         socketDir
-        socketNames
         sshSocketName
         ;
     in
     # python
     ''
+      import re
+
       socket_dir = "${socketDir}"
-      socket_names = ${builtins.toJSON socketNames}
+      public_socket_names = ${builtins.toJSON publicSocketNames}
+      client_socket_links = ${builtins.toJSON clientSocketLinks}
       agent_socket_name = "${agentSocketName}"
+      extra_socket_name = "${extraSocketName}"
+      # 全てのコマンドを受け付けるソケット。
+      full_socket = f"{socket_dir}/{agent_socket_name}"
       ssh_socket = "${socketDir}/${sshSocketName}"
       # グループに入ったユーザの`XDG_RUNTIME_DIR`。
       runtime_dir = "/run/user/${toString memberUid}"
@@ -157,8 +168,13 @@ testers.runNixOSTest {
           return f"runuser -u {user} -- sh -c 'cd && {command}'"
 
 
+      def as_vault(command):
+          # gpg-vaultユーザは、自分のGNUPGHOMEから全てのコマンドを受け付けるソケットへ繋ぎます。
+          return f"runuser -u gpg-vault -- env GNUPGHOME={vault_home} sh -c 'cd / && {command}'"
+
+
       def point_to_vault(user):
-          # home-managerを使わないユーザのgpgを、手でagentのソケットへ向けます。
+          # home-managerを使わないユーザのgpgを、手でagentの制限付きのソケットへ向けます。
           # gpgがソケットを探す場所は、`/run/user/<uid>`があるかで変わるので、gpg自身に聞きます。
           machine.succeed(as_user(
               user,
@@ -166,14 +182,16 @@ testers.runNixOSTest {
               " && echo no-autostart > .gnupg/gpg.conf"
               " && dir=$(gpgconf --list-dirs socketdir)"
               " && mkdir -m 700 -p $dir"
-              f" && ln -sf {socket_dir}/{agent_socket_name} $dir/{agent_socket_name}"
+              f" && ln -sf {socket_dir}/{extra_socket_name} $dir/{agent_socket_name}"
           ))
 
 
       def check_socket_permissions():
-          for name in socket_names:
+          for name in public_socket_names:
               stat = machine.succeed(f"stat -c '%U %G %a' {socket_dir}/{name}").strip()
               assert stat == "gpg-vault gpg-vault 660", f"{name}: {stat}"
+          stat = machine.succeed(f"stat -c '%U %G %a' {full_socket}").strip()
+          assert stat == "gpg-vault gpg-vault 700", f"{agent_socket_name}: {stat}"
           stat = machine.succeed(f"stat -c '%U %G %a' {socket_dir}").strip()
           assert stat == "gpg-vault gpg-vault 750", stat
 
@@ -184,9 +202,33 @@ testers.runNixOSTest {
           return status
 
 
+      def fail_forbidden(command):
+          # グループのユーザのコマンドが、agentに拒否されて失敗することを見ます。
+          # 終了コードだけでは、ファイルが読めないような別の理由の失敗と見分けられません。
+          status, output = machine.execute(as_user("${member}", f"( {command} ) 2>&1"))
+          assert status != 0, f"{command}: {output}"
+          assert "Forbidden" in output, f"{command}: {output}"
+          return output
+
+
       # `gpg-connect-agent`は繋げなくても0で終わるので、agentの応答があるかで見ます。
       ask_agent = "gpg-connect-agent --no-autostart \"getinfo version\" /bye | grep --quiet \"^D \""
+      # 繋いだソケットが制限付きなら、agentは`getinfo restricted`にOKを返します。
+      ask_restricted = "gpg-connect-agent --no-autostart \"getinfo restricted\" /bye | grep --line-regexp OK"
+      # ソケットを名指しして繋ぎます。
+      ask_full_socket = (
+          f"gpg-connect-agent --no-autostart -S {full_socket} \"getinfo version\" /bye"
+          " | grep --quiet \"^D \""
+      )
       sign = "echo test | gpg --batch --sign --armor | gpg --batch --verify"
+      decrypt = (
+          "echo test | gpg --batch --trust-model always --encrypt --recipient test@example.com"
+          " | gpg --batch --decrypt | grep --line-regexp test"
+      )
+      generate_key = (
+          "gpg --batch --pinentry-mode loopback --passphrase \"\""
+          " --quick-generate-key {} default default never"
+      )
 
       machine.wait_for_unit("multi-user.target")
       machine.wait_for_unit("gpg-vault-agent.service")
@@ -199,7 +241,7 @@ testers.runNixOSTest {
               " gpg --batch --no-autostart --list-keys ${importedUserId}"
           )
 
-      with subtest("ソケットはgpg-vaultグループにだけ開いている"):
+      with subtest("公開するソケットだけがgpg-vaultグループに開いている"):
           check_socket_permissions()
 
       with subtest("home-module.nixの規則がソケットへのリンクを置く"):
@@ -211,25 +253,83 @@ testers.runNixOSTest {
               f" && ln -sf {home_files}/gpg.conf .gnupg/gpg.conf"
               f" && XDG_RUNTIME_DIR={runtime_dir} systemd-tmpfiles --user --create {home_files}/user-tmpfiles.conf"
           ))
-          for name in socket_names:
+          for name, vault_name in client_socket_links.items():
               target = machine.succeed(f"readlink {runtime_dir}/gnupg/{name}").strip()
-              assert target == f"{socket_dir}/{name}", f"{name}: {target}"
+              assert target == f"{socket_dir}/{vault_name}", f"{name}: {target}"
+          # gpgが普通のソケットとして探す名前の先は、制限付きのソケットです。
+          assert client_socket_links[agent_socket_name] == extra_socket_name, client_socket_links
           # 鍵を持たないagentを自分で起動しないようにする設定です。
           machine.succeed(f"grep --line-regexp no-autostart {home_files}/gpg.conf")
+          # 制限付きのソケットで必ず出る警告を止める設定です。
+          machine.succeed(f"grep --line-regexp quiet {home_files}/gpg.conf")
           # ユーザのsystemdが起動の時に読む`environment.d`に出すファイルです。
           machine.succeed(
               f"grep --line-regexp --fixed-strings 'SSH_AUTH_SOCK={ssh_socket}'"
               f" {home_files}/environment.conf"
           )
 
-      with subtest("グループのユーザはソケット経由で鍵を作って署名できる"):
+      with subtest("gpg-vaultユーザは全てのコマンドを受け付けるソケット経由で鍵を作れる"):
+          machine.succeed(as_vault(generate_key.format("test@example.com")))
+          # 通常ユーザの側には公開鍵だけを渡します。
+          machine.succeed(
+              as_vault("gpg --batch --export --armor test@example.com") + " > /tmp/test-public.asc"
+          )
+          machine.succeed(as_user("${member}", "gpg --batch --import /tmp/test-public.asc"))
+
+      with subtest("グループのユーザは制限付きのソケット経由で署名と復号をできる"):
           # このユーザのgpgは、上で適用した`home-module.nix`のリンクと設定だけでagentへ繋ぎます。
-          machine.succeed(as_user(
-              "${member}",
-              "gpg --batch --pinentry-mode loopback --passphrase \"\""
-              " --quick-generate-key test@example.com ed25519 sign never"
-          ))
+          machine.succeed(as_user("${member}", ask_restricted))
+          output = machine.succeed(as_user("${member}", f"( {sign} ) 2>&1"))
+          # 秘密鍵の一覧を取る近道が拒否された警告は、`home-module.nix`の`quiet`で出なくなります。
+          assert "Forbidden" not in output, output
+          machine.succeed(as_user("${member}", decrypt))
+
+      with subtest("グループのユーザからの秘密鍵のエクスポートとインポートと鍵の生成は拒否される"):
+          output = fail_forbidden("gpg --batch --export-secret-keys --armor test@example.com")
+          assert "PRIVATE KEY" not in output, output
+          fail_forbidden(generate_key.format("other@example.com"))
+          # 同じ操作がgpg-vaultユーザからは通るので、拒否の理由はソケットの制限です。
+          machine.succeed(
+              as_vault("gpg --batch --export-secret-keys --armor test@example.com")
+              + " > /tmp/test-secret.asc"
+          )
+          machine.succeed("grep --quiet 'PRIVATE KEY' /tmp/test-secret.asc")
+          fail_forbidden("gpg --batch --import /tmp/test-secret.asc")
+
+      with subtest("グループのユーザからの鍵の削除とパスフレーズの変更は拒否される"):
+          count_secret_keys = f"ls {vault_home}/private-keys-v1.d | wc -l"
+          before = machine.succeed(count_secret_keys).strip()
+          # 鍵の一覧では、主鍵のフィンガープリントが16進数だけの行として出ます。
+          # v4の鍵はSHA-1で40桁、v5とv6の鍵はSHA-256で64桁です。
+          listing = machine.succeed(as_vault("gpg --batch --list-keys test@example.com"))
+          match = re.search(r"^\s*([0-9A-F]{40}|[0-9A-F]{64})$", listing, re.MULTILINE)
+          # 一覧の形が変わって取れなくなった時に、gpgが何を出したのかを見せます。
+          assert match, listing
+          fingerprint = match.group(1)
+          fail_forbidden(f"gpg --batch --yes --delete-secret-keys {fingerprint}")
+          fail_forbidden("gpg --batch --passwd test@example.com")
+          # loopbackへの切り替えそのものも拒否されます。
+          # gpgのコマンドでは他の操作の拒否と見分けられないので、agentへ切り替えだけを頼みます。
+          set_loopback = "gpg-connect-agent --no-autostart \"OPTION pinentry-mode=loopback\" /bye"
+          output = machine.succeed(as_user("${member}", f"( {set_loopback} ) 2>&1"))
+          errors = [line for line in output.splitlines() if line.startswith("ERR ")]
+          assert errors and "Forbidden" in errors[0], output
+          # 全てのコマンドを受け付けるソケットでは、同じ切り替えが通ります。
+          output = machine.succeed(as_vault(set_loopback))
+          assert output.splitlines() == ["OK"], output
+          # 拒否された後も、秘密鍵はvaultに残っていて使えます。
+          after = machine.succeed(count_secret_keys).strip()
+          assert before == after and int(after) > 0, f"{before} -> {after}"
+          machine.succeed(as_vault("gpg --batch --list-secret-keys test@example.com"))
           machine.succeed(as_user("${member}", sign))
+
+      with subtest("全てのコマンドを受け付けるソケットへはグループのユーザも繋げない"):
+          # 全てのコマンドを受け付けるソケットへは、名指ししても繋げません。
+          machine.fail(as_user("${member}", ask_full_socket))
+          machine.succeed(as_vault(ask_full_socket))
+          # 全てのコマンドを受け付けるソケットでは`getinfo restricted`が通らないので、
+          # 上の`ask_restricted`の成功は、制限付きのソケットに繋いだ時にだけ成り立ちます。
+          machine.fail(as_vault(ask_restricted))
 
       with subtest("秘密鍵のファイルはvaultの中にだけある"):
           machine.succeed(f"test -n \"$(ls {vault_home}/private-keys-v1.d)\"")
@@ -261,6 +361,7 @@ testers.runNixOSTest {
           machine.succeed("systemctl restart gpg-vault-agent.service")
           check_socket_permissions()
           machine.succeed(as_user("${member}", ask_agent))
+          machine.succeed(as_user("${member}", ask_restricted))
           machine.succeed(as_user("${member}", sign))
           status = ssh_add_status("${member}")
           assert status == 1, f"${member}: {status}"

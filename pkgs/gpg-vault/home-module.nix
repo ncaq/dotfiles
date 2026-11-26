@@ -11,7 +11,7 @@
 }:
 let
   cfg = config.services.gpg-vault;
-  inherit (pkgs.gpg-vault) socketDir socketNames sshSocketName;
+  inherit (pkgs.gpg-vault) clientSocketLinks socketDir sshSocketName;
   sshSocket = "${socketDir}/${sshSocketName}";
 in
 {
@@ -21,16 +21,28 @@ in
     # ソケットが見つからない時にgpgが鍵を持たないagentを勝手にspawnすると、
     # 「秘密鍵が見つからない」という紛らわしいエラーになるため、
     # autostartを無効化してソケット不在を明示的なエラーにします。
-    programs.gpg.settings.no-autostart = true;
+    programs.gpg.settings = {
+      no-autostart = true;
+      # gpgは秘密鍵の一覧を一度に取る近道(`HAVEKEY --list`)を最初に試します。
+      # 制限付きのソケットではagentがこれを必ず拒否するので、
+      # 署名のたびに「problem with fast path key listing: Forbidden - ignored」が出ます。
+      # 鍵ごとの問い合わせに切り替わるだけで動作に問題は無く、
+      # この警告を止める条件は`quiet`しかありません。
+      # 鍵ファイルの`Remote-list`が効くのは`KEYINFO --list`で、この警告には効きません。
+      quiet = true;
+    };
 
     systemd.user = {
       # gpgクライアントは標準のソケットパス(`$XDG_RUNTIME_DIR/gnupg/`)を参照するため、
       # symlinkでvault agentのソケットへ誘導します。
+      # gpgが普通のソケットとして探す名前の先は、vaultの制限付きのソケットです。
       # `%t`はユーザtmpfilesでは`$XDG_RUNTIME_DIR`に展開されます。
       tmpfiles.rules = [
         "d %t/gnupg 0700 - -"
       ]
-      ++ map (name: "L+ %t/gnupg/${name} - - - - ${socketDir}/${name}") socketNames;
+      ++ lib.mapAttrsToList (
+        name: target: "L+ %t/gnupg/${name} - - - - ${socketDir}/${target}"
+      ) clientSocketLinks;
 
       # systemdユーザサービス(`emacs.service`など)向けにenvironment.d経由で設定します。
       # インタラクティブなシェル初期化だけではGUIアプリやsystemdサービスに届きません。

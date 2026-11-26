@@ -12,6 +12,10 @@
   gpg-agentをgpg-vaultユーザで動かし、
   ソケットだけをgpg-vaultグループ経由で通常ユーザに公開します。
 
+  公開するのは、agentが操作を制限するソケットと、SSH認証用のソケットです。
+  全てのコマンドを受け付けるソケットは、gpg-vaultユーザとrootだけが繋げます。
+  どの操作がどちらでできるかと使い方は`README.md`に書いています。
+
   GNUPGHOMEに置く静的な設定のうち鍵に依らないものはパッケージ(`package.nix`)が持っていて、
   通常ユーザ側のクライアント設定は`home-module.nix`にあります。
   使う側(`nixos/core/gpg-vault.nix`)は、どの鍵を誰に使わせるかと、
@@ -21,8 +25,8 @@
   テスト(`nixos-test.nix`)もこのモジュールだけを読むので、ホストの構成に依存しません。
 
   厳密なアクセス制御ではありません:
-  通常ユーザはソケット経由で署名・復号・SSH認証・鍵のエクスポートを引き続き利用できます。
-  防げるのはうっかりアップロードさせるミスだけです。
+  通常ユーザはソケット経由で署名・復号・SSH認証を引き続き利用できます。
+  防げるのは、秘密鍵のファイルをうっかりアップロードさせるミスと、うっかりエクスポートするミスだけです。
   悪意は防げません。
 */
 {
@@ -46,7 +50,7 @@ let
 
   # GNUPGHOMEに置く静的な設定のうち、どの鍵を使うかに依らないもの。
   gnupgHomeFiles = pkgs.gpg-vault;
-  inherit (gnupgHomeFiles) socketDir socketNames;
+  inherit (gnupgHomeFiles) publicSocketNames socketDir socketNames;
 
   # `trusted-key`で主鍵をultimate信頼として宣言します。
   # これによりpreStartでの`--import-ownertrust`によるgpg起動が不要になります。
@@ -246,12 +250,13 @@ in
             # このchmodによるグループ書き込み(=接続)許可は必須です。
             # ExecStartPostの完了までunitはstartedにならないため、
             # After=で順序付けされた依存サービスが0700の窓に当たることはありません。
+            # 全てのコマンドを受け付けるソケットは対象に入れず、0700のまま残します。
             ExecStartPost = lib.escapeShellArgs (
               [
                 (lib.getExe' pkgs.coreutils "chmod")
                 "0660"
               ]
-              ++ map (name: "${socketDir}/${name}") socketNames
+              ++ map (name: "${socketDir}/${name}") publicSocketNames
             );
             Restart = "on-failure";
             Environment = [ "GNUPGHOME=${cfg.gnupgHome}" ];

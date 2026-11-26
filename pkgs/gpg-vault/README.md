@@ -119,8 +119,12 @@ gpg-vaultユーザは通常ユーザのファイルを読めないことが多�
 秘密鍵のインポート:
 
 ```zsh
-sudo -u gpg-vault env GNUPGHOME=/var/lib/gpg-vault/.gnupg gpg --import < subkeys-secret.asc
+sudo -u gpg-vault env GNUPGHOME=/var/lib/gpg-vault/.gnupg \
+  gpg --pinentry-mode loopback --import < subkeys-secret.asc
 ```
+
+パスフレーズ付きの鍵をインポートするとagentがパスフレーズを求めるので、
+後で書く`--pinentry-mode loopback`を付けています。
 
 秘密鍵のエクスポート:
 

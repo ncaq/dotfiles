@@ -11,6 +11,8 @@
 # - `privateUsers`が`pick`ならidmap付きの`extraFlags`と`RequiresMountsFor`で、
 #   それ以外なら`bindMounts`で、残すディレクトリを渡すこと
 # - `machineAddresses.<name>`があるコンテナだけに、アドレスと名前解決の設定が入ること
+# - vethのアドレスを持つコンテナだけに、ホスト側のvethの`.network`を作り、`postStart`を空にすること
+# - ホスト側のvethを設定するコンテナが`extraVeths`を持つ時に、表明が落ちること
 #
 # `container-template.nix`だけを`lib.evalModules`で読み込み、
 # 参照している他のオプションは最小の形で用意する。
@@ -26,6 +28,10 @@ let
       systemd = lib.mkOption {
         type = lib.types.anything;
         default = { };
+      };
+      assertions = lib.mkOption {
+        type = lib.types.listOf lib.types.anything;
+        default = [ ];
       };
       system.stateVersion = lib.mkOption {
         type = lib.types.str;
@@ -80,6 +86,14 @@ let
               localAddress6 = lib.mkOption {
                 type = lib.types.nullOr lib.types.str;
                 default = null;
+              };
+              hostBridge = lib.mkOption {
+                type = lib.types.nullOr lib.types.str;
+                default = null;
+              };
+              extraVeths = lib.mkOption {
+                type = lib.types.attrsOf lib.types.anything;
+                default = { };
               };
               extraFlags = lib.mkOption {
                 type = lib.types.listOf lib.types.str;
@@ -140,8 +154,27 @@ let
       };
       # 何も宣言しない。
       plain = { };
+      # `machineAddresses`を使わずに、プレフィックス長を付けたアドレスを直に書く。
+      # 名前が15文字を超えるので、vethの主名は縮められる。
+      prefixed-address = {
+        hostAddress = "192.168.100.10/24";
+        localAddress = "192.168.100.11/24";
+      };
+      # ブリッジに繋ぐので、vethはアドレスを持たない。
+      bridged = {
+        hostBridge = "br0";
+        localAddress = "192.168.100.21/24";
+      };
     };
   };
+  # ホスト側のvethを設定するコンテナが`extraVeths`を持つ。
+  withExtraVeths = evaluate {
+    containers.extra = {
+      localAddress = "192.168.100.31";
+      extraVeths.side = { };
+    };
+  };
+  failedAssertions = config: lib.filter (a: !a.assertion) config.assertions;
   inherit (evaluated) containers;
   containerUnits = evaluated.systemd.services;
 
@@ -235,4 +268,39 @@ assert lib.assertMsg (
   && !(containers.identity.config ? networking.useHostResolvConf)
   && !(containers.identity.config ? services.resolved.enable)
 ) "アドレスを持たないコンテナに名前解決の設定が入っています";
+assert lib.assertMsg (
+  evaluated.systemd.network == {
+    enable = true;
+    networks = {
+      "20-pick-veth" = {
+        matchConfig.Name = "ve-pick";
+        linkConfig.RequiredForOnline = "no";
+        addresses = [ { Address = "fdf2:a855:5a3f:100::10/128"; } ];
+        routes = [ { Destination = "fdf2:a855:5a3f:100::11/128"; } ];
+      };
+      "20-prefixed-address-veth" = {
+        matchConfig.Name = "ve-prefixed-address";
+        linkConfig.RequiredForOnline = "no";
+        addresses = [ { Address = "192.168.100.10/32"; } ];
+        routes = [ { Destination = "192.168.100.11/32"; } ];
+      };
+    };
+  }
+) "ホスト側のvethの`.network`が違います: ${show evaluated.systemd.network}";
+assert lib.assertMsg (
+  containerUnits."container@pick".postStart == ""
+  && containerUnits."container@prefixed-address".postStart == ""
+) "ホスト側のvethを設定するコンテナの`postStart`が空になっていません";
+assert lib.assertMsg (
+  !(containerUnits ? "container@bridged") && !(containerUnits ? "container@plain")
+) "ホスト側のvethを設定しないコンテナの`postStart`を書き換えています";
+assert lib.assertMsg (
+  failedAssertions evaluated == [ ]
+) "`extraVeths`を持たないコンテナで表明が落ちています: ${show (failedAssertions evaluated)}";
+assert lib.assertMsg (
+  lib.length (failedAssertions withExtraVeths) == 1
+) "ホスト側のvethを設定するコンテナが`extraVeths`を持っても表明が落ちません";
+assert lib.assertMsg (
+  !((evaluate { containers.plain = { }; }).systemd ? network)
+) "ホスト側のvethを設定するコンテナが無いのにsystemd-networkdを有効にしています";
 true

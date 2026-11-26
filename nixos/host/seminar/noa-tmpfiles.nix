@@ -22,8 +22,13 @@ let
   noaMount = "${utils.escapeSystemdPath noa}.mount";
 
   isUnderNoa = path: path == noa || lib.hasPrefix "${noa}/" path;
+  # `RequiresMountsFor`は文字列1つに空白区切りで複数のパスを書くこともできるので、
+  # 分けてから判定する。
   requiresNoa =
-    unitDef: lib.any isUnderNoa (lib.toList (unitDef.unitConfig.RequiresMountsFor or [ ]));
+    unitDef:
+    lib.any isUnderNoa (
+      lib.concatMap (lib.splitString " ") (lib.toList (unitDef.unitConfig.RequiresMountsFor or [ ]))
+    );
   # `RequiresMountsFor`で`/mnt/noa`の配下を必須にしているユニットの名前。
   # 自分自身の`unitConfig`は`before`から作られるので、
   # 見ると無限再帰になる。
@@ -34,6 +39,15 @@ let
   );
 in
 lib.mkIf (config.fileSystems ? ${noa}) {
+  assertions = [
+    {
+      # 抽出が壊れても`before`が欠けるだけで気付けないので、
+      # 1つも拾えていない時は評価を止める。
+      assertion = servicesRequiringNoa != [ ];
+      message = "noa-tmpfiles: ${noa}の配下を必須にしているサービスが1つも見つかりません。";
+    }
+  ];
+
   systemd.services = {
     noa-tmpfiles = {
       description = "Create files and directories under ${noa}";

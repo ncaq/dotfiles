@@ -25,8 +25,25 @@ let
         type = lib.types.anything;
         default = { };
       };
+      # `postStart`だけは実機と同じ型で持つ。
+      # `anything`のままだと文字列の定義を2つ合成できず、
+      # nixpkgsの定義を`mkForce`で上書きしていることを確かめられない。
       systemd = lib.mkOption {
-        type = lib.types.anything;
+        type = lib.types.submodule {
+          freeformType = lib.types.attrsOf lib.types.anything;
+          options.services = lib.mkOption {
+            type = lib.types.attrsOf (
+              lib.types.submodule {
+                freeformType = lib.types.attrsOf lib.types.anything;
+                options.postStart = lib.mkOption {
+                  type = lib.types.lines;
+                  default = "";
+                };
+              }
+            );
+            default = { };
+          };
+        };
         default = { };
       };
       assertions = lib.mkOption {
@@ -127,7 +144,12 @@ let
       ];
     }).config;
 
+  # nixpkgsのコンテナのモジュールが定義する`postStart`に見立てたもの。
+  upstreamPostStart = "ip addr add 192.0.2.1 dev ve-$INSTANCE";
   evaluated = evaluate {
+    systemd.services = lib.genAttrs [ "container@pick" "container@bridged" ] (_: {
+      postStart = upstreamPostStart;
+    });
     machineAddresses.pick = {
       host6 = "fdf2:a855:5a3f:100::10";
       guest6 = "fdf2:a855:5a3f:100::11";
@@ -297,7 +319,7 @@ assert lib.assertMsg (
   && containerUnits."container@prefixed-address".postStart == ""
 ) "ホスト側のvethを設定するコンテナの`postStart`が空になっていません";
 assert lib.assertMsg (
-  !(containerUnits ? "container@bridged")
+  lib.trim containerUnits."container@bridged".postStart == upstreamPostStart
   && !(containerUnits ? "container@plain")
   && !(containerUnits ? "container@shared-network")
 ) "ホスト側のvethを設定しないコンテナの`postStart`を書き換えています";

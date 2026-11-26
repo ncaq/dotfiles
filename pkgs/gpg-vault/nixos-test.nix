@@ -62,10 +62,20 @@ testers.runNixOSTest {
       environment.systemPackages = [ pkgs.gnupg ];
     };
 
-  testScript = # python
+  testScript =
+    { containers, ... }:
+    let
+      # 場所と名前はここに直に書かず、モジュールとパッケージの値から引きます。
+      # 直に書くと、モジュールの側で場所を変えた時に、テストだけが古い場所を見続けます。
+      inherit (containers.machine.services.gpg-vault) gnupgHome;
+      inherit (containers.machine.nixpkgs.pkgs.gpg-vault) socketDir socketNames;
+    in
+    # python
     ''
-      socket_dir = "/run/gpg-vault"
-      vault_home = "/var/lib/gpg-vault/.gnupg"
+      socket_dir = "${socketDir}"
+      socket_names = ${builtins.toJSON socketNames}
+      vault_home = "${gnupgHome}"
+      vault_parent = "${dirOf gnupgHome}"
 
 
       def as_user(user, command):
@@ -98,7 +108,7 @@ testers.runNixOSTest {
           )
 
       with subtest("ソケットはgpg-vaultグループにだけ開いている"):
-          for name in ["S.gpg-agent", "S.gpg-agent.ssh"]:
+          for name in socket_names:
               stat = machine.succeed(f"stat -c '%U %G %a' {socket_dir}/{name}").strip()
               assert stat == "gpg-vault gpg-vault 660", stat
           stat = machine.succeed(f"stat -c '%U %G %a' {socket_dir}").strip()
@@ -119,7 +129,12 @@ testers.runNixOSTest {
       with subtest("秘密鍵のファイルはvaultの中にだけある"):
           machine.succeed(f"test -n \"$(ls {vault_home}/private-keys-v1.d)\"")
           machine.fail(as_user("${member}", f"ls {vault_home}"))
-          machine.fail(as_user("${member}", "ls /var/lib/gpg-vault"))
+          machine.fail(as_user("${member}", f"ls {vault_parent}"))
+          # 上の`ls`の失敗は、一番外のディレクトリが閉じているだけで成り立ちます。
+          # 中のディレクトリも個別に閉じていることを、権限を直に見て確かめます。
+          for path in [vault_parent, vault_home, f"{vault_home}/private-keys-v1.d"]:
+              stat = machine.succeed(f"stat -c '%U %G %a' {path}").strip()
+              assert stat == "gpg-vault gpg-vault 700", f"{path}: {stat}"
           machine.fail(as_user("${member}", "ls .gnupg/private-keys-v1.d/*.key"))
 
       with subtest("グループの外のユーザはソケットへ繋げない"):

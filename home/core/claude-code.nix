@@ -291,12 +291,28 @@
             # systemdの`%`は全て物理メモリに対する割合です。
             # MemorySwapMaxはswap容量比ではないことに注意。
             # zram(物理メモリの20%、16GiB上限)の約半分を意図して10%としています。
+            #
+            # TasksMaxはfork bombのような暴走を小さく止めるためのものです。
+            # TasksMaxの`%`はメモリと違い、システム全体のタスク数の上限に対する割合です。
+            # 何も付けなくてもユーザのsystemdの`DefaultTasksMax`で15%が掛かりますが、
+            # それだと数セッションが同時に暴走した時にシステム全体の上限へ届くので、5%に絞っています。
+            # システム全体の上限は物理メモリに比例するので、割合にしておけばどのホストでも同じ比率になります。
+            # スレッドも数えられるので、
+            # コア数いっぱいの並列ビルドやテストでも届かないだろうと見積もった値です。
+            # 実測した上限ではありません。
+            #
+            # ここへ足せるのはcgroupの制限だけです。
+            # scopeは`SystemCallFilter`や`RestrictAddressFamilies`のような実行時の設定を受け付けません。
+            # serviceにすれば付けられますが、
+            # ユーザのsystemdがseccompを掛けるには`NoNewPrivileges`が必須で、
+            # セッションの中から`sudo`を使えなくなるので見送っています。
             exec systemd-run --user --scope --quiet --collect \
               --slice=claude-code.slice \
               --same-dir \
               -p MemoryHigh=75% \
               -p MemoryMax=80% \
               -p MemorySwapMax=10% \
+              -p TasksMax=5% \
               -- "$claude" "$@"
           fi
           exec "$claude" "$@"

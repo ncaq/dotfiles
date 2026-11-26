@@ -165,6 +165,11 @@ let
         hostBridge = "br0";
         localAddress = "192.168.100.21/24";
       };
+      # ホストのネットワークをそのまま使うので、アドレスを書いてもvethは作られない。
+      shared-network = {
+        privateNetwork = false;
+        localAddress = "192.168.100.41";
+      };
     };
   };
   # ホスト側のvethを設定するコンテナが`extraVeths`を持つ。
@@ -292,7 +297,9 @@ assert lib.assertMsg (
   && containerUnits."container@prefixed-address".postStart == ""
 ) "ホスト側のvethを設定するコンテナの`postStart`が空になっていません";
 assert lib.assertMsg (
-  !(containerUnits ? "container@bridged") && !(containerUnits ? "container@plain")
+  !(containerUnits ? "container@bridged")
+  && !(containerUnits ? "container@plain")
+  && !(containerUnits ? "container@shared-network")
 ) "ホスト側のvethを設定しないコンテナの`postStart`を書き換えています";
 assert lib.assertMsg (
   failedAssertions evaluated == [ ]

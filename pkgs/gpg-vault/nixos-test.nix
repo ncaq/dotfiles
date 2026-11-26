@@ -19,6 +19,7 @@
 # - グループに入っていないユーザは、ソケットへ繋げないこと
 # - SSHのソケットも、グループのユーザにだけ応答すること
 # - agentを再起動しても、ソケットが同じ場所に同じ権限でできること
+# - `clientUnits`に入れたユニットを起動すると、agentが引き込まれて先に起動すること
 #
 # クライアント側の`home-module.nix`はhome-managerのモジュールなので、ここでは動かしません。
 # 代わりに同じ形のソケットへのリンクを、ユーザのGNUPGHOMEへ手で置きます。
@@ -29,12 +30,19 @@ let
   # グループに入れるユーザと、入れないユーザ。
   member = "alice";
   outsider = "bob";
+  # `clientUnits`に入れる、agentへ接続するユニット。
+  clientService = "vault-client";
 in
 testers.runNixOSTest {
   name = "gpg-vault";
 
   containers.machine =
-    { pkgs, ... }:
+    {
+      lib,
+      pkgs,
+      config,
+      ...
+    }:
     {
       imports = [ ./module.nix ];
       services.gpg-vault = {
@@ -52,6 +60,18 @@ testers.runNixOSTest {
               gpgconf --kill gpg-agent
             '';
         users = [ member ];
+        clientUnits = [ "${clientService}.service" ];
+      };
+      # agentへ接続するユニットの代わり。
+      # sops-install-secretsと同じく、rootがvaultのGNUPGHOMEを指してagentへ繋ぎます。
+      # ブートでは起動せず、テストが手で起動します。
+      systemd.services.${clientService}.serviceConfig = {
+        Type = "oneshot";
+        Environment = [ "GNUPGHOME=${config.services.gpg-vault.gnupgHome}" ];
+        ExecStart = pkgs.writeShellScript "vault-client" ''
+          ${lib.getExe' pkgs.gnupg "gpg-connect-agent"} --no-autostart "getinfo version" /bye \
+            | ${lib.getExe pkgs.gnugrep} --quiet "^D "
+        '';
       };
       users.users = {
         ${member} = {
@@ -177,5 +197,15 @@ testers.runNixOSTest {
           machine.succeed(as_user("${member}", sign))
           status = ssh_add_status("${member}")
           assert status == 1, f"${member}: {status}"
+
+      with subtest("clientUnitsのユニットを起動すると、agentが先に起動する"):
+          before = machine.succeed("systemctl show --property=Before --value gpg-vault-agent.service")
+          assert "${clientService}.service" in before.split(), before
+          # agentを止めておいて、接続するユニットだけを起動します。
+          # agentが引き込まれないか、順序が付いていなければ、接続に失敗してユニットが失敗します。
+          machine.succeed("systemctl stop gpg-vault-agent.service")
+          machine.fail("systemctl is-active gpg-vault-agent.service")
+          machine.succeed("systemctl start ${clientService}.service")
+          machine.succeed("systemctl is-active gpg-vault-agent.service")
     '';
 }

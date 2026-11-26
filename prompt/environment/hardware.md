@@ -41,14 +41,14 @@ fastfetchの機能でGB単位系で表示させようとすると管理領域な
 - ncaq@bullet
 - Core Software
 - OS: NixOS 26.05 (Yarara) x86_64
-- Kernel: Linux 6.18.38-xanmod1
+- Kernel: Linux 6.18.64-xanmod1
 - BIOS (UEFI): 1.A92 (5.41)
 - Bootmgr: Limine - BOOTX64.EFI
-- Init System: systemd 260.2
+- Init System: systemd 260.5
 - LM: lightdm-autologin 1.32.0 (X11)
 - Shell: zsh 5.9.1
 - WM: hm-xsession (X11)
-- Terminal: tmux 3.6a
+- Terminal: tmux 3.7b
 - Locale: ja_JP.UTF-8
 - Core Hardware
 - Host: MS-7E51 (1.0)
@@ -57,12 +57,12 @@ fastfetchの機能でGB単位系で表示させようとすると管理領域な
 - Computing
 - CPU: AMD Ryzen 9 9950X3D (32) @ 5.76 GHz
 - GPU: NVIDIA GeForce RTX 5090 [Discrete]
-- Vulkan: 1.4.329 - NVIDIA [595.71.05]
-- OpenGL: 4.6.0 NVIDIA 595.71.05
-- OpenCL: 3.0 CUDA 13.2.82
+- Vulkan: 1.4.329 - NVIDIA [595.112.07]
+- OpenGL: 4.6.0 NVIDIA 595.112.07
+- OpenCL: 3.0 CUDA 13.2.88
 - Memory: 93.71 GiB
-- Swap: 8.00 GiB
-- Disk (/): 452.59 GiB / 1.82 TiB (24%) - btrfs
+- Swap: 48.00 GiB
+- Disk (/): 1.31 TiB / 1.82 TiB (72%) - btrfs
 - Output
 - Display (AW2725Q): 3840x2160 @ 1.5x in 27", 144 Hz [External] \*
 - Display (LG HDR 4K): 3840x2160 @ 1.5x in 27", 60 Hz [External]
@@ -93,14 +93,14 @@ FIDO認証としてディスクの復号化やパスキーなどに使ってい�
 - ncaq@creep
 - Core Software
 - OS: NixOS 26.05 (Yarara) x86_64
-- Kernel: Linux 6.18.38-xanmod1
+- Kernel: Linux 6.18.64-xanmod1
 - BIOS (UEFI): R2FET69W (1.49 ) (1.49)
 - Bootmgr: Limine - BOOTX64.EFI
-- Init System: systemd 260.2
+- Init System: systemd 260.5
 - LM: lightdm-autologin 1.32.0 (X11)
 - Shell: zsh 5.9.1
 - WM: hm-xsession (X11)
-- Terminal: tmux 3.6a
+- Terminal: tmux 3.7b
 - Locale: ja_JP.UTF-8
 - Core Hardware
 - Host: 21K9CTO1WW (ThinkPad P16s Gen 2)
@@ -109,14 +109,15 @@ FIDO認証としてディスクの復号化やパスキーなどに使ってい�
 - Computing
 - CPU: AMD Ryzen 5 PRO 7540U (12) @ 4.98 GHz
 - GPU: AMD Radeon 740M Graphics [Integrated]
-- Vulkan: 1.4.354 - radv [Mesa 26.1.4]
-- OpenGL: 4.6 (Compatibility Profile) Mesa 26.1.4
+- Vulkan: 1.4.354 - radv [Mesa 26.1.8]
+- OpenGL: 4.6 (Compatibility Profile) Mesa 26.1.8
 - Memory: 27.11 GiB
-- Swap: 4.07 GiB
-- Disk (/): 223.74 GiB / 691.91 GiB (32%) - btrfs
+- Swap: 37.42 GiB
+- Disk (/): 308.99 GiB / 691.91 GiB (45%) - btrfs
 - Output
 - Display (LEN41B5): 1920x1200 in 16", 60 Hz [Built-in]
 - Brightness (LEN41B5): 100% [Built-in]
+- Sound: Ryzen HD Audio Controller Speaker (40%)
 - Input
 - Keyboard 1: AT Translated Set 2 keyboard
 - Keyboard 2: Logitech MX Ergo
@@ -144,13 +145,13 @@ FIDO認証としてディスクの復号化やパスキーなどに使ってい�
 - ncaq@seminar
 - Core Software
 - OS: NixOS 26.05 (Yarara) x86_64
-- Kernel: Linux 6.18.38-xanmod1
+- Kernel: Linux 6.18.64-xanmod1
 - BIOS (UEFI): 4.21 (5.41)
 - Bootmgr: Limine - BOOTX64.EFI
-- Init System: systemd 260.2
-- LM: sshd 10.3p1 (TTY)
+- Init System: systemd 260.5
+- LM: sshd 10.6p2 (TTY)
 - Shell: zsh 5.9.1
-- Terminal: tmux 3.6a
+- Terminal: tmux 3.7b
 - Locale: ja_JP.UTF-8
 - Core Hardware
 - Host: A620M-HDV/M.2+
@@ -159,14 +160,13 @@ FIDO認証としてディスクの復号化やパスキーなどに使ってい�
 - Computing
 - CPU: AMD Ryzen 5 7600 (12) @ 5.17 GHz
 - GPU: AMD Raphael [Integrated]
-- Vulkan: 1.4.354 - radv [Mesa 26.1.4]
-- OpenGL: 4.6 (Compatibility Profile) Mesa 26.1.4
+- Vulkan: 1.4.354 - radv [Mesa 26.1.8]
+- OpenGL: 4.6 (Compatibility Profile) Mesa 26.1.8
 - Memory: 61.89 GiB
-- Swap: 72.00 GiB
-- Disk (/): 250.70 GiB / 1.82 TiB (13%) - btrfs
-- Disk (/mnt/noa): 2.88 TiB / 12.73 TiB (23%) - btrfs
+- Swap: 76.38 GiB
+- Disk (/): 949.70 GiB / 1.82 TiB (51%) - btrfs
+- Disk (/mnt/noa): 4.72 TiB / 16.37 TiB (29%) - btrfs
 - Output
-- Sound: Dummy Output (100%)
 - Input
 
 ## スマートデバイス

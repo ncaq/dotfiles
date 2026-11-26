@@ -54,16 +54,20 @@ let
   sshcontrolFile = pkgs.writeText "gpg-vault-sshcontrol" ''
     ${cfg.sshKeygrip}
   '';
+
+  # v4のフィンガープリントとkeygripの形。どちらもSHA-1の160bitを、空白の無い大文字の16進数で書く。
+  # 鍵の実在までは確かめられないが、空白入りの表記や鍵IDを渡す取り違えは評価の時に落とせる。
+  hex40 = lib.types.strMatching "[0-9A-F]{40}";
 in
 {
   options.services.gpg-vault = {
     enable = lib.mkEnableOption "GPG秘密鍵を通常ユーザから隔離するgpg-agent";
     fingerprint = lib.mkOption {
-      type = lib.types.str;
+      type = hex40;
       description = "ultimate信頼として宣言する主鍵のフィンガープリント。";
     };
     sshKeygrip = lib.mkOption {
-      type = lib.types.str;
+      type = hex40;
       description = "SSH認証に使用するGPGサブキーのkeygrip。";
     };
     publicKeyFile = lib.mkOption {

@@ -184,6 +184,11 @@ in
           mountOptions = [
             "noatime"
             "compress=zstd"
+            # マウントした後のトップレベルの所有者と権限を`mount`に設定させる。
+            # 理由は`noa.nix`に書いている。
+            "X-mount.owner=root"
+            "X-mount.group=root"
+            "X-mount.mode=0755"
             # ディスクが欠けてマウントできなくても、
             # emergency modeに落ちずに起動を続ける。
             # noaは起動に必須ではないので、

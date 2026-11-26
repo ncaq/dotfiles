@@ -15,6 +15,11 @@
 #   動いているデータベースをそのままコピーすると書き込みの途中を拾うことがあるので、
 #   SQLiteのバックアップの機能で一貫した状態を取ります
 #
+# sqlite3コマンドは既定ではロックを待たずに`database is locked`で失敗します。
+# VMごとのサービスが同時に動くと、他に接続の無いデータベースを同時に開くことになり、
+# 片方がそのロックに当たります。
+# 失敗するとVMが起動できなくなるので、ロックが外れるのを待たせます。
+#
 # ファイルを消してsqlite3を呼ぶだけなので、シェルスクリプトにしています。
 {
   coreutils,
@@ -33,7 +38,7 @@ writeShellApplication {
     store_dir=$2
     overlay_image=$3
     rm --force "$overlay_image" "$store_dir/db.sqlite"
-    sqlite3 "$nix_db_dir/db.sqlite" ".backup '$store_dir/db.sqlite'"
+    sqlite3 -cmd ".timeout 60000" "$nix_db_dir/db.sqlite" ".backup '$store_dir/db.sqlite'"
   '';
   # 他のユーザのイメージを消せることと、隔離の中からデータベースを読めることは、
   # 実際のユニットを動かさないと確かめられない。

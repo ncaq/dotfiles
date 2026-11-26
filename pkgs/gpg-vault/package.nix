@@ -14,6 +14,7 @@
 # gpg-vaultが何のための仕組みかと、使い方は`README.md`に書いてある。
 {
   homeManagerConfiguration,
+  lib,
   pinentry-curses,
   symlinkJoin,
   testers,
@@ -40,17 +41,15 @@ let
     extraSocketName
     sshSocketName
   ];
-  # そのうち通常ユーザへ公開するソケットの名前。
-  publicSocketNames = [
-    extraSocketName
-    sshSocketName
-  ];
   # 通常ユーザのgpgとsshが探すソケットの名前から、その先に置くvaultのソケットの名前への対応。
   # gpgが普通のソケットとして探す名前の先を、制限付きのソケットにする。
   clientSocketLinks = {
     ${agentSocketName} = extraSocketName;
     ${sshSocketName} = sshSocketName;
   };
+  # 通常ユーザへ公開するソケットの名前。
+  # リンクの先になるソケットだけを公開するので、上の対応から導く。
+  publicSocketNames = lib.unique (lib.attrValues clientSocketLinks);
 
   # Assuanソケットリダイレクトで`socketDir`にソケットを作らせます。
   # gpg-agentはリダイレクトファイル自体は終了時に削除しない

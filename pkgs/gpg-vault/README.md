@@ -129,9 +129,16 @@ sudo -u gpg-vault env GNUPGHOME=/var/lib/gpg-vault/.gnupg \
 秘密鍵のエクスポート:
 
 ```zsh
-sudo -u gpg-vault env GNUPGHOME=/var/lib/gpg-vault/.gnupg \
-  gpg --export-secret-subkeys --armor '<鍵ID>!' > subkeys-secret.asc
+(
+  umask 077
+  sudo -u gpg-vault env GNUPGHOME=/var/lib/gpg-vault/.gnupg \
+    gpg --export-secret-subkeys --armor '<鍵ID>!' > subkeys-secret.asc
+)
 ```
+
+書き出すファイルを作るのは通常ユーザのシェルなので、
+他のユーザから読めないように、
+そのシェルのumaskをサブシェルの中で絞っています。
 
 パスフレーズの入力が要る操作には`--pinentry-mode loopback`を付けます。
 agentは画面も端末も持たないユーザで動いていて、

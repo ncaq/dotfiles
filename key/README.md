@@ -66,8 +66,11 @@ gpg-vaultユーザとして行います。
 通常は以下の手段を使います。
 
 ```zsh
-sudo -u gpg-vault env GNUPGHOME=/var/lib/gpg-vault/.gnupg \
-  gpg --export-secret-subkeys --armor 'C65B759E5D5B3E95!' 'ACA66AB679E75544!' > subkeys-secret.asc
+(
+  umask 077
+  sudo -u gpg-vault env GNUPGHOME=/var/lib/gpg-vault/.gnupg \
+    gpg --export-secret-subkeys --armor 'C65B759E5D5B3E95!' 'ACA66AB679E75544!' > subkeys-secret.asc
+)
 ```
 
 などで安全な場所に副鍵のシークレットキーをエクスポートします。

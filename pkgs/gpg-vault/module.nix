@@ -14,7 +14,10 @@
 
   GNUPGHOMEに置く静的な設定のうち鍵に依らないものはパッケージ(`package.nix`)が持っていて、
   通常ユーザ側のクライアント設定は`home-module.nix`にあります。
-  使う側(`nixos/core/gpg-vault.nix`)は、どの鍵を誰に使わせるかだけを決めます。
+  使う側(`nixos/core/gpg-vault.nix`)は、どの鍵を誰に使わせるかと、
+  agentへ接続するユニット(`clientUnits`)を決めます。
+  sops-install-secretsのようにブートの途中で復号するものは、
+  `clientUnits`に入れないとagentより先に動くことがあります。
   テスト(`nixos-test.nix`)もこのモジュールだけを読むので、ホストの構成に依存しません。
 
   厳密なアクセス制御ではありません:

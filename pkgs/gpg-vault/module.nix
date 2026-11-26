@@ -112,10 +112,20 @@ in
     # `user@<uid>.service`が動いていないと存在しません。
     # home-managerの有効化のようにログインの前に動くものからも繋げるように、
     # lingerでブートの時から`user@<uid>.service`を起動させておくことを求めます。
-    assertions = map (user: {
-      assertion = config.users.users.${user}.linger == true;
-      message = "services.gpg-vault.usersの${user}には`users.users.${user}.linger = true`が必要です。";
-    }) cfg.users;
+    assertions =
+      map (user: {
+        assertion = config.users.users.${user}.linger == true;
+        message = "services.gpg-vault.usersの${user}には`users.users.${user}.linger = true`が必要です。";
+      }) cfg.users
+      ++ [
+        {
+          # `RuntimeDirectory`の名前は`socketDir`から`/run/`を外して作ります。
+          # `lib.removePrefix`は接頭辞が無くても元の文字列を返すだけなので、
+          # 外へ移すと評価は通ったまま、ユニットの起動の時に初めて失敗します。
+          assertion = lib.hasPrefix "/run/" socketDir;
+          message = "gpg-vaultのパッケージの`socketDir`(${socketDir})は`/run/`の下に置く必要があります。";
+        }
+      ];
 
     users = {
       users = {

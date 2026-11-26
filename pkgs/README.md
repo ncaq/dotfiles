@@ -49,6 +49,10 @@ NixOS Testで実際のユニットを動かします。
 ホストの側は、`nixos/core/trash.nix`のように`module.nix`を`imports`に書いて使います。
 `importDirModules`は`pkgs/`を走査しないので、ここだけは明示的に読み込みます。
 
+`gpg-vault`のようにユーザの側の設定と組になるものは、
+home-managerのモジュールも`<名前>/home-module.nix`として隣に置いて、
+`home/core/gpg.nix`のように`imports`に書いて使います。
+
 テストのマシンは、`nodes`ではなく`containers`に書いて、
 QEMUのVMではなくsystemd-nspawnのコンテナで動かします。
 ホストをブートしないので数秒で終わります。

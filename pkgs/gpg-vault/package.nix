@@ -13,6 +13,7 @@
 #
 # gpg-vaultが何のための仕組みかは`module.nix`の冒頭に書いてある。
 {
+  homeManagerConfiguration,
   pinentry-curses,
   symlinkJoin,
   testers,
@@ -64,6 +65,6 @@ symlinkJoin {
   passthru = {
     inherit socketDir socketNames sshSocketName;
     # ソケットの権限と、他のユーザから鍵が読めないことは、実際のユニットを動かさないと確かめられない。
-    tests.nixos = import ./nixos-test.nix { inherit testers; };
+    tests.nixos = import ./nixos-test.nix { inherit homeManagerConfiguration testers; };
   };
 }

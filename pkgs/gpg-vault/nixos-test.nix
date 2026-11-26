@@ -21,15 +21,27 @@
 # - agentを再起動しても、ソケットが同じ場所に同じ権限でできること
 # - `clientUnits`に入れたユニットを起動すると、agentが引き込まれて先に起動すること
 #
-# クライアント側の`home-module.nix`はhome-managerのモジュールなので、ここでは動かしません。
-# 代わりに同じ形のソケットへのリンクを、ユーザのGNUPGHOMEへ手で置きます。
-{ testers }:
+# クライアント側の`home-module.nix`は、グループに入ったユーザの構成としてhome-managerで評価します。
+# そこから出てきたユーザのtmpfilesの規則と`gpg.conf`を、そのユーザへそのまま適用します。
+# そのユーザのgpgは、`home-module.nix`が決めたリンクと設定だけでagentへ繋ぐので、
+# リンクの先がパッケージの`socketDir`からずれると、署名が通らなくなります。
+#
+# home-managerの有効化そのものは動かしません。
+# 有効化はnix-daemonを必要としますが、コンテナの中のnix-daemonはストアの所有者を変えられずに失敗します。
+# 生成されたファイルを置くところだけを、テストが代わりに行います。
+#
+# グループに入っていないユーザはhome-managerを使わず、リンクをテストが手で置きます。
+{ homeManagerConfiguration, testers }:
 let
   # vault側のpubringへ取り込ませる公開鍵のユーザID。
   importedUserId = "imported@example.com";
   # グループに入れるユーザと、入れないユーザ。
   member = "alice";
   outsider = "bob";
+  # `/run/user/<uid>`を指すので、グループに入れるユーザのUIDを決めておきます。
+  memberUid = 1000;
+  # `home-module.nix`から出てきたファイルを置く、`/etc`の下のディレクトリ。
+  homeFilesDir = "gpg-vault-home";
   # `clientUnits`に入れる、agentへ接続するユニット。
   clientService = "vault-client";
 in
@@ -45,6 +57,33 @@ testers.runNixOSTest {
     }:
     {
       imports = [ ./module.nix ];
+      # `home-module.nix`を有効にした構成から出てきたファイルを、テストから読める場所へ置きます。
+      environment.etc =
+        let
+          home =
+            (homeManagerConfiguration {
+              inherit pkgs;
+              modules = [
+                ./home-module.nix
+                {
+                  home = {
+                    username = member;
+                    homeDirectory = config.users.users.${member}.home;
+                    inherit (config.system) stateVersion;
+                  };
+                  programs.gpg.enable = true;
+                  services.gpg-vault.enable = true;
+                }
+              ];
+            }).config;
+        in
+        {
+          "${homeFilesDir}/user-tmpfiles.conf".source =
+            home.xdg.configFile."user-tmpfiles.d/home-manager.conf".source;
+          "${homeFilesDir}/gpg.conf".source = home.home.file."${home.programs.gpg.homedir}/gpg.conf".source;
+          "${homeFilesDir}/environment.conf".source =
+            home.xdg.configFile."environment.d/10-home-manager.conf".source;
+        };
       services.gpg-vault = {
         enable = true;
         fingerprint = "0000000000000000000000000000000000000000";
@@ -76,6 +115,7 @@ testers.runNixOSTest {
       users.users = {
         ${member} = {
           isNormalUser = true;
+          uid = memberUid;
           # モジュールが`users`のユーザに求めます。
           linger = true;
         };
@@ -110,9 +150,8 @@ testers.runNixOSTest {
 
 
       def point_to_vault(user):
-          # gpgがソケットを探す場所は、`/run/user/<uid>`があるかで変わります。
-          # lingerのユーザは`/run/user/<uid>/gnupg`で、無いユーザはGNUPGHOMEの直下です。
-          # どちらでも合うように、gpg自身に場所を聞きます。
+          # home-managerを使わないユーザのgpgを、手でagentのソケットへ向けます。
+          # gpgがソケットを探す場所は、`/run/user/<uid>`があるかで変わるので、gpg自身に聞きます。
           machine.succeed(as_user(
               user,
               "mkdir -m 700 -p .gnupg"
@@ -143,8 +182,8 @@ testers.runNixOSTest {
 
       machine.wait_for_unit("multi-user.target")
       machine.wait_for_unit("gpg-vault-agent.service")
-      # lingerのユーザの`/run/user/<uid>`ができてから、gpgにソケットの場所を聞きます。
-      machine.wait_until_succeeds("test -d /run/user/$(id -u ${member})")
+      # lingerのユーザの`/run/user/<uid>`ができるのを待ちます。
+      machine.wait_until_succeeds("test -d /run/user/${toString memberUid}")
 
       with subtest("公開鍵をvault側のpubringへ取り込む"):
           machine.succeed(
@@ -155,8 +194,29 @@ testers.runNixOSTest {
       with subtest("ソケットはgpg-vaultグループにだけ開いている"):
           check_socket_permissions()
 
+      with subtest("home-module.nixの規則がソケットへのリンクを置く"):
+          home_files = "/etc/${homeFilesDir}"
+          runtime_dir = "/run/user/${toString memberUid}"
+          # home-managerの有効化の代わりに、生成された`gpg.conf`とユーザのtmpfilesの規則を適用します。
+          machine.succeed(as_user(
+              "${member}",
+              "mkdir -m 700 -p .gnupg"
+              f" && ln -sf {home_files}/gpg.conf .gnupg/gpg.conf"
+              f" && XDG_RUNTIME_DIR={runtime_dir} systemd-tmpfiles --user --create {home_files}/user-tmpfiles.conf"
+          ))
+          for name in socket_names:
+              target = machine.succeed(f"readlink {runtime_dir}/gnupg/{name}").strip()
+              assert target == f"{socket_dir}/{name}", f"{name}: {target}"
+          # 鍵を持たないagentを自分で起動しないようにする設定です。
+          machine.succeed(f"grep --line-regexp no-autostart {home_files}/gpg.conf")
+          # ユーザのsystemdが起動の時に読む`environment.d`に出すファイルです。
+          machine.succeed(
+              f"grep --line-regexp --fixed-strings 'SSH_AUTH_SOCK={ssh_socket}'"
+              f" {home_files}/environment.conf"
+          )
+
       with subtest("グループのユーザはソケット経由で鍵を作って署名できる"):
-          point_to_vault("${member}")
+          # このユーザのgpgは、上で適用した`home-module.nix`のリンクと設定だけでagentへ繋ぎます。
           machine.succeed(as_user(
               "${member}",
               "gpg --batch --pinentry-mode loopback --passphrase \"\""

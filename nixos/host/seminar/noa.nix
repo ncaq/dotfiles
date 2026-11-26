@@ -6,9 +6,8 @@
 # - ルートのSSDの上のディレクトリ。マウントされていない時に見える
 #
 # トップレベルはroot所有の0755にする。
-# 所有者と権限は`disk.nix`のマウントオプションの`X-mount.owner`などで設定する。
-# ブート時のtmpfilesはマウントより前に動いてSSDの側に当たるので、
-# tmpfilesのルールでは設定できない。
+# tmpfilesのルールで設定して、
+# `noa-tmpfiles.nix`がマウントされた後に適用する。
 #
 # SSDの側は誰も読み書きできないようにする。
 # `/mnt/noa`は`nofail`なので、
@@ -31,12 +30,12 @@ let
 in
 {
   systemd = {
-    # マウントが無い構成でのトップレベルの代わり。
+    # トップレベルの所有者と権限。
     # tmpfilesは非root所有のディレクトリから別の所有者のディレクトリへ降りるのを、
     # "unsafe path transition"として拒否する。
     # 配下の各ディレクトリはそれぞれ個別の所有者を持つので、
     # 親はroot所有にする。
-    tmpfiles.rules = lib.mkIf (!hasNoaMount) [
+    tmpfiles.rules = [
       "d /mnt/noa 0755 root root -"
     ];
 

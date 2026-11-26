@@ -11,7 +11,7 @@
 # ソケットの場所と名前は`passthru`にも出している。
 # `module.nix`とクライアント側の`home-module.nix`は、パスを自分では書かずにそこから引く。
 #
-# gpg-vaultが何のための仕組みかは`module.nix`の冒頭に書いてある。
+# gpg-vaultが何のための仕組みかと、使い方は`README.md`に書いてある。
 {
   homeManagerConfiguration,
   pinentry-curses,
@@ -27,13 +27,30 @@ let
   socketDir = "/run/gpg-vault";
   # ssh-agentのエミュレーション用のソケットの名前。クライアント側が`SSH_AUTH_SOCK`に指す。
   sshSocketName = "S.gpg-agent.ssh";
-  # gpgの操作用のソケットの名前。
+  # agentの全てのコマンドを受け付けるソケットの名前。
+  # 秘密鍵のエクスポートもできるので通常ユーザへは公開せず、gpg-vaultユーザとrootだけが繋ぐ。
   agentSocketName = "S.gpg-agent";
-  # 通常ユーザへ公開する全てのソケットの名前。
+  # 制限付きのソケットの名前。
+  # 署名と復号はできるが、秘密鍵のエクスポートやインポートや削除はagentが拒否する。
+  # gpg-agentは設定しなくてもこのソケットを作る。
+  extraSocketName = "S.gpg-agent.extra";
+  # `socketDir`に作らせる全てのソケットの名前。
   socketNames = [
     agentSocketName
+    extraSocketName
     sshSocketName
   ];
+  # そのうち通常ユーザへ公開するソケットの名前。
+  publicSocketNames = [
+    extraSocketName
+    sshSocketName
+  ];
+  # 通常ユーザのgpgとsshが探すソケットの名前から、その先に置くvaultのソケットの名前への対応。
+  # gpgが普通のソケットとして探す名前の先を、制限付きのソケットにする。
+  clientSocketLinks = {
+    ${agentSocketName} = extraSocketName;
+    ${sshSocketName} = sshSocketName;
+  };
 
   # Assuanソケットリダイレクトで`socketDir`にソケットを作らせます。
   # gpg-agentはリダイレクトファイル自体は終了時に削除しない
@@ -51,8 +68,9 @@ symlinkJoin {
   paths = [
     (writeTextDir "gpg-agent.conf" ''
       enable-ssh-support
-      # パスフレーズの入力は、通常ユーザ側のgpgが`--pinentry-mode loopback`で受け取ってagentへ渡します。
+      # パスフレーズの入力は、gpg-vaultユーザで動かすgpgが`--pinentry-mode loopback`で受け取ってagentへ渡します。
       # agentは別のユーザで動いていて、pinentryを通常ユーザの端末や画面に出せないためです。
+      # 通常ユーザへ公開する制限付きのソケットからは、loopbackへの切り替えもagentが拒否します。
       allow-loopback-pinentry
       # そのためpinentryが入力を受け取ることはありませんが、
       # 設定として有効なパスは必要です。
@@ -66,6 +84,9 @@ symlinkJoin {
   passthru = {
     inherit
       agentSocketName
+      clientSocketLinks
+      extraSocketName
+      publicSocketNames
       socketDir
       socketNames
       sshSocketName

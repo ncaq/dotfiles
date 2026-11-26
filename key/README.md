@@ -10,24 +10,14 @@ NixOSホストでは秘密鍵ファイルの実体を通常ユーザから隔離
 コーディングエージェントなどが通常ユーザ権限でディレクトリを一括アップロードしても、
 秘密鍵ファイル自体は流出しないようにするための「うっかり防止」です。
 
-- 秘密鍵の実体: `/var/lib/gpg-vault/.gnupg/private-keys-v1.d/`(gpg-vaultユーザ所有、mode 700)
-- gpg-agent: `gpg-vault-agent.service`がgpg-vaultユーザで稼働
-- ソケット: `/run/gpg-vault/`にありgpg-vaultグループのみ接続可能
-- 通常ユーザの`~/.gnupg`: 公開鍵リングと設定のみで秘密鍵は置かない
+通常ユーザのgpgとsshはソケット経由でvaultのagentを使うため、
+署名と復号とSSH認証の使い勝手は通常とほぼ同じです。
+秘密鍵のエクスポートやインポートのような管理の操作は通常ユーザからはできず、
+gpg-vaultユーザとして行います。
 
-通常ユーザのgpg/sshはソケット経由でvaultのagentを使うため、
-使い勝手は通常とほぼ同じです。
-
-仕組みの本体は`pkgs/gpg-vault`にあります。
-NixOS側が`module.nix`、
-クライアント側が`home-module.nix`です。
-有効にしているのは`nixos/core/gpg-vault.nix`と`home/core/gpg.nix`です。
-
-トラブル時にvault側を直接調査する場合:
-
-```zsh
-sudo -u gpg-vault env GNUPGHOME=/var/lib/gpg-vault/.gnupg gpg --list-secret-keys
-```
+仕組みと使い方は[pkgs/gpg-vault/README.md](../pkgs/gpg-vault/README.md)に書いています。
+以下の手順のうちNixOSホストで秘密鍵を管理する操作は、
+そこに書いている通りgpg-vaultユーザとして実行します。
 
 ## 鍵の構成
 
@@ -76,10 +66,12 @@ sudo -u gpg-vault env GNUPGHOME=/var/lib/gpg-vault/.gnupg gpg --list-secret-keys
 通常は以下の手段を使います。
 
 ```zsh
-gpg --export-secret-subkeys --armor C65B759E5D5B3E95! ACA66AB679E75544! > subkeys-secret.asc
+sudo -u gpg-vault env GNUPGHOME=/var/lib/gpg-vault/.gnupg \
+  gpg --export-secret-subkeys --armor 'C65B759E5D5B3E95!' 'ACA66AB679E75544!' > subkeys-secret.asc
 ```
 
 などで安全な場所に副鍵のシークレットキーをエクスポートします。
+通常ユーザのgpgからのエクスポートはvaultのagentが拒否します。
 
 主鍵をインポートする必要はありません。
 
@@ -148,11 +140,15 @@ gpgconf --kill gpg-agent
 ### 端末にimport
 
 副鍵をimportします。
-秘密鍵はソケット経由でvaultのagentに送られ、
-`/var/lib/gpg-vault/.gnupg/private-keys-v1.d/`に保存されます。
+通常ユーザのgpgからの秘密鍵のimportはvaultのagentが拒否するので、
+gpg-vaultユーザとして実行します。
+秘密鍵は`/var/lib/gpg-vault/.gnupg/private-keys-v1.d/`に保存されます。
+gpg-vaultユーザからファイルが読めなくても良いように、
+標準入力で渡します。
 
 ```zsh
-gpg --import subkeys-secret.asc
+sudo -u gpg-vault env GNUPGHOME=/var/lib/gpg-vault/.gnupg \
+  gpg --pinentry-mode loopback --import < subkeys-secret.asc
 ```
 
 パスフレーズを削除します。
@@ -161,7 +157,8 @@ pinentryがユーザ境界を跨いで端末を開けないため、
 loopbackモードでgpg自身にパスフレーズを入力します。
 
 ```zsh
-gpg --pinentry-mode loopback --edit-key ncaq@ncaq.net
+sudo -u gpg-vault env GNUPGHOME=/var/lib/gpg-vault/.gnupg \
+  gpg --pinentry-mode loopback --edit-key ncaq@ncaq.net
 ```
 
 ```console

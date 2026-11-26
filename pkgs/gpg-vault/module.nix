@@ -23,8 +23,8 @@
   悪意は防げません。
 */
 {
-  pkgs,
   lib,
+  pkgs,
   config,
   ...
 }:

@@ -4,8 +4,8 @@
 # 通常ユーザ側ではgpg-agentを起動せずソケットだけをvaultに向けます。
 # 使う側(`home/core/gpg.nix`)は、有効にするかどうかだけを決めます。
 {
-  pkgs,
   lib,
+  pkgs,
   config,
   ...
 }:

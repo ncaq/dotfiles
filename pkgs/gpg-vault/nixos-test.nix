@@ -52,7 +52,11 @@ testers.runNixOSTest {
         users = [ member ];
       };
       users.users = {
-        ${member}.isNormalUser = true;
+        ${member} = {
+          isNormalUser = true;
+          # モジュールが`users`のユーザに求めます。
+          linger = true;
+        };
         ${outsider}.isNormalUser = true;
       };
       environment.systemPackages = [ pkgs.gnupg ];
@@ -69,17 +73,23 @@ testers.runNixOSTest {
 
 
       def point_to_vault(user):
-          # ユーザのセッションが無く`/run/user/<uid>`も無いので、gpgはGNUPGHOMEの直下のソケットを見ます。
+          # gpgがソケットを探す場所は、`/run/user/<uid>`があるかで変わります。
+          # lingerのユーザは`/run/user/<uid>/gnupg`で、無いユーザはGNUPGHOMEの直下です。
+          # どちらでも合うように、gpg自身に場所を聞きます。
           machine.succeed(as_user(
               user,
               "mkdir -m 700 -p .gnupg"
-              f" && ln -sf {socket_dir}/S.gpg-agent .gnupg/S.gpg-agent"
               " && echo no-autostart > .gnupg/gpg.conf"
+              " && dir=$(gpgconf --list-dirs socketdir)"
+              " && mkdir -m 700 -p $dir"
+              f" && ln -sf {socket_dir}/S.gpg-agent $dir/S.gpg-agent"
           ))
 
 
       machine.wait_for_unit("multi-user.target")
       machine.wait_for_unit("gpg-vault-agent.service")
+      # lingerのユーザの`/run/user/<uid>`ができてから、gpgにソケットの場所を聞きます。
+      machine.wait_until_succeeds("test -d /run/user/$(id -u ${member})")
 
       with subtest("公開鍵をvault側のpubringへ取り込む"):
           machine.succeed(

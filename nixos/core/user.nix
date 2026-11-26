@@ -23,14 +23,8 @@ in
           "wheel"
         ];
         shell = pkgs.zsh;
-        # `home-manager-${username}.service`はboot時に`multi-user.target`の段階で実行されます。
-        # 内部で`gpg --edit-key`などgpg-agentに依存する処理を行います。
-        # gpgクライアントは`/run/user/$UID/gnupg/`のソケットへ繋ぎます。
-        # そこにあるのは`gpg-vault`のgpg-agentのソケットへのリンクで、
-        # `pkgs/gpg-vault/home-module.nix`のユーザのtmpfilesが置くため、
-        # `user@$UID.service`が起動していないとIPC接続に失敗します。
-        # lingerを有効にしてログインしなくてもboot時から`user@$UID.service`を起動させ、
-        # `After=user@.service`で順序を明示することでこの問題を回避します。
+        # ログインしなくてもboot時から`user@$UID.service`を起動させます。
+        # gpg-vaultを使うユーザに求められていて、理由は`pkgs/gpg-vault/module.nix`に書いています。
         linger = true;
         # `hashedPassword`をリポジトリにコミットしている理由:
         # yescrypt($y$)はメモリハード関数であり、

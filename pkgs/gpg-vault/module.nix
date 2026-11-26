@@ -104,6 +104,16 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    # 通常ユーザのgpgは`/run/user/<uid>/gnupg/`のソケットへ繋ぎます。
+    # そこにあるのはagentのソケットへのリンクで、`home-module.nix`のユーザのtmpfilesが置くので、
+    # `user@<uid>.service`が動いていないと存在しません。
+    # home-managerの有効化のようにログインの前に動くものからも繋げるように、
+    # lingerでブートの時から`user@<uid>.service`を起動させておくことを求めます。
+    assertions = map (user: {
+      assertion = config.users.users.${user}.linger == true;
+      message = "services.gpg-vault.usersの${user}には`users.users.${user}.linger = true`が必要です。";
+    }) cfg.users;
+
     users = {
       users = {
         ${vaultUser} = {

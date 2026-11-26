@@ -14,12 +14,33 @@
   config,
   hardening,
   lib,
+  options,
+  pkgs,
   utils,
   ...
 }:
 let
   noa = "/mnt/noa";
   noaMount = "${utils.escapeSystemdPath noa}.mount";
+
+  # 全体のtmpfilesの元のコマンドライン。
+  # 上書きはこれに`--exclude-prefix`を足して作る。
+  # 元の定義とずれていないことを下のassertionと`system.checks`で確かめている。
+  # 更新で変わって検査に落ちたら、
+  # ここを新しいコマンドラインに合わせる。
+  upstreamSetupExecStart = "systemd-tmpfiles --create --remove --boot --exclude-prefix=/dev";
+  upstreamResetupExecStart = "systemd-tmpfiles --create --remove --exclude-prefix=/dev";
+  # systemd本体のユニットファイル。
+  upstreamSetupUnit = "${config.systemd.package}/example/systemd/system/systemd-tmpfiles-setup.service";
+  # nixpkgsのモジュールが定義している`systemd-tmpfiles-resetup`の`ExecStart`。
+  # ここで`mkForce`した定義も混ざるが、
+  # 文字列ではないので一致しない。
+  resetupExecStartDefinitions = lib.concatMap (
+    definition:
+    lib.optional (
+      definition ? systemd-tmpfiles-resetup.serviceConfig.ExecStart
+    ) definition.systemd-tmpfiles-resetup.serviceConfig.ExecStart
+  ) options.systemd.services.definitions;
 
   isUnderNoa = path: path == noa || lib.hasPrefix "${noa}/" path;
   # `RequiresMountsFor`は文字列1つに空白区切りで複数のパスを書くこともできるので、
@@ -46,6 +67,23 @@ lib.mkIf (config.fileSystems ? ${noa}) {
       assertion = servicesRequiringNoa != [ ];
       message = "noa-tmpfiles: ${noa}の配下を必須にしているサービスが1つも見つかりません。";
     }
+    {
+      assertion = lib.elem upstreamResetupExecStart resetupExecStartDefinitions;
+      message = "noa-tmpfiles: nixpkgsのsystemd-tmpfiles-resetupのExecStartが想定と違います。upstreamResetupExecStartを合わせてください。";
+    }
+  ];
+
+  # systemd本体のユニットファイルは評価の時には読めないので、
+  # システムのビルドの時に確かめる。
+  system.checks = [
+    (pkgs.runCommand "check-systemd-tmpfiles-setup-exec-start" { } ''
+      if ! grep --fixed-strings --line-regexp -- ${lib.escapeShellArg "ExecStart=${upstreamSetupExecStart}"} ${upstreamSetupUnit}; then
+        echo "noa-tmpfiles: systemd-tmpfiles-setup.serviceのExecStartが想定と違います。upstreamSetupExecStartを合わせてください。" >&2
+        grep ExecStart ${upstreamSetupUnit} >&2
+        exit 1
+      fi
+      touch $out
+    '')
   ];
 
   systemd.services = {
@@ -89,12 +127,18 @@ lib.mkIf (config.fileSystems ? ${noa}) {
 
     # 全体のtmpfilesから`/mnt/noa`を外す。
     # 外さないとブートのたびに配下のルールが失敗してログに残る。
-    # `ExecStart`はどちらも元のコマンドラインに`--exclude-prefix`を足したもの。
-    # systemdやnixpkgsの更新で元のコマンドラインが変わったら合わせる。
+    # 上書きの書き方が2つで違うのは、元の定義の場所が違うから。
+    #
+    # `systemd-tmpfiles-setup`はsystemd本体のユニットファイルで定義されている。
+    # ここでの設定はドロップインになるので、
+    # 空文字列で元の`ExecStart`を消してから足す。
     systemd-tmpfiles-setup.serviceConfig.ExecStart = [
       ""
-      "systemd-tmpfiles --create --remove --boot --exclude-prefix=/dev --exclude-prefix=${noa}"
+      "${upstreamSetupExecStart} --exclude-prefix=${noa}"
     ];
-    systemd-tmpfiles-resetup.serviceConfig.ExecStart = lib.mkForce "systemd-tmpfiles --create --remove --exclude-prefix=/dev --exclude-prefix=${noa}";
+    # `systemd-tmpfiles-resetup`はnixpkgsのモジュールが定義している。
+    # 同じオプションへの定義になるので、
+    # `mkForce`で置き換える。
+    systemd-tmpfiles-resetup.serviceConfig.ExecStart = lib.mkForce "${upstreamResetupExecStart} --exclude-prefix=${noa}";
   };
 }

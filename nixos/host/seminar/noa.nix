@@ -58,7 +58,11 @@ in
         DefaultDependencies = false;
         ConditionPathIsMountPoint = "!/mnt/noa";
       };
-      serviceConfig = hardening.isolated // {
+      # `PrivateTmp`は`After=systemd-tmpfiles-setup.service`を足すので外す。
+      # 付けていると全体のtmpfilesの後まで待つことになり、
+      # `Before=mnt-noa.mount`でマウントもそこまで遅れる。
+      # このユニットは`/tmp`を使わない。
+      serviceConfig = removeAttrs hardening.isolated [ "PrivateTmp" ] // {
         Type = "oneshot";
         CapabilityBoundingSet = [
           # 0000のディレクトリはrootでもcapabilityが無いと開けない。

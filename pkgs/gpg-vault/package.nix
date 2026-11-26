@@ -27,10 +27,11 @@ let
   socketDir = "/run/gpg-vault";
   # ssh-agentのエミュレーション用のソケットの名前。クライアント側が`SSH_AUTH_SOCK`に指す。
   sshSocketName = "S.gpg-agent.ssh";
+  # gpgの操作用のソケットの名前。
+  agentSocketName = "S.gpg-agent";
   # 通常ユーザへ公開する全てのソケットの名前。
   socketNames = [
-    # gpgの操作用。
-    "S.gpg-agent"
+    agentSocketName
     sshSocketName
   ];
 
@@ -63,7 +64,12 @@ symlinkJoin {
   ]
   ++ map socketRedirect socketNames;
   passthru = {
-    inherit socketDir socketNames sshSocketName;
+    inherit
+      agentSocketName
+      socketDir
+      socketNames
+      sshSocketName
+      ;
     # ソケットの権限と、他のユーザから鍵が読めないことは、実際のユニットを動かさないと確かめられない。
     tests.nixos = import ./nixos-test.nix { inherit homeManagerConfiguration testers; };
   };

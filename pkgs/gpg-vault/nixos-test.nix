@@ -134,13 +134,21 @@ testers.runNixOSTest {
       # 場所と名前はここに直に書かず、モジュールとパッケージの値から引きます。
       # 直に書くと、モジュールの側で場所を変えた時に、テストだけが古い場所を見続けます。
       inherit (containers.machine.services.gpg-vault) gnupgHome;
-      inherit (containers.machine.nixpkgs.pkgs.gpg-vault) socketDir socketNames sshSocketName;
+      inherit (containers.machine.nixpkgs.pkgs.gpg-vault)
+        agentSocketName
+        socketDir
+        socketNames
+        sshSocketName
+        ;
     in
     # python
     ''
       socket_dir = "${socketDir}"
       socket_names = ${builtins.toJSON socketNames}
+      agent_socket_name = "${agentSocketName}"
       ssh_socket = "${socketDir}/${sshSocketName}"
+      # グループに入ったユーザの`XDG_RUNTIME_DIR`。
+      runtime_dir = "/run/user/${toString memberUid}"
       vault_home = "${gnupgHome}"
       vault_parent = "${dirOf gnupgHome}"
 
@@ -158,7 +166,7 @@ testers.runNixOSTest {
               " && echo no-autostart > .gnupg/gpg.conf"
               " && dir=$(gpgconf --list-dirs socketdir)"
               " && mkdir -m 700 -p $dir"
-              f" && ln -sf {socket_dir}/S.gpg-agent $dir/S.gpg-agent"
+              f" && ln -sf {socket_dir}/{agent_socket_name} $dir/{agent_socket_name}"
           ))
 
 
@@ -183,7 +191,7 @@ testers.runNixOSTest {
       machine.wait_for_unit("multi-user.target")
       machine.wait_for_unit("gpg-vault-agent.service")
       # lingerのユーザの`/run/user/<uid>`ができるのを待ちます。
-      machine.wait_until_succeeds("test -d /run/user/${toString memberUid}")
+      machine.wait_until_succeeds(f"test -d {runtime_dir}")
 
       with subtest("公開鍵をvault側のpubringへ取り込む"):
           machine.succeed(
@@ -196,7 +204,6 @@ testers.runNixOSTest {
 
       with subtest("home-module.nixの規則がソケットへのリンクを置く"):
           home_files = "/etc/${homeFilesDir}"
-          runtime_dir = "/run/user/${toString memberUid}"
           # home-managerの有効化の代わりに、生成された`gpg.conf`とユーザのtmpfilesの規則を適用します。
           machine.succeed(as_user(
               "${member}",

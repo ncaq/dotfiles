@@ -36,14 +36,14 @@ let
   gnupg = config.programs.gnupg.package;
 
   vaultUser = "gpg-vault";
-  # `StateDirectory`と`RuntimeDirectory`に渡す名前。
-  directoryName = "gpg-vault";
-  vaultHome = "/var/lib/${directoryName}";
+  # `StateDirectory`に渡す名前。
+  stateDirectory = "gpg-vault";
+  vaultHome = "/var/lib/${stateDirectory}";
   agentService = "gpg-vault-agent";
 
   # GNUPGHOMEに置く静的な設定のうち、どの鍵を使うかに依らないもの。
   gnupgHomeFiles = pkgs.gpg-vault;
-  inherit (gnupgHomeFiles) socketDir;
+  inherit (gnupgHomeFiles) socketDir socketNames;
 
   # `trusted-key`で主鍵をultimate信頼として宣言します。
   # これによりpreStartでの`--import-ownertrust`によるgpg起動が不要になります。
@@ -104,14 +104,6 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    assertions = [
-      {
-        # `RuntimeDirectory`が作るのは`/run/${directoryName}`で、パッケージのリダイレクト先と別々に決まっている。
-        assertion = socketDir == "/run/${directoryName}";
-        message = "gpg-vaultのパッケージの`socketDir`がユニットの`RuntimeDirectory`と食い違っています。";
-      }
-    ];
-
     users = {
       users = {
         ${vaultUser} = {
@@ -157,7 +149,7 @@ in
           "${cfg.gnupgHome}/gpg.conf"."L+".argument = "${gpgConf}";
           "${cfg.gnupgHome}/sshcontrol"."L+".argument = "${sshcontrolFile}";
         }
-        // lib.genAttrs' [ "gpg-agent.conf" "S.gpg-agent" "S.gpg-agent.ssh" ] (
+        // lib.genAttrs' ([ "gpg-agent.conf" ] ++ socketNames) (
           name:
           lib.nameValuePair "${cfg.gnupgHome}/${name}" {
             "L+".argument = "${gnupgHomeFiles}/${name}";
@@ -231,15 +223,22 @@ in
             # このchmodによるグループ書き込み(=接続)許可は必須です。
             # ExecStartPostの完了までunitはstartedにならないため、
             # After=で順序付けされた依存サービスが0700の窓に当たることはありません。
-            ExecStartPost = "${pkgs.coreutils}/bin/chmod 0660 ${socketDir}/S.gpg-agent ${socketDir}/S.gpg-agent.ssh";
+            ExecStartPost = lib.escapeShellArgs (
+              [
+                (lib.getExe' pkgs.coreutils "chmod")
+                "0660"
+              ]
+              ++ map (name: "${socketDir}/${name}") socketNames
+            );
             Restart = "on-failure";
             Environment = [ "GNUPGHOME=${cfg.gnupgHome}" ];
             UMask = "0007";
             # `socketDir`の実体です。
-            RuntimeDirectory = directoryName;
+            # パッケージのリダイレクト先とずれないように、名前は`socketDir`から取ります。
+            RuntimeDirectory = lib.removePrefix "/run/" socketDir;
             RuntimeDirectoryMode = "0750";
             # `vaultHome`の実体です。
-            StateDirectory = directoryName;
+            StateDirectory = stateDirectory;
             StateDirectoryMode = "0700";
           };
       };

@@ -4,7 +4,7 @@
 # そのGNUPGHOMEでgpg-agentを動かす。
 # 何のために隔離するかは`module.nix`の冒頭に書いてある。
 #
-# 通常ユーザへ公開するソケットの場所は`socketDir`として`passthru`に出していて、
+# 通常ユーザへ公開するソケットの場所と名前は`socketDir`と`socketNames`として`passthru`に出していて、
 # `module.nix`とクライアント側の`home-module.nix`の両方がここから引く。
 #
 # ここに置くのは、どの鍵を使うかに依らないものだけ。
@@ -21,6 +21,14 @@ let
   # 何もしないとソケットはGNUPGHOME直下に作られ、
   # mode 700のディレクトリ内なので通常ユーザから届かなくなります。
   socketDir = "/run/gpg-vault";
+  # ssh-agentのエミュレーション用のソケットの名前。クライアント側が`SSH_AUTH_SOCK`に指す。
+  sshSocketName = "S.gpg-agent.ssh";
+  # 通常ユーザへ公開する全てのソケットの名前。
+  socketNames = [
+    # gpgの操作用。
+    "S.gpg-agent"
+    sshSocketName
+  ];
 
   # Assuanソケットリダイレクトで`socketDir`にソケットを作らせます。
   # gpg-agentはリダイレクトファイル自体は終了時に削除しない
@@ -48,11 +56,10 @@ symlinkJoin {
       # 鍵操作時にscdaemonがカード探索のためにspawnされるのを止めます。
       disable-scdaemon
     '')
-    (socketRedirect "S.gpg-agent")
-    (socketRedirect "S.gpg-agent.ssh")
-  ];
+  ]
+  ++ map socketRedirect socketNames;
   passthru = {
-    inherit socketDir;
+    inherit socketDir socketNames sshSocketName;
     # ソケットの権限と、他のユーザから鍵が読めないことは、実際のユニットを動かさないと確かめられない。
     tests.nixos = import ./nixos-test.nix { inherit testers; };
   };

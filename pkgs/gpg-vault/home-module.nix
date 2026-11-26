@@ -11,8 +11,8 @@
 }:
 let
   cfg = config.services.gpg-vault;
-  inherit (pkgs.gpg-vault) socketDir;
-  sshSocket = "${socketDir}/S.gpg-agent.ssh";
+  inherit (pkgs.gpg-vault) socketDir socketNames sshSocketName;
+  sshSocket = "${socketDir}/${sshSocketName}";
 in
 {
   options.services.gpg-vault.enable = lib.mkEnableOption "gpg-vaultのagentをgpgとsshのagentとして使う設定";
@@ -29,9 +29,8 @@ in
       # `%t`はユーザtmpfilesでは`$XDG_RUNTIME_DIR`に展開されます。
       tmpfiles.rules = [
         "d %t/gnupg 0700 - -"
-        "L+ %t/gnupg/S.gpg-agent - - - - ${socketDir}/S.gpg-agent"
-        "L+ %t/gnupg/S.gpg-agent.ssh - - - - ${sshSocket}"
-      ];
+      ]
+      ++ map (name: "L+ %t/gnupg/${name} - - - - ${socketDir}/${name}") socketNames;
 
       # systemdユーザサービス(`emacs.service`など)向けにenvironment.d経由で設定します。
       # インタラクティブなシェル初期化だけではGUIアプリやsystemdサービスに届きません。

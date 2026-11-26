@@ -8,9 +8,9 @@
 #
 # - IPv6のNATテーブルにmasqueradeがあること
 # - IPv6アドレスを持つコンテナの設定ファイルに、ホスト側とコンテナ側のIPv6アドレスが書かれていること。
-#   コンテナのinitとホスト側のpostStartはこのファイルを読んでアドレスと経路を付けます
+#   コンテナのinitはこのファイルを読んでコンテナ側のアドレスと経路を付けます
 # - ホスト側のsystemd-networkdの設定ファイルに、宣言したIPv6アドレスが書かれていること。
-#   open-webuiのコンテナのvethとmicroVMのTAPはpostStartではなくこちらで付けます
+#   コンテナのvethのホスト側とmicroVMのTAPはこちらで付けます
 # - microVMのTAPに実際にIPv6アドレスが付くこと
 #
 # コンテナのvethは実際のインタフェースを見ません。

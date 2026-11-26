@@ -19,6 +19,7 @@
 # 付け忘れても書き込めないようにしておく。
 {
   config,
+  hardening,
   lib,
   pkgs,
   ...
@@ -57,8 +58,15 @@ in
         DefaultDependencies = false;
         ConditionPathIsMountPoint = "!/mnt/noa";
       };
-      serviceConfig = {
+      serviceConfig = hardening.isolated // {
         Type = "oneshot";
+        CapabilityBoundingSet = [
+          # 0000のディレクトリはrootでもcapabilityが無いと開けない。
+          # `chattr`は属性を付ける相手を開く。
+          "CAP_DAC_READ_SEARCH"
+          "CAP_LINUX_IMMUTABLE"
+        ];
+        ReadWritePaths = [ "/mnt" ];
         ExecStart = [
           "${lib.getExe' pkgs.coreutils "mkdir"} --parents --mode=0000 /mnt/noa"
           # `--mode`は新しく作った時にしか効かないので、

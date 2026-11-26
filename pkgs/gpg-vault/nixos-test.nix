@@ -295,6 +295,9 @@ testers.runNixOSTest {
           # 全てのコマンドを受け付けるソケットへは、名指ししても繋げません。
           machine.fail(as_user("${member}", ask_full_socket))
           machine.succeed(as_vault(ask_full_socket))
+          # 全てのコマンドを受け付けるソケットでは`getinfo restricted`が通らないので、
+          # 上の`ask_restricted`の成功は、制限付きのソケットに繋いだ時にだけ成り立ちます。
+          machine.fail(as_vault(ask_restricted))
 
       with subtest("秘密鍵のファイルはvaultの中にだけある"):
           machine.succeed(f"test -n \"$(ls {vault_home}/private-keys-v1.d)\"")

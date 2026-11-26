@@ -17,6 +17,7 @@
 # - gpg-vaultユーザが、全てのコマンドを受け付けるソケット経由で鍵を作れること
 # - グループに入ったユーザが、制限付きのソケット経由で署名と復号をできること
 # - そのユーザからは、秘密鍵のエクスポートとインポートと鍵の生成がagentに拒否されること
+# - 鍵の削除とパスフレーズの変更も拒否されて、秘密鍵がvaultに残ること
 # - そのユーザからもvaultのGNUPGHOMEは読めず、自分の側に秘密鍵のファイルが無いこと
 # - グループに入っていないユーザは、ソケットへ繋げないこと
 # - SSHのソケットも、グループのユーザにだけ応答すること
@@ -292,6 +293,25 @@ testers.runNixOSTest {
           )
           machine.succeed("grep --quiet 'PRIVATE KEY' /tmp/test-secret.asc")
           fail_forbidden("gpg --batch --import /tmp/test-secret.asc")
+
+      with subtest("グループのユーザからの鍵の削除とパスフレーズの変更は拒否される"):
+          count_secret_keys = f"ls {vault_home}/private-keys-v1.d | wc -l"
+          before = machine.succeed(count_secret_keys).strip()
+          colons = machine.succeed(as_vault("gpg --batch --with-colons --list-keys test@example.com"))
+          fingerprint = next(
+              line.split(":")[9] for line in colons.splitlines() if line.startswith("fpr:")
+          )
+          fail_forbidden(f"gpg --batch --yes --delete-secret-keys {fingerprint}")
+          fail_forbidden("gpg --batch --passwd test@example.com")
+          # loopbackへの切り替えそのものも拒否されます。
+          fail_forbidden("gpg --batch --pinentry-mode loopback --passwd test@example.com")
+          # 拒否された後も、秘密鍵はvaultに残っていて使えます。
+          after = machine.succeed(count_secret_keys).strip()
+          assert before == after and int(after) > 0, f"{before} -> {after}"
+          machine.succeed(as_vault("gpg --batch --list-secret-keys test@example.com"))
+          machine.succeed(as_user("${member}", sign))
+
+      with subtest("全てのコマンドを受け付けるソケットへはグループのユーザも繋げない"):
           # 全てのコマンドを受け付けるソケットへは、名指ししても繋げません。
           machine.fail(as_user("${member}", ask_full_socket))
           machine.succeed(as_vault(ask_full_socket))

@@ -199,6 +199,15 @@ testers.runNixOSTest {
           return status
 
 
+      def fail_forbidden(command):
+          # グループのユーザのコマンドが、agentに拒否されて失敗することを見ます。
+          # 終了コードだけでは、ファイルが読めないような別の理由の失敗と見分けられません。
+          status, output = machine.execute(as_user("${member}", f"( {command} ) 2>&1"))
+          assert status != 0, f"{command}: {output}"
+          assert "Forbidden" in output, f"{command}: {output}"
+          return output
+
+
       # `gpg-connect-agent`は繋げなくても0で終わるので、agentの応答があるかで見ます。
       ask_agent = "gpg-connect-agent --no-autostart \"getinfo version\" /bye | grep --quiet \"^D \""
       # 繋いだソケットが制限付きなら、agentは`getinfo restricted`にOKを返します。
@@ -273,20 +282,16 @@ testers.runNixOSTest {
           machine.succeed(as_user("${member}", decrypt))
 
       with subtest("グループのユーザからの秘密鍵のエクスポートとインポートと鍵の生成は拒否される"):
-          status, output = machine.execute(as_user(
-              "${member}",
-              "gpg --batch --export-secret-keys --armor test@example.com"
-          ))
-          assert status != 0, status
+          output = fail_forbidden("gpg --batch --export-secret-keys --armor test@example.com")
           assert "PRIVATE KEY" not in output, output
-          machine.fail(as_user("${member}", generate_key.format("other@example.com")))
+          fail_forbidden(generate_key.format("other@example.com"))
           # 同じ操作がgpg-vaultユーザからは通るので、拒否の理由はソケットの制限です。
           machine.succeed(
               as_vault("gpg --batch --export-secret-keys --armor test@example.com")
               + " > /tmp/test-secret.asc"
           )
           machine.succeed("grep --quiet 'PRIVATE KEY' /tmp/test-secret.asc")
-          machine.fail(as_user("${member}", "gpg --batch --import /tmp/test-secret.asc"))
+          fail_forbidden("gpg --batch --import /tmp/test-secret.asc")
           # 全てのコマンドを受け付けるソケットへは、名指ししても繋げません。
           machine.fail(as_user("${member}", ask_full_socket))
           machine.succeed(as_vault(ask_full_socket))

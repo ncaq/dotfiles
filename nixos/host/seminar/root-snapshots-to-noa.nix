@@ -102,11 +102,14 @@ let
   # マウントされていない時に転送すると、
   # ルートのSSDの上の空のディレクトリへrootのスナップショットを丸ごと書き込むので、
   # マウントを必須にします。
+  # 転送先のサブボリュームは`noa-tmpfiles.service`がマウントの後に作るので、
+  # それより後に順序付けます。
   # `lowPriority`と同じ理由で`[Unit]`セクションを追記します。
   requireMount = ''
 
     [Unit]
     RequiresMountsFor=${targetPath}
+    After=noa-tmpfiles.service
   '';
 in
 {

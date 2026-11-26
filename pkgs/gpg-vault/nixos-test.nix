@@ -299,9 +299,13 @@ testers.runNixOSTest {
       with subtest("グループのユーザからの鍵の削除とパスフレーズの変更は拒否される"):
           count_secret_keys = f"ls {vault_home}/private-keys-v1.d | wc -l"
           before = machine.succeed(count_secret_keys).strip()
-          # 鍵の一覧では、主鍵のフィンガープリントが40桁の16進数だけの行として出ます。
+          # 鍵の一覧では、主鍵のフィンガープリントが16進数だけの行として出ます。
+          # v4の鍵はSHA-1で40桁、v5とv6の鍵はSHA-256で64桁です。
           listing = machine.succeed(as_vault("gpg --batch --list-keys test@example.com"))
-          fingerprint = re.findall(r"^\s*([0-9A-F]{40})$", listing, re.MULTILINE)[0]
+          match = re.search(r"^\s*([0-9A-F]{40}|[0-9A-F]{64})$", listing, re.MULTILINE)
+          # 一覧の形が変わって取れなくなった時に、gpgが何を出したのかを見せます。
+          assert match, listing
+          fingerprint = match.group(1)
           fail_forbidden(f"gpg --batch --yes --delete-secret-keys {fingerprint}")
           fail_forbidden("gpg --batch --passwd test@example.com")
           # loopbackへの切り替えそのものも拒否されます。

@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 {
   sops = {
     # sops-install-secrets.serviceを生成し、他のサービスから明示的に依存可能にする。
@@ -7,9 +7,10 @@
     # 秘密鍵はgpg-vaultユーザに隔離されているため(gpg-vault.nix)、
     # そちらのGNUPGHOMEを参照します。
     # 復号はvault agentにソケット経由で委譲されるため、
-    # gpg-vault.nix側で`gpg-vault-agent.service`への順序依存を設定しています。
+    # gpg-vault.nixの`clientUnits`に`sops-install-secrets.service`を入れています。
+    # それを受けて`pkgs/gpg-vault/module.nix`が、agentをこのユニットより前に起動します。
     gnupg = {
-      home = "/var/lib/gpg-vault/.gnupg";
+      home = config.services.gpg-vault.gnupgHome;
       sshKeyPaths = [ ];
     };
   };

@@ -44,6 +44,8 @@ let
         # nixpkgsの`home-manager`はmasterのスナップショットなので、
         # 構成の評価に使うinputと同じ版のCLIを渡す。
         inherit (inputs.home-manager.packages.${final.stdenv.hostPlatform.system}) home-manager;
+        # home-managerのモジュールを隣に持つパッケージが、テストでそのモジュールを評価するためのもの。
+        inherit (inputs.home-manager.lib) homeManagerConfiguration;
       }
     );
     directory = ../pkgs;

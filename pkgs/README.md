@@ -14,6 +14,8 @@ flakeの`packages`と`checks`にも加わります。
 overlayが`callPackage`の自動で渡す引数に足しています。
 `home-manager`のように、
 nixpkgsにあってもinputと版を揃えたいものも同じように足しています。
+`homeManagerConfiguration`のように、
+パッケージではなくテストがhome-managerのモジュールを評価するための関数も足しています。
 
 Haskellのパッケージは、
 overlayが渡す`localHaskellPackages`の`callCabal2nix`で組みます。
@@ -37,17 +39,33 @@ himariとその依存をパッケージの数だけ評価し直すことにな�
 
 ### ユニットごと確かめるテスト
 
-コマンドがsystemdのユニットとの組み合わせで意味を持つ時は、
+プログラムがsystemdのユニットとの組み合わせで意味を持つ時は、
 ユニットを定義するNixOSモジュールもパッケージの隣に置いて、
 NixOS Testで実際のユニットを動かします。
+ここで言うプログラムはコマンドに限らず、
+`gpg-vault`のようにユニットが動かすデーモンへ渡す設定ファイルをまとめたものも含みます。
 
-- `<名前>/package.nix`: コマンド。`passthru.tests.nixos`に`nixos-test.nix`を置く
-- `<名前>/module.nix`: コマンドを動かすユニットのNixOSモジュール。
+- `<名前>/package.nix`: プログラム。`passthru.tests.nixos`に`nixos-test.nix`を置く
+- `<名前>/module.nix`: プログラムを動かすユニットのNixOSモジュール。
   ホストの構成に依存させず、置き場所のようなホストごとの値はオプションで受け取る
 - `<名前>/nixos-test.nix`: `module.nix`だけを読み込んだマシンで確かめるテスト
 
 ホストの側は、`nixos/core/trash.nix`のように`module.nix`を`imports`に書いて使います。
 `importDirModules`は`pkgs/`を走査しないので、ここだけは明示的に読み込みます。
+
+`gpg-vault`のようにユーザの側の設定と組になるものは、
+home-managerのモジュールも`<名前>/home-module.nix`として隣に置いて、
+`home/core/gpg.nix`のように`imports`に書いて使います。
+`home-module.nix`も`nixos-test.nix`の中で確かめます。
+overlayが渡す`homeManagerConfiguration`で評価して、
+出てきたファイルをテストのマシンへ置きます。
+home-managerの有効化そのものはコンテナの中で動かせないためで、
+書き方は`pkgs/gpg-vault/nixos-test.nix`の冒頭に書いています。
+
+モジュールが入力に掛けている型やassertionは、
+`<名前>/module.test.nix`に評価のテストとして書けます。
+`package.nix`のあるディレクトリでもパッケージとしては拾われず、
+`test/README.md`に書いている仕組みが`checks`へ集めます。
 
 テストのマシンは、`nodes`ではなく`containers`に書いて、
 QEMUのVMではなくsystemd-nspawnのコンテナで動かします。

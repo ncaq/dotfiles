@@ -4,7 +4,6 @@
 # UI自体は負荷の軽い処理なのでseminarのCPUで足りる。
 # 推論は`ollama-backend.nix`がbulletのOllamaへ優先的に振り分ける。
 {
-  lib,
   pkgs,
   config,
   username,
@@ -185,42 +184,6 @@ in
         MemoryHigh = "8G"; # ソフトリミット。これを超えるとメモリを積極的に解放する。
         MemoryMax = "16G"; # ハードリミット。大きな文書の取り込みでも足りるだろうという推定値。
       };
-      # NixOSコンテナモジュールが生成する`postStart`は`ip addr add`と`ip route add`を使うため、
-      # 下のsystemd-networkdが先に設定済みだとEEXISTで失敗する。
-      # 実際の設定はsystemd-networkdへ任せるので、冪等にして失敗を無視する。
-      postStart = lib.mkForce ''
-        ifaceHost=ve-$INSTANCE
-        ip link set dev "$ifaceHost" up
-        ip -6 addr add ${addr.host6} dev "$ifaceHost" 2>/dev/null || true
-        ip -6 route add ${addr.guest6} dev "$ifaceHost" 2>/dev/null || true
-        ip addr add ${addr.host4} dev "$ifaceHost" 2>/dev/null || true
-        ip route add ${addr.guest4} dev "$ifaceHost" 2>/dev/null || true
-      '';
-    };
-    # vethへホスト側からアドレスとルートを設定する。
-    #
-    # NixOSコンテナモジュールのExecStartPostはコンテナのdefault target到達後に実行されるため、
-    # コンテナ内のサービスが起動する時点ではホスト側のネットワーク設定が終わっていない。
-    # Open WebUIは起動時にホストのCaddyを通してOllamaへ繋ぎに行くので、
-    # ホスト側の設定を待つとデッドロックする。
-    # systemd-networkdはvethの作成直後に設定を適用するのでこの順序問題が起きない。
-    # ここで宣言する`.network`が先に一致するので、
-    # systemdに同梱の`80-container-ve.network`はこのvethには使われない。
-    network.networks."20-open-webui-veth" = {
-      # `containers.open-webui.local.hostInterface`は使わない。
-      # systemd-networkdの`matchConfig.Name`はaltnameにも一致するので、
-      # 名前が15文字を超えて主名が縮められても、完全な`ve-<コンテナ名>`で一致する。
-      # あちらは超えた時にワイルドカードになり、
-      # 同じ先頭を持つ他のコンテナのvethにもこのアドレスを付けてしまう。
-      matchConfig.Name = "ve-open-webui";
-      addresses = [
-        { Address = "${addr.host6}/128"; }
-        { Address = "${addr.host4}/32"; }
-      ];
-      routes = [
-        { Destination = "${addr.guest6}/128"; }
-        { Destination = "${addr.guest4}/32"; }
-      ];
     };
   };
 }

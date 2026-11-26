@@ -46,6 +46,34 @@
   nixpkgsのresolvedのモジュールが有効なままだと評価を止めるため。
   コンテナ向けの既定値は`mkDefault true`なので、`mkForce`は要らない。
 
+  # ホスト側のveth
+
+  vethのアドレスを持つコンテナは、
+  ホスト側のアドレスとコンテナ宛のルートをsystemd-networkdで設定する。
+
+  nixpkgsのコンテナのモジュールは、これらを`container@<name>.service`の`postStart`で設定する。
+  `postStart`はコンテナの中の起動が終わってreadyになるまで動かないので、
+  コンテナの中のサービスが起動する時点では、ホスト側に戻りの経路がまだ無い。
+  起動の途中で外へ繋ぐサービスは応答を受け取れず、
+  タイムアウトで一度失敗して、それからコンテナがreadyになる。
+  systemd-networkdはvethが作られた直後に設定するので、この順序の問題が起きない。
+
+  `postStart`は空にする。
+  残すと`ip addr add`と`ip route add`が、systemd-networkdが先に設定したものと衝突して失敗する。
+  空にすると`extraVeths`の設定も消えるので、`extraVeths`を持つコンテナは評価を止める。
+
+  `.network`の`matchConfig.Name`には`local.hostInterface`を使わず、
+  完全な`ve-<コンテナ名>`を書く。
+  systemd-networkdの`Name=`はaltnameにも一致するので、
+  名前が15文字を超えて主名が縮められても一致する。
+  `local.hostInterface`は超えた時にワイルドカードになり、
+  同じ先頭を持つ他のコンテナのvethにも同じアドレスを付けてしまう。
+
+  ここで宣言する`.network`が先に一致するので、
+  systemdに同梱の`80-container-ve.network`はこれらのvethには使われない。
+  あちらが有効にするDHCPサーバやmasqueradeには頼っていない。
+  外へ出る経路は`machine-mapping.nix`がNATモジュールで作っている。
+
   # `local.hostInterface`
 
   vethのホスト側のインタフェース名を、
@@ -115,6 +143,25 @@ let
   withServiceUser = lib.filterAttrs (_: c: c.local.serviceUser) config.containers;
   withPersist = lib.filterAttrs (_: c: c.local.persist != [ ]) config.containers;
   usesIdmap = c: c.privateUsers == "pick";
+  # nixpkgsのコンテナのモジュールが`postStart`でホスト側のvethを設定するのと同じ条件。
+  # アドレスのオプションが効くのは`privateNetwork`の時だけで、
+  # ブリッジに繋ぐvethはアドレスを持たない。
+  hasVethAddress =
+    c:
+    c.privateNetwork
+    && c.hostBridge == null
+    && lib.any (address: address != null) [
+      c.hostAddress6
+      c.localAddress6
+      c.hostAddress
+      c.localAddress
+    ];
+  withVeth = lib.filterAttrs (_: hasVethAddress) config.containers;
+  # vethは1対1なので、相手だけを指すプレフィックス長にする。
+  # nixpkgsのオプションはプレフィックス長を付けた形も受け付けるので外す。
+  hostPrefix =
+    length: address:
+    lib.optional (address != null) "${lib.head (lib.splitString "/" address)}/${toString length}";
   hostInterfaceOf =
     name:
     let
@@ -213,20 +260,48 @@ assert hostInterfaceOf "niks3-private" == "ve-niks3-pr*";
   };
 
   config = {
+    assertions = lib.mapAttrsToList (name: c: {
+      assertion = c.extraVeths == { };
+      message = "containers.${name}.extraVeths: ホスト側のvethをsystemd-networkdで設定するために`postStart`を空にしているので、`extraVeths`は設定されません";
+    }) withVeth;
+
     users = {
       users = lib.mapAttrs (name: _: userOf name) withServiceUser;
       groups = lib.mapAttrs (name: _: { inherit (idsOf name) gid; }) withServiceUser;
     };
 
     systemd = {
+      network = lib.mkIf (withVeth != { }) {
+        enable = true;
+        networks = lib.mapAttrs' (
+          name: c:
+          lib.nameValuePair "20-${name}-veth" {
+            matchConfig.Name = "ve-${name}";
+            # 相手のコンテナが起動するまで設定が終わらない内向きのリンクなので、
+            # ホストがオンラインかどうかの判定には含めない。
+            linkConfig.RequiredForOnline = "no";
+            addresses = map (Address: { inherit Address; }) (
+              hostPrefix 128 c.hostAddress6 ++ hostPrefix 32 c.hostAddress
+            );
+            routes = map (Destination: { inherit Destination; }) (
+              hostPrefix 128 c.localAddress6 ++ hostPrefix 32 c.localAddress
+            );
+          }
+        ) withVeth;
+      };
       tmpfiles.rules = lib.concatLists (
         lib.mapAttrsToList (
           name: c: map (path: "d ${path} 0750 ${name} ${name} -") c.local.persist
         ) withPersist
       );
-      services = lib.mapAttrs' (
-        name: c: lib.nameValuePair "container@${name}" { unitConfig.RequiresMountsFor = c.local.persist; }
-      ) (lib.filterAttrs (_: usesIdmap) withPersist);
+      services = lib.mkMerge [
+        (lib.mapAttrs' (
+          name: c: lib.nameValuePair "container@${name}" { unitConfig.RequiresMountsFor = c.local.persist; }
+        ) (lib.filterAttrs (_: usesIdmap) withPersist))
+        (lib.mapAttrs' (
+          name: _: lib.nameValuePair "container@${name}" { postStart = lib.mkForce ""; }
+        ) withVeth)
+      ];
     };
   };
 }

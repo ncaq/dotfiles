@@ -309,7 +309,14 @@ testers.runNixOSTest {
           fail_forbidden(f"gpg --batch --yes --delete-secret-keys {fingerprint}")
           fail_forbidden("gpg --batch --passwd test@example.com")
           # loopbackへの切り替えそのものも拒否されます。
-          fail_forbidden("gpg --batch --pinentry-mode loopback --passwd test@example.com")
+          # gpgのコマンドでは他の操作の拒否と見分けられないので、agentへ切り替えだけを頼みます。
+          set_loopback = "gpg-connect-agent --no-autostart \"OPTION pinentry-mode=loopback\" /bye"
+          output = machine.succeed(as_user("${member}", f"( {set_loopback} ) 2>&1"))
+          errors = [line for line in output.splitlines() if line.startswith("ERR ")]
+          assert errors and "Forbidden" in errors[0], output
+          # 全てのコマンドを受け付けるソケットでは、同じ切り替えが通ります。
+          output = machine.succeed(as_vault(set_loopback))
+          assert output.splitlines() == ["OK"], output
           # 拒否された後も、秘密鍵はvaultに残っていて使えます。
           after = machine.succeed(count_secret_keys).strip()
           assert before == after and int(after) > 0, f"{before} -> {after}"

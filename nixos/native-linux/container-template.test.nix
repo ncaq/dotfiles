@@ -182,6 +182,13 @@ let
         hostAddress = "192.168.100.10/24";
         localAddress = "192.168.100.11/24";
       };
+      # IPv6とIPv4の両方を持ち、IPv6にはプレフィックス長を付ける。
+      dual-stack = {
+        hostAddress6 = "fd00::1/64";
+        localAddress6 = "fd00::2/64";
+        hostAddress = "192.168.100.50";
+        localAddress = "192.168.100.51";
+      };
       # ブリッジに繋ぐので、vethはアドレスを持たない。
       bridged = {
         hostBridge = "br0";
@@ -299,6 +306,19 @@ assert lib.assertMsg (
   evaluated.systemd.network == {
     enable = true;
     networks = {
+      # IPv6を先に並べて、プレフィックス長は相手だけを指す長さに置き換える。
+      "20-dual-stack-veth" = {
+        matchConfig.Name = "ve-dual-stack";
+        linkConfig.RequiredForOnline = "no";
+        addresses = [
+          { Address = "fd00::1/128"; }
+          { Address = "192.168.100.50/32"; }
+        ];
+        routes = [
+          { Destination = "fd00::2/128"; }
+          { Destination = "192.168.100.51/32"; }
+        ];
+      };
       "20-pick-veth" = {
         matchConfig.Name = "ve-pick";
         linkConfig.RequiredForOnline = "no";

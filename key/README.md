@@ -18,8 +18,10 @@ NixOSホストでは秘密鍵ファイルの実体を通常ユーザから隔離
 通常ユーザのgpg/sshはソケット経由でvaultのagentを使うため、
 使い勝手は通常とほぼ同じです。
 
-設定はNixOS側が`nixos/core/gpg-vault.nix`、
-クライアント側が`home/core/gpg.nix`です。
+仕組みの本体は`pkgs/gpg-vault`にあります。
+NixOS側が`module.nix`、
+クライアント側が`home-module.nix`です。
+有効にしているのは`nixos/core/gpg-vault.nix`と`home/core/gpg.nix`です。
 
 トラブル時にvault側を直接調査する場合:
 

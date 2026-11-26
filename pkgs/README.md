@@ -14,6 +14,8 @@ flakeの`packages`と`checks`にも加わります。
 overlayが`callPackage`の自動で渡す引数に足しています。
 `home-manager`のように、
 nixpkgsにあってもinputと版を揃えたいものも同じように足しています。
+`homeManagerConfiguration`のように、
+パッケージではなくテストがhome-managerのモジュールを評価するための関数も足しています。
 
 Haskellのパッケージは、
 overlayが渡す`localHaskellPackages`の`callCabal2nix`で組みます。
@@ -54,6 +56,16 @@ NixOS Testで実際のユニットを動かします。
 `gpg-vault`のようにユーザの側の設定と組になるものは、
 home-managerのモジュールも`<名前>/home-module.nix`として隣に置いて、
 `home/core/gpg.nix`のように`imports`に書いて使います。
+`home-module.nix`も`nixos-test.nix`の中で確かめます。
+overlayが渡す`homeManagerConfiguration`で評価して、
+出てきたファイルをテストのマシンへ置きます。
+home-managerの有効化そのものはコンテナの中で動かせないためで、
+書き方は`pkgs/gpg-vault/nixos-test.nix`の冒頭に書いています。
+
+モジュールが入力に掛けている型やassertionは、
+`<名前>/module.test.nix`に評価のテストとして書けます。
+`package.nix`のあるディレクトリでもパッケージとしては拾われず、
+`test/README.md`に書いている仕組みが`checks`へ集めます。
 
 テストのマシンは、`nodes`ではなく`containers`に書いて、
 QEMUのVMではなくsystemd-nspawnのコンテナで動かします。

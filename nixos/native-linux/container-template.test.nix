@@ -190,9 +190,11 @@ let
         localAddress = "192.168.100.51";
       };
       # ブリッジに繋ぐので、vethはアドレスを持たない。
+      # `postStart`を空にしないので、`extraVeths`を持っても表明は落ちない。
       bridged = {
         hostBridge = "br0";
         localAddress = "192.168.100.21/24";
+        extraVeths.side = { };
       };
       # ホストのネットワークをそのまま使うので、アドレスを書いてもvethは作られない。
       shared-network = {
@@ -345,7 +347,7 @@ assert lib.assertMsg (
 ) "ホスト側のvethを設定しないコンテナの`postStart`を書き換えています";
 assert lib.assertMsg (
   failedAssertions evaluated == [ ]
-) "`extraVeths`を持たないコンテナで表明が落ちています: ${show (failedAssertions evaluated)}";
+) "`extraVeths`の表明が、対象ではないコンテナで落ちています:${show (failedAssertions evaluated)}";
 assert lib.assertMsg (
   lib.length (failedAssertions withExtraVeths) == 1
 ) "ホスト側のvethを設定するコンテナが`extraVeths`を持っても表明が落ちません";

@@ -144,10 +144,12 @@ let
   withPersist = lib.filterAttrs (_: c: c.local.persist != [ ]) config.containers;
   usesIdmap = c: c.privateUsers == "pick";
   # nixpkgsのコンテナのモジュールが`postStart`でホスト側のvethを設定するのと同じ条件。
+  # アドレスのオプションが効くのは`privateNetwork`の時だけで、
   # ブリッジに繋ぐvethはアドレスを持たない。
   hasVethAddress =
     c:
-    c.hostBridge == null
+    c.privateNetwork
+    && c.hostBridge == null
     && lib.any (address: address != null) [
       c.hostAddress6
       c.localAddress6

@@ -24,7 +24,18 @@
 { lib, config, ... }:
 let
   githubRunnerVms = config.local.githubRunnerVms or { };
+  # VMの中のランナのサービスが、失敗で終わっても再起動されること。
+  # 上流のモジュールの既定は成功で終わった時だけで、
+  # 失敗で終わるとVMは動いたままランナだけが居なくなります。
+  # ランナのVMはテストVMでは起動しないので、VMの構成を評価して読みます。
+  runnerRestartOf =
+    name: runner:
+    config.microvm.vms.${name}.config.config.systemd.services."github-runner-${runner}".serviceConfig.Restart;
+  runnersRestartAlways = lib.all (
+    name: lib.all (runner: runnerRestartOf name runner == "always") githubRunnerVms.${name}.runnerNames
+  ) (lib.attrNames githubRunnerVms);
 in
+assert lib.assertMsg runnersRestartAlways "GitHub Actionsのランナのサービスが失敗で終わると再起動されません";
 lib.concatStrings (
   lib.mapAttrsToList (
     name: vm: # python

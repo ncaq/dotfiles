@@ -317,9 +317,30 @@ let
             let
               args = { inherit pkgs; };
               extraPkgs = (githubActionsRunnerPackages args).all ++ selfHostRunnerPackages args;
+              # 上流のモジュールはephemeralなランナを`Restart=on-success`にするので、
+              # 失敗で終わったランナは、VMを再起動するまで登録が消えたままになります。
+              # 実際に止まったのは、ジョブがOOMで殺された時と、
+              # VMが強制終了された後に前のセッションと衝突して終了コード1で終わった時です。
+              #
+              # 上流が成功だけにしているのは、公式のラッパが終了コード1を再試行しないのに揃っているだけです。
+              # 公式が再試行しないのは、登録を保持するランナは同じ認証情報で起動し直しても直らないからです。
+              # ephemeralなランナは起動のたびに登録からやり直すので、起動し直せば直ります。
+              #
+              # 間隔は公式のラッパが再試行できるエラーで待つのと同じ5秒です。
+              # セッションの衝突は前のセッションが切れるまで10分ほど続くので、
+              # すぐには直らなくても、諦めずに試し続けます。
+              # 5秒空くので、systemdの起動回数の上限(10秒に5回)には届きません。
+              #
+              # 指数バックオフ(`RestartSteps`)は使いません。
+              # 再起動のカウンタはジョブが正常に終わった時の再起動でも増えるので、
+              # ジョブを数回こなした後は、次の登録が毎回最大の間隔まで待たされる恐れがあります。
+              restartOverrides = {
+                Restart = lib.mkForce "always";
+                RestartSec = "5s";
+              };
               mkRunner = runnerName: {
                 name = runnerName;
-                value = {
+                value = lib.recursiveUpdate {
                   enable = true;
                   ephemeral = true;
                   replace = true;
@@ -335,8 +356,9 @@ let
                   extraEnvironment = {
                     ACTIONS_RUNNER_HOOK_JOB_STARTED = jobStartedHook;
                   };
-                }
-                // extraRunnerOptions;
+                  serviceOverrides = restartOverrides;
+                  # `serviceOverrides`を足すランナ定義が再起動の設定を消さないように、深く重ねます。
+                } extraRunnerOptions;
               };
             in
             builtins.listToAttrs (

@@ -97,6 +97,11 @@ main = print (encode [1 :: Int, 2, 3])
 JavaScriptを書くくらいなら、
 型検査をせず`node`コマンドで直接実行するだけの場合でもTypeScriptで書いてください。
 
+- ファイルの拡張子は`.ts`にしてください。
+- `node`は型を取り除いて実行するだけなので、
+  `enum`や値を持つ`namespace`のように型を取り除くだけでは済まない構文は使わないでください。
+  実行した時点でエラーになります。
+
 ## Python
 
 依存関係は`uv run --script`とPEP 723のinline script metadataでスクリプトの中に書いてください。

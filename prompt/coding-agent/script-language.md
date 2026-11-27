@@ -43,6 +43,15 @@
 各言語のスクリプトモードの依存関係の指定でスクリプトの中に書いてください。
 書き方は後の言語ごとの節にあります。
 
+ただしTypeScriptとPythonでは、
+npmやPyPIから直接ライブラリを取ってこないでください。
+npmやPyPIのパッケージはインストールの時に任意のコードを実行できますが、
+nixpkgsからパッケージを取ってくるだけならその機能はありません。
+ライブラリはnixpkgsから取ってきてください。
+nixpkgsに無いライブラリがどうしても必要な時は、
+書き捨てのスクリプトで済ませずに、
+リポジトリの依存関係として追加することを検討してください。
+
 処理系そのものが入っていない時や、
 外部のコマンドやシステムのライブラリのように言語のパッケージマネージャから取れないものが要る時だけ、
 shebangで`nix shell`を指定して補ってください。
@@ -117,22 +126,27 @@ JavaScriptを書くくらいなら、
 - `node`は型を取り除いて実行するだけなので、
   `enum`や値を持つ`namespace`のように型を取り除くだけでは済まない構文は使わないでください。
   実行した時点でエラーになります。
+- `npm install`や`npx`でライブラリを取ってこないでください。
+  npmのライブラリはnixpkgsにほとんど無いので、
+  基本的にNodeの標準ライブラリだけで書くことになります。
 
 ## Python
 
 ```python
-#!/usr/bin/env -S uv run --script
-# /// script
-# dependencies = ["httpx"]
-# ///
+#!/usr/bin/env nix
+#! nix shell --impure --expr ``(import (builtins.getFlake "nixpkgs") {}).python3.withPackages (ps: [ ps.httpx ])``
+#! nix --command python3
 import httpx
 
 print(httpx.__version__)
 ```
 
-- `uv run --script`で実行します。
-- 依存関係はPEP 723のinline script metadataに書きます。
-- `pip install`で環境にパッケージを入れないでください。
+- ライブラリはnixpkgsの`python3.withPackages`で束ねたPythonをshebangの`nix shell`で用意します。
+  `nix shell nixpkgs#python3 nixpkgs#python3Packages.httpx`のように並べるだけでは、
+  Pythonがライブラリを見つけられません。
+- `#! nix`の行でスペースや`"`を含む式は、
+  二重のバッククォートで囲まないとエラーになります。
+- `pip install`や`uv`でPyPIからライブラリを取ってこないでください。
 
 ## シェルスクリプト
 

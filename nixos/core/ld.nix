@@ -13,6 +13,8 @@
       expat
       glib
       gtk3
+      icu # .NETのグローバリゼーション
+      krb5 # .NETのネットワーク認証
       libX11
       libXcomposite
       libXdamage

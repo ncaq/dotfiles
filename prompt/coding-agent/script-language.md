@@ -19,10 +19,16 @@
 前のセクションの言語が使えない時だけ、
 次のセクションの言語に進んでください。
 
-処理系や依存関係が入っていない時は、
-各言語のスクリプトモードの依存関係の指定で補ってください。
-それでも補えない場合は、
+言語のライブラリは、
+各言語のスクリプトモードの依存関係の指定でスクリプトの中に書いてください。
+
+処理系そのものが入っていない時や、
+外部のコマンドやシステムのライブラリのように言語のパッケージマネージャから取れないものが要る時だけ、
 shebangで`nix shell`を指定して補ってください。
+
+```bash
+#!/usr/bin/env -S nix shell nixpkgs#<要るパッケージ> nixpkgs#<処理系のパッケージ> --command <処理系のコマンド>
+```
 
 ## F# Script
 
@@ -68,21 +74,21 @@ printfn "%d" (json?count.AsInteger())
 
 F# Scriptが使えない時の候補です。
 
-依存関係の指定をスクリプトの中で完結させにくいので、
-shebangの`nix shell`でパッケージ付きのGHCを用意してください。
+cabalのスクリプトモードで実行します。
+依存関係は`{- cabal: -}`のブロックにスクリプトの中で書けます。
 
 ```haskell
-#!/usr/bin/env nix
-#! nix shell --impure --expr ``(import (builtins.getFlake "nixpkgs") {}).haskellPackages.ghcWithPackages (ps: [ ps.aeson ])``
-#! nix --command runghc
+#!/usr/bin/env cabal
+{- cabal:
+build-depends: base, aeson
+-}
 import Data.Aeson (encode)
 
 main :: IO ()
 main = print (encode [1 :: Int, 2, 3])
 ```
 
-`#! nix`の行で`"`を使う式は、
-二重のバッククォートで囲まないとエラーになります。
+初回の実行時は依存関係のビルドに時間がかかります。
 
 ## TypeScript
 

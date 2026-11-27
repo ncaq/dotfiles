@@ -53,11 +53,21 @@ in
         options.baseURL = "${ollamaBaseUrl}/v1";
         models = ollamaModels;
       };
-      permission.external_directory = {
-        # Claude Codeと同じ追加ディレクトリを許可します。
-        "${codingAgentWorkDirFullPath}**" = "allow";
-        "/nix/store/**" = "allow";
-        "~/dotfiles/**" = "allow";
+      permission = {
+        external_directory = {
+          # Claude Codeと同じ追加ディレクトリを許可します。
+          "${codingAgentWorkDirFullPath}**" = "allow";
+          "/nix/store/**" = "allow";
+          "~/dotfiles/**" = "allow";
+        };
+        # Claude Codeのdenyと揃えて`rm`を拒否し、`trash`を使わせます。
+        # 最後に一致した規則が勝ち、どれにも一致しないと`ask`になるので、
+        # 他のコマンドを許可する`*`を先に置きます。
+        # JSONのキーは辞書順に並ぶので`*`が`rm *`より先に出ます。
+        bash = {
+          "*" = "allow";
+          "rm *" = "deny";
+        };
       };
     };
     # `home/linked/.claude/keybindings.json`と共通の操作へ寄せます。

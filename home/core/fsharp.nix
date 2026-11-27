@@ -1,17 +1,17 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 {
   home.packages = with pkgs; [
-    # nixpkgsのfantomasは既定の`dotnet-sdk`(8.0)でビルドされ、
+    # nixpkgsのfantomasは既定の`dotnet-sdk`でビルドされ、
     # 実行時にもそれを引き込むので、
-    # 入れているSDKの10.0に揃えます。
+    # `local.dotnet.sdk`で入れているSDKに揃えます。
     (fantomas.override {
       buildDotnetGlobalTool =
         args:
         buildDotnetGlobalTool (
           args
           // {
-            dotnet-sdk = dotnet-sdk_10;
-            dotnet-runtime = dotnet-sdk_10;
+            dotnet-sdk = config.local.dotnet.sdk;
+            dotnet-runtime = config.local.dotnet.sdk;
           }
         );
     })

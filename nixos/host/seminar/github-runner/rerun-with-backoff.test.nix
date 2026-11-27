@@ -9,6 +9,8 @@
 testers.runNixOSTest {
   name = "rerun-with-backoff";
 
+  node.specialArgs.hardening = import ../../../../lib/systemd-hardening.nix;
+
   containers.machine =
     { pkgs, ... }:
     {

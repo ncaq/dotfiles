@@ -216,6 +216,8 @@ let
       # 共有やTAPのようなホスト側のユニットに関わる変更をすぐ反映したい時は、
       # 手で`microvm@`を再起動します。
       restartIfChanged = false;
+      # VMの構成にはホストの`specialArgs`が渡らないので、VMの中のモジュールが使うものを渡します。
+      specialArgs = { inherit hardening; };
       config = {
         imports = [ ./rerun-with-backoff.nix ];
         system.stateVersion = "26.05";

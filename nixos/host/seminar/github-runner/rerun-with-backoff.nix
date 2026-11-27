@@ -33,7 +33,12 @@
   このディレクトリのモジュールはホストにも読み込まれます。
   ホストでは対象が空なので何もしません。
 */
-{ lib, config, ... }:
+{
+  lib,
+  config,
+  hardening,
+  ...
+}:
 let
   cfg = config.local.rerunWithBackoff;
   # 稼働中のsystemdと同じパッケージの`systemctl`。
@@ -68,7 +73,9 @@ in
       };
       ${rerunUnitOf unit} = {
         description = "Start ${unit} again after it exited successfully";
-        serviceConfig = {
+        # `systemctl`がsystemdと話すのはUNIXソケットだけです。
+        # ジョブの開始を頼むのにrootが要るので、ユーザは変えません。
+        serviceConfig = hardening.unixSocket // {
           Type = "oneshot";
           # 起動を待つと、対象が動いている間このユニットが終わりません。
           # 衝突するジョブがある時は断らせて、シャットダウンの途中で起動し直さないようにします。

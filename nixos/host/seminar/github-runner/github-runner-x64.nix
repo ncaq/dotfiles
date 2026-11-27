@@ -216,8 +216,22 @@ let
       # 共有やTAPのようなホスト側のユニットに関わる変更をすぐ反映したい時は、
       # 手で`microvm@`を再起動します。
       restartIfChanged = false;
+      # VMの構成にはホストの`specialArgs`が渡らないので、VMの中のモジュールが使うものを渡します。
+      specialArgs = { inherit hardening; };
       config = {
+        imports = [ ./rerun-with-backoff.nix ];
         system.stateVersion = "26.05";
+        # 上流のモジュールはephemeralなランナを`Restart=on-success`にするので、
+        # 失敗で終わったランナは、VMを再起動するまで登録が消えたままになります。
+        # 実際に止まったのは、ジョブがOOMで殺された時と、
+        # VMが強制終了された後に前のセッションと衝突して終了コード1で終わった時です。
+        #
+        # 上流が成功だけにしているのは、公式のラッパが終了コード1を再試行しないのに揃っているだけです。
+        # 公式が再試行しないのは、登録を保持するランナは同じ認証情報で起動し直しても直らないからです。
+        # ephemeralなランナは起動のたびに登録からやり直すので、起動し直せば直ります。
+        local.rerunWithBackoff = map (runnerName: "github-runner-${runnerName}") (runnerNamesOf {
+          inherit basename runnerNum;
+        });
         microvm = {
           hypervisor = "cloud-hypervisor";
           vsock.cid = config.microvmCid.${name};

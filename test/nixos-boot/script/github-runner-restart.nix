@@ -24,7 +24,21 @@
 { lib, config, ... }:
 let
   githubRunnerVms = config.local.githubRunnerVms or { };
+  # VMの中のランナのサービスが、成功で終わっても失敗で終わっても起動し直されること。
+  # 上流のモジュールの既定は成功で終わった時だけで、
+  # 失敗で終わるとVMは動いたままランナだけが居なくなります。
+  # 起動し直す仕組みの振る舞いは`rerun-with-backoff.test.nix`が確かめるので、
+  # ここでは全てのランナのサービスがその対象になっていることだけを見ます。
+  # ランナのVMはテストVMでは起動しないので、VMの構成を評価して読みます。
+  rerunUnitsOf = name: config.microvm.vms.${name}.config.config.local.rerunWithBackoff;
+  runnersRerun = lib.all (
+    name:
+    lib.all (
+      runner: lib.elem "github-runner-${runner}" (rerunUnitsOf name)
+    ) githubRunnerVms.${name}.runnerNames
+  ) (lib.attrNames githubRunnerVms);
 in
+assert lib.assertMsg runnersRerun "GitHub Actionsのランナのサービスが起動し直す対象になっていません";
 lib.concatStrings (
   lib.mapAttrsToList (
     name: vm: # python

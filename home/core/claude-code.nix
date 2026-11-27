@@ -254,8 +254,8 @@
           "Bash(gh * delete*)"
           "Bash(gh repo archive:*)"
           "Bash(gh repo rename:*)"
-          "Bash(rm:*)"
-        ];
+        ]
+        ++ map (command: "Bash(${command}:*)") (import ../../lib/coding-agent-denied-commands.nix);
       };
     };
   };

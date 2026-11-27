@@ -60,14 +60,18 @@ in
           "/nix/store/**" = "allow";
           "~/dotfiles/**" = "allow";
         };
-        # Claude Codeのdenyと揃えて`rm`を拒否し、`trash`を使わせます。
+        # Claude Codeのdenyと揃えたコマンドを拒否します。
         # 最後に一致した規則が勝ち、どれにも一致しないと`ask`になるので、
         # 他のコマンドを許可する`*`を先に置きます。
-        # JSONのキーは辞書順に並ぶので`*`が`rm *`より先に出ます。
+        # JSONのキーは辞書順に並ぶので`*`が他の規則より先に出ます。
         bash = {
           "*" = "allow";
-          "rm *" = "deny";
-        };
+        }
+        // builtins.listToAttrs (
+          map (command: lib.nameValuePair "${command} *" "deny") (
+            import ../../lib/coding-agent-denied-commands.nix
+          )
+        );
       };
     };
     # `home/linked/.claude/keybindings.json`と共通の操作へ寄せます。

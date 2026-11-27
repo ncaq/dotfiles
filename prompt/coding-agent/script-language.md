@@ -97,6 +97,19 @@ JavaScriptを書くくらいなら、
 TypeScriptも使えない時の候補です。
 汎用の選択としてはなるべく避けてください。
 
+依存関係は`uv run --script`とPEP 723のinline script metadataでスクリプトの中に書いてください。
+`pip install`で環境にパッケージを入れないでください。
+
+```python
+#!/usr/bin/env -S uv run --script
+# /// script
+# dependencies = ["httpx"]
+# ///
+import httpx
+
+print(httpx.__version__)
+```
+
 ## シェルスクリプト
 
 ここまでのどの言語も使えない時の最後の手段です。

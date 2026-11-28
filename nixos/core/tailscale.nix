@@ -38,6 +38,9 @@
   config = {
     services.tailscale = {
       enable = true;
+      # Exit Nodeとしては動作せず、他のノードのExit Nodeを使う側の設定。
+      # Exit Nodeになるサーバが`server/tailscale.nix`で上書きする。
+      useRoutingFeatures = lib.mkDefault "client";
     };
 
     systemd.services.tailscale-online = {

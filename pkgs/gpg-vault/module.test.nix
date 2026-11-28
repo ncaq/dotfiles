@@ -11,8 +11,10 @@
 #
 # `module.nix`だけを`lib.evalModules`で読み込み、
 # 参照している他のオプションは最小の形で用意する。
-{ lib }:
+{ lib, localLib }:
 let
+  # ホストでは`specialArgs`から届く引数を、モジュールだけを読むここでも渡す。
+  specialArgs = { inherit (localLib) hardening; };
   stub = {
     options = {
       assertions = lib.mkOption {
@@ -53,6 +55,7 @@ let
   evaluate =
     settings:
     (lib.evalModules {
+      inherit specialArgs;
       modules = [
         ./module.nix
         stub
@@ -89,6 +92,7 @@ let
     module:
     let
       evaluated = lib.evalModules {
+        inherit specialArgs;
         modules = [
           ./module.nix
           stub

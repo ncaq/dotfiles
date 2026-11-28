@@ -8,10 +8,10 @@
   config,
   lib,
   pkgs,
+  hardening,
   ...
 }:
 let
-  hardening = import ../../lib/systemd-hardening.nix;
   # サービス名はユニット属性名・StateDirectory・CacheDirectoryなど各所で使うため、
   # リネーム時の取りこぼしが起きないよう一箇所から導出します。
   serviceName = "nix-gc-root-hosts";

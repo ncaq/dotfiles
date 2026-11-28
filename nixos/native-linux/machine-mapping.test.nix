@@ -12,7 +12,7 @@
 #
 # `machine-mapping.nix`だけを`lib.evalModules`で読み込み、
 # 参照している他のオプションは最小の形で用意する。
-{ lib }:
+{ lib, localLib }:
 let
   stub = {
     options = {
@@ -36,6 +36,8 @@ let
     { machineAddresses, machineEgress }:
     let
       evaluated = lib.evalModules {
+        # ホストでは`specialArgs`から届く`localLib`を、モジュールだけを読むここでも渡す。
+        specialArgs = { inherit localLib; };
         modules = [
           ./machine-mapping.nix
           stub

@@ -1,8 +1,8 @@
 {
   pkgs,
-  lib,
   config,
   inputs,
+  localLib,
   ...
 }:
 {
@@ -11,10 +11,7 @@
   services.niks3-auto-upload = {
     enable = true;
     # 公開する側の`nixos/host/seminar/niks3-private.nix`と同じ定義からURLを組み立てる。
-    serverUrl = import ../../lib/niks3-private-tailscale-url.nix {
-      inherit lib;
-      tailnet = config.local.tailscale.tailnet;
-    };
+    serverUrl = localLib.niks3PrivateTailscaleUrl config.local.tailscale.tailnet;
     authTokenFile = config.sops.secrets."niks3-private-client-api-token".path;
   };
 

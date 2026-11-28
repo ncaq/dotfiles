@@ -17,6 +17,7 @@
   lib,
   pinentry-curses,
   symlinkJoin,
+  localLib,
   testers,
   writeTextDir,
 }:
@@ -91,6 +92,6 @@ symlinkJoin {
       sshSocketName
       ;
     # ソケットの権限と、他のユーザから鍵が読めないことは、実際のユニットを動かさないと確かめられない。
-    tests.nixos = import ./nixos-test.nix { inherit homeManagerConfiguration testers; };
+    tests.nixos = import ./nixos-test.nix { inherit localLib homeManagerConfiguration testers; };
   };
 }

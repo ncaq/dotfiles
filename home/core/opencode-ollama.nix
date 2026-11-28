@@ -28,10 +28,10 @@
   `output`は1回の応答の上限。
   配分の考え方は`lib/ollama-context.nix`にある。
 */
-{ lib, ... }:
+{ lib, localLib, ... }:
 let
-  ollamaContext = import ../../lib/ollama-context.nix;
-  modelNames = import ../../lib/ollama-model-names.nix;
+  inherit (localLib) ollamaContext;
+  modelNames = localLib.ollamaModelNames;
 
   # 接続するOllamaのホストと、そのホストのアクセラレータ。
   # bulletを名指しするのはGPU推論を使いたいためで、
@@ -46,9 +46,9 @@ let
   ollamaAccelerator = "cuda";
 
   # OllamaのTailscale Service経由のURL。
-  baseUrl = import ../../lib/ollama-tailscale-url.nix { inherit lib; } {
+  baseUrl = localLib.ollamaTailscaleUrl {
     hostName = ollamaHostName;
-    tailnet = import ../../lib/tailnet.nix;
+    inherit (localLib) tailnet;
   };
 
   limitFor =

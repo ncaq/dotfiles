@@ -15,7 +15,7 @@
   URLの形は`lib/niks3-private-tailscale-url.nix`が持っている。
 
   ```nix
-  service = import ../../../lib/niks3-private-tailscale-service.nix;
+  service = localLib.niks3PrivateTailscaleService;
   ```
 */
 "svc:niks3-private"

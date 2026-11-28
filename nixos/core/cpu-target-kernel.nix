@@ -30,13 +30,18 @@
   対象は`linux_xanmod`とそのサーバ向け派生`linux_xanmod_server`の両方で、
   パッチ系統が同じなので同一のKconfigシンボル(`MZEN*`等)が効く。
 */
-{ lib, config, ... }:
+{
+  lib,
+  config,
+  localLib,
+  ...
+}:
 let
   cpuName = config.local.cpuTarget;
   overlay =
     _final: prev:
     let
-      cpuTargets = import ../../lib/cpu-targets.nix { inherit lib; };
+      inherit (localLib) cpuTargets;
 
       kernelOption = cpuTargets.kernelOptionFor cpuName;
 

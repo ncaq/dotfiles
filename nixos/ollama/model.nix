@@ -3,14 +3,15 @@
   lib,
   pkgs,
   config,
+  localLib,
   ...
 }:
 let
   enableCuda = config.local.ollama.enableCuda;
-  fetchHuggingFace = import ../../lib/fetch-hugging-face.nix { inherit pkgs; };
+  fetchHuggingFace = localLib.fetchHuggingFace pkgs;
   quantizeGgufWithNextn = import ../../pkgs/merge-gguf-nextn/builder.nix { inherit pkgs; };
   # CLIと同じstoreのパスを使うため、取得の定義は`lib/`で共有している。
-  plamoTranslateModel = import ../../lib/plamo-translate-model.nix { inherit pkgs; };
+  plamoTranslateModel = localLib.plamoTranslateModel pkgs;
   patchGgufChatTemplate = import ../../pkgs/patch-gguf-chat-template/builder.nix { inherit pkgs; };
   # registryのQwen3.8が同梱しているパラメータ。
   # GGUFから自前で組み立てるとparamsレイヤが付いてこないので明示する。
@@ -55,7 +56,7 @@ let
   # アクセラレータごとに、役割から実際のモデル名を引く表。
   # home-managerの設定もこれを読むため、実体は`lib/`に置いている。
   # 理由はそのファイルの先頭に書いてある。
-  modelNames = import ../../lib/ollama-model-names.nix;
+  modelNames = localLib.ollamaModelNames;
   # PLaMo 3 Translateの配布元が推奨する生成の設定。
   #
   # 学習時の最大長は入力と出力の合計で32768トークンなので、
@@ -81,7 +82,7 @@ let
   # Ollamaにはその引数を渡す手段が無い。
   # 長さはOpenCodeの設定も必要とするので`lib/ollama-context.nix`が持っている。
   plamoTranslateParameters = {
-    num_ctx = (import ../../lib/ollama-context.nix).translateLength;
+    num_ctx = localLib.ollamaContext.translateLength;
     stop = "<|plamo:tag|>";
     temperature = 0;
   };

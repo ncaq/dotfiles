@@ -5,6 +5,7 @@
   isWSL,
   osConfig ? null,
   inputs,
+  localLib,
   ...
 }:
 let
@@ -15,9 +16,7 @@ let
   # 非NixOS環境ではosConfig自体が無く、
   # 登録外CPUのホストではcpuTargetがnullになるため、
   # いずれの場合もoverlayは適用されません。
-  extraOverlays = lib.optional (cpuTarget != null) (
-    import ../../lib/cpu-optimized-overlay.nix cpuTarget
-  );
+  extraOverlays = lib.optional (cpuTarget != null) (localLib.cpuOptimizedOverlay cpuTarget);
   # `programs.emacs.enable`を使うとhome-managerが`emacsWithPackages`で二重ラップし、
   # `.emacs.d/flake.nix`の`extraEmacsPackages`でリンクしたバイナリが消えるため、
   # `.emacs.d`由来の定義を`services.emacs`や`home.packages`で参照するようにします。

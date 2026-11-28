@@ -2,6 +2,7 @@
   importPkgsStable,
   importPkgsUnstable,
   importDirModules,
+  localLib,
   inputs,
 }:
 {
@@ -13,6 +14,7 @@ inputs.home-manager.lib.homeManagerConfiguration {
   extraSpecialArgs = {
     inherit
       importDirModules
+      localLib
       inputs
 
       username

@@ -3,7 +3,7 @@
   評価時にしか走らない純粋なNixのテストと、
   モジュールだけを読み込んだマシンで実際に動かすNixOS Testの2種類がある。
 
-  型: { lib, runCommand, testers } -> AttrSet Derivation
+  型: { lib, localLib, runCommand, testers } -> AttrSet Derivation
 
   何を集めるか:
     リポジトリの中の、名前が`.test.nix`で終わるファイルを再帰的に集めて、1ファイルを1つのテストにする。
@@ -13,6 +13,7 @@
     確かめる実装の隣に置き、`<実装の名前>.test.nix`という名前にする。
     トピックを分ける時は`<実装の名前>.<トピック>.test.nix`にする。
     テストは`{ lib }`を受け取り、全ての表明を通ると`true`を返す。
+    `lib/`の定義を使うテストは`{ lib, localLib }`のように`localLib`も受け取れる。
     ファイルを足すだけでテストに加わる。
 
     同じ名前の付け方で、`{ testers }`か`{ lib, testers }`を受け取って`testers.runNixOSTest`のderivationを返すテストも集める。
@@ -40,6 +41,7 @@
 */
 {
   lib,
+  localLib,
   runCommand,
   testers,
 }:
@@ -73,10 +75,10 @@ let
     lib.nameValuePair name (
       if lib.functionArgs test ? testers then
         # `lib`を使わないテストが受け取らずに済むように、求められた引数だけを渡す。
-        test (builtins.intersectAttrs (lib.functionArgs test) { inherit lib testers; })
+        test (builtins.intersectAttrs (lib.functionArgs test) { inherit lib localLib testers; })
       else
         let
-          result = test { inherit lib; };
+          result = test (builtins.intersectAttrs (lib.functionArgs test) { inherit lib localLib; });
         in
         runCommand name {
           passed = builtins.seq (

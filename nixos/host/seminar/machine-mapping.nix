@@ -1,6 +1,11 @@
 # seminarのコンテナとmicroVMへの、アドレスとIDの割り当て。
 # オプションと重複の検査は`nixos/native-linux/machine-mapping.nix`が持っている。
-{ lib, config, ... }:
+{
+  lib,
+  config,
+  localLib,
+  ...
+}:
 {
   options = {
     /**
@@ -128,7 +133,7 @@
 
     assertions =
       let
-        inherit (import ../../../lib/duplicates.nix { inherit lib; }) findDuplicates formatDuplicates;
+        inherit (localLib.duplicates) findDuplicates formatDuplicates;
 
         cidEntries = lib.mapAttrsToList (name: value: { inherit name value; }) config.microvmCid;
         duplicateCidValues = findDuplicates (map (e: e.value) cidEntries);

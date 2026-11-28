@@ -5,11 +5,11 @@
 # 決まった順に成功と失敗を返すサービスを対象にして、起動した時刻の間隔を見ます。
 # ランナはジョブを終えるたびにこの経路で登録し直すので、
 # 成功の後に起動し直されなくなると、ジョブを1つ終えた所でランナが居なくなります。
-{ testers }:
+{ testers, localLib }:
 testers.runNixOSTest {
   name = "rerun-with-backoff";
 
-  node.specialArgs.hardening = import ../../../../lib/systemd-hardening.nix;
+  node.specialArgs.hardening = localLib.hardening;
 
   containers.machine =
     { pkgs, ... }:

@@ -193,14 +193,19 @@
         "x86_64-linux"
       ];
 
-      # ディレクトリ内の全`.nix`ファイルをimportするヘルパ関数。
-      importDirModules = import ./lib/import-dir-modules.nix { inherit lib; };
-      # systemdサービス共通のハードニング設定。
-      hardening = import ./lib/systemd-hardening.nix;
-      # nixpkgsの共通設定。
-      nixpkgsConfig = import ./lib/nixpkgs-config.nix { inherit lib; };
-      # `pkgs/`の自作パッケージをトップレベルに生やすoverlay。
-      localPackagesOverlay = import ./lib/local-packages-overlay.nix { inherit lib inputs; };
+      # `lib/`の定義をまとめたもの。
+      # モジュールやパッケージやテストへ`localLib`として配るので、使う側は`import`せずに引数で受け取る。
+      localLib = import ./lib { inherit lib inputs; };
+      inherit (localLib)
+        # ディレクトリ内の全`.nix`ファイルをimportするヘルパ関数。
+        importDirModules
+        # systemdサービス共通のハードニング設定。
+        hardening
+        # nixpkgsの共通設定。
+        nixpkgsConfig
+        # `pkgs/`の自作パッケージをトップレベルに生やすoverlay。
+        localPackagesOverlay
+        ;
       # 全環境で共通のoverlays。
       overlays = [
         localPackagesOverlay
@@ -235,6 +240,7 @@
           importPkgsUnstable
           importDirModules
           hardening
+          localLib
           inputs
           ;
       };
@@ -297,6 +303,7 @@
           importPkgsStable
           importPkgsUnstable
           importDirModules
+          localLib
           inputs
           ;
       };
@@ -312,6 +319,7 @@
         default = import ./nix-on-droid {
           inherit
             importDirModules
+            localLib
             inputs
             nixpkgsConfig
             overlays
@@ -431,7 +439,7 @@
           # 実装の隣に置いたテスト(`*.test.nix`)を、ファイルごとにderivationにしたもの。
           # 実装のファイルに書けない評価のテストと、モジュールだけを動かすNixOS Testがある。
           nixTests = import ./test/collect-nix-tests.nix {
-            inherit lib;
+            inherit lib localLib;
             inherit (pkgs) runCommand testers;
           };
           # リポジトリ内のPythonをpyrightで型検査するためのderivation群。

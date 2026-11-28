@@ -3,7 +3,7 @@
 
   型: { cuda = { general, freedom, translate }; cpu = { general, freedom, translate }; embedding; }
 
-  NixOSモジュールからはこのファイルを直接importせず、
+  NixOSモジュールからは`localLib.ollamaModelNames`を直接読まず、
   `nixos/ollama/model.nix`がここから設定する`local.ollama.models`を参照すること。
   役割の意味と、
   自ホスト向けの`hostModels`との使い分けは`nixos/ollama/option.nix`が説明している。

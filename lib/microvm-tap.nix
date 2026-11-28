@@ -24,7 +24,7 @@
 
   ```nix
   let
-    tapNetwork = import ../../../lib/microvm-tap.nix {
+    tapNetwork = localLib.microvmTap {
       tap = "vm-mcp-nixos";
       addr = config.machineAddresses.mcp-nixos;
     };

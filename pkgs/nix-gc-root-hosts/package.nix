@@ -8,6 +8,7 @@
   localHaskellPackages,
   makeWrapper,
   nix,
+  localLib,
   testers,
 }:
 let
@@ -41,7 +42,7 @@ lib.pipe package [
     package.overrideAttrs (old: {
       passthru = (old.passthru or { }) // {
         tests = (old.passthru.tests or { }) // {
-          nixos = import ./nixos-test.nix { inherit testers; };
+          nixos = import ./nixos-test.nix { inherit localLib testers; };
         };
       };
     })

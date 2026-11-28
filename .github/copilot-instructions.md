@@ -37,6 +37,16 @@ ASCIIに対応する全角形(Fullwidth Forms)は使用禁止。
 
 何が除外されるかなどの詳しい動作は`lib/import-dir-modules.nix`に書いています。
 
+## `lib/`の定義は`localLib`で受け取る
+
+`lib/`の定義は`lib/default.nix`が1つの属性集合にまとめて、
+モジュールやパッケージやテストへ`localLib`という引数で配っています。
+相対パスで`import`せずに、
+`{ localLib, ... }:`で受け取って`localLib.tailnet`のように使います。
+
+`lib/`にファイルを足したら`lib/default.nix`にも1行足します。
+配り先の一覧は`lib/default.nix`の冒頭に書いています。
+
 # home-manager
 
 ## Termux

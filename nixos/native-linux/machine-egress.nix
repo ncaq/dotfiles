@@ -78,11 +78,16 @@
   `destinations`で個別に許す宛先は同じホスト上の他のマシンで、
   マシン同士はIPv6で繋ぐのでIPv4の宛先は受け付けない。
 */
-{ lib, config, ... }:
+{
+  lib,
+  config,
+  localLib,
+  ...
+}:
 let
   cfg = config.local.machineEgress;
   tailscale = config.local.tailscale;
-  parseIpv6 = import ../../lib/parse-ipv6.nix { inherit lib; };
+  inherit (localLib) parseIpv6;
 
   # 宣言を名前付きのリストにして、インタフェースのパターンごとにまとめる。
   # `containers.<name>.local.hostInterface`のワイルドカードで複数のコンテナが同じパターンに一致する時、

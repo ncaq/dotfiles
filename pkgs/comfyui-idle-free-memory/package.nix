@@ -12,6 +12,7 @@
   localHaskellPackages,
   runCommand,
   writeText,
+  localLib,
 }:
 let
   # 動かすものだけをstoreへ入れる。
@@ -30,7 +31,7 @@ let
     # コンテナのクロージャへGHCを持ち込まない。
     haskell.lib.compose.justStaticExecutables
   ];
-  hardening = import ../../lib/systemd-hardening.nix;
+  inherit (localLib) hardening;
   # 同梱するユニット。
   unit = writeText "${mainProgram}.service" (
     lib.generators.toINI { listsAsDuplicateKeys = true; } {

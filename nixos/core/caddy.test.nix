@@ -3,11 +3,11 @@
 # systemd-nspawnのコンテナの中で、`caddy.nix`だけを読み込んでCaddyを有効にしたマシンを動かします。
 # Caddyを有効にしたホストの全てに同じ設定が入るので、ホストをブートするテストではなくここに置いています。
 # 実行するnix-daemonに要る設定は`nix-daemon.nix`に書いてあります。
-{ testers }:
+{ testers, localLib }:
 testers.runNixOSTest {
   name = "caddy";
 
-  node.specialArgs.hardening = import ../../lib/systemd-hardening.nix;
+  node.specialArgs.hardening = localLib.hardening;
 
   containers.machine =
     { pkgs, ... }:

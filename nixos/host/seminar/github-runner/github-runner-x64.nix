@@ -63,6 +63,7 @@
   hardening,
   githubActionsRunnerPackages,
   githubRunnerShare,
+  localLib,
   ...
 }:
 let
@@ -176,7 +177,7 @@ let
   # アドレスはVMの名前で`machineAddresses`のエントリを引きます。
   tapNetworkOf =
     name: tap:
-    import ../../../../lib/microvm-tap.nix {
+    localLib.microvmTap {
       inherit tap;
       addr = config.machineAddresses.${name};
     };

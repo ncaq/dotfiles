@@ -22,12 +22,12 @@
 # プローブもTailscale Service経由でホスト側のsocketへ届くため、
 # `health_interval`ごとにsocket activationが発火して、
 # 使っていない間はGPUもメモリも消費しないという設計が成立しなくなる。
-{ lib, config, ... }:
+{ config, localLib, ... }:
 let
   addr = config.machineAddresses.open-webui;
   port = config.local.openWebui.ollamaPort;
   tailnet = config.local.tailscale.tailnet;
-  ollamaUrl = import ../../../../lib/ollama-tailscale-url.nix { inherit lib; };
+  ollamaUrl = localLib.ollamaTailscaleUrl;
   # 使いたい順のホスト名。
   # GPUのbulletを先に書き、落ちていればCPUのseminarへ回す。
   hosts = [

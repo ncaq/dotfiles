@@ -1,7 +1,7 @@
 {
-  lib,
   config,
   inputs,
+  localLib,
   ...
 }:
 {
@@ -38,10 +38,7 @@
         # tailnet経由のniks3-privateの方が高速なため、
         # `services.niks3.priority`でniks3-publicより高優先にしています。
         # 公開する側の`nixos/host/seminar/niks3-private.nix`と同じ定義からURLを組み立てます。
-        (import ../../lib/niks3-private-tailscale-url.nix {
-          inherit lib;
-          tailnet = config.local.tailscale.tailnet;
-        })
+        (localLib.niks3PrivateTailscaleUrl config.local.tailscale.tailnet)
         "https://ncaq.cachix.org/"
         "https://nix-community.cachix.org/"
       ];

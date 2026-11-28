@@ -1,6 +1,6 @@
-{ lib, ... }:
+{ lib, localLib, ... }:
 let
-  publicDns = import ../../lib/public-dns.nix;
+  inherit (localLib) publicDns;
   # systemd-resolvedへ渡す、DNS over TLSで確かめる名前付きの形。
   # IPv6のサーバを先に並べ、IPv4を持つ時だけIPv4のサーバを後ろに足す。
   encryptedDns =

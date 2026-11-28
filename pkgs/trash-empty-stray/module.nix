@@ -14,11 +14,11 @@
   pkgs,
   lib,
   config,
+  hardening,
   ...
 }:
 let
   cfg = config.services.trash-empty;
-  hardening = import ../../lib/systemd-hardening.nix;
   # ゴミ箱はホームやマウント先や/tmpにあるので、
   # それらを不可視またはread-onlyにする隔離は適用できない。
   baseServiceConfig =

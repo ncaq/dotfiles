@@ -18,6 +18,7 @@
   cachix,
   niks3,
   sops,
+  localLib,
 }:
 let
   # 動かすものだけをstoreへ入れる。
@@ -42,11 +43,8 @@ let
     private = {
       secretsFile = ../../secrets/niks3-private.yaml;
       # overlayで全環境共通のパッケージとして生やすためNixOSの`config`は読めない。
-      # `lib/tailnet.nix`の案内通りtailnet名を直接importして渡す。
-      serverUrl = import ../../lib/niks3-private-tailscale-url.nix {
-        inherit lib;
-        tailnet = import ../../lib/tailnet.nix;
-      };
+      # `lib/tailnet.nix`の案内通り`localLib.tailnet`を渡す。
+      serverUrl = localLib.niks3PrivateTailscaleUrl localLib.tailnet;
     };
   };
 in

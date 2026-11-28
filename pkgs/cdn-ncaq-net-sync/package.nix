@@ -26,6 +26,7 @@
 {
   coreutils,
   rsync,
+  localLib,
   testers,
   writeShellApplication,
 }:
@@ -65,5 +66,5 @@ writeShellApplication {
     done
   '';
   # リンクを捨てることと、ユニットの隔離は、実際のユニットを動かさないと確かめられない。
-  passthru.tests.nixos = import ./nixos-test.nix { inherit testers; };
+  passthru.tests.nixos = import ./nixos-test.nix { inherit localLib testers; };
 }

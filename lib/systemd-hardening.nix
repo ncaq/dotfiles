@@ -16,6 +16,7 @@
 
   NixOSモジュールへは`flake.nix`の`specialArgs`経由で、
   `hardening`として配布される。
+  それ以外の場所からは`localLib.hardening`として読める。
 */
 let
   base = {

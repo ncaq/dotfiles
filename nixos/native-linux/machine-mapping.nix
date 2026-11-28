@@ -4,10 +4,15 @@
   ここはオプションと検査だけを持ち、値はコンテナを持つホストやモジュールが宣言する。
   `container-template.nix`が、コンテナと同じ名前の宣言を引いてコンテナへ割り当てる。
 */
-{ lib, config, ... }:
+{
+  lib,
+  config,
+  localLib,
+  ...
+}:
 let
-  toAddress4 = import ../../lib/machine-address4.nix { inherit lib; };
-  parseIpv6 = import ../../lib/parse-ipv6.nix { inherit lib; };
+  toAddress4 = localLib.machineAddress4;
+  inherit (localLib) parseIpv6;
   addressType = lib.types.submodule (
     { config, ... }:
     {
@@ -93,7 +98,7 @@ in
 
     assertions =
       let
-        inherit (import ../../lib/duplicates.nix { inherit lib; }) findDuplicates formatDuplicates;
+        inherit (localLib.duplicates) findDuplicates formatDuplicates;
 
         # IPv4はIPv6から単射で導くので、IPv6が重ならなければIPv4も重ならない。
         # IPv6だけを見れば足りる。

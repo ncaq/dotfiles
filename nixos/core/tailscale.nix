@@ -3,6 +3,7 @@
   lib,
   config,
   hardening,
+  localLib,
   ...
 }:
 {
@@ -10,7 +11,7 @@
     tailnet = lib.mkOption {
       type = lib.types.str;
       readOnly = true;
-      default = import ../../lib/tailnet.nix;
+      default = localLib.tailnet;
       description = ''
         `tailscale status`で確認できるこのtailnetのMagicDNSのsuffix。
         ホスト名やService名にこれを付けたものが、tailnet内で引ける名前になる。

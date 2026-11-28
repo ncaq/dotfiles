@@ -14,9 +14,11 @@
 #
 # 本体は全ホストの構成をビルドするものなので、ここでは動かしません。
 # 本体の振る舞いはsandwichのテスト(`test`)で見ています。
-{ testers }:
+{ localLib, testers }:
 testers.runNixOSTest {
   name = "nix-gc-root-hosts";
+
+  node.specialArgs.hardening = localLib.hardening;
 
   containers.machine = {
     imports = [ ./module.nix ];

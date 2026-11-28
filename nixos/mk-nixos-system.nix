@@ -4,6 +4,7 @@
   importPkgsUnstable,
   importDirModules,
   hardening,
+  localLib,
   inputs,
 }:
 {
@@ -19,6 +20,7 @@ let
     inherit
       importDirModules
       hardening
+      localLib
       inputs
 
       hostName

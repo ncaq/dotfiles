@@ -1,14 +1,13 @@
 {
-  importDirModules,
   inputs,
-  nixpkgsConfig,
+  localLib,
   overlays,
   system,
   username,
-  localLib,
   ...
 }:
 let
+  inherit (localLib) importDirModules nixpkgsConfig;
   inherit (inputs)
     home-manager
     nixpkgs

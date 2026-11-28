@@ -1,7 +1,6 @@
 {
   importPkgsStable,
   importPkgsUnstable,
-  importDirModules,
   localLib,
   inputs,
 }:
@@ -12,8 +11,8 @@
 inputs.home-manager.lib.homeManagerConfiguration {
   pkgs = importPkgsStable system;
   extraSpecialArgs = {
+    inherit (localLib) importDirModules;
     inherit
-      importDirModules
       localLib
       inputs
 

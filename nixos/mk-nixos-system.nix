@@ -2,8 +2,6 @@
   lib,
   importPkgsStable,
   importPkgsUnstable,
-  importDirModules,
-  hardening,
   localLib,
   inputs,
 }:
@@ -17,9 +15,9 @@ let
   # 構成の`wsl.enable`ではなく静的な`hostInfo`から取るので、構成を評価せずに分かる。
   isWSL = hostInfo.${hostName}.wsl or false;
   specialArgs = {
+    # 使う箇所が多いものは、`localLib`から取り出して単独の引数としても配る。
+    inherit (localLib) importDirModules hardening;
     inherit
-      importDirModules
-      hardening
       localLib
       inputs
 

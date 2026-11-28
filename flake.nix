@@ -199,8 +199,6 @@
       inherit (localLib)
         # ディレクトリ内の全`.nix`ファイルをimportするヘルパ関数。
         importDirModules
-        # systemdサービス共通のハードニング設定。
-        hardening
         # nixpkgsの共通設定。
         nixpkgsConfig
         # `pkgs/`の自作パッケージをトップレベルに生やすoverlay。
@@ -238,8 +236,6 @@
           lib
           importPkgsStable
           importPkgsUnstable
-          importDirModules
-          hardening
           localLib
           inputs
           ;
@@ -302,7 +298,6 @@
         inherit
           importPkgsStable
           importPkgsUnstable
-          importDirModules
           localLib
           inputs
           ;
@@ -318,10 +313,8 @@
       nixOnDroidConfigurations = {
         default = import ./nix-on-droid {
           inherit
-            importDirModules
             localLib
             inputs
-            nixpkgsConfig
             overlays
             ;
           system = "aarch64-linux";

@@ -1,6 +1,6 @@
 { config, ... }:
 {
-  imports = [ ../../lib/git-repo-subscribe.nix ];
+  imports = [ ../../pkgs/git-repo-subscribe/home-module.nix ];
 
   programs.git-repo-subscribe.repositories = {
     home-manager = {

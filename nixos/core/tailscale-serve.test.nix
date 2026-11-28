@@ -14,12 +14,12 @@
 # Serviceを登録するユニットは起動に失敗しますが、リダイレクタには関わりません。
 { testers }:
 let
-  tailnet = import ./tailnet.nix;
+  tailnet = import ../../lib/tailnet.nix;
 in
 testers.runNixOSTest {
   name = "tailscale-serve";
 
-  node.specialArgs.hardening = import ./systemd-hardening.nix;
+  node.specialArgs.hardening = import ../../lib/systemd-hardening.nix;
 
   containers.machine =
     {

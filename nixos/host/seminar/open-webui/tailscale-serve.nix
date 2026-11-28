@@ -10,8 +10,6 @@ let
   port = config.containers.open-webui.config.services.open-webui.port;
 in
 {
-  imports = [ ../../../../lib/tailscale-serve.nix ];
-
   local.tailscaleServe.services.open-webui = {
     service = "svc:open-webui";
     label = "Open WebUI";
@@ -26,7 +24,7 @@ in
   # `ollama-backend.nix`でもコンテナとの間に立っているので、
   # 中継を1つ挟んでも増える部品は無い。
   #
-  # `lib/tailscale-serve.nix`のリダイレクタと同じく、ホスト名なしのアドレスにしてHTTPだけで待ち受ける。
+  # `nixos/core/tailscale-serve.nix`のリダイレクタと同じく、ホスト名なしのアドレスにしてHTTPだけで待ち受ける。
   # ホスト名を書くとCaddyが自動HTTPSを有効にしてしまう。
   #
   # Caddyの`reverse_proxy`はWebSocketのUpgradeをそのまま通し、

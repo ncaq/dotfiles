@@ -1,6 +1,6 @@
 # GGUFの本体へ、別ファイルで配られたMTPのNextN層を足すコマンド。
 #
-# `lib/quantize-gguf-with-nextn.nix`がモデルの量子化derivationから呼ぶ。
+# 隣の`builder.nix`がモデルの量子化derivationから呼ぶ。
 # なぜまとめる必要があるのかと、どうまとめるのかは`src/merge_gguf_nextn/merge.py`の冒頭に書いてある。
 #
 # Pythonで書いているのは、GGUFの上流の実装がllama.cppに同梱されたgguf-pyだからである。

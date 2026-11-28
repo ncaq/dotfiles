@@ -1,6 +1,6 @@
 # GGUFの`tokenizer.chat_template`を取り出して書き戻すコマンド。
 #
-# `lib/patch-gguf-chat-template.nix`がfixed-output derivationの中から呼ぶ。
+# 隣の`builder.nix`がfixed-output derivationの中から呼ぶ。
 # なぜテンプレートを差し替えるのかはそちらに、
 # どうやって位置を求めるのかは`src/PatchGgufChatTemplate/Gguf/`の各モジュールの冒頭に、
 # どうやって長さを保つのかは`src/PatchGgufChatTemplate/Pad.hs`の冒頭に書いてある。

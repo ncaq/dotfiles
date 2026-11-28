@@ -24,7 +24,7 @@
   テストは配線の漏れを見るために`assertions`の側も通す。
 
   ```nix
-  assertions = (import ../../../../lib/comfyui-api-workflow.nix { inherit lib; }).assertions {
+  assertions = (import ./lib/comfyui-api-workflow.nix { inherit lib; }).assertions {
     name = "画像生成";
     inherit workflow workflowNodes;
     validTypes = [ "model" "prompt" "seed" ];

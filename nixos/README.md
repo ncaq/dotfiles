@@ -4,6 +4,8 @@ NixOSのシステム設定です。
 `configuration.nix`がエントリポイントで`core/`をimportします。
 ホストごとの設定(`host/<名前>.nix`)が、
 必要な層を選んでimportします。
+`mk-nixos-system.nix`は、
+`flake.nix`がこれらからホストの構成を組み立てるための関数です。
 
 - `client/`: 人が直接操作するクライアントPC向けの設定。サーバには適用しない
 - `core/`: 全てのNixOSホストに共通の設定

@@ -8,10 +8,10 @@
 let
   enableCuda = config.local.ollama.enableCuda;
   fetchHuggingFace = import ../../lib/fetch-hugging-face.nix { inherit pkgs; };
-  quantizeGgufWithNextn = import ../../lib/quantize-gguf-with-nextn.nix { inherit pkgs; };
+  quantizeGgufWithNextn = import ../../pkgs/merge-gguf-nextn/builder.nix { inherit pkgs; };
   # CLIと同じstoreのパスを使うため、取得の定義は`lib/`で共有している。
   plamoTranslateModel = import ../../lib/plamo-translate-model.nix { inherit pkgs; };
-  patchGgufChatTemplate = import ../../lib/patch-gguf-chat-template.nix { inherit pkgs; };
+  patchGgufChatTemplate = import ../../pkgs/patch-gguf-chat-template/builder.nix { inherit pkgs; };
   # registryのQwen3.8が同梱しているパラメータ。
   # GGUFから自前で組み立てるとparamsレイヤが付いてこないので明示する。
   # `draft_num_predict`が特に重要で、
@@ -95,7 +95,7 @@ let
       # 公式の重みからggml-orgが変換したBF16を取り、自分でQ6_Kへ量子化する。
       # ggml-orgはドラフトヘッドを`mtp-*.gguf`として本体から切り離して配っているので、
       # 量子化の前に本体へまとめ直す。
-      # まとめる方法とその理由は`lib/quantize-gguf-with-nextn.nix`にある。
+      # まとめる方法とその理由は`pkgs/merge-gguf-nextn/builder.nix`にある。
       #
       # ggml-orgの変換のチャットテンプレートはassistantの発話を`{% generation %}`で囲んでいる。
       # assistantの発話を含む会話をOllamaで生成できることを確かめた。

@@ -3,7 +3,7 @@
 -- `app/Main.hs`は環境を用意してここを呼ぶだけにする。
 --
 -- 1つのコマンドに2つのサブコマンドを持つ。
--- `lib/removable-crypt.nix`がデバイスごとに引数を付けて、`mnt-<名前>`と`umnt-<名前>`として包む。
+-- `module.nix`がデバイスごとに引数を付けて、`mnt-<名前>`と`umnt-<名前>`として包む。
 --
 -- lensの`argument`はoptparse-applicativeの位置引数と名前がぶつかるので、Himariの側を隠す。
 module RemovableCrypt.Cli

@@ -97,7 +97,7 @@
   # 値の中の`%`はsystemdのspecifierとして展開される。
   # 画像生成の`filename_prefix`に書いた`%year%`が実際にこれで壊れていて、
   # 出力されたファイル名を見るまで気付けなかった。
-  # 判定の詳細は`lib/systemd-specifier.nix`に書いてある。
+  # 判定の詳細は`./lib/systemd-specifier.nix`に書いてある。
   #
   # 保護されるのはここへ書かれた値だけである。
   # `container.nix`が`//`で最後に重ねるリテラルと、
@@ -109,7 +109,7 @@
   # どちらも今のところ検査の対象へ含める必要がない。
   config.assertions =
     let
-      specifier = import ../../../../lib/systemd-specifier.nix { inherit lib; };
+      specifier = import ./lib/systemd-specifier.nix { inherit lib; };
       broken = specifier.unsafeNames config.local.openWebui.environment;
     in
     [

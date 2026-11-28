@@ -12,7 +12,7 @@ import Himari
 -- マッパの名前はそのままマウントポイントやデバイスのパスの一部になる。
 -- `/`や`..`が入るとルートの権限で意図しない場所を触ることになるので、
 -- 引数で受け取った時点で弾く。
--- `lib/removable-crypt.nix`のオプションの型も同じ規則で検査している。
+-- `module.nix`のオプションの型も同じ規則で検査している。
 validDeviceMapperName :: Text -> Bool
 validDeviceMapperName name = case T.uncons name of
   Just (initial, rest) -> alphanumeric initial && T.all allowed rest

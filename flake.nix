@@ -204,7 +204,6 @@
       # 全環境で共通のoverlays。
       overlays = [
         localPackagesOverlay
-        (import ./lib/snapper-btrfs-bin-overlay.nix)
         inputs.utensils-comfyui-nix.overlays.default
         inputs.firge-nix.overlays.default
       ];
@@ -229,7 +228,7 @@
       # systemを受け取り不安定版のpkgsを生成する。
       importPkgsUnstable = memoizePkgsPerSystem (importPkgsFor nixpkgs-unstable);
 
-      mkNixosSystem = import ./lib/mk-nixos-system.nix {
+      mkNixosSystem = import ./nixos/mk-nixos-system.nix {
         inherit
           lib
           importPkgsStable
@@ -286,7 +285,7 @@
           ;
       };
 
-      mkLinuxHomeManager = import ./lib/mk-linux-home-manager.nix {
+      mkLinuxHomeManager = import ./home/mk-linux-home-manager.nix {
         inherit
           importPkgsStable
           importPkgsUnstable
@@ -438,7 +437,7 @@
           # そちらを取ると誰も実行しない環境のクロージャを新たに取得することになる。
           # 型検査用の環境は検査専用の依存を足すので、
           # bulletが使う環境そのものにはならない。
-          pythonPyright = import ./lib/python-pyright.nix {
+          pythonPyright = import ./test/python-pyright.nix {
             inherit pkgs;
             comfyui = pkgs.comfy-ui-cuda;
           };

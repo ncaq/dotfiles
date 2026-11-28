@@ -30,7 +30,7 @@
     変換時にNextN層を捨てずに書き出したものを量子化した場合と同じ結果になる。
 
   なぜfixed-output derivationにするか:
-    `lib/patch-gguf-chat-template.nix`と同じ理由で、
+    `pkgs/patch-gguf-chat-template/builder.nix`と同じ理由で、
     flake.lockの更新のたびに同じ中身が別のパスになり、
     数十GBの再ビルドと再取得が走るのを避けるためである。
     imatrixを使わない量子化は決定的なので、

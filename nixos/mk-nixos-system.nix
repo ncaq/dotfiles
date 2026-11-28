@@ -35,8 +35,8 @@ let
     { nixpkgs.pkgs = importPkgsStable system; }
     inputs.disko.nixosModules.default
     inputs.sops-nix.nixosModules.sops
-    ../nixos/configuration.nix
-    ../nixos/host/${hostName}.nix
+    ./configuration.nix
+    ./host/${hostName}.nix
     inputs.home-manager.nixosModules.home-manager
     {
       home-manager = {

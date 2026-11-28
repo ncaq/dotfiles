@@ -1,5 +1,5 @@
 {
-  imports = [ ../../lib/removable-crypt.nix ];
+  imports = [ ../../pkgs/removable-crypt/module.nix ];
 
   programs.removable-crypt = {
     enable = true;

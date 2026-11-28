@@ -1,6 +1,6 @@
 -- | 引数の解釈と終了コードのテスト。
 --
--- `lib/patch-gguf-chat-template.nix`はビルドした実行ファイルを引数付きで呼ぶ。
+-- `builder.nix`はビルドした実行ファイルを引数付きで呼ぶ。
 -- 引数の振り分けと、失敗が0以外の終了コードになることをここで固定する。
 module Spec.CliSpec (tests) where
 

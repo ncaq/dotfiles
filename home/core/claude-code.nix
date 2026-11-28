@@ -15,6 +15,7 @@
   pkgs-unstable,
   config,
   systemdPackage,
+  codingAgentDeniedCommands,
   codingAgentWorkDirFullPath,
   ...
 }:
@@ -255,7 +256,7 @@
           "Bash(gh repo archive:*)"
           "Bash(gh repo rename:*)"
         ]
-        ++ map (command: "Bash(${command}:*)") (import ../../lib/coding-agent-denied-commands.nix);
+        ++ map (command: "Bash(${command}:*)") codingAgentDeniedCommands;
       };
     };
   };

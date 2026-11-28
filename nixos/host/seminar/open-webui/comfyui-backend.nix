@@ -22,7 +22,7 @@ let
   upstream = "https://${lib.removePrefix "svc:" comfyuiService}.${tailnet}";
 in
 {
-  # `lib/tailscale-serve.nix`のリダイレクタと同じく、ホスト名なしのアドレスにしてHTTPだけで待ち受ける。
+  # `nixos/core/tailscale-serve.nix`のリダイレクタと同じく、ホスト名なしのアドレスにしてHTTPだけで待ち受ける。
   # ホスト名を書くとCaddyが自動HTTPSを有効にしてしまう。
   services.caddy.virtualHosts.":${toString port}".extraConfig = ''
     bind [${addr.host6}]

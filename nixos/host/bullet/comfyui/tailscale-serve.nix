@@ -5,8 +5,6 @@
 # サブパスではなく専用のTailscale Serviceのルートへ公開する。
 { config, ... }:
 {
-  imports = [ ../../../../lib/tailscale-serve.nix ];
-
   local.tailscaleServe.services.comfyui = {
     # 中継して接続するseminarの`open-webui/comfyui-backend.nix`と共有する。
     service = import ../../../../lib/comfyui-tailscale-service.nix;

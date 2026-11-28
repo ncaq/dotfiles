@@ -17,8 +17,6 @@ let
   };
 in
 {
-  imports = [ ../../../lib/tailscale-serve.nix ];
-
   # privateNetworkのコンテナへはホストのCaddyで中継する。
   # `open-webui/tailscale-serve.nix`と同じ構成で、
   # `tailscale serve`の転送先をリモートのアドレスにするのを避けている。

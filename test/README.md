@@ -10,6 +10,7 @@ Nixで書いたテストのうち、
 - `nixos-boot/`: ホストごとにNixOSの構成をVMでブートするテスト(`testNixosBoot`)。
   `script/`はブート後に確かめるトピック、
   `vm/`はテストVMで動かないものを無効化したりモックにしたりするモジュール
+- `python-pyright.nix`: リポジトリ内のPythonをpyrightで型検査するチェック
 
 各言語のパッケージのテスト(`pkgs/*/test`など)は、
 その言語のツールが期待する場所に置いたままにします。
@@ -49,7 +50,7 @@ Nixで書いたテストのうち、
 `lib`を受け取らないファイルでは`assert 条件 || throw "メッセージ";`と書きます。
 
 トピックが複数ある時は、
-`lib/comfyui-api-workflow.nix`のように、
+`nixos/host/seminar/open-webui/lib/comfyui-api-workflow.nix`のように、
 トピックごとの`let ... in assert ...; true`を`tests`の属性として並べて、
 まとめて`assert`します。
 トピックごとに束縛の名前が分かれるので、

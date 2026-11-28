@@ -24,6 +24,10 @@ nixpkgsの`haskellPackages`にhimariを足したパッケージセットで、
 パッケージごとに`haskellPackages.extend`すると、
 himariとその依存をパッケージの数だけ評価し直すことになります。
 
+プログラムをderivationの中から呼んで別のderivationを作る関数は、
+`patch-gguf-chat-template`のように`<名前>/builder.nix`として隣に置いて、
+使う側が`import`します。
+
 新しく書く時の言語の選び方は`docs/helper-program-language-policy.md`に書いてあります。
 
 ## テスト
@@ -82,7 +86,7 @@ QEMUのVMではなくsystemd-nspawnのコンテナで動かします。
 - `pkgs/`直下の`.nix`は全てパッケージとして`callPackage`されるので、補助のファイルは直下に置けない
 - `package.nix`を持つディレクトリでは、他の`.nix`は拾われない
 - `package.nix`を持たないサブディレクトリは入れ子の属性集合になり、flakeの`packages`と`checks`では扱えない
-- `callPackage`で包むと`.override`が変わって困るもの(`lib/linux-xanmod-server.nix`のカーネル)は`lib/`に置く
+- `callPackage`で包むと`.override`が変わって困るもの(`nixos/core/kernel-overlays.nix`のカーネル)は、使う側のoverlayに直接書く
 
 overlayは`prev`を見ずに上書きするので、
 nixpkgsと同じ名前のパッケージを置くとnixpkgsの中の依存まで差し替わります。

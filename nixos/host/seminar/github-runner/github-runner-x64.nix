@@ -61,12 +61,12 @@
   lib,
   config,
   hardening,
+  githubActionsRunnerPackages,
   githubRunnerShare,
   ...
 }:
 let
   inherit (githubRunnerShare)
-    githubActionsRunnerPackages
     selfHostRunnerPackages
     jobStartedHook
     registrationTokenBroker

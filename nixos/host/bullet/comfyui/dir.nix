@@ -23,9 +23,9 @@
 # どのUIDで書いてもseminar上ではncaqのファイルになる。
 {
   lib,
-  pkgs,
   config,
   utils,
+  seminarCifs,
   ...
 }:
 let
@@ -35,14 +35,7 @@ let
   hostMountParent = "/run/comfyui-cifs";
   hostMountPoint = "${hostMountParent}/output";
   mountUnit = "${utils.escapeSystemdPath hostMountPoint}.mount";
-  inherit
-    (import ../../../../lib/seminar-cifs.nix {
-      inherit pkgs;
-      systemd = config.systemd.package;
-    })
-    baseMountOptions
-    mkRetryService
-    ;
+  inherit (seminarCifs) baseMountOptions mkRetryService;
 in
 {
   options.local.comfyui.outputDir = lib.mkOption {
@@ -107,7 +100,7 @@ in
           what = "//seminar/chihiro/comfyui-output";
           where = hostMountPoint;
           type = "cifs";
-          # 認証・セキュリティ・ダイアレクトの共通部分は`lib/seminar-cifs.nix`で管理する。
+          # 認証・セキュリティ・ダイアレクトの共通部分は`nixos/native-linux/seminar-cifs.nix`で管理する。
           # 資格情報は`nixos/native-linux/cifs.nix`と同じものを使う。
           options = lib.concatStringsSep "," (
             baseMountOptions config.sops.templates."cifs-credentials".path

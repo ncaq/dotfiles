@@ -11,14 +11,19 @@
 # あちらと違って振り分け先はbulletだけなので、
 # フェイルオーバもパッシブヘルスチェックも要らない。
 # bulletが落ちていれば画像は生成できない、というだけである。
-{ lib, config, ... }:
+{
+  lib,
+  config,
+  hostInfo,
+  ...
+}:
 let
   addr = config.machineAddresses.open-webui;
   port = config.local.openWebui.comfyuiPort;
   tailnet = config.local.tailscale.tailnet;
-  # 公開する側のbulletの`comfyui/tailscale-serve.nix`と同じ定義から名前を組み立てる。
-  # `ollama-backend.nix`が`lib/ollama-tailscale-service.nix`でしているのと同じである。
-  comfyuiService = import ../../../../lib/comfyui-tailscale-service.nix;
+  # 公開する側のbulletの`comfyui/tailscale-serve.nix`と同じ、
+  # `flake.nix`の`hostInfo`の定義から名前を組み立てる。
+  comfyuiService = hostInfo.bullet.comfyuiTailscaleService;
   upstream = "https://${lib.removePrefix "svc:" comfyuiService}.${tailnet}";
 in
 {

@@ -1,9 +1,9 @@
 /**
   全ホスト共通で適用するカーネル関連overlayの登録モジュール。
 
-  CPU最適化overlay(`cpu-optimized-kernel-overlay.nix`)は、
+  カーネルのCPU最適化overlayは、
   `local.cpuTarget`が設定されているホストでだけ有効化したいため、
-  `cpu-target.nix`の`mkIf`内で別途登録している。
+  `cpu-target-kernel.nix`が`mkIf`内で別途登録している。
   こちらは適用条件を持たない、
   全ホストで常時必要なoverlayをまとめる。
 
@@ -28,7 +28,7 @@
   ビルドするだけで起動しないとか、
   バイナリサイズを多少増やす程度の無害なものはそのまま残します。
 
-  CPUモデル固有の最適化は別の`cpu-optimized-kernel-overlay.nix`で適用するため、
+  CPUモデル固有の最適化は別の`cpu-target-kernel.nix`で適用するため、
   ここではCPU最適化のKconfigには触らない。
 
   実際に`boot.kernelPackages`で参照されない限りビルドコストは発生しない。
@@ -40,7 +40,7 @@
   `callPackage`は結果を`makeOverridable`で再ラップするため、
   `.override`が外側の引数だけを対象にしてしまい、
   内部の`linux_xanmod.override`チェーンに届かなくなる。
-  `cpu-optimized-kernel-overlay.nix`が`linux_xanmod_server`に対しても、
+  `cpu-target-kernel.nix`が`linux_xanmod_server`に対しても、
   `kernelPatches`を追加する形で`.override`を呼ぶ必要があるため、
   内部の`override`をそのまま露出させる。
 

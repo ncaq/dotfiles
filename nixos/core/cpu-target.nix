@@ -1,5 +1,6 @@
 /**
   ホストのCPUモデルを宣言し、登録済みなら最適化overlayを適用するモジュール。
+  カーネル向けの最適化overlayは`cpu-target-kernel.nix`が適用する。
 
   `local.cpuTarget`に`/proc/cpuinfo`の`model name`文字列をそのまま設定する。
   `lib/cpu-targets.nix`の`targets`に登録されているCPUのみを`enum`で受け付け、
@@ -67,7 +68,6 @@ in
   config = lib.mkIf (config.local.cpuTarget != null) {
     nixpkgs.overlays = [
       (import ../../lib/cpu-optimized-overlay.nix config.local.cpuTarget)
-      (import ../../lib/cpu-optimized-kernel-overlay.nix config.local.cpuTarget)
     ];
   };
 }

@@ -1,7 +1,7 @@
 /**
   コンテナとmicroVMの中のログを、ホストから同じコマンドで読めるようにする。
 
-  全てのコンテナの中のjournalをコンソールへ流して(理由は`lib/journal-to-console.nix`)、
+  全てのコンテナの中のjournalをコンソールへ流して(理由は`journal-to-console.nix`)、
   ホストのjournalに入ったものを読む`machine-log`コマンドを提供する。
 
   ```console
@@ -55,6 +55,7 @@
   lib,
   config,
   pkgs,
+  journalToConsole,
   ...
 }:
 let
@@ -83,7 +84,7 @@ in
   options.containers = lib.mkOption {
     type = lib.types.attrsOf (
       lib.types.submodule {
-        config.config = import ../../lib/journal-to-console.nix;
+        config.config = journalToConsole;
       }
     );
   };

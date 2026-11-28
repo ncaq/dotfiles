@@ -257,6 +257,13 @@
           # オンボード有線NICのMACアドレス。
           # seminarがWake-on-LANのmagic packetを送る宛先に使う。
           macAddress = "34:5a:60:bf:07:ad";
+          # ComfyUIのTailscale Service名。
+          # 公開するbulletと、tailnetの外から中継して接続するseminarの両方が同じ名前を必要とする。
+          # それぞれにリテラルで書くと、名前を変えたときに片方が静かに古いままになる。
+          # 接続先が落ちている場合と区別が付かず、接続がタイムアウトするまで気付けない。
+          # ComfyUIを公開するのはGPUを持つbulletだけなので、
+          # `lib/ollama-tailscale-service.nix`のようにホスト名から組み立てることはしない。
+          comfyuiTailscaleService = "svc:comfyui";
         };
         "creep" = {
           system = "x86_64-linux";

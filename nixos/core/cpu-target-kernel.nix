@@ -38,13 +38,12 @@
 }:
 let
   cpuName = config.local.cpuTarget;
+  # `cpuName`が`null`のホストでは評価できないが、
+  # 使うのは下の`mkIf`で`cpuName`が`null`でない時だけ登録するoverlayの中だけなので、評価されない。
+  kernelOption = localLib.cpuTargets.kernelOptionFor cpuName;
   overlay =
     _final: prev:
     let
-      inherit (localLib) cpuTargets;
-
-      kernelOption = cpuTargets.kernelOptionFor cpuName;
-
       optimize =
         kernel:
         kernel.override (oldArgs: {

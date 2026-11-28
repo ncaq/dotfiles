@@ -14,8 +14,8 @@ let
   # WSL2の上で動くホストかどうか。
   # 構成の`wsl.enable`ではなく静的な`hostInfo`から取るので、構成を評価せずに分かる。
   isWSL = hostInfo.${hostName}.wsl or false;
-  # `server`層を読み込むサーバかどうか。
-  isServer = hostInfo.${hostName}.server or false;
+  # `client`層を読み込むクライアントPCかどうか。
+  isClient = hostInfo.${hostName}.client or false;
   specialArgs = {
     # 使う箇所が多いものは、`localLib`から取り出して単独の引数としても配る。
     inherit (localLib) importDirModules hardening;
@@ -46,7 +46,7 @@ let
         useGlobalPkgs = true;
         useUserPackages = true;
         extraSpecialArgs = specialArgs // {
-          inherit isWSL isServer;
+          inherit isWSL isClient;
           isTermux = false;
         };
         sharedModules = [

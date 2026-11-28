@@ -19,9 +19,9 @@ NixOSのシステム設定です。
 - `wsl/`: WSL2環境専用の設定
 
 WSLのホストが読み込むのは`core/`と`wsl/`だけです。
-`server/`を読み込むホストは、
-home-managerがGUIの設定を外せるように、
-`flake.nix`の`hostInfo`にも`server = true`を書きます。
+`client/`か`server/`を読み込むホストは、
+`flake.nix`の`hostInfo`にも`client = true`か`server = true`を書きます。
+home-managerは`client`を見てGUIの設定を読み込みます。
 
 NixOS Containerの定義の定型は、
 `native-linux/container-template.nix`が既定値と`containers.<name>.local`の宣言から生成します。

@@ -21,7 +21,8 @@ inputs.home-manager.lib.homeManagerConfiguration {
     pkgs-unstable = importPkgsUnstable system;
     isTermux = false;
     isWSL = false;
-    isServer = false;
+    # NixOSの外で使うのは人が直接操作するクライアントPCなので、GUIの設定も読み込む。
+    isClient = true;
   };
   modules = [
     inputs.sops-nix.homeManagerModules.sops

@@ -5,13 +5,11 @@
   username,
   isTermux,
   isWSL,
-  isServer,
+  isClient,
   ...
 }:
 let
   nativeLinux = !(isTermux || isWSL);
-  # 人が直接操作するGUIのある環境。
-  client = nativeLinux && !isServer;
 in
 {
   home = {
@@ -38,6 +36,6 @@ in
     ./link.nix
   ]
   ++ lib.optional nativeLinux ./native-linux
-  ++ lib.optional client ./client
+  ++ lib.optional isClient ./client
   ++ lib.optional isWSL ./wsl;
 }

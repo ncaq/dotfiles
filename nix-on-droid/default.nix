@@ -88,7 +88,7 @@ inputs.nix-on-droid.lib.nixOnDroidConfiguration {
           };
           isTermux = true; # アプリとしてはnix-on-droidですがランタイム的にはTermuxの方が妥当な名前。
           isWSL = false;
-          isServer = false;
+          isClient = false;
         };
         sharedModules = [
           inputs.sops-nix.homeManagerModules.sops

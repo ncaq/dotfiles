@@ -9,18 +9,28 @@
   hostInfo,
   ...
 }:
+let
+  # 層を読み込んだかどうかを示すoption。
+  # 層の中のモジュールが`true`にして、`hostInfo`と突き合わせるためだけに使う。
+  mkLayerOption =
+    layer:
+    lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "`${layer}`層を読み込んだかどうか。";
+    };
+in
 {
-  options.local.server = lib.mkOption {
-    type = lib.types.bool;
-    default = false;
-    description = ''
-      `server`層を読み込んだかどうか。
-      `server`層が`true`にする。
-      `hostInfo`の`server`と突き合わせるためだけに使う。
-    '';
+  options.local = {
+    client = mkLayerOption "client";
+    server = mkLayerOption "server";
   };
 
   config.assertions = [
+    {
+      assertion = (hostInfo.${hostName}.client or false) == config.local.client;
+      message = "`flake.nix`の`hostInfo.${hostName}.client`が、`client`層を読み込んだかどうかと食い違っています。";
+    }
     {
       assertion = (hostInfo.${hostName}.wsl or false) == (config.wsl.enable or false);
       message = "`flake.nix`の`hostInfo.${hostName}.wsl`が、構成の`wsl.enable`と食い違っています。";

@@ -80,10 +80,7 @@
 
     niks3 = {
       url = "github:Mic92/niks3";
-      inputs = {
-        nixpkgs.follows = "nixpkgs";
-        treefmt-nix.follows = "treefmt-nix";
-      };
+      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     xremap-flake = {

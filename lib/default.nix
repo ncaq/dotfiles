@@ -12,12 +12,15 @@
   - `pkgs/`のパッケージ: `callPackage`が自動で渡す引数(`local-packages-overlay.nix`)
   - `*.test.nix`のテスト: `test/collect-nix-tests.nix`が渡す引数
 
-  NixOS Testの中のマシンは別のモジュール評価なので、
-  `nixos/core/caddy.test.nix`のように`node.specialArgs`へテストが自分で渡す。
+  NixOS Testの中のマシンは別のモジュール評価なので、`localLib`は届かない。
+  `nixos/core/caddy.test.nix`のように、
+  テストが受け取った`localLib`から、
+  マシンのモジュールが必要とする引数(`hardening`など)を`node.specialArgs`へ自分で渡す。
 
   ファイルごとに引数の形が違うので、ディレクトリを走査せずに明示的に並べる。
   ファイルを足したらここにも1行足す。
-  `lib/`の中のファイル同士は、これまで通り相対パスで`import`する。
+  `lib/`の中のファイル同士は相対パスで`import`する。
+  `localLib`は`lib/`の外へ配るためのもの。
 
   # `lib/`に置くもの
 

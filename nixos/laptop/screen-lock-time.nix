@@ -16,7 +16,7 @@ in
     # サイクル時間の30秒が経過するとロックされます。
     # ラップトップは外に持ち出すためセキュリティを重視して、
     # デスクトップと違い猶予は短めにしています。
-    # 仕組みの詳細はnative-linuxのscreen-lock.nixを参照。
+    # 仕組みの詳細はclientのscreen-lock.nixを参照。
     user.services.screensaver-timeout = {
       description = "Set X screensaver timeout";
       serviceConfig = {

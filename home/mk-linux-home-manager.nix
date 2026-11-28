@@ -21,6 +21,7 @@ inputs.home-manager.lib.homeManagerConfiguration {
     pkgs-unstable = importPkgsUnstable system;
     isTermux = false;
     isWSL = false;
+    isServer = false;
   };
   modules = [
     inputs.sops-nix.homeManagerModules.sops

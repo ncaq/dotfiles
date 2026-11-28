@@ -272,6 +272,11 @@
         };
         "seminar" = {
           system = "x86_64-linux";
+          # `server`層を読み込むサーバかどうか。
+          # home-managerがGUIの設定を読み込むかを、
+          # NixOSの構成を評価せずに決めるために静的に書く。
+          # 構成と食い違っていないかは`nixos/core/host-info.nix`が確かめる。
+          server = true;
         };
       };
 

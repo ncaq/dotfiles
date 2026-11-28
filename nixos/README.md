@@ -7,7 +7,7 @@ NixOSのシステム設定です。
 `mk-nixos-system.nix`は、
 `flake.nix`がこれらからホストの構成を組み立てるための関数です。
 
-- `client/`: 人が直接操作するクライアントPC向けの設定。サーバには適用しない
+- `client/`: 人が直接操作するクライアントPC向けのGUIなどの設定。サーバには適用しない
 - `core/`: 全てのNixOSホストに共通の設定
 - `desktop/`: 据え置きのデスクトップPCに固有の設定。ラップトップPCには適用しない
 - `gaming/`: ゲームをするホスト向けの設定
@@ -19,6 +19,9 @@ NixOSのシステム設定です。
 - `wsl/`: WSL2環境専用の設定
 
 WSLのホストが読み込むのは`core/`と`wsl/`だけです。
+`server/`を読み込むホストは、
+home-managerがGUIの設定を外せるように、
+`flake.nix`の`hostInfo`にも`server = true`を書きます。
 
 NixOS Containerの定義の定型は、
 `native-linux/container-template.nix`が既定値と`containers.<name>.local`の宣言から生成します。

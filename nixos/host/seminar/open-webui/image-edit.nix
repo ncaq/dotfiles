@@ -296,7 +296,7 @@ in
   # 後者には値を入れる設定が無いためである。
   # 代わりに生成の側に無い`image`を持つ。
   # それぞれの理由は`workflowNodes`の直前に書いてある。
-  assertions = (import ../../../../lib/comfyui-api-workflow.nix { inherit lib; }).assertions {
+  assertions = (import ./lib/comfyui-api-workflow.nix { inherit lib; }).assertions {
     name = "Open WebUIの画像編集";
     inherit workflow workflowNodes;
     validTypes = [

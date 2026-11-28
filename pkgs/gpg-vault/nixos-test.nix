@@ -34,7 +34,11 @@
 # 生成されたファイルを置くところだけを、テストが代わりに行います。
 #
 # グループに入っていないユーザはhome-managerを使わず、リンクをテストが手で置きます。
-{ homeManagerConfiguration, testers }:
+{
+  homeManagerConfiguration,
+  localLib,
+  testers,
+}:
 let
   # vault側のpubringへ取り込ませる公開鍵のユーザID。
   importedUserId = "imported@example.com";
@@ -50,6 +54,8 @@ let
 in
 testers.runNixOSTest {
   name = "gpg-vault";
+
+  node.specialArgs.hardening = localLib.hardening;
 
   containers.machine =
     {

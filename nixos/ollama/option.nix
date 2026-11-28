@@ -5,9 +5,14 @@
   片方だけ変更しても評価は成功して実機で壊れるまで気付けない。
   永続データ領域のパスはホストとコンテナの双方から参照されるため特に危ない。
 */
-{ lib, config, ... }:
+{
+  lib,
+  config,
+  localLib,
+  ...
+}:
 let
-  contextLength = (import ../../lib/ollama-context.nix).length;
+  contextLength = localLib.ollamaContext.length;
   # そのアクセラレータで使うモデルを役割ごとに並べたもの。
   roleType = lib.types.submodule {
     options = {

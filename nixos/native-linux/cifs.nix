@@ -4,19 +4,12 @@
   config,
   hostName,
   username,
+  seminarCifs,
   ...
 }:
 let
   userConfig = config.users.users.${username};
-  inherit
-    (import ../../lib/seminar-cifs.nix {
-      inherit pkgs;
-      systemd = config.systemd.package;
-    })
-    baseMountOptions
-    mkRetryService
-    waitForSeminar
-    ;
+  inherit (seminarCifs) baseMountOptions mkRetryService waitForSeminar;
 in
 lib.mkMerge [
   (lib.mkIf (hostName != "seminar") {
@@ -59,7 +52,7 @@ lib.mkMerge [
           what = "//seminar/chihiro";
           where = "/mnt/chihiro";
           type = "cifs";
-          # 認証・セキュリティ・ダイアレクトの共通部分は`lib/seminar-cifs.nix`で管理する。
+          # 認証・セキュリティ・ダイアレクトの共通部分は`seminar-cifs.nix`で管理する。
           options = lib.concatStringsSep "," (
             baseMountOptions config.sops.templates."cifs-credentials".path
             ++ [

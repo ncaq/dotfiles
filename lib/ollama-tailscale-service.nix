@@ -12,7 +12,7 @@
   規則は1箇所に集める。
 
   ```nix
-  service = import ../../lib/ollama-tailscale-service.nix config.networking.hostName;
+  service = localLib.ollamaTailscaleService config.networking.hostName;
   ```
 */
 hostName: "svc:ollama-${hostName}"

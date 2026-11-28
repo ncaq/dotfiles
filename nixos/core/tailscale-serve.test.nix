@@ -12,14 +12,14 @@
 # tailscaledは動かさないので、
 # Tailscale Serve経由ではなくリダイレクタのポートへ直接投げます。
 # Serviceを登録するユニットは起動に失敗しますが、リダイレクタには関わりません。
-{ testers }:
+{ testers, localLib }:
 let
-  tailnet = import ./tailnet.nix;
+  inherit (localLib) tailnet;
 in
 testers.runNixOSTest {
   name = "tailscale-serve";
 
-  node.specialArgs.hardening = import ./systemd-hardening.nix;
+  node.specialArgs.hardening = localLib.hardening;
 
   containers.machine =
     {

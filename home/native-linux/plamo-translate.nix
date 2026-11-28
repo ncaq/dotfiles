@@ -14,6 +14,7 @@
   pkgs,
   pkgs-unstable,
   osConfig ? null,
+  localLib,
   ...
 }:
 let
@@ -21,7 +22,7 @@ let
   # NixOSの外のhome-managerでは下の既定の設定になる。
   # `null`を属性名に使うと`or`へ届く前に型エラーになる。
   hostName = osConfig.networking.hostName or "";
-  plamoTranslateModel = import ../../lib/plamo-translate-model.nix { inherit pkgs; };
+  plamoTranslateModel = localLib.plamoTranslateModel pkgs;
   setting =
     {
       # RTX 5090で速度を優先するのでCUDA版にする。

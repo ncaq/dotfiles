@@ -1,7 +1,7 @@
 # 暗号化されたリムーバブルデバイスをマウントしてアンマウントするコマンド。
 #
 # `mount`と`unmount`のサブコマンドを持つ。
-# `lib/removable-crypt.nix`がデバイスごとに引数を付けて、`mnt-<名前>`と`umnt-<名前>`として包む。
+# 隣の`module.nix`がデバイスごとに引数を付けて、`mnt-<名前>`と`umnt-<名前>`として包む。
 # 手順は`src/RemovableCrypt/Mount.hs`と`src/RemovableCrypt/Unmount.hs`に書いてある。
 {
   lib,

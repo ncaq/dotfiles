@@ -60,7 +60,7 @@
   アドレスごとに`lib`から渡し直すと、変換のたびに表明が走り直す。
 
   ```nix
-  toAddress4 = import ../../lib/machine-address4.nix { inherit lib; };
+  toAddress4 = localLib.machineAddress4;
   toAddress4 "fdf2:a855:5a3f:100::11"
   => "192.168.100.11"
   ```

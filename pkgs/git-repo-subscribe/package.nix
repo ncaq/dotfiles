@@ -1,6 +1,6 @@
 # Gitリポジトリをcloneして、安全な時だけfast-forwardで更新するコマンド。
 #
-# `lib/git-repo-subscribe.nix`のhome-managerモジュールが、
+# 隣の`home-module.nix`のhome-managerモジュールが、
 # 購読するリポジトリごとに呼ぶ。
 # Gitの操作は`git`コマンドに任せるので、PATHへ足して包む。
 {

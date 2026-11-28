@@ -1,7 +1,7 @@
 -- | コマンドラインの引数の解釈と、失敗の終了コードへの変換。
 --
 -- `app/Main.hs`は環境を用意して引数をここへ渡すだけにして、
--- `lib/patch-gguf-chat-template.nix`が実際に呼ぶ形での振る舞いをsandwichで検査できるようにする。
+-- `builder.nix`が実際に呼ぶ形での振る舞いをsandwichで検査できるようにする。
 -- `embed`が失敗しても0で終わるように変わると、
 -- fixed-output derivationのhashの不一致としてしか現れず原因を突き止めにくい。
 module PatchGgufChatTemplate.Cli

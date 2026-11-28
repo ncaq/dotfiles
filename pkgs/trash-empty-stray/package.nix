@@ -7,6 +7,7 @@
   haskell,
   localHaskellPackages,
   makeWrapper,
+  localLib,
   testers,
   trash-cli,
   util-linux,
@@ -56,7 +57,7 @@ lib.pipe package [
     package.overrideAttrs (old: {
       passthru = (old.passthru or { }) // {
         tests = (old.passthru.tests or { }) // {
-          nixos = import ./nixos-test.nix { inherit testers; };
+          nixos = import ./nixos-test.nix { inherit localLib testers; };
         };
       };
     })

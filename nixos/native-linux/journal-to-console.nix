@@ -1,6 +1,9 @@
 /**
-  コンテナとmicroVMの中のjournalをコンソールへ流すNixOSモジュール。
-  ゲストの設定へ入れて使う。
+  コンテナとmicroVMの中のjournalをコンソールへ流すNixOSモジュールを、
+  `journalToConsole`として他のモジュールへ渡す。
+  受け取った側がゲストの設定へ入れて使う。
+  コンテナへは`machine-log.nix`が、
+  microVMへは`nixos/host/seminar/microvm-log.nix`が入れる。
 
   コンテナは`ephemeral`でmicroVMのルートはtmpfsなので、
   中のjournalは止めた時に消える。
@@ -47,8 +50,10 @@
   `nixos/native-linux/machine-log.nix`に書いている。
 */
 {
-  # `/dev/console`は、コンテナではnspawnが繋ぐptyを指す。
-  # microVMではvirtio-console(`hvc0`)を指す。
-  # そうなるようにカーネルのコンソールを`nixos/host/seminar/microvm-log.nix`で決めている。
-  services.journald.console = "/dev/console";
+  _module.args.journalToConsole = {
+    # `/dev/console`は、コンテナではnspawnが繋ぐptyを指す。
+    # microVMではvirtio-console(`hvc0`)を指す。
+    # そうなるようにカーネルのコンソールを`nixos/host/seminar/microvm-log.nix`で決めている。
+    services.journald.console = "/dev/console";
+  };
 }

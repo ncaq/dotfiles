@@ -193,18 +193,20 @@
         "x86_64-linux"
       ];
 
-      # ディレクトリ内の全`.nix`ファイルをimportするヘルパ関数。
-      importDirModules = import ./lib/import-dir-modules.nix { inherit lib; };
-      # systemdサービス共通のハードニング設定。
-      hardening = import ./lib/systemd-hardening.nix;
-      # nixpkgsの共通設定。
-      nixpkgsConfig = import ./lib/nixpkgs-config.nix { inherit lib; };
-      # `pkgs/`の自作パッケージをトップレベルに生やすoverlay。
-      localPackagesOverlay = import ./lib/local-packages-overlay.nix { inherit lib inputs; };
+      # `lib/`の定義をまとめたもの。
+      # モジュールやパッケージやテストへ`localLib`として配るので、使う側は`import`せずに引数で受け取る。
+      localLib = import ./lib { inherit lib inputs; };
+      inherit (localLib)
+        # ディレクトリ内の全`.nix`ファイルをimportするヘルパ関数。
+        importDirModules
+        # nixpkgsの共通設定。
+        nixpkgsConfig
+        # `pkgs/`の自作パッケージをトップレベルに生やすoverlay。
+        localPackagesOverlay
+        ;
       # 全環境で共通のoverlays。
       overlays = [
         localPackagesOverlay
-        (import ./lib/snapper-btrfs-bin-overlay.nix)
         inputs.utensils-comfyui-nix.overlays.default
         inputs.firge-nix.overlays.default
       ];
@@ -229,13 +231,12 @@
       # systemを受け取り不安定版のpkgsを生成する。
       importPkgsUnstable = memoizePkgsPerSystem (importPkgsFor nixpkgs-unstable);
 
-      mkNixosSystem = import ./lib/mk-nixos-system.nix {
+      mkNixosSystem = import ./nixos/mk-nixos-system.nix {
         inherit
           lib
           importPkgsStable
           importPkgsUnstable
-          importDirModules
-          hardening
+          localLib
           inputs
           ;
       };
@@ -258,6 +259,13 @@
           # オンボード有線NICのMACアドレス。
           # seminarがWake-on-LANのmagic packetを送る宛先に使う。
           macAddress = "34:5a:60:bf:07:ad";
+          # ComfyUIのTailscale Service名。
+          # 公開するbulletと、tailnetの外から中継して接続するseminarの両方が同じ名前を必要とする。
+          # それぞれにリテラルで書くと、名前を変えたときに片方が静かに古いままになる。
+          # 接続先が落ちている場合と区別が付かず、接続がタイムアウトするまで気付けない。
+          # ComfyUIを公開するのはGPUを持つbulletだけなので、
+          # `lib/ollama-tailscale-service.nix`のようにホスト名から組み立てることはしない。
+          comfyuiTailscaleService = "svc:comfyui";
         };
         "creep" = {
           system = "x86_64-linux";
@@ -286,11 +294,11 @@
           ;
       };
 
-      mkLinuxHomeManager = import ./lib/mk-linux-home-manager.nix {
+      mkLinuxHomeManager = import ./home/mk-linux-home-manager.nix {
         inherit
           importPkgsStable
           importPkgsUnstable
-          importDirModules
+          localLib
           inputs
           ;
       };
@@ -305,9 +313,8 @@
       nixOnDroidConfigurations = {
         default = import ./nix-on-droid {
           inherit
-            importDirModules
+            localLib
             inputs
-            nixpkgsConfig
             overlays
             ;
           system = "aarch64-linux";
@@ -425,7 +432,7 @@
           # 実装の隣に置いたテスト(`*.test.nix`)を、ファイルごとにderivationにしたもの。
           # 実装のファイルに書けない評価のテストと、モジュールだけを動かすNixOS Testがある。
           nixTests = import ./test/collect-nix-tests.nix {
-            inherit lib;
+            inherit lib localLib;
             inherit (pkgs) runCommand testers;
           };
           # リポジトリ内のPythonをpyrightで型検査するためのderivation群。
@@ -438,7 +445,7 @@
           # そちらを取ると誰も実行しない環境のクロージャを新たに取得することになる。
           # 型検査用の環境は検査専用の依存を足すので、
           # bulletが使う環境そのものにはならない。
-          pythonPyright = import ./lib/python-pyright.nix {
+          pythonPyright = import ./test/python-pyright.nix {
             inherit pkgs;
             comfyui = pkgs.comfy-ui-cuda;
           };

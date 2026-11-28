@@ -7,7 +7,7 @@
   NixOSモジュールからはそのオプション経由で参照すること。
 
   home-managerの設定はNixOSの`config`を読めないため、
-  tailnet内の名前を組み立てる時にこのファイルを直接importする。
+  tailnet内の名前を組み立てる時に`localLib.tailnet`を直接読む。
   同じ文字列を両方にリテラルで書くと、
   tailnetを移した時に片方だけが古いまま残る。
 */

@@ -22,7 +22,7 @@
 # - 実際の`ExecStart`をそのまま動かすと、転送先へ中継できること。
 #   テストのマシンの中でさらにコンテナを起動することはできないので、
 #   転送先のアドレスをloopbackに付けて、そこへ代わりのHTTPサーバを立てます
-{ testers }:
+{ testers, localLib }:
 let
   # 中継先になるコンテナ側のアドレスとポート。
   targetAddress = "fd00::2";
@@ -33,7 +33,7 @@ in
 testers.runNixOSTest {
   name = "container-socket-activation";
 
-  node.specialArgs.hardening = import ../../lib/systemd-hardening.nix;
+  node.specialArgs.hardening = localLib.hardening;
 
   containers.machine =
     { pkgs, ... }:

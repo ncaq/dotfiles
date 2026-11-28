@@ -13,7 +13,7 @@
 # - 他のユーザが所有するディレクトリの中の、前の書き込み用の層のイメージを消すこと
 # - データベースの写しが壊れていない形で置かれ、元の中身を持っていること
 # - もう一度動かすと、前の写しが捨てられて、今の中身に取り直されること
-{ testers }:
+{ localLib, testers }:
 let
   vmName = "runner";
   vmUser = "vm-owner";
@@ -26,6 +26,8 @@ let
 in
 testers.runNixOSTest {
   name = "github-runner-store";
+
+  node.specialArgs.hardening = localLib.hardening;
 
   containers.machine =
     { pkgs, ... }:

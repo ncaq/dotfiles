@@ -6,8 +6,6 @@
   ...
 }:
 let
-  # 全てのランナのPATHへ足す基本的なパッケージリスト。
-  githubActionsRunnerPackages = import ../../../../lib/github-actions-runner-packages.nix;
   # セルフホステッドランナに固有で入っていて欲しいパッケージリスト。
   selfHostRunnerPackages =
     { pkgs, ... }:
@@ -90,7 +88,6 @@ in
   # 共有定義を他のランナモジュールから利用可能にします。
   _module.args.githubRunnerShare = {
     inherit
-      githubActionsRunnerPackages
       selfHostRunnerPackages
       jobStartedHook
       registrationTokenBroker

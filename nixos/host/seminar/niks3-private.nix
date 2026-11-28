@@ -1,7 +1,7 @@
 {
-  lib,
   config,
   inputs,
+  localLib,
   ...
 }:
 let
@@ -11,14 +11,9 @@ let
   # niks3-publicのコンテナも同じ番号を使うが、あちらは自分のnetnsの中なので衝突しない。
   port = 5751;
   # substituterやアップロード先として接続する側と同じ定義からURLを組み立てる。
-  cacheUrl = import ../../../lib/niks3-private-tailscale-url.nix {
-    inherit lib;
-    tailnet = config.local.tailscale.tailnet;
-  };
+  cacheUrl = localLib.niks3PrivateTailscaleUrl config.local.tailscale.tailnet;
 in
 {
-  imports = [ ../../../lib/tailscale-serve.nix ];
-
   # privateNetworkのコンテナへはホストのCaddyで中継する。
   # `open-webui/tailscale-serve.nix`と同じ構成で、
   # `tailscale serve`の転送先をリモートのアドレスにするのを避けている。
@@ -96,7 +91,7 @@ in
     # Funnelではないのでインターネットには公開されない。
     # readはTailscaleネットワーク認証、writeはAPIトークン認証。
     tailscaleServe.services.niks3-private = {
-      service = import ../../../lib/niks3-private-tailscale-service.nix;
+      service = localLib.niks3PrivateTailscaleService;
       label = "niks3 private";
       inherit port;
     };

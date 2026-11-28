@@ -16,10 +16,11 @@
   pkgs,
   pkgs-unstable,
   hardening,
+  localLib,
   ...
 }:
 let
-  plamoTranslateModel = import ../../../../lib/plamo-translate-model.nix { inherit pkgs; };
+  plamoTranslateModel = localLib.plamoTranslateModel pkgs;
   # コンテナの中のループバックでしか待たないので、ホストのポートとは重ならない。
   port = 8189;
   arguments = [

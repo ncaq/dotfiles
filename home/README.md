@@ -2,6 +2,8 @@
 
 home-managerの設定です。
 `default.nix`がエントリポイントです。
+`mk-linux-home-manager.nix`は、
+`flake.nix`がNixOSを介さないhome-managerの構成を組み立てるための関数です。
 
 - `core/`: 全環境で共通の設定
 - `linked/`: シンボリックリンクで配置する設定ファイル

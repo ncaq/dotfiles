@@ -2,31 +2,10 @@
   lib,
   pkgs-unstable,
   config,
+  codingAgentDeniedCommands,
   codingAgentWorkDirFullPath,
   ...
 }:
-let
-  # 接続するOllamaのホストと、そのホストのアクセラレータ。
-  # bulletを名指しするのはGPU推論を使いたいためで、
-  # 他のホストのOllamaはコーディングに使える速度が出ない。
-  #
-  # 2つを組にして置くのは、
-  # contextの長さもモデルの一覧もアクセラレータから引くためです。
-  # ホスト名の隣で決めておかないと、
-  # 接続先を変えた時に片方だけが古いまま残り、
-  # CPUのホストへCUDAの前提を宣言したproviderが静かに生まれます。
-  ollamaHostName = "bullet";
-  ollamaAccelerator = "cuda";
-
-  # OllamaのTailscale Service経由のURL。
-  ollamaBaseUrl = import ../../lib/ollama-tailscale-url.nix { inherit lib; } {
-    hostName = ollamaHostName;
-    tailnet = import ../../lib/tailnet.nix;
-  };
-  # providerのモデルごとのcontextの長さ。
-  # 全てのモデルに付ける理由は`lib/ollama-model-limit.nix`にあります。
-  ollamaModels = import ../../lib/ollama-model-limit.nix { inherit lib; } ollamaAccelerator;
-in
 {
   programs.opencode = {
     enable = true;
@@ -44,15 +23,7 @@ in
       model = "github-copilot/gpt-6.1-sol";
       small_model = "github-copilot/gpt-6-luna";
       lsp = true;
-      # bulletのOllamaをOpenAI互換APIの素のproviderとして登録します。
-      # `ollama launch opencode`のハーネス経由ではなく通常のAPI呼び出しで利用します。
-      # Tailscale ServiceのURLを使うことでbullet以外のクライアントからも同じ設定で使えます。
-      provider.ollama = {
-        npm = "@ai-sdk/openai-compatible";
-        name = "Ollama (bullet)";
-        options.baseURL = "${ollamaBaseUrl}/v1";
-        models = ollamaModels;
-      };
+      # Ollamaのproviderは`opencode-ollama.nix`が登録します。
       permission = {
         external_directory = {
           # Claude Codeと同じ追加ディレクトリを許可します。
@@ -68,9 +39,7 @@ in
           "*" = "allow";
         }
         // builtins.listToAttrs (
-          map (command: lib.nameValuePair "${command} *" "deny") (
-            import ../../lib/coding-agent-denied-commands.nix
-          )
+          map (command: lib.nameValuePair "${command} *" "deny") codingAgentDeniedCommands
         );
       };
     };

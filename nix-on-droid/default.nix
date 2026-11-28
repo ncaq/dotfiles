@@ -1,13 +1,13 @@
 {
-  importDirModules,
   inputs,
-  nixpkgsConfig,
+  localLib,
   overlays,
   system,
   username,
   ...
 }:
 let
+  inherit (localLib) importDirModules nixpkgsConfig;
   inherit (inputs)
     home-manager
     nixpkgs
@@ -43,7 +43,7 @@ inputs.nix-on-droid.lib.nixOnDroidConfiguration {
         # nix-on-droid自身が公開DNSを書いた`text`を定義していて、
         # `text`で書くと行が連結されるので、`source`で丸ごと置き換える。
         etc."resolv.conf".source = pkgs.writeText "resolv.conf" ''
-          search ${import ../lib/tailnet.nix}
+          search ${localLib.tailnet}
           nameserver fd7a:115c:a1e0::53
           nameserver 100.100.100.100
         '';
@@ -77,6 +77,7 @@ inputs.nix-on-droid.lib.nixOnDroidConfiguration {
         extraSpecialArgs = {
           inherit
             importDirModules
+            localLib
             inputs
 
             username

@@ -16,11 +16,12 @@
   lib,
   pkgs,
   config,
+  localLib,
   ...
 }:
 let
   dataDir = config.containers.comfyui.config.services.comfyui.dataDir;
-  fetchHuggingFace = import ../../../../lib/fetch-hugging-face.nix { inherit pkgs; };
+  fetchHuggingFace = localLib.fetchHuggingFace pkgs;
   # 属性名は`models/`配下のディレクトリ名、
   # その中の属性名が配置するファイル名に対応する。
   models = {

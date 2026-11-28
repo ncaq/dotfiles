@@ -61,12 +61,13 @@
   lib,
   config,
   hardening,
+  githubActionsRunnerPackages,
   githubRunnerShare,
+  localLib,
   ...
 }:
 let
   inherit (githubRunnerShare)
-    githubActionsRunnerPackages
     selfHostRunnerPackages
     jobStartedHook
     registrationTokenBroker
@@ -176,7 +177,7 @@ let
   # アドレスはVMの名前で`machineAddresses`のエントリを引きます。
   tapNetworkOf =
     name: tap:
-    import ../../../../lib/microvm-tap.nix {
+    localLib.microvmTap {
       inherit tap;
       addr = config.machineAddresses.${name};
     };

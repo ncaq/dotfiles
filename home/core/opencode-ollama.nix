@@ -1,9 +1,8 @@
 /**
-  OpenCodeのOllamaのproviderへ渡す、モデルごとのcontextの長さ。
+  OpenCodeにtailnet越しのOllamaをproviderとして登録するモジュール。
+  モデルごとのcontextの長さも合わせて渡す。
 
-  型: { lib } -> String -> AttrSet { limit = { context = Int; output = Int; }; }
-
-  引数はアクセラレータ名(`cuda`か`cpu`)で、
+  `limitFor`の引数はアクセラレータ名(`cuda`か`cpu`)で、
   `lib/ollama-model-names.nix`のそのアクセラレータの全ての役割のモデルに`limit`を付ける。
 
   なぜ全ての役割に付けるか:
@@ -29,10 +28,28 @@
   `output`は1回の応答の上限。
   配分の考え方は`lib/ollama-context.nix`にある。
 */
-{ lib }:
+{ lib, localLib, ... }:
 let
-  ollamaContext = import ./ollama-context.nix;
-  modelNames = import ./ollama-model-names.nix;
+  inherit (localLib) ollamaContext;
+  modelNames = localLib.ollamaModelNames;
+
+  # 接続するOllamaのホストと、そのホストのアクセラレータ。
+  # bulletを名指しするのはGPU推論を使いたいためで、
+  # 他のホストのOllamaはコーディングに使える速度が出ない。
+  #
+  # 2つを組にして置くのは、
+  # contextの長さもモデルの一覧もアクセラレータから引くためです。
+  # ホスト名の隣で決めておかないと、
+  # 接続先を変えた時に片方だけが古いまま残り、
+  # CPUのホストへCUDAの前提を宣言したproviderが静かに生まれます。
+  ollamaHostName = "bullet";
+  ollamaAccelerator = "cuda";
+
+  # OllamaのTailscale Service経由のURL。
+  baseUrl = localLib.ollamaTailscaleUrl {
+    hostName = ollamaHostName;
+    inherit (localLib) tailnet;
+  };
 
   limitFor =
     accelerator:
@@ -99,10 +116,20 @@ in
 # 全ての役割の全てのモデルに、
 # 実際に動かしている長さが付くことを表で確かめる。
 #
-# 呼び出し側が使うアクセラレータだけでなく、全てのアクセラレータで確かめる。
-# 今呼んでいるのはCUDAのホストへ繋ぐ設定だけなので、
-# 呼ばれた分だけを見るとCPUの側の表が壊れても気付けない。
+# 接続先のアクセラレータだけでなく、全てのアクセラレータで確かめる。
+# 繋いでいるのはCUDAのホストだけなので、
+# 使う分だけを見るとCPUの側の表が壊れても気付けない。
 # モデル名の表にはアクセラレータ別でない`embedding`もあるので、
 # アクセラレータの一覧は長さの表から取る。
 assert lib.all checkAccelerator (lib.attrNames ollamaContext.length);
-limitFor
+{
+  # bulletのOllamaをOpenAI互換APIの素のproviderとして登録します。
+  # `ollama launch opencode`のハーネス経由ではなく通常のAPI呼び出しで利用します。
+  # Tailscale ServiceのURLを使うことでbullet以外のクライアントからも同じ設定で使えます。
+  programs.opencode.settings.provider.ollama = {
+    npm = "@ai-sdk/openai-compatible";
+    name = "Ollama (${ollamaHostName})";
+    options.baseURL = "${baseUrl}/v1";
+    models = limitFor ollamaAccelerator;
+  };
+}

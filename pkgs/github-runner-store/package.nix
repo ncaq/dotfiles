@@ -24,6 +24,7 @@
 {
   coreutils,
   sqlite,
+  localLib,
   testers,
   writeShellApplication,
 }:
@@ -42,5 +43,5 @@ writeShellApplication {
   '';
   # 他のユーザのイメージを消せることと、隔離の中からデータベースを読めることは、
   # 実際のユニットを動かさないと確かめられない。
-  passthru.tests.nixos = import ./nixos-test.nix { inherit testers; };
+  passthru.tests.nixos = import ./nixos-test.nix { inherit localLib testers; };
 }

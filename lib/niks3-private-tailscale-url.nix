@@ -12,13 +12,12 @@
 
   NixOSモジュールからは`config.local.tailscale.tailnet`を渡す。
   home-managerから呼ばれるパッケージはNixOSの`config`を読めないため、
-  `lib/tailnet.nix`を直接importして渡す。
+  `localLib.tailnet`を渡す。
+
+  使う側は`localLib.niks3PrivateTailscaleUrl`にtailnetを渡して呼ぶ。
 
   ```nix
-  url = import ../../lib/niks3-private-tailscale-url.nix {
-    inherit lib;
-    tailnet = config.local.tailscale.tailnet;
-  };
+  url = localLib.niks3PrivateTailscaleUrl config.local.tailscale.tailnet;
   ```
 */
 { lib, tailnet }:

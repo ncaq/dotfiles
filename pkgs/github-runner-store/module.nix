@@ -13,11 +13,11 @@
   pkgs,
   lib,
   config,
+  hardening,
   ...
 }:
 let
   cfg = config.services.github-runner-store;
-  hardening = import ../../lib/systemd-hardening.nix;
 in
 {
   options.services.github-runner-store = {

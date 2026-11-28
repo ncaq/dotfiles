@@ -15,7 +15,7 @@
 # - ステージングから消えたファイルが、配信ディレクトリからも消えること
 # - ジョブのユーザがステージングの`public`自体を動かせないこと
 # - それでも`public`が`/etc`へのリンクになった時に、`/etc`の中身が写らないこと
-{ testers }:
+{ localLib, testers }:
 let
   stagingUser = "runner";
   cdnRoot = "/srv/cdn";
@@ -23,6 +23,8 @@ let
 in
 testers.runNixOSTest {
   name = "cdn-ncaq-net-sync";
+
+  node.specialArgs.hardening = localLib.hardening;
 
   containers.machine = {
     imports = [ ./module.nix ];

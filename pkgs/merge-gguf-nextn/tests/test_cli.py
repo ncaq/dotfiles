@@ -10,7 +10,7 @@ from merge_gguf_nextn.merge import MergeError
 
 
 def test_passes_main_draft_output_in_order(monkeypatch: pytest.MonkeyPatch) -> None:
-    # `lib/quantize-gguf-with-nextn.nix`は位置引数で呼ぶので、順番を固定する。
+    # `builder.nix`は位置引数で呼ぶので、順番を固定する。
     calls: list[tuple[Path, Path, Path]] = []
 
     def fake_merge(main: Path, draft: Path, output: Path) -> None:

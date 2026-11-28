@@ -17,6 +17,7 @@
   pkgs,
   config,
   hardening,
+  localLib,
   ...
 }:
 let
@@ -24,7 +25,7 @@ let
   # VMの定義とsystemd-networkdと帯域制限と出口の制限が同じ名前を使うので1箇所に置く。
   tap = "vm-mcp-nixos";
   # TAPのホスト側とゲスト側のネットワークの定義。
-  tapNetwork = import ../../../lib/microvm-tap.nix {
+  tapNetwork = localLib.microvmTap {
     inherit tap;
     addr = config.machineAddresses.mcp-nixos;
   };

@@ -2,8 +2,7 @@
   lib,
   importPkgsStable,
   importPkgsUnstable,
-  importDirModules,
-  hardening,
+  localLib,
   inputs,
 }:
 {
@@ -16,9 +15,10 @@ let
   # 構成の`wsl.enable`ではなく静的な`hostInfo`から取るので、構成を評価せずに分かる。
   isWSL = hostInfo.${hostName}.wsl or false;
   specialArgs = {
+    # 使う箇所が多いものは、`localLib`から取り出して単独の引数としても配る。
+    inherit (localLib) importDirModules hardening;
     inherit
-      importDirModules
-      hardening
+      localLib
       inputs
 
       hostName
@@ -35,8 +35,8 @@ let
     { nixpkgs.pkgs = importPkgsStable system; }
     inputs.disko.nixosModules.default
     inputs.sops-nix.nixosModules.sops
-    ../nixos/configuration.nix
-    ../nixos/host/${hostName}.nix
+    ./configuration.nix
+    ./host/${hostName}.nix
     inputs.home-manager.nixosModules.home-manager
     {
       home-manager = {

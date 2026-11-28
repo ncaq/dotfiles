@@ -18,11 +18,11 @@
   pkgs,
   lib,
   config,
+  hardening,
   ...
 }:
 let
   cfg = config.services.cdn-ncaq-net-sync;
-  hardening = import ../../lib/systemd-hardening.nix;
   # 配信ディレクトリを所有して同期を行う専用のユーザ。
   syncUser = "cdn-ncaq-net";
   # 同期のサービスと、それを起動するpath unitの名前。

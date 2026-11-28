@@ -3,13 +3,17 @@
 # Funnelではないのでインターネットには公開されない。
 # LoRA Managerは`/loras_static`などのルート絶対URLを使うため、
 # サブパスではなく専用のTailscale Serviceのルートへ公開する。
-{ config, ... }:
 {
-  imports = [ ../../../../lib/tailscale-serve.nix ];
-
+  config,
+  hostName,
+  hostInfo,
+  ...
+}:
+{
   local.tailscaleServe.services.comfyui = {
-    # 中継して接続するseminarの`open-webui/comfyui-backend.nix`と共有する。
-    service = import ../../../../lib/comfyui-tailscale-service.nix;
+    # 中継して接続するseminarの`open-webui/comfyui-backend.nix`と共有するので、
+    # `flake.nix`の`hostInfo`から取る。
+    service = hostInfo.${hostName}.comfyuiTailscaleService;
     label = "ComfyUI";
     port = config.containers.comfyui.config.services.comfyui.port;
     socket = "comfyui-proxy.socket";

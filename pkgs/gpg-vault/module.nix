@@ -33,11 +33,11 @@
   lib,
   pkgs,
   config,
+  hardening,
   ...
 }:
 let
   cfg = config.services.gpg-vault;
-  hardening = import ../../lib/systemd-hardening.nix;
   # クライアント側(home-managerの`programs.gpg`)と同じ既定のgnupgに揃えるため、
   # `pkgs.gnupg`を直接参照せずNixOSの`programs.gnupg.package`を経由する。
   gnupg = config.programs.gnupg.package;

@@ -22,7 +22,11 @@
     共通のoverlaysの先頭に置くので`prev`は素のnixpkgsで、
     メモ化済みのインスタンスのまま調べられる。
 */
-{ lib, inputs }:
+{
+  lib,
+  inputs,
+  localLib,
+}:
 final: prev:
 let
   # 自作のHaskellパッケージが共有するパッケージセット。
@@ -40,6 +44,8 @@ let
       final
       // {
         inherit localHaskellPackages;
+        # `lib/`の定義。パッケージも相対パスで`import`せずに引数で受け取る。
+        inherit localLib;
         inherit (inputs.niks3.packages.${final.stdenv.hostPlatform.system}) niks3;
         # nixpkgsの`home-manager`はmasterのスナップショットなので、
         # 構成の評価に使うinputと同じ版のCLIを渡す。

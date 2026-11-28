@@ -9,8 +9,7 @@
   URLの形はここに集める。
 
   ```nix
-  ollamaUrl = import ../../lib/ollama-tailscale-url.nix { inherit lib; };
-  url = ollamaUrl {
+  url = localLib.ollamaTailscaleUrl {
     hostName = "bullet";
     tailnet = config.local.tailscale.tailnet;
   };

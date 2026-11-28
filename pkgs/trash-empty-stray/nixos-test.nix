@@ -25,7 +25,7 @@
 #   マウントを作れないsandwichのテストでは確かめられない
 #
 # 権限の絞り込みが強すぎてuidを変えられない時は、ユニットが失敗するのでここで落ちます。
-{ testers }:
+{ localLib, testers }:
 let
   user = "alice";
   base = "/home/${user}/trash-empty-stray-test";
@@ -37,6 +37,8 @@ let
 in
 testers.runNixOSTest {
   name = "trash-empty-stray";
+
+  node.specialArgs.hardening = localLib.hardening;
 
   containers.machine = {
     imports = [ ./module.nix ];

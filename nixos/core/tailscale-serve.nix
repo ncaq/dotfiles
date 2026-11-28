@@ -1,13 +1,12 @@
 /**
   ホスト上のポートをTailscale Serviceとしてtailnet内へ公開するモジュール。
 
-  公開したいモジュールがこのファイルを直接importして、
-  `local.tailscaleServe.services.<name>`を設定する。
+  公開したいモジュールが`local.tailscaleServe.services.<name>`を設定する。
   生成されるユニット名は`tailscale-serve-<name>`になる。
+  Serviceを1つも設定しないホストには何も足さない。
 
   ```nix
   {
-    imports = [ ../../lib/tailscale-serve.nix ];
     local.tailscaleServe.services.ollama = {
       service = "svc:ollama-bullet";
       label = "Ollama";
@@ -18,9 +17,8 @@
   ```
 
   HTTPSへのリダイレクタもこのモジュールが同時に定義する。
-  利用側にimportを増やさせるとホストを増やした時に忘れて、
+  利用側に別の設定を書かせるとホストを増やした時に忘れて、
   80番にTCP接続はできるのに転送先が居ないという実行時にしか出ない壊れ方をする。
-  同じパスのモジュールはモジュールシステムが重複除去するので、
   公開するServiceが何個あってもリダイレクタの定義は1つに保たれる。
 
   # 登録の直列化

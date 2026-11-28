@@ -405,7 +405,7 @@ in
   # `validTypes`はOpen WebUIの`ComfyUIGenerateImageForm`が持つフィールドで、
   # `requiredTypes`はそのうち無いとUIの入力が黙って無視されるものである。
   # 寸法とstepsは環境変数の側にも既定値があるので必須にはしない。
-  assertions = (import ../../../../lib/comfyui-api-workflow.nix { inherit lib; }).assertions {
+  assertions = (import ./lib/comfyui-api-workflow.nix { inherit lib; }).assertions {
     name = "Open WebUIの画像生成";
     inherit workflow workflowNodes;
     validTypes = [

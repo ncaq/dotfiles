@@ -6,11 +6,12 @@
   lib,
   pkgs,
   config,
+  localLib,
   ...
 }:
 let
   ollama = config.containers.ollama.config.services.ollama;
-  budget = (import ../../lib/ollama-context.nix).budget config.local.ollama.contextLength;
+  budget = localLib.ollamaContext.budget config.local.ollama.contextLength;
   ollama-client = pkgs.writeShellApplication {
     name = "ollama";
     runtimeEnv.OLLAMA_HOST = "[::1]:${toString ollama.port}";

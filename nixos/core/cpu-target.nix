@@ -1,5 +1,6 @@
 /**
   ホストのCPUモデルを宣言し、登録済みなら最適化overlayを適用するモジュール。
+  カーネル向けの最適化overlayは`cpu-target-kernel.nix`が適用する。
 
   `local.cpuTarget`に`/proc/cpuinfo`の`model name`文字列をそのまま設定する。
   `lib/cpu-targets.nix`の`targets`に登録されているCPUのみを`enum`で受け付け、
@@ -10,9 +11,14 @@
   ただし`cpuThreads`や`cpuBudgetThreads`を前提にするモジュール(beesなど)を使うホストでは、
   CPUを登録した上で`cpuTarget`を設定する必要がある。
 */
-{ lib, config, ... }:
+{
+  lib,
+  config,
+  localLib,
+  ...
+}:
 let
-  cpuTargets = import ../../lib/cpu-targets.nix { inherit lib; };
+  inherit (localLib) cpuTargets;
   cpuTarget = config.local.cpuTarget;
   # SMTの1物理コア分(2スレッド)はOSやその他プロセスのために空けておく。
   reservedThreads = 2;
@@ -66,8 +72,7 @@ in
 
   config = lib.mkIf (config.local.cpuTarget != null) {
     nixpkgs.overlays = [
-      (import ../../lib/cpu-optimized-overlay.nix config.local.cpuTarget)
-      (import ../../lib/cpu-optimized-kernel-overlay.nix config.local.cpuTarget)
+      (localLib.cpuOptimizedOverlay config.local.cpuTarget)
     ];
   };
 }

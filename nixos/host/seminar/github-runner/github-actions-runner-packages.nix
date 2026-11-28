@@ -1,5 +1,7 @@
 /**
-  全てのランナのPATHへ足すパッケージリスト。
+  全てのランナのPATHへ足すパッケージリストを、
+  `githubActionsRunnerPackages`として他のランナモジュールへ渡す。
+  ランナのVMの中の`pkgs`で組み立てるので、`pkgs`を受け取る関数にしている。
 
   GitHubホステッドランナに入っているものに合わせて揃えることはしません。
   大量の依存が発生して本当にリポジトリが利用しているものが不透明になるからです。
@@ -34,55 +36,58 @@
   バージョンを気にするような用途の場合はワークフローの方で、
   NixなりActionsなりを使って用意することを想定しています。
 */
-{ pkgs, ... }:
-with pkgs;
-let
-  # 暗黙のうちに要求されることが多いランタイム。
-  basicRuntime = [
-    go
-    nodejs
-    perl
-    python3
-    sqlite
-  ];
-
-  cliTools = [
-    # Version Control
-    git-lfs
-
-    # GitHub CLI
-    gh
-
-    # Data Processing
-    jq
-    yq-go
-
-    # Compression
-    _7zz # 7zip
-    bzip2
-    unzip
-    xz
-    zstd
-
-    # Network
-    curl
-    iproute2
-    iputils # ping
-    rsync
-    wget
-
-    # Security
-    gnupg
-  ];
-in
 {
-  all = builtins.concatLists [
-    basicRuntime
-    cliTools
-  ];
+  _module.args.githubActionsRunnerPackages =
+    { pkgs, ... }:
+    with pkgs;
+    let
+      # 暗黙のうちに要求されることが多いランタイム。
+      basicRuntime = [
+        go
+        nodejs
+        perl
+        python3
+        sqlite
+      ];
 
-  inherit
-    basicRuntime
-    cliTools
-    ;
+      cliTools = [
+        # Version Control
+        git-lfs
+
+        # GitHub CLI
+        gh
+
+        # Data Processing
+        jq
+        yq-go
+
+        # Compression
+        _7zz # 7zip
+        bzip2
+        unzip
+        xz
+        zstd
+
+        # Network
+        curl
+        iproute2
+        iputils # ping
+        rsync
+        wget
+
+        # Security
+        gnupg
+      ];
+    in
+    {
+      all = builtins.concatLists [
+        basicRuntime
+        cliTools
+      ];
+
+      inherit
+        basicRuntime
+        cliTools
+        ;
+    };
 }

@@ -29,7 +29,8 @@ Nixで書いたテストのうち、
   書き方は`pkgs/README.md`に書いています
 - コマンドを持たないモジュールは、モジュールの隣の`.test.nix`。
   `nixos/core/caddy.test.nix`のように、
-  `{ testers }`を受け取って`testers.runNixOSTest`のderivationを返します。
+  `{ testers, localLib }`を受け取って`testers.runNixOSTest`のderivationを返します。
+  `lib/`の定義を使わないテストは`{ testers }`だけで構いません。
   下の評価のテストと同じく`collect-nix-tests.nix`が集めます
 
 `nixos-boot/`に書くのは、実機の構成を組み上げた結果を見るものだけです。

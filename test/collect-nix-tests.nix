@@ -17,6 +17,7 @@
     ファイルを足すだけでテストに加わる。
 
     同じ名前の付け方で、`{ testers }`か`{ lib, testers }`を受け取って`testers.runNixOSTest`のderivationを返すテストも集める。
+    こちらも`lib/`の定義を使うテストは`{ testers, localLib }`のように`localLib`も受け取れる。
     コマンドを持たないモジュールの振る舞いを、ホストをブートせずに確かめるためのもの。
     コマンドを持つものは、パッケージのテスト(`pkgs/<名前>/nixos-test.nix`)に書く。
 

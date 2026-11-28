@@ -38,7 +38,7 @@
   - 使う場所が1つのファイルに閉じていて短いものは、そのファイルに直接書く
   - 長いものや、複数のモジュールから等しく使われるものは、使う側のディレクトリに独立したファイルとして置く。
     置くだけで読み込まれるディレクトリではモジュールにして、
-    `nixos/native-linux/seminar-cifs.nix`のように`_module.args`で渡すか、
+    `nixos/client/seminar-cifs.nix`のように`_module.args`で渡すか、
     `nixos/core/cpu-target-kernel.nix`のように自分で設定する
   - パッケージと組になるモジュールや関数は、`pkgs/<名前>/`の隣に置く(`pkgs/README.md`)
   - ホストをまたいで共有する値は、`flake.nix`の`hostInfo`に書く

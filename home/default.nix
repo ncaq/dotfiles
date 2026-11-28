@@ -5,6 +5,7 @@
   username,
   isTermux,
   isWSL,
+  isClient,
   ...
 }:
 let
@@ -35,5 +36,6 @@ in
     ./link.nix
   ]
   ++ lib.optional nativeLinux ./native-linux
+  ++ lib.optional isClient ./client
   ++ lib.optional isWSL ./wsl;
 }

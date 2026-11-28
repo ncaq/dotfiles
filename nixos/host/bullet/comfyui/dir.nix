@@ -100,8 +100,8 @@ in
           what = "//seminar/chihiro/comfyui-output";
           where = hostMountPoint;
           type = "cifs";
-          # 認証・セキュリティ・ダイアレクトの共通部分は`nixos/native-linux/seminar-cifs.nix`で管理する。
-          # 資格情報は`nixos/native-linux/cifs.nix`と同じものを使う。
+          # 認証・セキュリティ・ダイアレクトの共通部分は`nixos/client/seminar-cifs.nix`で管理する。
+          # 資格情報は`nixos/client/cifs.nix`と同じものを使う。
           options = lib.concatStringsSep "," (
             baseMountOptions config.sops.templates."cifs-credentials".path
             ++ [

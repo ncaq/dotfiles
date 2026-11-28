@@ -259,6 +259,11 @@
           # オンボード有線NICのMACアドレス。
           # seminarがWake-on-LANのmagic packetを送る宛先に使う。
           macAddress = "34:5a:60:bf:07:ad";
+          # `client`層を読み込むクライアントPCかどうか。
+          # home-managerがGUIの設定を読み込むかを、
+          # NixOSの構成を評価せずに決めるために静的に書く。
+          # 構成と食い違っていないかは`nixos/core/host-info.nix`が確かめる。
+          client = true;
           # ComfyUIのTailscale Service名。
           # 公開するbulletと、tailnetの外から中継して接続するseminarの両方が同じ名前を必要とする。
           # それぞれにリテラルで書くと、名前を変えたときに片方が静かに古いままになる。
@@ -269,9 +274,13 @@
         };
         "creep" = {
           system = "x86_64-linux";
+          client = true;
         };
         "seminar" = {
           system = "x86_64-linux";
+          # `server`層を読み込むサーバかどうか。
+          # 構成と食い違っていないかは`nixos/core/host-info.nix`が確かめる。
+          server = true;
         };
       };
 
